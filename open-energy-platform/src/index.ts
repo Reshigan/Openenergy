@@ -70,47 +70,8 @@ app.route('/api/threads', threadsRoutes);
 app.route('/api/marketplace', marketplaceRoutes);
 app.route('/api/admin', adminRoutes);
 
-// SPA fallback - serve static files from R2
-app.get('/*', async (c) => {
-  const path = c.req.path;
-  
-  // Skip API routes
-  if (path.startsWith('/api/')) {
-    return c.text('API Not Found', 404);
-  }
-
-  // Determine the R2 key
-  const key = path === '/' ? 'index.html' : path.slice(1);
-  
-  try {
-    const asset = await c.env.R2.get(key);
-    if (asset) {
-      const contentType = key.endsWith('.html') ? 'text/html' :
-                          key.endsWith('.js') ? 'application/javascript' :
-                          key.endsWith('.css') ? 'text/css' : 'application/octet-stream';
-      return c.body(asset.body, {
-        headers: { 'Content-Type': contentType, 'Cache-Control': 'no-cache' }
-      });
-    }
-  } catch (e) {
-    console.error('R2 Error:', e);
-    return c.json({ error: 'R2 Error', message: String(e) }, 500);
-  }
-
-  // Try index.html fallback for SPA routing
-  try {
-    const index = await c.env.R2.get('index.html');
-    if (index) {
-      return c.body(index.body, { 
-        headers: { 'Content-Type': 'text/html', 'Cache-Control': 'no-cache' } 
-      });
-    }
-  } catch (e) {
-    console.error('R2 index Error:', e);
-  }
-
-  return c.text('Frontend not deployed - R2 empty or error', 404);
-});
+// Static assets (SPA shell, JS, CSS, images) are served by Cloudflare Pages directly.
+// This Worker / Pages Function only handles API routes under /api/*.
 
 // Error handling
 app.onError((err, c) => {

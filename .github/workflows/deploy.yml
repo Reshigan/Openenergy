@@ -7,15 +7,14 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 env:
   NODE_VERSION: '20'
-  VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,7 +26,7 @@ jobs:
           cache: 'npm'
           cache-dependency-path: open-energy-platform/pages/package-lock.json
 
-      - name: Install dependencies
+      - name: Install frontend dependencies
         working-directory: open-energy-platform/pages
         run: npm ci
 
@@ -38,15 +37,12 @@ jobs:
       - name: Verify build output
         working-directory: open-energy-platform/pages
         run: |
-          echo "Build output:"
-          ls -la dist/
-          echo "Checking dist contents..."
-          if [ -f dist/index.html ]; then
-            echo "✓ index.html found"
-          else
-            echo "✗ index.html NOT found!"
-            ls -la
-          fi
+          echo "Build output:" && ls -la dist/
+          test -f dist/index.html && echo "index.html found"
+
+      - name: Install Functions dependencies (hono, zod, bcryptjs)
+        working-directory: open-energy-platform
+        run: npm install --no-audit --no-fund
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -58,28 +54,53 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     environment:
       name: production
       url: https://oe.vantax.co.za
-    
     permissions:
       contents: read
       deployments: write
-    
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: open-energy-platform
-          directory: dist
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          wranglerVersion: '3'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: open-energy-platform/pages/package-lock.json
+
+      - name: Install frontend + build (reproduce)
+        working-directory: open-energy-platform/pages
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install Functions dependencies (hono, zod, bcryptjs)
+        working-directory: open-energy-platform
+        run: npm install --no-audit --no-fund
+
+      - name: Apply D1 migrations (remote)
+        working-directory: open-energy-platform
+        env:
+          CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx wrangler@4 d1 execute open-energy-db --remote --file=./migrations/001_core.sql -y
+          npx wrangler@4 d1 execute open-energy-db --remote --file=./migrations/002_domain.sql -y
+          npx wrangler@4 d1 execute open-energy-db --remote --file=./migrations/003_seed.sql -y
+
+      - name: Deploy Pages (frontend + Functions)
+        working-directory: open-energy-platform
+        env:
+          CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx wrangler@4 pages deploy pages/dist \
+            --project-name=open-energy-platform \
+            --branch=main \
+            --commit-dirty=true

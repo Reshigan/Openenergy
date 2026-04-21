@@ -87,16 +87,18 @@ INSERT OR IGNORE INTO emission_factors (id, energy_source, factor_value, unit, s
 ('ef_009', 'Biomass', 0.03, 'kgCO2/kWh', 'DEFRA 2024', '2024-01-01');
 
 -- ---- DEMO PARTICIPANTS ----
-INSERT OR IGNORE INTO participants (id, email, password_hash, name, company_name, role, status, kyc_status, bbbee_level, subscription_tier, email_verified, onboarding_completed) VALUES
-('demo_admin_001', 'admin@openenergy.co.za', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYuP6V6xq4y', 'System Admin', 'Open Energy Platform', 'admin', 'active', 'approved', 1, 'enterprise', 1, 1),
-('demo_trader_001', 'trader@demo.co.za', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYuP6V6xq4y', 'Sipho Mkhize', 'Mkhize Energy Traders', 'trader', 'active', 'approved', 2, 'professional', 1, 1),
-('demo_ipp_001', 'ippsolar@renewco.za', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYuP6V6xq4y', 'Johan van der Berg', 'RenewCo Solar (Pty) Ltd', 'ipp_developer', 'active', 'approved', 3, 'enterprise', 1, 1),
-('demo_ipp_002', 'ippeol@windcapital.za', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYuP6V6xq4y', 'Lerato Moloto', 'WindCapital (Pty) Ltd', 'ipp_developer', 'active', 'approved', 4, 'professional', 1, 1),
-('demo_carbon_001', 'portfolio@greenfunds.co.za', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYuP6V6xq4y', 'Anita Naidoo', 'GreenFunds Carbon Fund', 'carbon_fund', 'active', 'approved', 1, 'enterprise', 1, 1),
-('demo_offtaker_001', 'energy@municipality.gov.za', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYuP6V6xq4y', 'Thabo Molefe', 'City Energy Municipality', 'offtaker', 'active', 'approved', 1, 'enterprise', 1, 1),
-('demo_lender_001', 'deals@infrastructure-cap.com', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYuP6V6xq4y', 'Pieter van Zyl', 'Infrastructure Capital Partners', 'lender', 'active', 'approved', 1, 'enterprise', 1, 1),
-('demo_grid_001', 'operations@eskom.co.za', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYuP6V6xq4y', 'Nomsa Dlamini', 'Eskom Holdings', 'grid_operator', 'active', 'approved', NULL, 'enterprise', 1, 1),
-('demo_viewer_001', 'analyst@energyresearch.org', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYuP6V6xq4y', 'Kagiso Tlhotlhalemaje', 'Energy Research Institute', 'regulator', 'active', 'approved', NULL, 'starter', 1, 0);
+-- All demo accounts share the password: Demo@2024!
+-- bcrypt hash ($2a$10$...) below was generated with bcryptjs cost=10 for "Demo@2024!"
+INSERT OR REPLACE INTO participants (id, email, password_hash, name, company_name, role, status, kyc_status, bbbee_level, subscription_tier, email_verified, onboarding_completed) VALUES
+('demo_admin_001',      'admin@openenergy.co.za',       'pbkdf2$sha256$100000$b3BlbmVuZXJneS1kZW1vLXNhbHQ=$IOJml+OkT8C4tON6R1DA+HDLPXUGnOyqgPF6XBjyYkk=', 'System Admin',           'Open Energy Platform',             'admin',         'active', 'approved',  1, 'enterprise',   1, 1),
+('demo_trader_001',     'trader@openenergy.co.za',      'pbkdf2$sha256$100000$b3BlbmVuZXJneS1kZW1vLXNhbHQ=$IOJml+OkT8C4tON6R1DA+HDLPXUGnOyqgPF6XBjyYkk=', 'Sipho Mkhize',           'Mkhize Energy Traders',            'trader',        'active', 'approved',  2, 'professional', 1, 1),
+('demo_ipp_001',        'ipp@openenergy.co.za',         'pbkdf2$sha256$100000$b3BlbmVuZXJneS1kZW1vLXNhbHQ=$IOJml+OkT8C4tON6R1DA+HDLPXUGnOyqgPF6XBjyYkk=', 'Johan van der Berg',     'RenewCo Solar (Pty) Ltd',          'ipp_developer', 'active', 'approved',  3, 'enterprise',   1, 1),
+('demo_ipp_002',        'wind@openenergy.co.za',        'pbkdf2$sha256$100000$b3BlbmVuZXJneS1kZW1vLXNhbHQ=$IOJml+OkT8C4tON6R1DA+HDLPXUGnOyqgPF6XBjyYkk=', 'Lerato Moloto',          'WindCapital (Pty) Ltd',            'ipp_developer', 'active', 'approved',  4, 'professional', 1, 1),
+('demo_carbon_001',     'carbon@openenergy.co.za',      'pbkdf2$sha256$100000$b3BlbmVuZXJneS1kZW1vLXNhbHQ=$IOJml+OkT8C4tON6R1DA+HDLPXUGnOyqgPF6XBjyYkk=', 'Anita Naidoo',           'GreenFunds Carbon Fund',           'carbon_fund',   'active', 'approved',  1, 'enterprise',   1, 1),
+('demo_offtaker_001',   'offtaker@openenergy.co.za',    'pbkdf2$sha256$100000$b3BlbmVuZXJneS1kZW1vLXNhbHQ=$IOJml+OkT8C4tON6R1DA+HDLPXUGnOyqgPF6XBjyYkk=', 'Thabo Molefe',           'City Energy Municipality',         'offtaker',      'active', 'approved',  1, 'enterprise',   1, 1),
+('demo_lender_001',     'lender@openenergy.co.za',      'pbkdf2$sha256$100000$b3BlbmVuZXJneS1kZW1vLXNhbHQ=$IOJml+OkT8C4tON6R1DA+HDLPXUGnOyqgPF6XBjyYkk=', 'Pieter van Zyl',         'Infrastructure Capital Partners',  'lender',        'active', 'approved',  1, 'enterprise',   1, 1),
+('demo_grid_001',       'grid@openenergy.co.za',        'pbkdf2$sha256$100000$b3BlbmVuZXJneS1kZW1vLXNhbHQ=$IOJml+OkT8C4tON6R1DA+HDLPXUGnOyqgPF6XBjyYkk=', 'Nomsa Dlamini',          'Eskom Holdings',                   'grid_operator', 'active', 'approved', NULL,'enterprise',   1, 1),
+('demo_regulator_001',  'regulator@openenergy.co.za',   'pbkdf2$sha256$100000$b3BlbmVuZXJneS1kZW1vLXNhbHQ=$IOJml+OkT8C4tON6R1DA+HDLPXUGnOyqgPF6XBjyYkk=', 'Kagiso Tlhotlhalemaje',  'NERSA / Energy Research Institute','regulator',     'active', 'approved', NULL,'starter',      1, 1);
 
 -- ---- DEMO CARBON PROJECTS ----
 INSERT OR IGNORE INTO carbon_projects (id, project_name, project_number, project_type, methodology, host_country, developer_id, credits_issued, credits_available, status, registration_date) VALUES
