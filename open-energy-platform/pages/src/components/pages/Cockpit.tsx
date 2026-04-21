@@ -14,6 +14,7 @@ import { useAuth } from '../../lib/useAuth';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { FioriTile, FioriTileGroup } from '../FioriTile';
+import { ActionQueueCard } from '../ActionQueueCard';
 import { OfftakerAiHub } from '../OfftakerAiHub';
 
 const formatZAR = (val: number) =>
@@ -161,8 +162,12 @@ export function Cockpit() {
         </div>
       </div>
 
+      {/* Action queue — cross-role handovers land here */}
+      <ActionQueueCard />
+
       {/* Role-specific AI module — Offtaker: Bill → Mix → LOI */}
       {role === 'offtaker' && <OfftakerAiHub />}
+
 
       {/* Market Pulse */}
       <FioriTileGroup

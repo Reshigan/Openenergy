@@ -33,7 +33,9 @@ const BASE_NAV: NavItem[] = [
 ];
 
 function navForRole(role: string | undefined): NavItem[] {
-  if (!role) return BASE_NAV;
+  // Admin link is only ever shown to admins; everyone else gets a curated list without /admin.
+  const nonAdminBase = BASE_NAV.filter((n) => n.path !== '/admin');
+  if (!role) return nonAdminBase;
   switch (role) {
     case 'admin':
       return BASE_NAV;
@@ -64,11 +66,12 @@ function navForRole(role: string | undefined): NavItem[] {
     case 'grid_operator':
       return BASE_NAV.filter((n) => ['/cockpit', '/grid', '/settlement'].includes(n.path));
     case 'regulator':
+      // Regulators see the marketplace, ESG and the compliance dashboard — not the admin console.
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/admin', '/marketplace', '/esg'].includes(n.path),
+        ['/cockpit', '/marketplace', '/esg'].includes(n.path),
       );
     default:
-      return BASE_NAV;
+      return nonAdminBase;
   }
 }
 
@@ -229,13 +232,15 @@ export function FioriShell({ children }: { children: ReactNode }) {
                 >
                   <User size={14} /> My profile
                 </button>
-                <button
-                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left hover:bg-[#fafafa] transition-colors"
-                  style={{ color: '#32363a' }}
-                  onClick={() => navigate('/admin')}
-                >
-                  <Settings size={14} /> Settings
-                </button>
+                {user?.role === 'admin' && (
+                  <button
+                    className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left hover:bg-[#fafafa] transition-colors"
+                    style={{ color: '#32363a' }}
+                    onClick={() => navigate('/admin')}
+                  >
+                    <Settings size={14} /> Settings
+                  </button>
+                )}
                 <button
                   className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left hover:bg-[#ffebeb] transition-colors border-t"
                   style={{ color: '#bb0000', borderColor: '#f0f1f2' }}

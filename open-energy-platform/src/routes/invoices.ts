@@ -3,6 +3,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { fireCascade } from '../utils/cascade';
 
 const invoices = new Hono<HonoEnv>();
 
@@ -79,7 +80,99 @@ invoices.post('/', async (c) => {
   ).run();
 
   const invoice = await c.env.DB.prepare('SELECT * FROM invoices WHERE id = ?').bind(invoiceId).first();
+
+  await fireCascade({
+    event: 'invoice.created',
+    actor_id: user.id,
+    entity_type: 'invoices',
+    entity_id: invoiceId,
+    data: { invoice_number, total_amount, to_participant_id },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: invoice }, 201);
+});
+
+// POST /invoices/:id/issue — transition draft→issued (fires invoice.issued cascade)
+invoices.post('/:id/issue', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+
+  const existing = await c.env.DB.prepare('SELECT from_participant_id, status, invoice_number, total_amount, due_date, to_participant_id FROM invoices WHERE id = ?').bind(id).first();
+  if (!existing) return c.json({ success: false, error: 'Invoice not found' }, 404);
+  if (existing.from_participant_id !== user.id) return c.json({ success: false, error: 'Not authorized' }, 403);
+  if (existing.status !== 'draft') return c.json({ success: false, error: `Cannot issue invoice in status '${existing.status}'` }, 400);
+
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(`UPDATE invoices SET status = 'issued', issued_at = ?, updated_at = ? WHERE id = ?`).bind(now, now, id).run();
+
+  await fireCascade({
+    event: 'invoice.issued',
+    actor_id: user.id,
+    entity_type: 'invoices',
+    entity_id: id,
+    data: { invoice_number: existing.invoice_number, total_amount: existing.total_amount, due_date: existing.due_date, to_participant_id: existing.to_participant_id },
+    env: c.env,
+  });
+
+  return c.json({ success: true, data: { id, status: 'issued' } });
+});
+
+// POST /invoices/:id/pay — transition issued→paid (fires invoice.paid cascade)
+invoices.post('/:id/pay', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const { paid_amount, payment_reference } = await c.req.json().catch(() => ({}));
+
+  const existing = await c.env.DB.prepare('SELECT to_participant_id, from_participant_id, status, invoice_number, total_amount FROM invoices WHERE id = ?').bind(id).first();
+  if (!existing) return c.json({ success: false, error: 'Invoice not found' }, 404);
+  if (existing.to_participant_id !== user.id) return c.json({ success: false, error: 'Only the payer can mark this invoice paid' }, 403);
+  if (existing.status !== 'issued') {
+    return c.json({ success: false, error: `Cannot pay invoice in status '${existing.status}'. Expected 'issued'.` }, 400);
+  }
+
+  const amount = Number(paid_amount ?? existing.total_amount ?? 0);
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(`UPDATE invoices SET status = 'paid', paid_at = ?, paid_amount = ?, updated_at = ? WHERE id = ?`).bind(now, amount, now, id).run();
+
+  await fireCascade({
+    event: 'invoice.paid',
+    actor_id: user.id,
+    entity_type: 'invoices',
+    entity_id: id,
+    data: { invoice_number: existing.invoice_number, paid_amount: amount, payment_reference },
+    env: c.env,
+  });
+
+  return c.json({ success: true, data: { id, status: 'paid', paid_amount: amount } });
+});
+
+// POST /invoices/:id/dispute — file a dispute on an invoice (fires dispute.filed cascade)
+invoices.post('/:id/dispute', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const { reason } = await c.req.json().catch(() => ({}));
+
+  const existing = await c.env.DB.prepare('SELECT to_participant_id, from_participant_id, status, match_id FROM invoices WHERE id = ?').bind(id).first();
+  if (!existing) return c.json({ success: false, error: 'Invoice not found' }, 404);
+  if (existing.to_participant_id !== user.id && existing.from_participant_id !== user.id) return c.json({ success: false, error: 'Not authorized' }, 403);
+  if (existing.status !== 'issued') {
+    return c.json({ success: false, error: `Cannot dispute invoice in status '${existing.status}'. Only 'issued' invoices can be disputed.` }, 400);
+  }
+
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(`UPDATE invoices SET status = 'disputed', updated_at = ? WHERE id = ?`).bind(now, id).run();
+
+  await fireCascade({
+    event: 'dispute.filed',
+    actor_id: user.id,
+    entity_type: 'invoices',
+    entity_id: id,
+    data: { reason: reason || 'unspecified', match_id: existing.match_id, invoice_id: id },
+    env: c.env,
+  });
+
+  return c.json({ success: true, data: { id, status: 'disputed' } });
 });
 
 // PUT /invoices/:id - Update invoice
