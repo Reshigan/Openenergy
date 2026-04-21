@@ -35,14 +35,15 @@ function iconForType(type: string) {
   return Inbox;
 }
 
-function pathForEntity(entityType: string | null): string {
+function hrefForAction(entityType: string | null, entityId: string | null): string {
+  if (entityType === 'contract_documents' && entityId) return `/contracts/${entityId}`;
   switch (entityType) {
     case 'contract_documents': return '/contracts';
-    case 'invoices': return '/settlement';
-    case 'trade_matches': return '/trading';
-    case 'project_milestones': return '/projects';
-    case 'settlement_disputes': return '/settlement';
-    case 'ona_faults': return '/projects';
+    case 'invoices': return entityId ? `/settlement?focus=${entityId}` : '/settlement';
+    case 'trade_matches': return entityId ? `/trading?focus=${entityId}` : '/trading';
+    case 'project_milestones': return entityId ? `/projects?focus=${entityId}` : '/projects';
+    case 'settlement_disputes': return entityId ? `/settlement?focus=${entityId}` : '/settlement';
+    case 'ona_faults': return entityId ? `/projects?focus=${entityId}` : '/projects';
     default: return '/cockpit';
   }
 }
@@ -145,7 +146,7 @@ export function ActionQueueCard() {
         {!loading && !error && items.map((it) => {
           const Icon = iconForType(it.type);
           const p = priorityColor[it.priority] || priorityColor.normal;
-          const href = it.entity_id ? `${pathForEntity(it.entity_type)}?focus=${it.entity_id}` : pathForEntity(it.entity_type);
+          const href = hrefForAction(it.entity_type, it.entity_id);
           return (
             <div
               key={it.id}
