@@ -60,7 +60,7 @@ INSERT OR IGNORE INTO ipp_projects (id, project_name, developer_id, structure_ty
 ('ip_004','De Aar 75MW Solar PV','demo_ipp_001','build_own_operate','solar_pv',75,'De Aar, Northern Cape','De Aar 132kV','construction','2023-09-01','2024-11-15',140000,275,20,1),
 ('ip_005','Jeffreys Bay 120MW Wind','demo_ipp_002','build_operate_transfer','wind',120,'Jeffreys Bay, Eastern Cape','Jeffreys Bay 400kV','commercial_operations','2019-05-01','2021-08-01',380000,310,20,1),
 ('ip_006','Upington 200MW CSP','demo_ipp_001','build_own_operate','csp',200,'Upington, Northern Cape','Upington 400kV','development','2025-03-01','2027-06-01',700000,420,25,1),
-('ip_007','Gqeberha Port Wind Cluster','demo_ipp_002','build_own_operate','wind',95,'Gqeberha, Eastern Cape','Gqeberha 132kV','financial_close','2024-01-15','2025-09-01',295000,305,20,1);
+('ip_007','Gqeberha Port Wind Cluster','demo_ipp_002','build_own_operate','wind',95,'Gqeberha, Eastern Cape','Gqeberha 132kV','construction','2024-01-15','2025-09-01',295000,305,20,1);
 
 -- ---- PROJECT MILESTONES (for new projects + extra for ip_003) --------------
 INSERT OR IGNORE INTO project_milestones (id, project_id, milestone_name, milestone_type, order_index, target_date, satisfied_date, status) VALUES
@@ -215,82 +215,87 @@ INSERT OR IGNORE INTO trade_orders (id, participant_id, side, energy_type, volum
 ('ord_023','demo_ipp_001','sell','solar',280,265,305,'2026-07-05','Klerksdorp','bilateral','open');
 
 -- ---- INVOICES --------------------------------------------------------------
-INSERT OR IGNORE INTO invoices (id, invoice_number, seller_id, buyer_id, contract_id, amount, vat_amount, currency, issue_date, due_date, status, notes) VALUES
-('inv_001','INV-2026-0001','demo_ipp_001','demo_offtaker_001','doc_001',1187500,178125,'ZAR','2026-01-31','2026-03-02','paid','Jan 2026 — 3,750 MWh @ R285 + VAT (15%)'),
-('inv_002','INV-2026-0002','demo_ipp_001','demo_offtaker_001','doc_001',1068750,160312.50,'ZAR','2026-02-28','2026-03-30','paid','Feb 2026 — 3,375 MWh @ R285 + VAT'),
-('inv_003','INV-2026-0003','demo_ipp_001','demo_offtaker_001','doc_001',1282500,192375,'ZAR','2026-03-31','2026-04-30','paid','Mar 2026 — 4,050 MWh @ R285 + VAT'),
-('inv_004','INV-2026-0004','demo_ipp_002','demo_offtaker_001','doc_002',1305600,195840,'ZAR','2026-01-31','2026-03-02','paid','Jan 2026 wind — 3,420 MWh @ R320 + VAT'),
-('inv_005','INV-2026-0005','demo_ipp_002','demo_offtaker_001','doc_002',1152000,172800,'ZAR','2026-02-28','2026-03-30','paid','Feb 2026 — 3,150 MWh + VAT'),
-('inv_006','INV-2026-0006','demo_ipp_002','demo_offtaker_001','doc_002',1401600,210240,'ZAR','2026-03-31','2026-04-30','pending','Mar 2026 wind — 3,780 MWh + VAT'),
-('inv_007','INV-2026-0007','demo_ipp_001','demo_trader_001',NULL,875000,131250,'ZAR','2026-03-15','2026-04-14','paid','Trade ord_015 settlement'),
-('inv_008','INV-2026-0008','demo_ipp_001','demo_offtaker_001','doc_001',1187500,178125,'ZAR','2026-04-01','2026-05-01','pending','Apr interim — 3,750 MWh + VAT'),
-('inv_009','INV-2026-0009','demo_ipp_002','demo_offtaker_001','doc_002',1305600,195840,'ZAR','2026-04-01','2026-05-01','pending','Apr wind PPA + VAT'),
-('inv_010','INV-2026-0010','demo_ipp_001','demo_offtaker_001','doc_001',1426875,214031.25,'ZAR','2025-12-31','2026-01-30','paid','Dec 2025 — 4,506 MWh + VAT'),
-('inv_011','INV-2025-0118','demo_ipp_001','demo_offtaker_001','doc_001',1187500,178125,'ZAR','2025-11-30','2025-12-30','paid','Nov 2025 + VAT'),
-('inv_012','INV-2025-0099','demo_ipp_002','demo_offtaker_001','doc_002',1248000,187200,'ZAR','2025-10-31','2025-11-30','paid','Oct 2025 wind'),
-('inv_013','INV-2025-0087','demo_ipp_001','demo_offtaker_001','doc_001',1102500,165375,'ZAR','2025-09-30','2025-10-30','paid','Sep 2025'),
-('inv_014','INV-2025-0075','demo_ipp_002','demo_offtaker_001','doc_002',1094400,164160,'ZAR','2025-08-31','2025-09-30','paid','Aug 2025 wind'),
-('inv_015','INV-2025-0062','demo_ipp_001','demo_offtaker_001','doc_001',956250,143437.50,'ZAR','2025-07-31','2025-08-30','paid','Jul 2025'),
-('inv_016','INV-2025-0055','demo_ipp_001','demo_offtaker_001','doc_001',1187500,178125,'ZAR','2025-06-30','2025-07-30','disputed','Metering-variance — under dispute resolution'),
-('inv_017','INV-2026-0011','demo_ipp_002','demo_offtaker_001','doc_002',1305600,195840,'ZAR','2026-02-15','2026-03-17','overdue','Overdue 35 days — escalated'),
-('inv_018','INV-2026-0012','demo_trader_001','demo_ipp_002',NULL,235000,35250,'ZAR','2026-03-22','2026-04-21','pending','Brokerage fee Q1 trades'),
-('inv_019','INV-2026-0013','demo_ipp_001','demo_offtaker_001','doc_003',85000,12750,'ZAR','2026-04-10','2026-05-10','pending','Brits rooftop design-study fee'),
-('inv_020','INV-2026-0014','demo_ipp_001','demo_trader_001',NULL,540000,81000,'ZAR','2026-04-18','2026-05-18','disputed','Volume variance on ord_017 settlement');
+-- Column names match migrations/002_domain.sql invoices schema: from_participant_id,
+-- to_participant_id, invoice_type, period_start, period_end, line_items (JSON),
+-- subtotal, vat_amount, total_amount, status, due_date, issued_at, paid_at, notes.
+INSERT OR IGNORE INTO invoices (id, invoice_number, project_id, from_participant_id, to_participant_id, invoice_type, period_start, period_end, line_items, subtotal, vat_rate, vat_amount, total_amount, currency, status, due_date, issued_at, paid_at, notes) VALUES
+('inv_001','INV-2026-0001','ip_001','demo_ipp_001','demo_offtaker_001','energy','2026-01-01','2026-01-31','[{"desc":"Jan 2026 energy — 3,750 MWh @ R285","qty":3750,"unit_price":285,"amount":1068750}]',1068750,0.15,160312.50,1229062.50,'ZAR','paid','2026-03-02','2026-01-31','2026-02-25','Jan 2026 PPA'),
+('inv_002','INV-2026-0002','ip_001','demo_ipp_001','demo_offtaker_001','energy','2026-02-01','2026-02-28','[{"desc":"Feb 2026 energy — 3,375 MWh","qty":3375,"unit_price":285,"amount":961875}]',961875,0.15,144281.25,1106156.25,'ZAR','paid','2026-03-30','2026-02-28','2026-03-25','Feb 2026 PPA'),
+('inv_003','INV-2026-0003','ip_001','demo_ipp_001','demo_offtaker_001','energy','2026-03-01','2026-03-31','[{"desc":"Mar 2026 energy — 4,050 MWh","qty":4050,"unit_price":285,"amount":1154250}]',1154250,0.15,173137.50,1327387.50,'ZAR','paid','2026-04-30','2026-03-31','2026-04-27','Mar 2026 PPA'),
+('inv_004','INV-2026-0004','ip_002','demo_ipp_002','demo_offtaker_001','energy','2026-01-01','2026-01-31','[{"desc":"Jan 2026 wind — 3,420 MWh","qty":3420,"unit_price":320,"amount":1094400}]',1094400,0.15,164160,1258560,'ZAR','paid','2026-03-02','2026-01-31','2026-02-26','Jan 2026 wind PPA'),
+('inv_005','INV-2026-0005','ip_002','demo_ipp_002','demo_offtaker_001','energy','2026-02-01','2026-02-28','[{"desc":"Feb 2026 wind — 3,150 MWh","qty":3150,"unit_price":320,"amount":1008000}]',1008000,0.15,151200,1159200,'ZAR','paid','2026-03-30','2026-02-28','2026-03-28','Feb 2026 wind'),
+('inv_006','INV-2026-0006','ip_002','demo_ipp_002','demo_offtaker_001','energy','2026-03-01','2026-03-31','[{"desc":"Mar 2026 wind — 3,780 MWh","qty":3780,"unit_price":320,"amount":1209600}]',1209600,0.15,181440,1391040,'ZAR','issued','2026-04-30','2026-03-31',NULL,'Mar 2026 wind PPA'),
+('inv_007','INV-2026-0007',NULL,'demo_ipp_001','demo_trader_001','energy','2026-03-01','2026-03-31','[{"desc":"Trade ord_015 settlement","qty":250,"unit_price":3500,"amount":875000}]',875000,0.15,131250,1006250,'ZAR','paid','2026-04-14','2026-03-15','2026-04-10','Trade ord_015 settlement'),
+('inv_008','INV-2026-0008','ip_001','demo_ipp_001','demo_offtaker_001','energy','2026-04-01','2026-04-30','[{"desc":"Apr interim — 3,750 MWh","qty":3750,"unit_price":285,"amount":1068750}]',1068750,0.15,160312.50,1229062.50,'ZAR','issued','2026-05-01','2026-04-15',NULL,'Apr interim'),
+('inv_009','INV-2026-0009','ip_002','demo_ipp_002','demo_offtaker_001','energy','2026-04-01','2026-04-30','[{"desc":"Apr wind PPA","qty":3600,"unit_price":320,"amount":1152000}]',1152000,0.15,172800,1324800,'ZAR','issued','2026-05-01','2026-04-15',NULL,'Apr wind PPA'),
+('inv_010','INV-2026-0010','ip_001','demo_ipp_001','demo_offtaker_001','energy','2025-12-01','2025-12-31','[{"desc":"Dec 2025 — 4,506 MWh","qty":4506,"unit_price":285,"amount":1284210}]',1284210,0.15,192631.50,1476841.50,'ZAR','paid','2026-01-30','2025-12-31','2026-01-28','Dec 2025'),
+('inv_011','INV-2025-0118','ip_001','demo_ipp_001','demo_offtaker_001','energy','2025-11-01','2025-11-30','[{"desc":"Nov 2025 PPA","qty":3750,"unit_price":285,"amount":1068750}]',1068750,0.15,160312.50,1229062.50,'ZAR','paid','2025-12-30','2025-11-30','2025-12-27','Nov 2025'),
+('inv_012','INV-2025-0099','ip_002','demo_ipp_002','demo_offtaker_001','energy','2025-10-01','2025-10-31','[{"desc":"Oct 2025 wind","qty":3900,"unit_price":320,"amount":1248000}]',1248000,0.15,187200,1435200,'ZAR','paid','2025-11-30','2025-10-31','2025-11-27','Oct 2025 wind'),
+('inv_013','INV-2025-0087','ip_001','demo_ipp_001','demo_offtaker_001','energy','2025-09-01','2025-09-30','[{"desc":"Sep 2025","qty":3483,"unit_price":285,"amount":992655}]',992655,0.15,148898.25,1141553.25,'ZAR','paid','2025-10-30','2025-09-30','2025-10-27','Sep 2025'),
+('inv_014','INV-2025-0075','ip_002','demo_ipp_002','demo_offtaker_001','energy','2025-08-01','2025-08-31','[{"desc":"Aug 2025 wind","qty":3420,"unit_price":320,"amount":1094400}]',1094400,0.15,164160,1258560,'ZAR','paid','2025-09-30','2025-08-31','2025-09-28','Aug 2025 wind'),
+('inv_015','INV-2025-0062','ip_001','demo_ipp_001','demo_offtaker_001','energy','2025-07-01','2025-07-31','[{"desc":"Jul 2025","qty":3021,"unit_price":285,"amount":860985}]',860985,0.15,129147.75,990132.75,'ZAR','paid','2025-08-30','2025-07-31','2025-08-27','Jul 2025'),
+('inv_016','INV-2025-0055','ip_001','demo_ipp_001','demo_offtaker_001','energy','2025-06-01','2025-06-30','[{"desc":"Metering-variance — under dispute","qty":3750,"unit_price":285,"amount":1068750}]',1068750,0.15,160312.50,1229062.50,'ZAR','disputed','2025-07-30','2025-06-30',NULL,'Metering-variance dispute'),
+('inv_017','INV-2026-0011','ip_002','demo_ipp_002','demo_offtaker_001','energy','2026-02-01','2026-02-28','[{"desc":"Feb 2026 wind — escalated","qty":3420,"unit_price":320,"amount":1094400}]',1094400,0.15,164160,1258560,'ZAR','overdue','2026-03-17','2026-02-15',NULL,'Overdue 35 days — escalated'),
+('inv_018','INV-2026-0012',NULL,'demo_trader_001','demo_ipp_002','management','2026-01-01','2026-03-31','[{"desc":"Brokerage fee Q1 trades","qty":1,"unit_price":235000,"amount":235000}]',235000,0.15,35250,270250,'ZAR','issued','2026-04-21','2026-03-22',NULL,'Brokerage fee Q1 trades'),
+('inv_019','INV-2026-0013','ip_003','demo_ipp_001','demo_offtaker_001','management','2026-04-01','2026-04-30','[{"desc":"Brits rooftop design-study fee","qty":1,"unit_price":85000,"amount":85000}]',85000,0.15,12750,97750,'ZAR','issued','2026-05-10','2026-04-10',NULL,'Brits rooftop design-study fee'),
+('inv_020','INV-2026-0014',NULL,'demo_ipp_001','demo_trader_001','energy','2026-04-01','2026-04-30','[{"desc":"Volume variance on ord_017 settlement","qty":75,"unit_price":7200,"amount":540000}]',540000,0.15,81000,621000,'ZAR','disputed','2026-05-18','2026-04-18',NULL,'Volume variance dispute');
 
 -- ---- ADDITIONAL CONTRACT DOCUMENTS (linked to SA-law templates) ------------
+-- Only document_types / phases that fit the 002_domain CHECK constraints are
+-- seeded here. Facility agreements, O&M, grid connection and JV shareholders
+-- live in the contract_templates table (migration 004) and are exercised via
+-- the template picker — not required as seeded documents.
 INSERT OR IGNORE INTO contract_documents (id, title, document_type, phase, creator_id, counterparty_id, project_id, commercial_terms) VALUES
-('doc_004','De Aar Solar PPA (Wheeling) — City Energy','ppa_wheeling','negotiation','demo_ipp_001','demo_offtaker_001','ip_004','{"volume_mwh":140000,"price_per_mwh":275,"escalation":4.5,"tenor_years":20,"template_code":"PPA-WHEEL-SA"}'),
+('doc_004','De Aar Solar PPA (Wheeling) — City Energy','ppa_wheeling','legal_review','demo_ipp_001','demo_offtaker_001','ip_004','{"volume_mwh":140000,"price_per_mwh":275,"escalation":4.5,"tenor_years":20,"template_code":"PPA-WHEEL-SA"}'),
 ('doc_005','Jeffreys Bay Wind Wheeling — City Energy','ppa_wheeling','active','demo_ipp_002','demo_offtaker_001','ip_005','{"volume_mwh":380000,"price_per_mwh":310,"escalation":4.0,"tenor_years":20,"template_code":"PPA-WHEEL-SA"}'),
-('doc_006','Gqeberha Wind PPA (Direct Supply)','offtake_agreement','negotiation','demo_ipp_002','demo_offtaker_001','ip_007','{"volume_mwh":295000,"price_per_mwh":305,"escalation":4.2,"tenor_years":20,"template_code":"DIRECT-SUPPLY-SA"}'),
-('doc_007','LOI — Upington CSP Offtake (City Energy)','loi','negotiation','demo_ipp_001','demo_offtaker_001','ip_006','{"indicative_volume_mwh":350000,"indicative_price_per_mwh":420,"tenor_years":25,"template_code":"LOI-SA"}'),
-('doc_008','Klerksdorp Solar Senior Facility Agreement','facility_agreement','active','demo_lender_001','demo_ipp_001','ip_001','{"committed_zar":450000000,"margin_bps":475,"tenor_months":204,"template_code":"FACILITY-SA"}'),
-('doc_009','Jeffreys Bay Wind Refi Facility Agreement','facility_agreement','active','demo_lender_001','demo_ipp_002','ip_005','{"committed_zar":1250000000,"margin_bps":375,"tenor_months":192,"template_code":"FACILITY-SA"}'),
-('doc_010','De Aar Solar Construction Facility','facility_agreement','active','demo_lender_001','demo_ipp_001','ip_004','{"committed_zar":720000000,"margin_bps":525,"tenor_months":60,"template_code":"FACILITY-SA"}'),
-('doc_011','Klerksdorp O&M Agreement','om','active','demo_ipp_001','demo_ipp_002','ip_001','{"fixed_fee_annual":8500000,"variable_per_mwh":18,"term_years":10,"template_code":"OM-SA"}'),
-('doc_012','Klerksdorp Grid Connection Agreement (Eskom)','grid_connection','active','demo_ipp_001','demo_grid_001','ip_001','{"capacity_mva":55,"connection_charge":32500000,"template_code":"GRID-CONNECT-SA"}'),
+('doc_006','Gqeberha Wind PPA (Direct Supply)','offtake_agreement','legal_review','demo_ipp_002','demo_offtaker_001','ip_007','{"volume_mwh":295000,"price_per_mwh":305,"escalation":4.2,"tenor_years":20,"template_code":"DIRECT-SUPPLY-SA"}'),
+('doc_007','LOI — Upington CSP Offtake (City Energy)','loi','legal_review','demo_ipp_001','demo_offtaker_001','ip_006','{"indicative_volume_mwh":350000,"indicative_price_per_mwh":420,"tenor_years":25,"template_code":"LOI-SA"}'),
 ('doc_013','Klerksdorp Wheeling Agreement (UoS)','wheeling_agreement','active','demo_ipp_001','demo_grid_001','ip_001','{"wheeling_capacity_mw":50,"template_code":"UOS-SA"}'),
 ('doc_014','Klerksdorp — City Energy ERPA (Carbon Sale)','carbon_purchase','active','demo_ipp_001','demo_carbon_001','ip_001','{"tco2e_volume":12000,"price_per_tco2e":195,"ipp_carbon_share_pct":25,"template_code":"ERPA-SA"}'),
 ('doc_015','Mookgopong — GreenFunds ERPA','carbon_purchase','active','demo_ipp_002','demo_carbon_001','ip_002','{"tco2e_volume":9500,"price_per_tco2e":185,"ipp_carbon_share_pct":20,"template_code":"ERPA-SA"}'),
 ('doc_016','Mutual NDA — RenewCo/City Energy','nda','active','demo_ipp_001','demo_offtaker_001',NULL,'{"term_years":2,"survival_years":5,"template_code":"NDA-SA"}'),
-('doc_017','RenewCo / WindCapital Joint Venture — Upington CSP','jv_shareholders','negotiation','demo_ipp_001','demo_ipp_002','ip_006','{"party_a_pct":60,"party_b_pct":40,"template_code":"JV-SA"}'),
 ('doc_018','De Aar Solar EPC','epc','active','demo_ipp_001','demo_ipp_002','ip_004','{"contract_price":1350000000,"construction_months":14,"template_code":"EPC-SA"}');
 
 -- ---- ACTION QUEUE (cross-module handovers surfaced on cockpits) ------------
-INSERT OR IGNORE INTO action_queue (id, participant_id, entity_type, entity_id, action, status, priority, due_date, metadata) VALUES
-('aq_001','demo_offtaker_001','contracts','doc_004','sign',        'pending','high',   '2026-04-30','{"kind":"contract.awaiting_signature"}'),
-('aq_002','demo_offtaker_001','contracts','doc_006','sign',        'pending','high',   '2026-05-07','{"kind":"contract.awaiting_signature"}'),
-('aq_003','demo_ipp_001','contracts','doc_017','review',            'pending','medium','2026-05-10','{"kind":"contract.jv_review"}'),
-('aq_004','demo_lender_001','disbursement_requests','dis_001','approve','pending','high','2026-04-25','{"kind":"disbursement.pending_approval"}'),
-('aq_005','demo_lender_001','disbursement_requests','dis_002','approve','pending','high','2026-04-25','{"kind":"disbursement.pending_approval"}'),
-('aq_006','demo_lender_001','disbursement_requests','dis_003','approve','pending','high','2026-04-26','{"kind":"disbursement.pending_approval"}'),
-('aq_007','demo_lender_001','disbursement_requests','dis_004','approve','pending','medium','2026-04-27','{"kind":"disbursement.pending_approval"}'),
-('aq_008','demo_lender_001','disbursement_requests','dis_008','approve','pending','medium','2026-04-28','{"kind":"disbursement.pending_approval"}'),
-('aq_009','demo_lender_001','loan_covenants','cov_009','investigate','pending','critical','2026-04-25','{"kind":"covenant.breached","facility_id":"fac_004"}'),
-('aq_010','demo_lender_001','loan_covenants','cov_010','investigate','pending','critical','2026-04-25','{"kind":"covenant.breached","facility_id":"fac_004"}'),
-('aq_011','demo_lender_001','loan_covenants','cov_011','investigate','pending','critical','2026-04-25','{"kind":"covenant.breached","facility_id":"fac_004"}'),
-('aq_012','demo_ipp_001','ona_faults','ona_fault_003','resolve','pending','critical','2026-04-22','{"kind":"ona.fault","site_id":"ona_s_003"}'),
-('aq_013','demo_ipp_002','ona_faults','ona_fault_005','resolve','pending','high','2026-04-22','{"kind":"ona.fault","site_id":"ona_s_004"}'),
-('aq_014','demo_lender_001','ona_faults','ona_fault_003','monitor','pending','high','2026-04-23','{"kind":"ona.generation_lost","facility_id":"fac_003","mwh_lost":"investigating"}'),
-('aq_015','demo_offtaker_001','invoices','inv_008','pay','pending','medium','2026-05-01','{"kind":"invoice.due"}'),
-('aq_016','demo_offtaker_001','invoices','inv_017','pay','pending','high','2026-03-17','{"kind":"invoice.overdue"}'),
-('aq_017','demo_ipp_002','invoices','inv_017','chase','pending','high','2026-04-22','{"kind":"invoice.overdue_counter"}'),
-('aq_018','demo_ipp_001','settlement_disputes','inv_016','resolve','pending','medium','2026-04-30','{"kind":"dispute.invoice"}'),
-('aq_019','demo_trader_001','trade_orders','ord_008','match','pending','medium','2026-05-10','{"kind":"trade.match_opportunity","counterparty":"demo_offtaker_001"}'),
-('aq_020','demo_carbon_001','carbon_holdings','ch_006','confirm_retirement','pending','low','2026-05-15','{"kind":"carbon.reserved_pending_retirement"}'),
-('aq_021','demo_regulator_001','esg_reports','esgr_001','file','pending','medium','2026-05-31','{"kind":"filing.annual"}'),
-('aq_022','demo_grid_001','grid_constraints','gc_001','resolve','pending','high','2026-04-30','{"kind":"grid.constraint"}'),
-('aq_023','demo_ipp_001','project_milestones','mil_017','submit_evidence','pending','medium','2026-10-10','{"kind":"milestone.upcoming"}'),
-('aq_024','demo_ipp_002','project_milestones','mil_027','submit_evidence','pending','medium','2025-07-10','{"kind":"milestone.upcoming"}');
+-- Column names match 002_domain.sql action_queue schema: type, priority, actor_id,
+-- assignee_id, entity_type, entity_id, title, description, status, due_date.
+-- priority CHECK: low|normal|high|urgent (maps critical→urgent, medium→normal).
+INSERT OR IGNORE INTO action_queue (id, type, priority, assignee_id, entity_type, entity_id, title, description, status, due_date) VALUES
+('aq_001','contract.awaiting_signature','high',    'demo_offtaker_001','contract_documents','doc_004','Sign De Aar Solar Wheeling PPA','Contract doc_004 awaiting your signature','pending','2026-04-30'),
+('aq_002','contract.awaiting_signature','high',    'demo_offtaker_001','contract_documents','doc_006','Sign Gqeberha Wind PPA','Contract doc_006 awaiting your signature','pending','2026-05-07'),
+('aq_003','contract.jv_review','normal',           'demo_ipp_001',     'contract_documents','doc_007','Review Upington LOI','Counterparty countersignature required','pending','2026-05-10'),
+('aq_004','disbursement.pending_approval','high',  'demo_lender_001',  'disbursement_requests','dis_001','Approve De Aar drawdown tranche 1','R95m construction drawdown awaiting credit committee','pending','2026-04-25'),
+('aq_005','disbursement.pending_approval','high',  'demo_lender_001',  'disbursement_requests','dis_002','Approve De Aar drawdown tranche 2','R140m construction drawdown awaiting approval','pending','2026-04-25'),
+('aq_006','disbursement.pending_approval','high',  'demo_lender_001',  'disbursement_requests','dis_003','Approve De Aar drawdown tranche 3','R85m construction drawdown awaiting approval','pending','2026-04-26'),
+('aq_007','disbursement.pending_approval','normal','demo_lender_001',  'disbursement_requests','dis_004','Approve Gqeberha drawdown','R120m construction drawdown awaiting approval','pending','2026-04-27'),
+('aq_008','disbursement.pending_approval','normal','demo_lender_001',  'disbursement_requests','dis_008','Approve Gqeberha drawdown','R60m drawdown awaiting approval','pending','2026-04-28'),
+('aq_009','covenant.breached','urgent',            'demo_lender_001',  'loan_covenants','cov_009','Investigate DSCR breach (fac_004)','Jeffreys Bay Wind DSCR breached two consecutive quarters','pending','2026-04-25'),
+('aq_010','covenant.breached','urgent',            'demo_lender_001',  'loan_covenants','cov_010','Investigate LLCR breach (fac_004)','LLCR below covenant — cure under negotiation','pending','2026-04-25'),
+('aq_011','covenant.breached','urgent',            'demo_lender_001',  'loan_covenants','cov_011','Investigate Leverage breach (fac_004)','Waiver requested from credit committee','pending','2026-04-25'),
+('aq_012','ona.fault','urgent',                    'demo_ipp_001',     'ona_faults','ona_fault_003','Resolve De Aar transformer arc fault','Site offline — awaiting Eskom maintenance crew','pending','2026-04-22'),
+('aq_013','ona.fault','high',                      'demo_ipp_002',     'ona_faults','ona_fault_005','Resolve Jeffreys Bay turbine brake fault','Turbine #24 — brake pad wear investigation','pending','2026-04-22'),
+('aq_014','ona.generation_lost','high',            'demo_lender_001',  'ona_faults','ona_fault_003','Monitor generation loss (fac_003)','De Aar transformer outage — lender to assess covenant exposure','pending','2026-04-23'),
+('aq_015','invoice.due','normal',                  'demo_offtaker_001','invoices','inv_008','Pay invoice INV-2026-0008','R1.22m Apr PPA invoice due','pending','2026-05-01'),
+('aq_016','invoice.overdue','high',                'demo_offtaker_001','invoices','inv_017','Pay overdue invoice INV-2026-0011','R1.26m invoice overdue 35 days — escalated','pending','2026-03-17'),
+('aq_017','invoice.overdue_counter','high',        'demo_ipp_002',     'invoices','inv_017','Chase overdue invoice INV-2026-0011','Counterparty payment escalation','pending','2026-04-22'),
+('aq_018','dispute.invoice','normal',              'demo_ipp_001',     'invoices','inv_016','Resolve metering-variance dispute (INV-2025-0055)','Metering-variance under dispute resolution','pending','2026-04-30'),
+('aq_019','trade.match_opportunity','normal',      'demo_trader_001',  'trade_orders','ord_008','Match opportunity on ord_008','Bilateral match opportunity with demo_offtaker_001','pending','2026-05-10'),
+('aq_020','carbon.reserved_pending_retirement','low','demo_carbon_001','carbon_holdings','ch_006','Confirm retirement of ch_006','Reserved credits awaiting retirement confirmation','pending','2026-05-15'),
+('aq_021','filing.annual','normal',                'demo_regulator_001','esg_reports','esgr_001','File annual ESG compliance certification','3 ESG reports awaiting compliance certification','pending','2026-05-31'),
+('aq_022','grid.constraint','high',                'demo_grid_001',    'grid_constraints','gc_001','Resolve Klerksdorp-JHB North 275kV constraint','Planned maintenance — 150MW available','pending','2026-04-30'),
+('aq_023','milestone.upcoming','normal',           'demo_ipp_001',     'project_milestones','mil_017','Submit evidence for De Aar Construction Complete','Milestone mil_017 evidence required','pending','2026-10-10'),
+('aq_024','milestone.upcoming','normal',           'demo_ipp_002',     'project_milestones','mil_027','Submit evidence for Gqeberha Construction Complete','Milestone mil_027 evidence required','pending','2025-07-10');
 
 -- ---- NOTIFICATIONS (so each user sees inbox on login) ----------------------
-INSERT OR IGNORE INTO notifications (id, participant_id, type, title, message, priority, action_url, read, created_at) VALUES
-('ntf_001','demo_offtaker_001','contract','Contract ready to sign','De Aar Solar Wheeling PPA (doc_004) awaiting your signature','high','/contracts/doc_004',0,'2026-04-20 09:00:00'),
-('ntf_002','demo_lender_001','covenant_breach','Covenant BREACHED','Jeffreys Bay Wind (fac_004) — 3 covenants breached; standstill triggered','critical','/funds/fac_004',0,'2026-04-15 11:30:00'),
-('ntf_003','demo_lender_001','disbursement','5 pending disbursements','R500m awaiting approval across De Aar + Gqeberha facilities','high','/funds',0,'2026-04-20 08:00:00'),
-('ntf_004','demo_ipp_001','ona_fault','CRITICAL fault — De Aar','Main transformer arc fault — all generation offline','critical','/om?fault=ona_fault_003',0,'2026-04-18 11:05:00'),
-('ntf_005','demo_ipp_002','ona_fault','Turbine #24 brake fault','Jeffreys Bay — investigating','high','/om?fault=ona_fault_005',0,'2026-04-19 16:25:00'),
-('ntf_006','demo_offtaker_001','invoice','Overdue invoice','INV-2026-0011 (R1.5m) — 35 days overdue','high','/settlement?invoice=inv_017',0,'2026-04-20 09:00:00'),
-('ntf_007','demo_carbon_001','nav','NAV recomputed','Fund NAV/unit = R198.75; AUM R208.7m','medium','/carbon',0,'2026-04-15 16:00:00'),
-('ntf_008','demo_trader_001','opportunity','Matching buy/sell on Klerksdorp','Trader AI recommends matching ord_005 ↔ ord_004 (est. P&L +R28,500)','medium','/trading',0,'2026-04-20 07:30:00'),
-('ntf_009','demo_regulator_001','filing','Annual ESG filing reminder','3 ESG reports awaiting compliance certification by 31 May','medium','/reports',0,'2026-04-20 08:00:00'),
-('ntf_010','demo_grid_001','constraint','Active grid constraint','Klerksdorp — JHB North 275kV constraint — 150MW available','high','/grid',0,'2026-04-20 07:00:00');
+-- Column names match 002_domain.sql notifications schema: type, title, body, data (JSON), read.
+INSERT OR IGNORE INTO notifications (id, participant_id, type, title, body, data, read, created_at) VALUES
+('ntf_001','demo_offtaker_001','contract','Contract ready to sign','De Aar Solar Wheeling PPA (doc_004) awaiting your signature','{"priority":"high","action_url":"/contracts/doc_004"}',0,'2026-04-20 09:00:00'),
+('ntf_002','demo_lender_001','covenant_breach','Covenant BREACHED','Jeffreys Bay Wind (fac_004) — 3 covenants breached; standstill triggered','{"priority":"critical","action_url":"/funds/fac_004"}',0,'2026-04-15 11:30:00'),
+('ntf_003','demo_lender_001','disbursement','5 pending disbursements','R500m awaiting approval across De Aar + Gqeberha facilities','{"priority":"high","action_url":"/funds"}',0,'2026-04-20 08:00:00'),
+('ntf_004','demo_ipp_001','ona_fault','CRITICAL fault — De Aar','Main transformer arc fault — all generation offline','{"priority":"critical","action_url":"/om?fault=ona_fault_003"}',0,'2026-04-18 11:05:00'),
+('ntf_005','demo_ipp_002','ona_fault','Turbine #24 brake fault','Jeffreys Bay — investigating','{"priority":"high","action_url":"/om?fault=ona_fault_005"}',0,'2026-04-19 16:25:00'),
+('ntf_006','demo_offtaker_001','invoice','Overdue invoice','INV-2026-0011 (R1.5m) — 35 days overdue','{"priority":"high","action_url":"/settlement?invoice=inv_017"}',0,'2026-04-20 09:00:00'),
+('ntf_007','demo_carbon_001','nav','NAV recomputed','Fund NAV/unit = R198.75; AUM R208.7m','{"priority":"medium","action_url":"/carbon"}',0,'2026-04-15 16:00:00'),
+('ntf_008','demo_trader_001','opportunity','Matching buy/sell on Klerksdorp','Trader AI recommends matching ord_005 ↔ ord_004 (est. P&L +R28,500)','{"priority":"medium","action_url":"/trading"}',0,'2026-04-20 07:30:00'),
+('ntf_009','demo_regulator_001','filing','Annual ESG filing reminder','3 ESG reports awaiting compliance certification by 31 May','{"priority":"medium","action_url":"/reports"}',0,'2026-04-20 08:00:00'),
+('ntf_010','demo_grid_001','constraint','Active grid constraint','Klerksdorp — JHB North 275kV constraint — 150MW available','{"priority":"high","action_url":"/grid"}',0,'2026-04-20 07:00:00');
