@@ -5,6 +5,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { fireCascade } from '../utils/cascade';
 
 const contracts = new Hono<HonoEnv>();
 
@@ -94,7 +95,108 @@ contracts.post('/', async (c) => {
 
   const contract = await c.env.DB.prepare('SELECT * FROM contract_documents WHERE id = ?').bind(contractId).first();
 
+  await fireCascade({
+    event: 'contract.created',
+    actor_id: user.id,
+    entity_type: 'contract_documents',
+    entity_id: contractId,
+    data: { title, phase, contract_type, counterparty_id },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: contract }, 201);
+});
+
+// POST /contracts/:id/signatories — add/register a signatory slot (creator only)
+contracts.post('/:id/signatories', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const { participant_id, signatory_name, signatory_designation } = await c.req.json();
+
+  const existing = await c.env.DB.prepare('SELECT creator_id FROM contract_documents WHERE id = ?').bind(id).first();
+  if (!existing) return c.json({ success: false, error: 'Contract not found' }, 404);
+  if (existing.creator_id !== user.id) return c.json({ success: false, error: 'Not authorized' }, 403);
+
+  const sigId = 'sig_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+  await c.env.DB.prepare(`
+    INSERT INTO document_signatories (id, document_id, participant_id, signatory_name, signatory_designation, signed, created_at)
+    VALUES (?, ?, ?, ?, ?, 0, ?)
+  `).bind(sigId, id, participant_id, signatory_name || null, signatory_designation || null, new Date().toISOString()).run();
+
+  return c.json({ success: true, data: { id: sigId } }, 201);
+});
+
+// POST /contracts/:id/phase — move contract through phases (fires contract.phase_changed)
+contracts.post('/:id/phase', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const { phase } = await c.req.json();
+
+  const existing = await c.env.DB.prepare('SELECT creator_id, counterparty_id, phase FROM contract_documents WHERE id = ?').bind(id).first();
+  if (!existing) return c.json({ success: false, error: 'Contract not found' }, 404);
+  if (existing.creator_id !== user.id && existing.counterparty_id !== user.id) return c.json({ success: false, error: 'Not authorized' }, 403);
+  if (!phase) return c.json({ success: false, error: 'phase is required' }, 400);
+
+  const previous_phase = existing.phase;
+  await c.env.DB.prepare('UPDATE contract_documents SET phase = ?, updated_at = ? WHERE id = ?')
+    .bind(phase, new Date().toISOString(), id).run();
+
+  await fireCascade({
+    event: 'contract.phase_changed',
+    actor_id: user.id,
+    entity_type: 'contract_documents',
+    entity_id: id,
+    data: { new_phase: phase, previous_phase },
+    env: c.env,
+  });
+
+  return c.json({ success: true, data: { id, phase } });
+});
+
+// POST /contracts/:id/sign — current user signs the document; fires contract.signed if all signed
+contracts.post('/:id/sign', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const { signature_r2_key, document_hash } = await c.req.json().catch(() => ({}));
+
+  const contract = await c.env.DB.prepare('SELECT id, creator_id, counterparty_id FROM contract_documents WHERE id = ?').bind(id).first();
+  if (!contract) return c.json({ success: false, error: 'Contract not found' }, 404);
+
+  const signatory = await c.env.DB.prepare(
+    'SELECT id, signed FROM document_signatories WHERE document_id = ? AND participant_id = ?'
+  ).bind(id, user.id).first();
+  if (!signatory) return c.json({ success: false, error: 'Not listed as a signatory on this contract' }, 403);
+  if (signatory.signed) return c.json({ success: false, error: 'Already signed' }, 400);
+
+  await c.env.DB.prepare(`
+    UPDATE document_signatories
+    SET signed = 1, signed_at = ?, signature_r2_key = ?, document_hash_at_signing = ?
+    WHERE id = ?
+  `).bind(
+    new Date().toISOString(),
+    signature_r2_key || null,
+    document_hash || null,
+    signatory.id
+  ).run();
+
+  const pending = await c.env.DB.prepare(
+    'SELECT COUNT(*) as count FROM document_signatories WHERE document_id = ? AND signed = 0'
+  ).bind(id).first();
+
+  const allSigned = !pending?.count || pending.count === 0;
+
+  if (allSigned) {
+    await fireCascade({
+      event: 'contract.signed',
+      actor_id: user.id,
+      entity_type: 'contract_documents',
+      entity_id: id,
+      data: { signed_by: user.id },
+      env: c.env,
+    });
+  }
+
+  return c.json({ success: true, data: { signed_by: user.id, all_signed: allSigned } });
 });
 
 // PUT /contracts/:id — Update contract
@@ -127,6 +229,16 @@ contracts.put('/:id', async (c) => {
   `).bind(title, description, phase, contract_type, status, termsJson, new Date().toISOString(), id).run();
 
   const contract = await c.env.DB.prepare('SELECT * FROM contract_documents WHERE id = ?').bind(id).first();
+
+  await fireCascade({
+    event: 'contract.amended',
+    actor_id: user.id,
+    entity_type: 'contract_documents',
+    entity_id: id,
+    data: { fields: Object.keys(body) },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: contract });
 });
 
@@ -144,6 +256,16 @@ contracts.delete('/:id', async (c) => {
   }
 
   await c.env.DB.prepare('DELETE FROM contract_documents WHERE id = ?').bind(id).run();
+
+  await fireCascade({
+    event: 'contract.terminated',
+    actor_id: user.id,
+    entity_type: 'contract_documents',
+    entity_id: id,
+    data: {},
+    env: c.env,
+  });
+
   return c.json({ success: true, data: { message: 'Contract deleted' } });
 });
 
