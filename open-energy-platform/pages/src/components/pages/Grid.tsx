@@ -5,6 +5,18 @@ import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 
+function getDefaultStatus() {
+  return {
+    frequency: 49.97,
+    totalLoad: '42,500',
+    capacity: '15,200',
+    activeWheeling: 8,
+    renewableShare: 74,
+    imbalance: -120,
+    timestamp: new Date().toISOString(),
+  };
+}
+
 export function Grid() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
