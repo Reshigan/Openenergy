@@ -13,11 +13,12 @@ const TOKEN_EXPIRY_HOURS = 24;
 export async function signToken(payload: Omit<JWTPayload, 'iat' | 'exp'>, secret: string): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const expires = now + (TOKEN_EXPIRY_HOURS * 60 * 60);
-  
-  const header = base64UrlEncode(JSON.stringify({ alg: JWT_ALGORITHM, typ: 'JWT' }));
-  const body = base64UrlEncode(JSON.stringify({ ...payload, iat: now, exp: expires }));
-  const signature = base64UrlEncode(await signWithHMAC(`${header}.${body}`, secret));
-  
+
+  const header = base64UrlEncodeStr(JSON.stringify({ alg: JWT_ALGORITHM, typ: 'JWT' }));
+  const body = base64UrlEncodeStr(JSON.stringify({ ...payload, iat: now, exp: expires }));
+  const sig = await signWithHMAC(`${header}.${body}`, secret);
+  const signature = base64UrlEncodeBytes(new Uint8Array(sig));
+
   return `${header}.${body}.${signature}`;
 }
 
@@ -25,27 +26,34 @@ export async function verifyToken(token: string, secret: string): Promise<JWTPay
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
-    
+
     const [header, body, signature] = parts;
-    
+
     // Verify signature
-    const expectedSig = base64UrlEncode(await signWithHMAC(`${header}.${body}`, secret));
+    const sig = await signWithHMAC(`${header}.${body}`, secret);
+    const expectedSig = base64UrlEncodeBytes(new Uint8Array(sig));
     if (signature !== expectedSig) return null;
-    
+
     // Parse and check expiry
-    const payload: JWTPayload = JSON.parse(atob(body));
+    const payload: JWTPayload = JSON.parse(atob(body.replace(/-/g, '+').replace(/_/g, '/')));
     const now = Math.floor(Date.now() / 1000);
-    
+
     if (payload.exp < now) return null;
-    
+
     return payload;
   } catch {
     return null;
   }
 }
 
-function base64UrlEncode(str: string): string {
+function base64UrlEncodeStr(str: string): string {
   return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+function base64UrlEncodeBytes(bytes: Uint8Array): string {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
 async function signWithHMAC(data: string, secret: string): Promise<ArrayBuffer> {
@@ -176,18 +184,71 @@ export function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Hash password using bcrypt
-export async function hashPassword(password: string): Promise<string> {
-  // Using bcryptjs for compatibility with Cloudflare Workers
-  // In production, use Web Crypto API for better performance
-  const bcrypt = await import('bcryptjs');
-  return bcrypt.hash(password, 12);
+// Password hashing — PBKDF2 over Web Crypto (Workers-native, no node_compat needed).
+// Stored format: `pbkdf2$sha256$<iterations>$<saltB64>$<hashB64>`.
+// Legacy bcrypt hashes ($2a$...) are still accepted for backward compat.
+const PBKDF2_ITERATIONS = 100_000;
+const PBKDF2_KEYLEN = 32;
+
+function b64encode(buf: ArrayBuffer | Uint8Array): string {
+  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
 }
 
-// Verify password
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  const bcrypt = await import('bcryptjs');
-  return bcrypt.compare(password, hash);
+function b64decode(s: string): Uint8Array {
+  const bin = atob(s);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+async function pbkdf2(password: string, salt: Uint8Array, iterations: number, keyLen: number): Promise<Uint8Array> {
+  const keyMat = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations },
+    keyMat,
+    keyLen * 8
+  );
+  return new Uint8Array(bits);
+}
+
+export async function hashPassword(password: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const hash = await pbkdf2(password, salt, PBKDF2_ITERATIONS, PBKDF2_KEYLEN);
+  return `pbkdf2$sha256$${PBKDF2_ITERATIONS}$${b64encode(salt)}$${b64encode(hash)}`;
+}
+
+export async function verifyPassword(password: string, stored: string): Promise<boolean> {
+  if (stored.startsWith('pbkdf2$')) {
+    const parts = stored.split('$');
+    if (parts.length !== 5 || parts[1] !== 'sha256') return false;
+    const iterations = parseInt(parts[2], 10);
+    const salt = b64decode(parts[3]);
+    const expected = b64decode(parts[4]);
+    const actual = await pbkdf2(password, salt, iterations, expected.length);
+    if (actual.length !== expected.length) return false;
+    let diff = 0;
+    for (let i = 0; i < actual.length; i++) diff |= actual[i] ^ expected[i];
+    return diff === 0;
+  }
+  // Legacy bcrypt fallback (only used if seed wasn't re-applied)
+  if (stored.startsWith('$2')) {
+    try {
+      const bcrypt = await import('bcryptjs');
+      return await bcrypt.compare(password, stored);
+    } catch {
+      return false;
+    }
+  }
+  return false;
 }
 
 // Refresh token
