@@ -172,11 +172,11 @@ trading.post('/recommend', async (c) => {
     max_recommendations?: number;
   };
 
-  const filters: string[] = [`status = 'open'`];
+  const filters: string[] = [`o.status = 'open'`];
   const bindings: unknown[] = [];
-  if (body.side) { filters.push('side = ?'); bindings.push(body.side); }
-  if (body.energy_type) { filters.push('energy_type = ?'); bindings.push(body.energy_type); }
-  if (body.delivery_point) { filters.push('delivery_point = ?'); bindings.push(body.delivery_point); }
+  if (body.side) { filters.push('o.side = ?'); bindings.push(body.side); }
+  if (body.energy_type) { filters.push('o.energy_type = ?'); bindings.push(body.energy_type); }
+  if (body.delivery_point) { filters.push('o.delivery_point = ?'); bindings.push(body.delivery_point); }
 
   const book = await c.env.DB.prepare(`
     SELECT o.id, o.side, o.energy_type, o.volume_mwh, o.price_min, o.price_max,
