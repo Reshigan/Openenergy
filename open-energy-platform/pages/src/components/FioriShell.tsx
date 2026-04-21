@@ -4,7 +4,7 @@ import {
   LayoutDashboard, FileText, TrendingUp, CircleDollarSign, Leaf, Building2,
   BarChart3, Zap, PiggyBank, GitBranch, ShoppingCart, Store, Settings,
   Search, Bell, HelpCircle, LogOut, User, ChevronLeft, ChevronRight, Sparkles,
-  Menu,
+  Menu, Wrench, FileBarChart,
 } from 'lucide-react';
 import { useAuth } from '../lib/useAuth';
 
@@ -26,9 +26,11 @@ const BASE_NAV: NavItem[] = [
   { path: '/projects',    label: 'IPP Projects', icon: Building2,       section: 'Operations' },
   { path: '/pipeline',    label: 'Pipeline',     icon: GitBranch,       section: 'Operations' },
   { path: '/grid',        label: 'Grid',         icon: Zap,             section: 'Operations' },
+  { path: '/om',          label: 'O&M',          icon: Wrench,          section: 'Operations' },
   { path: '/carbon',      label: 'Carbon',       icon: Leaf,            section: 'Sustainability' },
   { path: '/esg',         label: 'ESG',          icon: BarChart3,       section: 'Sustainability' },
   { path: '/funds',       label: 'Funds',        icon: PiggyBank,       section: 'Finance' },
+  { path: '/reports',     label: 'Reports',      icon: FileBarChart,    section: 'Insights' },
   { path: '/admin',       label: 'Admin',        icon: Settings,        section: 'System' },
 ];
 
@@ -41,34 +43,34 @@ function navForRole(role: string | undefined): NavItem[] {
       return BASE_NAV;
     case 'trader':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/trading', '/settlement', '/contracts', '/marketplace'].includes(n.path),
+        ['/cockpit', '/trading', '/settlement', '/contracts', '/marketplace', '/reports'].includes(n.path),
       );
     case 'ipp_developer':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/projects', '/contracts', '/settlement', '/grid', '/marketplace', '/esg'].includes(
+        ['/cockpit', '/projects', '/contracts', '/settlement', '/grid', '/om', '/marketplace', '/esg', '/reports'].includes(
           n.path,
         ),
       );
     case 'carbon_fund':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/carbon', '/marketplace', '/funds', '/pipeline', '/esg'].includes(n.path),
+        ['/cockpit', '/carbon', '/marketplace', '/funds', '/pipeline', '/esg', '/reports'].includes(n.path),
       );
     case 'offtaker':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/contracts', '/procurement', '/marketplace', '/settlement', '/esg'].includes(
+        ['/cockpit', '/contracts', '/procurement', '/marketplace', '/settlement', '/esg', '/reports'].includes(
           n.path,
         ),
       );
     case 'lender':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/projects', '/pipeline', '/funds', '/settlement'].includes(n.path),
+        ['/cockpit', '/projects', '/pipeline', '/funds', '/settlement', '/om', '/reports'].includes(n.path),
       );
     case 'grid_operator':
-      return BASE_NAV.filter((n) => ['/cockpit', '/grid', '/settlement'].includes(n.path));
+      return BASE_NAV.filter((n) => ['/cockpit', '/grid', '/settlement', '/reports'].includes(n.path));
     case 'regulator':
       // Regulators see the marketplace, ESG and the compliance dashboard — not the admin console.
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/marketplace', '/esg'].includes(n.path),
+        ['/cockpit', '/marketplace', '/esg', '/reports'].includes(n.path),
       );
     default:
       return nonAdminBase;
@@ -256,7 +258,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
 
       {/* Sidebar */}
       <aside
-        className="fiori-rail fixed left-0 bottom-0 overflow-y-auto flex flex-col"
+        className={`fiori-rail fixed left-0 bottom-0 overflow-y-auto flex flex-col ${collapsed ? 'collapsed' : ''}`}
         style={{
           top: 44,
           width: sidebarWidth,
@@ -264,10 +266,18 @@ export function FioriShell({ children }: { children: ReactNode }) {
         }}
       >
         <nav className="flex-1 py-3">
+          {sections.length === 0 && !collapsed && (
+            <div className="px-4 py-3 text-[12px]" style={{ color: '#89919a' }}>
+              Loading navigation…
+            </div>
+          )}
           {sections.map(([section, items]) => (
             <div key={section} className="mb-2">
               {!collapsed && (
                 <div className="fiori-rail-section">{section}</div>
+              )}
+              {collapsed && (
+                <div className="mx-3 my-1 h-px" style={{ background: '#f0f1f2' }} />
               )}
               {items.map((item) => {
                 const Icon = item.icon;

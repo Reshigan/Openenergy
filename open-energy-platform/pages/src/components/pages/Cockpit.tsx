@@ -18,6 +18,8 @@ import { ActionQueueCard } from '../ActionQueueCard';
 import { OfftakerAiHub } from '../OfftakerAiHub';
 import { FunderAiHub } from '../FunderAiHub';
 import { CarbonFundAiHub } from '../CarbonFundAiHub';
+import { TraderAiHub } from '../TraderAiHub';
+import { RegulatorAiHub } from '../RegulatorAiHub';
 
 const formatZAR = (val: number) =>
   new Intl.NumberFormat('en-ZA', {
@@ -167,10 +169,12 @@ export function Cockpit() {
       {/* Action queue — cross-role handovers land here */}
       <ActionQueueCard />
 
-      {/* Role-specific AI module — Offtaker: Bill → Mix → LOI */}
+      {/* Role-specific AI module — each role gets its own copilot */}
       {role === 'offtaker' && <OfftakerAiHub />}
       {role === 'lender' && <FunderAiHub />}
       {role === 'carbon_fund' && <CarbonFundAiHub />}
+      {role === 'trader' && <TraderAiHub />}
+      {role === 'regulator' && <RegulatorAiHub />}
 
 
       {/* Market Pulse */}
