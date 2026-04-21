@@ -94,6 +94,138 @@ contracts.get('/:id', async (c) => {
   return c.json({ success: true, data: contract });
 });
 
+// GET /contracts/:id/rendered — full contract document: template body with
+// commercial_terms variables interpolated, signatory roster, phase timeline.
+// Used by the Contract Detail page to render the full legal text + sign flow.
+contracts.get('/:id/rendered', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+
+  const contract = await c.env.DB.prepare(`
+    SELECT cd.*,
+           creator.name as creator_name,
+           creator.company_name as creator_company,
+           counterparty.name as counterparty_name,
+           counterparty.company_name as counterparty_company
+    FROM contract_documents cd
+    LEFT JOIN participants creator ON cd.creator_id = creator.id
+    LEFT JOIN participants counterparty ON cd.counterparty_id = counterparty.id
+    WHERE cd.id = ?
+    AND (cd.creator_id = ? OR cd.counterparty_id = ?)
+  `).bind(id, user.id, user.id).first();
+
+  if (!contract) {
+    return c.json({ success: false, error: 'Contract not found' }, 404);
+  }
+
+  let commercialTerms: Record<string, unknown> = {};
+  if (contract.commercial_terms && typeof contract.commercial_terms === 'string') {
+    try { commercialTerms = JSON.parse(contract.commercial_terms) as Record<string, unknown>; } catch { commercialTerms = {}; }
+  }
+
+  let template: Record<string, unknown> | null = null;
+  const templateCode = (commercialTerms.template_code as string | undefined)
+    || inferTemplateCodeFromDocumentType(contract.document_type as string);
+  if (templateCode) {
+    template = await c.env.DB.prepare(
+      `SELECT id, code, name, category, document_type, description, jurisdiction,
+              governing_law, sa_law_references, template_body, variables_json, version
+       FROM contract_templates WHERE code = ? AND published = 1`,
+    ).bind(templateCode).first() as Record<string, unknown> | null;
+  }
+
+  // Merge defaults from template + commercial terms + party data for interpolation
+  const vars: Record<string, string> = {
+    seller_name: (contract.creator_company as string) || (contract.creator_name as string) || 'Seller',
+    seller_reg: (commercialTerms.seller_reg as string) || '____________',
+    buyer_name: (contract.counterparty_company as string) || (contract.counterparty_name as string) || 'Buyer',
+    buyer_reg: (commercialTerms.buyer_reg as string) || '____________',
+    contract_volume_mwh: String(commercialTerms.volume_mwh ?? '_____'),
+    energy_type: String(commercialTerms.energy_type ?? 'renewable'),
+    project_name: (contract.title as string) || 'Project',
+    location: String(commercialTerms.location ?? 'South Africa'),
+    tenor_years: String(commercialTerms.tenor_years ?? '20'),
+    price_per_mwh: String(commercialTerms.price_per_mwh ?? '_____'),
+    escalation_pct: String(commercialTerms.escalation ?? '4.5'),
+    carbon_share: String(commercialTerms.carbon_share ?? '0'),
+    effective_date: (contract.created_at as string || '').slice(0, 10),
+  };
+  // Add every commercial_terms key as a variable fallback
+  for (const [k, v] of Object.entries(commercialTerms)) {
+    if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+      vars[k] = String(v);
+    }
+  }
+
+  let renderedBody = '';
+  if (template && typeof template.template_body === 'string') {
+    renderedBody = interpolateTemplate(template.template_body, vars);
+  } else {
+    renderedBody = defaultContractBody(contract, vars);
+  }
+
+  const signatories = await c.env.DB.prepare(
+    `SELECT ds.id, ds.document_id, ds.participant_id, ds.signatory_name,
+            ds.signatory_designation, ds.signed, ds.signed_at,
+            ds.signature_r2_key, ds.document_hash_at_signing,
+            p.name as participant_name, p.company_name as participant_company
+     FROM document_signatories ds
+     LEFT JOIN participants p ON ds.participant_id = p.id
+     WHERE ds.document_id = ?
+     ORDER BY ds.created_at ASC`,
+  ).bind(id).all();
+
+  return c.json({
+    success: true,
+    data: {
+      contract,
+      template,
+      commercial_terms: commercialTerms,
+      rendered_body: renderedBody,
+      signatories: signatories.results || [],
+      current_user_id: user.id,
+      can_sign: (contract.creator_id === user.id) || (contract.counterparty_id === user.id),
+    },
+  });
+});
+
+function interpolateTemplate(body: string, vars: Record<string, string>): string {
+  return body.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key: string) => {
+    const v = vars[key];
+    return v !== undefined && v !== '' ? v : `{{${key}}}`;
+  });
+}
+
+function inferTemplateCodeFromDocumentType(documentType: string): string | null {
+  const map: Record<string, string> = {
+    ppa_wheeling: 'PPA-WHEEL-SA',
+    ppa_btm: 'PPA-BTM-SA',
+    loi: 'LOI-SA',
+    term_sheet: 'TERM-SHEET-SA',
+    nda: 'NDA-SA',
+    carbon_purchase: 'ERPA-SA',
+    wheeling_agreement: 'PPA-WHEEL-SA',
+    offtake_agreement: 'DIRECT-SUPPLY-SA',
+    epc: 'EPC-SA',
+    hoa: 'HOA-SA',
+  };
+  return map[documentType] ?? null;
+}
+
+function defaultContractBody(contract: Record<string, unknown>, vars: Record<string, string>): string {
+  return `# ${contract.title}\n\n` +
+    `**Document type:** ${contract.document_type}\n\n` +
+    `**Parties:** ${vars.seller_name} ("Seller") and ${vars.buyer_name} ("Buyer").\n\n` +
+    `**Project:** ${vars.project_name} — ${vars.location}\n\n` +
+    `**Commercial terms:**\n` +
+    `- Volume: ${vars.contract_volume_mwh} MWh / annum\n` +
+    `- Price: ZAR ${vars.price_per_mwh}/MWh\n` +
+    `- Escalation: ${vars.escalation_pct}% per annum\n` +
+    `- Tenor: ${vars.tenor_years} years\n\n` +
+    `**Governing law:** Laws of the Republic of South Africa. Disputes referred to arbitration under AFSA Rules in Johannesburg.\n\n` +
+    `**Signed** at ____________ on this ____ day of ________ 20__.`;
+}
+
 // POST /contracts — Create new contract
 contracts.post('/', async (c) => {
   const user = getCurrentUser(c);

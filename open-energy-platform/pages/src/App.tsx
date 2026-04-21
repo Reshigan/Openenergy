@@ -9,6 +9,7 @@ import { FioriShell } from './components/FioriShell';
 // Import page components
 import { Cockpit } from './components/pages/Cockpit';
 import { Contracts } from './components/pages/Contracts';
+import { ContractDetail } from './components/pages/ContractDetail';
 import { Trading } from './components/pages/Trading';
 import { Carbon } from './components/pages/Carbon';
 import { ProcurementHub } from './components/pages/ProcurementHub';
@@ -891,6 +892,7 @@ function AppRoutes() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/cockpit" element={<ProtectedRoute><Layout><Cockpit /></Layout></ProtectedRoute>} />
       <Route path="/contracts" element={<ProtectedRoute><Layout><Contracts /></Layout></ProtectedRoute>} />
+      <Route path="/contracts/:id" element={<ProtectedRoute><Layout><ContractDetail /></Layout></ProtectedRoute>} />
       <Route path="/trading" element={<ProtectedRoute><Layout><Trading /></Layout></ProtectedRoute>} />
       <Route path="/settlement" element={<ProtectedRoute><Layout><Cockpit /></Layout></ProtectedRoute>} />
       <Route path="/carbon" element={<ProtectedRoute><Layout><Carbon /></Layout></ProtectedRoute>} />
