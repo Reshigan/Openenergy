@@ -1,7 +1,6 @@
 name = "open-energy-platform"
-main = "src/index.ts"
 compatibility_date = "2024-01-01"
-workers_dev = false
+pages_build_output_dir = "pages/dist"
 
 [[r2_buckets]]
 binding = "R2"
@@ -15,7 +14,3 @@ id = "aa6172248d474199a39c5f6aeafb2ec2"
 binding = "DB"
 database_name = "open-energy-db"
 database_id = "e0665a44-2f3e-4ab6-8ec5-101af4e8f951"
-
-[[routes]]
-pattern = "oe.vantax.co.za/*"
-zone_name = "vantax.co.za"

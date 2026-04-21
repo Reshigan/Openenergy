@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { api } from '../api';
+import { AuthContext, api } from '../context/AuthContext';
+import { AuthContext as AuthContextType } from '../lib/api';
 
 // Sidebar items by role
 const roleSidebarItems: Record<string, { label: string, path: string, icon: string }[]> = {
@@ -89,6 +90,3 @@ export function useAuth() {
   if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 }
-
-// Re-export AuthContext for use in components
-import { AuthContext } from '../App';

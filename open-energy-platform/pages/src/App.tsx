@@ -2,6 +2,22 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
+// Import page components
+import { CockpitPage } from './components/pages/Cockpit';
+import { ContractsPage } from './components/pages/Contracts';
+import { TradingPage } from './components/pages/Trading';
+import { CarbonPage } from './components/pages/Carbon';
+import { ProcurementHubPage } from './components/pages/ProcurementHub';
+import { ProjectsPage } from './components/pages/Projects';
+import { Layout } from './components/Layout';
+import { Skeleton } from './components/Skeleton';
+import { EmptyState } from './components/EmptyState';
+import { ErrorBanner } from './components/ErrorBanner';
+import { ExportBar } from './components/ExportBar';
+import { ConfirmDialog } from './components/ConfirmDialog';
+import { BatchActionBar } from './components/BatchActionBar';
+import { EntityLink } from './components/EntityLink';
+
 // Types
 interface User {
   id: string;
@@ -36,7 +52,7 @@ interface RegisterData {
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 // Create axios instance
-const api = axios.create({
+export const api = axios.create({
   baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -50,10 +66,13 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Export formatZAR utility
+export const formatZAR = (val: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(val);
+
 // Auth Context
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const useAuth = () => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
@@ -125,7 +144,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-oe-cream">
+      <div className="min-h-screen flex items-center justify-center bg-ionex-canvas">
         <div className="text-center">
           <div className="spinner mx-auto mb-4" />
           <p className="text-gray-600">Loading...</p>
@@ -155,9 +174,9 @@ function Layout({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen flex bg-oe-cream">
+    <div className="min-h-screen flex bg-ionex-canvas">
       {/* Sidebar */}
-      <aside className="w-64 bg-oe-forest text-white flex flex-col">
+      <aside className="w-64 bg-ionex-brand text-white flex flex-col">
         <div className="p-6 border-b border-white/10">
           <h1 className="text-xl font-display font-bold">Open Energy</h1>
           <p className="text-sm text-white/60 mt-1">Platform</p>
@@ -173,7 +192,7 @@ function Layout({ children }: { children: ReactNode }) {
               {item.icon && <item.icon size={20} />}
               <span>{item.label}</span>
               {item.badge && (
-                <span className="ml-auto bg-oe-accent text-xs px-2 py-0.5 rounded-full">
+                <span className="ml-auto bg-ionex-accent text-xs px-2 py-0.5 rounded-full">
                   {item.badge}
                 </span>
               )}
@@ -183,7 +202,7 @@ function Layout({ children }: { children: ReactNode }) {
 
         <div className="p-4 border-t border-white/10">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-oe-accent rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-ionex-accent rounded-full flex items-center justify-center">
               <span className="font-semibold">{user?.name?.charAt(0) || 'U'}</span>
             </div>
             <div className="flex-1 min-w-0">
@@ -193,7 +212,7 @@ function Layout({ children }: { children: ReactNode }) {
           </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-white/10 transition-colors"
+            className="w-full flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-ionex-surface/10 transition-colors"
           >
             Logout
           </button>
@@ -202,7 +221,7 @@ function Layout({ children }: { children: ReactNode }) {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
-        <header className="bg-white border-b px-6 py-4 flex items-center justify-between">
+        <header className="bg-ionex-surface border-b px-6 py-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-800">
             {navigation.find((n) => n.path === location.pathname)?.label || 'Dashboard'}
           </h2>
@@ -379,14 +398,21 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-oe-forest to-oe-forest-dark flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-ionex-brand-deep via-ionex-brand to-ionex-brand-light flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Branding Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-display font-bold text-white mb-2">Open Energy</h1>
-          <p className="text-white/70">Platform</p>
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-ionex-accent rounded-2xl mb-4 shadow-lg">
+            <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h1 className="text-4xl font-display font-bold text-white mb-1">Open Energy</h1>
+          <p className="text-ionex-accent text-lg font-medium">Platform</p>
+          <p className="text-white/50 text-sm mt-2">by Vanta X Holdings</p>
         </div>
 
-        <div className="card p-8">
+        <div className="card p-8 shadow-2xl">
           <h2 className="text-2xl font-semibold text-center mb-6">Sign In</h2>
 
           {error && (
@@ -427,7 +453,7 @@ function LoginPage() {
 
           <p className="text-center text-sm text-gray-600 mt-6">
             Don't have an account?{' '}
-            <Link to="/register" className="text-oe-forest hover:underline">
+            <Link to="/register" className="text-ionex-brand hover:underline">
               Register
             </Link>
           </p>
@@ -554,7 +580,7 @@ function RegisterPage() {
 
           <p className="text-center text-sm text-gray-600 mt-6">
             Already have an account?{' '}
-            <Link to="/login" className="text-oe-forest hover:underline">
+            <Link to="/login" className="text-ionex-brand hover:underline">
               Sign In
             </Link>
           </p>
@@ -603,12 +629,12 @@ function CockpitPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="card p-6">
           <h3 className="text-sm font-medium text-gray-500">Notifications</h3>
-          <p className="text-3xl font-bold text-oe-forest">{data?.notifications || 0}</p>
+          <p className="text-3xl font-bold text-ionex-brand">{data?.notifications || 0}</p>
           <p className="text-xs text-gray-500 mt-1">Unread items</p>
         </div>
         <div className="card p-6">
           <h3 className="text-sm font-medium text-gray-500">Action Items</h3>
-          <p className="text-3xl font-bold text-oe-accent">{data?.action_items?.length || 0}</p>
+          <p className="text-3xl font-bold text-ionex-accent">{data?.action_items?.length || 0}</p>
           <p className="text-xs text-gray-500 mt-1">Pending tasks</p>
         </div>
         <div className="card p-6">
@@ -625,7 +651,7 @@ function CockpitPage() {
           {data.projects?.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {data.projects.map((p: any) => (
-                <div key={p.status} className="p-4 bg-oe-cream rounded-lg">
+                <div key={p.status} className="p-4 bg-ionex-canvas rounded-lg">
                   <p className="text-2xl font-bold">{p.count}</p>
                   <p className="text-sm text-gray-600 capitalize">{p.status.replace('_', ' ')}</p>
                 </div>
@@ -648,7 +674,7 @@ function CockpitPage() {
           <h2 className="text-lg font-semibold mb-4">Trading Overview</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {data.orders?.map((o: any) => (
-              <div key={o.status} className="p-4 bg-oe-cream rounded-lg">
+              <div key={o.status} className="p-4 bg-ionex-canvas rounded-lg">
                 <p className="text-2xl font-bold">{o.count}</p>
                 <p className="text-sm text-gray-600 capitalize">{o.status}</p>
               </div>

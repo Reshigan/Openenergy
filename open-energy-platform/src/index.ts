@@ -5,6 +5,7 @@ import { HonoEnv } from './utils/types';
 
 // Route imports
 import authRoutes from './routes/auth';
+import cockpitRoutes from './routes/cockpit';
 import participantsRoutes from './routes/participants';
 import contractsRoutes from './routes/contracts';
 import invoicesRoutes from './routes/invoices';
@@ -13,9 +14,15 @@ import tradingRoutes from './routes/trading';
 import settlementRoutes from './routes/settlement';
 import carbonRoutes from './routes/carbon';
 import esgRoutes from './routes/esg';
+import esgReportsRoutes from './routes/esg-reports';
 import gridRoutes from './routes/grid';
 import procurementRoutes from './routes/procurement';
+import dealroomRoutes from './routes/dealroom';
+import modulesRoutes from './routes/modules';
+import popiaRoutes from './routes/popia';
 import intelligenceRoutes from './routes/intelligence';
+import briefingRoutes from './routes/briefing';
+import meteringRoutes from './routes/metering';
 import onaRoutes from './routes/ona';
 import pipelineRoutes from './routes/pipeline';
 import vaultRoutes from './routes/vault';
@@ -36,6 +43,7 @@ app.get('/api/health', (c) => c.json({ status: 'healthy', version: '1.0.0' }));
 
 // Auth routes
 app.route('/api/auth', authRoutes);
+app.route('/api/cockpit', cockpitRoutes);
 
 // Protected routes
 app.route('/api/participants', participantsRoutes);
@@ -46,9 +54,15 @@ app.route('/api/trading', tradingRoutes);
 app.route('/api/settlement', settlementRoutes);
 app.route('/api/carbon', carbonRoutes);
 app.route('/api/esg', esgRoutes);
+app.route('/api/esg-reports', esgReportsRoutes);
 app.route('/api/grid', gridRoutes);
 app.route('/api/procurement', procurementRoutes);
+app.route('/api/dealroom', dealroomRoutes);
+app.route('/api/modules', modulesRoutes);
+app.route('/api/popia', popiaRoutes);
 app.route('/api/intelligence', intelligenceRoutes);
+app.route('/api/briefing', briefingRoutes);
+app.route('/api/metering', meteringRoutes);
 app.route('/api/ona', onaRoutes);
 app.route('/api/pipeline', pipelineRoutes);
 app.route('/api/vault', vaultRoutes);
