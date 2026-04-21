@@ -3,12 +3,18 @@ import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation 
 import axios from 'axios';
 
 // Import page components
-import { CockpitPage } from './components/pages/Cockpit';
-import { ContractsPage } from './components/pages/Contracts';
-import { TradingPage } from './components/pages/Trading';
-import { CarbonPage } from './components/pages/Carbon';
-import { ProcurementHubPage } from './components/pages/ProcurementHub';
-import { ProjectsPage } from './components/pages/Projects';
+import { Cockpit } from './components/pages/Cockpit';
+import { Contracts } from './components/pages/Contracts';
+import { Trading } from './components/pages/Trading';
+import { Carbon } from './components/pages/Carbon';
+import { ProcurementHub } from './components/pages/ProcurementHub';
+import { Projects } from './components/pages/Projects';
+import { Grid } from './components/pages/Grid';
+import { ESG } from './components/pages/ESG';
+import { Funds } from './components/pages/Funds';
+import { Marketplace } from './components/pages/Marketplace';
+import { Admin } from './components/pages/Admin';
+import { Pipeline } from './components/pages/Pipeline';
 import { Layout } from './components/Layout';
 import { Skeleton } from './components/Skeleton';
 import { EmptyState } from './components/EmptyState';
@@ -884,19 +890,19 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/cockpit" element={<ProtectedRoute><Layout><CockpitPage /></Layout></ProtectedRoute>} />
-      <Route path="/contracts" element={<ProtectedRoute><Layout><ContractsPage /></Layout></ProtectedRoute>} />
-      <Route path="/trading" element={<ProtectedRoute><Layout><TradingPage /></Layout></ProtectedRoute>} />
-      <Route path="/settlement" element={<ProtectedRoute><Layout><PlaceholderPage title="Settlement" /></Layout></ProtectedRoute>} />
-      <Route path="/carbon" element={<ProtectedRoute><Layout><PlaceholderPage title="Carbon Market" /></Layout></ProtectedRoute>} />
-      <Route path="/projects" element={<ProtectedRoute><Layout><PlaceholderPage title="IPP Projects" /></Layout></ProtectedRoute>} />
-      <Route path="/esg" element={<ProtectedRoute><Layout><PlaceholderPage title="ESG Dashboard" /></Layout></ProtectedRoute>} />
-      <Route path="/grid" element={<ProtectedRoute><Layout><PlaceholderPage title="Grid Management" /></Layout></ProtectedRoute>} />
-      <Route path="/funds" element={<ProtectedRoute><Layout><PlaceholderPage title="Fund Management" /></Layout></ProtectedRoute>} />
-      <Route path="/pipeline" element={<ProtectedRoute><Layout><PlaceholderPage title="Pipeline" /></Layout></ProtectedRoute>} />
-      <Route path="/procurement" element={<ProtectedRoute><Layout><PlaceholderPage title="Procurement" /></Layout></ProtectedRoute>} />
-      <Route path="/marketplace" element={<ProtectedRoute><Layout><PlaceholderPage title="Marketplace" /></Layout></ProtectedRoute>} />
-      <Route path="/admin" element={<ProtectedRoute><Layout><PlaceholderPage title="Admin" /></Layout></ProtectedRoute>} />
+      <Route path="/cockpit" element={<ProtectedRoute><Layout><Cockpit /></Layout></ProtectedRoute>} />
+      <Route path="/contracts" element={<ProtectedRoute><Layout><Contracts /></Layout></ProtectedRoute>} />
+      <Route path="/trading" element={<ProtectedRoute><Layout><Trading /></Layout></ProtectedRoute>} />
+      <Route path="/settlement" element={<ProtectedRoute><Layout><Cockpit /></Layout></ProtectedRoute>} />
+      <Route path="/carbon" element={<ProtectedRoute><Layout><Carbon /></Layout></ProtectedRoute>} />
+      <Route path="/projects" element={<ProtectedRoute><Layout><Projects /></Layout></ProtectedRoute>} />
+      <Route path="/esg" element={<ProtectedRoute><Layout><ESG /></Layout></ProtectedRoute>} />
+      <Route path="/grid" element={<ProtectedRoute><Layout><Grid /></Layout></ProtectedRoute>} />
+      <Route path="/funds" element={<ProtectedRoute><Layout><Funds /></Layout></ProtectedRoute>} />
+      <Route path="/pipeline" element={<ProtectedRoute><Layout><Pipeline /></Layout></ProtectedRoute>} />
+      <Route path="/procurement" element={<ProtectedRoute><Layout><ProcurementHub /></Layout></ProtectedRoute>} />
+      <Route path="/marketplace" element={<ProtectedRoute><Layout><Marketplace /></Layout></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute><Layout><Admin /></Layout></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/cockpit" replace />} />
       <Route path="*" element={<Navigate to="/cockpit" replace />} />
     </Routes>
