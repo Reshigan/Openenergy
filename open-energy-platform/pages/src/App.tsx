@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './lib/useAuth';
+import { api } from './lib/api';
 
 // Import page components
 import { Cockpit } from './components/pages/Cockpit';
@@ -24,124 +26,8 @@ import { ConfirmDialog } from './components/ConfirmDialog';
 import { BatchActionBar } from './components/BatchActionBar';
 import { EntityLink } from './components/EntityLink';
 
-// Types
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  company_name?: string;
-  role: string;
-  email_verified: boolean;
-  kyc_status: string;
-  enabled_modules?: string[];
-}
-
-interface AuthContextType {
-  user: User | null;
-  token: string | null;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
-  logout: () => void;
-  refreshUser: () => Promise<void>;
-}
-
-interface RegisterData {
-  email: string;
-  password: string;
-  name: string;
-  company_name?: string;
-  role: string;
-}
-
-// API Base URL
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-
-// Create axios instance
-export const api = axios.create({
-  baseURL: API_BASE,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-// Add auth interceptor
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
 // Export formatZAR utility
 export const formatZAR = (val: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(val);
-
-// Auth Context
-const AuthContext = createContext<AuthContextType | null>(null);
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
-  return context;
-};
-
-// Auth Provider
-function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-  const [loading, setLoading] = useState(true);
-
-  const refreshUser = async () => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    try {
-      const response = await api.get('/auth/me');
-      if (response.data.success) {
-        setUser(response.data.data);
-      }
-    } catch {
-      setToken(null);
-      localStorage.removeItem('token');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    refreshUser();
-  }, [token]);
-
-  const login = async (email: string, password: string) => {
-    const response = await api.post('/auth/login', { email, password });
-    if (response.data.success) {
-      setToken(response.data.data.token);
-      setUser(response.data.data.participant);
-      localStorage.setItem('token', response.data.data.token);
-    } else {
-      throw new Error(response.data.error || 'Login failed');
-    }
-  };
-
-  const register = async (data: RegisterData) => {
-    const response = await api.post('/auth/register', data);
-    if (!response.data.success) {
-      throw new Error(response.data.error || 'Registration failed');
-    }
-  };
-
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('token');
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, refreshUser }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
 
 // Protected Route Wrapper
 function ProtectedRoute({ children }: { children: ReactNode }) {
