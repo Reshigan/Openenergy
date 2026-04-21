@@ -1,83 +1,64 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Activity, Briefcase, FileText, TrendingUp, Users, AlertCircle, Calendar, DollarSign, Zap, ArrowUpRight, ArrowDownRight, ChevronRight, Bell, Settings, Search } from 'lucide-react';
+import {
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis,
+  CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Legend,
+} from 'recharts';
+import {
+  Briefcase, FileText, TrendingUp, Zap, Leaf, ShoppingCart, Store,
+  Building2, BarChart3, Sparkles, ArrowRight, CircleDollarSign, Activity,
+  ShieldCheck, GitBranch, Gauge, Wind, Sun, Flame, Coins, Scale,
+} from 'lucide-react';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
 import { Skeleton } from '../Skeleton';
-import { EmptyState } from '../EmptyState';
 import { ErrorBanner } from '../ErrorBanner';
-import { EntityLink } from '../EntityLink';
+import { FioriTile, FioriTileGroup } from '../FioriTile';
 
-const formatZAR = (val: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(val);
+const formatZAR = (val: number) =>
+  new Intl.NumberFormat('en-ZA', {
+    style: 'currency',
+    currency: 'ZAR',
+    maximumFractionDigits: 0,
+  }).format(val);
 
-// Role-specific sidebar items
-const roleSidebarItems: Record<string, { icon: React.ReactNode; label: string; path: string; badge?: string }[]> = {
-  admin: [
-    { icon: <Users className="w-4 h-4" />, label: 'KYC Queue', path: '/admin' },
-    { icon: <Settings className="w-4 h-4" />, label: 'Platform Config', path: '/admin' },
-    { icon: <DollarSign className="w-4 h-4" />, label: 'Fee Management', path: '/admin' },
-    { icon: <Activity className="w-4 h-4" />, label: 'Analytics', path: '/admin' },
-  ],
-  ipp_developer: [
-    { icon: <Briefcase className="w-4 h-4" />, label: 'My Projects', path: '/projects' },
-    { icon: <FileText className="w-4 h-4" />, label: 'Contracts', path: '/contracts' },
-    { icon: <Calendar className="w-4 h-4" />, label: 'Disbursements', path: '/projects' },
-    { icon: <TrendingUp className="w-4 h-4" />, label: 'Metering', path: '/metering' },
-  ],
-  trader: [
-    { icon: <Zap className="w-4 h-4" />, label: 'Trading', path: '/trading' },
-    { icon: <DollarSign className="w-4 h-4" />, label: 'Settlement', path: '/settlement' },
-    { icon: <FileText className="w-4 h-4" />, label: 'Invoices', path: '/settlement' },
-    { icon: <Activity className="w-4 h-4" />, label: 'Portfolio', path: '/cockpit' },
-  ],
-  carbon_fund: [
-    { icon: <TrendingUp className="w-4 h-4" />, label: 'Portfolio', path: '/fund-dashboard' },
-    { icon: <FileText className="w-4 h-4" />, label: 'Credits', path: '/carbon' },
-    { icon: <BarChart className="w-4 h-4" />, label: 'Options', path: '/carbon' },
-    { icon: <Activity className="w-4 h-4" />, label: 'NAV History', path: '/fund-dashboard' },
-  ],
-  offtaker: [
-    { icon: <Zap className="w-4 h-4" />, label: 'Energy Demand', path: '/trading' },
-    { icon: <FileText className="w-4 h-4" />, label: 'Contracts', path: '/contracts' },
-    { icon: <TrendingUp className="w-4 h-4" />, label: 'Procurement', path: '/procurement' },
-    { icon: <Activity className="w-4 h-4" />, label: 'ESG', path: '/esg' },
-  ],
-  lender: [
-    { icon: <Briefcase className="w-4 h-4" />, label: 'Portfolio', path: '/lender-dashboard' },
-    { icon: <DollarSign className="w-4 h-4" />, label: 'Disbursements', path: '/lender-dashboard' },
-    { icon: <AlertCircle className="w-4 h-4" />, label: 'Watchlist', path: '/lender-dashboard' },
-    { icon: <Activity className="w-4 h-4" />, label: 'Covenant Health', path: '/lender-dashboard' },
-  ],
-  grid_operator: [
-    { icon: <Zap className="w-4 h-4" />, label: 'Grid Status', path: '/grid' },
-    { icon: <Activity className="w-4 h-4" />, label: 'Wheeling', path: '/grid' },
-    { icon: <Calendar className="w-4 h-4" />, label: 'Metering', path: '/metering' },
-    { icon: <AlertCircle className="w-4 h-4" />, label: 'Imbalance', path: '/grid' },
-  ],
-  regulator: [
-    { icon: <FileText className="w-4 h-4" />, label: 'Compliance', path: '/admin' },
-    { icon: <Users className="w-4 h-4" />, label: 'Participants', path: '/admin' },
-    { icon: <Activity className="w-4 h-4" />, label: 'Market Data', path: '/admin' },
-    { icon: <TrendingUp className="w-4 h-4" />, label: 'Reports', path: '/admin' },
-  ],
-};
+const formatCompact = (val: number) =>
+  new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(val);
 
-// Sample market data
+// Sample chart data
 const marketData = [
-  { month: 'Jan', price: 1850 },
-  { month: 'Feb', price: 1920 },
-  { month: 'Mar', price: 1780 },
-  { month: 'Apr', price: 2100 },
-  { month: 'May', price: 2050 },
-  { month: 'Jun', price: 1950 },
+  { month: 'Jan', solar: 1620, wind: 1510, hybrid: 1580, thermal: 1820 },
+  { month: 'Feb', solar: 1720, wind: 1580, hybrid: 1640, thermal: 1850 },
+  { month: 'Mar', solar: 1590, wind: 1490, hybrid: 1530, thermal: 1780 },
+  { month: 'Apr', solar: 1880, wind: 1740, hybrid: 1820, thermal: 1940 },
+  { month: 'May', solar: 1950, wind: 1810, hybrid: 1900, thermal: 2010 },
+  { month: 'Jun', solar: 1820, wind: 1720, hybrid: 1760, thermal: 1940 },
+  { month: 'Jul', solar: 1920, wind: 1830, hybrid: 1870, thermal: 2050 },
+  { month: 'Aug', solar: 2080, wind: 1940, hybrid: 2000, thermal: 2120 },
 ];
 
 const portfolioData = [
-  { name: 'Active', value: 65, color: '#22c55e' },
-  { name: 'Pending', value: 25, color: '#f59e0b' },
-  { name: 'Closed', value: 10, color: '#94a3b8' },
+  { name: 'Solar',   value: 42, color: '#0a6ed1' },
+  { name: 'Wind',    value: 28, color: '#5d36ff' },
+  { name: 'Hybrid',  value: 18, color: '#0d7b84' },
+  { name: 'Storage', value: 8,  color: '#e9730c' },
+  { name: 'Carbon',  value: 4,  color: '#ab218e' },
 ];
+
+const volumeData = [
+  { hour: '00', mw: 420 }, { hour: '02', mw: 380 }, { hour: '04', mw: 360 },
+  { hour: '06', mw: 520 }, { hour: '08', mw: 780 }, { hour: '10', mw: 920 },
+  { hour: '12', mw: 1040 }, { hour: '14', mw: 1150 }, { hour: '16', mw: 1120 },
+  { hour: '18', mw: 980 }, { hour: '20', mw: 780 }, { hour: '22', mw: 560 },
+];
+
+// Greeting by time
+const greeting = () => {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+};
 
 export function Cockpit() {
   const { user } = useAuth();
@@ -85,274 +66,572 @@ export function Cockpit() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
-  const [actionItems, setActionItems] = useState<any[]>([]);
-  const [intelligence, setIntelligence] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchDashboardData();
+    let alive = true;
+    const run = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [statsRes] = await Promise.all([
+          api
+            .get('/cockpit/stats')
+            .catch(() => ({ data: { success: true, data: defaultStats() } })),
+        ]);
+        if (!alive) return;
+        setStats(statsRes.data?.data || defaultStats());
+      } catch (e: any) {
+        if (alive) setError(e.message || 'Failed to load dashboard');
+      } finally {
+        if (alive) setLoading(false);
+      }
+    };
+    run();
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  const fetchDashboardData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [statsRes, actionsRes, intelRes] = await Promise.all([
-        api.get('/cockpit/stats').catch(() => ({ data: { success: true, data: getDefaultStats() } })),
-        api.get('/intelligence/my-items').catch(() => ({ data: { success: true, data: [] } })),
-        api.get('/cockpit/morning-briefing').catch(() => ({ data: { success: true, data: { message: 'Configure email for daily briefings' } } })),
-      ]);
-      setStats(statsRes.data?.data || getDefaultStats());
-      setActionItems(actionsRes.data?.data || []);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load dashboard');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const role = user?.role ?? 'admin';
+  const today = useMemo(
+    () =>
+      new Date().toLocaleDateString('en-ZA', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }),
+    [],
+  );
 
-  const getDefaultStats = () => ({
-    activeProjects: 3,
-    pendingInvoices: 2,
-    openTrades: 5,
-    carbonBalance: 1250,
-    totalValue: 2450000,
-    esgScore: 78,
-  });
-
-  if (loading) return <div className="p-6"><Skeleton variant="card" rows={4} /></div>;
-  if (error) return <div className="p-6"><ErrorBanner message={error} onRetry={fetchDashboardData} /></div>;
-
-  const sidebarItems = roleSidebarItems[user?.role || 'admin'] || roleSidebarItems.admin;
+  if (loading)
+    return (
+      <div className="space-y-6">
+        <Skeleton variant="card" rows={2} />
+        <Skeleton variant="card" rows={4} />
+      </div>
+    );
+  if (error) return <ErrorBanner message={error} onRetry={() => window.location.reload()} />;
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user?.name?.split(' ')[0]}</h1>
-          <p className="text-ionex-text-mute">Here's your Open Energy overview</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="p-2 hover:bg-gray-100 rounded-lg">
-            <Bell className="w-5 h-5 text-ionex-text-mute" />
-          </button>
-          <button onClick={() => navigate('/settings')} className="p-2 hover:bg-gray-100 rounded-lg">
-            <Settings className="w-5 h-5 text-ionex-text-mute" />
-          </button>
-        </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          title="Active Projects"
-          value={stats?.activeProjects || 0}
-          icon={<Briefcase className="w-5 h-5" />}
-          trend={{ value: 12, positive: true }}
-          color="blue"
-        />
-        <KPICard
-          title="Pending Invoices"
-          value={stats?.pendingInvoices || 0}
-          icon={<FileText className="w-5 h-5" />}
-          trend={{ value: 3, positive: false }}
-          color="orange"
-        />
-        <KPICard
-          title="Open Trades"
-          value={stats?.openTrades || 0}
-          icon={<Zap className="w-5 h-5" />}
-          trend={{ value: 8, positive: true }}
-          color="green"
-        />
-        <KPICard
-          title="Carbon Balance"
-          value={`${stats?.carbonBalance || 0} tCO₂e`}
-          icon={<TrendingUp className="w-5 h-5" />}
-          color="emerald"
-        />
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Market Price Chart */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-ionex-border-100 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold">Energy Market Price</h2>
-            <select className="text-sm border border-ionex-border-200 rounded-lg px-3 py-1">
-              <option>Last 6 months</option>
-              <option>Last 12 months</option>
-              <option>YTD</option>
-            </select>
+    <div className="space-y-6">
+      {/* Hero */}
+      <div className="fiori-hero">
+        <div className="flex flex-col lg:flex-row lg:items-end gap-6">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 text-[12px] tracking-widest uppercase text-white/70 font-semibold">
+              <Sparkles size={12} />
+              <span>Open Energy Exchange · {today}</span>
+            </div>
+            <h1 className="mt-2 text-[28px] sm:text-[32px] font-bold tracking-tight">
+              {greeting()}, {user?.name?.split(' ')[0] ?? 'there'}
+            </h1>
+            <p className="mt-1 text-white/75 text-[14px] max-w-2xl">
+              {heroSubtitleFor(role)}
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button
+                onClick={() => navigate(primaryActionFor(role).path)}
+                className="h-9 px-4 rounded-lg text-[13px] font-semibold text-[#0a2540] bg-white hover:bg-white/90 transition-colors inline-flex items-center gap-2 shadow-[0_8px_20px_rgba(0,0,0,0.25)]"
+              >
+                {primaryActionFor(role).label}
+                <ArrowRight size={14} />
+              </button>
+              <button
+                onClick={() => navigate('/marketplace')}
+                className="h-9 px-4 rounded-lg text-[13px] font-semibold text-white border border-white/30 hover:bg-white/10 transition-colors inline-flex items-center gap-2"
+              >
+                Explore Marketplace
+              </button>
+            </div>
           </div>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={marketData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `R${v}`} />
-              <Tooltip formatter={(v: number) => [`R${v}/MWh`, 'Price']} />
-              <Line type="monotone" dataKey="price" stroke="#22c55e" strokeWidth={2} dot={{ fill: '#22c55e' }} />
-            </LineChart>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-3 min-w-0 lg:min-w-[560px]">
+            <HeroKPI label="Active Projects" value={stats?.activeProjects ?? 12} tint="#9cecb4" />
+            <HeroKPI label="Open Trades" value={stats?.openTrades ?? 38} tint="#ffd27a" />
+            <HeroKPI label="Pending Invoices" value={stats?.pendingInvoices ?? 6} tint="#ffb4b4" />
+            <HeroKPI
+              label="Portfolio Value"
+              value={formatCompact(stats?.totalValue ?? 2_450_000)}
+              suffix="ZAR"
+              tint="#c6b8ff"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Market Pulse */}
+      <FioriTileGroup
+        title="Market Pulse"
+        description="Live snapshot of today's Open Energy market"
+      >
+        <FioriTile
+          title="Market Price"
+          subtitle="Avg. cleared price"
+          value={`R${(stats?.avgPrice ?? 1920).toLocaleString()}`}
+          unit="/MWh"
+          trend="up"
+          trendValue="+4.2%"
+          footer="vs. last week"
+          accent="blue"
+          icon={TrendingUp}
+          onClick={() => navigate('/trading')}
+        />
+        <FioriTile
+          title="Volume Traded"
+          subtitle="Last 24h"
+          value={`${formatCompact(stats?.volume24h ?? 18_400)}`}
+          unit="MWh"
+          trend="up"
+          trendValue="+12.8%"
+          footer="peak @ 14:00"
+          accent="indigo"
+          icon={Activity}
+          onClick={() => navigate('/trading')}
+        />
+        <FioriTile
+          title="Renewable Share"
+          subtitle="Of total dispatched"
+          value={`${stats?.renewablePct ?? 74}`}
+          unit="%"
+          trend="up"
+          trendValue="+1.4pp"
+          footer="solar dominant"
+          accent="green"
+          icon={Sun}
+          onClick={() => navigate('/grid')}
+        />
+        <FioriTile
+          title="Grid Frequency"
+          subtitle="National average"
+          value={`${stats?.frequency ?? 49.97}`}
+          unit="Hz"
+          trend="flat"
+          trendValue="stable"
+          footer="within tolerance"
+          accent="teal"
+          icon={Gauge}
+          onClick={() => navigate('/grid')}
+        />
+        <FioriTile
+          title="Carbon Saved"
+          subtitle="This month"
+          value={`${formatCompact(stats?.carbonSaved ?? 42_800)}`}
+          unit="tCO₂e"
+          trend="up"
+          trendValue="+8.1%"
+          footer="vs. grid baseline"
+          accent="plum"
+          icon={Leaf}
+          onClick={() => navigate('/carbon')}
+        />
+        <FioriTile
+          title="ESG Score"
+          subtitle="Portfolio composite"
+          value={`${stats?.esgScore ?? 86}`}
+          unit="/ 100"
+          trend="up"
+          trendValue="+3 pts"
+          footer="leader quartile"
+          accent="pink"
+          icon={ShieldCheck}
+          onClick={() => navigate('/esg')}
+        />
+      </FioriTileGroup>
+
+      {/* Charts row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="fiori-glass lg:col-span-2 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-[16px] font-bold" style={{ color: '#32363a' }}>
+                Energy Market Price
+              </h2>
+              <p className="text-[12px]" style={{ color: '#6a6d70' }}>
+                R / MWh · by source · last 8 months
+              </p>
+            </div>
+            <div className="flex gap-1 rounded-lg p-0.5" style={{ background: '#eff1f2' }}>
+              {['6M', '1Y', 'YTD'].map((r, i) => (
+                <button
+                  key={r}
+                  className="h-7 px-3 rounded-md text-[12px] font-semibold transition-colors"
+                  style={{
+                    background: i === 0 ? '#ffffff' : 'transparent',
+                    color: i === 0 ? '#0a6ed1' : '#6a6d70',
+                    boxShadow: i === 0 ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                  }}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={260}>
+            <AreaChart data={marketData}>
+              <defs>
+                <linearGradient id="gradSolar" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#0a6ed1" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#0a6ed1" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="gradWind" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#5d36ff" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#5d36ff" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="gradHybrid" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#0d7b84" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#0d7b84" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7ea" />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6a6d70' }} axisLine={false} tickLine={false} />
+              <YAxis
+                tick={{ fontSize: 11, fill: '#6a6d70' }}
+                tickFormatter={(v) => `R${v}`}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: 'rgba(255,255,255,0.95)',
+                  border: '1px solid #e5e5e5',
+                  borderRadius: 8,
+                  boxShadow: '0 8px 24px rgba(53,74,95,0.12)',
+                  fontSize: 12,
+                }}
+                formatter={(v: number) => [`R${v}/MWh`]}
+              />
+              <Area
+                type="monotone"
+                dataKey="solar"
+                stroke="#0a6ed1"
+                strokeWidth={2}
+                fill="url(#gradSolar)"
+                dot={false}
+              />
+              <Area
+                type="monotone"
+                dataKey="wind"
+                stroke="#5d36ff"
+                strokeWidth={2}
+                fill="url(#gradWind)"
+                dot={false}
+              />
+              <Area
+                type="monotone"
+                dataKey="hybrid"
+                stroke="#0d7b84"
+                strokeWidth={2}
+                fill="url(#gradHybrid)"
+                dot={false}
+              />
+            </AreaChart>
           </ResponsiveContainer>
+          <div className="flex items-center gap-4 pt-2 text-[12px]" style={{ color: '#6a6d70' }}>
+            <LegendDot color="#0a6ed1" label="Solar" />
+            <LegendDot color="#5d36ff" label="Wind" />
+            <LegendDot color="#0d7b84" label="Hybrid" />
+          </div>
         </div>
 
-        {/* Portfolio Allocation */}
-        <div className="bg-white rounded-xl border border-ionex-border-100 p-6">
-          <h2 className="text-lg font-semibold mb-6">Portfolio Allocation</h2>
-          <ResponsiveContainer width="100%" height={180}>
+        <div className="fiori-glass p-5">
+          <h2 className="text-[16px] font-bold" style={{ color: '#32363a' }}>
+            Portfolio Allocation
+          </h2>
+          <p className="text-[12px] mb-2" style={{ color: '#6a6d70' }}>
+            Share of dispatched MWh
+          </p>
+          <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
                 data={portfolioData}
                 cx="50%"
                 cy="50%"
-                innerRadius={50}
+                innerRadius={55}
                 outerRadius={80}
+                paddingAngle={2}
                 dataKey="value"
+                stroke="#ffffff"
+                strokeWidth={2}
               >
                 {portfolioData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip
+                contentStyle={{
+                  background: 'rgba(255,255,255,0.95)',
+                  border: '1px solid #e5e5e5',
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
+                formatter={(v: number, n: string) => [`${v}%`, n]}
+              />
             </PieChart>
           </ResponsiveContainer>
-          <div className="flex justify-center gap-4 mt-4">
-            {portfolioData.map((item, i) => (
-              <div key={i} className="flex items-center gap-2 text-xs">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-ionex-text-sub">{item.name}</span>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
+            {portfolioData.map((p) => (
+              <div key={p.name} className="flex items-center justify-between text-[12px]">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-2.5 h-2.5 rounded-sm"
+                    style={{ background: p.color }}
+                  />
+                  <span style={{ color: '#32363a' }}>{p.name}</span>
+                </div>
+                <span className="font-semibold" style={{ color: '#32363a' }}>
+                  {p.value}%
+                </span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Quick Actions Sidebar */}
-        <div className="bg-white rounded-xl border border-ionex-border-100 p-6">
-          <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
-          <div className="space-y-2">
-            {sidebarItems.map((item, i) => (
-              <button
-                key={i}
-                onClick={() => navigate(item.path)}
-                className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-ionex-brand/10 rounded-lg text-ionex-brand">
-                    {item.icon}
-                  </div>
-                  <span className="text-sm font-medium">{item.label}</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-gray-400" />
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Action Queue */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-ionex-border-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Action Queue</h2>
-            <span className="px-2 py-1 bg-ionex-accent/20 text-ionex-accent text-xs font-medium rounded-full">
-              {actionItems.length} items
-            </span>
-          </div>
-          {actionItems.length === 0 ? (
-            <EmptyState
-              icon={<Check className="w-8 h-8 text-green-500" />}
-              title="All caught up!"
-              description="No pending actions at this time"
-            />
-          ) : (
-            <div className="space-y-3">
-              {actionItems.slice(0, 5).map((item, i) => (
-                <div key={i} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                  <div className={`p-2 rounded-lg ${getPriorityColor(item.priority)}`}>
-                    <AlertCircle className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{item.title}</p>
-                    <p className="text-xs text-ionex-text-mute">{item.description}</p>
-                  </div>
-                  <button className="px-3 py-1 text-xs bg-white border border-ionex-border-200 rounded-lg hover:bg-gray-50">
-                    View
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Financial Summary */}
-      <div className="bg-white rounded-xl border border-ionex-border-100 p-6">
-        <h2 className="text-lg font-semibold mb-6">Financial Summary</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      {/* Daily dispatch */}
+      <div className="fiori-glass p-5">
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <p className="text-sm text-ionex-text-mute mb-1">Total Portfolio Value</p>
-            <p className="text-2xl font-bold">{formatZAR(stats?.totalValue || 0)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-ionex-text-mute mb-1">This Month's P&L</p>
-            <p className="text-2xl font-bold text-green-600 flex items-center gap-1">
-              <ArrowUpRight className="w-5 h-5" />
-              +{formatZAR(125000)}
+            <h2 className="text-[16px] font-bold" style={{ color: '#32363a' }}>
+              Dispatch Profile (24h)
+            </h2>
+            <p className="text-[12px]" style={{ color: '#6a6d70' }}>
+              Aggregate generation in MW, last 24 hours
             </p>
           </div>
-          <div>
-            <p className="text-sm text-ionex-text-mute mb-1">Pending Settlements</p>
-            <p className="text-2xl font-bold">{formatZAR(stats?.pendingSettlements || 450000)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-ionex-text-mute mb-1">ESG Score</p>
-            <p className="text-2xl font-bold text-ionex-accent">{stats?.esgScore || 0}/100</p>
-          </div>
+          <span className="fiori-chip info">
+            Peak 1.15 GW @ 14:00
+          </span>
         </div>
+        <ResponsiveContainer width="100%" height={180}>
+          <BarChart data={volumeData} barSize={24}>
+            <defs>
+              <linearGradient id="gradBar" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#5d36ff" stopOpacity={1} />
+                <stop offset="100%" stopColor="#0a6ed1" stopOpacity={1} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7ea" vertical={false} />
+            <XAxis dataKey="hour" tick={{ fontSize: 11, fill: '#6a6d70' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: '#6a6d70' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}`} />
+            <Tooltip
+              cursor={{ fill: '#f5f6f7' }}
+              contentStyle={{
+                background: 'rgba(255,255,255,0.95)',
+                border: '1px solid #e5e5e5',
+                borderRadius: 8,
+                fontSize: 12,
+              }}
+              formatter={(v: number) => [`${v} MW`]}
+            />
+            <Bar dataKey="mw" fill="url(#gradBar)" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Quick actions */}
+      <FioriTileGroup title="Jump to" description="Your most-used workspaces">
+        <FioriTile
+          variant="feature"
+          featureBg="ocean"
+          title="Trading Desk"
+          subtitle="Place orders & manage positions"
+          icon={TrendingUp}
+          badge="LIVE"
+          footer="Go to Trading"
+          onClick={() => navigate('/trading')}
+        />
+        <FioriTile
+          variant="feature"
+          featureBg="indigo"
+          title="Procurement Hub"
+          subtitle="RFPs, bid evaluation, contracts"
+          icon={ShoppingCart}
+          footer="Open Procurement"
+          onClick={() => navigate('/procurement')}
+        />
+        <FioriTile
+          variant="feature"
+          featureBg="teal"
+          title="IPP Projects"
+          subtitle="Pipeline, assets, generation"
+          icon={Building2}
+          footer="Manage Projects"
+          onClick={() => navigate('/projects')}
+        />
+        <FioriTile
+          variant="feature"
+          featureBg="sunset"
+          title="Carbon & ESG"
+          subtitle="Offsets, retirements, scores"
+          icon={Leaf}
+          footer="View Sustainability"
+          onClick={() => navigate('/carbon')}
+        />
+      </FioriTileGroup>
+
+      {/* Operations */}
+      <FioriTileGroup
+        title="Operations"
+        description="Key assets and processes you own"
+      >
+        <FioriTile
+          title="Active Contracts"
+          value={stats?.activeContracts ?? 24}
+          subtitle="4 awaiting signature"
+          icon={FileText}
+          accent="blue"
+          footer="View contracts →"
+          onClick={() => navigate('/contracts')}
+        />
+        <FioriTile
+          title="Pipeline Stage"
+          value={stats?.pipelineProjects ?? 9}
+          subtitle="Projects in origination"
+          icon={GitBranch}
+          accent="indigo"
+          footer="View pipeline →"
+          onClick={() => navigate('/pipeline')}
+        />
+        <FioriTile
+          title="Settlements"
+          value={formatZAR(stats?.settled ?? 18_450_000)}
+          subtitle="Cleared last 30 days"
+          icon={CircleDollarSign}
+          accent="green"
+          footer="Settlement log →"
+          onClick={() => navigate('/settlement')}
+        />
+        <FioriTile
+          title="Funds AUM"
+          value={formatCompact(stats?.aum ?? 1_240_000_000)}
+          unit="ZAR"
+          subtitle="Open Energy Fund I"
+          icon={Coins}
+          accent="plum"
+          footer="View funds →"
+          onClick={() => navigate('/funds')}
+        />
+        <FioriTile
+          title="Grid Congestion"
+          value={`${stats?.congestion ?? 3}`}
+          subtitle="Active constraint zones"
+          icon={Wind}
+          accent="amber"
+          trend="down"
+          trendValue="-2"
+          footer="Monitor grid →"
+          onClick={() => navigate('/grid')}
+        />
+        <FioriTile
+          title="Compliance"
+          value={`${stats?.complianceRate ?? 98}`}
+          unit="%"
+          subtitle="POPIA + NERSA filings"
+          icon={Scale}
+          accent="teal"
+          trend="up"
+          trendValue="+1.2pp"
+          footer="Open compliance →"
+          onClick={() => navigate('/admin')}
+        />
+      </FioriTileGroup>
+    </div>
+  );
+}
+
+function HeroKPI({
+  label,
+  value,
+  suffix,
+  tint,
+}: {
+  label: string;
+  value: string | number;
+  suffix?: string;
+  tint: string;
+}) {
+  return (
+    <div className="fiori-hero-kpi">
+      <div className="text-[11px] uppercase tracking-widest text-white/70 font-semibold">
+        {label}
+      </div>
+      <div className="mt-1 flex items-baseline gap-1.5">
+        <span
+          className="text-[26px] font-bold tracking-tight"
+          style={{ color: tint, textShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+        >
+          {value}
+        </span>
+        {suffix && <span className="text-[12px] text-white/75">{suffix}</span>}
       </div>
     </div>
   );
 }
 
-function KPICard({ title, value, icon, trend, color }: { title: string; value: any; icon: React.ReactNode; trend?: { value: number; positive: boolean }; color: string }) {
-  const colorMap: Record<string, string> = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    orange: 'bg-orange-50 text-orange-600',
-    emerald: 'bg-emerald-50 text-emerald-600',
-  };
-
+function LegendDot({ color, label }: { color: string; label: string }) {
   return (
-    <div className="bg-white rounded-xl border border-ionex-border-100 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-xl ${colorMap[color]}`}>{icon}</div>
-        {trend && (
-          <div className={`flex items-center gap-1 text-sm ${trend.positive ? 'text-green-600' : 'text-red-600'}`}>
-            {trend.positive ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-            {trend.value}%
-          </div>
-        )}
-      </div>
-      <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
-      <p className="text-sm text-ionex-text-mute">{title}</p>
+    <div className="flex items-center gap-1.5">
+      <span className="w-2.5 h-2.5 rounded-sm" style={{ background: color }} />
+      <span>{label}</span>
     </div>
   );
 }
 
-function Check({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-    </svg>
-  );
+function defaultStats() {
+  return {
+    activeProjects: 12,
+    openTrades: 38,
+    pendingInvoices: 6,
+    totalValue: 2_450_000,
+    avgPrice: 1920,
+    volume24h: 18_400,
+    renewablePct: 74,
+    frequency: 49.97,
+    carbonSaved: 42_800,
+    esgScore: 86,
+    activeContracts: 24,
+    pipelineProjects: 9,
+    settled: 18_450_000,
+    aum: 1_240_000_000,
+    congestion: 3,
+    complianceRate: 98,
+  };
 }
 
-function getPriorityColor(priority: string) {
-  const map: Record<string, string> = {
-    high: 'bg-red-100 text-red-600',
-    medium: 'bg-yellow-100 text-yellow-600',
-    low: 'bg-blue-100 text-blue-600',
-  };
-  return map[priority] || map.medium;
+function heroSubtitleFor(role: string): string {
+  switch (role) {
+    case 'admin':
+      return 'Platform overview across all tenants and markets. Keep an eye on uptime, KYC queue, and trade volume.';
+    case 'trader':
+      return 'Your trading desk is active. Live order book, positions, and real-time market intel at a glance.';
+    case 'ipp_developer':
+      return 'Your IPP assets and pipeline projects are operational. Track generation, contracts, and settlements here.';
+    case 'carbon_fund':
+      return 'Carbon portfolio performance, origination pipeline, and retirement activity in one view.';
+    case 'offtaker':
+      return 'Your procurement workspace — RFPs, active contracts, consumption and ESG reporting ready to go.';
+    case 'lender':
+      return 'Credit portfolio at a glance — disbursements, covenants, watchlist and NAV trajectory.';
+    case 'grid_operator':
+      return 'Live grid status — frequency, congestion, wheeling and imbalance in one dashboard.';
+    case 'regulator':
+      return 'Market oversight — licensed entities, submissions queue, investigations and audit trail.';
+    default:
+      return "Here's today's snapshot of your Open Energy workspace.";
+  }
+}
+
+function primaryActionFor(role: string): { label: string; path: string } {
+  switch (role) {
+    case 'admin':           return { label: 'Open Admin Console',      path: '/admin' };
+    case 'trader':          return { label: 'Open Trading Desk',       path: '/trading' };
+    case 'ipp_developer':   return { label: 'Open IPP Projects',       path: '/projects' };
+    case 'carbon_fund':     return { label: 'Open Carbon Portfolio',   path: '/carbon' };
+    case 'offtaker':        return { label: 'Open Procurement Hub',    path: '/procurement' };
+    case 'lender':          return { label: 'Open Credit Portfolio',   path: '/funds' };
+    case 'grid_operator':   return { label: 'Open Grid Monitor',       path: '/grid' };
+    case 'regulator':       return { label: 'Open Oversight Console',  path: '/admin' };
+    default:                return { label: 'Open Contracts',          path: '/contracts' };
+  }
 }

@@ -1,8 +1,10 @@
 import React, { useState, useEffect, ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Sparkles, ShieldCheck, Zap, Leaf, Activity, ArrowRight } from 'lucide-react';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './lib/useAuth';
 import { api } from './lib/api';
+import { FioriShell } from './components/FioriShell';
 
 // Import page components
 import { Cockpit } from './components/pages/Cockpit';
@@ -17,7 +19,6 @@ import { Funds } from './components/pages/Funds';
 import { Marketplace } from './components/pages/Marketplace';
 import { Admin } from './components/pages/Admin';
 import { Pipeline } from './components/pages/Pipeline';
-import { Layout } from './components/Layout';
 import { Skeleton } from './components/Skeleton';
 import { EmptyState } from './components/EmptyState';
 import { ErrorBanner } from './components/ErrorBanner';
@@ -52,86 +53,9 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-// Layout with Sidebar
+// Layout — Fiori shell wrapper
 function Layout({ children }: { children: ReactNode }) {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const navigation = getNavigationForRole(user?.role || '');
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  return (
-    <div className="min-h-screen flex bg-ionex-canvas">
-      {/* Sidebar */}
-      <aside className="w-64 bg-ionex-brand text-white flex flex-col">
-        <div className="p-6 border-b border-white/10">
-          <h1 className="text-xl font-display font-bold">Open Energy</h1>
-          <p className="text-sm text-white/60 mt-1">Energy Exchange Platform</p>
-        </div>
-        
-        <nav className="flex-1 p-4 space-y-1">
-          {navigation.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
-            >
-              {item.icon && <item.icon size={20} />}
-              <span>{item.label}</span>
-              {item.badge && (
-                <span className="ml-auto bg-ionex-accent text-xs px-2 py-0.5 rounded-full">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="p-4 border-t border-white/10">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-ionex-accent rounded-full flex items-center justify-center">
-              <span className="font-semibold">{user?.name?.charAt(0) || 'U'}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium truncate">{user?.name}</p>
-              <p className="text-xs text-white/60 truncate">{user?.role}</p>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-ionex-surface/10 transition-colors"
-          >
-            Logout
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <header className="bg-ionex-surface border-b px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-800">
-            {navigation.find((n) => n.path === location.pathname)?.label || 'Dashboard'}
-          </h2>
-          <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-gray-100 rounded-lg">
-              <span className="sr-only">Notifications</span>
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-            </button>
-          </div>
-        </header>
-        <div className="p-6">
-          {children}
-        </div>
-      </main>
-    </div>
-  );
+  return <FioriShell>{children}</FioriShell>;
 }
 
 // Navigation items by role
@@ -289,87 +213,245 @@ function LoginPage() {
     }
   };
 
+  const fillDemo = (demoEmail: string) => {
+    setEmail(demoEmail);
+    setPassword('Demo@2024!');
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ionex-brand-deep via-ionex-brand to-ionex-brand-light flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* IonEx Branding Header */}
-        <div className="text-center mb-8">
-          {/* IonEx Logo */}
-          <div className="inline-flex items-center justify-center mb-4">
-            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="mb-4">
-              <rect width="64" height="64" rx="12" fill="#00C896"/>
-              <path 
-                d="M16 16L48 48M48 16L16 48" 
-                stroke="white" 
-                strokeWidth="6" 
-                strokeLinecap="round"
-                style={{ transform: 'rotate(22.5deg 32 32)', transformOrigin: 'center' }}
-              />
-              <path 
-                d="M20 20L44 44M44 20L20 44" 
-                stroke="#0A3D62" 
-                strokeWidth="3" 
-                strokeLinecap="round"
-                style={{ transform: 'rotate(22.5deg 32 32)', transformOrigin: 'center' }}
-              />
-            </svg>
+    <div className="min-h-screen grid lg:grid-cols-[1.1fr_0.9fr]" style={{ background: '#f5f6f7' }}>
+      {/* Brand panel */}
+      <div
+        className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden text-white"
+        style={{
+          background:
+            'radial-gradient(circle at 15% 15%, rgba(10,110,209,0.85) 0%, transparent 45%),' +
+            'radial-gradient(circle at 85% 25%, rgba(93,54,255,0.80) 0%, transparent 50%),' +
+            'radial-gradient(circle at 70% 90%, rgba(171,33,142,0.80) 0%, transparent 50%),' +
+            'radial-gradient(circle at 95% 95%, rgba(233,115,12,0.55) 0%, transparent 45%),' +
+            'linear-gradient(135deg, #0a1930 0%, #152030 40%, #354a5f 100%)',
+        }}
+      >
+        <div className="aurora" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg,#0a6ed1,#5d36ff)',
+                boxShadow: '0 8px 24px rgba(10,110,209,0.45)',
+              }}
+            >
+              <Sparkles size={22} className="text-white" />
+            </div>
+            <div>
+              <div className="text-[18px] font-bold tracking-tight">Open Energy</div>
+              <div className="text-[11px] uppercase tracking-[0.2em] text-white/60">
+                Exchange · Vanta X
+              </div>
+            </div>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-1 tracking-tight">Open Energy</h1>
-          <p className="text-ionex-accent text-lg font-medium">Energy Exchange Platform</p>
-          <p className="text-white/50 text-sm mt-2">by Vanta X Holdings</p>
         </div>
 
-        <div className="bg-ionex-surface rounded-[8px] p-8 shadow-[0_8px_24px_rgba(10,61,98,0.12)]">
-          <h2 className="text-2xl font-semibold text-center mb-6 text-ionex-brand">Sign In</h2>
+        <div className="relative z-10 max-w-xl">
+          <h1 className="text-[42px] lg:text-[52px] font-bold leading-[1.05] tracking-tight">
+            South Africa's{' '}
+            <span
+              style={{
+                background: 'linear-gradient(90deg,#9cc6ff 0%,#c6b8ff 50%,#ffc6eb 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              unified energy exchange
+            </span>
+            .
+          </h1>
+          <p className="mt-5 text-white/80 text-[16px] max-w-lg leading-relaxed">
+            Trade power, carbon and RECs, originate IPP projects, run procurement,
+            and settle with confidence — all on a single Fiori-grade platform.
+          </p>
+          <div className="mt-8 grid grid-cols-2 gap-3 max-w-lg">
+            <FeatureBadge icon={Activity} label="Live trading" tint="#9cc6ff" />
+            <FeatureBadge icon={Leaf} label="Carbon & ESG" tint="#9cecb4" />
+            <FeatureBadge icon={Zap} label="Grid & settlement" tint="#ffd27a" />
+            <FeatureBadge icon={ShieldCheck} label="POPIA & NERSA" tint="#ffc6eb" />
+          </div>
+        </div>
+
+        <div className="relative z-10 text-[12px] text-white/55">
+          © {new Date().getFullYear()} Open Energy · Vanta X Holdings
+        </div>
+      </div>
+
+      {/* Form panel */}
+      <div className="flex items-center justify-center p-6 sm:p-10">
+        <div className="w-full max-w-md">
+          {/* Mobile brand */}
+          <div className="flex lg:hidden items-center gap-3 mb-8">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg,#0a6ed1,#5d36ff)' }}
+            >
+              <Sparkles size={18} className="text-white" />
+            </div>
+            <div>
+              <div className="text-[16px] font-bold" style={{ color: '#32363a' }}>
+                Open Energy
+              </div>
+              <div className="text-[11px] uppercase tracking-widest" style={{ color: '#89919a' }}>
+                Exchange
+              </div>
+            </div>
+          </div>
+
+          <h2 className="text-[28px] font-bold tracking-tight" style={{ color: '#32363a' }}>
+            Sign in
+          </h2>
+          <p className="mt-1 text-[14px]" style={{ color: '#6a6d70' }}>
+            Welcome back. Use your Open Energy credentials to continue.
+          </p>
 
           {error && (
-            <div className="bg-ionex-error-bg border border-ionex-error text-ionex-error p-3 rounded-[6px] mb-4 text-sm">{error}</div>
+            <div
+              className="mt-5 rounded-lg border px-3 py-2 text-[13px]"
+              style={{
+                background: '#ffebeb',
+                borderColor: '#e9a2a2',
+                color: '#bb0000',
+              }}
+            >
+              {error}
+            </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
-              <label className="block text-[13px] font-medium text-ionex-text-sub mb-1">Email</label>
+              <label className="label">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-10 px-3 border border-ionex-border rounded-[6px] bg-ionex-surface text-ionex-text focus:border-ionex-brand focus:ring-1 focus:ring-ionex-brand outline-none"
-                placeholder="you@example.com"
+                className="input"
+                placeholder="you@openenergy.co.za"
                 required
+                autoFocus
               />
             </div>
             <div>
-              <label className="block text-[13px] font-medium text-ionex-text-sub mb-1">Password</label>
+              <div className="flex items-center justify-between">
+                <label className="label">Password</label>
+                <Link
+                  to="#"
+                  className="text-[12px] font-semibold"
+                  style={{ color: '#0a6ed1' }}
+                >
+                  Forgot?
+                </Link>
+              </div>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-10 px-3 border border-ionex-border rounded-[6px] bg-ionex-surface text-ionex-text focus:border-ionex-brand focus:ring-1 focus:ring-ionex-brand outline-none"
+                className="input"
                 placeholder="••••••••"
                 required
               />
             </div>
-            <button
-              type="submit"
-              className="w-full h-10 bg-ionex-brand text-white rounded-[6px] font-medium hover:bg-ionex-brand-light transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ionex-accent disabled:opacity-50"
-              disabled={loading}
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
+            <button type="submit" className="btn btn-primary w-full" disabled={loading}>
+              {loading ? (
+                <>
+                  <span className="spinner" style={{ borderTopColor: '#ffffff' }} />
+                  Signing in…
+                </>
+              ) : (
+                <>
+                  Sign in
+                  <ArrowRight size={14} />
+                </>
+              )}
             </button>
           </form>
 
-          <p className="text-center text-sm text-ionex-text-mute mt-6">
+          <div className="mt-6 flex items-center gap-3">
+            <div className="flex-1 h-px" style={{ background: '#e5e5e5' }} />
+            <span className="text-[11px] uppercase tracking-widest" style={{ color: '#89919a' }}>
+              or use a demo account
+            </span>
+            <div className="flex-1 h-px" style={{ background: '#e5e5e5' }} />
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {[
+              { label: 'Admin',         email: 'admin@openenergy.co.za',     tint: 'indigo'  },
+              { label: 'Trader',        email: 'trader@openenergy.co.za',    tint: 'blue'    },
+              { label: 'IPP Developer', email: 'ipp@openenergy.co.za',       tint: 'teal'    },
+              { label: 'Carbon Fund',   email: 'carbon@openenergy.co.za',    tint: 'green'   },
+              { label: 'Offtaker',      email: 'offtaker@openenergy.co.za',  tint: 'amber'   },
+              { label: 'Grid Operator', email: 'grid@openenergy.co.za',      tint: 'plum'    },
+            ].map((r) => (
+              <button
+                key={r.email}
+                type="button"
+                onClick={() => fillDemo(r.email)}
+                className="flex items-center justify-between gap-2 h-10 px-3 rounded-lg text-[13px] font-semibold border transition-all hover:-translate-y-0.5"
+                style={{
+                  background: '#ffffff',
+                  borderColor: '#e5e5e5',
+                  color: '#32363a',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                }}
+              >
+                <span className="flex items-center gap-2">
+                  <span className={`fiori-chip ${r.tint === 'indigo' ? 'indigo' : r.tint === 'blue' ? 'info' : r.tint === 'teal' ? 'info' : r.tint === 'green' ? 'good' : r.tint === 'amber' ? 'critical' : 'info'}`} style={{ height: 18, padding: '0 6px', fontSize: 10 }}>
+                    {r.label}
+                  </span>
+                </span>
+                <span style={{ color: '#6a6d70', fontWeight: 500 }} className="truncate text-[11px]">
+                  {r.email.split('@')[0]}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <p className="mt-6 text-center text-[13px]" style={{ color: '#6a6d70' }}>
             Don't have an account?{' '}
-            <Link to="/register" className="text-ionex-accent hover:text-ionex-accent-deep font-medium">
-              Register
+            <Link to="/register" className="font-semibold" style={{ color: '#0a6ed1' }}>
+              Request access
             </Link>
           </p>
         </div>
-
-        <p className="text-center text-white/50 text-sm mt-6">
-          © 2024 Open Energy by Vanta X Holdings
-        </p>
       </div>
+    </div>
+  );
+}
+
+function FeatureBadge({
+  icon: Icon,
+  label,
+  tint,
+}: {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  tint: string;
+}) {
+  return (
+    <div
+      className="flex items-center gap-2.5 px-3 py-2 rounded-lg"
+      style={{
+        background: 'rgba(255,255,255,0.08)',
+        border: '1px solid rgba(255,255,255,0.12)',
+        backdropFilter: 'blur(8px)',
+      }}
+    >
+      <div
+        className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"
+        style={{ background: 'rgba(255,255,255,0.12)', color: tint }}
+      >
+        <Icon size={16} />
+      </div>
+      <span className="text-[13px] font-semibold text-white/90">{label}</span>
     </div>
   );
 }

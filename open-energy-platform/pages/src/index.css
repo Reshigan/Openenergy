@@ -1,333 +1,561 @@
+/* Fallback + monospace (imports first, per CSS spec) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  /* ═══ IonEx v2 Brand Tokens ═══ */
-  --ionex-brand: #0A3D62;
-  --ionex-brand-light: #1E5A8E;
-  --ionex-brand-deep: #062640;
-  --ionex-accent: #00C896;
-  --ionex-accent-deep: #009973;
-  --ionex-mint: #00C896;
-
-  /* Neutrals */
-  --ionex-shell-bg: #062640;
-  --ionex-shell-fg: #FFFFFF;
-  --ionex-canvas: #F5F7F9;
-  --ionex-surface: #FFFFFF;
-  --ionex-surface-alt: #F8F9FA;
-  --ionex-border: #D5DADF;
-  --ionex-border-soft: #E5E9ED;
-  --ionex-text: #0A3D62;
-  --ionex-text-sub: #5B738B;
-  --ionex-text-mute: #89919A;
-
-  /* Semantic */
-  --ionex-success: #107E3E;
-  --ionex-success-bg: #EBF5F0;
-  --ionex-warning: #E9730C;
-  --ionex-warning-bg: #FEF7E6;
-  --ionex-error: #BB0000;
-  --ionex-error-bg: #FEEBEB;
-
-  /* Layout */
-  --shell-height: 48px;
-  --sidebar-width: 240px;
-  --sidebar-collapsed: 56px;
-  --tile-size-std: 176px;
-  --tile-size-compact: 88px;
-  --max-content: 1440px;
+/* ═══ SAP 72 font (Horizon theme) ═══ */
+@font-face {
+  font-family: '72';
+  src: url('https://sdk.openui5.org/resources/sap/ui/core/themes/sap_horizon/fonts/72-Regular-full.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: '72';
+  src: url('https://sdk.openui5.org/resources/sap/ui/core/themes/sap_horizon/fonts/72-Bold-full.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: '72full';
+  src: url('https://sdk.openui5.org/resources/sap/ui/core/themes/sap_horizon/fonts/72-Regular-full.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 
-/* Dark mode tokens */
-[data-theme="dark"] {
-  --ionex-canvas: #062640;
-  --ionex-surface: #0F3555;
-  --ionex-surface-alt: #144064;
-  --ionex-border: #1E5A8E;
-  --ionex-border-soft: #2A6BA5;
-  --ionex-text: #E7EBF0;
-  --ionex-text-sub: #B2BAC2;
-  --ionex-text-mute: #6F7E8C;
-  --ionex-shell-bg: #031A2C;
+:root {
+  /* ═══ SAP Fiori 3 Quartz Light Tokens ═══ */
+  --fiori-shell: #354a5f;
+  --fiori-brand: #0a6ed1;
+  --fiori-brand-hover: #085caf;
+  --fiori-brand-light: #427cac;
+  --fiori-canvas: #f5f6f7;
+  --fiori-surface: #ffffff;
+  --fiori-border: #d9d9d9;
+  --fiori-text: #32363a;
+  --fiori-text-sub: #515559;
+  --fiori-text-mute: #89919a;
+  --fiori-success: #107e3e;
+  --fiori-warning: #e9730c;
+  --fiori-error: #bb0000;
+  --fiori-info: #0a6ed1;
+
+  /* IonEx legacy aliases (now Fiori) */
+  --ionex-brand: var(--fiori-brand);
+  --ionex-brand-light: var(--fiori-brand-light);
+  --ionex-brand-deep: #0854a0;
+  --ionex-accent: var(--fiori-brand);
+  --ionex-accent-deep: var(--fiori-brand-hover);
+  --ionex-shell-bg: var(--fiori-shell);
+  --ionex-canvas: var(--fiori-canvas);
+  --ionex-surface: var(--fiori-surface);
+  --ionex-surface-alt: #fafafa;
+  --ionex-border: var(--fiori-border);
+  --ionex-border-soft: #e5e5e5;
+  --ionex-text: var(--fiori-text);
+  --ionex-text-sub: var(--fiori-text-sub);
+  --ionex-text-mute: var(--fiori-text-mute);
+  --ionex-success: var(--fiori-success);
+  --ionex-warning: var(--fiori-warning);
+  --ionex-error: var(--fiori-error);
+  --shell-height: 44px;
+  --sidebar-width: 256px;
+  --sidebar-collapsed: 48px;
+  --tile-size-std: 176px;
+  --tile-size-compact: 88px;
+  --max-content: 1600px;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html, body {
+  font-family: '72', '72full', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 body {
-  @apply bg-ionex-canvas text-ionex-text font-sans antialiased;
+  background: var(--fiori-canvas);
+  color: var(--fiori-text);
 }
 
-/* Inter font import */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #c4c7ca; border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: #89919a; background-clip: padding-box; }
 
-/* JetBrains Mono for data */
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  @apply bg-ionex-surface-alt;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-ionex-brand rounded;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-ionex-brand-light;
-}
-
-/* Focus styles - IonEx v2 uses mint accent for focus */
+/* Focus */
 *:focus-visible {
-  @apply outline-none ring-2 ring-ionex-accent ring-offset-2;
+  outline: 2px solid #0a6ed1;
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
-/* Shell Bar (top navigation - 48px) */
-.shell-bar {
-  @apply fixed top-0 left-0 right-0 h-[48px] bg-ionex-shell z-50;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.1);
+/* ═══ Shell Bar ═══ */
+.fiori-shell {
+  background: linear-gradient(90deg, #1f2b3a 0%, #354a5f 30%, #3d5a7c 55%, #5d36ff 90%, #6e1f6f 100%);
+  color: #ffffff;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Sidebar */
-.sidebar {
-  @apply fixed left-0 top-[48px] w-[240px] h-[calc(100vh-48px)] bg-ionex-surface border-r border-ionex-border overflow-y-auto;
+.fiori-shell-title {
+  font-family: '72', '72full', Inter, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
-.sidebar-collapsed {
-  @apply w-[56px];
+/* ═══ Icon rail sidebar ═══ */
+.fiori-rail {
+  background: #ffffff;
+  border-right: 1px solid #e5e5e5;
 }
 
-/* Content area padding for shell + sidebar */
-.content-area {
-  @apply ml-[240px] pt-[48px] min-h-screen;
+.fiori-rail-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  padding: 0 14px;
+  margin: 2px 8px;
+  border-radius: 6px;
+  color: #515559;
+  font-size: 14px;
+  transition: background 150ms ease, color 150ms ease;
+  position: relative;
 }
-
-/* Button base styles - IonEx v2 */
-.btn {
-  @apply inline-flex items-center justify-center px-4 py-2 rounded-[6px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
-}
-
-.btn-primary {
-  @apply btn bg-ionex-brand text-white hover:bg-ionex-brand-light focus:ring-ionex-brand;
-}
-
-.btn-primary-accent {
-  @apply btn bg-ionex-accent text-ionex-brand hover:bg-ionex-accent-deep focus:ring-ionex-accent;
-}
-
-.btn-secondary {
-  @apply btn bg-transparent text-ionex-brand border border-ionex-border hover:bg-ionex-surface-alt focus:ring-ionex-brand;
-}
-
-.btn-tertiary {
-  @apply btn bg-transparent text-ionex-brand hover:bg-ionex-surface-alt;
-}
-
-.btn-ghost {
-  @apply btn bg-transparent text-ionex-text-sub hover:bg-ionex-surface-alt hover:text-ionex-text;
-}
-
-/* Card styles */
-.card {
-  @apply bg-ionex-surface rounded-lg shadow-shadow-sm border border-ionex-border-soft;
-}
-
-.card-header {
-  @apply px-6 py-4 border-b border-ionex-border-soft;
-}
-
-.card-body {
-  @apply p-6;
-}
-
-/* Tile styles (176px standard) - IonEx v2 */
-.tile {
-  @apply w-[176px] h-[160px] rounded-[6px] p-4 flex flex-col justify-between cursor-pointer transition-all hover:shadow-shadow-md hover:-translate-y-0.5 hover:border-ionex-brand;
-}
-
-.tile-standard {
-  @apply tile bg-ionex-surface border border-ionex-border;
-}
-
-.tile-compact {
-  @apply w-[88px] h-[88px] tile bg-ionex-surface border border-ionex-border;
-}
-
-/* KPI font - JetBrains Mono */
-.kpi-value {
-  font-family: 'JetBrains Mono', Consolas, monospace;
-  font-size: 28px;
+.fiori-rail-item:hover { background: #eff1f2; color: #32363a; }
+.fiori-rail-item.active {
+  background: #e5f0fa;
+  color: #0a6ed1;
   font-weight: 600;
 }
+.fiori-rail-item.active::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, #0a6ed1 0%, #5d36ff 100%);
+}
 
-/* Form styles */
+.fiori-rail-section {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #89919a;
+  padding: 12px 16px 4px;
+}
+
+/* ═══ Hero strip (for launchpad/cockpit) ═══ */
+.fiori-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  padding: 28px 32px;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(10,110,209,0.85) 0%, transparent 45%),
+    radial-gradient(circle at 85% 30%, rgba(93,54,255,0.80) 0%, transparent 50%),
+    radial-gradient(circle at 60% 90%, rgba(171,33,142,0.75) 0%, transparent 55%),
+    radial-gradient(circle at 95% 90%, rgba(233,115,12,0.55) 0%, transparent 45%),
+    linear-gradient(135deg, #152030 0%, #1f2b3a 40%, #354a5f 100%);
+}
+.fiori-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='1'%3E%3Cpath d='M0 60 Q30 30 60 60 T120 60'/%3E%3Cpath d='M0 80 Q30 50 60 80 T120 80'/%3E%3Cpath d='M0 40 Q30 10 60 40 T120 40'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  opacity: 0.6;
+  pointer-events: none;
+}
+.fiori-hero > * { position: relative; z-index: 1; }
+
+.fiori-hero-kpi {
+  background: rgba(255,255,255,0.10);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+/* ═══ Fiori Launchpad Tiles ═══ */
+.fiori-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  transition: transform 180ms cubic-bezier(0.4,0,0.2,1),
+              box-shadow 180ms cubic-bezier(0.4,0,0.2,1),
+              border-color 180ms cubic-bezier(0.4,0,0.2,1);
+  overflow: hidden;
+  cursor: pointer;
+  min-height: 176px;
+}
+.fiori-tile::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--tile-accent, linear-gradient(90deg,#0a6ed1,#5d36ff));
+  opacity: 0.9;
+}
+.fiori-tile::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: var(--tile-glow, radial-gradient(circle at center, rgba(10,110,209,0.12) 0%, transparent 70%));
+  pointer-events: none;
+  transition: transform 400ms cubic-bezier(0.4,0,0.2,1), opacity 400ms;
+}
+.fiori-tile:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px rgba(53,74,95,0.12), 0 2px 4px rgba(53,74,95,0.08);
+  border-color: #d0d4d8;
+}
+.fiori-tile:hover::after { transform: scale(1.2); }
+
+/* Tile accent variants */
+.fiori-tile.accent-blue   { --tile-accent: linear-gradient(90deg,#0a6ed1,#427cac); --tile-glow: radial-gradient(circle at center, rgba(10,110,209,0.18) 0%, transparent 70%); }
+.fiori-tile.accent-indigo { --tile-accent: linear-gradient(90deg,#5d36ff,#7b5cff); --tile-glow: radial-gradient(circle at center, rgba(93,54,255,0.18) 0%, transparent 70%); }
+.fiori-tile.accent-teal   { --tile-accent: linear-gradient(90deg,#0d7b84,#22a7b0); --tile-glow: radial-gradient(circle at center, rgba(13,123,132,0.18) 0%, transparent 70%); }
+.fiori-tile.accent-plum   { --tile-accent: linear-gradient(90deg,#6e1f6f,#ab218e); --tile-glow: radial-gradient(circle at center, rgba(171,33,142,0.18) 0%, transparent 70%); }
+.fiori-tile.accent-pink   { --tile-accent: linear-gradient(90deg,#ab218e,#e01885); --tile-glow: radial-gradient(circle at center, rgba(224,24,133,0.15) 0%, transparent 70%); }
+.fiori-tile.accent-amber  { --tile-accent: linear-gradient(90deg,#e9730c,#f5b800); --tile-glow: radial-gradient(circle at center, rgba(233,115,12,0.18) 0%, transparent 70%); }
+.fiori-tile.accent-green  { --tile-accent: linear-gradient(90deg,#107e3e,#2dbb66); --tile-glow: radial-gradient(circle at center, rgba(16,126,62,0.18) 0%, transparent 70%); }
+.fiori-tile.accent-red    { --tile-accent: linear-gradient(90deg,#bb0000,#e01818); --tile-glow: radial-gradient(circle at center, rgba(187,0,0,0.15) 0%, transparent 70%); }
+
+/* Tile "feature" variant — filled gradient background */
+.fiori-tile.feature {
+  color: #ffffff;
+  border: none;
+  background: var(--tile-bg, linear-gradient(135deg, #0a6ed1 0%, #5d36ff 100%));
+  box-shadow: 0 8px 20px rgba(10,110,209,0.25);
+}
+.fiori-tile.feature::before { opacity: 0; }
+.fiori-tile.feature::after { background: radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, transparent 70%); }
+.fiori-tile.feature:hover { box-shadow: 0 16px 36px rgba(10,110,209,0.35); }
+.fiori-tile.feature.bg-indigo { --tile-bg: linear-gradient(135deg,#5d36ff 0%,#ab218e 100%); }
+.fiori-tile.feature.bg-teal   { --tile-bg: linear-gradient(135deg,#0d7b84 0%,#107e3e 100%); }
+.fiori-tile.feature.bg-sunset { --tile-bg: linear-gradient(135deg,#e9730c 0%,#ab218e 100%); }
+.fiori-tile.feature.bg-ocean  { --tile-bg: linear-gradient(135deg,#0a6ed1 0%,#0d7b84 100%); }
+
+/* KPI value */
+.kpi-value {
+  font-family: '72', '72full', Inter, sans-serif;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: #32363a;
+}
+.fiori-tile.feature .kpi-value { color: #ffffff; }
+
+.kpi-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #515559;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.fiori-tile.feature .kpi-label { color: rgba(255,255,255,0.85); }
+
+.kpi-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.kpi-trend.up   { color: #107e3e; }
+.kpi-trend.down { color: #bb0000; }
+.fiori-tile.feature .kpi-trend.up { color: #9cecb4; }
+.fiori-tile.feature .kpi-trend.down { color: #ffb4b4; }
+
+/* ═══ Glass card (for chart panels) ═══ */
+.fiori-glass {
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(53,74,95,0.04), 0 12px 32px rgba(53,74,95,0.06);
+}
+
+/* ═══ Object Page Header ═══ */
+.fiori-objectpage-header {
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+  border-bottom: 1px solid #e5e5e5;
+  padding: 20px 32px 16px;
+  position: relative;
+  overflow: hidden;
+}
+.fiori-objectpage-header::before {
+  content: '';
+  position: absolute;
+  right: -80px;
+  top: -80px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(10,110,209,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ═══ Ambient canvas background ═══ */
+.fiori-canvas-ambient {
+  position: relative;
+  background: #f5f6f7;
+}
+.fiori-canvas-ambient::before {
+  content: '';
+  position: fixed;
+  inset: 44px 0 0 var(--sidebar-width, 256px);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(10,110,209,0.08) 0%, transparent 40%),
+    radial-gradient(circle at 95% 20%, rgba(93,54,255,0.07) 0%, transparent 45%),
+    radial-gradient(circle at 75% 95%, rgba(171,33,142,0.06) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+.fiori-canvas-ambient > * { position: relative; z-index: 1; }
+
+/* ═══ Status chips ═══ */
+.fiori-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.fiori-chip.good     { background: #ebf5eb; color: #107e3e; }
+.fiori-chip.critical { background: #fef7e6; color: #8a6906; }
+.fiori-chip.negative { background: #ffebeb; color: #bb0000; }
+.fiori-chip.info     { background: #e5f0fa; color: #0a6ed1; }
+.fiori-chip.neutral  { background: #eff1f2; color: #515559; }
+.fiori-chip.indigo   { background: #efeafe; color: #5d36ff; }
+.fiori-chip::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.7;
+}
+
+/* ═══ Buttons ═══ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  font-family: inherit;
+  transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary {
+  background: linear-gradient(135deg, #0a6ed1 0%, #5d36ff 100%);
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(10,110,209,0.20), 0 4px 10px rgba(10,110,209,0.20);
+}
+.btn-primary:hover:not(:disabled) { box-shadow: 0 2px 4px rgba(10,110,209,0.30), 0 8px 16px rgba(10,110,209,0.25); transform: translateY(-1px); }
+.btn-primary-accent { @apply btn-primary; }
+
+.btn-secondary {
+  background: #ffffff;
+  color: #0a6ed1;
+  border-color: #0a6ed1;
+}
+.btn-secondary:hover:not(:disabled) { background: #e5f0fa; }
+
+.btn-tertiary {
+  background: transparent;
+  color: #0a6ed1;
+}
+.btn-tertiary:hover:not(:disabled) { background: #e5f0fa; }
+
+.btn-ghost {
+  background: transparent;
+  color: #515559;
+}
+.btn-ghost:hover:not(:disabled) { background: #eff1f2; color: #32363a; }
+
+/* ═══ Cards ═══ */
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f1f2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-body { padding: 20px; }
+
+/* ═══ Forms ═══ */
 .input {
-  @apply w-full px-3 py-2 border border-ionex-border rounded-[6px] focus:border-ionex-brand focus:ring-1 focus:ring-ionex-brand bg-ionex-surface text-ionex-text;
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #89919a;
+  border-bottom: 2px solid #89919a;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #32363a;
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
-
+.input:focus {
+  outline: none;
+  border-color: #0a6ed1;
+  border-bottom-color: #0a6ed1;
+  box-shadow: 0 0 0 2px rgba(10,110,209,0.15);
+}
 .label {
-  @apply block text-[13px] font-medium text-ionex-text-sub mb-1;
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #515559;
+  margin-bottom: 4px;
 }
 
-/* Status badges - IonEx v2 */
-.badge {
-  @apply inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium;
-}
+/* ═══ Badges (legacy aliases) ═══ */
+.badge { @apply fiori-chip; }
+.badge-success  { @apply fiori-chip good; }
+.badge-warning  { @apply fiori-chip critical; }
+.badge-error    { @apply fiori-chip negative; }
+.badge-info     { @apply fiori-chip info; }
+.badge-neutral  { @apply fiori-chip neutral; }
+.badge-new      { @apply fiori-chip indigo; }
+.badge-beta     { @apply fiori-chip info; }
+.badge-preview  { @apply fiori-chip neutral; }
 
-.badge-success {
-  @apply badge bg-ionex-success-bg text-ionex-success;
+/* Nav items (legacy) */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  padding: 0 14px;
+  margin: 2px 8px;
+  border-radius: 6px;
+  color: rgba(255,255,255,0.75);
+  font-size: 14px;
+  transition: background 150ms ease, color 150ms ease;
 }
-
-.badge-warning {
-  @apply badge bg-ionex-warning-bg text-ionex-warning;
-}
-
-.badge-error {
-  @apply badge bg-ionex-error-bg text-ionex-error;
-}
-
-.badge-info {
-  @apply badge bg-ionex-brand/10 text-ionex-brand;
-}
-
-/* New/Beta badges */
-.badge-new {
-  @apply badge bg-ionex-accent text-ionex-brand;
-}
-
-.badge-beta {
-  @apply badge bg-transparent text-ionex-accent border border-ionex-accent;
-}
-
-.badge-preview {
-  @apply badge bg-transparent text-ionex-text-sub border border-ionex-border;
-}
-
-.badge-neutral {
-  @apply badge bg-gray-100 text-gray-800;
+.nav-item:hover { background: rgba(255,255,255,0.08); color: #ffffff; }
+.nav-item.active {
+  background: rgba(255,255,255,0.12);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 #5d36ff;
 }
 
 /* Loading spinner */
 .spinner {
-  @apply animate-spin h-5 w-5 text-ionex-accent;
+  width: 20px; height: 20px;
+  border: 2px solid #e5f0fa;
+  border-top-color: #0a6ed1;
+  border-radius: 50%;
+  animation: spin 600ms linear infinite;
 }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* Table styles */
-.table {
-  @apply w-full text-sm;
-}
-
-.table th {
-  @apply px-4 py-3 text-left font-semibold text-ionex-text-sub bg-ionex-surface-alt border-b border-ionex-border;
-}
-
-.table td {
-  @apply px-4 py-3 border-b border-ionex-border-soft;
-}
-
-.table tr:hover td {
-  @apply bg-ionex-surface-alt/50;
-}
-
-/* Skeleton loading */
 .skeleton {
-  @apply animate-pulse bg-ionex-border rounded;
+  background: linear-gradient(90deg, #f0f1f2 0%, #e5e7ea 50%, #f0f1f2 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+  border-radius: 4px;
 }
+@keyframes shimmer { to { background-position: -200% 0; } }
 
-/* Sidebar navigation - IonEx v2 */
-.nav-item {
-  @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-ionex-text-sub hover:bg-ionex-surface-alt hover:text-ionex-text transition-colors;
+/* Table */
+.table { width: 100%; font-size: 14px; border-collapse: separate; border-spacing: 0; }
+.table th { text-align: left; padding: 10px 14px; font-weight: 600; color: #515559; background: #fafafa; border-bottom: 1px solid #e5e5e5; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+.table td { padding: 12px 14px; border-bottom: 1px solid #f0f1f2; color: #32363a; }
+.table tbody tr:hover td { background: #fafafa; }
+
+/* Data grid (legacy) */
+.data-grid { @apply w-full; border-collapse: separate; border-spacing: 0; }
+.data-grid-header { background: linear-gradient(135deg,#354a5f,#1f2b3a); color: #ffffff; font-weight: 600; }
+.data-grid-row { border-bottom: 1px solid #f0f1f2; }
+.data-grid-row:hover { background: #fafafa; }
+.data-grid-cell { padding: 12px 14px; }
+
+/* Alerts (legacy) */
+.alert { padding: 12px 16px; border-radius: 8px; border: 1px solid; font-size: 14px; }
+.alert-success { background: #ebf5eb; border-color: #107e3e; color: #107e3e; }
+.alert-error   { background: #ffebeb; border-color: #bb0000; color: #bb0000; }
+.alert-warning { background: #fef7e6; border-color: #e9730c; color: #8a6906; }
+.alert-info    { background: #e5f0fa; border-color: #0a6ed1; color: #0a6ed1; }
+
+/* Floating aurora blobs behind login */
+.aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
-
-.nav-item.active {
-  @apply bg-ionex-brand/8 text-ionex-brand font-medium border-l-[3px] border-ionex-accent;
-}
-
-/* Kendo-style grid for data tables */
-.data-grid {
-  @apply w-full border-collapse;
-}
-
-.data-grid-header {
-  @apply bg-ionex-brand text-white font-medium;
-}
-
-.data-grid-row {
-  @apply border-b border-ionex-border hover:bg-ionex-surface-alt/50 transition-colors;
-}
-
-.data-grid-cell {
-  @apply px-4 py-3;
-}
-
-/* Alert styles */
-.alert {
-  @apply p-4 rounded-lg border;
-}
-
-.alert-success {
-  @apply alert bg-ionex-success-bg border-ionex-success text-ionex-success;
-}
-
-.alert-error {
-  @apply alert bg-ionex-error-bg border-ionex-error text-ionex-error;
-}
-
-.alert-warning {
-  @apply alert bg-ionex-warning-bg border-ionex-warning text-ionex-warning;
-}
-
-.alert-info {
-  @apply alert bg-ionex-brand/10 border-ionex-brand text-ionex-brand;
-}
-
-/* IonEx X logo icon */
-.ionex-x {
-  position: relative;
-  width: 20px;
-  height: 20px;
-}
-
-.ionex-x::before {
+.aurora::before,
+.aurora::after {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, var(--ionex-brand) 50%, var(--ionex-accent) 50%);
-  clip-path: polygon(0 0, 100% 100%, 100% 0);
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.85;
+  animation: float 14s ease-in-out infinite;
+}
+.aurora::before { width: 520px; height: 520px; background: radial-gradient(circle, #0a6ed1, transparent 60%); top: -160px; left: -120px; }
+.aurora::after  { width: 520px; height: 520px; background: radial-gradient(circle, #ab218e, transparent 60%); bottom: -160px; right: -120px; animation-delay: -6s; }
+@keyframes float {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(30px,-40px) scale(1.08); }
 }
 
-/* Transitions - IonEx v2 */
-.transition-ionex {
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
+/* IonEx X icon (legacy) */
+.ionex-x { position: relative; width: 20px; height: 20px; }
 
-/* Layout helpers */
-.shell-height {
-  height: var(--shell-height);
-}
-
-.sidebar-width {
-  width: var(--sidebar-width);
-}
-
-.tile-std {
-  width: var(--tile-size-std);
-  height: 160px;
-}
-
-.tile-compact {
-  width: var(--tile-size-compact);
-  height: var(--tile-size-compact);
+/* Fade-in on mount */
+.fade-in { animation: fade-in 0.35s ease-out both; }
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
