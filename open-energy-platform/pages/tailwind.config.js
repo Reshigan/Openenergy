@@ -14,6 +14,8 @@ export default {
         
         /* Neutrals */
         'ionex-shell': '#062640',
+        'ionex-shell-bg': '#062640',
+        'ionex-shell-fg': '#FFFFFF',
         'ionex-canvas': '#F5F7F9',
         'ionex-surface': '#FFFFFF',
         'ionex-surface-alt': '#F8F9FA',
@@ -48,6 +50,7 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         display: ['Playfair Display', 'Georgia', 'serif'],
+        mono: ['JetBrains Mono', 'Consolas', 'monospace'],
       },
       spacing: {
         'space-1': '4px',
@@ -60,6 +63,11 @@ export default {
         'space-10': '40px',
         'space-12': '48px',
         'space-16': '64px',
+        'shell-height': '48px',
+        'sidebar': '240px',
+        'sidebar-collapsed': '56px',
+        'tile-std': '176px',
+        'tile-compact': '88px',
       },
       borderRadius: {
         'radius-xs': '2px',
@@ -76,6 +84,19 @@ export default {
       },
       maxWidth: {
         'max-content': '1440px',
+      },
+      transitionTimingFunction: {
+        'ease-ionex': 'cubic-bezier(0.4, 0, 0.2, 1)',
+      },
+      width: {
+        'sidebar': '240px',
+        'sidebar-collapsed': '56px',
+        'tile-std': '176px',
+        'tile-compact': '88px',
+      },
+      height: {
+        'shell': '48px',
+        'tile-std': '160px',
       },
     },
   },

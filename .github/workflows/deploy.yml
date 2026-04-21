@@ -1,0 +1,85 @@
+name: CI/CD - Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  NODE_VERSION: '20'
+  VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: open-energy-platform/pages/package-lock.json
+
+      - name: Install dependencies
+        working-directory: open-energy-platform/pages
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: open-energy-platform/pages
+        run: npm run build
+
+      - name: Verify build output
+        working-directory: open-energy-platform/pages
+        run: |
+          echo "Build output:"
+          ls -la dist/
+          echo "Checking dist contents..."
+          if [ -f dist/index.html ]; then
+            echo "✓ index.html found"
+          else
+            echo "✗ index.html NOT found!"
+            ls -la
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: open-energy-platform/pages/dist
+          retention-days: 7
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://oe.vantax.co.za
+    
+    permissions:
+      contents: read
+      deployments: write
+    
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: open-energy-platform
+          directory: dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          wranglerVersion: '3'

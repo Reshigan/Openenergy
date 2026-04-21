@@ -3,12 +3,18 @@ import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation 
 import axios from 'axios';
 
 // Import page components
-import { CockpitPage } from './components/pages/Cockpit';
-import { ContractsPage } from './components/pages/Contracts';
-import { TradingPage } from './components/pages/Trading';
-import { CarbonPage } from './components/pages/Carbon';
-import { ProcurementHubPage } from './components/pages/ProcurementHub';
-import { ProjectsPage } from './components/pages/Projects';
+import { Cockpit } from './components/pages/Cockpit';
+import { Contracts } from './components/pages/Contracts';
+import { Trading } from './components/pages/Trading';
+import { Carbon } from './components/pages/Carbon';
+import { ProcurementHub } from './components/pages/ProcurementHub';
+import { Projects } from './components/pages/Projects';
+import { Grid } from './components/pages/Grid';
+import { ESG } from './components/pages/ESG';
+import { Funds } from './components/pages/Funds';
+import { Marketplace } from './components/pages/Marketplace';
+import { Admin } from './components/pages/Admin';
+import { Pipeline } from './components/pages/Pipeline';
 import { Layout } from './components/Layout';
 import { Skeleton } from './components/Skeleton';
 import { EmptyState } from './components/EmptyState';
@@ -179,7 +185,7 @@ function Layout({ children }: { children: ReactNode }) {
       <aside className="w-64 bg-ionex-brand text-white flex flex-col">
         <div className="p-6 border-b border-white/10">
           <h1 className="text-xl font-display font-bold">Open Energy</h1>
-          <p className="text-sm text-white/60 mt-1">Platform</p>
+          <p className="text-sm text-white/60 mt-1">Energy Exchange Platform</p>
         </div>
         
         <nav className="flex-1 p-4 space-y-1">
@@ -400,67 +406,82 @@ function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-ionex-brand-deep via-ionex-brand to-ionex-brand-light flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Branding Header */}
+        {/* IonEx Branding Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-ionex-accent rounded-2xl mb-4 shadow-lg">
-            <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          {/* IonEx Logo */}
+          <div className="inline-flex items-center justify-center mb-4">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" className="mb-4">
+              <rect width="64" height="64" rx="12" fill="#00C896"/>
+              <path 
+                d="M16 16L48 48M48 16L16 48" 
+                stroke="white" 
+                strokeWidth="6" 
+                strokeLinecap="round"
+                style={{ transform: 'rotate(22.5deg 32 32)', transformOrigin: 'center' }}
+              />
+              <path 
+                d="M20 20L44 44M44 20L20 44" 
+                stroke="#0A3D62" 
+                strokeWidth="3" 
+                strokeLinecap="round"
+                style={{ transform: 'rotate(22.5deg 32 32)', transformOrigin: 'center' }}
+              />
             </svg>
           </div>
-          <h1 className="text-4xl font-display font-bold text-white mb-1">Open Energy</h1>
-          <p className="text-ionex-accent text-lg font-medium">Platform</p>
+          <h1 className="text-4xl font-bold text-white mb-1 tracking-tight">Open Energy</h1>
+          <p className="text-ionex-accent text-lg font-medium">Energy Exchange Platform</p>
           <p className="text-white/50 text-sm mt-2">by Vanta X Holdings</p>
         </div>
 
-        <div className="card p-8 shadow-2xl">
-          <h2 className="text-2xl font-semibold text-center mb-6">Sign In</h2>
+        <div className="bg-ionex-surface rounded-[8px] p-8 shadow-[0_8px_24px_rgba(10,61,98,0.12)]">
+          <h2 className="text-2xl font-semibold text-center mb-6 text-ionex-brand">Sign In</h2>
 
           {error && (
-            <div className="alert-error mb-4">{error}</div>
+            <div className="bg-ionex-error-bg border border-ionex-error text-ionex-error p-3 rounded-[6px] mb-4 text-sm">{error}</div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="label">Email</label>
+              <label className="block text-[13px] font-medium text-ionex-text-sub mb-1">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="input"
+                className="w-full h-10 px-3 border border-ionex-border rounded-[6px] bg-ionex-surface text-ionex-text focus:border-ionex-brand focus:ring-1 focus:ring-ionex-brand outline-none"
                 placeholder="you@example.com"
                 required
               />
             </div>
             <div>
-              <label className="label">Password</label>
+              <label className="block text-[13px] font-medium text-ionex-text-sub mb-1">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="input"
+                className="w-full h-10 px-3 border border-ionex-border rounded-[6px] bg-ionex-surface text-ionex-text focus:border-ionex-brand focus:ring-1 focus:ring-ionex-brand outline-none"
                 placeholder="••••••••"
                 required
               />
             </div>
             <button
               type="submit"
-              className="btn-primary w-full"
+              className="w-full h-10 bg-ionex-brand text-white rounded-[6px] font-medium hover:bg-ionex-brand-light transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ionex-accent disabled:opacity-50"
               disabled={loading}
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-600 mt-6">
+          <p className="text-center text-sm text-ionex-text-mute mt-6">
             Don't have an account?{' '}
-            <Link to="/register" className="text-ionex-brand hover:underline">
+            <Link to="/register" className="text-ionex-accent hover:text-ionex-accent-deep font-medium">
               Register
             </Link>
           </p>
         </div>
 
         <p className="text-center text-white/50 text-sm mt-6">
-          © 2024 Open Energy Platform
+          © 2024 Open Energy by Vanta X Holdings
         </p>
       </div>
     </div>
@@ -500,7 +521,7 @@ function RegisterPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-display font-bold text-white mb-2">Open Energy</h1>
-          <p className="text-white/70">Platform</p>
+          <p className="text-white/70">Energy Exchange Platform</p>
         </div>
 
         <div className="card p-8">
@@ -884,19 +905,19 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/cockpit" element={<ProtectedRoute><Layout><CockpitPage /></Layout></ProtectedRoute>} />
-      <Route path="/contracts" element={<ProtectedRoute><Layout><ContractsPage /></Layout></ProtectedRoute>} />
-      <Route path="/trading" element={<ProtectedRoute><Layout><TradingPage /></Layout></ProtectedRoute>} />
-      <Route path="/settlement" element={<ProtectedRoute><Layout><PlaceholderPage title="Settlement" /></Layout></ProtectedRoute>} />
-      <Route path="/carbon" element={<ProtectedRoute><Layout><PlaceholderPage title="Carbon Market" /></Layout></ProtectedRoute>} />
-      <Route path="/projects" element={<ProtectedRoute><Layout><PlaceholderPage title="IPP Projects" /></Layout></ProtectedRoute>} />
-      <Route path="/esg" element={<ProtectedRoute><Layout><PlaceholderPage title="ESG Dashboard" /></Layout></ProtectedRoute>} />
-      <Route path="/grid" element={<ProtectedRoute><Layout><PlaceholderPage title="Grid Management" /></Layout></ProtectedRoute>} />
-      <Route path="/funds" element={<ProtectedRoute><Layout><PlaceholderPage title="Fund Management" /></Layout></ProtectedRoute>} />
-      <Route path="/pipeline" element={<ProtectedRoute><Layout><PlaceholderPage title="Pipeline" /></Layout></ProtectedRoute>} />
-      <Route path="/procurement" element={<ProtectedRoute><Layout><PlaceholderPage title="Procurement" /></Layout></ProtectedRoute>} />
-      <Route path="/marketplace" element={<ProtectedRoute><Layout><PlaceholderPage title="Marketplace" /></Layout></ProtectedRoute>} />
-      <Route path="/admin" element={<ProtectedRoute><Layout><PlaceholderPage title="Admin" /></Layout></ProtectedRoute>} />
+      <Route path="/cockpit" element={<ProtectedRoute><Layout><Cockpit /></Layout></ProtectedRoute>} />
+      <Route path="/contracts" element={<ProtectedRoute><Layout><Contracts /></Layout></ProtectedRoute>} />
+      <Route path="/trading" element={<ProtectedRoute><Layout><Trading /></Layout></ProtectedRoute>} />
+      <Route path="/settlement" element={<ProtectedRoute><Layout><Cockpit /></Layout></ProtectedRoute>} />
+      <Route path="/carbon" element={<ProtectedRoute><Layout><Carbon /></Layout></ProtectedRoute>} />
+      <Route path="/projects" element={<ProtectedRoute><Layout><Projects /></Layout></ProtectedRoute>} />
+      <Route path="/esg" element={<ProtectedRoute><Layout><ESG /></Layout></ProtectedRoute>} />
+      <Route path="/grid" element={<ProtectedRoute><Layout><Grid /></Layout></ProtectedRoute>} />
+      <Route path="/funds" element={<ProtectedRoute><Layout><Funds /></Layout></ProtectedRoute>} />
+      <Route path="/pipeline" element={<ProtectedRoute><Layout><Pipeline /></Layout></ProtectedRoute>} />
+      <Route path="/procurement" element={<ProtectedRoute><Layout><ProcurementHub /></Layout></ProtectedRoute>} />
+      <Route path="/marketplace" element={<ProtectedRoute><Layout><Marketplace /></Layout></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute><Layout><Admin /></Layout></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/cockpit" replace />} />
       <Route path="*" element={<Navigate to="/cockpit" replace />} />
     </Routes>
