@@ -250,7 +250,7 @@ contracts.delete('/:id', async (c) => {
   const id = c.req.param('id');
 
   const existing = await c.env.DB.prepare(
-    'SELECT creator_id, counterparty_id, document_name FROM contract_documents WHERE id = ?',
+    'SELECT creator_id, counterparty_id, title FROM contract_documents WHERE id = ?',
   ).bind(id).first();
   if (!existing) {
     return c.json({ success: false, error: 'Contract not found' }, 404);
@@ -267,7 +267,7 @@ contracts.delete('/:id', async (c) => {
     data: {
       counterparty_id: existing.counterparty_id,
       creator_id: existing.creator_id,
-      document_name: existing.document_name,
+      title: existing.title,
       reason: 'deleted_by_creator',
     },
     env: c.env,

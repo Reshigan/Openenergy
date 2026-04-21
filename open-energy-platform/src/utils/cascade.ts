@@ -127,13 +127,30 @@ async function determineNotificationRecipients(ctx: CascadeContext, env: any): P
     }
     case 'trade_matches':
     case 'escrow_accounts': {
-      const match = await env.DB.prepare(`
-        SELECT tm.buy_participant_id, tm.sell_participant_id 
-        FROM trade_matches tm WHERE tm.id = ?
-      `).bind(ctx.entity_id).first();
-      if (match) {
-        recipients.add(match.buy_participant_id);
-        recipients.add(match.sell_participant_id);
+      // Prefer the buyer/seller participant IDs that the firer passed through
+      // in `ctx.data` (trading.ts / invoices.ts handlers already have them),
+      // and fall back to a JOIN through trade_orders if the caller didn't
+      // include them. `trade_matches` itself only stores buy_order_id /
+      // sell_order_id — participants are resolved via trade_orders.
+      const dataBuyer = ctx.data?.buyer_id as string | undefined;
+      const dataSeller = ctx.data?.seller_id as string | undefined;
+      if (dataBuyer) recipients.add(dataBuyer);
+      if (dataSeller) recipients.add(dataSeller);
+      if (!dataBuyer || !dataSeller) {
+        try {
+          const match = await env.DB.prepare(`
+            SELECT b.participant_id AS buyer_id, s.participant_id AS seller_id
+            FROM trade_matches tm
+            JOIN trade_orders b ON tm.buy_order_id = b.id
+            JOIN trade_orders s ON tm.sell_order_id = s.id
+            WHERE tm.id = ?
+          `).bind(ctx.entity_id).first();
+          if (match?.buyer_id) recipients.add(match.buyer_id as string);
+          if (match?.seller_id) recipients.add(match.seller_id as string);
+        } catch {
+          // Swallow resolver errors so a schema mismatch never aborts the
+          // whole cascade chain (audit + webhooks + handlers still run).
+        }
       }
       break;
     }
@@ -477,7 +494,9 @@ async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
     }
 
     case 'contract.phase_changed': {
-      if (ctx.data?.new_phase === 'ready_to_sign') {
+      // `execution` is the phase at which contract signatories are notified
+      // — matches the CHECK constraint on contract_documents.phase in 001_core.
+      if (ctx.data?.new_phase === 'execution') {
         const signatories = await db.prepare(
           `SELECT participant_id FROM document_signatories WHERE document_id = ? AND signed = 0`
         ).bind(ctx.entity_id).all();
