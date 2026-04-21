@@ -21,10 +21,10 @@ trading.get('/orders', async (c) => {
 trading.get('/orderbook', async (c) => {
   const side = c.req.query('side');
   const energyType = c.req.query('energy_type');
-  const filters: string[] = [`status = 'open'`];
+  const filters: string[] = [`o.status = 'open'`];
   const bindings: unknown[] = [];
-  if (side) { filters.push('side = ?'); bindings.push(side); }
-  if (energyType) { filters.push('energy_type = ?'); bindings.push(energyType); }
+  if (side) { filters.push('o.side = ?'); bindings.push(side); }
+  if (energyType) { filters.push('o.energy_type = ?'); bindings.push(energyType); }
   const orders = await c.env.DB.prepare(
     `SELECT o.*, p.name as participant_name FROM trade_orders o
      LEFT JOIN participants p ON o.participant_id = p.id
