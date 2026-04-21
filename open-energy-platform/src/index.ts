@@ -30,6 +30,7 @@ import threadsRoutes from './routes/threads';
 import marketplaceRoutes from './routes/marketplace';
 import adminRoutes from './routes/admin';
 import aiRoutes from './routes/ai';
+import funderRoutes from './routes/funder';
 
 const app = new Hono<HonoEnv>();
 
@@ -71,6 +72,7 @@ app.route('/api/threads', threadsRoutes);
 app.route('/api/marketplace', marketplaceRoutes);
 app.route('/api/admin', adminRoutes);
 app.route('/api/ai', aiRoutes);
+app.route('/api/funder', funderRoutes);
 
 // Static assets (SPA shell, JS, CSS, images) are served by Cloudflare Pages directly.
 // This Worker / Pages Function only handles API routes under /api/*.

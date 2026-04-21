@@ -16,6 +16,8 @@ import { ErrorBanner } from '../ErrorBanner';
 import { FioriTile, FioriTileGroup } from '../FioriTile';
 import { ActionQueueCard } from '../ActionQueueCard';
 import { OfftakerAiHub } from '../OfftakerAiHub';
+import { FunderAiHub } from '../FunderAiHub';
+import { CarbonFundAiHub } from '../CarbonFundAiHub';
 
 const formatZAR = (val: number) =>
   new Intl.NumberFormat('en-ZA', {
@@ -167,6 +169,8 @@ export function Cockpit() {
 
       {/* Role-specific AI module — Offtaker: Bill → Mix → LOI */}
       {role === 'offtaker' && <OfftakerAiHub />}
+      {role === 'lender' && <FunderAiHub />}
+      {role === 'carbon_fund' && <CarbonFundAiHub />}
 
 
       {/* Market Pulse */}
