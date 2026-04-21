@@ -20,6 +20,7 @@ import { Marketplace } from './components/pages/Marketplace';
 import { Admin } from './components/pages/Admin';
 import { Pipeline } from './components/pages/Pipeline';
 import { Reports } from './components/pages/Reports';
+import { OM } from './components/pages/OM';
 import { Skeleton } from './components/Skeleton';
 import { EmptyState } from './components/EmptyState';
 import { ErrorBanner } from './components/ErrorBanner';
@@ -74,6 +75,7 @@ function getNavigationForRole(role: string) {
     { path: '/pipeline', label: 'Pipeline', icon: FlowIcon },
     { path: '/procurement', label: 'Procurement', icon: ShoppingIcon },
     { path: '/marketplace', label: 'Marketplace', icon: ShopIcon },
+    { path: '/om', label: 'O&M', icon: WrenchIcon },
     { path: '/reports', label: 'Reports', icon: ChartIcon },
   ];
 
@@ -87,12 +89,12 @@ function getNavigationForRole(role: string) {
       return adminNav;
     case 'ipp_developer':
       return baseNav.filter((n) => !['/trading', '/funds'].includes(n.path));
+    case 'lender':
+      return baseNav.filter((n) => ['/cockpit', '/projects', '/funds', '/om', '/reports'].includes(n.path));
     case 'trader':
       return baseNav.filter((n) => ['/cockpit', '/contracts', '/trading', '/settlement', '/reports'].includes(n.path));
     case 'carbon_fund':
       return baseNav.filter((n) => ['/cockpit', '/carbon', '/funds', '/reports'].includes(n.path));
-    case 'lender':
-      return baseNav.filter((n) => ['/cockpit', '/projects', '/funds', '/reports'].includes(n.path));
     case 'grid_operator':
       return baseNav.filter((n) => ['/cockpit', '/grid', '/reports'].includes(n.path));
     case 'offtaker':
@@ -181,6 +183,14 @@ function ShopIcon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+    </svg>
+  );
+}
+
+function WrenchIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437" />
     </svg>
   );
 }
@@ -893,6 +903,7 @@ function AppRoutes() {
       <Route path="/marketplace" element={<ProtectedRoute><Layout><Marketplace /></Layout></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><Layout><Admin /></Layout></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
+      <Route path="/om" element={<ProtectedRoute><Layout><OM /></Layout></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/cockpit" replace />} />
       <Route path="*" element={<Navigate to="/cockpit" replace />} />
     </Routes>
