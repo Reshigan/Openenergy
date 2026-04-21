@@ -127,7 +127,9 @@ invoices.post('/:id/pay', async (c) => {
   const existing = await c.env.DB.prepare('SELECT to_participant_id, from_participant_id, status, invoice_number, total_amount FROM invoices WHERE id = ?').bind(id).first();
   if (!existing) return c.json({ success: false, error: 'Invoice not found' }, 404);
   if (existing.to_participant_id !== user.id) return c.json({ success: false, error: 'Only the payer can mark this invoice paid' }, 403);
-  if (existing.status === 'paid') return c.json({ success: false, error: 'Already paid' }, 400);
+  if (existing.status !== 'issued') {
+    return c.json({ success: false, error: `Cannot pay invoice in status '${existing.status}'. Expected 'issued'.` }, 400);
+  }
 
   const amount = Number(paid_amount ?? existing.total_amount ?? 0);
   const now = new Date().toISOString();
@@ -154,6 +156,9 @@ invoices.post('/:id/dispute', async (c) => {
   const existing = await c.env.DB.prepare('SELECT to_participant_id, from_participant_id, status, match_id FROM invoices WHERE id = ?').bind(id).first();
   if (!existing) return c.json({ success: false, error: 'Invoice not found' }, 404);
   if (existing.to_participant_id !== user.id && existing.from_participant_id !== user.id) return c.json({ success: false, error: 'Not authorized' }, 403);
+  if (existing.status !== 'issued') {
+    return c.json({ success: false, error: `Cannot dispute invoice in status '${existing.status}'. Only 'issued' invoices can be disputed.` }, 400);
+  }
 
   const now = new Date().toISOString();
   await c.env.DB.prepare(`UPDATE invoices SET status = 'disputed', updated_at = ? WHERE id = ?`).bind(now, id).run();

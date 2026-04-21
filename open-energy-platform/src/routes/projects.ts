@@ -200,12 +200,20 @@ projects.put('/:id', async (c) => {
 
   const project = await c.env.DB.prepare('SELECT * FROM ipp_projects WHERE id = ?').bind(id).first();
 
+  // Only fire `ipp.performance_reported` when fields that actually affect
+  // generation / economics changed (capacity, status, technology). Plain
+  // metadata edits fire the low-noise `ipp.project_updated` event instead so
+  // we don't spam lenders with notifications on every rename.
+  const fields = Object.keys(body);
+  const performanceFields = new Set(['capacity_mw', 'status', 'technology']);
+  const isPerformanceUpdate = fields.some((f) => performanceFields.has(f));
+
   await fireCascade({
-    event: 'ipp.performance_reported',
+    event: isPerformanceUpdate ? 'ipp.performance_reported' : 'ipp.project_updated',
     actor_id: user.id,
     entity_type: 'ipp_projects',
     entity_id: id,
-    data: { fields: Object.keys(body) },
+    data: { fields, project_name: project?.project_name },
     env: c.env,
   });
 

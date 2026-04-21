@@ -20,7 +20,7 @@ export type EventType =
   | 'carbon.traded' | 'carbon.retired' | 'carbon.transferring' | 'carbon.fund_nav_updated'
   | 'carbon.option_exercised' | 'carbon.option_expired'
   // IPP
-  | 'ipp.project_created' | 'ipp.milestone_satisfied' | 'ipp.milestone_cp_satisfied'
+  | 'ipp.project_created' | 'ipp.project_updated' | 'ipp.milestone_satisfied' | 'ipp.milestone_cp_satisfied'
   | 'ipp.financial_close' | 'ipp.disbursement_requested' | 'ipp.disbursement_approved'
   | 'ipp.performance_reported'
   // ESG
@@ -241,6 +241,10 @@ function buildNotificationContent(ctx: CascadeContext): { title: string; body: s
     'ipp.project_created': () => ({ 
       title: 'IPP Project Created', 
       body: `New project "${ctx.data?.project_name || ctx.entity_id}" has been created.` 
+    }),
+    'ipp.project_updated': () => ({ 
+      title: 'IPP Project Updated', 
+      body: `Project ${ctx.data?.project_name || ctx.entity_id} metadata has been updated${ctx.data?.fields ? ` (${(ctx.data.fields as string[]).join(', ')})` : ''}.` 
     }),
     'ipp.milestone_satisfied': () => ({ 
       title: 'Milestone Achieved', 

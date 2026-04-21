@@ -242,12 +242,16 @@ contracts.put('/:id', async (c) => {
   return c.json({ success: true, data: contract });
 });
 
-// DELETE /contracts/:id — Delete contract
+// DELETE /contracts/:id — Delete contract. Fire cascade BEFORE the delete so the
+// cascade resolver can still look up the counterparty, and also carry them in
+// `data` as a belt-and-braces fallback.
 contracts.delete('/:id', async (c) => {
   const user = getCurrentUser(c);
   const id = c.req.param('id');
 
-  const existing = await c.env.DB.prepare('SELECT creator_id FROM contract_documents WHERE id = ?').bind(id).first();
+  const existing = await c.env.DB.prepare(
+    'SELECT creator_id, counterparty_id, document_name FROM contract_documents WHERE id = ?',
+  ).bind(id).first();
   if (!existing) {
     return c.json({ success: false, error: 'Contract not found' }, 404);
   }
@@ -255,16 +259,21 @@ contracts.delete('/:id', async (c) => {
     return c.json({ success: false, error: 'Not authorized to delete this contract' }, 403);
   }
 
-  await c.env.DB.prepare('DELETE FROM contract_documents WHERE id = ?').bind(id).run();
-
   await fireCascade({
     event: 'contract.terminated',
     actor_id: user.id,
     entity_type: 'contract_documents',
     entity_id: id,
-    data: {},
+    data: {
+      counterparty_id: existing.counterparty_id,
+      creator_id: existing.creator_id,
+      document_name: existing.document_name,
+      reason: 'deleted_by_creator',
+    },
     env: c.env,
   });
+
+  await c.env.DB.prepare('DELETE FROM contract_documents WHERE id = ?').bind(id).run();
 
   return c.json({ success: true, data: { message: 'Contract deleted' } });
 });
