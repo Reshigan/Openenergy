@@ -4,11 +4,17 @@
 
 import type { D1Database, KVNamespace, R2Bucket, DurableObjectNamespace } from '@cloudflare/workers-types';
 
+// Workers AI binding surface (subset of what we call)
+export interface WorkersAI {
+  run: (model: string, input: Record<string, unknown>) => Promise<unknown>;
+}
+
 // Cloudflare Bindings Interface
 export interface HonoEnv {
   DB: D1Database;
   KV: KVNamespace;
   R2: R2Bucket;
+  AI?: WorkersAI;
   ORDER_BOOK: DurableObjectNamespace;
   ESCROW_MGR: DurableObjectNamespace;
   RISK_ENGINE: DurableObjectNamespace;

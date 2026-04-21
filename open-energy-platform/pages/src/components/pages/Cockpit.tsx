@@ -15,6 +15,7 @@ import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { FioriTile, FioriTileGroup } from '../FioriTile';
 import { ActionQueueCard } from '../ActionQueueCard';
+import { OfftakerAiHub } from '../OfftakerAiHub';
 
 const formatZAR = (val: number) =>
   new Intl.NumberFormat('en-ZA', {
@@ -163,6 +164,10 @@ export function Cockpit() {
 
       {/* Action queue — cross-role handovers land here */}
       <ActionQueueCard />
+
+      {/* Role-specific AI module — Offtaker: Bill → Mix → LOI */}
+      {role === 'offtaker' && <OfftakerAiHub />}
+
 
       {/* Market Pulse */}
       <FioriTileGroup

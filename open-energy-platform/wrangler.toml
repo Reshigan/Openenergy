@@ -20,3 +20,10 @@ id = "aa6172248d474199a39c5f6aeafb2ec2"
 binding = "DB"
 database_name = "open-energy-db"
 database_id = "e0665a44-2f3e-4ab6-8ec5-101af4e8f951"
+
+# Workers AI binding for role-aware AI analysis (offtaker bill optimisation,
+# IPP project simulation, carbon fund NAV, lender cashflow, trader signals,
+# regulator compliance narrative). Uses Cloudflare-hosted models; no external
+# keys required.
+[ai]
+binding = "AI"
