@@ -3,12 +3,33 @@
 @tailwind utilities;
 
 :root {
-  --oe-forest: #1a3d2e;
-  --oe-forest-dark: #0f261d;
-  --oe-forest-light: #2d5a44;
-  --oe-accent: #c9a227;
-  --oe-cream: #f5f1e8;
-  --oe-gold: #d4af37;
+  /* ═══ IonEx v2 Brand Tokens ═══ */
+  --ionex-brand: #0A3D62;
+  --ionex-brand-light: #1E5A8E;
+  --ionex-brand-deep: #062640;
+  --ionex-accent: #00C896;
+  --ionex-accent-deep: #009973;
+  --ionex-mint: #00C896;
+
+  /* Neutrals */
+  --ionex-shell-bg: #062640;
+  --ionex-shell-fg: #FFFFFF;
+  --ionex-canvas: #F5F7F9;
+  --ionex-surface: #FFFFFF;
+  --ionex-surface-alt: #F8F9FA;
+  --ionex-border: #D5DADF;
+  --ionex-border-soft: #E5E9ED;
+  --ionex-text: #0A3D62;
+  --ionex-text-sub: #5B738B;
+  --ionex-text-mute: #89919A;
+
+  /* Semantic */
+  --ionex-success: #107E3E;
+  --ionex-success-bg: #EBF5F0;
+  --ionex-warning: #E9730C;
+  --ionex-warning-bg: #FEF7E6;
+  --ionex-error: #BB0000;
+  --ionex-error-bg: #FEEBEB;
 }
 
 * {
@@ -16,7 +37,7 @@
 }
 
 body {
-  @apply bg-oe-cream text-slate-800 font-sans antialiased;
+  @apply bg-ionex-canvas text-ionex-text font-sans antialiased;
 }
 
 /* Custom scrollbar */
@@ -26,80 +47,127 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100;
+  @apply bg-ionex-surface-alt;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-oe-forest rounded;
+  @apply bg-ionex-brand rounded;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-oe-forest-light;
+  @apply bg-ionex-brand-light;
 }
 
 /* Focus styles */
 *:focus-visible {
-  @apply outline-none ring-2 ring-oe-accent ring-offset-2;
+  @apply outline-none ring-2 ring-ionex-accent ring-offset-2;
+}
+
+/* Shell Bar (top navigation - 48px) */
+.shell-bar {
+  @apply fixed top-0 left-0 right-0 h-shell bg-ionex-shell z-50;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.1);
+}
+
+/* Sidebar */
+.sidebar {
+  @apply fixed left-0 top-shell w-sidebar h-[calc(100vh-48px)] bg-ionex-surface border-r border-ionex-border overflow-y-auto;
+}
+
+.sidebar-collapsed {
+  @apply w-sidebar-collapsed;
+}
+
+/* Content area padding for shell + sidebar */
+.content-area {
+  @apply ml-sidebar pt-shell min-h-screen;
 }
 
 /* Button base styles */
 .btn {
-  @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
 .btn-primary {
-  @apply btn bg-oe-forest text-white hover:bg-oe-forest-light focus:ring-oe-forest;
+  @apply btn bg-ionex-brand text-white hover:bg-ionex-brand-light focus:ring-ionex-brand;
 }
 
 .btn-secondary {
-  @apply btn bg-oe-cream-dark text-oe-forest hover:bg-gray-200 focus:ring-oe-forest;
+  @apply btn bg-ionex-surface text-ionex-text hover:bg-ionex-surface-alt border border-ionex-border focus:ring-ionex-brand;
 }
 
 .btn-accent {
-  @apply btn bg-oe-accent text-white hover:bg-oe-accent-dark focus:ring-oe-accent;
+  @apply btn bg-ionex-accent text-white hover:bg-ionex-accent-deep focus:ring-ionex-accent;
+}
+
+.btn-ghost {
+  @apply btn bg-transparent text-ionex-text-sub hover:bg-ionex-surface-alt focus:ring-ionex-brand;
 }
 
 /* Card styles */
 .card {
-  @apply bg-white rounded-xl shadow-sm border border-gray-100;
+  @apply bg-ionex-surface rounded-lg shadow-ionex-sm border border-ionex-border-soft;
 }
 
 .card-header {
-  @apply px-6 py-4 border-b border-gray-100;
+  @apply px-6 py-4 border-b border-ionex-border-soft;
 }
 
 .card-body {
   @apply p-6;
 }
 
+/* Tile styles (176px standard) */
+.tile {
+  @apply w-tile-std h-40 rounded-lg p-4 flex flex-col justify-between cursor-pointer transition-all hover:shadow-ionex-md hover:-translate-y-0.5;
+}
+
+.tile-standard {
+  @apply tile bg-ionex-surface border border-ionex-border hover:border-ionex-brand;
+}
+
+.tile-compact {
+  @apply w-tile-compact h-tile-compact tile bg-ionex-surface border border-ionex-border;
+}
+
 /* Form styles */
 .input {
-  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-oe-forest focus:ring-1 focus:ring-oe-forest;
+  @apply w-full px-3 py-2 border border-ionex-border rounded-md focus:border-ionex-brand focus:ring-1 focus:ring-ionex-brand bg-ionex-surface text-ionex-text;
 }
 
 .label {
-  @apply block text-sm font-medium text-gray-700 mb-1;
+  @apply block text-sm font-medium text-ionex-text-sub mb-1;
 }
 
 /* Status badges */
 .badge {
-  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  @apply inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium;
 }
 
 .badge-success {
-  @apply badge bg-green-100 text-green-800;
+  @apply badge bg-ionex-success-bg text-ionex-success;
 }
 
 .badge-warning {
-  @apply badge bg-yellow-100 text-yellow-800;
+  @apply badge bg-ionex-warning-bg text-ionex-warning;
 }
 
-.badge-danger {
-  @apply badge bg-red-100 text-red-800;
+.badge-error {
+  @apply badge bg-ionex-error-bg text-ionex-error;
 }
 
 .badge-info {
-  @apply badge bg-blue-100 text-blue-800;
+  @apply badge bg-ionex-brand-light/10 text-ionex-brand;
+}
+
+/* IonEx X logo icon */
+.ionex-x::before {
+  content: '';
+  display: block;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, var(--ionex-brand) 50%, var(--ionex-accent) 50%);
+  clip-path: polygon(0 0, 100% 100%, 100% 0);
 }
 
 .badge-neutral {
