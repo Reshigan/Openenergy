@@ -184,8 +184,8 @@ function Layout({ children }: { children: ReactNode }) {
       {/* Sidebar */}
       <aside className="w-64 bg-ionex-brand text-white flex flex-col">
         <div className="p-6 border-b border-white/10">
-          <h1 className="text-xl font-display font-bold">IonEx</h1>
-          <p className="text-sm text-white/60 mt-1">Energy Exchange</p>
+          <h1 className="text-xl font-display font-bold">Open Energy</h1>
+          <p className="text-sm text-white/60 mt-1">Energy Exchange Platform</p>
         </div>
         
         <nav className="flex-1 p-4 space-y-1">
@@ -428,8 +428,8 @@ function LoginPage() {
               />
             </svg>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-1 tracking-tight">IonEx</h1>
-          <p className="text-ionex-accent text-lg font-medium">Energy Exchange Energy Exchange</p>
+          <h1 className="text-4xl font-bold text-white mb-1 tracking-tight">Open Energy</h1>
+          <p className="text-ionex-accent text-lg font-medium">Energy Exchange Platform</p>
           <p className="text-white/50 text-sm mt-2">by Vanta X Holdings</p>
         </div>
 
@@ -481,7 +481,7 @@ function LoginPage() {
         </div>
 
         <p className="text-center text-white/50 text-sm mt-6">
-          © 2024 IonEx by Vanta X Holdings
+          © 2024 Open Energy by Vanta X Holdings
         </p>
       </div>
     </div>
@@ -520,8 +520,8 @@ function RegisterPage() {
     <div className="min-h-screen bg-gradient-to-br from-oe-forest to-oe-forest-dark flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-display font-bold text-white mb-2">IonEx</h1>
-          <p className="text-white/70">Energy Exchange</p>
+          <h1 className="text-4xl font-display font-bold text-white mb-2">Open Energy</h1>
+          <p className="text-white/70">Energy Exchange Platform</p>
         </div>
 
         <div className="card p-8">
