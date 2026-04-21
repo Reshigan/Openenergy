@@ -91,6 +91,8 @@ jobs:
           npx wrangler@4 d1 execute open-energy-db --remote --file=./migrations/001_core.sql -y
           npx wrangler@4 d1 execute open-energy-db --remote --file=./migrations/002_domain.sql -y
           npx wrangler@4 d1 execute open-energy-db --remote --file=./migrations/003_seed.sql -y
+          npx wrangler@4 d1 execute open-energy-db --remote --file=./migrations/004_contract_templates.sql -y
+          npx wrangler@4 d1 execute open-energy-db --remote --file=./migrations/005_ai_seed.sql -y
 
       - name: Deploy Pages (frontend + Functions)
         working-directory: open-energy-platform

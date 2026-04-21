@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { ask } from '../utils/ai';
 
 const trading = new Hono<HonoEnv>();
 trading.use('*', authMiddleware);
@@ -157,6 +158,55 @@ trading.post('/match', async (c) => {
   });
 
   return c.json({ success: true, data: { id: matchId, total_value } }, 201);
+});
+
+// POST /trading/recommend — AI trader copilot
+// Body: { side?, energy_type?, delivery_point?, max_recommendations? }
+// Returns top-N opportunities the trader should match/hedge today.
+trading.post('/recommend', async (c) => {
+  const user = getCurrentUser(c);
+  const body = (await c.req.json().catch(() => ({}))) as {
+    side?: 'buy' | 'sell';
+    energy_type?: string;
+    delivery_point?: string;
+    max_recommendations?: number;
+  };
+
+  const filters: string[] = [`status = 'open'`];
+  const bindings: unknown[] = [];
+  if (body.side) { filters.push('side = ?'); bindings.push(body.side); }
+  if (body.energy_type) { filters.push('energy_type = ?'); bindings.push(body.energy_type); }
+  if (body.delivery_point) { filters.push('delivery_point = ?'); bindings.push(body.delivery_point); }
+
+  const book = await c.env.DB.prepare(`
+    SELECT o.id, o.side, o.energy_type, o.volume_mwh, o.price_min, o.price_max,
+           o.delivery_date, o.delivery_point, o.market_type, p.name as participant_name,
+           o.participant_id
+    FROM trade_orders o
+    LEFT JOIN participants p ON o.participant_id = p.id
+    WHERE ${filters.join(' AND ')}
+    ORDER BY o.created_at DESC LIMIT 60
+  `).bind(...bindings).all();
+
+  const myOrders = await c.env.DB.prepare(
+    `SELECT id, side, energy_type, volume_mwh, price_min, price_max, delivery_date, delivery_point
+     FROM trade_orders WHERE participant_id = ? AND status = 'open' ORDER BY created_at DESC LIMIT 30`,
+  ).bind(user.id).all();
+
+  const result = await ask(c.env, {
+    intent: 'trader.order_recommendation',
+    role: user.role,
+    prompt:
+      `Recommend the top ${body.max_recommendations || 5} matching or hedging actions for me.
+Return a JSON array of { action: 'match'|'hedge'|'place', my_order_id?, counterparty_order_id?,
+volume_mwh, indicative_price, rationale, estimated_pnl_zar }.`,
+    context: {
+      my_orders: myOrders.results || [],
+      order_book: book.results || [],
+    },
+  });
+
+  return c.json({ success: true, data: result });
 });
 
 export default trading;

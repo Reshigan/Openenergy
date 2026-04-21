@@ -12,6 +12,32 @@ const contracts = new Hono<HonoEnv>();
 // Apply auth middleware to all routes
 contracts.use('*', authMiddleware);
 
+// GET /contracts/templates — list SA-law contract templates available to use
+contracts.get('/templates', async (c) => {
+  const category = c.req.query('category');
+  const documentType = c.req.query('document_type');
+  const filters: string[] = ['published = 1'];
+  const bindings: unknown[] = [];
+  if (category) { filters.push('category = ?'); bindings.push(category); }
+  if (documentType) { filters.push('document_type = ?'); bindings.push(documentType); }
+  const rs = await c.env.DB.prepare(
+    `SELECT id, code, name, category, document_type, description, jurisdiction,
+            governing_law, sa_law_references, version
+     FROM contract_templates WHERE ${filters.join(' AND ')} ORDER BY category, name`,
+  ).bind(...bindings).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+// GET /contracts/templates/:code — full template with body + variables
+contracts.get('/templates/:code', async (c) => {
+  const code = c.req.param('code');
+  const tpl = await c.env.DB.prepare(
+    `SELECT * FROM contract_templates WHERE code = ? AND published = 1`,
+  ).bind(code).first();
+  if (!tpl) return c.json({ success: false, error: 'Template not found' }, 404);
+  return c.json({ success: true, data: tpl });
+});
+
 // GET /contracts — List contracts for user
 contracts.get('/', async (c) => {
   const user = getCurrentUser(c);

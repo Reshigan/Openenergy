@@ -120,17 +120,59 @@ export function Contracts() {
   );
 }
 
+type Template = {
+  id: string;
+  code: string;
+  name: string;
+  category: string;
+  document_type: string;
+  description: string;
+  jurisdiction: string;
+  governing_law: string;
+  sa_law_references: string;
+};
+
 function CreateContractModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
-  const [formData, setFormData] = useState({ title: '', document_type: 'ppa_wheeling', counterparty_id: '', project_id: '' });
+  const [formData, setFormData] = useState({ title: '', document_type: 'ppa_wheeling', contract_type: 'ppa_wheeling', phase: 'draft', counterparty_id: '', project_id: '', template_code: '' });
+  const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.get('/contracts/templates')
+      .then((res) => setTemplates((res.data?.data as Template[]) || []))
+      .catch(() => setTemplates([]));
+  }, []);
+
+  const selectTemplate = (code: string) => {
+    const tpl = templates.find((t) => t.code === code);
+    if (!tpl) {
+      setFormData((f) => ({ ...f, template_code: '' }));
+      return;
+    }
+    setFormData((f) => ({
+      ...f,
+      template_code: code,
+      document_type: tpl.document_type,
+      contract_type: tpl.document_type,
+      title: f.title || tpl.name,
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      await api.post('/contracts', formData);
+      await api.post('/contracts', {
+        title: formData.title,
+        document_type: formData.document_type,
+        contract_type: formData.contract_type,
+        phase: formData.phase,
+        counterparty_id: formData.counterparty_id,
+        project_id: formData.project_id,
+        commercial_terms: formData.template_code ? { template_code: formData.template_code } : undefined,
+      });
       onCreated();
       onClose();
     } catch (err: any) {
@@ -140,33 +182,67 @@ function CreateContractModal({ onClose, onCreated }: { onClose: () => void; onCr
     }
   };
 
+  const selectedTpl = templates.find((t) => t.code === formData.template_code);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4">
-        <div className="p-4 border-b border-ionex-border-100 flex items-center justify-between">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="p-4 border-b border-ionex-border-100 flex items-center justify-between sticky top-0 bg-white">
           <h3 className="text-lg font-semibold">Create Contract</h3>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded"><XCircle className="w-5 h-5" /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              SA-law template <span className="text-xs text-gray-400">(optional — pre-fills type)</span>
+            </label>
+            <select value={formData.template_code} onChange={(e) => selectTemplate(e.target.value)} className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg">
+              <option value="">— no template (blank draft) —</option>
+              {templates.map((t) => (
+                <option key={t.code} value={t.code}>
+                  [{t.category}] {t.name}
+                </option>
+              ))}
+            </select>
+            {selectedTpl && (
+              <div className="mt-2 text-xs text-gray-600 bg-gray-50 border border-ionex-border-100 rounded-md p-2">
+                <div><strong>Governing law:</strong> {selectedTpl.governing_law} · {selectedTpl.jurisdiction}</div>
+                <div><strong>SA references:</strong> {selectedTpl.sa_law_references}</div>
+                {selectedTpl.description && <div className="mt-1">{selectedTpl.description}</div>}
+              </div>
+            )}
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
             <input type="text" required value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg" placeholder="Contract title" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-            <select value={formData.document_type} onChange={e => setFormData({ ...formData, document_type: e.target.value })} className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg">
+            <select value={formData.document_type} onChange={e => setFormData({ ...formData, document_type: e.target.value, contract_type: e.target.value })} className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg">
               <option value="ppa_wheeling">PPA Wheeling</option>
               <option value="ppa_btm">PPA BTM</option>
+              <option value="direct_supply">Direct Supply</option>
               <option value="loi">LOI</option>
               <option value="term_sheet">Term Sheet</option>
               <option value="hoa">Heads of Agreement</option>
-              <option value="carbon_purchase">Carbon Purchase</option>
+              <option value="nda">NDA</option>
+              <option value="epc">EPC</option>
+              <option value="om">O&amp;M</option>
+              <option value="erpa">ERPA / Carbon Sale</option>
+              <option value="intercreditor">Intercreditor</option>
+              <option value="facility">Facility Agreement</option>
+              <option value="security">Security Agreement</option>
+              <option value="services">Services</option>
+              <option value="grid_connection">Grid Connection</option>
+              <option value="use_of_system">Use-of-System</option>
+              <option value="net_metering">Net-Metering</option>
+              <option value="jv">Joint Venture</option>
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Counterparty ID</label>
-            <input type="text" required value={formData.counterparty_id} onChange={e => setFormData({ ...formData, counterparty_id: e.target.value })} className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg" placeholder="Participant ID" />
+            <input type="text" required value={formData.counterparty_id} onChange={e => setFormData({ ...formData, counterparty_id: e.target.value })} className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg" placeholder="e.g. demo_offtaker_001" />
           </div>
           <div className="flex justify-end gap-3 pt-4">
             <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-300 rounded-lg hover:bg-gray-50">Cancel</button>

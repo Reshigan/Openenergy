@@ -286,7 +286,7 @@ function LoginPage() {
           </h1>
           <p className="mt-5 text-white/80 text-[16px] max-w-lg leading-relaxed">
             Trade power, carbon and RECs, originate IPP projects, run procurement,
-            and settle with confidence — all on a single Fiori-grade platform.
+            and settle with confidence — all on one enterprise-grade platform.
           </p>
           <div className="mt-8 grid grid-cols-2 gap-3 max-w-lg">
             <FeatureBadge icon={Activity} label="Live trading" tint="#9cc6ff" />
