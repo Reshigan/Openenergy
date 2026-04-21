@@ -1,0 +1,33 @@
+{
+  "name": "open-energy-platform",
+  "version": "1.0.0",
+  "description": "Open Energy Platform - Energy Trading & Management",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build:pages": "cd pages && npm install && npm run build",
+    "deploy:pages": "wrangler pages deploy pages/dist",
+    "db:migrate": "wrangler d1 migrations apply open-energy-db --local",
+    "db:seed": "wrangler d1 execute open-energy-db --local --file=./migrations/seed.sql",
+    "db:create": "wrangler d1 create open-energy-db",
+    "kv:create": "wrangler kv:namespace create OE_KV",
+    "r2:create": "wrangler r2 bucket create open-energy-vault",
+    "tail": "wrangler logs tail"
+  },
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20240620.0",
+    "bcryptjs": "^2.4.3",
+    "hono": "^4.4.7",
+    "jsonwebtoken": "^9.0.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.6",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0",
+    "wrangler": "^4.84.0"
+  }
+}

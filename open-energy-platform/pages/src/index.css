@@ -1,0 +1,181 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --oe-forest: #1a3d2e;
+  --oe-forest-dark: #0f261d;
+  --oe-forest-light: #2d5a44;
+  --oe-accent: #c9a227;
+  --oe-cream: #f5f1e8;
+  --oe-gold: #d4af37;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  @apply bg-oe-cream text-slate-800 font-sans antialiased;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-oe-forest rounded;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-oe-forest-light;
+}
+
+/* Focus styles */
+*:focus-visible {
+  @apply outline-none ring-2 ring-oe-accent ring-offset-2;
+}
+
+/* Button base styles */
+.btn {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-primary {
+  @apply btn bg-oe-forest text-white hover:bg-oe-forest-light focus:ring-oe-forest;
+}
+
+.btn-secondary {
+  @apply btn bg-oe-cream-dark text-oe-forest hover:bg-gray-200 focus:ring-oe-forest;
+}
+
+.btn-accent {
+  @apply btn bg-oe-accent text-white hover:bg-oe-accent-dark focus:ring-oe-accent;
+}
+
+/* Card styles */
+.card {
+  @apply bg-white rounded-xl shadow-sm border border-gray-100;
+}
+
+.card-header {
+  @apply px-6 py-4 border-b border-gray-100;
+}
+
+.card-body {
+  @apply p-6;
+}
+
+/* Form styles */
+.input {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-oe-forest focus:ring-1 focus:ring-oe-forest;
+}
+
+.label {
+  @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+/* Status badges */
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.badge-success {
+  @apply badge bg-green-100 text-green-800;
+}
+
+.badge-warning {
+  @apply badge bg-yellow-100 text-yellow-800;
+}
+
+.badge-danger {
+  @apply badge bg-red-100 text-red-800;
+}
+
+.badge-info {
+  @apply badge bg-blue-100 text-blue-800;
+}
+
+.badge-neutral {
+  @apply badge bg-gray-100 text-gray-800;
+}
+
+/* Loading spinner */
+.spinner {
+  @apply animate-spin h-5 w-5 text-oe-forest;
+}
+
+/* Table styles */
+.table {
+  @apply w-full text-sm;
+}
+
+.table th {
+  @apply px-4 py-3 text-left font-semibold text-gray-600 bg-gray-50 border-b;
+}
+
+.table td {
+  @apply px-4 py-3 border-b border-gray-100;
+}
+
+.table tr:hover td {
+  @apply bg-gray-50;
+}
+
+/* Skeleton loading */
+.skeleton {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+/* Sidebar navigation */
+.nav-item {
+  @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-oe-forest transition-colors;
+}
+
+.nav-item.active {
+  @apply bg-oe-forest/10 text-oe-forest font-medium;
+}
+
+/* Kendo-style grid for data tables */
+.data-grid {
+  @apply w-full border-collapse;
+}
+
+.data-grid-header {
+  @apply bg-oe-forest text-white font-medium;
+}
+
+.data-grid-row {
+  @apply border-b border-gray-200 hover:bg-oe-cream/50 transition-colors;
+}
+
+.data-grid-cell {
+  @apply px-4 py-3;
+}
+
+/* Error/success banners */
+.alert {
+  @apply p-4 rounded-lg border;
+}
+
+.alert-success {
+  @apply alert bg-green-50 border-green-200 text-green-800;
+}
+
+.alert-error {
+  @apply alert bg-red-50 border-red-200 text-red-800;
+}
+
+.alert-warning {
+  @apply alert bg-yellow-50 border-yellow-200 text-yellow-800;
+}
+
+.alert-info {
+  @apply alert bg-blue-50 border-blue-200 text-blue-800;
+}
