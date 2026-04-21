@@ -10,7 +10,7 @@ on:
 
 env:
   NODE_VERSION: '20'
-  VITE_API_URL: ${{ secrets.VITE_API_URL }}
+  VITE_API_URL: ${{ secrets.VITE_API_URL || '/api' }}
 
 jobs:
   build:
