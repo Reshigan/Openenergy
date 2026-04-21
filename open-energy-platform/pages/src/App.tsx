@@ -19,6 +19,7 @@ import { Funds } from './components/pages/Funds';
 import { Marketplace } from './components/pages/Marketplace';
 import { Admin } from './components/pages/Admin';
 import { Pipeline } from './components/pages/Pipeline';
+import { Reports } from './components/pages/Reports';
 import { Skeleton } from './components/Skeleton';
 import { EmptyState } from './components/EmptyState';
 import { ErrorBanner } from './components/ErrorBanner';
@@ -73,6 +74,7 @@ function getNavigationForRole(role: string) {
     { path: '/pipeline', label: 'Pipeline', icon: FlowIcon },
     { path: '/procurement', label: 'Procurement', icon: ShoppingIcon },
     { path: '/marketplace', label: 'Marketplace', icon: ShopIcon },
+    { path: '/reports', label: 'Reports', icon: ChartIcon },
   ];
 
   const adminNav = [
@@ -86,15 +88,19 @@ function getNavigationForRole(role: string) {
     case 'ipp_developer':
       return baseNav.filter((n) => !['/trading', '/funds'].includes(n.path));
     case 'trader':
-      return baseNav.filter((n) => ['/cockpit', '/contracts', '/trading', '/settlement'].includes(n.path));
+      return baseNav.filter((n) => ['/cockpit', '/contracts', '/trading', '/settlement', '/reports'].includes(n.path));
     case 'carbon_fund':
-      return baseNav.filter((n) => ['/cockpit', '/carbon', '/funds'].includes(n.path));
+      return baseNav.filter((n) => ['/cockpit', '/carbon', '/funds', '/reports'].includes(n.path));
     case 'lender':
-      return baseNav.filter((n) => ['/cockpit', '/projects', '/funds'].includes(n.path));
+      return baseNav.filter((n) => ['/cockpit', '/projects', '/funds', '/reports'].includes(n.path));
     case 'grid_operator':
-      return baseNav.filter((n) => ['/cockpit', '/grid'].includes(n.path));
+      return baseNav.filter((n) => ['/cockpit', '/grid', '/reports'].includes(n.path));
+    case 'offtaker':
+      return baseNav.filter((n) => ['/cockpit', '/contracts', '/procurement', '/marketplace', '/reports'].includes(n.path));
+    case 'regulator':
+      return baseNav.filter((n) => ['/cockpit', '/esg', '/reports'].includes(n.path));
     default:
-      return baseNav.slice(0, 5);
+      return [...baseNav.slice(0, 5), { path: '/reports', label: 'Reports', icon: ChartIcon }];
   }
 }
 
@@ -886,6 +892,7 @@ function AppRoutes() {
       <Route path="/procurement" element={<ProtectedRoute><Layout><ProcurementHub /></Layout></ProtectedRoute>} />
       <Route path="/marketplace" element={<ProtectedRoute><Layout><Marketplace /></Layout></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><Layout><Admin /></Layout></ProtectedRoute>} />
+      <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/cockpit" replace />} />
       <Route path="*" element={<Navigate to="/cockpit" replace />} />
     </Routes>
