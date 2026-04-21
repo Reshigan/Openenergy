@@ -30,6 +30,27 @@
   --ionex-warning-bg: #FEF7E6;
   --ionex-error: #BB0000;
   --ionex-error-bg: #FEEBEB;
+
+  /* Layout */
+  --shell-height: 48px;
+  --sidebar-width: 240px;
+  --sidebar-collapsed: 56px;
+  --tile-size-std: 176px;
+  --tile-size-compact: 88px;
+  --max-content: 1440px;
+}
+
+/* Dark mode tokens */
+[data-theme="dark"] {
+  --ionex-canvas: #062640;
+  --ionex-surface: #0F3555;
+  --ionex-surface-alt: #144064;
+  --ionex-border: #1E5A8E;
+  --ionex-border-soft: #2A6BA5;
+  --ionex-text: #E7EBF0;
+  --ionex-text-sub: #B2BAC2;
+  --ionex-text-mute: #6F7E8C;
+  --ionex-shell-bg: #031A2C;
 }
 
 * {
@@ -39,6 +60,12 @@
 body {
   @apply bg-ionex-canvas text-ionex-text font-sans antialiased;
 }
+
+/* Inter font import */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* JetBrains Mono for data */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
@@ -58,55 +85,59 @@ body {
   @apply bg-ionex-brand-light;
 }
 
-/* Focus styles */
+/* Focus styles - IonEx v2 uses mint accent for focus */
 *:focus-visible {
   @apply outline-none ring-2 ring-ionex-accent ring-offset-2;
 }
 
 /* Shell Bar (top navigation - 48px) */
 .shell-bar {
-  @apply fixed top-0 left-0 right-0 h-shell bg-ionex-shell z-50;
+  @apply fixed top-0 left-0 right-0 h-[48px] bg-ionex-shell z-50;
   box-shadow: 0 1px 0 rgba(255,255,255,0.1);
 }
 
 /* Sidebar */
 .sidebar {
-  @apply fixed left-0 top-shell w-sidebar h-[calc(100vh-48px)] bg-ionex-surface border-r border-ionex-border overflow-y-auto;
+  @apply fixed left-0 top-[48px] w-[240px] h-[calc(100vh-48px)] bg-ionex-surface border-r border-ionex-border overflow-y-auto;
 }
 
 .sidebar-collapsed {
-  @apply w-sidebar-collapsed;
+  @apply w-[56px];
 }
 
 /* Content area padding for shell + sidebar */
 .content-area {
-  @apply ml-sidebar pt-shell min-h-screen;
+  @apply ml-[240px] pt-[48px] min-h-screen;
 }
 
-/* Button base styles */
+/* Button base styles - IonEx v2 */
 .btn {
-  @apply inline-flex items-center justify-center px-4 py-2 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-[6px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
 .btn-primary {
   @apply btn bg-ionex-brand text-white hover:bg-ionex-brand-light focus:ring-ionex-brand;
 }
 
-.btn-secondary {
-  @apply btn bg-ionex-surface text-ionex-text hover:bg-ionex-surface-alt border border-ionex-border focus:ring-ionex-brand;
+.btn-primary-accent {
+  @apply btn bg-ionex-accent text-ionex-brand hover:bg-ionex-accent-deep focus:ring-ionex-accent;
 }
 
-.btn-accent {
-  @apply btn bg-ionex-accent text-white hover:bg-ionex-accent-deep focus:ring-ionex-accent;
+.btn-secondary {
+  @apply btn bg-transparent text-ionex-brand border border-ionex-border hover:bg-ionex-surface-alt focus:ring-ionex-brand;
+}
+
+.btn-tertiary {
+  @apply btn bg-transparent text-ionex-brand hover:bg-ionex-surface-alt;
 }
 
 .btn-ghost {
-  @apply btn bg-transparent text-ionex-text-sub hover:bg-ionex-surface-alt focus:ring-ionex-brand;
+  @apply btn bg-transparent text-ionex-text-sub hover:bg-ionex-surface-alt hover:text-ionex-text;
 }
 
 /* Card styles */
 .card {
-  @apply bg-ionex-surface rounded-lg shadow-ionex-sm border border-ionex-border-soft;
+  @apply bg-ionex-surface rounded-lg shadow-shadow-sm border border-ionex-border-soft;
 }
 
 .card-header {
@@ -117,29 +148,36 @@ body {
   @apply p-6;
 }
 
-/* Tile styles (176px standard) */
+/* Tile styles (176px standard) - IonEx v2 */
 .tile {
-  @apply w-tile-std h-40 rounded-lg p-4 flex flex-col justify-between cursor-pointer transition-all hover:shadow-ionex-md hover:-translate-y-0.5;
+  @apply w-[176px] h-[160px] rounded-[6px] p-4 flex flex-col justify-between cursor-pointer transition-all hover:shadow-shadow-md hover:-translate-y-0.5 hover:border-ionex-brand;
 }
 
 .tile-standard {
-  @apply tile bg-ionex-surface border border-ionex-border hover:border-ionex-brand;
+  @apply tile bg-ionex-surface border border-ionex-border;
 }
 
 .tile-compact {
-  @apply w-tile-compact h-tile-compact tile bg-ionex-surface border border-ionex-border;
+  @apply w-[88px] h-[88px] tile bg-ionex-surface border border-ionex-border;
+}
+
+/* KPI font - JetBrains Mono */
+.kpi-value {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 28px;
+  font-weight: 600;
 }
 
 /* Form styles */
 .input {
-  @apply w-full px-3 py-2 border border-ionex-border rounded-md focus:border-ionex-brand focus:ring-1 focus:ring-ionex-brand bg-ionex-surface text-ionex-text;
+  @apply w-full px-3 py-2 border border-ionex-border rounded-[6px] focus:border-ionex-brand focus:ring-1 focus:ring-ionex-brand bg-ionex-surface text-ionex-text;
 }
 
 .label {
-  @apply block text-sm font-medium text-ionex-text-sub mb-1;
+  @apply block text-[13px] font-medium text-ionex-text-sub mb-1;
 }
 
-/* Status badges */
+/* Status badges - IonEx v2 */
 .badge {
   @apply inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium;
 }
@@ -157,17 +195,20 @@ body {
 }
 
 .badge-info {
-  @apply badge bg-ionex-brand-light/10 text-ionex-brand;
+  @apply badge bg-ionex-brand/10 text-ionex-brand;
 }
 
-/* IonEx X logo icon */
-.ionex-x::before {
-  content: '';
-  display: block;
-  width: 20px;
-  height: 20px;
-  background: linear-gradient(135deg, var(--ionex-brand) 50%, var(--ionex-accent) 50%);
-  clip-path: polygon(0 0, 100% 100%, 100% 0);
+/* New/Beta badges */
+.badge-new {
+  @apply badge bg-ionex-accent text-ionex-brand;
+}
+
+.badge-beta {
+  @apply badge bg-transparent text-ionex-accent border border-ionex-accent;
+}
+
+.badge-preview {
+  @apply badge bg-transparent text-ionex-text-sub border border-ionex-border;
 }
 
 .badge-neutral {
@@ -176,7 +217,7 @@ body {
 
 /* Loading spinner */
 .spinner {
-  @apply animate-spin h-5 w-5 text-oe-forest;
+  @apply animate-spin h-5 w-5 text-ionex-accent;
 }
 
 /* Table styles */
@@ -185,29 +226,29 @@ body {
 }
 
 .table th {
-  @apply px-4 py-3 text-left font-semibold text-gray-600 bg-gray-50 border-b;
+  @apply px-4 py-3 text-left font-semibold text-ionex-text-sub bg-ionex-surface-alt border-b border-ionex-border;
 }
 
 .table td {
-  @apply px-4 py-3 border-b border-gray-100;
+  @apply px-4 py-3 border-b border-ionex-border-soft;
 }
 
 .table tr:hover td {
-  @apply bg-gray-50;
+  @apply bg-ionex-surface-alt/50;
 }
 
 /* Skeleton loading */
 .skeleton {
-  @apply animate-pulse bg-gray-200 rounded;
+  @apply animate-pulse bg-ionex-border rounded;
 }
 
-/* Sidebar navigation */
+/* Sidebar navigation - IonEx v2 */
 .nav-item {
-  @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-oe-forest transition-colors;
+  @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-ionex-text-sub hover:bg-ionex-surface-alt hover:text-ionex-text transition-colors;
 }
 
 .nav-item.active {
-  @apply bg-oe-forest/10 text-oe-forest font-medium;
+  @apply bg-ionex-brand/8 text-ionex-brand font-medium border-l-[3px] border-ionex-accent;
 }
 
 /* Kendo-style grid for data tables */
@@ -216,34 +257,77 @@ body {
 }
 
 .data-grid-header {
-  @apply bg-oe-forest text-white font-medium;
+  @apply bg-ionex-brand text-white font-medium;
 }
 
 .data-grid-row {
-  @apply border-b border-gray-200 hover:bg-oe-cream/50 transition-colors;
+  @apply border-b border-ionex-border hover:bg-ionex-surface-alt/50 transition-colors;
 }
 
 .data-grid-cell {
   @apply px-4 py-3;
 }
 
-/* Error/success banners */
+/* Alert styles */
 .alert {
   @apply p-4 rounded-lg border;
 }
 
 .alert-success {
-  @apply alert bg-green-50 border-green-200 text-green-800;
+  @apply alert bg-ionex-success-bg border-ionex-success text-ionex-success;
 }
 
 .alert-error {
-  @apply alert bg-red-50 border-red-200 text-red-800;
+  @apply alert bg-ionex-error-bg border-ionex-error text-ionex-error;
 }
 
 .alert-warning {
-  @apply alert bg-yellow-50 border-yellow-200 text-yellow-800;
+  @apply alert bg-ionex-warning-bg border-ionex-warning text-ionex-warning;
 }
 
 .alert-info {
-  @apply alert bg-blue-50 border-blue-200 text-blue-800;
+  @apply alert bg-ionex-brand/10 border-ionex-brand text-ionex-brand;
+}
+
+/* IonEx X logo icon */
+.ionex-x {
+  position: relative;
+  width: 20px;
+  height: 20px;
+}
+
+.ionex-x::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--ionex-brand) 50%, var(--ionex-accent) 50%);
+  clip-path: polygon(0 0, 100% 100%, 100% 0);
+}
+
+/* Transitions - IonEx v2 */
+.transition-ionex {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Layout helpers */
+.shell-height {
+  height: var(--shell-height);
+}
+
+.sidebar-width {
+  width: var(--sidebar-width);
+}
+
+.tile-std {
+  width: var(--tile-size-std);
+  height: 160px;
+}
+
+.tile-compact {
+  width: var(--tile-size-compact);
+  height: var(--tile-size-compact);
 }
