@@ -35,6 +35,19 @@ jobs:
         working-directory: open-energy-platform/pages
         run: npm run build
 
+      - name: Verify build output
+        working-directory: open-energy-platform/pages
+        run: |
+          echo "Build output:"
+          ls -la dist/
+          echo "Checking dist contents..."
+          if [ -f dist/index.html ]; then
+            echo "✓ index.html found"
+          else
+            echo "✗ index.html NOT found!"
+            ls -la
+          fi
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
