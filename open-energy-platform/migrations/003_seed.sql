@@ -88,7 +88,7 @@ INSERT OR IGNORE INTO emission_factors (id, energy_source, factor_value, unit, s
 
 -- ---- DEMO PARTICIPANTS ----
 -- All demo accounts share the password: Demo@2024!
--- bcrypt hash ($2a$10$...) below was generated with bcryptjs cost=10 for "Demo@2024!"
+-- PBKDF2-SHA256 hash (100 000 iterations, salt = 'openenergy-demo-salt') for "Demo@2024!"
 INSERT OR REPLACE INTO participants (id, email, password_hash, name, company_name, role, status, kyc_status, bbbee_level, subscription_tier, email_verified, onboarding_completed) VALUES
 ('demo_admin_001',      'admin@openenergy.co.za',       'pbkdf2$sha256$100000$b3BlbmVuZXJneS1kZW1vLXNhbHQ=$IOJml+OkT8C4tON6R1DA+HDLPXUGnOyqgPF6XBjyYkk=', 'System Admin',           'Open Energy Platform',             'admin',         'active', 'approved',  1, 'enterprise',   1, 1),
 ('demo_trader_001',     'trader@openenergy.co.za',      'pbkdf2$sha256$100000$b3BlbmVuZXJneS1kZW1vLXNhbHQ=$IOJml+OkT8C4tON6R1DA+HDLPXUGnOyqgPF6XBjyYkk=', 'Sipho Mkhize',           'Mkhize Energy Traders',            'trader',        'active', 'approved',  2, 'professional', 1, 1),
