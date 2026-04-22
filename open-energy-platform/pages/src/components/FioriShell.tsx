@@ -175,8 +175,15 @@ export function FioriShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen" style={{ background: '#f5f6f7' }}>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-[#0a6ed1] focus:px-3 focus:py-2 focus:rounded-md focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#0a6ed1]"
+      >
+        Skip to main content
+      </a>
       {/* Shell Bar */}
       <header
+        role="banner"
         className="fiori-shell fixed top-0 left-0 right-0 z-50 flex items-center h-11 px-2 sm:px-4"
       >
         <div className="relative" ref={menuRef}>
@@ -291,7 +298,8 @@ export function FioriShell({ children }: { children: ReactNode }) {
               className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 pointer-events-none"
             />
             <input
-              type="text"
+              type="search"
+              aria-label="Search across Open Energy"
               placeholder="Search across Open Energy …"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -304,19 +312,32 @@ export function FioriShell({ children }: { children: ReactNode }) {
         </div>
 
         <div className="flex items-center gap-1">
-          <button className="relative w-9 h-9 rounded-md text-white/85 hover:bg-white/10 flex items-center justify-center transition-colors">
-            <Bell size={16} />
+          <button
+            type="button"
+            aria-label="Notifications"
+            className="relative w-9 h-9 rounded-md text-white/85 hover:bg-white/10 flex items-center justify-center transition-colors"
+          >
+            <Bell size={16} aria-hidden="true" />
             <span
+              aria-hidden="true"
               className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
               style={{ background: '#ff9800', boxShadow: '0 0 0 2px #354a5f' }}
             />
           </button>
-          <button className="w-9 h-9 rounded-md text-white/85 hover:bg-white/10 flex items-center justify-center transition-colors">
-            <HelpCircle size={16} />
+          <button
+            type="button"
+            aria-label="Help"
+            className="w-9 h-9 rounded-md text-white/85 hover:bg-white/10 flex items-center justify-center transition-colors"
+          >
+            <HelpCircle size={16} aria-hidden="true" />
           </button>
           <div className="relative">
             <button
+              type="button"
               onClick={() => setUserMenu((v) => !v)}
+              aria-label="User menu"
+              aria-haspopup="menu"
+              aria-expanded={userMenu}
               className="flex items-center gap-2 ml-1 pl-1 pr-2 h-9 rounded-md hover:bg-white/10 transition-colors"
             >
               <div
@@ -339,6 +360,8 @@ export function FioriShell({ children }: { children: ReactNode }) {
             </button>
             {userMenu && (
               <div
+                role="menu"
+                aria-label="User menu"
                 className="absolute right-0 top-full mt-1 w-60 rounded-lg shadow-lg border overflow-hidden"
                 style={{ background: '#ffffff', borderColor: '#e5e5e5' }}
                 onMouseLeave={() => setUserMenu(false)}
@@ -447,6 +470,8 @@ export function FioriShell({ children }: { children: ReactNode }) {
 
       {/* Canvas */}
       <main
+        id="main-content"
+        tabIndex={-1}
         className="fiori-canvas-ambient min-h-screen"
         style={{
           paddingTop: 44,
