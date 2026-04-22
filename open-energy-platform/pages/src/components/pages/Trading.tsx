@@ -50,8 +50,8 @@ export function Trading() {
       const histArr = Array.isArray(histData)
         ? histData.map((m: any) => ({
             timestamp: m.matched_at ?? m.timestamp ?? new Date().toISOString(),
-            price: Number(m.price_per_mwh ?? m.price ?? 0),
-            volume: Number(m.volume_mwh ?? m.volume ?? 0),
+            price: Number(m.matched_price ?? m.price_per_mwh ?? m.price ?? 0),
+            volume: Number(m.matched_volume_mwh ?? m.volume_mwh ?? m.volume ?? 0),
           }))
         : [];
       setTradeHistory(histArr);
