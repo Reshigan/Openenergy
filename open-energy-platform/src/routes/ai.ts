@@ -7,7 +7,7 @@
 
 import { Hono } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
-import { HonoEnv } from '../utils/types';
+import { HonoEnv, AppError } from '../utils/types';
 import { ask, AiIntent } from '../utils/ai';
 import { extractBillProfile, buildDeterministicMix } from '../utils/offtaker-heuristics';
 import { fireCascade } from '../utils/cascade';
@@ -250,11 +250,14 @@ ai.post('/offtaker/loi', async (c) => {
 
     // Tenant isolation: skip projects whose developer is in a different tenant.
     // Admin callers bypass (they can issue LOIs cross-tenant).
+    // Only swallow AppError (cross-tenant) — transient DB errors must surface
+    // so the caller sees a 500 rather than silently losing projects in the mix.
     if (project.developer_id) {
       try {
         await assertSameTenantParticipant(c, project.developer_id as string);
-      } catch {
-        continue;
+      } catch (e) {
+        if (e instanceof AppError) continue;
+        throw e;
       }
     }
 

@@ -430,7 +430,7 @@ ona.post('/projects/:projectId/outreach', async (c) => {
     const placeholders = body.offtaker_ids.map(() => '?').join(',');
     const sql = admin
       ? `SELECT id, name, email FROM participants WHERE role = 'offtaker' AND id IN (${placeholders})`
-      : `SELECT id, name, email FROM participants WHERE role = 'offtaker' AND id IN (${placeholders}) AND COALESCE(tenant_id, 'default') = ?`;
+      : `SELECT id, name, email FROM participants WHERE role = 'offtaker' AND id IN (${placeholders}) AND COALESCE(NULLIF(tenant_id, ''), 'default') = ?`;
     const binds = admin ? body.offtaker_ids : [...body.offtaker_ids, callerTenant];
     const r = await c.env.DB.prepare(sql).bind(...binds).all();
     targets = (r.results || []) as typeof targets;
@@ -438,7 +438,7 @@ ona.post('/projects/:projectId/outreach', async (c) => {
     const r = admin
       ? await c.env.DB.prepare(`SELECT id, name, email FROM participants WHERE role = 'offtaker' LIMIT 25`).all()
       : await c.env.DB.prepare(
-          `SELECT id, name, email FROM participants WHERE role = 'offtaker' AND COALESCE(tenant_id, 'default') = ? LIMIT 25`
+          `SELECT id, name, email FROM participants WHERE role = 'offtaker' AND COALESCE(NULLIF(tenant_id, ''), 'default') = ? LIMIT 25`
         ).bind(callerTenant).all();
     targets = (r.results || []) as typeof targets;
   }

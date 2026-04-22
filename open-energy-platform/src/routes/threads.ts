@@ -73,7 +73,7 @@ threads.post('/', async (c) => {
       ? await c.env.DB.prepare('SELECT id FROM participants WHERE name = ? LIMIT 1')
           .bind(name).first() as { id?: string } | null
       : await c.env.DB.prepare(
-          "SELECT id FROM participants WHERE name = ? AND COALESCE(tenant_id, 'default') = ? LIMIT 1"
+          "SELECT id FROM participants WHERE name = ? AND COALESCE(NULLIF(tenant_id, ''), 'default') = ? LIMIT 1"
         ).bind(name, callerTenant).first() as { id?: string } | null;
     if (target?.id && target.id !== user.id) {
       const nid = 'ntf_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);

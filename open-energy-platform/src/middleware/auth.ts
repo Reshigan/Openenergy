@@ -104,7 +104,12 @@ export async function authMiddleware(c: Context<HonoEnv>, next: Next) {
     if (!row) {
       throw new AppError(ErrorCode.UNAUTHORIZED, 'Account no longer exists', 401);
     }
-    tenantId = row.tenant_id ?? 'default';
+    // Normalize with `||` (not `??`) so empty-string tenant_id collapses to
+    // 'default' — matches `getTenantId()` in utils/tenant.ts and prevents the
+    // SQL `COALESCE(tenant_id, 'default')` vs JS-`||` mismatch flagged by
+    // Devin Review (an empty-string DB value would bypass COALESCE and fail
+    // the equality comparison in WHERE clauses).
+    tenantId = row.tenant_id || 'default';
   } catch (e) {
     if (e instanceof AppError) throw e;
     throw new AppError(ErrorCode.INTERNAL_ERROR, 'Unable to resolve tenant', 500);

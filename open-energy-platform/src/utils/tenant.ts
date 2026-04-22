@@ -120,7 +120,7 @@ export async function assertResourceTenant(
  */
 export async function participantsInCallerTenant(c: Context<HonoEnv>): Promise<string[]> {
   const tenant = getTenantId(c);
-  const rs = await c.env.DB.prepare('SELECT id FROM participants WHERE COALESCE(tenant_id, \'default\') = ?')
+  const rs = await c.env.DB.prepare('SELECT id FROM participants WHERE COALESCE(NULLIF(tenant_id, \'\'), \'default\') = ?')
     .bind(tenant)
     .all<{ id: string }>();
   return (rs.results || []).map((r) => r.id);
