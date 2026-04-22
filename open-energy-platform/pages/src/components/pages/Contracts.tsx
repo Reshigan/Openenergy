@@ -134,6 +134,7 @@ type Template = {
 };
 
 function CreateContractModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  useEscapeKey(onClose);
   const [formData, setFormData] = useState({ title: '', document_type: 'ppa_wheeling', contract_type: 'ppa_wheeling', phase: 'draft', counterparty_id: '', project_id: '', template_code: '' });
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(false);

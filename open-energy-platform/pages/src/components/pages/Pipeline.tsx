@@ -220,6 +220,7 @@ function DealDetailModal({ deal, onClose, onStageChange }: {
   onClose: () => void;
   onStageChange: (d: Deal, stage: Stage, status?: DealStatus, contractValue?: number) => void;
 }) {
+  useEscapeKey(onClose);
   const [targetStage, setTargetStage] = useState<Stage>(deal.stage);
   const [closeStatus, setCloseStatus] = useState<DealStatus>('won');
   const [contractValue, setContractValue] = useState<number>(deal.estimated_value || 0);
@@ -294,6 +295,7 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 function CreateDealModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  useEscapeKey(onClose);
   const [dealName, setDealName] = useState('');
   const [clients, setClients] = useState<ParticipantLite[]>([]);
   const [clientId, setClientId] = useState('');

@@ -149,6 +149,7 @@ export function Carbon() {
 }
 
 function RetireModal({ onClose, onRetired }: { onClose: () => void; onRetired: () => void }) {
+  useEscapeKey(onClose);
   const [quantity, setQuantity] = useState('');
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);

@@ -130,6 +130,7 @@ export function ProcurementHub() {
 }
 
 function CreateRfpModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  useEscapeKey(onClose);
   const [formData, setFormData] = useState({ title: '', description: '', budget_min: '', budget_max: '', deadline: '', project_type: 'ppa' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -173,6 +174,7 @@ function CreateRfpModal({ onClose, onCreated }: { onClose: () => void; onCreated
 }
 
 function RfpDetailModal({ rfp, onClose }: { rfp: any; onClose: () => void }) {
+  useEscapeKey(onClose);
   const [submitting, setSubmitting] = useState(false);
   const [price, setPrice] = useState('');
 

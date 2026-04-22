@@ -273,6 +273,7 @@ function Th({ children }: { children: React.ReactNode }) { return <th className=
 function Td({ children, className = '' }: { children: React.ReactNode; className?: string }) { return <td className={`px-4 py-2 ${className}`}>{children}</td>; }
 
 function ErasureModal({ onClose, onSubmitted }: { onClose: () => void; onSubmitted: () => void }) {
+  useEscapeKey(onClose);
   const [reason, setReason] = useState('');
   const [confirmation, setConfirmation] = useState(false);
   const [saving, setSaving] = useState(false);

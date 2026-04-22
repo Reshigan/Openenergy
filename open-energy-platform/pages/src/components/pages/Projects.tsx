@@ -278,6 +278,7 @@ function ProjectModal(props: {
   err: string | null;
   showStatus: boolean;
 }) {
+  useEscapeKey(onClose);
   const { title, form, setForm, onClose, onSubmit, saving, err, showStatus } = props;
   const f = <K extends keyof FormState>(k: K) => (v: FormState[K]) => setForm({ ...form, [k]: v });
 

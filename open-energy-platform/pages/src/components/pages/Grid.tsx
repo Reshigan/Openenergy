@@ -295,6 +295,7 @@ export function Grid() {
 }
 
 function ConstraintModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  useEscapeKey(onClose);
   const [constraintType, setConstraintType] = useState<'transmission' | 'distribution' | 'generation' | 'demand'>('transmission');
   const [location, setLocation] = useState('');
   const [severity, setSeverity] = useState<'low' | 'medium' | 'high' | 'critical'>('medium');

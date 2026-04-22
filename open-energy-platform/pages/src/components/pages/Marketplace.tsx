@@ -401,6 +401,7 @@ function ListingDetailModal({ listing, isMine, inquiries, inquiriesLoading, onCl
   onWithdraw: () => void;
   onRespond: (inquiryId: string, status: 'accepted' | 'rejected', message?: string) => void;
 }) {
+  useEscapeKey(onClose);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose} role="dialog" aria-modal="true">
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -498,6 +499,7 @@ function ListingDetailModal({ listing, isMine, inquiries, inquiriesLoading, onCl
 }
 
 function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void; }) {
+  useEscapeKey(onClose);
   const [form, setForm] = useState({
     listing_type: 'carbon' as ListingType,
     // defaults below match tonnes+ZAR for carbon; user can edit
@@ -606,6 +608,7 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
 }
 
 function InquireModal({ listing, onClose, onSent }: { listing: Listing; onClose: () => void; onSent: () => void; }) {
+  useEscapeKey(onClose);
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
