@@ -14,7 +14,11 @@ export function useEscapeKey(onEscape: () => void, enabled = true) {
     if (!enabled) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        e.stopPropagation();
+        // stopImmediatePropagation stops other document-level listeners on
+        // the same event — important when modals stack (last-registered
+        // listener fires first, so the topmost modal handles Escape and the
+        // underlying one stays open).
+        e.stopImmediatePropagation();
         onEscape();
       }
     };

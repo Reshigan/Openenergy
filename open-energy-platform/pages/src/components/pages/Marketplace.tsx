@@ -297,7 +297,7 @@ export function Marketplace() {
           inquiries={selectedInquiries}
           inquiriesLoading={detailLoading}
           onClose={() => { setSelectedListing(null); setSelectedInquiries(null); }}
-          onInquire={() => { setShowInquire(selectedListing); }}
+          onInquire={() => { setShowInquire(selectedListing); setSelectedListing(null); setSelectedInquiries(null); }}
           onWithdraw={() => withdrawListing(selectedListing)}
           onRespond={respondToInquiry}
         />
