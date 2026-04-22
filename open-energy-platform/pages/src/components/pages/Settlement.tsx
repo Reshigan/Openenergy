@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { DollarSign, RefreshCw, Plus, X, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
@@ -459,8 +460,9 @@ function FileDisputeModal({ invoice, onClose, onDone }: { invoice: Invoice; onCl
 }
 
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  useEscapeKey(onClose);
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>

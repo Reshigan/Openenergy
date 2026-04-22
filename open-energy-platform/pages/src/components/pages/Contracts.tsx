@@ -8,6 +8,7 @@ import { EmptyState } from '../EmptyState';
 import { ErrorBanner } from '../ErrorBanner';
 import { ExportBar } from '../ExportBar';
 import { EntityLink } from '../EntityLink';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 const phases = ['draft', 'loi', 'term_sheet', 'hoa', 'draft_agreement', 'legal_review', 'statutory_check', 'execution', 'active', 'amended', 'terminated', 'expired'];
 
@@ -133,6 +134,7 @@ type Template = {
 };
 
 function CreateContractModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  useEscapeKey(onClose);
   const [formData, setFormData] = useState({ title: '', document_type: 'ppa_wheeling', contract_type: 'ppa_wheeling', phase: 'draft', counterparty_id: '', project_id: '', template_code: '' });
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(false);
@@ -185,7 +187,7 @@ function CreateContractModal({ onClose, onCreated }: { onClose: () => void; onCr
   const selectedTpl = templates.find((t) => t.code === formData.template_code);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-4 border-b border-ionex-border-100 flex items-center justify-between sticky top-0 bg-white">
           <h3 className="text-lg font-semibold">Create Contract</h3>

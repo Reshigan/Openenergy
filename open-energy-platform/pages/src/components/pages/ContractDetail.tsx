@@ -5,6 +5,7 @@ import {
   CheckCircle2, Clock, Scale, FileText, Loader2, Send,
 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 import jsPDF from 'jspdf';
 
 type Contract = {
@@ -140,6 +141,8 @@ export function ContractDetail() {
   const [typedName, setTypedName] = useState('');
   const [agree, setAgree] = useState(false);
   const [phaseChanging, setPhaseChanging] = useState(false);
+
+  useEscapeKey(() => { setSignOpen(false); setTypedName(''); setAgree(false); }, signOpen);
 
   const load = async () => {
     if (!id) return;
@@ -484,7 +487,7 @@ export function ContractDetail() {
 
       {/* Sign modal */}
       {signOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true">
           <div className="bg-white rounded-xl max-w-lg w-full p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-2">Sign this contract</h3>
             <p className="text-xs text-gray-600 mb-4">

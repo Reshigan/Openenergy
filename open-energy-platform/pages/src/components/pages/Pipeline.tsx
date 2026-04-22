@@ -4,6 +4,7 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 type Stage = 'identification' | 'qualification' | 'proposal' | 'negotiation' | 'contracting' | 'closed';
 type DealStatus = 'active' | 'won' | 'lost' | 'cancelled';
@@ -219,6 +220,7 @@ function DealDetailModal({ deal, onClose, onStageChange }: {
   onClose: () => void;
   onStageChange: (d: Deal, stage: Stage, status?: DealStatus, contractValue?: number) => void;
 }) {
+  useEscapeKey(onClose);
   const [targetStage, setTargetStage] = useState<Stage>(deal.stage);
   const [closeStatus, setCloseStatus] = useState<DealStatus>('won');
   const [contractValue, setContractValue] = useState<number>(deal.estimated_value || 0);
@@ -229,7 +231,7 @@ function DealDetailModal({ deal, onClose, onStageChange }: {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
           <div>
@@ -293,6 +295,7 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 function CreateDealModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  useEscapeKey(onClose);
   const [dealName, setDealName] = useState('');
   const [clients, setClients] = useState<ParticipantLite[]>([]);
   const [clientId, setClientId] = useState('');
@@ -339,7 +342,7 @@ function CreateDealModal({ onClose, onCreated }: { onClose: () => void; onCreate
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">New deal</h3>

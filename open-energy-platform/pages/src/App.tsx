@@ -401,6 +401,8 @@ function LoginPage() {
 
           {error && (
             <div
+              role="alert"
+              aria-live="polite"
               className="mt-5 rounded-lg border px-3 py-2 text-[13px]"
               style={{
                 background: '#ffebeb',
@@ -412,11 +414,15 @@ function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
             <div>
-              <label className="label">Email</label>
+              <label className="label" htmlFor="login-email">Email</label>
               <input
+                id="login-email"
+                name="email"
                 type="email"
+                autoComplete="email"
+                aria-invalid={Boolean(error)}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="input"
@@ -427,7 +433,7 @@ function LoginPage() {
             </div>
             <div>
               <div className="flex items-center justify-between">
-                <label className="label">Password</label>
+                <label className="label" htmlFor="login-password">Password</label>
                 <Link
                   to="/forgot-password"
                   className="text-[12px] font-semibold"
@@ -437,7 +443,11 @@ function LoginPage() {
                 </Link>
               </div>
               <input
+                id="login-password"
+                name="password"
                 type="password"
+                autoComplete="current-password"
+                aria-invalid={Boolean(error)}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="input"
@@ -447,10 +457,13 @@ function LoginPage() {
             </div>
             {mfaRequired && (
               <div>
-                <label className="label">Authenticator code</label>
+                <label className="label" htmlFor="login-mfa">Authenticator code</label>
                 <input
+                  id="login-mfa"
+                  name="mfa_code"
                   type="text"
                   inputMode="numeric"
+                  autoComplete="one-time-code"
                   pattern="[0-9]{6}"
                   maxLength={6}
                   value={mfaCode}
@@ -673,14 +686,17 @@ function RegisterPage() {
           <h2 className="text-2xl font-semibold text-center mb-6">Create Account</h2>
 
           {error && (
-            <div className="alert-error mb-4">{error}</div>
+            <div role="alert" aria-live="polite" className="alert-error mb-4">{error}</div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div>
-              <label className="label">Full Name</label>
+              <label className="label" htmlFor="register-name">Full Name</label>
               <input
+                id="register-name"
+                name="name"
                 type="text"
+                autoComplete="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="input"
@@ -689,9 +705,12 @@ function RegisterPage() {
               />
             </div>
             <div>
-              <label className="label">Company Name</label>
+              <label className="label" htmlFor="register-company">Company Name</label>
               <input
+                id="register-company"
+                name="company_name"
                 type="text"
+                autoComplete="organization"
                 value={formData.company_name}
                 onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
                 className="input"
@@ -699,9 +718,13 @@ function RegisterPage() {
               />
             </div>
             <div>
-              <label className="label">Email</label>
+              <label className="label" htmlFor="register-email">Email</label>
               <input
+                id="register-email"
+                name="email"
                 type="email"
+                autoComplete="email"
+                aria-invalid={Boolean(error)}
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="input"
@@ -710,9 +733,13 @@ function RegisterPage() {
               />
             </div>
             <div>
-              <label className="label">Password</label>
+              <label className="label" htmlFor="register-password">Password</label>
               <input
+                id="register-password"
+                name="password"
                 type="password"
+                autoComplete="new-password"
+                aria-describedby="register-password-hint"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="input"
@@ -720,10 +747,15 @@ function RegisterPage() {
                 required
                 minLength={8}
               />
+              <p id="register-password-hint" className="text-[11px] text-[#6a6d70] mt-1">
+                Minimum 8 characters.
+              </p>
             </div>
             <div>
-              <label className="label">Role</label>
+              <label className="label" htmlFor="register-role">Role</label>
               <select
+                id="register-role"
+                name="role"
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                 className="input"

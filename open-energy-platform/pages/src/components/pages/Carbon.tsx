@@ -7,6 +7,7 @@ import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { ExportBar } from '../ExportBar';
 import { EntityLink } from '../EntityLink';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 const formatZAR = (val: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(val);
 
@@ -148,6 +149,7 @@ export function Carbon() {
 }
 
 function RetireModal({ onClose, onRetired }: { onClose: () => void; onRetired: () => void }) {
+  useEscapeKey(onClose);
   const [quantity, setQuantity] = useState('');
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
@@ -169,7 +171,7 @@ function RetireModal({ onClose, onRetired }: { onClose: () => void; onRetired: (
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
         <div className="p-4 border-b border-ionex-border-100"><h3 className="text-lg font-semibold">Retire Carbon Credits</h3></div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">

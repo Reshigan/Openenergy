@@ -5,6 +5,7 @@ import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { useAuth } from '../../lib/useAuth';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 type ListingType = 'energy' | 'capacity' | 'carbon' | 'equipment' | 'service';
 type ListingStatus = 'active' | 'pending' | 'sold' | 'withdrawn';
@@ -296,7 +297,7 @@ export function Marketplace() {
           inquiries={selectedInquiries}
           inquiriesLoading={detailLoading}
           onClose={() => { setSelectedListing(null); setSelectedInquiries(null); }}
-          onInquire={() => { setShowInquire(selectedListing); }}
+          onInquire={() => { setShowInquire(selectedListing); setSelectedListing(null); setSelectedInquiries(null); }}
           onWithdraw={() => withdrawListing(selectedListing)}
           onRespond={respondToInquiry}
         />
@@ -400,8 +401,9 @@ function ListingDetailModal({ listing, isMine, inquiries, inquiriesLoading, onCl
   onWithdraw: () => void;
   onRespond: (inquiryId: string, status: 'accepted' | 'rejected', message?: string) => void;
 }) {
+  useEscapeKey(onClose);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose} role="dialog" aria-modal="true">
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-start justify-between gap-4">
           <div>
@@ -497,6 +499,7 @@ function ListingDetailModal({ listing, isMine, inquiries, inquiriesLoading, onCl
 }
 
 function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void; }) {
+  useEscapeKey(onClose);
   const [form, setForm] = useState({
     listing_type: 'carbon' as ListingType,
     // defaults below match tonnes+ZAR for carbon; user can edit
@@ -542,7 +545,7 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose} role="dialog" aria-modal="true">
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
           <h2 className="text-xl font-bold">Create listing</h2>
@@ -605,6 +608,7 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
 }
 
 function InquireModal({ listing, onClose, onSent }: { listing: Listing; onClose: () => void; onSent: () => void; }) {
+  useEscapeKey(onClose);
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -623,7 +627,7 @@ function InquireModal({ listing, onClose, onSent }: { listing: Listing; onClose:
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose} role="dialog" aria-modal="true">
       <div className="bg-white rounded-xl shadow-xl max-w-md w-full" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
           <div>

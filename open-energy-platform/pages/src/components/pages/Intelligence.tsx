@@ -5,6 +5,7 @@ import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { useAuth } from '../../lib/useAuth';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 type Severity = 'info' | 'warning' | 'critical';
 
@@ -228,8 +229,9 @@ function DetailModal({ item, canResolve, onClose, onResolve }: {
   onClose: () => void;
   onResolve: () => void;
 }) {
+  useEscapeKey(onClose);
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
           <div className="flex items-center gap-2">

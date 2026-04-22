@@ -6,6 +6,7 @@ import { Skeleton } from '../Skeleton';
 import { EmptyState } from '../EmptyState';
 import { ErrorBanner } from '../ErrorBanner';
 import { ExportBar } from '../ExportBar';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 const formatZAR = (val: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(val);
 
@@ -129,6 +130,7 @@ export function ProcurementHub() {
 }
 
 function CreateRfpModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  useEscapeKey(onClose);
   const [formData, setFormData] = useState({ title: '', description: '', budget_min: '', budget_max: '', deadline: '', project_type: 'ppa' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -149,7 +151,7 @@ function CreateRfpModal({ onClose, onCreated }: { onClose: () => void; onCreated
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-4 border-b border-ionex-border-100 flex items-center justify-between"><h3 className="text-lg font-semibold">Create RFP</h3><button onClick={onClose} className="p-1 hover:bg-gray-100 rounded"><X className="w-5 h-5" /></button></div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -172,6 +174,7 @@ function CreateRfpModal({ onClose, onCreated }: { onClose: () => void; onCreated
 }
 
 function RfpDetailModal({ rfp, onClose }: { rfp: any; onClose: () => void }) {
+  useEscapeKey(onClose);
   const [submitting, setSubmitting] = useState(false);
   const [price, setPrice] = useState('');
 
@@ -189,7 +192,7 @@ function RfpDetailModal({ rfp, onClose }: { rfp: any; onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4">
         <div className="p-4 border-b border-ionex-border-100 flex items-center justify-between"><h3 className="text-lg font-semibold">{rfp.title}</h3><button onClick={onClose} className="p-1 hover:bg-gray-100 rounded"><X className="w-5 h-5" /></button></div>
         <div className="p-6 space-y-4">

@@ -7,6 +7,7 @@ import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { useAuth } from '../../lib/useAuth';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 type Tab = 'connections' | 'wheeling' | 'constraints' | 'imbalance';
 
@@ -294,6 +295,7 @@ export function Grid() {
 }
 
 function ConstraintModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  useEscapeKey(onClose);
   const [constraintType, setConstraintType] = useState<'transmission' | 'distribution' | 'generation' | 'demand'>('transmission');
   const [location, setLocation] = useState('');
   const [severity, setSeverity] = useState<'low' | 'medium' | 'high' | 'critical'>('medium');
@@ -325,7 +327,7 @@ function ConstraintModal({ onClose, onCreated }: { onClose: () => void; onCreate
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-ionex-border-100">
           <h2 className="text-lg font-semibold">Publish grid constraint</h2>
