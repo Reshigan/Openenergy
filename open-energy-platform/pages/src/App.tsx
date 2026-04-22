@@ -22,6 +22,8 @@ import { Admin } from './components/pages/Admin';
 import { Pipeline } from './components/pages/Pipeline';
 import { Reports } from './components/pages/Reports';
 import { OM } from './components/pages/OM';
+import { Lois } from './components/pages/Lois';
+import { LoiDetail } from './components/pages/LoiDetail';
 import { Skeleton } from './components/Skeleton';
 import { EmptyState } from './components/EmptyState';
 import { ErrorBanner } from './components/ErrorBanner';
@@ -77,6 +79,7 @@ function getNavigationForRole(role: string) {
     { path: '/procurement', label: 'Procurement', icon: ShoppingIcon },
     { path: '/marketplace', label: 'Marketplace', icon: ShopIcon },
     { path: '/om', label: 'O&M', icon: WrenchIcon },
+    { path: '/lois', label: 'Letters of Intent', icon: DocumentIcon },
     { path: '/reports', label: 'Reports', icon: ChartIcon },
   ];
 
@@ -89,7 +92,7 @@ function getNavigationForRole(role: string) {
     case 'admin':
       return adminNav;
     case 'ipp_developer':
-      return baseNav.filter((n) => !['/trading', '/funds'].includes(n.path));
+      return baseNav.filter((n) => !['/trading', '/funds', '/marketplace'].includes(n.path));
     case 'lender':
       return baseNav.filter((n) => ['/cockpit', '/projects', '/funds', '/om', '/reports'].includes(n.path));
     case 'trader':
@@ -99,7 +102,7 @@ function getNavigationForRole(role: string) {
     case 'grid_operator':
       return baseNav.filter((n) => ['/cockpit', '/grid', '/reports'].includes(n.path));
     case 'offtaker':
-      return baseNav.filter((n) => ['/cockpit', '/contracts', '/procurement', '/marketplace', '/reports'].includes(n.path));
+      return baseNav.filter((n) => ['/cockpit', '/contracts', '/lois', '/procurement', '/marketplace', '/reports'].includes(n.path));
     case 'regulator':
       return baseNav.filter((n) => ['/cockpit', '/esg', '/reports'].includes(n.path));
     default:
@@ -906,6 +909,8 @@ function AppRoutes() {
       <Route path="/admin" element={<ProtectedRoute><Layout><Admin /></Layout></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
       <Route path="/om" element={<ProtectedRoute><Layout><OM /></Layout></ProtectedRoute>} />
+      <Route path="/lois" element={<ProtectedRoute><Layout><Lois /></Layout></ProtectedRoute>} />
+      <Route path="/lois/:id" element={<ProtectedRoute><Layout><LoiDetail /></Layout></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/cockpit" replace />} />
       <Route path="*" element={<Navigate to="/cockpit" replace />} />
     </Routes>

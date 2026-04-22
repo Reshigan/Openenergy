@@ -30,6 +30,7 @@ import threadsRoutes from './routes/threads';
 import marketplaceRoutes from './routes/marketplace';
 import adminRoutes from './routes/admin';
 import aiRoutes from './routes/ai';
+import loiRoutes from './routes/lois';
 import funderRoutes from './routes/funder';
 import regulatorRoutes from './routes/regulator';
 
@@ -73,6 +74,7 @@ app.route('/api/threads', threadsRoutes);
 app.route('/api/marketplace', marketplaceRoutes);
 app.route('/api/admin', adminRoutes);
 app.route('/api/ai', aiRoutes);
+app.route('/api/lois', loiRoutes);
 app.route('/api/funder', funderRoutes);
 app.route('/api/regulator', regulatorRoutes);
 
