@@ -138,7 +138,7 @@ grid.post('/wheeling/:id/activate', async (c) => {
 grid.get('/constraints', async (c) => {
   const rows = await c.env.DB.prepare(`
     SELECT * FROM grid_constraints
-    WHERE status IN ('active','monitoring')
+    WHERE status IN ('active','forecast')
     ORDER BY CASE severity WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 ELSE 4 END,
              created_at DESC
     LIMIT 100
@@ -162,9 +162,9 @@ grid.post('/constraints', async (c) => {
   const sev = severity && ['low', 'medium', 'high', 'critical'].includes(severity) ? severity : 'medium';
   const id = 'gct_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
   await c.env.DB.prepare(`
-    INSERT INTO grid_constraints (id, constraint_type, location, severity, available_capacity_mw, start_date, end_date, status, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?)
-  `).bind(id, constraint_type, location, sev, available_capacity_mw != null ? Number(available_capacity_mw) : null, start_date || null, end_date || null, new Date().toISOString()).run();
+    INSERT INTO grid_constraints (id, constraint_type, location, severity, available_capacity_mw, start_date, end_date, description, status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
+  `).bind(id, constraint_type, location, sev, available_capacity_mw != null ? Number(available_capacity_mw) : null, start_date || null, end_date || null, description || null, new Date().toISOString()).run();
 
   await fireCascade({
     event: 'grid.constraint_active',
@@ -183,7 +183,7 @@ grid.post('/constraints/:id/clear', async (c) => {
   if (!isOperator(user.role)) {
     return c.json({ success: false, error: 'Only grid operators may clear constraints' }, 403);
   }
-  await c.env.DB.prepare('UPDATE grid_constraints SET status = \'cleared\', end_date = ? WHERE id = ?').bind(new Date().toISOString().split('T')[0], id).run();
+  await c.env.DB.prepare('UPDATE grid_constraints SET status = \'resolved\', end_date = ? WHERE id = ?').bind(new Date().toISOString().split('T')[0], id).run();
   return c.json({ success: true });
 });
 
