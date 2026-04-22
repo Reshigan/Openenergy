@@ -8,6 +8,7 @@ import { EmptyState } from '../EmptyState';
 import { ErrorBanner } from '../ErrorBanner';
 import { ExportBar } from '../ExportBar';
 import { EntityLink } from '../EntityLink';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 const formatZAR = (val: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(val);
 
@@ -281,11 +282,11 @@ function ProjectModal(props: {
   const f = <K extends keyof FormState>(k: K) => (v: FormState[K]) => setForm({ ...form, [k]: v });
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="projects-modal-title">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mt-8">
         <div className="flex items-center justify-between px-5 py-4 border-b border-ionex-border-soft">
-          <h2 className="text-lg font-semibold">{title}</h2>
-          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100"><X className="w-4 h-4" /></button>
+          <h2 id="projects-modal-title" className="text-lg font-semibold">{title}</h2>
+          <button type="button" onClick={onClose} aria-label="Close dialog" className="p-1 rounded hover:bg-gray-100"><X className="w-4 h-4" aria-hidden="true" /></button>
         </div>
         <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <Field label="Project name" required>

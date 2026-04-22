@@ -484,7 +484,7 @@ export function ContractDetail() {
 
       {/* Sign modal */}
       {signOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true">
           <div className="bg-white rounded-xl max-w-lg w-full p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-2">Sign this contract</h3>
             <p className="text-xs text-gray-600 mb-4">

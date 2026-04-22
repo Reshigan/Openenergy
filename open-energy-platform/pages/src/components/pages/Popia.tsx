@@ -4,6 +4,7 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 type Tab = 'consent' | 'dsar' | 'erasure';
 
@@ -292,7 +293,7 @@ function ErasureModal({ onClose, onSubmitted }: { onClose: () => void; onSubmitt
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">Request erasure (Section 24)</h3>
