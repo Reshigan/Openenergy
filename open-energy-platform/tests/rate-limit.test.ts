@@ -36,6 +36,7 @@ describe('isSensitivePath', () => {
   it('matches auth login paths', () => {
     expect(isSensitivePath('/api/auth/login')).toBe(true);
     expect(isSensitivePath('/api/auth/forgot-password')).toBe(true);
+    expect(isSensitivePath('/api/auth/reset-password')).toBe(true);
     expect(isSensitivePath('/api/auth/mfa/verify')).toBe(true);
     expect(isSensitivePath('/api/auth/sso/microsoft/callback')).toBe(true);
     expect(isSensitivePath('/api/auth/refresh')).toBe(true);

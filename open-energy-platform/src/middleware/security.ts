@@ -26,7 +26,7 @@ const MAX_SENSITIVE_REQUESTS = 10;
 // Paths that should trip the stricter limiter. Substring match.
 const SENSITIVE_PATH_PATTERNS = [
   '/auth/login',
-  '/auth/password-reset',
+  '/auth/reset-password',
   '/auth/forgot-password',
   '/auth/mfa/verify',
   '/auth/mfa/challenge',
