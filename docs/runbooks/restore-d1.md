@@ -2,7 +2,7 @@
 
 This runbook covers restoring `open-energy-db` from a nightly R2 backup
 created by `.github/workflows/backup.yml` calling
-`POST /api/admin/backup/run`.
+`POST /api/backup/run`.
 
 ## 1. Pre-flight
 
@@ -13,7 +13,7 @@ Prerequisites:
   `CLOUDFLARE_API_TOKEN`).
 - `wrangler@4` installed (`npx wrangler@4 --version` works).
 - You have decided **which backup to restore**. List them via one of:
-  - `GET https://oe.vantax.co.za/api/admin/backup/list` (admin JWT, shows
+  - `GET https://oe.vantax.co.za/api/backup/list` (admin JWT, shows
     size + row count + generated_at).
   - Cloudflare dashboard → R2 → `open-energy-vault` → `backups/` prefix.
   - `npx wrangler@4 r2 object get open-energy-vault/backups/YYYY-MM-DD/d1-….sql.gz --file=./restore.sql.gz`

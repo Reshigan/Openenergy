@@ -25,7 +25,7 @@ jobs:
             exit 0
           fi
           RESPONSE=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" \
-            -X POST https://oe.vantax.co.za/api/admin/backup/run \
+            -X POST https://oe.vantax.co.za/api/backup/run \
             -H "X-Backup-Token: $BACKUP_TOKEN" \
             -H 'Content-Type: application/json' \
             --max-time 600 \

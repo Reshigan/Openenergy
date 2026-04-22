@@ -27,7 +27,7 @@ export interface HonoEnv {
   AZURE_AD_REDIRECT_URI?: string;
   APP_BASE_URL?: string;
   // Shared secret used by the scheduled GitHub Actions cron job to trigger
-  // /api/admin/backup/run without a user JWT. Set via `wrangler secret put BACKUP_TOKEN`.
+  // /api/backup/run without a user JWT. Set via `wrangler secret put BACKUP_TOKEN`.
   BACKUP_TOKEN?: string;
 }
 

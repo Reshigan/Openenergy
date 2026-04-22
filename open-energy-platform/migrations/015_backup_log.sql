@@ -1,7 +1,7 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 015 — Backup Catalog (PR-Prod-6)
 -- ═══════════════════════════════════════════════════════════════════════════
--- Small catalog row written by POST /api/admin/backup/run after each D1 → R2
+-- Small catalog row written by POST /api/backup/run after each D1 → R2
 -- dump. Operators use this table (joined with R2 metadata) to pick a backup
 -- to restore — never wipe this table without also clearing old R2 objects.
 -- ═══════════════════════════════════════════════════════════════════════════
