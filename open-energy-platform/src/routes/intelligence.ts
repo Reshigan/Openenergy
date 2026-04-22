@@ -219,37 +219,52 @@ intelligence.post('/scan', async (c) => {
     });
   }
 
-  // 3. Overdue and upcoming invoices (per recipient).
+  // 3. Overdue and upcoming invoices (per recipient). `invoices.total_amount`
+  // is the VAT-inclusive invoice total; `paid_amount` tracks partial payments.
   const invoiceRows = await c.env.DB.prepare(`
-    SELECT id, invoice_number, to_participant_id, amount_zar, paid_amount, status, due_date
+    SELECT id, invoice_number, to_participant_id, total_amount, paid_amount, status, due_date
     FROM invoices
     WHERE status IN ('issued','partial') AND due_date <= date('now','+7 day')
   `).all();
   for (const row of invoiceRows.results || []) {
-    const inv = row as { id: string; invoice_number: string; to_participant_id: string; amount_zar: number; paid_amount: number; status: string; due_date: string };
+    const inv = row as { id: string; invoice_number: string; to_participant_id: string; total_amount: number; paid_amount: number; status: string; due_date: string };
     const overdue = inv.due_date < new Date().toISOString().slice(0, 10);
+    const outstanding = (inv.total_amount || 0) - (inv.paid_amount || 0);
     await touch({
       participant_id: inv.to_participant_id,
       type: 'financial',
       severity: overdue ? 'critical' : 'warning',
       title: `${overdue ? 'Overdue' : 'Due'} invoice ${inv.invoice_number}`,
-      description: `${overdue ? 'Overdue since' : 'Due by'} ${inv.due_date}. Outstanding R${(inv.amount_zar - (inv.paid_amount || 0)).toLocaleString('en-ZA')}.`,
+      description: `${overdue ? 'Overdue since' : 'Due by'} ${inv.due_date}. Outstanding R${outstanding.toLocaleString('en-ZA')}.`,
       entity_type: 'invoices',
       entity_id: inv.id,
       action_required: 'Settle or dispute',
     });
   }
 
-  // 4. Contracts expiring ≤ 90 days (both parties notified).
-  const expiringRows = await safeAll(c.env, `
-    SELECT id, title, creator_id, counterparty_id, end_date
+  // 4. Contracts expiring ≤ 90 days — contract end/term dates live inside the
+  // commercial_terms JSON blob (no dedicated column). We parse it here and
+  // notify both parties when the computed end date falls within the window.
+  const activeContractRows = await safeAll(c.env, `
+    SELECT id, title, creator_id, counterparty_id, commercial_terms
     FROM contract_documents
-    WHERE end_date IS NOT NULL
-      AND end_date BETWEEN date('now') AND date('now','+90 day')
-      AND phase = 'active'
+    WHERE phase = 'active' AND commercial_terms IS NOT NULL
   `);
-  for (const row of expiringRows) {
-    const k = row as { id: string; title: string; creator_id: string; counterparty_id: string; end_date: string };
+  const today = new Date();
+  const in90 = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000);
+  for (const row of activeContractRows) {
+    const k = row as { id: string; title: string; creator_id: string; counterparty_id: string; commercial_terms: string };
+    let endIso: string | null = null;
+    try {
+      const terms = JSON.parse(k.commercial_terms) as Record<string, unknown>;
+      const candidate = (terms.end_date || terms.term_end_date || terms.expiry_date || terms.delivery_end) as string | undefined;
+      if (candidate) endIso = String(candidate).slice(0, 10);
+    } catch {
+      endIso = null;
+    }
+    if (!endIso) continue;
+    const end = new Date(endIso);
+    if (isNaN(end.getTime()) || end < today || end > in90) continue;
     for (const party of [k.creator_id, k.counterparty_id]) {
       if (!party) continue;
       await touch({
@@ -257,7 +272,7 @@ intelligence.post('/scan', async (c) => {
         type: 'market',
         severity: 'info',
         title: `Contract expiring: ${k.title}`,
-        description: `Expires ${k.end_date}. Start renewal talks.`,
+        description: `Expires ${endIso}. Start renewal talks.`,
         entity_type: 'contract_documents',
         entity_id: k.id,
         action_required: 'Open renewal discussion',

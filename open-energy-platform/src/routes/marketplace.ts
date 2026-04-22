@@ -32,12 +32,12 @@ marketplace.get('/listings', async (c) => {
 
   const filters: string[] = [];
   const bindings: unknown[] = [];
-  if (type) { filters.push('listing_type = ?'); bindings.push(type); }
-  if (status) { filters.push('status = ?'); bindings.push(status); }
-  else if (!mine) { filters.push("status = 'active'"); }
-  if (mine) { filters.push('seller_id = ?'); bindings.push(user.id); }
+  if (type) { filters.push('ml.listing_type = ?'); bindings.push(type); }
+  if (status) { filters.push('ml.status = ?'); bindings.push(status); }
+  else if (!mine) { filters.push("ml.status = 'active'"); }
+  if (mine) { filters.push('ml.seller_id = ?'); bindings.push(user.id); }
   if (q) {
-    filters.push('(LOWER(title) LIKE ? OR LOWER(description) LIKE ?)');
+    filters.push('(LOWER(ml.title) LIKE ? OR LOWER(ml.description) LIKE ?)');
     bindings.push(`%${q.toLowerCase()}%`, `%${q.toLowerCase()}%`);
   }
   const where = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
