@@ -22,7 +22,7 @@ async function ensureTable(env: HonoEnv['Bindings']) {
       filing_type TEXT NOT NULL,
       reporting_period TEXT NOT NULL,
       filed_by TEXT NOT NULL,
-      status TEXT DEFAULT 'draft',
+      status TEXT NOT NULL DEFAULT 'draft',
       narrative TEXT,
       evidence_json TEXT,
       created_at TEXT DEFAULT (datetime('now'))
