@@ -83,12 +83,19 @@ regulator.put('/filings/:id', async (c) => {
   }
   const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
   const editable = ['reporting_period', 'narrative', 'evidence_json', 'filing_type'] as const;
+  // Columns with NOT NULL in both migration 017 and ensureTable. We reject
+  // `null` on these with 400 rather than letting the UPDATE blow up on a
+  // constraint violation and surface as 500.
+  const nonNullable = new Set<string>(['reporting_period', 'filing_type']);
   const sets: string[] = [];
   const binds: (string | number | null)[] = [];
   for (const k of editable) {
     if (k in body) {
-      sets.push(`${k} = ?`);
       const v = body[k];
+      if (v == null && nonNullable.has(k)) {
+        return c.json({ success: false, error: `${k} cannot be null` }, 400);
+      }
+      sets.push(`${k} = ?`);
       binds.push(v == null ? null : (typeof v === 'string' ? v : JSON.stringify(v)));
     }
   }
