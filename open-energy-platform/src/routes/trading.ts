@@ -68,7 +68,7 @@ trading.post('/orders', async (c) => {
   await c.env.DB.prepare(`
     INSERT INTO trade_orders (id, participant_id, side, energy_type, volume_mwh, price_min, price_max, delivery_date, delivery_point, market_type, status, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?)
-  `).bind(orderId, user.id, side, energy_type, volume_mwh, price_min || null, price_max || null, delivery_date || null, delivery_point || null, market_type || 'bilateral', now, now).run();
+  `).bind(orderId, user.id, side, energy_type, volume_mwh, price_min ?? null, price_max ?? null, delivery_date || null, delivery_point || null, market_type || 'bilateral', now, now).run();
 
   await fireCascade({
     event: 'trade.order_placed',

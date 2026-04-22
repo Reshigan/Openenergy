@@ -167,7 +167,7 @@ async function determineNotificationRecipients(ctx: CascadeContext, env: any): P
       if (proj) recipients.add(proj.developer_id);
       // Notify lenders too
       const lenders = await env.DB.prepare('SELECT DISTINCT investor_participant_id FROM fund_commitments fc JOIN energy_funds ef ON fc.fund_id = ef.id').all();
-      lenders.results?.forEach((l: any) => recipients.add(l.investment_participant_id));
+      lenders.results?.forEach((l: any) => recipients.add(l.investor_participant_id));
       break;
     }
     case 'project_disbursements': {
@@ -197,7 +197,7 @@ async function determineNotificationRecipients(ctx: CascadeContext, env: any): P
         if (proj) recipients.add(proj.developer_id);
         // Notify lenders of DSCR impact
         const lenders = await env.DB.prepare('SELECT investor_participant_id FROM fund_commitments').all();
-        lenders.results?.forEach((l: any) => recipients.add(l.investment_participant_id));
+        lenders.results?.forEach((l: any) => recipients.add(l.investor_participant_id));
         // Notify offtakers
         const contracts = await env.DB.prepare('SELECT counterparty_id FROM contract_documents WHERE project_id = ?').bind(fault.project_id).all();
         contracts.results?.forEach((c: any) => recipients.add(c.counterparty_id));
@@ -531,7 +531,7 @@ async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
           priority: 'urgent',
           actor_id: ctx.actor_id,
           assignee_id: (a as { id: string }).id,
-          entity_type: 'settlement_disputes',
+          entity_type: 'invoices',
           entity_id: ctx.entity_id,
           title: 'Review dispute',
           description: `Dispute filed: ${(ctx.data?.reason as string) || 'No reason provided'}`,

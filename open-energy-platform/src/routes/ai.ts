@@ -358,7 +358,7 @@ async function collectRoleReport(
       const [participants, contracts, trades, invoices] = await Promise.all([
         safe(env.DB.prepare(`SELECT COUNT(*) AS c FROM participants`).first<{ c: number }>(), { c: 0 }),
         safe(env.DB.prepare(`SELECT COUNT(*) AS c FROM contract_documents`).first<{ c: number }>(), { c: 0 }),
-        safe(env.DB.prepare(`SELECT COUNT(*) AS c, SUM(total_value) AS gmv FROM trade_matches WHERE created_at > ?`).bind(since).first<{ c: number; gmv: number }>(), { c: 0, gmv: 0 }),
+        safe(env.DB.prepare(`SELECT COUNT(*) AS c, SUM(matched_volume_mwh * matched_price) AS gmv FROM trade_matches WHERE matched_at > ?`).bind(since).first<{ c: number; gmv: number }>(), { c: 0, gmv: 0 }),
         safe(env.DB.prepare(`SELECT COUNT(*) AS c, SUM(total_amount) AS total FROM invoices WHERE created_at > ?`).bind(since).first<{ c: number; total: number }>(), { c: 0, total: 0 }),
       ]);
       return { ...common, participants, contracts, trades, invoices };
@@ -367,13 +367,19 @@ async function collectRoleReport(
     case 'trader': {
       const orders = await safe(
         env.DB.prepare(
-          `SELECT COUNT(*) AS c, SUM(volume) AS vol FROM orders WHERE participant_id = ? AND created_at > ?`,
+          `SELECT COUNT(*) AS c, SUM(volume_mwh) AS vol FROM trade_orders WHERE participant_id = ? AND created_at > ?`,
         ).bind(userId, since).first<{ c: number; vol: number }>(),
         { c: 0, vol: 0 },
       );
+      // trade_matches has no participant_id; JOIN via trade_orders to filter.
       const matches = await safe(
         env.DB.prepare(
-          `SELECT COUNT(*) AS c, SUM(total_value) AS value FROM trade_matches WHERE (buyer_id = ? OR seller_id = ?) AND created_at > ?`,
+          `SELECT COUNT(*) AS c, SUM(tm.matched_volume_mwh * tm.matched_price) AS value
+             FROM trade_matches tm
+             JOIN trade_orders bo ON tm.buy_order_id = bo.id
+             JOIN trade_orders so ON tm.sell_order_id = so.id
+            WHERE (bo.participant_id = ? OR so.participant_id = ?)
+              AND tm.matched_at > ?`,
         ).bind(userId, userId, since).first<{ c: number; value: number }>(),
         { c: 0, value: 0 },
       );
@@ -428,9 +434,14 @@ async function collectRoleReport(
         ).bind(since).first<{ c: number; q: number }>(),
         { c: 0, q: 0 },
       );
+      // carbon_credits is not a migration-managed table; report from the
+      // canonical schema: carbon_holdings JOIN carbon_projects for methodology.
       const holdings = await safe(
         env.DB.prepare(
-          `SELECT methodology, SUM(quantity) AS q FROM carbon_credits GROUP BY methodology`,
+          `SELECT cp.methodology, SUM(ch.quantity) AS q
+             FROM carbon_holdings ch
+             JOIN carbon_projects cp ON cp.id = ch.project_id
+            GROUP BY cp.methodology`,
         ).all(),
         { results: [] },
       );
@@ -460,7 +471,7 @@ async function collectRoleReport(
       );
       const nominations = await safe(
         env.DB.prepare(
-          `SELECT COUNT(*) AS c, SUM(volume_mwh) AS v FROM grid_nominations WHERE created_at > ?`,
+          `SELECT COUNT(*) AS c, SUM(nominated_mwh) AS v FROM ona_nominations WHERE created_at > ?`,
         ).bind(since).first<{ c: number; v: number }>(),
         { c: 0, v: 0 },
       );
@@ -470,7 +481,7 @@ async function collectRoleReport(
     case 'regulator': {
       const audit = await safe(
         env.DB.prepare(
-          `SELECT event_type, COUNT(*) AS c FROM audit_logs WHERE created_at > ? GROUP BY event_type ORDER BY c DESC LIMIT 20`,
+          `SELECT action AS event_type, COUNT(*) AS c FROM audit_logs WHERE created_at > ? GROUP BY action ORDER BY c DESC LIMIT 20`,
         ).bind(since).all(),
         { results: [] },
       );
