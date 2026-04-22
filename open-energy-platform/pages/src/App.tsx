@@ -25,6 +25,8 @@ import { OM } from './components/pages/OM';
 import { Lois } from './components/pages/Lois';
 import { LoiDetail } from './components/pages/LoiDetail';
 import { Intelligence } from './components/pages/Intelligence';
+import { Settlement } from './components/pages/Settlement';
+import { Popia } from './components/pages/Popia';
 import { Skeleton } from './components/Skeleton';
 import { EmptyState } from './components/EmptyState';
 import { ErrorBanner } from './components/ErrorBanner';
@@ -899,7 +901,7 @@ function AppRoutes() {
       <Route path="/contracts" element={<ProtectedRoute><Layout><Contracts /></Layout></ProtectedRoute>} />
       <Route path="/contracts/:id" element={<ProtectedRoute><Layout><ContractDetail /></Layout></ProtectedRoute>} />
       <Route path="/trading" element={<ProtectedRoute><Layout><Trading /></Layout></ProtectedRoute>} />
-      <Route path="/settlement" element={<ProtectedRoute><Layout><Cockpit /></Layout></ProtectedRoute>} />
+      <Route path="/settlement" element={<ProtectedRoute><Layout><Settlement /></Layout></ProtectedRoute>} />
       <Route path="/carbon" element={<ProtectedRoute><Layout><Carbon /></Layout></ProtectedRoute>} />
       <Route path="/projects" element={<ProtectedRoute><Layout><Projects /></Layout></ProtectedRoute>} />
       <Route path="/esg" element={<ProtectedRoute><Layout><ESG /></Layout></ProtectedRoute>} />
@@ -914,6 +916,7 @@ function AppRoutes() {
       <Route path="/lois" element={<ProtectedRoute><Layout><Lois /></Layout></ProtectedRoute>} />
       <Route path="/lois/:id" element={<ProtectedRoute><Layout><LoiDetail /></Layout></ProtectedRoute>} />
       <Route path="/intelligence" element={<ProtectedRoute><Layout><Intelligence /></Layout></ProtectedRoute>} />
+      <Route path="/popia" element={<ProtectedRoute><Layout><Popia /></Layout></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/cockpit" replace />} />
       <Route path="*" element={<Navigate to="/cockpit" replace />} />
     </Routes>
