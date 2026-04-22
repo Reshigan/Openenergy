@@ -222,12 +222,59 @@ function SettingsIcon({ size = 20 }: { size?: number }) {
 function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mfaCode, setMfaCode] = useState('');
   const [mfaRequired, setMfaRequired] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [ssoEnabled, setSsoEnabled] = useState(false);
+  const [ssoLoading, setSsoLoading] = useState(false);
+
+  useEffect(() => {
+    api.get('/auth/sso/config').then((r) => {
+      if (r.data?.success && r.data?.data?.enabled) setSsoEnabled(true);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const ssoError = params.get('sso_error');
+    if (ssoError) {
+      const msgMap: Record<string, string> = {
+        missing_code: 'Microsoft sign-in was cancelled.',
+        expired_state: 'Microsoft sign-in session expired. Please try again.',
+        token_exchange: 'Could not exchange Microsoft authorization code.',
+        bad_issuer: 'Microsoft token failed issuer check.',
+        bad_audience: 'Microsoft token was issued for a different application.',
+        nonce_mismatch: 'Microsoft sign-in anti-replay check failed.',
+        bad_signature: 'Microsoft token signature invalid.',
+        expired_id_token: 'Microsoft token has expired.',
+        no_email: 'Microsoft account did not return an email.',
+        account_suspended: 'Your account is suspended. Contact support.',
+      };
+      setError(msgMap[ssoError] || `Microsoft sign-in failed (${ssoError}).`);
+    }
+  }, [location.search]);
+
+  const handleMicrosoftSso = async () => {
+    setError('');
+    setSsoLoading(true);
+    try {
+      const r = await api.post('/auth/sso/microsoft/start', { return_to: '/cockpit' });
+      if (r.data?.success && r.data?.data?.redirect_url) {
+        window.location.href = r.data.data.redirect_url;
+        return;
+      }
+      setError('Could not start Microsoft sign-in.');
+    } catch (err: unknown) {
+      const anyErr = err as { response?: { data?: { error?: string } }; message?: string };
+      setError(anyErr?.response?.data?.error || anyErr?.message || 'Microsoft sign-in unavailable');
+    } finally {
+      setSsoLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -426,6 +473,39 @@ function LoginPage() {
             </button>
           </form>
 
+          {ssoEnabled && (
+            <>
+              <div className="mt-5 flex items-center gap-3">
+                <div className="flex-1 h-px" style={{ background: '#e5e5e5' }} />
+                <span className="text-[11px] uppercase tracking-widest" style={{ color: '#89919a' }}>
+                  or
+                </span>
+                <div className="flex-1 h-px" style={{ background: '#e5e5e5' }} />
+              </div>
+              <button
+                type="button"
+                onClick={handleMicrosoftSso}
+                disabled={ssoLoading}
+                className="mt-4 flex items-center justify-center gap-2.5 w-full h-11 rounded-lg border text-[14px] font-semibold transition-all hover:-translate-y-0.5"
+                style={{
+                  background: '#ffffff',
+                  borderColor: '#8c8c8c',
+                  color: '#32363a',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                }}
+              >
+                {/* Microsoft 4-colour logo */}
+                <svg width="18" height="18" viewBox="0 0 21 21" aria-hidden="true">
+                  <rect x="1"  y="1"  width="9" height="9" fill="#f25022" />
+                  <rect x="11" y="1"  width="9" height="9" fill="#7fba00" />
+                  <rect x="1"  y="11" width="9" height="9" fill="#00a4ef" />
+                  <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+                </svg>
+                {ssoLoading ? 'Opening Microsoft…' : 'Sign in with Microsoft'}
+              </button>
+            </>
+          )}
+
           <div className="mt-6 flex items-center gap-3">
             <div className="flex-1 h-px" style={{ background: '#e5e5e5' }} />
             <span className="text-[11px] uppercase tracking-widest" style={{ color: '#89919a' }}>
@@ -504,6 +584,47 @@ function FeatureBadge({
         <Icon size={16} />
       </div>
       <span className="text-[13px] font-semibold text-white/90">{label}</span>
+    </div>
+  );
+}
+
+// SSO Landing Page — invoked by backend callback redirect. Reads the token
+// bundle from the URL fragment, stashes it via AuthContext, and navigates to
+// the `return_to` path (default: /cockpit).
+function SsoLanding() {
+  const { acceptSsoTokens } = useAuth();
+  const navigate = useNavigate();
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const frag = window.location.hash.replace(/^#/, '');
+    const params = new URLSearchParams(frag);
+    const token = params.get('token');
+    const refresh_token = params.get('refresh_token') || undefined;
+    const returnTo = params.get('return_to') || '/cockpit';
+    if (!token) {
+      setError('Missing SSO token — please try signing in again.');
+      const t = setTimeout(() => navigate('/login?sso_error=missing_token', { replace: true }), 2000);
+      return () => clearTimeout(t);
+    }
+    acceptSsoTokens({ token, refresh_token });
+    // Clear the fragment so tokens don't linger in browser history.
+    window.history.replaceState(null, '', returnTo);
+    navigate(returnTo, { replace: true });
+  }, [acceptSsoTokens, navigate]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#f5f6f7' }}>
+      <div className="text-center">
+        {error ? (
+          <p className="text-[14px]" style={{ color: '#bb0000' }}>{error}</p>
+        ) : (
+          <>
+            <div className="spinner mx-auto mb-4" />
+            <p className="text-[14px]" style={{ color: '#6a6d70' }}>Completing Microsoft sign-in…</p>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -924,6 +1045,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/sso-landing" element={<SsoLanding />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />

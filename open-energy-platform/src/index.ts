@@ -5,6 +5,7 @@ import { HonoEnv } from './utils/types';
 
 // Route imports
 import authRoutes from './routes/auth';
+import ssoRoutes from './routes/sso';
 import cockpitRoutes from './routes/cockpit';
 import participantsRoutes from './routes/participants';
 import contractsRoutes from './routes/contracts';
@@ -47,6 +48,7 @@ app.get('/api/health', (c) => c.json({ status: 'healthy', version: '1.0.0' }));
 
 // Auth routes
 app.route('/api/auth', authRoutes);
+app.route('/api/auth/sso', ssoRoutes);
 app.route('/api/cockpit', cockpitRoutes);
 
 // Protected routes

@@ -20,6 +20,12 @@ export interface HonoEnv {
   RISK_ENGINE: DurableObjectNamespace;
   SMART_CONTRACT: DurableObjectNamespace;
   JWT_SECRET: string;
+  // Microsoft Entra ID SSO bindings (optional — when unset, SSO is disabled)
+  AZURE_AD_CLIENT_ID?: string;
+  AZURE_AD_TENANT_ID?: string;
+  AZURE_AD_CLIENT_SECRET?: string;
+  AZURE_AD_REDIRECT_URI?: string;
+  APP_BASE_URL?: string;
 }
 
 // JWT Token Payload
