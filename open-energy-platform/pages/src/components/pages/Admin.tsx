@@ -1,358 +1,498 @@
-import React, { useState, useEffect } from 'react';
-import { Users, Settings, Shield, Activity, DollarSign, RefreshCw, CheckCircle, XCircle, Clock, AlertTriangle, BarChart2, UserPlus, FileText, Database } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Users, Settings, Shield, Activity, DollarSign, RefreshCw,
+  ClipboardList, BarChart2, AlertTriangle, CheckCircle, XCircle,
+} from 'lucide-react';
 import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
-import { ExportBar } from '../ExportBar';
 
-interface Participant {
+type KycStatus = 'pending' | 'in_review' | 'approved' | 'rejected';
+type UserStatus = 'pending' | 'active' | 'suspended' | 'rejected';
+
+interface ParticipantRow {
   id: string;
-  name: string;
   email: string;
+  name: string;
+  company_name?: string;
   role: string;
-  kyc_status: string;
+  status: UserStatus;
+  kyc_status: KycStatus;
+  subscription_tier?: string;
+  bbbee_level?: number;
+  tenant_id?: string;
+  email_verified?: number;
+  last_login?: string;
   created_at: string;
 }
 
-interface KYCRequest {
-  id: string;
-  participant_name: string;
-  submitted_at: string;
-  documents_count: number;
+interface ModuleRow {
+  module_key: string;
+  display_name: string;
+  description?: string;
+  category?: string;
+  enabled: number;
 }
 
+interface AuditRow {
+  id: string;
+  actor_id: string;
+  actor_name?: string;
+  actor_role?: string;
+  action: string;
+  entity_type?: string;
+  entity_id?: string;
+  changes?: string;
+  created_at: string;
+}
+
+interface StatsSnapshot {
+  participants_by_status: Array<{ status: string; n: number }>;
+  contracts_by_phase: Array<{ phase: string; n: number }>;
+  trades_30d: { n?: number; volume_mwh?: number };
+  invoices_by_status: Array<{ status: string; n: number; total: number }>;
+}
+
+interface BillingSnapshot {
+  tiers: Array<{ subscription_tier: string; n: number }>;
+  monthly_recurring_zar: number;
+  rate_card: Record<string, number>;
+}
+
+type TabKey = 'overview' | 'kyc' | 'users' | 'modules' | 'audit' | 'billing';
+
+const TABS: Array<{ key: TabKey; label: string; icon: React.ReactNode }> = [
+  { key: 'overview', label: 'Overview', icon: <BarChart2 className="w-4 h-4" /> },
+  { key: 'kyc', label: 'KYC Queue', icon: <Shield className="w-4 h-4" /> },
+  { key: 'users', label: 'Users', icon: <Users className="w-4 h-4" /> },
+  { key: 'modules', label: 'Modules', icon: <Settings className="w-4 h-4" /> },
+  { key: 'audit', label: 'Audit Logs', icon: <ClipboardList className="w-4 h-4" /> },
+  { key: 'billing', label: 'Billing', icon: <DollarSign className="w-4 h-4" /> },
+];
+
+const STATUS_PILL: Record<string, string> = {
+  active: 'bg-green-100 text-green-700',
+  pending: 'bg-amber-100 text-amber-700',
+  in_review: 'bg-blue-100 text-blue-700',
+  approved: 'bg-green-100 text-green-700',
+  rejected: 'bg-red-100 text-red-700',
+  suspended: 'bg-gray-200 text-gray-700',
+};
+
+const formatZAR = (value: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value || 0);
+
 export function Admin() {
+  const [tab, setTab] = useState<TabKey>('overview');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'kyc' | 'participants' | 'config' | 'fees' | 'analytics'>('kyc');
-  const [kycQueue, setKycQueue] = useState<KYCRequest[]>([]);
-  const [participants, setParticipants] = useState<Participant[]>([]);
-  const [stats, setStats] = useState<any>(null);
 
-  useEffect(() => { fetchAdminData(); }, [activeTab]);
+  const [stats, setStats] = useState<StatsSnapshot | null>(null);
+  const [kyc, setKyc] = useState<ParticipantRow[]>([]);
+  const [kycFilter, setKycFilter] = useState<KycStatus>('pending');
+  const [users, setUsers] = useState<ParticipantRow[]>([]);
+  const [userSearch, setUserSearch] = useState('');
+  const [userDebounce, setUserDebounce] = useState('');
+  const [modules, setModules] = useState<ModuleRow[]>([]);
+  const [audit, setAudit] = useState<AuditRow[]>([]);
+  const [billing, setBilling] = useState<BillingSnapshot | null>(null);
 
-  const fetchAdminData = async () => {
+  useEffect(() => {
+    const h = setTimeout(() => setUserDebounce(userSearch.trim()), 300);
+    return () => clearTimeout(h);
+  }, [userSearch]);
+
+  const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      if (activeTab === 'kyc') {
-        const res = await api.get('/admin/kyc-queue').catch(() => ({ data: { success: true, data: getDefaultKycQueue() } }));
-        setKycQueue(res.data?.data || getDefaultKycQueue());
-      } else if (activeTab === 'participants') {
-        const res = await api.get('/admin/participants').catch(() => ({ data: { success: true, data: getDefaultParticipants() } }));
-        setParticipants(res.data?.data || getDefaultParticipants());
+      if (tab === 'overview') {
+        const res = await api.get('/admin/stats');
+        setStats(res.data?.data || null);
+      } else if (tab === 'kyc') {
+        const res = await api.get(`/admin/kyc?status=${kycFilter}`);
+        setKyc(res.data?.data || []);
+      } else if (tab === 'users') {
+        const qs = userDebounce ? `?q=${encodeURIComponent(userDebounce)}` : '';
+        const res = await api.get(`/admin/users${qs}`);
+        setUsers(res.data?.data || []);
+      } else if (tab === 'modules') {
+        const res = await api.get('/admin/modules');
+        setModules(res.data?.data || []);
+      } else if (tab === 'audit') {
+        const res = await api.get('/admin/audit-logs?page_size=100');
+        setAudit(res.data?.data || []);
+      } else if (tab === 'billing') {
+        const res = await api.get('/admin/billing');
+        setBilling(res.data?.data || null);
       }
-      setStats(getDefaultStats());
     } catch (err: any) {
-      setError(err.message);
+      setError(err?.response?.data?.error || err?.message || 'Failed to load admin data');
     } finally {
       setLoading(false);
     }
-  };
+  }, [tab, kycFilter, userDebounce]);
 
-  if (loading) return <div className="p-6"><Skeleton variant="card" rows={5} /></div>;
-  if (error) return <div className="p-6"><ErrorBanner message={error} onRetry={fetchAdminData} /></div>;
+  useEffect(() => { void fetchAll(); }, [fetchAll]);
+
+  const decideKyc = useCallback(async (id: string, next: KycStatus, notes?: string) => {
+    try {
+      await api.put(`/admin/kyc/${id}`, { kyc_status: next, notes });
+      await fetchAll();
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Failed to update KYC');
+    }
+  }, [fetchAll]);
+
+  const setUserStatus = useCallback(async (id: string, status: UserStatus) => {
+    try {
+      await api.put(`/admin/users/${id}`, { status });
+      await fetchAll();
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Failed to update user');
+    }
+  }, [fetchAll]);
+
+  const toggleModule = useCallback(async (key: string, enabled: boolean) => {
+    try {
+      await api.put(`/admin/modules/${key}`, { enabled });
+      await fetchAll();
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Failed to toggle module');
+    }
+  }, [fetchAll]);
+
+  const overviewTiles = useMemo(() => {
+    const total = (rows: Array<{ n: number }> = []) => rows.reduce((s, r) => s + Number(r.n || 0), 0);
+    return [
+      { label: 'Participants', value: total(stats?.participants_by_status) },
+      { label: 'Contracts', value: total(stats?.contracts_by_phase) },
+      { label: 'Trades (30d)', value: Number(stats?.trades_30d?.n || 0) },
+      { label: 'MWh traded (30d)', value: Math.round(Number(stats?.trades_30d?.volume_mwh || 0)).toLocaleString() },
+    ];
+  }, [stats]);
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-ionex-text-mute">Platform management and configuration</p>
+          <h1 className="text-2xl font-bold text-gray-900">Platform Admin</h1>
+          <p className="text-ionex-text-mute">KYC queue, users, modules, audit logs, billing.</p>
         </div>
-        <button onClick={fetchAdminData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">
+        <button onClick={fetchAll} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
           <RefreshCw className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <StatCard title="Total Participants" value={stats?.totalParticipants || 156} icon={<Users className="w-5 h-5" />} />
-        <StatCard title="Pending KYC" value={stats?.pendingKyc || 12} icon={<Clock className="w-5 h-5" />} status="warning" />
-        <StatCard title="Active Traders" value={stats?.activeTraders || 45} icon={<Activity className="w-5 h-5" />} />
-        <StatCard title="Monthly Revenue" value={`R${((stats?.monthlyRevenue || 250000) / 1000).toFixed(0)}k`} icon={<DollarSign className="w-5 h-5" />} />
-        <StatCard title="System Uptime" value="99.9%" icon={<Shield className="w-5 h-5" />} status="success" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {overviewTiles.map(t => (
+          <div key={t.label} className="p-4 bg-white border border-ionex-border-100 rounded-xl">
+            <p className="text-xs uppercase tracking-wide text-ionex-text-mute">{t.label}</p>
+            <p className="text-2xl font-semibold text-gray-900 mt-1">{t.value}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-ionex-border-100">
-        <div className="flex gap-6">
-          {[
-            { id: 'kyc', label: 'KYC Queue', icon: <Shield className="w-4 h-4" /> },
-            { id: 'participants', label: 'Participants', icon: <Users className="w-4 h-4" /> },
-            { id: 'config', label: 'Configuration', icon: <Settings className="w-4 h-4" /> },
-            { id: 'fees', label: 'Fee Management', icon: <DollarSign className="w-4 h-4" /> },
-            { id: 'analytics', label: 'Analytics', icon: <BarChart2 className="w-4 h-4" /> },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 py-3 px-1 border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? 'border-ionex-brand text-ionex-brand'
-                  : 'border-transparent text-ionex-text-mute hover:text-ionex-brand'
-              }`}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
+      <div className="border-b border-ionex-border-100 flex gap-6 flex-wrap">
+        {TABS.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`flex items-center gap-2 pb-3 border-b-2 transition-colors ${tab === t.key ? 'border-ionex-brand text-ionex-brand font-semibold' : 'border-transparent text-ionex-text-mute hover:text-gray-900'}`}
+          >
+            {t.icon}{t.label}
+          </button>
+        ))}
+      </div>
+
+      {loading && <Skeleton variant="card" rows={4} />}
+      {error && <ErrorBanner message={error} onRetry={fetchAll} />}
+
+      {!loading && !error && tab === 'overview' && <OverviewPanel stats={stats} />}
+
+      {!loading && !error && tab === 'kyc' && (
+        <KycPanel kyc={kyc} filter={kycFilter} onFilterChange={setKycFilter} onDecide={decideKyc} />
+      )}
+
+      {!loading && !error && tab === 'users' && (
+        <UsersPanel users={users} search={userSearch} onSearchChange={setUserSearch} onSetStatus={setUserStatus} />
+      )}
+
+      {!loading && !error && tab === 'modules' && (
+        <ModulesPanel modules={modules} onToggle={toggleModule} />
+      )}
+
+      {!loading && !error && tab === 'audit' && (
+        <AuditPanel rows={audit} />
+      )}
+
+      {!loading && !error && tab === 'billing' && (
+        <BillingPanel billing={billing} />
+      )}
+    </div>
+  );
+}
+
+function OverviewPanel({ stats }: { stats: StatsSnapshot | null }) {
+  if (!stats) return <EmptyState icon={<BarChart2 className="w-8 h-8" />} title="No stats" description="Stats are being collected." />;
+  const Section = ({ title, rows, valueKey }: { title: string; rows: any[]; valueKey: string }) => (
+    <div className="p-5 bg-white rounded-xl border border-ionex-border-100">
+      <h3 className="font-semibold text-gray-900 mb-3">{title}</h3>
+      {(!rows || rows.length === 0) ? (
+        <p className="text-sm text-ionex-text-mute">No data</p>
+      ) : (
+        <ul className="divide-y divide-ionex-border-100">
+          {rows.map((r, i) => (
+            <li key={i} className="py-2 flex justify-between text-sm">
+              <span className="capitalize text-gray-700">{r[valueKey]}</span>
+              <span className="font-semibold">{r.n}{r.total != null ? ` · ${formatZAR(r.total)}` : ''}</span>
+            </li>
           ))}
-        </div>
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'kyc' && <KYCTab queue={kycQueue} onRefresh={fetchAdminData} />}
-      {activeTab === 'participants' && <ParticipantsTab participants={participants} onRefresh={fetchAdminData} />}
-      {activeTab === 'config' && <ConfigTab />}
-      {activeTab === 'fees' && <FeesTab />}
-      {activeTab === 'analytics' && <AnalyticsTab />}
-    </div>
-  );
-}
-
-function StatCard({ title, value, icon, status }: { title: string; value: string | number; icon: React.ReactNode; status?: string }) {
-  const statusColors: Record<string, string> = {
-    success: 'bg-green-50 text-green-600',
-    warning: 'bg-yellow-50 text-yellow-600',
-    error: 'bg-red-50 text-red-600',
-  };
-
-  return (
-    <div className="bg-white rounded-xl border border-ionex-border-100 p-4">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-ionex-text-mute text-sm">{title}</span>
-        <div className={`p-2 rounded-lg ${statusColors[status || ''] || 'bg-ionex-brand/10 text-ionex-brand'}`}>
-          {icon}
-        </div>
-      </div>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-    </div>
-  );
-}
-
-function KYCTab({ queue, onRefresh }: { queue: KYCRequest[]; onRefresh: () => void }) {
-  const handleApprove = async (id: string) => {
-    await api.post(`/admin/kyc/${id}/approve`);
-    onRefresh();
-  };
-
-  const handleReject = async (id: string) => {
-    await api.post(`/admin/kyc/${id}/reject`);
-    onRefresh();
-  };
-
-  return (
-    <div className="bg-white rounded-xl border border-ionex-border-100 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">KYC Verification Queue</h2>
-        <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full">{queue.length} pending</span>
-      </div>
-      {queue.length === 0 ? (
-        <EmptyState icon={<CheckCircle className="w-8 h-8" />} title="All caught up!" description="No pending KYC verifications" />
-      ) : (
-        <>
-          <ExportBar data={queue} filename="kyc_queue" />
-          <table className="w-full text-sm">
-            <thead><tr className="border-b border-ionex-border-100"><th className="text-left py-3">Applicant</th><th className="text-left">Submitted</th><th className="text-center">Documents</th><th className="text-right">Actions</th></tr></thead>
-            <tbody>
-              {queue.map(item => (
-                <tr key={item.id} className="border-b border-ionex-border-50">
-                  <td className="py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-ionex-brand/10 rounded-full flex items-center justify-center text-ionex-brand font-semibold">
-                        {item.participant_name.charAt(0)}
-                      </div>
-                      <span className="font-medium">{item.participant_name}</span>
-                    </div>
-                  </td>
-                  <td className="text-ionex-text-mute">{item.submitted_at}</td>
-                  <td className="text-center">{item.documents_count}</td>
-                  <td className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <button onClick={() => handleApprove(item.id)} className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">Approve</button>
-                      <button onClick={() => handleReject(item.id)} className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">Reject</button>
-                      <button className="px-3 py-1 border border-ionex-border-200 text-xs rounded hover:bg-gray-50">Review</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
+        </ul>
       )}
     </div>
   );
-}
-
-function ParticipantsTab({ participants, onRefresh }: { participants: Participant[]; onRefresh: () => void }) {
   return (
-    <div className="bg-white rounded-xl border border-ionex-border-100 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Platform Participants</h2>
-        <button className="flex items-center gap-2 px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light">
-          <UserPlus className="w-4 h-4" /> Add Participant
-        </button>
-      </div>
-      {participants.length === 0 ? (
-        <EmptyState icon={<Users className="w-8 h-8" />} title="No participants" description="Participants will appear here" />
-      ) : (
-        <>
-          <ExportBar data={participants} filename="participants" />
-          <table className="w-full text-sm">
-            <thead><tr className="border-b border-ionex-border-100"><th className="text-left py-3">Name</th><th className="text-left">Email</th><th className="text-left">Role</th><th className="text-left">KYC Status</th><th className="text-left">Joined</th></tr></thead>
-            <tbody>
-              {participants.map(p => (
-                <tr key={p.id} className="border-b border-ionex-border-50">
-                  <td className="py-3 font-medium">{p.name}</td>
-                  <td className="text-ionex-text-mute">{p.email}</td>
-                  <td><span className="px-2 py-0.5 bg-ionex-brand/10 text-ionex-brand text-xs rounded-full">{p.role}</span></td>
-                  <td>
-                    <span className={`px-2 py-0.5 text-xs rounded-full ${
-                      p.kyc_status === 'verified' ? 'bg-green-100 text-green-700' :
-                      p.kyc_status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-red-100 text-red-700'
-                    }`}>
-                      {p.kyc_status}
-                    </span>
-                  </td>
-                  <td className="text-ionex-text-mute">{p.created_at}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
-    </div>
-  );
-}
-
-function ConfigTab() {
-  return (
-    <div className="bg-white rounded-xl border border-ionex-border-100 p-6">
-      <h2 className="text-lg font-semibold mb-6">Platform Configuration</h2>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <h3 className="font-medium text-gray-700">General Settings</h3>
-          <ConfigField label="Platform Name" defaultValue="Open Energy Platform" />
-          <ConfigField label="Support Email" defaultValue="support@openenergy.co.za" />
-          <ConfigField label="Maintenance Mode" type="toggle" defaultChecked={false} />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Section title="Participants by status" rows={stats.participants_by_status} valueKey="status" />
+      <Section title="Contracts by phase" rows={stats.contracts_by_phase} valueKey="phase" />
+      <Section title="Invoices by status" rows={stats.invoices_by_status} valueKey="status" />
+      <div className="p-5 bg-white rounded-xl border border-ionex-border-100">
+        <h3 className="font-semibold text-gray-900 mb-3">Trade activity (30d)</h3>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-ionex-text-mute">Matched trades</p>
+            <p className="text-xl font-semibold">{Number(stats.trades_30d?.n || 0)}</p>
+          </div>
+          <div>
+            <p className="text-ionex-text-mute">Volume (MWh)</p>
+            <p className="text-xl font-semibold">{Math.round(Number(stats.trades_30d?.volume_mwh || 0)).toLocaleString()}</p>
+          </div>
         </div>
-        <div className="space-y-4">
-          <h3 className="font-medium text-gray-700">Trading Settings</h3>
-          <ConfigField label="Min Trade Size (MWh)" defaultValue="10" type="number" />
-          <ConfigField label="Max Price (ZAR/MWh)" defaultValue="5000" type="number" />
-          <ConfigField label="Enable Carbon Trading" type="toggle" defaultChecked={true} />
-        </div>
-      </div>
-      <div className="mt-6 pt-6 border-t border-ionex-border-100">
-        <button className="px-6 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light">Save Configuration</button>
       </div>
     </div>
   );
 }
 
-function ConfigField({ label, defaultValue, type = 'text', defaultChecked }: {
-  label: string;
-  defaultValue?: string | number;
-  type?: string;
-  defaultChecked?: boolean;
+function KycPanel({ kyc, filter, onFilterChange, onDecide }: {
+  kyc: ParticipantRow[];
+  filter: KycStatus;
+  onFilterChange: (v: KycStatus) => void;
+  onDecide: (id: string, next: KycStatus, notes?: string) => void;
 }) {
   return (
-    <div className="flex items-center justify-between py-2">
-      <label className="text-sm text-gray-600">{label}</label>
-      {type === 'toggle' ? (
-        <input type="checkbox" defaultChecked={defaultChecked} className="w-5 h-5 rounded border-ionex-border" />
-      ) : type === 'number' ? (
-        <input type="number" defaultValue={defaultValue} className="w-32 px-3 py-1 border border-ionex-border-200 rounded-lg" />
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        {(['pending', 'in_review', 'approved', 'rejected'] as KycStatus[]).map(s => (
+          <button
+            key={s}
+            onClick={() => onFilterChange(s)}
+            className={`px-3 py-1.5 rounded-full text-sm border ${filter === s ? 'bg-ionex-brand text-white border-ionex-brand' : 'bg-white border-ionex-border-200 text-gray-700 hover:bg-gray-50'}`}
+          >
+            {s.replace('_', ' ')}
+          </button>
+        ))}
+      </div>
+      {kyc.length === 0 ? (
+        <EmptyState icon={<Shield className="w-8 h-8" />} title="No KYC requests" description={`No participants with status "${filter}".`} />
       ) : (
-        <input type="text" defaultValue={defaultValue} className="w-64 px-3 py-1 border border-ionex-border-200 rounded-lg" />
+        <div className="bg-white rounded-xl border border-ionex-border-100 divide-y divide-ionex-border-100">
+          {kyc.map(p => (
+            <div key={p.id} className="p-4 flex items-center justify-between flex-wrap gap-3">
+              <div className="min-w-0">
+                <p className="font-semibold text-gray-900">{p.name}{p.company_name ? ` · ${p.company_name}` : ''}</p>
+                <p className="text-sm text-ionex-text-mute">{p.email} · {p.role}</p>
+                <p className="text-xs text-ionex-text-mute">Submitted {new Date(p.created_at).toLocaleString()}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {filter !== 'approved' && (
+                  <button
+                    onClick={() => onDecide(p.id, 'approved', 'KYC verified.')}
+                    className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 flex items-center gap-1"
+                  >
+                    <CheckCircle className="w-4 h-4" /> Approve
+                  </button>
+                )}
+                {filter !== 'in_review' && filter !== 'approved' && (
+                  <button
+                    onClick={() => onDecide(p.id, 'in_review', 'Requires additional review.')}
+                    className="px-3 py-1.5 border border-blue-300 text-blue-700 rounded-lg text-sm hover:bg-blue-50 flex items-center gap-1"
+                  >
+                    <AlertTriangle className="w-4 h-4" /> Hold
+                  </button>
+                )}
+                {filter !== 'rejected' && (
+                  <button
+                    onClick={() => {
+                      const reason = prompt('Reason for rejection?') || 'KYC rejected.';
+                      onDecide(p.id, 'rejected', reason);
+                    }}
+                    className="px-3 py-1.5 border border-red-300 text-red-700 rounded-lg text-sm hover:bg-red-50 flex items-center gap-1"
+                  >
+                    <XCircle className="w-4 h-4" /> Reject
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
 }
 
-function FeesTab() {
+function UsersPanel({ users, search, onSearchChange, onSetStatus }: {
+  users: ParticipantRow[];
+  search: string;
+  onSearchChange: (v: string) => void;
+  onSetStatus: (id: string, status: UserStatus) => void;
+}) {
   return (
-    <div className="bg-white rounded-xl border border-ionex-border-100 p-6">
-      <h2 className="text-lg font-semibold mb-6">Fee Management</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <FeeCard title="Transaction Fee" rate="0.5%" description="Per trade execution" />
-        <FeeCard title="Membership Fee" rate="R5,000" description="Monthly per participant" />
-        <FeeCard title="Carbon Trading Fee" rate="1.2%" description="Per carbon credit trade" />
-      </div>
-      <div className="mt-6">
-        <h3 className="font-medium text-gray-700 mb-4">Recent Fee Collections</h3>
-        <table className="w-full text-sm">
-          <thead><tr className="border-b border-ionex-border-100"><th className="text-left py-2">Date</th><th className="text-left">Type</th><th className="text-right">Amount</th></tr></thead>
-          <tbody>
-            <tr className="border-b border-ionex-border-50"><td className="py-2">2024-04-15</td><td>Transaction Fee</td><td className="text-right">R12,450</td></tr>
-            <tr className="border-b border-ionex-border-50"><td className="py-2">2024-04-14</td><td>Membership</td><td className="text-right">R85,000</td></tr>
-            <tr className="border-b border-ionex-border-50"><td className="py-2">2024-04-13</td><td>Carbon Trading</td><td className="text-right">R8,200</td></tr>
-          </tbody>
-        </table>
-      </div>
+    <div className="space-y-3">
+      <input
+        value={search}
+        onChange={e => onSearchChange(e.target.value)}
+        placeholder="Search by name, email, or company"
+        className="w-full max-w-md px-3 py-2 border border-ionex-border-200 rounded-lg"
+      />
+      {users.length === 0 ? (
+        <EmptyState icon={<Users className="w-8 h-8" />} title="No users" description="Try a different search." />
+      ) : (
+        <div className="bg-white rounded-xl border border-ionex-border-100 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-left text-ionex-text-mute">
+              <tr>
+                <th className="p-3 font-medium">User</th>
+                <th className="p-3 font-medium">Role</th>
+                <th className="p-3 font-medium">Status</th>
+                <th className="p-3 font-medium">KYC</th>
+                <th className="p-3 font-medium">Tier</th>
+                <th className="p-3 font-medium text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ionex-border-100">
+              {users.map(u => (
+                <tr key={u.id}>
+                  <td className="p-3">
+                    <p className="font-medium text-gray-900">{u.name}</p>
+                    <p className="text-xs text-ionex-text-mute">{u.email}{u.company_name ? ` · ${u.company_name}` : ''}</p>
+                  </td>
+                  <td className="p-3 capitalize">{u.role.replace('_', ' ')}</td>
+                  <td className="p-3"><span className={`px-2 py-1 rounded-full text-xs ${STATUS_PILL[u.status] || 'bg-gray-100 text-gray-700'}`}>{u.status}</span></td>
+                  <td className="p-3"><span className={`px-2 py-1 rounded-full text-xs ${STATUS_PILL[u.kyc_status] || 'bg-gray-100 text-gray-700'}`}>{u.kyc_status}</span></td>
+                  <td className="p-3 capitalize">{u.subscription_tier || '—'}</td>
+                  <td className="p-3 text-right">
+                    {u.status !== 'active' && (
+                      <button onClick={() => onSetStatus(u.id, 'active')} className="text-xs text-green-700 hover:underline mr-3">Activate</button>
+                    )}
+                    {u.status !== 'suspended' && (
+                      <button onClick={() => onSetStatus(u.id, 'suspended')} className="text-xs text-red-700 hover:underline">Suspend</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
 
-function FeeCard({ title, rate, description }: { title: string; rate: string; description: string }) {
+function ModulesPanel({ modules, onToggle }: { modules: ModuleRow[]; onToggle: (key: string, enabled: boolean) => void; }) {
+  if (modules.length === 0) return <EmptyState icon={<Settings className="w-8 h-8" />} title="No modules" description="Module catalogue is empty." />;
   return (
-    <div className="p-4 border border-ionex-border-100 rounded-lg">
-      <h4 className="font-medium text-gray-900">{title}</h4>
-      <p className="text-2xl font-bold text-ionex-brand mt-2">{rate}</p>
-      <p className="text-sm text-ionex-text-mute mt-1">{description}</p>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {modules.map(m => (
+        <div key={m.module_key} className="p-4 bg-white border border-ionex-border-100 rounded-xl">
+          <div className="flex items-center justify-between">
+            <div className="min-w-0">
+              <p className="font-semibold text-gray-900">{m.display_name}</p>
+              <p className="text-xs text-ionex-text-mute">{m.module_key}{m.category ? ` · ${m.category}` : ''}</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" checked={!!m.enabled} onChange={e => onToggle(m.module_key, e.target.checked)} className="sr-only peer" />
+              <div className="w-11 h-6 bg-gray-300 peer-checked:bg-ionex-brand rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5" />
+            </label>
+          </div>
+          {m.description && <p className="text-sm text-gray-600 mt-2">{m.description}</p>}
+        </div>
+      ))}
     </div>
   );
 }
 
-function AnalyticsTab() {
+function AuditPanel({ rows }: { rows: AuditRow[] }) {
+  if (rows.length === 0) return <EmptyState icon={<ClipboardList className="w-8 h-8" />} title="No audit entries" description="No actions have been logged yet." />;
   return (
-    <div className="bg-white rounded-xl border border-ionex-border-100 p-6">
-      <h2 className="text-lg font-semibold mb-6">Platform Analytics</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <h4 className="font-medium mb-3">Trading Volume (30 days)</h4>
-          <p className="text-3xl font-bold text-ionex-brand">45,230 MWh</p>
-          <p className="text-sm text-green-600 mt-1">+12% from last month</p>
-        </div>
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <h4 className="font-medium mb-3">Active Participants</h4>
-          <p className="text-3xl font-bold text-ionex-brand">156</p>
-          <p className="text-sm text-green-600 mt-1">+8 new this month</p>
-        </div>
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <h4 className="font-medium mb-3">Total Carbon Traded</h4>
-          <p className="text-3xl font-bold text-ionex-brand">8,450 tCO₂e</p>
-          <p className="text-sm text-green-600 mt-1">+23% from last month</p>
-        </div>
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <h4 className="font-medium mb-3">Platform Revenue</h4>
-          <p className="text-3xl font-bold text-ionex-brand">R342,000</p>
-          <p className="text-sm text-green-600 mt-1">+5% from last month</p>
-        </div>
+    <div className="bg-white rounded-xl border border-ionex-border-100 overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-gray-50 text-left text-ionex-text-mute">
+          <tr>
+            <th className="p-3 font-medium">When</th>
+            <th className="p-3 font-medium">Actor</th>
+            <th className="p-3 font-medium">Action</th>
+            <th className="p-3 font-medium">Entity</th>
+            <th className="p-3 font-medium">Changes</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-ionex-border-100">
+          {rows.map(r => (
+            <tr key={r.id}>
+              <td className="p-3 text-ionex-text-mute">{new Date(r.created_at).toLocaleString()}</td>
+              <td className="p-3">
+                <p className="font-medium text-gray-900">{r.actor_name || r.actor_id}</p>
+                {r.actor_role && <p className="text-xs text-ionex-text-mute capitalize">{r.actor_role.replace('_', ' ')}</p>}
+              </td>
+              <td className="p-3 font-mono text-xs">{r.action}</td>
+              <td className="p-3 font-mono text-xs">{r.entity_type}{r.entity_id ? ` · ${r.entity_id}` : ''}</td>
+              <td className="p-3 font-mono text-xs max-w-xs truncate" title={r.changes || ''}>{r.changes || '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function BillingPanel({ billing }: { billing: BillingSnapshot | null }) {
+  if (!billing) return <EmptyState icon={<DollarSign className="w-8 h-8" />} title="No billing data" description="Billing snapshot is empty." />;
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="p-5 bg-white border border-ionex-border-100 rounded-xl">
+        <p className="text-xs uppercase tracking-wide text-ionex-text-mute">Monthly recurring revenue</p>
+        <p className="text-3xl font-bold text-gray-900 mt-2">{formatZAR(billing.monthly_recurring_zar)}</p>
+        <p className="text-xs text-ionex-text-mute mt-1">Based on active participants × tier rate</p>
+      </div>
+      <div className="p-5 bg-white border border-ionex-border-100 rounded-xl">
+        <p className="font-semibold text-gray-900 mb-3">Tier rate card</p>
+        <ul className="text-sm space-y-1">
+          {Object.entries(billing.rate_card).map(([tier, rate]) => (
+            <li key={tier} className="flex justify-between">
+              <span className="capitalize text-gray-700">{tier}</span>
+              <span className="font-mono">{formatZAR(Number(rate))}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="p-5 bg-white border border-ionex-border-100 rounded-xl md:col-span-2">
+        <p className="font-semibold text-gray-900 mb-3">Active participants by tier</p>
+        {billing.tiers.length === 0 ? (
+          <p className="text-sm text-ionex-text-mute">No active participants.</p>
+        ) : (
+          <ul className="divide-y divide-ionex-border-100">
+            {billing.tiers.map(t => {
+              const rate = billing.rate_card[t.subscription_tier] || 0;
+              return (
+                <li key={t.subscription_tier} className="py-2 flex justify-between text-sm">
+                  <span className="capitalize text-gray-700">{t.subscription_tier || '—'}</span>
+                  <span className="font-mono">{t.n} × {formatZAR(rate)} = {formatZAR(rate * Number(t.n || 0))}</span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </div>
   );
-}
-
-function getDefaultKycQueue(): KYCRequest[] {
-  return [
-    { id: '1', participant_name: 'GreenPower Solutions', submitted_at: '2024-04-15', documents_count: 5 },
-    { id: '2', participant_name: 'SolarTech Investments', submitted_at: '2024-04-14', documents_count: 7 },
-    { id: '3', participant_name: 'EcoEnergy Trading', submitted_at: '2024-04-13', documents_count: 4 },
-  ];
-}
-
-function getDefaultParticipants(): Participant[] {
-  return [
-    { id: '1', name: 'SolarCorp SA', email: 'info@solarcorp.co.za', role: 'ipp_developer', kyc_status: 'verified', created_at: '2024-01-15' },
-    { id: '2', name: 'WindPower Ltd', email: 'contact@windpower.co.za', role: 'trader', kyc_status: 'verified', created_at: '2024-02-01' },
-    { id: '3', name: 'EnergyFund Africa', email: 'invest@energyfund.co.za', role: 'carbon_fund', kyc_status: 'verified', created_at: '2024-02-20' },
-  ];
-}
-
-function getDefaultStats() {
-  return { totalParticipants: 156, pendingKyc: 12, activeTraders: 45, monthlyRevenue: 250000 };
 }
