@@ -244,7 +244,7 @@ export function Settlement() {
         <RecordPaymentModal invoice={payInvoice} onClose={() => setPayInvoice(null)} onDone={() => { setPayInvoice(null); void refreshAll(); }} />
       )}
       {disputeInvoice && (
-        <FileDisputeModal invoice={disputeInvoice} onClose={() => setDisputeInvoice(null)} onDone={() => { setDisputeInvoice(null); setTab('disputes'); void fetchSummary(); }} />
+        <FileDisputeModal invoice={disputeInvoice} onClose={() => setDisputeInvoice(null)} onDone={() => { setDisputeInvoice(null); setTab('disputes'); setStatusFilter('all'); void fetchSummary(); }} />
       )}
     </div>
   );
