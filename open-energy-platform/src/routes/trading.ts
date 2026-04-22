@@ -4,6 +4,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import { ask } from '../utils/ai';
+import { withLock, LockBusyError } from '../utils/locks';
 
 const trading = new Hono<HonoEnv>();
 trading.use('*', authMiddleware);
@@ -109,6 +110,11 @@ trading.post('/orders/:id/cancel', async (c) => {
 
 // POST /trading/match — match a buy order against a sell order (fires trade.matched cascade)
 // Body: { buy_order_id, sell_order_id, volume_mwh, price_per_mwh? }
+//
+// Serialized on the (sorted) order-id pair via an advisory lock so two callers
+// can't both observe open/open and both flip the orders to 'matched' — which
+// would otherwise produce duplicate trade_matches rows + two escrow + two
+// invoice rows from the cascade.
 trading.post('/match', async (c) => {
   const user = getCurrentUser(c);
   const { buy_order_id, sell_order_id, volume_mwh, price_per_mwh } = await c.req.json();
@@ -117,47 +123,77 @@ trading.post('/match', async (c) => {
     return c.json({ success: false, error: 'buy_order_id, sell_order_id, volume_mwh are required' }, 400);
   }
 
-  const buy = await c.env.DB.prepare('SELECT * FROM trade_orders WHERE id = ?').bind(buy_order_id).first();
-  const sell = await c.env.DB.prepare('SELECT * FROM trade_orders WHERE id = ?').bind(sell_order_id).first();
-  if (!buy || !sell) return c.json({ success: false, error: 'Order(s) not found' }, 404);
-  if (buy.side !== 'buy' || sell.side !== 'sell') return c.json({ success: false, error: 'Mismatched sides' }, 400);
-  if (buy.status !== 'open' || sell.status !== 'open') return c.json({ success: false, error: 'Only open orders can be matched' }, 400);
-  // Only one of the two parties (or admin) can call match
-  if (user.id !== buy.participant_id && user.id !== sell.participant_id && user.role !== 'admin') {
-    return c.json({ success: false, error: 'Not a counterparty to either order' }, 403);
+  const [aId, bId] = [String(buy_order_id), String(sell_order_id)].sort();
+  const lockKey = `trade:match:${aId}:${bId}`;
+
+  try {
+    const body = await withLock(
+      c.env,
+      lockKey,
+      user.id,
+      async () => {
+        const buy = await c.env.DB.prepare('SELECT * FROM trade_orders WHERE id = ?').bind(buy_order_id).first();
+        const sell = await c.env.DB.prepare('SELECT * FROM trade_orders WHERE id = ?').bind(sell_order_id).first();
+        if (!buy || !sell) throw new LockBusyError('__not_found__');
+        if (buy.side !== 'buy' || sell.side !== 'sell') throw new LockBusyError('__mismatched_sides__');
+        if (buy.status !== 'open' || sell.status !== 'open') throw new LockBusyError('__not_open__');
+        if (user.id !== buy.participant_id && user.id !== sell.participant_id && user.role !== 'admin') {
+          throw new LockBusyError('__not_counterparty__');
+        }
+
+        const matchId = 'mt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+        const price = Number(price_per_mwh ?? sell.price_min ?? buy.price_max ?? 0);
+        const total_value = price * Number(volume_mwh);
+        const now = new Date().toISOString();
+
+        await c.env.DB.prepare(`
+          INSERT INTO trade_matches (id, buy_order_id, sell_order_id, matched_volume_mwh, matched_price, matched_at, status)
+          VALUES (?, ?, ?, ?, ?, ?, 'pending')
+        `).bind(matchId, buy_order_id, sell_order_id, volume_mwh, price, now).run();
+
+        await c.env.DB.prepare(`UPDATE trade_orders SET status = 'matched', updated_at = ? WHERE id IN (?, ?)`)
+          .bind(now, buy_order_id, sell_order_id).run();
+
+        await fireCascade({
+          event: 'trade.matched',
+          actor_id: user.id,
+          entity_type: 'trade_matches',
+          entity_id: matchId,
+          data: {
+            match_id: matchId,
+            buyer_id: buy.participant_id,
+            seller_id: sell.participant_id,
+            volume_mwh,
+            price_per_mwh: price,
+            total_value,
+            delivery_date: buy.delivery_date || sell.delivery_date,
+          },
+          env: c.env,
+        });
+
+        return { id: matchId, total_value };
+      },
+      { ttlSeconds: 15, context: { buy_order_id, sell_order_id } },
+    );
+
+    return c.json({ success: true, data: body }, 201);
+  } catch (err) {
+    if (err instanceof LockBusyError) {
+      switch (err.message) {
+        case '__not_found__':
+          return c.json({ success: false, error: 'Order(s) not found' }, 404);
+        case '__mismatched_sides__':
+          return c.json({ success: false, error: 'Mismatched sides' }, 400);
+        case '__not_open__':
+          return c.json({ success: false, error: 'Only open orders can be matched' }, 400);
+        case '__not_counterparty__':
+          return c.json({ success: false, error: 'Not a counterparty to either order' }, 403);
+        default:
+          return c.json({ success: false, error: 'Another match is in progress on these orders — retry in a moment' }, 409);
+      }
+    }
+    throw err;
   }
-
-  const matchId = 'mt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
-  const price = Number(price_per_mwh ?? sell.price_min ?? buy.price_max ?? 0);
-  const total_value = price * Number(volume_mwh);
-  const now = new Date().toISOString();
-
-  await c.env.DB.prepare(`
-    INSERT INTO trade_matches (id, buy_order_id, sell_order_id, matched_volume_mwh, matched_price, matched_at, status)
-    VALUES (?, ?, ?, ?, ?, ?, 'pending')
-  `).bind(matchId, buy_order_id, sell_order_id, volume_mwh, price, now).run();
-
-  await c.env.DB.prepare(`UPDATE trade_orders SET status = 'matched', updated_at = ? WHERE id IN (?, ?)`)
-    .bind(now, buy_order_id, sell_order_id).run();
-
-  await fireCascade({
-    event: 'trade.matched',
-    actor_id: user.id,
-    entity_type: 'trade_matches',
-    entity_id: matchId,
-    data: {
-      match_id: matchId,
-      buyer_id: buy.participant_id,
-      seller_id: sell.participant_id,
-      volume_mwh,
-      price_per_mwh: price,
-      total_value,
-      delivery_date: buy.delivery_date || sell.delivery_date,
-    },
-    env: c.env,
-  });
-
-  return c.json({ success: true, data: { id: matchId, total_value } }, 201);
 });
 
 // POST /trading/recommend — AI trader copilot

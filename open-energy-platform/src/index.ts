@@ -1,6 +1,7 @@
 // Open Energy Platform — Main Entry Point
 import { Hono } from 'hono';
 import { corsMiddleware, securityHeaders, rateLimitMiddleware, requestLogger } from './middleware/security';
+import { idempotency } from './middleware/idempotency';
 import { HonoEnv } from './utils/types';
 
 // Route imports
@@ -44,6 +45,8 @@ app.use('*', securityHeaders);
 app.use('*', corsMiddleware);
 app.use('*', rateLimitMiddleware);
 app.use('*', requestLogger);
+// Idempotency (no-op unless caller sends Idempotency-Key; see migration 013)
+app.use('*', idempotency);
 
 // Health check
 app.get('/api/health', (c) => c.json({ status: 'healthy', version: '1.0.0' }));
