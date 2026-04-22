@@ -149,9 +149,11 @@ function renderInline(src: string): React.ReactNode[] {
       // click, so we hard-gate by scheme here. Relative links and fragment
       // refs (#…) are accepted; anything else must be http/https/mailto/tel.
       const href = m[5].trim();
+      // Protocol-relative URLs (//evil.com) also navigate off-site, so we
+      // reject the leading-// case explicitly.
       const isSafe =
         href.startsWith('#') ||
-        href.startsWith('/') ||
+        (href.startsWith('/') && !href.startsWith('//')) ||
         /^(https?|mailto|tel):/i.test(href);
       parts.push(
         isSafe ? (
