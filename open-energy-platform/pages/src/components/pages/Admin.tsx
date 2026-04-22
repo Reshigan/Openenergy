@@ -549,7 +549,7 @@ function UsersPanel({ users, tenants, search, onSearchChange, onSetStatus, onCre
             <label className="text-sm">
               <span className="text-ionex-text-mute">Role</span>
               <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg bg-white">
-                {['admin','trader','ipp_developer','offtaker','lender','carbon_fund','grid_operator','regulator'].map(r => (
+                {['admin','trader','ipp_developer','offtaker','lender','carbon_fund','grid_operator','regulator','support'].map(r => (
                   <option key={r} value={r}>{r.replace('_',' ')}</option>
                 ))}
               </select>

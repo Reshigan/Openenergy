@@ -19,6 +19,7 @@ import { ESG } from './components/pages/ESG';
 import { Funds } from './components/pages/Funds';
 import { Marketplace } from './components/pages/Marketplace';
 import { Admin } from './components/pages/Admin';
+import { Support } from './components/pages/Support';
 import { Pipeline } from './components/pages/Pipeline';
 import { Reports } from './components/pages/Reports';
 import { OM } from './components/pages/OM';
@@ -1065,6 +1066,7 @@ function AppRoutes() {
       <Route path="/procurement" element={<ProtectedRoute><Layout><ProcurementHub /></Layout></ProtectedRoute>} />
       <Route path="/marketplace" element={<ProtectedRoute><Layout><Marketplace /></Layout></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><Layout><Admin /></Layout></ProtectedRoute>} />
+      <Route path="/support" element={<ProtectedRoute><Layout><Support /></Layout></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
       <Route path="/om" element={<ProtectedRoute><Layout><OM /></Layout></ProtectedRoute>} />
       <Route path="/lois" element={<ProtectedRoute><Layout><Lois /></Layout></ProtectedRoute>} />
