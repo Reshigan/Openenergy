@@ -37,13 +37,17 @@ function iconForType(type: string) {
 
 function hrefForAction(entityType: string | null, entityId: string | null): string {
   if (entityType === 'contract_documents' && entityId) return `/contracts/${entityId}`;
+  if (entityType === 'loi_drafts' && entityId) return `/lois/${entityId}`;
   switch (entityType) {
     case 'contract_documents': return '/contracts';
+    case 'loi_drafts': return '/lois';
     case 'invoices': return entityId ? `/settlement?focus=${entityId}` : '/settlement';
     case 'trade_matches': return entityId ? `/trading?focus=${entityId}` : '/trading';
     case 'project_milestones': return entityId ? `/projects?focus=${entityId}` : '/projects';
     case 'settlement_disputes': return entityId ? `/settlement?focus=${entityId}` : '/settlement';
     case 'ona_faults': return entityId ? `/projects?focus=${entityId}` : '/projects';
+    case 'disbursement_requests': return entityId ? `/funds?focus=${entityId}` : '/funds';
+    case 'loan_covenants': return entityId ? `/funds?focus=${entityId}` : '/funds';
     default: return '/cockpit';
   }
 }
