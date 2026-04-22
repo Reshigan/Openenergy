@@ -29,6 +29,7 @@ import { Intelligence } from './components/pages/Intelligence';
 import { Settlement } from './components/pages/Settlement';
 import { Popia } from './components/pages/Popia';
 import { Briefing } from './components/pages/Briefing';
+import { Monitoring } from './components/pages/Monitoring';
 import ForgotPassword from './components/pages/ForgotPassword';
 import ResetPassword from './components/pages/ResetPassword';
 import Security from './components/pages/Security';
@@ -1067,6 +1068,7 @@ function AppRoutes() {
       <Route path="/marketplace" element={<ProtectedRoute><Layout><Marketplace /></Layout></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><Layout><Admin /></Layout></ProtectedRoute>} />
       <Route path="/support" element={<ProtectedRoute><Layout><Support /></Layout></ProtectedRoute>} />
+      <Route path="/admin/monitoring" element={<ProtectedRoute><Layout><Monitoring /></Layout></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
       <Route path="/om" element={<ProtectedRoute><Layout><OM /></Layout></ProtectedRoute>} />
       <Route path="/lois" element={<ProtectedRoute><Layout><Lois /></Layout></ProtectedRoute>} />

@@ -4,6 +4,7 @@
 
 import { Context, Next } from 'hono';
 import { HonoEnv } from '../utils/types';
+import { logger, recordRequestStat, normaliseRoute } from '../utils/logger';
 
 // Generate unique request ID
 export function generateRequestId(): string {
@@ -155,27 +156,40 @@ export async function validateContentType(c: Context<HonoEnv>, next: Next) {
   await next();
 }
 
-// Request logging
+// Request logging — emits a single structured JSON line per request.
+// Also records a rolling request_stats bucket so /admin/monitoring can
+// show per-route traffic + latency without scanning Logpush exports.
 export async function requestLogger(c: Context<HonoEnv>, next: Next) {
   const start = Date.now();
   const method = c.req.method;
   const path = c.req.path;
+  const route = normaliseRoute(path);
   const requestId = c.get('requestId') || generateRequestId();
-  
-  // Log request
-  console.log(`[${requestId}] ${method} ${path}`);
-  
+
   await next();
-  
-  // Log response
+
   const duration = Date.now() - start;
   const status = c.res.status;
-  
-  console.log(`[${requestId}] ${method} ${path} ${status} ${duration}ms`);
-  
-  // Log slow requests (>1s)
-  if (duration > 1000) {
-    console.warn(`[${requestId}] Slow request: ${method} ${path} took ${duration}ms`);
+  const auth = c.get('auth') as { user?: { id?: string }; tenant_id?: string } | undefined;
+
+  logger.info('http_request', {
+    req_id: requestId,
+    method,
+    path,
+    route,
+    status,
+    latency_ms: duration,
+    slow: duration > 1000,
+    participant_id: auth?.user?.id,
+    tenant_id: auth?.tenant_id,
+  });
+
+  // Stats bucket is best-effort; skip the DB write for health checks to
+  // avoid drowning the table in noise.
+  if (c.env?.DB && !path.startsWith('/api/health')) {
+    c.executionCtx?.waitUntil?.(
+      recordRequestStat(c.env.DB, route, method, status, duration).catch(() => {}),
+    ) ?? (await recordRequestStat(c.env.DB, route, method, status, duration).catch(() => {}));
   }
 }
 

@@ -4,7 +4,7 @@ import {
   LayoutDashboard, FileText, TrendingUp, CircleDollarSign, Leaf, Building2,
   BarChart3, Zap, PiggyBank, GitBranch, ShoppingCart, Store, Settings,
   Search, Bell, HelpCircle, LogOut, User, ChevronLeft, ChevronRight, Sparkles,
-  Menu, Wrench, FileBarChart, Activity, ShieldCheck, Sun, LifeBuoy,
+  Menu, Wrench, FileBarChart, Activity, ShieldCheck, Sun, LifeBuoy, Gauge,
 } from 'lucide-react';
 import { useAuth } from '../lib/useAuth';
 
@@ -36,23 +36,27 @@ const BASE_NAV: NavItem[] = [
   { path: '/popia',       label: 'POPIA',        icon: ShieldCheck,     section: 'Compliance' },
   { path: '/admin',       label: 'Admin',        icon: Settings,        section: 'System' },
   { path: '/support',     label: 'Support',      icon: LifeBuoy,        section: 'System' },
+  { path: '/admin/monitoring', label: 'Monitoring', icon: Gauge,       section: 'System' },
 ];
 
 function navForRole(role: string | undefined): NavItem[] {
   // /admin is admin-only; /support is admin + support only. Everyone else
   // gets a curated list without either. POPIA is visible to every role
   // because every user has personal data rights.
-  const nonSystem = BASE_NAV.filter((n) => n.path !== '/admin' && n.path !== '/support');
+  const nonSystem = BASE_NAV.filter(
+    (n) => n.path !== '/admin' && n.path !== '/support' && n.path !== '/admin/monitoring',
+  );
   if (!role) return nonSystem;
   switch (role) {
     case 'admin':
       return BASE_NAV;
     case 'support':
       // Support staff see a narrow console: their /support page, the action
-      // queues and audit surfaces, and read-only Intelligence/Briefing so
-      // they can see what the user is seeing when triaging tickets.
+      // queues and audit surfaces, the shared /admin/monitoring dashboard,
+      // and read-only Intelligence/Briefing so they can see what the user is
+      // seeing when triaging tickets.
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/support', '/intelligence', '/briefing', '/popia'].includes(n.path),
+        ['/cockpit', '/support', '/admin/monitoring', '/intelligence', '/briefing', '/popia'].includes(n.path),
       );
     case 'trader':
       return BASE_NAV.filter((n) =>
