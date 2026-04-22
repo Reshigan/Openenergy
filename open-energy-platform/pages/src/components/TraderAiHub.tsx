@@ -45,6 +45,44 @@ export function TraderAiHub() {
     return [];
   })();
 
+  // The LLM typically wraps its output in a ```json …``` fence (the prompt
+  // asks for exactly that), and sometimes echoes the whole structured payload
+  // as prose. When we've already parsed `recs`, the structured cards ARE the
+  // rendered form — the raw text is pure duplication, so we drop it. When we
+  // have no recs (fallback path), we still show the text but with code fences
+  // and any JSON-blob prefix stripped so the trader sees prose, not a blob.
+  const narrativeText = (() => {
+    const raw = result?.text?.trim();
+    if (!raw) return '';
+    if (recs.length > 0) return '';
+
+    // Strip ```json … ``` (or generic ```) code fences — anywhere in the text.
+    let cleaned = raw
+      .replace(/```(?:json|javascript|js)?\s*[\s\S]*?```/gi, '')
+      .trim();
+
+    // Some models prefix a bare JSON object before prose — drop a leading { … }
+    // block if what's left after it is non-empty prose.
+    if (cleaned.startsWith('{')) {
+      let depth = 0;
+      let end = -1;
+      for (let i = 0; i < cleaned.length; i++) {
+        const ch = cleaned[i];
+        if (ch === '{') depth++;
+        else if (ch === '}') {
+          depth--;
+          if (depth === 0) { end = i; break; }
+        }
+      }
+      if (end > 0) {
+        const after = cleaned.slice(end + 1).trim();
+        if (after.length > 0) cleaned = after;
+      }
+    }
+
+    return cleaned.trim();
+  })();
+
   const runRecommend = async () => {
     setLoading(true);
     setError(null);
@@ -139,11 +177,16 @@ export function TraderAiHub() {
             Hit "Recommend actions" to get AI-ranked opportunities across your open orders and the book.
           </div>
         )}
-        {result?.text && (
-          <pre className="text-[12px] whitespace-pre-wrap font-mono p-3 rounded-md"
+        {narrativeText && (
+          <div className="text-[13px] leading-relaxed whitespace-pre-wrap p-3 rounded-md"
                style={{ background: '#f7f8f9', color: '#32363a' }}>
-            {result.text}
-          </pre>
+            {narrativeText}
+          </div>
+        )}
+        {result && recs.length === 0 && !narrativeText && !loading && (
+          <div className="text-[13px]" style={{ color: '#6a6d70' }}>
+            No actionable recommendations from the current order book — try again once more orders are posted.
+          </div>
         )}
         {recs.length > 0 && (
           <div className="space-y-2">
