@@ -1,1 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+.wrangler/
+
+# Test coverage reports
 coverage/
+
+# Env / secrets
+.dev.vars
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

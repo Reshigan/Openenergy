@@ -38,6 +38,9 @@ import loiRoutes from './routes/lois';
 import funderRoutes from './routes/funder';
 import regulatorRoutes from './routes/regulator';
 import reportsRoutes from './routes/reports';
+import telemetryRoutes from './routes/telemetry';
+import monitoringRoutes from './routes/monitoring';
+import { logger } from './utils/logger';
 
 const app = new Hono<HonoEnv>();
 
@@ -93,14 +96,65 @@ app.route('/api/lois', loiRoutes);
 app.route('/api/funder', funderRoutes);
 app.route('/api/regulator', regulatorRoutes);
 app.route('/api/reports', reportsRoutes);
+app.route('/api/telemetry', telemetryRoutes);
+app.route('/api/admin/monitoring', monitoringRoutes);
 
 // Static assets (SPA shell, JS, CSS, images) are served by Cloudflare Pages directly.
 // This Worker / Pages Function only handles API routes under /api/*.
 
-// Error handling
+// Error handling — emit a structured log + persist to error_log so the
+// /admin/monitoring console can surface the crash to operators. Response
+// includes req_id so users / support can correlate back to the log line.
 app.onError((err, c) => {
-  console.error('Worker error:', err);
-  return c.json({ error: 'Internal Server Error', message: err.message }, 500);
+  const reqId = (c.get('requestId') as string | undefined) ||
+    `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  const auth = c.get('auth') as { user?: { id?: string }; tenant_id?: string } | undefined;
+
+  logger.error('unhandled_error', {
+    req_id: reqId,
+    route: c.req.path,
+    method: c.req.method,
+    participant_id: auth?.user?.id,
+    tenant_id: auth?.tenant_id,
+    error_name: (err as Error).name,
+    error_message: err.message,
+    error_stack: (err as Error).stack,
+  });
+
+  // Best-effort DB write — never mask the original error.
+  try {
+    const id = `errlog_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+    const write = c.env.DB.prepare(
+      `INSERT INTO error_log
+         (id, req_id, source, severity, route, method, status,
+          participant_id, tenant_id, error_name, error_message,
+          error_stack, user_agent, ip, url)
+       VALUES (?, ?, 'server', 'error', ?, ?, 500, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+      .bind(
+        id,
+        reqId,
+        c.req.path,
+        c.req.method,
+        auth?.user?.id || null,
+        auth?.tenant_id || null,
+        (err as Error).name || null,
+        (err.message || '').slice(0, 2000),
+        ((err as Error).stack || '').slice(0, 8000),
+        (c.req.header('User-Agent') || '').slice(0, 500) || null,
+        c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || null,
+        c.req.url.slice(0, 1000),
+      )
+      .run();
+    c.executionCtx?.waitUntil?.(Promise.resolve(write).catch(() => {}));
+  } catch {
+    /* swallow — never fail the error handler */
+  }
+
+  return c.json(
+    { error: 'Internal Server Error', message: err.message, req_id: reqId },
+    500,
+  );
 });
 
 app.notFound((c) => {
