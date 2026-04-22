@@ -84,7 +84,7 @@ jobs:
 
       - name: Install Functions dependencies (hono, zod, bcryptjs)
         working-directory: open-energy-platform
-        run: npm install --no-audit --no-fund
+        run: npm install --no-audit --no-fund --legacy-peer-deps
 
       - name: Apply D1 migrations (remote)
         working-directory: open-energy-platform
