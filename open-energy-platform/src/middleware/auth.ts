@@ -135,14 +135,28 @@ export async function optionalAuth(c: Context<HonoEnv>, next: Next) {
     if (secret) {
       const payload = await verifyToken(token, secret);
       if (payload) {
-        c.set('auth', {
-          user: {
-            id: payload.sub,
-            email: payload.email,
-            role: payload.role,
-            name: payload.name,
-          },
-        });
+        // Mirror authMiddleware: resolve tenant_id so tenant helpers work under
+        // optionalAuth too. If the DB lookup fails or the participant vanished,
+        // treat the request as anonymous (consistent with this middleware's
+        // non-failing contract).
+        try {
+          const row = await c.env.DB.prepare('SELECT tenant_id FROM participants WHERE id = ?')
+            .bind(payload.sub)
+            .first<{ tenant_id: string | null }>();
+          if (row) {
+            c.set('auth', {
+              user: {
+                id: payload.sub,
+                email: payload.email,
+                role: payload.role,
+                name: payload.name,
+                tenant_id: row.tenant_id ?? 'default',
+              },
+            });
+          }
+        } catch {
+          // Swallow — optional auth must never block an anonymous request.
+        }
       }
     }
   }
