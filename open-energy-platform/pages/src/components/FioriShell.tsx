@@ -4,7 +4,7 @@ import {
   LayoutDashboard, FileText, TrendingUp, CircleDollarSign, Leaf, Building2,
   BarChart3, Zap, PiggyBank, GitBranch, ShoppingCart, Store, Settings,
   Search, Bell, HelpCircle, LogOut, User, ChevronLeft, ChevronRight, Sparkles,
-  Menu, Wrench, FileBarChart,
+  Menu, Wrench, FileBarChart, Activity,
 } from 'lucide-react';
 import { useAuth } from '../lib/useAuth';
 
@@ -30,6 +30,7 @@ const BASE_NAV: NavItem[] = [
   { path: '/carbon',      label: 'Carbon',       icon: Leaf,            section: 'Sustainability' },
   { path: '/esg',         label: 'ESG',          icon: BarChart3,       section: 'Sustainability' },
   { path: '/funds',       label: 'Funds',        icon: PiggyBank,       section: 'Finance' },
+  { path: '/intelligence', label: 'Intelligence', icon: Activity,       section: 'Insights' },
   { path: '/reports',     label: 'Reports',      icon: FileBarChart,    section: 'Insights' },
   { path: '/admin',       label: 'Admin',        icon: Settings,        section: 'System' },
 ];
@@ -43,34 +44,34 @@ function navForRole(role: string | undefined): NavItem[] {
       return BASE_NAV;
     case 'trader':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/trading', '/settlement', '/contracts', '/marketplace', '/reports'].includes(n.path),
+        ['/cockpit', '/trading', '/settlement', '/contracts', '/marketplace', '/intelligence', '/reports'].includes(n.path),
       );
     case 'ipp_developer':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/projects', '/contracts', '/settlement', '/grid', '/om', '/marketplace', '/esg', '/reports'].includes(
+        ['/cockpit', '/projects', '/contracts', '/settlement', '/grid', '/om', '/marketplace', '/esg', '/intelligence', '/reports'].includes(
           n.path,
         ),
       );
     case 'carbon_fund':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/carbon', '/marketplace', '/funds', '/pipeline', '/esg', '/reports'].includes(n.path),
+        ['/cockpit', '/carbon', '/marketplace', '/funds', '/pipeline', '/esg', '/intelligence', '/reports'].includes(n.path),
       );
     case 'offtaker':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/contracts', '/procurement', '/marketplace', '/settlement', '/esg', '/reports'].includes(
+        ['/cockpit', '/contracts', '/procurement', '/marketplace', '/settlement', '/esg', '/intelligence', '/reports'].includes(
           n.path,
         ),
       );
     case 'lender':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/projects', '/pipeline', '/funds', '/settlement', '/om', '/reports'].includes(n.path),
+        ['/cockpit', '/projects', '/pipeline', '/funds', '/settlement', '/om', '/intelligence', '/reports'].includes(n.path),
       );
     case 'grid_operator':
-      return BASE_NAV.filter((n) => ['/cockpit', '/grid', '/settlement', '/reports'].includes(n.path));
+      return BASE_NAV.filter((n) => ['/cockpit', '/grid', '/settlement', '/intelligence', '/reports'].includes(n.path));
     case 'regulator':
-      // Regulators see the marketplace, ESG and the compliance dashboard — not the admin console.
+      // Regulators see the marketplace, ESG, intelligence feed and the compliance dashboard — not the admin console.
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/marketplace', '/esg', '/reports'].includes(n.path),
+        ['/cockpit', '/marketplace', '/esg', '/intelligence', '/reports'].includes(n.path),
       );
     default:
       return nonAdminBase;

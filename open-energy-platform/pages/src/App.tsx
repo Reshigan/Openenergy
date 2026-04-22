@@ -24,6 +24,7 @@ import { Reports } from './components/pages/Reports';
 import { OM } from './components/pages/OM';
 import { Lois } from './components/pages/Lois';
 import { LoiDetail } from './components/pages/LoiDetail';
+import { Intelligence } from './components/pages/Intelligence';
 import { Skeleton } from './components/Skeleton';
 import { EmptyState } from './components/EmptyState';
 import { ErrorBanner } from './components/ErrorBanner';
@@ -80,6 +81,7 @@ function getNavigationForRole(role: string) {
     { path: '/marketplace', label: 'Marketplace', icon: ShopIcon },
     { path: '/om', label: 'O&M', icon: WrenchIcon },
     { path: '/lois', label: 'Letters of Intent', icon: DocumentIcon },
+    { path: '/intelligence', label: 'Intelligence', icon: ChartIcon },
     { path: '/reports', label: 'Reports', icon: ChartIcon },
   ];
 
@@ -94,17 +96,17 @@ function getNavigationForRole(role: string) {
     case 'ipp_developer':
       return baseNav.filter((n) => !['/trading', '/funds', '/marketplace'].includes(n.path));
     case 'lender':
-      return baseNav.filter((n) => ['/cockpit', '/projects', '/funds', '/om', '/reports'].includes(n.path));
+      return baseNav.filter((n) => ['/cockpit', '/projects', '/funds', '/om', '/intelligence', '/reports'].includes(n.path));
     case 'trader':
-      return baseNav.filter((n) => ['/cockpit', '/contracts', '/trading', '/settlement', '/reports'].includes(n.path));
+      return baseNav.filter((n) => ['/cockpit', '/contracts', '/trading', '/settlement', '/intelligence', '/reports'].includes(n.path));
     case 'carbon_fund':
-      return baseNav.filter((n) => ['/cockpit', '/carbon', '/funds', '/reports'].includes(n.path));
+      return baseNav.filter((n) => ['/cockpit', '/carbon', '/funds', '/intelligence', '/reports'].includes(n.path));
     case 'grid_operator':
-      return baseNav.filter((n) => ['/cockpit', '/grid', '/reports'].includes(n.path));
+      return baseNav.filter((n) => ['/cockpit', '/grid', '/intelligence', '/reports'].includes(n.path));
     case 'offtaker':
-      return baseNav.filter((n) => ['/cockpit', '/contracts', '/lois', '/procurement', '/marketplace', '/reports'].includes(n.path));
+      return baseNav.filter((n) => ['/cockpit', '/contracts', '/lois', '/procurement', '/marketplace', '/intelligence', '/reports'].includes(n.path));
     case 'regulator':
-      return baseNav.filter((n) => ['/cockpit', '/esg', '/reports'].includes(n.path));
+      return baseNav.filter((n) => ['/cockpit', '/esg', '/intelligence', '/reports'].includes(n.path));
     default:
       return [...baseNav.slice(0, 5), { path: '/reports', label: 'Reports', icon: ChartIcon }];
   }
@@ -911,6 +913,7 @@ function AppRoutes() {
       <Route path="/om" element={<ProtectedRoute><Layout><OM /></Layout></ProtectedRoute>} />
       <Route path="/lois" element={<ProtectedRoute><Layout><Lois /></Layout></ProtectedRoute>} />
       <Route path="/lois/:id" element={<ProtectedRoute><Layout><LoiDetail /></Layout></ProtectedRoute>} />
+      <Route path="/intelligence" element={<ProtectedRoute><Layout><Intelligence /></Layout></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/cockpit" replace />} />
       <Route path="*" element={<Navigate to="/cockpit" replace />} />
     </Routes>
