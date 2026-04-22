@@ -35,6 +35,7 @@ import aiRoutes from './routes/ai';
 import loiRoutes from './routes/lois';
 import funderRoutes from './routes/funder';
 import regulatorRoutes from './routes/regulator';
+import reportsRoutes from './routes/reports';
 
 const app = new Hono<HonoEnv>();
 
@@ -81,6 +82,7 @@ app.route('/api/ai', aiRoutes);
 app.route('/api/lois', loiRoutes);
 app.route('/api/funder', funderRoutes);
 app.route('/api/regulator', regulatorRoutes);
+app.route('/api/reports', reportsRoutes);
 
 // Static assets (SPA shell, JS, CSS, images) are served by Cloudflare Pages directly.
 // This Worker / Pages Function only handles API routes under /api/*.

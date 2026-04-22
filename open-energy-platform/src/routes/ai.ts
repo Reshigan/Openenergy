@@ -337,8 +337,9 @@ ai.get('/reports/:role', async (c) => {
   const reportRole = c.req.param('role');
   const period = c.req.query('period') || '90d';
 
-  // Admins can introspect any role; everyone else is locked to their own.
-  if (user.role !== 'admin' && user.role !== reportRole) {
+  // Admin + support can introspect any role; everyone else is locked to their own.
+  // Keep this in sync with the ADMIN_LIKE set in src/routes/reports.ts.
+  if (user.role !== 'admin' && user.role !== 'support' && user.role !== reportRole) {
     return c.json({ success: false, error: 'Forbidden' }, 403);
   }
 
