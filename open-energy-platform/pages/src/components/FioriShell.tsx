@@ -1,4 +1,4 @@
-import React, { useState, useMemo, ReactNode } from 'react';
+import React, { useState, useMemo, useEffect, useRef, ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, TrendingUp, CircleDollarSign, Leaf, Building2,
@@ -108,6 +108,34 @@ export function FioriShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [query, setQuery] = useState('');
   const [userMenu, setUserMenu] = useState(false);
+  // menuOpen drives the hamburger dropdown (full nav list grouped by section).
+  // It exists in addition to `collapsed` so the hamburger works on any
+  // viewport — even when the rail is already collapsed to icons.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // Close the hamburger dropdown on route change or outside click—without
+  // this it stays open after selecting an item.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onDown(ev: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(ev.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    function onKey(ev: KeyboardEvent) {
+      if (ev.key === 'Escape') setMenuOpen(false);
+    }
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
 
   const nav = useMemo(() => navForRole(user?.role), [user?.role]);
   const sections = useMemo(() => {
@@ -137,13 +165,87 @@ export function FioriShell({ children }: { children: ReactNode }) {
       <header
         className="fiori-shell fixed top-0 left-0 right-0 z-50 flex items-center h-11 px-2 sm:px-4"
       >
-        <button
-          onClick={() => setCollapsed((v) => !v)}
-          className="flex items-center justify-center w-9 h-9 rounded-md text-white/90 hover:bg-white/10 transition-colors"
-          aria-label="Toggle navigation"
-        >
-          <Menu size={18} />
-        </button>
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="flex items-center justify-center w-9 h-9 rounded-md text-white/90 hover:bg-white/10 transition-colors"
+            aria-label="Open navigation menu"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+          >
+            <Menu size={18} />
+          </button>
+
+          {menuOpen && (
+            <div
+              role="menu"
+              aria-label="Primary navigation"
+              className="fixed sm:absolute left-0 sm:left-0 top-11 sm:top-11 mt-1 w-[90vw] sm:w-[320px] max-h-[calc(100vh-56px)] overflow-y-auto bg-white rounded-md shadow-xl border border-[#e5e7eb] z-50"
+              style={{ boxShadow: '0 12px 32px rgba(15,23,42,0.18)' }}
+            >
+              <div className="px-3 py-2 border-b border-[#f0f1f2] flex items-center justify-between">
+                <span className="text-[11px] uppercase tracking-[0.08em] text-[#64748b] font-semibold">
+                  Navigation
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCollapsed((v) => !v);
+                    setMenuOpen(false);
+                  }}
+                  className="text-[11px] text-[#0a6ed1] hover:underline"
+                >
+                  {collapsed ? 'Expand rail' : 'Collapse rail'}
+                </button>
+              </div>
+              {sections.length === 0 && (
+                <div className="px-4 py-4 text-[13px] text-[#64748b]">
+                  Sign in to see navigation.
+                </div>
+              )}
+              {sections.map(([section, items]) => (
+                <div key={section} className="py-1">
+                  <div className="px-3 py-1.5 text-[10px] uppercase tracking-[0.1em] text-[#89919a] font-semibold">
+                    {section}
+                  </div>
+                  {items.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.path);
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        role="menuitem"
+                        onClick={() => setMenuOpen(false)}
+                        className={`flex items-center gap-2 px-3 py-2 text-[13px] ${
+                          active
+                            ? 'bg-[#eff6ff] text-[#0a6ed1] font-semibold'
+                            : 'text-[#32363a] hover:bg-[#f5f6f7]'
+                        }`}
+                      >
+                        <Icon size={15} className="shrink-0" />
+                        <span className="truncate">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
+              <div className="border-t border-[#f0f1f2] p-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-[#b91c1c] hover:bg-[#fef2f2] rounded-sm"
+                >
+                  <LogOut size={14} />
+                  Sign out
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center gap-2 ml-1 mr-4 select-none">
           <div
