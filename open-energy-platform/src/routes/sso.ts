@@ -216,6 +216,18 @@ sso.get('/microsoft/callback', async (c) => {
              status = CASE WHEN status = 'pending' THEN 'active' ELSE status END
        WHERE id = ?`
     ).bind(participant.id).run();
+    // Fire the same cascade as the regular /auth/verify-email endpoint so the
+    // audit log + webhook subscribers see SSO-driven verifications. `via`
+    // distinguishes this path from the click-the-link path (Devin Review
+    // finding on PR #44).
+    await fireCascade({
+      event: 'auth.email_verified',
+      actor_id: participant.id,
+      entity_type: 'participants',
+      entity_id: participant.id,
+      data: { via: 'microsoft_sso' },
+      env: c.env,
+    });
   }
 
   // Issue OE access + refresh tokens and create a session row.
