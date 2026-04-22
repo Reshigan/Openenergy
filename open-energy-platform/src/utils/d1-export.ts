@@ -92,8 +92,15 @@ async function dumpTable(
   out: string[],
 ): Promise<number> {
   // Column order comes from PRAGMA table_info so the INSERT matches schema.
+  // SQLite treats PRAGMA table_info(name) identifiers the same as other
+  // identifier contexts, so quote with doubled " to preserve names that
+  // contain spaces, quotes, or other punctuation. The prior stripping of
+  // double-quotes produced broken SQL for non-bareword table names, which
+  // caused PRAGMA to return zero columns → dumpTable returned 0 → schema
+  // was dumped without data (silent data loss in the backup artifact).
+  const quotedPragmaTable = `"${table.replace(/"/g, '""')}"`;
   const colsRes = await db
-    .prepare(`PRAGMA table_info(${JSON.stringify(table).replace(/"/g, '')})`)
+    .prepare(`PRAGMA table_info(${quotedPragmaTable})`)
     .all<{ name: string }>();
   const cols = (colsRes.results || []).map((c) => c.name);
   if (cols.length === 0) return 0;

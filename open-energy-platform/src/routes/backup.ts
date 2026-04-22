@@ -21,13 +21,38 @@ import { logger } from '../utils/logger';
 
 const backup = new Hono<HonoEnv>();
 
+// Constant-time comparison of two strings. We sign each value with the same
+// ephemeral HMAC-SHA256 key and then byte-compare the 32-byte digests. The
+// Workers runtime does not expose crypto.subtle.timingSafeEqual, so this is
+// the standard portable pattern. Unequal-length inputs are rejected early.
+async function timingSafeEqualStr(a: string, b: string): Promise<boolean> {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  if (a.length === 0 || b.length === 0) return false;
+  const enc = new TextEncoder();
+  const keyBytes = new Uint8Array(32);
+  crypto.getRandomValues(keyBytes);
+  const key = await crypto.subtle.importKey(
+    'raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
+  );
+  const [da, db] = await Promise.all([
+    crypto.subtle.sign('HMAC', key, enc.encode(a)),
+    crypto.subtle.sign('HMAC', key, enc.encode(b)),
+  ]);
+  const av = new Uint8Array(da);
+  const bv = new Uint8Array(db);
+  if (av.length !== bv.length) return false;
+  let diff = 0;
+  for (let i = 0; i < av.length; i++) diff |= av[i] ^ bv[i];
+  return diff === 0;
+}
+
 // Accept either an admin JWT or a shared BACKUP_TOKEN header. The shared
 // token is set via `wrangler secret put BACKUP_TOKEN` and is used by the
 // scheduled GitHub Actions job so it doesn't need a real user session.
 backup.use('*', async (c, next) => {
   const tokenHeader = c.req.header('X-Backup-Token') || '';
   const expected = (c.env as { BACKUP_TOKEN?: string }).BACKUP_TOKEN;
-  if (expected && tokenHeader && tokenHeader === expected) {
+  if (expected && tokenHeader && (await timingSafeEqualStr(tokenHeader, expected))) {
     await next();
     return;
   }
