@@ -103,6 +103,7 @@ admin.put('/modules/:key', async (c) => {
   const user = getCurrentUser(c);
   const key = c.req.param('key');
   const { enabled } = (await c.req.json().catch(() => ({}))) as { enabled?: boolean };
+  if (enabled === undefined) return c.json({ success: false, error: 'enabled field is required' }, 400);
   await c.env.DB.prepare('UPDATE modules SET enabled = ? WHERE module_key = ?').bind(enabled ? 1 : 0, key).run();
   if (c.env.KV) await c.env.KV.delete(`module:${key}`);
   await c.env.DB.prepare(`

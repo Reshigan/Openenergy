@@ -126,7 +126,7 @@ vault.get('/files/:id/download', async (c) => {
     return new Response(obj.body, {
       headers: {
         'content-type': row.mime_type || 'application/octet-stream',
-        'content-disposition': `attachment; filename="${row.file_name}"`,
+        'content-disposition': `attachment; filename="${row.file_name.replace(/["\\]/g, '_')}"`,
       },
     });
   }
