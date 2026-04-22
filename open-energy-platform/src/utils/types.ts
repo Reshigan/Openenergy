@@ -102,6 +102,7 @@ export interface AuthContext {
     email: string;
     role: ParticipantRole;
     name: string;
+    tenant_id?: string;
   };
 }
 

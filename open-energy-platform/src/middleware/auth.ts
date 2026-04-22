@@ -92,6 +92,17 @@ export async function authMiddleware(c: Context<HonoEnv>, next: Next) {
     throw new AppError(ErrorCode.UNAUTHORIZED, 'Invalid or expired token', 401);
   }
   
+  // Look up tenant_id for isolation enforcement (single row, indexed PK)
+  let tenantId: string | undefined;
+  try {
+    const row = await c.env.DB.prepare('SELECT tenant_id FROM participants WHERE id = ?')
+      .bind(payload.sub)
+      .first<{ tenant_id: string | null }>();
+    tenantId = row?.tenant_id ?? 'default';
+  } catch {
+    tenantId = 'default';
+  }
+
   // Set auth context
   c.set('auth', {
     user: {
@@ -99,9 +110,10 @@ export async function authMiddleware(c: Context<HonoEnv>, next: Next) {
       email: payload.email,
       role: payload.role,
       name: payload.name,
+      tenant_id: tenantId,
     },
   });
-  
+
   await next();
 }
 

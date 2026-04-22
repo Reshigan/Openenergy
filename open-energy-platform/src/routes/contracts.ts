@@ -6,6 +6,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { assertSameTenantParticipant } from '../utils/tenant';
 
 const contracts = new Hono<HonoEnv>();
 
@@ -240,6 +241,10 @@ contracts.post('/', async (c) => {
     return c.json({ success: false, error: 'Title, phase, and contract_type are required' }, 400);
   }
 
+  if (counterparty_id && counterparty_id !== user.id) {
+    await assertSameTenantParticipant(c, counterparty_id);
+  }
+
   const contractId = 'ct_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
   const termsJson = commercial_terms ? JSON.stringify(commercial_terms) : null;
 
@@ -274,6 +279,10 @@ contracts.post('/:id/signatories', async (c) => {
   const existing = await c.env.DB.prepare('SELECT creator_id FROM contract_documents WHERE id = ?').bind(id).first();
   if (!existing) return c.json({ success: false, error: 'Contract not found' }, 404);
   if (existing.creator_id !== user.id) return c.json({ success: false, error: 'Not authorized' }, 403);
+
+  if (participant_id && participant_id !== user.id) {
+    await assertSameTenantParticipant(c, participant_id);
+  }
 
   const sigId = 'sig_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
   await c.env.DB.prepare(`
