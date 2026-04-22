@@ -33,6 +33,10 @@ export type EventType =
   // General
   | 'demand.matched' | 'marketplace.bid' | 'meter.ingested'
   | 'popia.consent_changed' | 'popia.data_exported' | 'popia.erasure'
+  // Pipeline
+  | 'pipeline.created' | 'pipeline.stage_changed' | 'pipeline.won' | 'pipeline.lost'
+  // Threads / collaboration
+  | 'thread.posted'
   | 'intelligence.item_created' | 'action_queue.created';
 
 interface CascadeContext {
