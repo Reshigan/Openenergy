@@ -198,15 +198,172 @@ trading.post('/recommend', async (c) => {
     role: user.role,
     prompt:
       `Recommend the top ${body.max_recommendations || 5} matching or hedging actions for me.
-Return a JSON array of { action: 'match'|'hedge'|'place', my_order_id?, counterparty_order_id?,
-volume_mwh, indicative_price, rationale, estimated_pnl_zar }.`,
+Return ONLY a JSON object of shape { "recommendations": [ { "action": "match"|"hedge"|"place",
+"my_order_id"?, "counterparty_order_id"?, "side"?, "energy_type"?, "volume_mwh", "indicative_price",
+"rationale", "estimated_pnl_zar" } ] } inside a \`\`\`json block.`,
     context: {
       my_orders: myOrders.results || [],
       order_book: book.results || [],
     },
   });
 
-  return c.json({ success: true, data: result });
+  // Guarantee structured recommendations even if the LLM returned prose or a
+  // top-level JSON array. Build a deterministic list from the real order book
+  // so the UI can always one-click.
+  const max = Number(body.max_recommendations) > 0 ? Number(body.max_recommendations) : 5;
+  const recs = extractOrNormaliseRecommendations(result, {
+    myOrders: (myOrders.results || []) as OrderRow[],
+    book: (book.results || []) as OrderRow[],
+    userId: user.id,
+    max,
+  });
+
+  const structured = {
+    ...(result.structured || {}),
+    recommendations: recs,
+  };
+
+  return c.json({ success: true, data: { ...result, structured } });
 });
+
+// ---------------------------------------------------------------------------
+// Deterministic recommendation helpers.
+// The LLM can legitimately return any of:
+//   - { recommendations: [...] }
+//   - [...]  (top-level JSON array)
+//   - free-form prose with no JSON
+// Callers rely on .structured.recommendations being an array — so normalise.
+// ---------------------------------------------------------------------------
+type OrderRow = {
+  id: string;
+  side: 'buy' | 'sell';
+  energy_type: string;
+  volume_mwh: number;
+  price_min: number | null;
+  price_max: number | null;
+  delivery_date: string | null;
+  delivery_point: string | null;
+  participant_id?: string;
+  participant_name?: string;
+};
+
+type TraderRec = {
+  action: 'match' | 'hedge' | 'place';
+  my_order_id?: string;
+  counterparty_order_id?: string;
+  side?: 'buy' | 'sell';
+  energy_type?: string;
+  volume_mwh: number;
+  indicative_price: number;
+  rationale: string;
+  estimated_pnl_zar?: number;
+};
+
+function extractOrNormaliseRecommendations(
+  result: { text?: string; structured?: Record<string, unknown> },
+  args: { myOrders: OrderRow[]; book: OrderRow[]; userId: string; max: number },
+): TraderRec[] {
+  const fromStruct = pickRecsFromStructured(result.structured);
+  if (fromStruct.length > 0) return fromStruct.slice(0, args.max);
+
+  return buildDeterministicRecommendations(args).slice(0, args.max);
+}
+
+function pickRecsFromStructured(s?: Record<string, unknown>): TraderRec[] {
+  if (!s) return [];
+  const candidate = Array.isArray((s as { recommendations?: unknown }).recommendations)
+    ? (s as { recommendations: unknown[] }).recommendations
+    : Array.isArray(s)
+      ? (s as unknown as unknown[])
+      : [];
+  const out: TraderRec[] = [];
+  for (const raw of candidate) {
+    if (!raw || typeof raw !== 'object') continue;
+    const r = raw as Record<string, unknown>;
+    const action = (r.action === 'match' || r.action === 'hedge' || r.action === 'place')
+      ? r.action
+      : 'place';
+    const vol = Number(r.volume_mwh);
+    const price = Number(r.indicative_price);
+    if (!Number.isFinite(vol) || vol <= 0) continue;
+    out.push({
+      action,
+      my_order_id: typeof r.my_order_id === 'string' ? r.my_order_id : undefined,
+      counterparty_order_id: typeof r.counterparty_order_id === 'string' ? r.counterparty_order_id : undefined,
+      side: r.side === 'buy' || r.side === 'sell' ? r.side : undefined,
+      energy_type: typeof r.energy_type === 'string' ? r.energy_type : undefined,
+      volume_mwh: vol,
+      indicative_price: Number.isFinite(price) ? price : 0,
+      rationale: typeof r.rationale === 'string' ? r.rationale : 'LLM recommendation',
+      estimated_pnl_zar: Number.isFinite(Number(r.estimated_pnl_zar)) ? Number(r.estimated_pnl_zar) : undefined,
+    });
+  }
+  return out;
+}
+
+function buildDeterministicRecommendations(args: {
+  myOrders: OrderRow[];
+  book: OrderRow[];
+  userId: string;
+  max: number;
+}): TraderRec[] {
+  const out: TraderRec[] = [];
+
+  // 1) Match: for each of my open orders, find the best counterparty on the opposite side.
+  for (const mine of args.myOrders) {
+    const opp: 'buy' | 'sell' = mine.side === 'buy' ? 'sell' : 'buy';
+    const candidates = args.book.filter((b) =>
+      b.side === opp &&
+      b.energy_type === mine.energy_type &&
+      b.participant_id !== args.userId,
+    );
+    if (candidates.length === 0) continue;
+    const best = candidates.sort((a, b) => {
+      const pa = mine.side === 'buy' ? Number(a.price_min ?? Infinity) : -Number(a.price_max ?? -Infinity);
+      const pb = mine.side === 'buy' ? Number(b.price_min ?? Infinity) : -Number(b.price_max ?? -Infinity);
+      return pa - pb;
+    })[0];
+    const volume = Math.min(Number(mine.volume_mwh) || 0, Number(best.volume_mwh) || 0);
+    if (volume <= 0) continue;
+    const price = Number(
+      mine.side === 'buy' ? best.price_min ?? mine.price_max : best.price_max ?? mine.price_min,
+    ) || 0;
+    const spread = mine.side === 'buy'
+      ? (Number(mine.price_max) || price) - price
+      : price - (Number(mine.price_min) || price);
+    out.push({
+      action: 'match',
+      my_order_id: mine.id,
+      counterparty_order_id: best.id,
+      side: mine.side,
+      energy_type: mine.energy_type,
+      volume_mwh: volume,
+      indicative_price: price,
+      rationale: `Opposite-side ${best.energy_type} order from ${best.participant_name || 'counterparty'} at R${price}/MWh for ${volume} MWh.`,
+      estimated_pnl_zar: Math.round(spread * volume),
+    });
+    if (out.length >= args.max) return out;
+  }
+
+  // 2) Place: if no match, surface top book opportunities the trader can mirror.
+  const visibleBook = args.book.filter((b) => b.participant_id !== args.userId);
+  for (const b of visibleBook) {
+    if (out.length >= args.max) break;
+    const opp: 'buy' | 'sell' = b.side === 'buy' ? 'sell' : 'buy';
+    const price = Number(b.price_min ?? b.price_max ?? 0);
+    if (!price) continue;
+    out.push({
+      action: 'place',
+      side: opp,
+      energy_type: b.energy_type,
+      volume_mwh: Number(b.volume_mwh) || 10,
+      indicative_price: price,
+      rationale: `Place a ${opp} order to meet open ${b.side} from ${b.participant_name || 'counterparty'} at R${price}/MWh.`,
+      estimated_pnl_zar: 0,
+    });
+  }
+
+  return out;
+}
 
 export default trading;
