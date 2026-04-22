@@ -126,13 +126,22 @@ export function Reports() {
   const [csvBusy, setCsvBusy] = useState<string | null>(null);
 
   const isAdminLike = user?.role === 'admin' || user?.role === 'support';
-  const [selectedRole, setSelectedRole] = useState<string>(user?.role || 'admin');
+  // Start empty so we wait for AuthContext to hydrate before firing any
+  // /reports fetch — otherwise a support user who mounts before `user` lands
+  // would default to 'admin' and stay there. When user resolves below we
+  // sync this state to their own role as the sensible starting view.
+  const [selectedRole, setSelectedRole] = useState<string>('');
 
-  const role = isAdminLike ? selectedRole : (user?.role || 'admin');
+  useEffect(() => {
+    if (user?.role && !selectedRole) setSelectedRole(user.role);
+  }, [user?.role, selectedRole]);
+
+  const role = isAdminLike ? (selectedRole || user?.role || '') : (user?.role || '');
   const layout = ROLE_KPI_LAYOUT[role] || [];
   const title = ROLE_TITLES[role] || 'Operations report';
 
   const loadAi = useCallback(async () => {
+    if (!role) return;
     setLoading(true);
     setError(null);
     try {
@@ -146,6 +155,7 @@ export function Reports() {
   }, [role, period]);
 
   const loadDetailed = useCallback(async () => {
+    if (!role) return;
     setDetailedLoading(true);
     setDetailedError(null);
     try {
@@ -158,8 +168,8 @@ export function Reports() {
     }
   }, [role]);
 
-  useEffect(() => { void loadAi(); }, [loadAi]);
-  useEffect(() => { void loadDetailed(); }, [loadDetailed]);
+  useEffect(() => { if (role) void loadAi(); }, [loadAi, role]);
+  useEffect(() => { if (role) void loadDetailed(); }, [loadDetailed, role]);
 
   const kpis = useMemo(() => {
     if (!aiData?.kpis) return [];
@@ -252,7 +262,9 @@ export function Reports() {
       </section>
 
       {/* Detailed summary tiles (from /reports/:role) */}
-      {detailed && (
+      {/* Hide while a fresh fetch is in-flight so we never show stale
+          cross-role tiles during a role-selector switch. */}
+      {!detailedLoading && detailed && (
         <section>
           <div className="flex items-center gap-2 mb-2">
             <TableIcon size={14} className="text-[#6a6d70]" />
