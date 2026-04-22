@@ -40,7 +40,7 @@ export interface JWTPayload {
 }
 
 // Participant Role Enum
-export type ParticipantRole = 'admin' | 'ipp_developer' | 'trader' | 'carbon_fund' | 'offtaker' | 'lender' | 'grid_operator' | 'regulator';
+export type ParticipantRole = 'admin' | 'ipp_developer' | 'trader' | 'carbon_fund' | 'offtaker' | 'lender' | 'grid_operator' | 'regulator' | 'support';
 
 // Module Definition
 export interface Module {
