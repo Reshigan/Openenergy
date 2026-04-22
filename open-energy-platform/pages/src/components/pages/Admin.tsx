@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Users, Settings, Shield, Activity, DollarSign, RefreshCw,
   ClipboardList, BarChart2, AlertTriangle, CheckCircle, XCircle,
+  Plus, Trash2, Edit3, Building2, Mail, Copy,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
@@ -28,11 +29,23 @@ interface ParticipantRow {
 }
 
 interface ModuleRow {
+  id?: string;
   module_key: string;
   display_name: string;
   description?: string;
   category?: string;
   enabled: number;
+  required_role?: string | null;
+  price_monthly?: number | null;
+}
+
+interface TenantRow {
+  id: string;
+  slug: string;
+  display_name: string;
+  description?: string | null;
+  participant_count?: number;
+  created_at: string;
 }
 
 interface AuditRow {
@@ -60,13 +73,14 @@ interface BillingSnapshot {
   rate_card: Record<string, number>;
 }
 
-type TabKey = 'overview' | 'kyc' | 'users' | 'modules' | 'audit' | 'billing';
+type TabKey = 'overview' | 'kyc' | 'users' | 'modules' | 'tenants' | 'audit' | 'billing';
 
 const TABS: Array<{ key: TabKey; label: string; icon: React.ReactNode }> = [
   { key: 'overview', label: 'Overview', icon: <BarChart2 className="w-4 h-4" /> },
   { key: 'kyc', label: 'KYC Queue', icon: <Shield className="w-4 h-4" /> },
   { key: 'users', label: 'Users', icon: <Users className="w-4 h-4" /> },
   { key: 'modules', label: 'Modules', icon: <Settings className="w-4 h-4" /> },
+  { key: 'tenants', label: 'Tenants', icon: <Building2 className="w-4 h-4" /> },
   { key: 'audit', label: 'Audit Logs', icon: <ClipboardList className="w-4 h-4" /> },
   { key: 'billing', label: 'Billing', icon: <DollarSign className="w-4 h-4" /> },
 ];
@@ -94,8 +108,14 @@ export function Admin() {
   const [userSearch, setUserSearch] = useState('');
   const [userDebounce, setUserDebounce] = useState('');
   const [modules, setModules] = useState<ModuleRow[]>([]);
+  const [tenants, setTenants] = useState<TenantRow[]>([]);
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [billing, setBilling] = useState<BillingSnapshot | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const flashToast = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 4000);
+  }, []);
 
   useEffect(() => {
     const h = setTimeout(() => setUserDebounce(userSearch.trim()), 300);
@@ -119,6 +139,9 @@ export function Admin() {
       } else if (tab === 'modules') {
         const res = await api.get('/admin/modules');
         setModules(res.data?.data || []);
+      } else if (tab === 'tenants') {
+        const res = await api.get('/admin/tenants');
+        setTenants(res.data?.data || []);
       } else if (tab === 'audit') {
         const res = await api.get('/admin/audit-logs?page_size=100');
         setAudit(res.data?.data || []);
@@ -161,6 +184,110 @@ export function Admin() {
       alert(err?.response?.data?.error || 'Failed to toggle module');
     }
   }, [fetchAll]);
+
+  const createModule = useCallback(async (input: { module_key: string; display_name: string; description?: string; price_monthly?: number; required_role?: string | null }) => {
+    try {
+      await api.post('/admin/modules', input);
+      flashToast(`Module “${input.display_name}” created.`);
+      await fetchAll();
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Failed to create module');
+    }
+  }, [fetchAll, flashToast]);
+
+  const updateModule = useCallback(async (key: string, patch: Partial<ModuleRow>) => {
+    try {
+      await api.put(`/admin/modules/${key}`, patch);
+      flashToast(`Module “${key}” updated.`);
+      await fetchAll();
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Failed to update module');
+    }
+  }, [fetchAll, flashToast]);
+
+  const deleteModule = useCallback(async (key: string) => {
+    if (!window.confirm(`Delete module “${key}”? This clears per-participant overrides and cannot be undone.`)) return;
+    try {
+      await api.delete(`/admin/modules/${key}`);
+      flashToast(`Module “${key}” deleted.`);
+      await fetchAll();
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Failed to delete module');
+    }
+  }, [fetchAll, flashToast]);
+
+  const createUser = useCallback(async (input: { email: string; name: string; role: string; company_name?: string; tenant_id?: string }) => {
+    try {
+      const res = await api.post('/admin/users', input);
+      const url = res.data?.data?.reset_url;
+      if (url) {
+        try { await navigator.clipboard?.writeText(url); } catch { /* ignore */ }
+        flashToast(`User created. Reset link copied to clipboard: ${url}`);
+      } else {
+        flashToast('User created.');
+      }
+      await fetchAll();
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Failed to create user');
+    }
+  }, [fetchAll, flashToast]);
+
+  const deleteUser = useCallback(async (id: string, email: string) => {
+    if (!window.confirm(`Suspend user ${email}? Active sessions will be revoked. (Rows are never deleted — integrity is preserved.)`)) return;
+    try {
+      await api.delete(`/admin/users/${id}`);
+      flashToast(`User ${email} suspended.`);
+      await fetchAll();
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Failed to suspend user');
+    }
+  }, [fetchAll, flashToast]);
+
+  const issuePasswordReset = useCallback(async (id: string, email: string) => {
+    try {
+      const res = await api.post(`/admin/users/${id}/password-reset`, {});
+      const url = res.data?.data?.reset_url;
+      if (url) {
+        try { await navigator.clipboard?.writeText(url); } catch { /* ignore */ }
+        flashToast(`Reset link for ${email} copied to clipboard.`);
+      } else {
+        flashToast(`Reset link issued for ${email}.`);
+      }
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Failed to issue reset link');
+    }
+  }, [flashToast]);
+
+  const createTenant = useCallback(async (input: { display_name: string; slug?: string; description?: string }) => {
+    try {
+      await api.post('/admin/tenants', input);
+      flashToast(`Tenant “${input.display_name}” created.`);
+      await fetchAll();
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Failed to create tenant');
+    }
+  }, [fetchAll, flashToast]);
+
+  const updateTenant = useCallback(async (id: string, patch: { display_name?: string; description?: string | null }) => {
+    try {
+      await api.put(`/admin/tenants/${id}`, patch);
+      flashToast(`Tenant “${id}” updated.`);
+      await fetchAll();
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Failed to update tenant');
+    }
+  }, [fetchAll, flashToast]);
+
+  const deleteTenant = useCallback(async (id: string) => {
+    if (!window.confirm(`Delete tenant “${id}”? Only tenants without participants can be deleted.`)) return;
+    try {
+      await api.delete(`/admin/tenants/${id}`);
+      flashToast(`Tenant “${id}” deleted.`);
+      await fetchAll();
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Failed to delete tenant');
+    }
+  }, [fetchAll, flashToast]);
 
   const overviewTiles = useMemo(() => {
     const total = (rows: Array<{ n: number }> = []) => rows.reduce((s, r) => s + Number(r.n || 0), 0);
@@ -215,11 +342,24 @@ export function Admin() {
       )}
 
       {!loading && !error && tab === 'users' && (
-        <UsersPanel users={users} search={userSearch} onSearchChange={setUserSearch} onSetStatus={setUserStatus} />
+        <UsersPanel
+          users={users}
+          tenants={tenants}
+          search={userSearch}
+          onSearchChange={setUserSearch}
+          onSetStatus={setUserStatus}
+          onCreate={createUser}
+          onDelete={deleteUser}
+          onIssueReset={issuePasswordReset}
+        />
       )}
 
       {!loading && !error && tab === 'modules' && (
-        <ModulesPanel modules={modules} onToggle={toggleModule} />
+        <ModulesPanel modules={modules} onToggle={toggleModule} onCreate={createModule} onUpdate={updateModule} onDelete={deleteModule} />
+      )}
+
+      {!loading && !error && tab === 'tenants' && (
+        <TenantsPanel tenants={tenants} onCreate={createTenant} onUpdate={updateTenant} onDelete={deleteTenant} />
       )}
 
       {!loading && !error && tab === 'audit' && (
@@ -228,6 +368,13 @@ export function Admin() {
 
       {!loading && !error && tab === 'billing' && (
         <BillingPanel billing={billing} />
+      )}
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 max-w-md bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg text-sm flex items-start gap-3" role="status" aria-live="polite">
+          <Copy className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <span className="break-all">{toast}</span>
+        </div>
       )}
     </div>
   );
@@ -341,20 +488,91 @@ function KycPanel({ kyc, filter, onFilterChange, onDecide }: {
   );
 }
 
-function UsersPanel({ users, search, onSearchChange, onSetStatus }: {
+function UsersPanel({ users, tenants, search, onSearchChange, onSetStatus, onCreate, onDelete, onIssueReset }: {
   users: ParticipantRow[];
+  tenants: TenantRow[];
   search: string;
   onSearchChange: (v: string) => void;
   onSetStatus: (id: string, status: UserStatus) => void;
+  onCreate: (input: { email: string; name: string; role: string; company_name?: string; tenant_id?: string }) => void;
+  onDelete: (id: string, email: string) => void;
+  onIssueReset: (id: string, email: string) => void;
 }) {
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState({ email: '', name: '', role: 'offtaker', company_name: '', tenant_id: 'default' });
+  const resetForm = () => setForm({ email: '', name: '', role: 'offtaker', company_name: '', tenant_id: 'default' });
   return (
     <div className="space-y-3">
-      <input
-        value={search}
-        onChange={e => onSearchChange(e.target.value)}
-        placeholder="Search by name, email, or company"
-        className="w-full max-w-md px-3 py-2 border border-ionex-border-200 rounded-lg"
-      />
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <input
+          value={search}
+          onChange={e => onSearchChange(e.target.value)}
+          placeholder="Search by name, email, or company"
+          className="flex-1 min-w-[260px] max-w-md px-3 py-2 border border-ionex-border-200 rounded-lg"
+        />
+        <button
+          onClick={() => { resetForm(); setShowCreate(true); }}
+          className="px-3 py-2 bg-ionex-brand text-white rounded-lg text-sm hover:bg-ionex-brand-700 flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" /> Create user
+        </button>
+      </div>
+      {showCreate && (
+        <div className="p-4 bg-white border border-ionex-border-100 rounded-xl space-y-3">
+          <h3 className="font-semibold text-gray-900">New user</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label className="text-sm">
+              <span className="text-ionex-text-mute">Email *</span>
+              <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg" placeholder="jane@example.co.za" />
+            </label>
+            <label className="text-sm">
+              <span className="text-ionex-text-mute">Name *</span>
+              <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg" />
+            </label>
+            <label className="text-sm">
+              <span className="text-ionex-text-mute">Role</span>
+              <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg bg-white">
+                {['admin','trader','ipp','offtaker','lender','carbon_fund','grid_operator','regulator','support'].map(r => (
+                  <option key={r} value={r}>{r.replace('_',' ')}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-sm">
+              <span className="text-ionex-text-mute">Tenant</span>
+              <select value={form.tenant_id} onChange={e => setForm({ ...form, tenant_id: e.target.value })} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg bg-white">
+                <option value="default">default</option>
+                {tenants.filter(t => t.id !== 'default').map(t => (
+                  <option key={t.id} value={t.id}>{t.display_name}</option>
+                ))}
+              </select>
+            </label>
+            <label className="text-sm md:col-span-2">
+              <span className="text-ionex-text-mute">Company name (optional)</span>
+              <input value={form.company_name} onChange={e => setForm({ ...form, company_name: e.target.value })} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg" />
+            </label>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowCreate(false)} className="px-3 py-2 text-sm border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+            <button
+              disabled={!form.email || !form.name}
+              onClick={() => {
+                onCreate({
+                  email: form.email.trim(),
+                  name: form.name.trim(),
+                  role: form.role,
+                  company_name: form.company_name.trim() || undefined,
+                  tenant_id: form.tenant_id,
+                });
+                setShowCreate(false);
+                resetForm();
+              }}
+              className="px-3 py-2 text-sm bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-700 disabled:opacity-50 flex items-center gap-2"
+            >
+              <Mail className="w-4 h-4" /> Create &amp; copy reset link
+            </button>
+          </div>
+        </div>
+      )}
       {users.length === 0 ? (
         <EmptyState icon={<Users className="w-8 h-8" />} title="No users" description="Try a different search." />
       ) : (
@@ -381,13 +599,15 @@ function UsersPanel({ users, search, onSearchChange, onSetStatus }: {
                   <td className="p-3"><span className={`px-2 py-1 rounded-full text-xs ${STATUS_PILL[u.status] || 'bg-gray-100 text-gray-700'}`}>{u.status}</span></td>
                   <td className="p-3"><span className={`px-2 py-1 rounded-full text-xs ${STATUS_PILL[u.kyc_status] || 'bg-gray-100 text-gray-700'}`}>{u.kyc_status}</span></td>
                   <td className="p-3 capitalize">{u.subscription_tier || '—'}</td>
-                  <td className="p-3 text-right">
+                  <td className="p-3 text-right whitespace-nowrap">
                     {u.status !== 'active' && (
                       <button onClick={() => onSetStatus(u.id, 'active')} className="text-xs text-green-700 hover:underline mr-3">Activate</button>
                     )}
                     {u.status !== 'suspended' && (
-                      <button onClick={() => onSetStatus(u.id, 'suspended')} className="text-xs text-red-700 hover:underline">Suspend</button>
+                      <button onClick={() => onSetStatus(u.id, 'suspended')} className="text-xs text-red-700 hover:underline mr-3">Suspend</button>
                     )}
+                    <button onClick={() => onIssueReset(u.id, u.email)} className="text-xs text-blue-700 hover:underline mr-3">Reset link</button>
+                    <button onClick={() => onDelete(u.id, u.email)} className="text-xs text-red-700 hover:underline" aria-label={`Suspend ${u.email}`}><Trash2 className="w-3.5 h-3.5 inline" /></button>
                   </td>
                 </tr>
               ))}
@@ -399,25 +619,268 @@ function UsersPanel({ users, search, onSearchChange, onSetStatus }: {
   );
 }
 
-function ModulesPanel({ modules, onToggle }: { modules: ModuleRow[]; onToggle: (key: string, enabled: boolean) => void; }) {
-  if (modules.length === 0) return <EmptyState icon={<Settings className="w-8 h-8" />} title="No modules" description="Module catalogue is empty." />;
+function ModulesPanel({ modules, onToggle, onCreate, onUpdate, onDelete }: {
+  modules: ModuleRow[];
+  onToggle: (key: string, enabled: boolean) => void;
+  onCreate: (input: { module_key: string; display_name: string; description?: string; price_monthly?: number; required_role?: string | null }) => void;
+  onUpdate: (key: string, patch: Partial<ModuleRow>) => void;
+  onDelete: (key: string) => void;
+}) {
+  const [showCreate, setShowCreate] = useState(false);
+  const [editKey, setEditKey] = useState<string | null>(null);
+  const [form, setForm] = useState({ module_key: '', display_name: '', description: '', price_monthly: '', required_role: '' });
+  const [editForm, setEditForm] = useState({ display_name: '', description: '', price_monthly: '', required_role: '' });
+  const resetForm = () => setForm({ module_key: '', display_name: '', description: '', price_monthly: '', required_role: '' });
+  const beginEdit = (m: ModuleRow) => {
+    setEditKey(m.module_key);
+    setEditForm({
+      display_name: m.display_name,
+      description: m.description || '',
+      price_monthly: m.price_monthly != null ? String(m.price_monthly) : '',
+      required_role: m.required_role || '',
+    });
+  };
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-      {modules.map(m => (
-        <div key={m.module_key} className="p-4 bg-white border border-ionex-border-100 rounded-xl">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0">
-              <p className="font-semibold text-gray-900">{m.display_name}</p>
-              <p className="text-xs text-ionex-text-mute">{m.module_key}{m.category ? ` · ${m.category}` : ''}</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" checked={!!m.enabled} onChange={e => onToggle(m.module_key, e.target.checked)} className="sr-only peer" />
-              <div className="w-11 h-6 bg-gray-300 peer-checked:bg-ionex-brand rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5" />
+    <div className="space-y-3">
+      <div className="flex items-center justify-end">
+        <button
+          onClick={() => { resetForm(); setShowCreate(true); }}
+          className="px-3 py-2 bg-ionex-brand text-white rounded-lg text-sm hover:bg-ionex-brand-700 flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" /> Add module
+        </button>
+      </div>
+      {showCreate && (
+        <div className="p-4 bg-white border border-ionex-border-100 rounded-xl space-y-3">
+          <h3 className="font-semibold text-gray-900">New module</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label className="text-sm">
+              <span className="text-ionex-text-mute">Module key *</span>
+              <input value={form.module_key} onChange={e => setForm({ ...form, module_key: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_') })} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg font-mono" placeholder="ona_advanced" />
+            </label>
+            <label className="text-sm">
+              <span className="text-ionex-text-mute">Display name *</span>
+              <input value={form.display_name} onChange={e => setForm({ ...form, display_name: e.target.value })} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg" />
+            </label>
+            <label className="text-sm">
+              <span className="text-ionex-text-mute">Price / month (ZAR)</span>
+              <input type="number" min="0" value={form.price_monthly} onChange={e => setForm({ ...form, price_monthly: e.target.value })} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg" />
+            </label>
+            <label className="text-sm">
+              <span className="text-ionex-text-mute">Required role (optional)</span>
+              <input value={form.required_role} onChange={e => setForm({ ...form, required_role: e.target.value })} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg" placeholder="admin" />
+            </label>
+            <label className="text-sm md:col-span-2">
+              <span className="text-ionex-text-mute">Description</span>
+              <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg" />
             </label>
           </div>
-          {m.description && <p className="text-sm text-gray-600 mt-2">{m.description}</p>}
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowCreate(false)} className="px-3 py-2 text-sm border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+            <button
+              disabled={!form.module_key || !form.display_name}
+              onClick={() => {
+                onCreate({
+                  module_key: form.module_key.trim(),
+                  display_name: form.display_name.trim(),
+                  description: form.description.trim() || undefined,
+                  price_monthly: form.price_monthly ? Number(form.price_monthly) : undefined,
+                  required_role: form.required_role.trim() || null,
+                });
+                setShowCreate(false);
+                resetForm();
+              }}
+              className="px-3 py-2 text-sm bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-700 disabled:opacity-50"
+            >Create module</button>
+          </div>
         </div>
-      ))}
+      )}
+      {modules.length === 0 ? (
+        <EmptyState icon={<Settings className="w-8 h-8" />} title="No modules" description="Module catalogue is empty. Use “Add module” to create one." />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {modules.map(m => (
+            <div key={m.module_key} className="p-4 bg-white border border-ionex-border-100 rounded-xl">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-semibold text-gray-900">{m.display_name}</p>
+                  <p className="text-xs text-ionex-text-mute">{m.module_key}{m.category ? ` · ${m.category}` : ''}{m.required_role ? ` · requires ${m.required_role}` : ''}{m.price_monthly != null ? ` · ${formatZAR(Number(m.price_monthly))}/mo` : ''}</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                  <input type="checkbox" checked={!!m.enabled} onChange={e => onToggle(m.module_key, e.target.checked)} className="sr-only peer" />
+                  <div className="w-11 h-6 bg-gray-300 peer-checked:bg-ionex-brand rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5" />
+                </label>
+              </div>
+              {editKey === m.module_key ? (
+                <div className="mt-3 space-y-2 border-t border-ionex-border-100 pt-3">
+                  <input value={editForm.display_name} onChange={e => setEditForm({ ...editForm, display_name: e.target.value })} className="w-full px-2 py-1.5 text-sm border border-ionex-border-200 rounded" placeholder="Display name" />
+                  <textarea value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} rows={2} className="w-full px-2 py-1.5 text-sm border border-ionex-border-200 rounded" placeholder="Description" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="number" min="0" value={editForm.price_monthly} onChange={e => setEditForm({ ...editForm, price_monthly: e.target.value })} className="w-full px-2 py-1.5 text-sm border border-ionex-border-200 rounded" placeholder="Price / month" />
+                    <input value={editForm.required_role} onChange={e => setEditForm({ ...editForm, required_role: e.target.value })} className="w-full px-2 py-1.5 text-sm border border-ionex-border-200 rounded" placeholder="Required role" />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button onClick={() => setEditKey(null)} className="text-xs text-gray-700 hover:underline">Cancel</button>
+                    <button
+                      onClick={() => {
+                        onUpdate(m.module_key, {
+                          display_name: editForm.display_name.trim(),
+                          description: editForm.description.trim(),
+                          price_monthly: editForm.price_monthly ? Number(editForm.price_monthly) : null,
+                          required_role: editForm.required_role.trim() || null,
+                        });
+                        setEditKey(null);
+                      }}
+                      className="text-xs text-ionex-brand hover:underline"
+                    >Save</button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {m.description && <p className="text-sm text-gray-600 mt-2">{m.description}</p>}
+                  <div className="mt-3 flex gap-3">
+                    <button onClick={() => beginEdit(m)} className="text-xs text-blue-700 hover:underline flex items-center gap-1"><Edit3 className="w-3.5 h-3.5" /> Edit</button>
+                    <button onClick={() => onDelete(m.module_key)} className="text-xs text-red-700 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TenantsPanel({ tenants, onCreate, onUpdate, onDelete }: {
+  tenants: TenantRow[];
+  onCreate: (input: { display_name: string; slug?: string; description?: string }) => void;
+  onUpdate: (id: string, patch: { display_name?: string; description?: string | null }) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState({ display_name: '', slug: '', description: '' });
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ display_name: '', description: '' });
+  const resetForm = () => setForm({ display_name: '', slug: '', description: '' });
+  const beginEdit = (t: TenantRow) => {
+    setEditId(t.id);
+    setEditForm({ display_name: t.display_name, description: t.description || '' });
+  };
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-ionex-text-mute">Tenants isolate participants, contracts, trades, and reports. The <code>default</code> tenant is reserved and cannot be deleted.</p>
+        <button
+          onClick={() => { resetForm(); setShowCreate(true); }}
+          className="px-3 py-2 bg-ionex-brand text-white rounded-lg text-sm hover:bg-ionex-brand-700 flex items-center gap-2 flex-shrink-0"
+        >
+          <Plus className="w-4 h-4" /> New tenant
+        </button>
+      </div>
+      {showCreate && (
+        <div className="p-4 bg-white border border-ionex-border-100 rounded-xl space-y-3">
+          <h3 className="font-semibold text-gray-900">New tenant</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label className="text-sm">
+              <span className="text-ionex-text-mute">Display name *</span>
+              <input value={form.display_name} onChange={e => setForm({ ...form, display_name: e.target.value })} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg" placeholder="Vantax Group" />
+            </label>
+            <label className="text-sm">
+              <span className="text-ionex-text-mute">Slug (optional)</span>
+              <input value={form.slug} onChange={e => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg font-mono" placeholder="vantax-group" />
+            </label>
+            <label className="text-sm md:col-span-2">
+              <span className="text-ionex-text-mute">Description</span>
+              <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg" />
+            </label>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowCreate(false)} className="px-3 py-2 text-sm border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+            <button
+              disabled={!form.display_name}
+              onClick={() => {
+                onCreate({
+                  display_name: form.display_name.trim(),
+                  slug: form.slug.trim() || undefined,
+                  description: form.description.trim() || undefined,
+                });
+                setShowCreate(false);
+                resetForm();
+              }}
+              className="px-3 py-2 text-sm bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-700 disabled:opacity-50"
+            >Create tenant</button>
+          </div>
+        </div>
+      )}
+      {tenants.length === 0 ? (
+        <EmptyState icon={<Building2 className="w-8 h-8" />} title="No tenants" description="No tenants seeded yet." />
+      ) : (
+        <div className="bg-white rounded-xl border border-ionex-border-100 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-left text-ionex-text-mute">
+              <tr>
+                <th className="p-3 font-medium">Tenant</th>
+                <th className="p-3 font-medium">Slug</th>
+                <th className="p-3 font-medium">Members</th>
+                <th className="p-3 font-medium">Created</th>
+                <th className="p-3 font-medium text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ionex-border-100">
+              {tenants.map(t => (
+                <tr key={t.id}>
+                  <td className="p-3">
+                    {editId === t.id ? (
+                      <div className="space-y-2">
+                        <input value={editForm.display_name} onChange={e => setEditForm({ ...editForm, display_name: e.target.value })} className="w-full px-2 py-1.5 text-sm border border-ionex-border-200 rounded" />
+                        <textarea value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} rows={2} className="w-full px-2 py-1.5 text-sm border border-ionex-border-200 rounded" placeholder="Description" />
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="font-medium text-gray-900 flex items-center gap-2"><Building2 className="w-4 h-4 text-ionex-text-mute" />{t.display_name}</p>
+                        {t.description && <p className="text-xs text-ionex-text-mute mt-0.5">{t.description}</p>}
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-3 font-mono text-xs text-ionex-text-mute">{t.slug}</td>
+                  <td className="p-3">{t.participant_count ?? 0}</td>
+                  <td className="p-3 text-xs text-ionex-text-mute">{new Date(t.created_at).toLocaleDateString()}</td>
+                  <td className="p-3 text-right whitespace-nowrap">
+                    {editId === t.id ? (
+                      <>
+                        <button onClick={() => setEditId(null)} className="text-xs text-gray-700 hover:underline mr-3">Cancel</button>
+                        <button
+                          onClick={() => {
+                            onUpdate(t.id, {
+                              display_name: editForm.display_name.trim(),
+                              description: editForm.description.trim() || null,
+                            });
+                            setEditId(null);
+                          }}
+                          className="text-xs text-ionex-brand hover:underline"
+                        >Save</button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => beginEdit(t)} className="text-xs text-blue-700 hover:underline mr-3"><Edit3 className="w-3.5 h-3.5 inline mr-1" />Edit</button>
+                        {t.id !== 'default' && (
+                          <button
+                            onClick={() => onDelete(t.id)}
+                            disabled={(t.participant_count ?? 0) > 0}
+                            title={(t.participant_count ?? 0) > 0 ? 'Move or suspend tenant members before deleting' : 'Delete tenant'}
+                            className="text-xs text-red-700 hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+                          ><Trash2 className="w-3.5 h-3.5 inline mr-1" />Delete</button>
+                        )}
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
