@@ -487,7 +487,9 @@ popia.put('/breach/:id', async (c) => {
 popia.get('/pii-access', async (c) => {
   const user = getCurrentUser(c);
   const subjectId = c.req.query('subject_id');
-  if (!isPrivilegedRole(user.role) && subjectId !== user.id) {
+  // Non-privileged callers default to their own records when subject_id is omitted;
+  // only reject if they explicitly ask for a different subject.
+  if (!isPrivilegedRole(user.role) && subjectId && subjectId !== user.id) {
     return c.json({ success: false, error: 'Not authorized' }, 403);
   }
   const filters: string[] = [];
