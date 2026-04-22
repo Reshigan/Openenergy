@@ -4,6 +4,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { getTenantId, isAdmin } from '../utils/tenant';
 
 const threads = new Hono<HonoEnv>();
 threads.use('*', authMiddleware);
@@ -60,11 +61,20 @@ threads.post('/', async (c) => {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(id, entity_type, entity_id, user.id, parent_id || null, content.trim(), now, now).run();
 
-  // Notify any @mentioned participants (best-effort string match on name)
+  // Notify any @mentioned participants (best-effort string match on name).
+  // Tenant isolation: only mention targets in the caller's tenant (admins see
+  // across tenants).
   const mentionedNames = Array.from(content.matchAll(/@([\w\s]{2,40}?)(?=$|[,\.!\?\s])/g)).map((m) => m[1].trim()).filter(Boolean);
   const notified: string[] = [];
+  const callerTenant = getTenantId(c);
+  const admin = isAdmin(c);
   for (const name of mentionedNames) {
-    const target = await c.env.DB.prepare('SELECT id FROM participants WHERE name = ? LIMIT 1').bind(name).first() as { id?: string } | null;
+    const target = admin
+      ? await c.env.DB.prepare('SELECT id FROM participants WHERE name = ? LIMIT 1')
+          .bind(name).first() as { id?: string } | null
+      : await c.env.DB.prepare(
+          "SELECT id FROM participants WHERE name = ? AND COALESCE(NULLIF(tenant_id, ''), 'default') = ? LIMIT 1"
+        ).bind(name, callerTenant).first() as { id?: string } | null;
     if (target?.id && target.id !== user.id) {
       const nid = 'ntf_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
       await c.env.DB.prepare(`

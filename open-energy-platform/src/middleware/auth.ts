@@ -92,6 +92,29 @@ export async function authMiddleware(c: Context<HonoEnv>, next: Next) {
     throw new AppError(ErrorCode.UNAUTHORIZED, 'Invalid or expired token', 401);
   }
   
+  // Look up tenant_id for isolation enforcement (single row, indexed PK).
+  // Fail closed on DB error — silently defaulting to 'default' on a transient
+  // failure would let a tenant-A user bypass cross-tenant checks for the
+  // duration of the request.
+  let tenantId: string;
+  try {
+    const row = await c.env.DB.prepare('SELECT tenant_id FROM participants WHERE id = ?')
+      .bind(payload.sub)
+      .first<{ tenant_id: string | null }>();
+    if (!row) {
+      throw new AppError(ErrorCode.UNAUTHORIZED, 'Account no longer exists', 401);
+    }
+    // Normalize with `||` (not `??`) so empty-string tenant_id collapses to
+    // 'default' — matches `getTenantId()` in utils/tenant.ts and prevents the
+    // SQL `COALESCE(tenant_id, 'default')` vs JS-`||` mismatch flagged by
+    // Devin Review (an empty-string DB value would bypass COALESCE and fail
+    // the equality comparison in WHERE clauses).
+    tenantId = row.tenant_id || 'default';
+  } catch (e) {
+    if (e instanceof AppError) throw e;
+    throw new AppError(ErrorCode.INTERNAL_ERROR, 'Unable to resolve tenant', 500);
+  }
+
   // Set auth context
   c.set('auth', {
     user: {
@@ -99,9 +122,10 @@ export async function authMiddleware(c: Context<HonoEnv>, next: Next) {
       email: payload.email,
       role: payload.role,
       name: payload.name,
+      tenant_id: tenantId,
     },
   });
-  
+
   await next();
 }
 
@@ -116,14 +140,28 @@ export async function optionalAuth(c: Context<HonoEnv>, next: Next) {
     if (secret) {
       const payload = await verifyToken(token, secret);
       if (payload) {
-        c.set('auth', {
-          user: {
-            id: payload.sub,
-            email: payload.email,
-            role: payload.role,
-            name: payload.name,
-          },
-        });
+        // Mirror authMiddleware: resolve tenant_id so tenant helpers work under
+        // optionalAuth too. If the DB lookup fails or the participant vanished,
+        // treat the request as anonymous (consistent with this middleware's
+        // non-failing contract).
+        try {
+          const row = await c.env.DB.prepare('SELECT tenant_id FROM participants WHERE id = ?')
+            .bind(payload.sub)
+            .first<{ tenant_id: string | null }>();
+          if (row) {
+            c.set('auth', {
+              user: {
+                id: payload.sub,
+                email: payload.email,
+                role: payload.role,
+                name: payload.name,
+                tenant_id: row.tenant_id ?? 'default',
+              },
+            });
+          }
+        } catch {
+          // Swallow — optional auth must never block an anonymous request.
+        }
       }
     }
   }

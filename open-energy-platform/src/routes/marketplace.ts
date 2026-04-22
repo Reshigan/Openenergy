@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { assertSameTenantParticipant } from '../utils/tenant';
 
 const marketplace = new Hono<HonoEnv>();
 marketplace.use('*', authMiddleware);
@@ -169,6 +170,9 @@ marketplace.post('/listings/:id/inquire', async (c) => {
   if (!listing) return c.json({ success: false, error: 'listing_not_found' }, 404);
   if (listing.status !== 'active') return c.json({ success: false, error: 'listing_not_active' }, 400);
   if (listing.seller_id === user.id) return c.json({ success: false, error: 'cannot_inquire_on_own_listing' }, 400);
+
+  // Tenant isolation: buyer and seller must be in the same tenant (or caller is admin).
+  await assertSameTenantParticipant(c, listing.seller_id);
 
   const inquiryId = genId('mi');
   const now = new Date().toISOString();

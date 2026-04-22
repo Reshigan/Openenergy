@@ -6,6 +6,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { assertSameTenantParticipant, getTenantId } from '../utils/tenant';
 
 const contracts = new Hono<HonoEnv>();
 
@@ -240,15 +241,21 @@ contracts.post('/', async (c) => {
     return c.json({ success: false, error: 'Title, phase, and contract_type are required' }, 400);
   }
 
+  if (counterparty_id && counterparty_id !== user.id) {
+    await assertSameTenantParticipant(c, counterparty_id);
+  }
+
   const contractId = 'ct_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
   const termsJson = commercial_terms ? JSON.stringify(commercial_terms) : null;
+
+  const tenantId = getTenantId(c);
 
   await c.env.DB.prepare(`
     INSERT INTO contract_documents (
       id, title, document_type, phase, creator_id, counterparty_id, project_id, commercial_terms, tenant_id, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'default', ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
-    contractId, title, contract_type, phase, user.id, counterparty_id || user.id, project_id || null, termsJson, new Date().toISOString(), new Date().toISOString()
+    contractId, title, contract_type, phase, user.id, counterparty_id || user.id, project_id || null, termsJson, tenantId, new Date().toISOString(), new Date().toISOString()
   ).run();
 
   const contract = await c.env.DB.prepare('SELECT * FROM contract_documents WHERE id = ?').bind(contractId).first();
@@ -274,6 +281,10 @@ contracts.post('/:id/signatories', async (c) => {
   const existing = await c.env.DB.prepare('SELECT creator_id FROM contract_documents WHERE id = ?').bind(id).first();
   if (!existing) return c.json({ success: false, error: 'Contract not found' }, 404);
   if (existing.creator_id !== user.id) return c.json({ success: false, error: 'Not authorized' }, 403);
+
+  if (participant_id && participant_id !== user.id) {
+    await assertSameTenantParticipant(c, participant_id);
+  }
 
   const sigId = 'sig_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
   await c.env.DB.prepare(`
