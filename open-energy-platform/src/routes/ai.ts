@@ -9,6 +9,7 @@ import { Hono } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { ask, AiIntent } from '../utils/ai';
+import { extractBillProfile, buildDeterministicMix } from '../utils/offtaker-heuristics';
 import { fireCascade } from '../utils/cascade';
 
 const ai = new Hono<HonoEnv>();
@@ -84,6 +85,15 @@ demand_charge_zar_per_kva, and tou_risk ('low'|'medium'|'high').`,
     },
   });
 
+  // Guaranteed structured profile — LLM can (and does) return free-form text.
+  // We extract values from the bill content directly and merge AI output over
+  // our heuristic so the UI is never blank.
+  const heuristic = extractBillProfile(body.content || '', {
+    annual_kwh: body.annual_kwh,
+    avg_tariff: body.avg_tariff,
+  });
+  const structured = { ...heuristic, ...(result.structured || {}) };
+
   await c.env.DB.prepare(
     `INSERT INTO offtaker_bills (id, offtaker_id, source, meta_json, ai_result_json) VALUES (?, ?, ?, ?, ?)`,
   ).bind(
@@ -91,10 +101,10 @@ demand_charge_zar_per_kva, and tou_risk ('low'|'medium'|'high').`,
     user.id,
     body.source || 'text',
     JSON.stringify(body.meta || {}),
-    JSON.stringify(result.structured || { text: result.text }),
+    JSON.stringify(structured),
   ).run();
 
-  return c.json({ success: true, data: { bill_id: billId, ...result } });
+  return c.json({ success: true, data: { bill_id: billId, ...result, structured } });
 });
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -168,7 +178,27 @@ sharing. Return JSON: { mix:[{project_id,project_name,share_pct,mwh_per_year,ble
     },
   });
 
-  return c.json({ success: true, data: { ...result, projects: projects.results || [] } });
+  // Guaranteed structured mix — when the LLM returns prose instead of JSON
+  // we compute a deterministic mix from the project list so the UI is never
+  // empty. If the LLM does return a valid mix, we prefer that.
+  const projectList = (projects.results || []) as Array<Record<string, unknown>>;
+  const fallbackMix = buildDeterministicMix(projectList, requiredMwh, currentTariff);
+  const aiMix = Array.isArray((result.structured as { mix?: unknown })?.mix)
+    ? ((result.structured as { mix?: unknown[] }).mix as unknown[])
+    : [];
+  const structured =
+    aiMix.length > 0
+      ? (result.structured as Record<string, unknown>)
+      : fallbackMix;
+
+  return c.json({
+    success: true,
+    data: {
+      ...result,
+      structured,
+      projects: projectList,
+    },
+  });
 });
 
 // ──────────────────────────────────────────────────────────────────────────

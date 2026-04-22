@@ -24,6 +24,13 @@ type OptimizeResponse = {
   projects?: Array<Record<string, unknown>>;
 };
 
+// Accept either fractional (0.35) or percent (35) values from the API.
+function normalisePct(v: number | undefined): number {
+  if (v === undefined || v === null || Number.isNaN(v)) return 0;
+  if (v > 1) return v;
+  return v * 100;
+}
+
 type BillProfile = {
   annual_kwh?: number;
   peak_pct?: number;
@@ -226,7 +233,7 @@ export function OfftakerAiHub() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <ProfileKpi label="Annual consumption" value={`${Math.round((profile.annual_kwh || 0) / 1000).toLocaleString()} MWh`} />
               <ProfileKpi label="Avg tariff" value={`R${profile.avg_tariff_zar_per_kwh ?? '—'}/kWh`} />
-              <ProfileKpi label="Peak share" value={`${Math.round((profile.peak_pct || 0) * 100)}%`} />
+              <ProfileKpi label="Peak share" value={`${Math.round(normalisePct(profile.peak_pct))}%`} />
               <ProfileKpi label="TOU risk" value={profile.tou_risk || '—'} />
             </div>
             <div className="flex items-center gap-3">
