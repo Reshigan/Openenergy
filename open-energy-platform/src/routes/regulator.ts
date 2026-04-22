@@ -22,7 +22,7 @@ async function ensureTable(env: HonoEnv['Bindings']) {
       filing_type TEXT NOT NULL,
       reporting_period TEXT NOT NULL,
       filed_by TEXT NOT NULL,
-      status TEXT DEFAULT 'draft',
+      status TEXT NOT NULL DEFAULT 'draft',
       narrative TEXT,
       evidence_json TEXT,
       created_at TEXT DEFAULT (datetime('now'))
@@ -84,12 +84,12 @@ regulator.put('/filings/:id', async (c) => {
   const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
   const editable = ['reporting_period', 'narrative', 'evidence_json', 'filing_type'] as const;
   const sets: string[] = [];
-  const binds: (string | number)[] = [];
+  const binds: (string | number | null)[] = [];
   for (const k of editable) {
     if (k in body) {
       sets.push(`${k} = ?`);
       const v = body[k];
-      binds.push(typeof v === 'string' ? v : JSON.stringify(v));
+      binds.push(v == null ? null : (typeof v === 'string' ? v : JSON.stringify(v)));
     }
   }
   if (sets.length === 0) return c.json({ success: false, error: 'No editable fields supplied' }, 400);
