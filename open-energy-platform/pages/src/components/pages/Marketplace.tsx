@@ -313,7 +313,7 @@ export function Marketplace() {
         <InquireModal
           listing={showInquire}
           onClose={() => setShowInquire(null)}
-          onSent={async () => { setShowInquire(null); setTab('inquiries'); await fetchData(); }}
+          onSent={() => { setShowInquire(null); setTab('inquiries'); }}
         />
       )}
     </div>
