@@ -46,6 +46,7 @@ type Signatory = {
   signatory_designation?: string | null;
   signed: number;
   signed_at?: string | null;
+  document_hash_at_signing?: string | null;
   participant_name?: string | null;
   participant_company?: string | null;
 };
@@ -277,7 +278,7 @@ export function ContractDetail() {
       const who = s.participant_company || s.participant_name || s.signatory_name || s.participant_id;
       if (s.signed) {
         writeLine(`✓ Signed by ${who} — ${s.signatory_designation || 'Authorised signatory'} on ${s.signed_at?.slice(0, 10)}`, { bold: true, size: 10, spaceAfter: 2 });
-        writeLine(`   Integrity hash at signing: ${s.id}`, { size: 8, spaceAfter: 6 });
+        writeLine(`   Integrity hash at signing: ${s.document_hash_at_signing || s.id}`, { size: 8, spaceAfter: 6 });
       } else {
         writeLine(`[ ] ${who} — ${s.signatory_designation || 'Authorised signatory'}`, { size: 10, spaceAfter: 6 });
       }
