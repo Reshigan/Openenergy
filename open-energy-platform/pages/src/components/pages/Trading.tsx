@@ -33,10 +33,13 @@ export function Trading() {
       let asks: any[] = [];
       if (Array.isArray(raw)) {
         for (const o of raw) {
-          const price = Number(o.price_max ?? o.price_min ?? o.price ?? 0);
+          const isBuy = o.side === 'buy' || o.side === 'bid';
+          const price = isBuy
+            ? Number(o.price_max ?? o.price_min ?? o.price ?? 0)
+            : Number(o.price_min ?? o.price_max ?? o.price ?? 0);
           const volume = Number(o.volume_mwh ?? o.volume ?? 0);
           const row = { ...o, price, volume };
-          if (o.side === 'buy' || o.side === 'bid') bids.push(row);
+          if (isBuy) bids.push(row);
           else asks.push(row);
         }
       } else if (raw && typeof raw === 'object') {
