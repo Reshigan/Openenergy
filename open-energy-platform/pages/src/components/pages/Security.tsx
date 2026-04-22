@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { api } from '../../context/AuthContext';
 import { ShieldCheck, KeyRound, Smartphone, Laptop, RefreshCcw } from 'lucide-react';
 
@@ -116,7 +117,6 @@ export default function Security() {
     } catch { /* noop */ }
   }
 
-  const qrSrc = mfaSetup ? `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(mfaSetup.otpauth_uri)}&size=180x180` : '';
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -144,7 +144,9 @@ export default function Security() {
         )}
         {!mfaEnabled && mfaSetup && (
           <div className="flex flex-col md:flex-row gap-6 items-start">
-            <img src={qrSrc} alt="TOTP QR code" className="w-[180px] h-[180px] border rounded-lg" style={{ borderColor: '#e5e5e5' }} />
+            <div className="w-[180px] h-[180px] border rounded-lg p-2 bg-white flex items-center justify-center" style={{ borderColor: '#e5e5e5' }}>
+              <QRCodeSVG value={mfaSetup.otpauth_uri} size={160} level="M" includeMargin={false} />
+            </div>
             <div className="flex-1 space-y-3">
               <div>
                 <div className="text-[12px] font-semibold text-gray-500 uppercase tracking-widest">Manual secret</div>

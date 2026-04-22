@@ -129,7 +129,9 @@ auth.post('/login', async (c) => {
   ).bind(participant.id).first() as any;
   if (mfa?.verified_at) {
     if (!mfaCode) {
-      await recordLoginAttempt(c.env.DB, email, ip, false, 'mfa_required');
+      // Do NOT record this as a failed attempt — the password was valid.
+      // Treating the MFA challenge as a failure would lock out MFA-enabled users
+      // after 5 normal logins within the 15-minute window.
       return c.json({ success: false, error: 'MFA code required', code: 'MFA_REQUIRED' }, 401);
     }
     const ok = await totpVerify(mfa.secret_base32, mfaCode);
@@ -247,8 +249,11 @@ auth.post('/resend-verification', async (c) => {
     // No enumeration
     return c.json({ success: true, data: { message: 'If the account exists and is unverified, a verification link has been sent' } });
   }
-  const token = await createEmailVerificationToken(c.env.DB, p.id);
-  return c.json({ success: true, data: { message: 'Verification link sent', verification_token: token } });
+  // Security: never return the verification token in the API response.
+  // It would otherwise allow any attacker to verify any unverified email
+  // and flip the account to 'active'. Delivered via email provider once wired.
+  await createEmailVerificationToken(c.env.DB, p.id);
+  return c.json({ success: true, data: { message: 'If the account exists and is unverified, a verification link has been sent' } });
 });
 
 // POST /auth/forgot-password — Request password reset (D1-backed token, not KV)
@@ -266,7 +271,12 @@ auth.post('/forgot-password', async (c) => {
     return c.json({ success: true, data: { message: 'If email exists, reset instructions have been sent' } });
   }
 
-  const resetToken = await createPasswordResetToken(c.env.DB, participant.id, clientIp(c));
+  // Security: NEVER return the reset token in the API response. Doing so
+  // would allow any unauthenticated attacker to reset any account's password
+  // just by knowing the email. The token is stored server-side and delivered
+  // via email once a mail provider is configured. Until then, admins can
+  // issue reset links out-of-band via POST /auth/admin/reset-link.
+  await createPasswordResetToken(c.env.DB, participant.id, clientIp(c));
 
   await fireCascade({
     event: 'auth.password_reset',
@@ -281,10 +291,34 @@ auth.post('/forgot-password', async (c) => {
     success: true,
     data: {
       message: 'If email exists, reset instructions have been sent',
-      // Until a mail provider is configured, surface the token so admins can test.
-      reset_token: resetToken,
     },
   });
+});
+
+// POST /auth/admin/reset-link — Admin-only: generate a one-time reset link for
+// a target participant's email. Used until a mail provider is wired.
+auth.post('/admin/reset-link', authMiddleware, async (c) => {
+  const caller = getCurrentUser(c);
+  if (caller.role !== 'admin') {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
+  const body = await c.req.json().catch(() => ({} as any));
+  const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
+  if (!email) return c.json({ success: false, error: 'email required' }, 400);
+  const participant = await c.env.DB.prepare(
+    'SELECT id FROM participants WHERE email = ?'
+  ).bind(email).first() as any;
+  if (!participant) return c.json({ success: false, error: 'no_participant' }, 404);
+  const token = await createPasswordResetToken(c.env.DB, participant.id, clientIp(c));
+  await fireCascade({
+    event: 'auth.password_reset',
+    actor_id: caller.id,
+    entity_type: 'participants',
+    entity_id: participant.id,
+    data: { email, reason: 'admin_issued_reset_link' },
+    env: c.env,
+  });
+  return c.json({ success: true, data: { reset_token: token } });
 });
 
 // POST /auth/reset-password — Consume reset token + set new password
