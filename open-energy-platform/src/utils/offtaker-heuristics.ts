@@ -59,7 +59,10 @@ export function extractBillProfile(
   if (!avgTariff || !isFinite(avgTariff)) avgTariff = 2.15;
 
   // peak / standard / off-peak percentages.
-  const peakM = text.match(/peak[^0-9]*([\d.]+)\s*%/i);
+  // Peak regex uses a negative lookbehind so it doesn't accidentally match
+  // the leading 'peak' inside 'off-peak' (which would swap the two values
+  // when off-peak appears first in the input).
+  const peakM = text.match(/(?<!off[\s-]?)peak[^0-9]*([\d.]+)\s*%/i);
   const standardM = text.match(/standard[^0-9]*([\d.]+)\s*%/i);
   const offpeakM = text.match(/off[\s-]?peak[^0-9]*([\d.]+)\s*%/i);
 
@@ -131,8 +134,15 @@ export function buildDeterministicMix(
     };
   });
 
-  const weightedPrice = mix.reduce((acc, m) => acc + (m.share_pct / 100) * m.blended_price, 0);
+  // Savings calc must account for any uncovered portion of demand at the
+  // current tariff — otherwise a 2-project mix (share_pct summing to 75%)
+  // would silently treat the remaining 25% as free.
   const currentPerMwh = currentTariff * 1000;
+  const totalSharePct = mix.reduce((acc, m) => acc + m.share_pct, 0);
+  const uncoveredPct = Math.max(0, 100 - totalSharePct);
+  const weightedPrice =
+    mix.reduce((acc, m) => acc + (m.share_pct / 100) * m.blended_price, 0) +
+    (uncoveredPct / 100) * currentPerMwh;
   const savingsPct = currentPerMwh > 0 ? Math.max(0, Math.round(((currentPerMwh - weightedPrice) / currentPerMwh) * 100)) : 0;
   const carbon = Math.round(requiredMwh * 0.95);
 
