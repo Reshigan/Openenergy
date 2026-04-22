@@ -304,7 +304,12 @@ admin.post('/users', async (c) => {
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
   const name = typeof body.name === 'string' ? body.name.trim() : '';
   const role = typeof body.role === 'string' ? body.role : '';
-  const allowedRoles = ['admin', 'ipp_developer', 'trader', 'carbon_fund', 'offtaker', 'lender', 'grid_operator', 'regulator', 'support'];
+  // 'support' intentionally omitted here — the DB CHECK constraint in
+  // migrations/001_core.sql:13 doesn't yet include it. PR-Prod-Support adds
+  // the migration that extends the CHECK AND adds 'support' back to this
+  // list (and to the frontend dropdown). Without the migration this
+  // INSERT would fail with CHECK constraint violation (Devin Review).
+  const allowedRoles = ['admin', 'ipp_developer', 'trader', 'carbon_fund', 'offtaker', 'lender', 'grid_operator', 'regulator'];
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return c.json({ success: false, error: 'Valid email is required' }, 400);
   if (!name) return c.json({ success: false, error: 'Name is required' }, 400);
   if (!allowedRoles.includes(role)) return c.json({ success: false, error: 'Invalid role' }, 400);
