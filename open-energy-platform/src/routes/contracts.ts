@@ -6,7 +6,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
-import { assertSameTenantParticipant } from '../utils/tenant';
+import { assertSameTenantParticipant, getTenantId } from '../utils/tenant';
 
 const contracts = new Hono<HonoEnv>();
 
@@ -248,12 +248,14 @@ contracts.post('/', async (c) => {
   const contractId = 'ct_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
   const termsJson = commercial_terms ? JSON.stringify(commercial_terms) : null;
 
+  const tenantId = getTenantId(c);
+
   await c.env.DB.prepare(`
     INSERT INTO contract_documents (
       id, title, document_type, phase, creator_id, counterparty_id, project_id, commercial_terms, tenant_id, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'default', ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
-    contractId, title, contract_type, phase, user.id, counterparty_id || user.id, project_id || null, termsJson, new Date().toISOString(), new Date().toISOString()
+    contractId, title, contract_type, phase, user.id, counterparty_id || user.id, project_id || null, termsJson, tenantId, new Date().toISOString(), new Date().toISOString()
   ).run();
 
   const contract = await c.env.DB.prepare('SELECT * FROM contract_documents WHERE id = ?').bind(contractId).first();
