@@ -133,9 +133,16 @@ export function Admin() {
         const res = await api.get(`/admin/kyc?status=${kycFilter}`);
         setKyc(res.data?.data || []);
       } else if (tab === 'users') {
+        // Fetch tenants in parallel so the "Create user" tenant picker is
+        // populated without requiring the admin to visit the Tenants tab
+        // first (Devin Review finding — tenants list was otherwise empty).
         const qs = userDebounce ? `?q=${encodeURIComponent(userDebounce)}` : '';
-        const res = await api.get(`/admin/users${qs}`);
-        setUsers(res.data?.data || []);
+        const [usersRes, tenantsRes] = await Promise.all([
+          api.get(`/admin/users${qs}`),
+          api.get('/admin/tenants'),
+        ]);
+        setUsers(usersRes.data?.data || []);
+        setTenants(tenantsRes.data?.data || []);
       } else if (tab === 'modules') {
         const res = await api.get('/admin/modules');
         setModules(res.data?.data || []);
@@ -532,7 +539,7 @@ function UsersPanel({ users, tenants, search, onSearchChange, onSetStatus, onCre
             <label className="text-sm">
               <span className="text-ionex-text-mute">Role</span>
               <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg bg-white">
-                {['admin','trader','ipp','offtaker','lender','carbon_fund','grid_operator','regulator','support'].map(r => (
+                {['admin','trader','ipp_developer','offtaker','lender','carbon_fund','grid_operator','regulator','support'].map(r => (
                   <option key={r} value={r}>{r.replace('_',' ')}</option>
                 ))}
               </select>
