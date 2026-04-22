@@ -60,6 +60,12 @@ FROM participants;
 DROP TABLE participants;
 ALTER TABLE participants_new RENAME TO participants;
 
+-- Recreate non-unique indexes that were dropped with the old table
+-- (id PRIMARY KEY and email UNIQUE recreate implicitly; these don't).
+-- Matches 001_core.sql:300-302.
+CREATE INDEX IF NOT EXISTS idx_participants_role ON participants(role);
+CREATE INDEX IF NOT EXISTS idx_participants_status ON participants(status);
+
 PRAGMA foreign_keys = ON;
 
 -- ============================================================================

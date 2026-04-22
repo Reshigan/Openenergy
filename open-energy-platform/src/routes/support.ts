@@ -117,7 +117,7 @@ support.post('/participants/:id/reset-link', async (c) => {
 
   const ip = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || null;
   const token = await createPasswordResetToken(c.env.DB, p.id, ip);
-  const origin = new URL(c.req.url).origin;
+  const origin = c.env.APP_BASE_URL || new URL(c.req.url).origin;
   const url = `${origin}/reset-password?token=${encodeURIComponent(token)}`;
 
   await auditLog(c.env.DB, actor.id, 'support.reset_link_issued', p.id, { email: p.email });
