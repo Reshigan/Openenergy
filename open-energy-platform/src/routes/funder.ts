@@ -102,6 +102,100 @@ funder.get('/facilities', async (c) => {
 });
 
 // ──────────────────────────────────────────────────────────────────────────
+// POST /facilities — create new loan facility (lender or admin only).
+// The facility is owned by the calling lender participant unless admin
+// explicitly hands ownership off via `lender_participant_id`.
+// ──────────────────────────────────────────────────────────────────────────
+funder.post('/facilities', async (c) => {
+  await ensureTables(c.env);
+  const user = getCurrentUser(c);
+  if (user.role !== 'lender' && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Only lenders or admins can create facilities' }, 403);
+  }
+  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const facility_name = typeof body.facility_name === 'string' ? body.facility_name.trim() : '';
+  if (!facility_name) return c.json({ success: false, error: 'facility_name is required' }, 400);
+  const id = uid('fac');
+  const ownerId = user.role === 'admin' && typeof body.lender_participant_id === 'string'
+    ? body.lender_participant_id
+    : user.id;
+  await c.env.DB.prepare(`
+    INSERT INTO loan_facilities
+      (id, facility_name, project_id, lender_participant_id, borrower_participant_id,
+       facility_type, committed_amount, drawn_amount, currency, interest_rate_pct,
+       tenor_months, dscr_covenant, status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
+  `).bind(
+    id,
+    facility_name,
+    (body.project_id as string) || null,
+    ownerId,
+    (body.borrower_participant_id as string) || null,
+    (body.facility_type as string) || null,
+    body.committed_amount != null ? Number(body.committed_amount) : null,
+    body.drawn_amount != null ? Number(body.drawn_amount) : 0,
+    (body.currency as string) || 'ZAR',
+    body.interest_rate_pct != null ? Number(body.interest_rate_pct) : null,
+    body.tenor_months != null ? Number(body.tenor_months) : null,
+    body.dscr_covenant != null ? Number(body.dscr_covenant) : 1.20,
+    new Date().toISOString(),
+  ).run();
+  const row = await c.env.DB.prepare('SELECT * FROM loan_facilities WHERE id = ?').bind(id).first();
+  return c.json({ success: true, data: row }, 201);
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// PUT /facilities/:id — edit. Lenders can only touch their own facility.
+// ──────────────────────────────────────────────────────────────────────────
+funder.put('/facilities/:id', async (c) => {
+  await ensureTables(c.env);
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const row = await c.env.DB.prepare('SELECT lender_participant_id FROM loan_facilities WHERE id = ?').bind(id).first() as { lender_participant_id?: string } | null;
+  if (!row) return c.json({ success: false, error: 'Facility not found' }, 404);
+  if (user.role !== 'admin' && row.lender_participant_id !== user.id) {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const editable = ['facility_name', 'project_id', 'facility_type', 'committed_amount',
+    'drawn_amount', 'currency', 'interest_rate_pct', 'tenor_months',
+    'dscr_covenant', 'status', 'borrower_participant_id'] as const;
+  const sets: string[] = [];
+  const binds: (string | number | null)[] = [];
+  for (const k of editable) {
+    if (k in body) {
+      sets.push(`${k} = ?`);
+      const v = body[k];
+      if (v == null) binds.push(null);
+      else if (typeof v === 'number') binds.push(v);
+      else binds.push(String(v));
+    }
+  }
+  if (sets.length === 0) return c.json({ success: false, error: 'No editable fields supplied' }, 400);
+  binds.push(id);
+  await c.env.DB.prepare(`UPDATE loan_facilities SET ${sets.join(', ')} WHERE id = ?`).bind(...binds).run();
+  const out = await c.env.DB.prepare('SELECT * FROM loan_facilities WHERE id = ?').bind(id).first();
+  return c.json({ success: true, data: out });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// DELETE /facilities/:id — mark facility closed rather than hard-delete so
+// covenant/disbursement history stays auditable.
+// ──────────────────────────────────────────────────────────────────────────
+funder.delete('/facilities/:id', async (c) => {
+  await ensureTables(c.env);
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const row = await c.env.DB.prepare('SELECT lender_participant_id FROM loan_facilities WHERE id = ?').bind(id).first() as { lender_participant_id?: string } | null;
+  if (!row) return c.json({ success: false, error: 'Facility not found' }, 404);
+  if (user.role !== 'admin' && row.lender_participant_id !== user.id) {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  await c.env.DB.prepare(`UPDATE loan_facilities SET status = 'closed' WHERE id = ?`).bind(id).run();
+  return c.json({ success: true, data: { id, status: 'closed' } });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
 // GET /summary — book-level KPIs
 // ──────────────────────────────────────────────────────────────────────────
 funder.get('/summary', async (c) => {

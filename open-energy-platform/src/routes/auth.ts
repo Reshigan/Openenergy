@@ -455,6 +455,78 @@ auth.put('/profile', authMiddleware, async (c) => {
   return c.json({ success: true, data: { message: 'Profile updated' } });
 });
 
+// GET /auth/preferences — participant_preferences row (notifications, locale, …)
+auth.get('/preferences', authMiddleware, async (c) => {
+  const user = getCurrentUser(c);
+  let row = await c.env.DB
+    .prepare('SELECT * FROM participant_preferences WHERE participant_id = ?')
+    .bind(user.id)
+    .first() as any;
+  if (!row) {
+    // Seed defaults on first read so PUT can use a straight UPDATE path.
+    await c.env.DB
+      .prepare(`INSERT INTO participant_preferences (participant_id, updated_at) VALUES (?, ?)`) 
+      .bind(user.id, new Date().toISOString())
+      .run();
+    row = await c.env.DB
+      .prepare('SELECT * FROM participant_preferences WHERE participant_id = ?')
+      .bind(user.id)
+      .first();
+  }
+  return c.json({ success: true, data: row });
+});
+
+// PUT /auth/preferences — partial update of a participant_preferences row.
+auth.put('/preferences', authMiddleware, async (c) => {
+  const user = getCurrentUser(c);
+  const body = await c.req.json();
+  // Whitelist the editable columns to prevent writing arbitrary keys.
+  const allowed = [
+    'notify_email_contracts',
+    'notify_email_settlement',
+    'notify_email_covenants',
+    'notify_email_lois',
+    'notify_in_app',
+    'locale',
+    'currency',
+    'timezone',
+    'date_format',
+    'dashboard_layout',
+  ] as const;
+  const patch: Record<string, unknown> = {};
+  for (const key of allowed) {
+    if (key in body) patch[key] = body[key];
+  }
+  if (Object.keys(patch).length === 0) {
+    return c.json({ success: false, error: 'No valid preference keys supplied' }, 400);
+  }
+  const has = await c.env.DB
+    .prepare('SELECT 1 FROM participant_preferences WHERE participant_id = ?')
+    .bind(user.id)
+    .first();
+  const cols = Object.keys(patch);
+  const placeholders = cols.map((c) => `${c} = ?`).join(', ');
+  const values = cols.map((c) => patch[c]);
+  if (!has) {
+    const colList = ['participant_id', ...cols, 'updated_at'].join(', ');
+    const vals = ['?', ...cols.map(() => '?'), '?'].join(', ');
+    await c.env.DB
+      .prepare(`INSERT INTO participant_preferences (${colList}) VALUES (${vals})`)
+      .bind(user.id, ...(values as (string | number)[]), new Date().toISOString())
+      .run();
+  } else {
+    await c.env.DB
+      .prepare(`UPDATE participant_preferences SET ${placeholders}, updated_at = ? WHERE participant_id = ?`)
+      .bind(...(values as (string | number)[]), new Date().toISOString(), user.id)
+      .run();
+  }
+  const row = await c.env.DB
+    .prepare('SELECT * FROM participant_preferences WHERE participant_id = ?')
+    .bind(user.id)
+    .first();
+  return c.json({ success: true, data: row });
+});
+
 // POST /auth/change-password — requires current password; revokes all sessions
 auth.post('/change-password', authMiddleware, async (c) => {
   const user = getCurrentUser(c);

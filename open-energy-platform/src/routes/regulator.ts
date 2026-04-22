@@ -31,6 +31,139 @@ async function ensureTable(env: HonoEnv['Bindings']) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// POST /filings — create a blank draft that the regulator can edit before
+// auto-generating. Body: { filing_type, reporting_period, title?, body_md? }
+// Access: regulator or admin.
+// ──────────────────────────────────────────────────────────────────────────
+regulator.post('/filings', async (c) => {
+  await ensureTable(c.env);
+  const user = getCurrentUser(c);
+  if (user.role !== 'regulator' && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Only regulators may create filings' }, 403);
+  }
+  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const filing_type = typeof body.filing_type === 'string' ? body.filing_type : '';
+  const reporting_period = typeof body.reporting_period === 'string' ? body.reporting_period : '';
+  if (!filing_type || !reporting_period) {
+    return c.json({ success: false, error: 'filing_type and reporting_period are required' }, 400);
+  }
+  const id = 'rf_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  await c.env.DB.prepare(`
+    INSERT INTO regulator_filings (id, filing_type, reporting_period, filed_by, status, narrative, evidence_json)
+    VALUES (?, ?, ?, ?, 'draft', ?, ?)
+  `).bind(
+    id,
+    filing_type,
+    reporting_period,
+    user.id,
+    (body.body_md as string) || (body.narrative as string) || '',
+    typeof body.evidence === 'object' ? JSON.stringify(body.evidence) : '{}',
+  ).run();
+  const row = await c.env.DB.prepare('SELECT * FROM regulator_filings WHERE id = ?').bind(id).first();
+  return c.json({ success: true, data: row }, 201);
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// PUT /filings/:id — update draft narrative or reporting period. Only the
+// author (or admin) may edit, and only while status is 'draft'.
+// ──────────────────────────────────────────────────────────────────────────
+regulator.put('/filings/:id', async (c) => {
+  await ensureTable(c.env);
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const row = await c.env.DB
+    .prepare('SELECT filed_by, status FROM regulator_filings WHERE id = ?')
+    .bind(id).first() as { filed_by?: string; status?: string } | null;
+  if (!row) return c.json({ success: false, error: 'Filing not found' }, 404);
+  if (user.role !== 'admin' && row.filed_by !== user.id) {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  if (row.status !== 'draft') {
+    return c.json({ success: false, error: `Cannot edit filing in status '${row.status}'` }, 400);
+  }
+  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const editable = ['reporting_period', 'narrative', 'evidence_json', 'filing_type'] as const;
+  const sets: string[] = [];
+  const binds: (string | number)[] = [];
+  for (const k of editable) {
+    if (k in body) {
+      sets.push(`${k} = ?`);
+      const v = body[k];
+      binds.push(typeof v === 'string' ? v : JSON.stringify(v));
+    }
+  }
+  if (sets.length === 0) return c.json({ success: false, error: 'No editable fields supplied' }, 400);
+  binds.push(id);
+  await c.env.DB.prepare(`UPDATE regulator_filings SET ${sets.join(', ')} WHERE id = ?`).bind(...binds).run();
+  const out = await c.env.DB.prepare('SELECT * FROM regulator_filings WHERE id = ?').bind(id).first();
+  return c.json({ success: true, data: out });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// POST /filings/:id/submit — move draft → submitted and stamp the timestamp.
+// ──────────────────────────────────────────────────────────────────────────
+regulator.post('/filings/:id/submit', async (c) => {
+  await ensureTable(c.env);
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const row = await c.env.DB
+    .prepare('SELECT filed_by, status FROM regulator_filings WHERE id = ?')
+    .bind(id).first() as { filed_by?: string; status?: string } | null;
+  if (!row) return c.json({ success: false, error: 'Filing not found' }, 404);
+  if (user.role !== 'admin' && row.filed_by !== user.id) {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  if (row.status !== 'draft') {
+    return c.json({ success: false, error: `Only drafts can be submitted (current: ${row.status})` }, 400);
+  }
+  await c.env.DB.prepare(`UPDATE regulator_filings SET status = 'submitted' WHERE id = ?`).bind(id).run();
+  const out = await c.env.DB.prepare('SELECT * FROM regulator_filings WHERE id = ?').bind(id).first();
+  return c.json({ success: true, data: out });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// POST /filings/:id/archive — archive any non-draft filing. Draft filings
+// should be DELETE'd rather than archived.
+// ──────────────────────────────────────────────────────────────────────────
+regulator.post('/filings/:id/archive', async (c) => {
+  await ensureTable(c.env);
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const row = await c.env.DB
+    .prepare('SELECT filed_by, status FROM regulator_filings WHERE id = ?')
+    .bind(id).first() as { filed_by?: string; status?: string } | null;
+  if (!row) return c.json({ success: false, error: 'Filing not found' }, 404);
+  if (user.role !== 'admin' && row.filed_by !== user.id) {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  await c.env.DB.prepare(`UPDATE regulator_filings SET status = 'archived' WHERE id = ?`).bind(id).run();
+  const out = await c.env.DB.prepare('SELECT * FROM regulator_filings WHERE id = ?').bind(id).first();
+  return c.json({ success: true, data: out });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// DELETE /filings/:id — only drafts. Submitted / archived filings stay on
+// record and must go through /archive for an audit trail.
+// ──────────────────────────────────────────────────────────────────────────
+regulator.delete('/filings/:id', async (c) => {
+  await ensureTable(c.env);
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const row = await c.env.DB
+    .prepare('SELECT filed_by, status FROM regulator_filings WHERE id = ?')
+    .bind(id).first() as { filed_by?: string; status?: string } | null;
+  if (!row) return c.json({ success: false, error: 'Filing not found' }, 404);
+  if (user.role !== 'admin' && row.filed_by !== user.id) {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  if (row.status !== 'draft') {
+    return c.json({ success: false, error: `Only drafts may be deleted (archive submitted/archived filings instead)` }, 400);
+  }
+  await c.env.DB.prepare('DELETE FROM regulator_filings WHERE id = ?').bind(id).run();
+  return c.json({ success: true, data: { id, deleted: true } });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
 // GET /filings — list filings (regulator/admin see all, others only their own)
 // ──────────────────────────────────────────────────────────────────────────
 regulator.get('/filings', async (c) => {

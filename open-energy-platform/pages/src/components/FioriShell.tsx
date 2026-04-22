@@ -359,9 +359,9 @@ export function FioriShell({ children }: { children: ReactNode }) {
                 <button
                   className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left hover:bg-[#fafafa] transition-colors"
                   style={{ color: '#32363a' }}
-                  onClick={() => navigate('/cockpit')}
+                  onClick={() => { setUserMenu(false); navigate('/settings'); }}
                 >
-                  <User size={14} /> My profile
+                  <User size={14} /> Profile &amp; preferences
                 </button>
                 <button
                   className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left hover:bg-[#fafafa] transition-colors"
@@ -374,9 +374,9 @@ export function FioriShell({ children }: { children: ReactNode }) {
                   <button
                     className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left hover:bg-[#fafafa] transition-colors"
                     style={{ color: '#32363a' }}
-                    onClick={() => navigate('/admin')}
+                    onClick={() => { setUserMenu(false); navigate('/admin'); }}
                   >
-                    <Settings size={14} /> Settings
+                    <Settings size={14} /> Admin console
                   </button>
                 )}
                 <button
