@@ -205,8 +205,17 @@ sso.get('/microsoft/callback', async (c) => {
     // must not be able to authenticate via SSO either (Devin Review finding).
     return c.redirect('/login?sso_error=account_rejected');
   } else if (!participant.email_verified) {
-    // A verified SSO login proves email ownership — flip the bit.
-    await c.env.DB.prepare(`UPDATE participants SET email_verified = 1 WHERE id = ?`).bind(participant.id).run();
+    // A verified SSO login proves email ownership — flip email_verified AND
+    // transition status 'pending' -> 'active' to mirror auth.ts:228. Without
+    // the status flip, SSO-verified users stay stuck in 'pending' forever
+    // (no automatic process can resolve it), which also skews regulator /
+    // admin analytics that filter on status='active' (Devin Review finding).
+    await c.env.DB.prepare(
+      `UPDATE participants
+         SET email_verified = 1,
+             status = CASE WHEN status = 'pending' THEN 'active' ELSE status END
+       WHERE id = ?`
+    ).bind(participant.id).run();
   }
 
   // Issue OE access + refresh tokens and create a session row.
