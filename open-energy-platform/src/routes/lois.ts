@@ -178,7 +178,7 @@ lois.post('/:id/accept', async (c) => {
     INSERT INTO contract_documents (
       id, title, document_type, phase, creator_id, counterparty_id,
       project_id, commercial_terms, tenant_id, created_at, updated_at
-    ) VALUES (?, ?, 'ppa', 'term_sheet', ?, ?, ?, ?, 'default', ?, ?)
+    ) VALUES (?, ?, 'term_sheet', 'term_sheet', ?, ?, ?, ?, 'default', ?, ?)
   `).bind(
     contractId,
     title,
