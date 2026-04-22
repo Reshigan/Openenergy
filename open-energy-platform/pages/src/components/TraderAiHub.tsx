@@ -7,6 +7,8 @@ type Recommendation = {
   action: 'match' | 'hedge' | 'place';
   my_order_id?: string;
   counterparty_order_id?: string;
+  side?: 'buy' | 'sell';
+  energy_type?: string;
   volume_mwh?: number;
   indicative_price?: number;
   rationale?: string;
@@ -32,8 +34,14 @@ export function TraderAiHub() {
   const [creating, setCreating] = useState<string | null>(null);
 
   const recs: Recommendation[] = (() => {
-    const s = result?.structured as { recommendations?: Recommendation[] } | undefined;
-    if (Array.isArray(s?.recommendations)) return s.recommendations;
+    const s = result?.structured as
+      | { recommendations?: Recommendation[] }
+      | Recommendation[]
+      | undefined;
+    if (Array.isArray(s)) return s as Recommendation[];
+    if (Array.isArray((s as { recommendations?: Recommendation[] } | undefined)?.recommendations)) {
+      return (s as { recommendations: Recommendation[] }).recommendations;
+    }
     return [];
   })();
 
@@ -50,19 +58,45 @@ export function TraderAiHub() {
     }
   };
 
-  const oneClickPlace = async (r: Recommendation, idx: number) => {
+  const oneClickAction = async (r: Recommendation, idx: number) => {
     setCreating(`${idx}`);
+    setError(null);
     try {
+      if (r.action === 'match' && r.my_order_id && r.counterparty_order_id) {
+        // Need to figure out which side each id is. We pass the ids as-is; the
+        // match endpoint validates sides. The simpler convention: my_order and
+        // counterparty_order are already paired opposite. Resolve at server.
+        // For the client we use: if rec.side === 'buy', my_order is buy.
+        const mySide = r.side || 'buy';
+        const body = mySide === 'buy'
+          ? {
+              buy_order_id: r.my_order_id,
+              sell_order_id: r.counterparty_order_id,
+              volume_mwh: r.volume_mwh || 10,
+              price_per_mwh: r.indicative_price,
+            }
+          : {
+              buy_order_id: r.counterparty_order_id,
+              sell_order_id: r.my_order_id,
+              volume_mwh: r.volume_mwh || 10,
+              price_per_mwh: r.indicative_price,
+            };
+        await api.post('/trading/match', body);
+        navigate('/trading');
+        return;
+      }
+      const side = r.side || 'buy';
       await api.post('/trading/orders', {
-        side: 'buy',
-        energy_type: 'solar',
+        side,
+        energy_type: r.energy_type || 'solar',
         volume_mwh: r.volume_mwh || 10,
-        price_min: r.indicative_price,
+        price_min: side === 'buy' ? undefined : r.indicative_price,
+        price_max: side === 'buy' ? r.indicative_price : undefined,
         market_type: 'bilateral',
       });
       navigate('/trading');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to create order');
+      setError(e instanceof Error ? e.message : 'Failed to execute action');
     } finally {
       setCreating(null);
     }
@@ -133,12 +167,15 @@ export function TraderAiHub() {
                   )}
                 </div>
                 <button
-                  onClick={() => oneClickPlace(r, i)}
+                  onClick={() => oneClickAction(r, i)}
                   disabled={creating === `${i}`}
                   className="text-[12px] font-semibold px-3 h-8 rounded-md inline-flex items-center gap-1"
                   style={{ background: '#e5f0fa', color: '#0a6ed1' }}
                 >
-                  {creating === `${i}` ? 'Creating…' : 'Place order'} <ArrowRight size={12} />
+                  {creating === `${i}`
+                    ? 'Executing…'
+                    : r.action === 'match' ? 'Match now' : r.action === 'hedge' ? 'Create hedge' : 'Place order'}
+                  <ArrowRight size={12} />
                 </button>
               </div>
             ))}
