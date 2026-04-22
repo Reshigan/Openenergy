@@ -41,6 +41,7 @@ import reportsRoutes from './routes/reports';
 import telemetryRoutes from './routes/telemetry';
 import monitoringRoutes from './routes/monitoring';
 import { logger } from './utils/logger';
+import backupRoutes from './routes/backup';
 
 const app = new Hono<HonoEnv>();
 
@@ -98,6 +99,12 @@ app.route('/api/regulator', regulatorRoutes);
 app.route('/api/reports', reportsRoutes);
 app.route('/api/telemetry', telemetryRoutes);
 app.route('/api/admin/monitoring', monitoringRoutes);
+// Backup routes are deliberately mounted outside /api/admin to avoid being
+// shadowed by the admin sub-app's global authMiddleware — Hono flattens
+// sub-app middleware onto the shared router, so /api/admin/* middleware
+// would fire before the backup-specific X-Backup-Token guard ever runs,
+// which would break the unattended GitHub Actions cron job.
+app.route('/api/backup', backupRoutes);
 
 // Static assets (SPA shell, JS, CSS, images) are served by Cloudflare Pages directly.
 // This Worker / Pages Function only handles API routes under /api/*.

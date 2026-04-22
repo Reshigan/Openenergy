@@ -1,0 +1,41 @@
+name: Scheduled D1 Backup
+
+# Nightly D1 → R2 backup. Invokes the admin backup endpoint which dumps
+# every user table to a gzipped SQL file in the open-energy-vault bucket
+# under backups/YYYY-MM-DD/. Restore procedure is in
+# docs/runbooks/restore-d1.md.
+on:
+  schedule:
+    # 02:17 UTC daily (= 04:17 SAST). Odd minute to avoid the top-of-hour
+    # surge of other Cloudflare cron jobs.
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Trigger backup
+        env:
+          BACKUP_TOKEN: ${{ secrets.BACKUP_TOKEN }}
+        run: |
+          if [ -z "$BACKUP_TOKEN" ]; then
+            echo "::warning::BACKUP_TOKEN secret not set — skipping backup. See docs/runbooks/restore-d1.md for setup."
+            exit 0
+          fi
+          RESPONSE=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" \
+            -X POST https://oe.vantax.co.za/api/admin/backup/run \
+            -H "X-Backup-Token: $BACKUP_TOKEN" \
+            -H 'Content-Type: application/json' \
+            --max-time 600 \
+            -d '{}')
+          HTTP_CODE=$(echo "$RESPONSE" | grep HTTP_STATUS | cut -d: -f2)
+          BODY=$(echo "$RESPONSE" | sed '/HTTP_STATUS/d')
+          echo "Response body:"
+          echo "$BODY"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Backup failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+          echo "Backup succeeded."
