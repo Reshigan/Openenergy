@@ -22,6 +22,32 @@ type RecommendResponse = {
 };
 
 /**
+ * Return the index of the matching '}' that closes the JSON object starting at
+ * position 0, or -1 if no balanced object is found. Quote-aware: braces inside
+ * string values are ignored, backslash escapes inside strings are handled.
+ */
+function findJsonObjectEnd(s: string): number {
+  if (s[0] !== '{') return -1;
+  let depth = 0;
+  let inString = false;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (inString) {
+      if (ch === '\\') { i++; continue; } // skip the escaped char
+      if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') { inString = true; continue; }
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+/**
  * TraderAiHub — AI copilot panel for the trader cockpit.
  * Calls POST /api/trading/recommend, renders the top actions, lets the trader
  * one-click create an order for any "place" recommendation.
@@ -43,6 +69,37 @@ export function TraderAiHub() {
       return (s as { recommendations: Recommendation[] }).recommendations;
     }
     return [];
+  })();
+
+  // The LLM typically wraps its output in a ```json …``` fence (the prompt
+  // asks for exactly that), and sometimes echoes the whole structured payload
+  // as prose. When we've already parsed `recs`, the structured cards ARE the
+  // rendered form — the raw text is pure duplication, so we drop it. When we
+  // have no recs (fallback path), we still show the text but with code fences
+  // and any JSON-blob prefix stripped so the trader sees prose, not a blob.
+  const narrativeText = (() => {
+    const raw = result?.text?.trim();
+    if (!raw) return '';
+    if (recs.length > 0) return '';
+
+    // Strip ```json … ``` (or generic ```) code fences — anywhere in the text.
+    let cleaned = raw
+      .replace(/```(?:json|javascript|js)?\s*[\s\S]*?```/gi, '')
+      .trim();
+
+    // Some models prefix a bare JSON object before prose — drop a leading { … }
+    // block if what's left after it is non-empty prose. Use a quote-aware
+    // scanner so braces inside string values don't throw off the depth count
+    // (e.g. `{"rationale":"fell below } threshold"}`).
+    if (cleaned.startsWith('{')) {
+      const end = findJsonObjectEnd(cleaned);
+      if (end > 0) {
+        const after = cleaned.slice(end + 1).trim();
+        if (after.length > 0) cleaned = after;
+      }
+    }
+
+    return cleaned.trim();
   })();
 
   const runRecommend = async () => {
@@ -139,11 +196,16 @@ export function TraderAiHub() {
             Hit "Recommend actions" to get AI-ranked opportunities across your open orders and the book.
           </div>
         )}
-        {result?.text && (
-          <pre className="text-[12px] whitespace-pre-wrap font-mono p-3 rounded-md"
+        {narrativeText && (
+          <div className="text-[13px] leading-relaxed whitespace-pre-wrap p-3 rounded-md"
                style={{ background: '#f7f8f9', color: '#32363a' }}>
-            {result.text}
-          </pre>
+            {narrativeText}
+          </div>
+        )}
+        {result && recs.length === 0 && !narrativeText && !loading && (
+          <div className="text-[13px]" style={{ color: '#6a6d70' }}>
+            No actionable recommendations from the current order book — try again once more orders are posted.
+          </div>
         )}
         {recs.length > 0 && (
           <div className="space-y-2">
