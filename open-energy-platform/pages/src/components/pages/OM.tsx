@@ -5,6 +5,7 @@ import {
   CheckCircle2, Clock, Flame, Rocket, Send,
 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { NarrativeText } from '../NarrativeText';
 
 type Tab = 'fleet' | 'telemetry' | 'forecast' | 'faults' | 'maintenance' | 'analytics' | 'insights' | 'simulate';
 
@@ -282,7 +283,7 @@ function ForecastTab({ siteId }: { siteId: string | null }) {
         </header>
         <div className="p-5">
           {narrative
-            ? <pre className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#32363a] font-sans">{narrative}</pre>
+            ? <NarrativeText text={narrative} />
             : <div className="text-[13px] text-[#6a6d70]">Click Generate to run the AI forecast narrative for this site.</div>}
         </div>
       </div>
@@ -384,7 +385,7 @@ function FaultsTab() {
                       <div className="text-[11px] uppercase tracking-wider text-[#5d36ff]">AI triage</div>
                       {triage[f.id].fallback && <span className="text-[10px] uppercase tracking-wider text-[#8b6d00] bg-[#fff4d6] rounded px-2 py-[2px]">Fallback</span>}
                     </div>
-                    <pre className="whitespace-pre-wrap text-[12px] leading-relaxed text-[#32363a] font-sans">{triage[f.id].text}</pre>
+                    <NarrativeText text={triage[f.id].text} />
                   </div>
                 )}
                 <div className="mt-3 flex items-center gap-2">
@@ -522,7 +523,7 @@ function InsightsTab() {
       <div className="p-5">
         {loading && <div className="text-[13px] text-[#6a6d70] flex items-center gap-2"><Loader2 size={14} className="animate-spin" />Generating control-room brief…</div>}
         {!loading && data?.narrative?.text && (
-          <pre className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#32363a] font-sans">{data.narrative.text}</pre>
+          <NarrativeText text={data.narrative.text} />
         )}
       </div>
     </div>
@@ -630,7 +631,7 @@ function SimulateTab() {
         </div>
         {simulation?.text && (
           <div className="border-t border-[#f0f0f0] bg-[#fafbff] p-5">
-            <pre className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#32363a] font-sans">{simulation.text}</pre>
+            <NarrativeText text={simulation.text} />
           </div>
         )}
       </section>
@@ -680,7 +681,7 @@ function SimulateTab() {
                   <div className="text-[13px] font-semibold text-[#32363a]">LOI to {d.offtaker_name}</div>
                   {d.fallback && <span className="ml-2 text-[10px] uppercase tracking-wider text-[#8b6d00] bg-[#fff4d6] rounded px-2 py-[2px]">Fallback</span>}
                 </div>
-                <pre className="mt-2 whitespace-pre-wrap text-[12px] leading-relaxed text-[#32363a] font-sans">{d.body_md}</pre>
+                <div className="mt-2"><NarrativeText text={d.body_md} /></div>
               </div>
             ))}
           </div>

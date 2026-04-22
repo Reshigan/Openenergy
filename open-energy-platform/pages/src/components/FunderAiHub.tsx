@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Sparkles, ShieldAlert, Loader2, Banknote, Activity, LineChart } from 'lucide-react';
 import { api } from '../lib/api';
+import { NarrativeText } from './NarrativeText';
 
 type Summary = {
   facility_count: number;
@@ -190,19 +191,19 @@ export function FunderAiHub() {
           {cashflow?.text && (
             <div className="mt-3 rounded-lg border border-blue-100 bg-[#f5f9ff] p-3">
               {cashflow.fallback && <span className="text-[10px] uppercase tracking-wider text-[#8b6d00] bg-[#fff4d6] rounded px-2 py-[2px] mr-2">Fallback</span>}
-              <pre className="whitespace-pre-wrap text-[12px] leading-relaxed text-[#32363a] font-sans">{cashflow.text}</pre>
+              <NarrativeText text={cashflow.text} />
             </div>
           )}
           {sensitivity?.text && (
             <div className="mt-3 rounded-lg border border-indigo-100 bg-[#f3f4ff] p-3">
               {sensitivity.fallback && <span className="text-[10px] uppercase tracking-wider text-[#8b6d00] bg-[#fff4d6] rounded px-2 py-[2px] mr-2">Fallback</span>}
-              <pre className="whitespace-pre-wrap text-[12px] leading-relaxed text-[#32363a] font-sans">{sensitivity.text}</pre>
+              <NarrativeText text={sensitivity.text} />
             </div>
           )}
           {insights?.text && (
             <div className="mt-3 rounded-lg border border-amber-100 bg-[#fff9ec] p-3">
               {insights.fallback && <span className="text-[10px] uppercase tracking-wider text-[#8b6d00] bg-[#fff4d6] rounded px-2 py-[2px] mr-2">Fallback</span>}
-              <pre className="whitespace-pre-wrap text-[12px] leading-relaxed text-[#32363a] font-sans">{insights.text}</pre>
+              <NarrativeText text={insights.text} />
             </div>
           )}
         </div>

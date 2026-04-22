@@ -1,6 +1,7 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { FileUp, Sparkles, Send, Loader2, CheckCircle2 } from 'lucide-react';
 import { api } from '../lib/api';
+import { NarrativeText } from './NarrativeText';
 
 type MixItem = {
   project_id: string;
@@ -333,7 +334,9 @@ export function OfftakerAiHub() {
                     <span className="h-6 w-6 rounded-md bg-[#e7f4ea] text-[#107e3e] grid place-items-center"><CheckCircle2 size={14} /></span>
                     <h3 className="text-[14px] font-semibold text-[#32363a]">{l.project_name}</h3>
                   </header>
-                  <pre className="whitespace-pre-wrap text-[12px] leading-relaxed text-[#32363a] max-h-64 overflow-auto bg-[#fafafa] rounded p-2 border border-[#f0f0f0]">{l.body_md}</pre>
+                  <div className="max-h-64 overflow-auto bg-[#fafafa] rounded p-2 border border-[#f0f0f0]">
+                    <NarrativeText text={l.body_md} />
+                  </div>
                 </article>
               ))}
             </div>
