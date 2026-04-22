@@ -150,7 +150,12 @@ admin.put('/modules/:key', async (c) => {
   if (typeof body.required_role === 'string' || body.required_role === null) {
     updates.push('required_role = ?'); bindings.push(body.required_role || null);
   }
-  if (body.price_monthly != null && !Number.isNaN(Number(body.price_monthly))) {
+  // Allow explicit `null` so admins can clear a module's price (stored as
+  // NULL in the DB). Previously `!= null` silently swallowed the clear and
+  // the UI would show a success toast while nothing changed.
+  if (body.price_monthly === null) {
+    updates.push('price_monthly = ?'); bindings.push(null);
+  } else if (body.price_monthly !== undefined && !Number.isNaN(Number(body.price_monthly))) {
     updates.push('price_monthly = ?'); bindings.push(Number(body.price_monthly));
   }
   if (!updates.length) return c.json({ success: false, error: 'No valid fields to update' }, 400);

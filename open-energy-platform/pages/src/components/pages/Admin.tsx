@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Users, Settings, Shield, Activity, DollarSign, RefreshCw,
   ClipboardList, BarChart2, AlertTriangle, CheckCircle, XCircle,
@@ -112,9 +112,19 @@ export function Admin() {
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [billing, setBilling] = useState<BillingSnapshot | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  // Track the pending clear timer so a rapid succession of flashToast() calls
+  // doesn't have the earlier timer prematurely dismiss the later toast.
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flashToast = useCallback((msg: string) => {
     setToast(msg);
-    setTimeout(() => setToast(null), 4000);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => {
+      setToast(null);
+      toastTimer.current = null;
+    }, 4000);
+  }, []);
+  useEffect(() => () => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
   }, []);
 
   useEffect(() => {
