@@ -253,6 +253,7 @@ function LoginPage() {
         expired_id_token: 'Microsoft token has expired.',
         no_email: 'Microsoft account did not return an email.',
         account_suspended: 'Your account is suspended. Contact support.',
+        account_rejected: 'Your account has been rejected. Contact support.',
       };
       setError(msgMap[ssoError] || `Microsoft sign-in failed (${ssoError}).`);
     }

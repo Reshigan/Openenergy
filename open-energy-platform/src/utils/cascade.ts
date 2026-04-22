@@ -5,7 +5,7 @@
 export type EventType =
   // Auth
   | 'auth.registered' | 'auth.login' | 'auth.logout' | 'auth.otp_sent' | 'auth.otp_verified'
-  | 'auth.password_reset' | 'auth.module_access_changed'
+  | 'auth.email_verified' | 'auth.password_reset' | 'auth.module_access_changed'
   // Contract
   | 'contract.created' | 'contract.phase_changed' | 'contract.signed' | 'contract.executed'
   | 'contract.amended' | 'contract.terminated' | 'contract.statutory_check_completed'
