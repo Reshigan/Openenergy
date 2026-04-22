@@ -29,9 +29,17 @@ export type EventType =
   | 'grid.connection_created' | 'grid.constraint_active' | 'grid.wheeling_started'
   | 'grid.imbalance_calculated'
   // Ona
-  | 'ona.fault_detected' | 'ona.forecast_synced' | 'ona.maintenance_scheduled'
+  | 'ona.fault_detected' | 'ona.fault_triaged' | 'ona.fault_resolved'
+  | 'ona.forecast_synced' | 'ona.maintenance_scheduled' | 'ona.maintenance_updated'
+  // Grid / Metering extras
+  | 'grid.connection_commissioned' | 'metering.reading_validated'
+  // Pipeline / Threads / Dealroom
+  | 'pipeline.created' | 'pipeline.stage_changed' | 'pipeline.won' | 'pipeline.lost'
+  | 'thread.posted' | 'dealroom.proposed' | 'dealroom.accepted'
+  // Marketplace
+  | 'marketplace.bid' | 'marketplace.listed' | 'marketplace.inquired' | 'marketplace.accepted'
   // General
-  | 'demand.matched' | 'marketplace.bid' | 'meter.ingested'
+  | 'demand.matched' | 'meter.ingested'
   | 'popia.consent_changed' | 'popia.data_exported' | 'popia.erasure'
   // Pipeline
   | 'pipeline.created' | 'pipeline.stage_changed' | 'pipeline.won' | 'pipeline.lost'
