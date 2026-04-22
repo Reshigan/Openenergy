@@ -118,6 +118,7 @@ export function Settlement() {
 
   const reconcilePayment = useCallback(async (p: Payment) => {
     const bankRef = prompt('Bank statement reference (optional):', p.bank_reference || '');
+    if (bankRef === null) return; // user cancelled — do NOT reconcile
     try {
       await api.post(`/settlement/payments/${p.id}/reconcile`, { bank_reference: bankRef || undefined });
       await fetchData();
