@@ -22,6 +22,32 @@ type RecommendResponse = {
 };
 
 /**
+ * Return the index of the matching '}' that closes the JSON object starting at
+ * position 0, or -1 if no balanced object is found. Quote-aware: braces inside
+ * string values are ignored, backslash escapes inside strings are handled.
+ */
+function findJsonObjectEnd(s: string): number {
+  if (s[0] !== '{') return -1;
+  let depth = 0;
+  let inString = false;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (inString) {
+      if (ch === '\\') { i++; continue; } // skip the escaped char
+      if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') { inString = true; continue; }
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+/**
  * TraderAiHub — AI copilot panel for the trader cockpit.
  * Calls POST /api/trading/recommend, renders the top actions, lets the trader
  * one-click create an order for any "place" recommendation.
@@ -62,18 +88,11 @@ export function TraderAiHub() {
       .trim();
 
     // Some models prefix a bare JSON object before prose — drop a leading { … }
-    // block if what's left after it is non-empty prose.
+    // block if what's left after it is non-empty prose. Use a quote-aware
+    // scanner so braces inside string values don't throw off the depth count
+    // (e.g. `{"rationale":"fell below } threshold"}`).
     if (cleaned.startsWith('{')) {
-      let depth = 0;
-      let end = -1;
-      for (let i = 0; i < cleaned.length; i++) {
-        const ch = cleaned[i];
-        if (ch === '{') depth++;
-        else if (ch === '}') {
-          depth--;
-          if (depth === 0) { end = i; break; }
-        }
-      }
+      const end = findJsonObjectEnd(cleaned);
       if (end > 0) {
         const after = cleaned.slice(end + 1).trim();
         if (after.length > 0) cleaned = after;
