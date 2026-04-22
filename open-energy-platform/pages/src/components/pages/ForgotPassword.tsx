@@ -5,7 +5,6 @@ import { api } from '../../context/AuthContext';
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
-  const [resetToken, setResetToken] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -17,7 +16,6 @@ export default function ForgotPassword() {
       const res = await api.post('/auth/forgot-password', { email });
       if (res.data?.success) {
         setSent(true);
-        if (res.data.data?.reset_token) setResetToken(res.data.data.reset_token);
       } else {
         setError(res.data?.error || 'Request failed');
       }
@@ -41,17 +39,10 @@ export default function ForgotPassword() {
             <div className="rounded-lg border px-3 py-2 text-[13px]" style={{ background: '#ebf7ef', borderColor: '#9ec9a8', color: '#0e6027' }}>
               If that email exists, a reset link has been dispatched.
             </div>
-            {resetToken && (
-              <div className="rounded-lg border px-3 py-3 text-[12px]" style={{ background: '#fff7e0', borderColor: '#e8c66c', color: '#6a4e00' }}>
-                <div className="font-semibold mb-1">Dev/admin token (email provider not configured):</div>
-                <div className="font-mono break-all">{resetToken}</div>
-                <div className="mt-2">
-                  <Link to={`/reset-password?token=${encodeURIComponent(resetToken)}`} className="font-semibold" style={{ color: '#0a6ed1' }}>
-                    Open reset link →
-                  </Link>
-                </div>
-              </div>
-            )}
+            <div className="rounded-lg border px-3 py-3 text-[12px]" style={{ background: '#fff7e0', borderColor: '#e8c66c', color: '#6a4e00' }}>
+              Until a mail provider is wired, an administrator can issue you a one-time reset link via
+              <span className="font-mono"> POST /api/auth/admin/reset-link</span> (admin-authenticated).
+            </div>
             <Link to="/login" className="btn btn-secondary w-full">Back to sign in</Link>
           </div>
         ) : (
