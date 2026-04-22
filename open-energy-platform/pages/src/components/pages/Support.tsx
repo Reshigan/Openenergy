@@ -165,8 +165,8 @@ export function Support() {
       }
       // Store so the Axios interceptor picks it up on the next request.
       sessionStorage.setItem('oe_impersonation_active', '1');
-      sessionStorage.setItem('oe_impersonation_original_token', localStorage.getItem('oe_token') || '');
-      localStorage.setItem('oe_token', token);
+      sessionStorage.setItem('oe_impersonation_original_token', localStorage.getItem('token') || '');
+      localStorage.setItem('token', token);
       flashToast('Impersonating — page will reload');
       setTimeout(() => { window.location.href = '/cockpit'; }, 600);
     } catch (e: any) {
