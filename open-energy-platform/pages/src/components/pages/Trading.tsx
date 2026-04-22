@@ -26,11 +26,35 @@ export function Trading() {
       const [bookRes, posRes, histRes] = await Promise.all([
         api.get('/trading/orderbook').catch(() => ({ data: { success: true, data: { bids: generateSampleOrders('buy', 5), asks: generateSampleOrders('sell', 5) } } })),
         api.get('/trading/positions').catch(() => ({ data: { success: true, data: [] } })),
-        api.get('/trading/history').catch(() => ({ data: { success: true, data: generateSampleHistory() } })),
+        api.get('/trading/matches').catch(() => ({ data: { success: true, data: generateSampleHistory() } })),
       ]);
-      setOrderBook(bookRes.data?.data || { bids: [], asks: [] });
-      setPositions(posRes.data?.data || []);
-      setTradeHistory(histRes.data?.data || []);
+      const raw = bookRes.data?.data;
+      let bids: any[] = [];
+      let asks: any[] = [];
+      if (Array.isArray(raw)) {
+        for (const o of raw) {
+          const price = Number(o.price_max ?? o.price_min ?? o.price ?? 0);
+          const volume = Number(o.volume_mwh ?? o.volume ?? 0);
+          const row = { ...o, price, volume };
+          if (o.side === 'buy' || o.side === 'bid') bids.push(row);
+          else asks.push(row);
+        }
+      } else if (raw && typeof raw === 'object') {
+        bids = Array.isArray(raw.bids) ? raw.bids : [];
+        asks = Array.isArray(raw.asks) ? raw.asks : [];
+      }
+      setOrderBook({ bids, asks });
+      const posData = posRes.data?.data;
+      setPositions(Array.isArray(posData) ? posData : []);
+      const histData = histRes.data?.data;
+      const histArr = Array.isArray(histData)
+        ? histData.map((m: any) => ({
+            timestamp: m.matched_at ?? m.timestamp ?? new Date().toISOString(),
+            price: Number(m.price_per_mwh ?? m.price ?? 0),
+            volume: Number(m.volume_mwh ?? m.volume ?? 0),
+          }))
+        : [];
+      setTradeHistory(histArr);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -55,7 +79,12 @@ export function Trading() {
   if (loading) return <div className="p-6"><Skeleton variant="card" rows={4} /></div>;
   if (error) return <div className="p-6"><ErrorBanner message={error} onRetry={fetchTradingData} /></div>;
 
-  const combinedBook = [...orderBook.bids.map(b => ({ ...b, side: 'bid' })), ...orderBook.asks.map(a => ({ ...a, side: 'ask' }))].sort((a, b) => b.price - a.price);
+  const safeBids = Array.isArray(orderBook?.bids) ? orderBook.bids : [];
+  const safeAsks = Array.isArray(orderBook?.asks) ? orderBook.asks : [];
+  const combinedBook = [
+    ...safeBids.map(b => ({ ...b, side: 'bid' })),
+    ...safeAsks.map(a => ({ ...a, side: 'ask' })),
+  ].sort((a, b) => b.price - a.price);
 
   return (
     <div className="p-6 space-y-6">
