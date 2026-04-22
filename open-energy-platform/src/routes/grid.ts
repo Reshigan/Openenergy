@@ -240,6 +240,38 @@ grid.post('/imbalance/calculate', async (c) => {
   return c.json({ success: true, data: { id, imbalance_kwh: delta, imbalance_charge: charge, within_tolerance: withinTolerance } }, 201);
 });
 
+// PUT /grid/imbalance/:id — grid operator edits a persisted imbalance row.
+// Recomputes imbalance_kwh / charge / within_tolerance whenever scheduled /
+// actual / rate change so downstream dashboards stay consistent.
+grid.put('/imbalance/:id', async (c) => {
+  const user = getCurrentUser(c);
+  if (!isOperator(user.role)) {
+    return c.json({ success: false, error: 'Only grid operators may edit imbalance rows' }, 403);
+  }
+  const id = c.req.param('id');
+  const existing = await c.env.DB
+    .prepare('SELECT * FROM grid_imbalance WHERE id = ?')
+    .bind(id).first() as Record<string, unknown> | null;
+  if (!existing) return c.json({ success: false, error: 'Imbalance period not found' }, 404);
+  const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const period_start = (body.period_start as string | undefined) ?? (existing.period_start as string);
+  const period_end = (body.period_end as string | undefined) ?? (existing.period_end as string);
+  const scheduled_kwh = body.scheduled_kwh != null ? Number(body.scheduled_kwh) : Number(existing.scheduled_kwh);
+  const actual_kwh = body.actual_kwh != null ? Number(body.actual_kwh) : Number(existing.actual_kwh);
+  const imbalance_rate = body.imbalance_rate != null ? Number(body.imbalance_rate) : Number(existing.imbalance_rate);
+  const delta = actual_kwh - scheduled_kwh;
+  const withinTolerance = Math.abs(delta) / Math.max(1, scheduled_kwh) <= 0.03 ? 1 : 0;
+  const charge = withinTolerance ? 0 : Math.abs(delta) * imbalance_rate;
+  await c.env.DB.prepare(`
+    UPDATE grid_imbalance
+       SET period_start = ?, period_end = ?, scheduled_kwh = ?, actual_kwh = ?,
+           imbalance_kwh = ?, imbalance_rate = ?, imbalance_charge = ?, within_tolerance = ?
+     WHERE id = ?
+  `).bind(period_start, period_end, scheduled_kwh, actual_kwh, delta, imbalance_rate, charge, withinTolerance, id).run();
+  const out = await c.env.DB.prepare('SELECT * FROM grid_imbalance WHERE id = ?').bind(id).first();
+  return c.json({ success: true, data: out });
+});
+
 grid.post('/imbalance/:id/settle', async (c) => {
   const user = getCurrentUser(c);
   const id = c.req.param('id');
