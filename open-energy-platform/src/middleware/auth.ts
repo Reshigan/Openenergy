@@ -155,7 +155,10 @@ export async function optionalAuth(c: Context<HonoEnv>, next: Next) {
                 email: payload.email,
                 role: payload.role,
                 name: payload.name,
-                tenant_id: row.tenant_id ?? 'default',
+                // `||` (not `??`) so empty-string DB values collapse to
+                // 'default' — matches authMiddleware line 112, getTenantId(),
+                // and SQL `COALESCE(NULLIF(tenant_id, ''), 'default')`.
+                tenant_id: row.tenant_id || 'default',
               },
             });
           }
