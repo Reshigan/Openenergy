@@ -18,6 +18,18 @@ function isOperator(role: string) {
   return role === 'admin' || role === 'grid_operator' || role === 'regulator';
 }
 
+// Shared imbalance math. Tolerance mirrors NERSA/Eskom practice: a ±3%
+// relative band when schedule is non-trivial, falling back to an absolute
+// 10 kWh cut-off for zero-scheduled periods so a stray 5 kWh spike does
+// not charge a settlement fee. Charge is always rounded to 2 dp to match
+// D1 REAL persistence rules and keep POST/PUT idempotent.
+function computeImbalance(scheduled: number, actual: number, rate: number) {
+  const delta = actual - scheduled;
+  const withinTolerance = scheduled > 0 ? Math.abs(delta) / scheduled <= 0.03 : Math.abs(delta) < 10;
+  const charge = withinTolerance ? 0 : Math.round(Math.abs(delta) * rate * 100) / 100;
+  return { delta, withinTolerance, charge };
+}
+
 // ---------- CONNECTIONS ----------
 grid.get('/connections', async (c) => {
   const user = getCurrentUser(c);
@@ -219,10 +231,8 @@ grid.post('/imbalance/calculate', async (c) => {
   }
   const scheduled = Number(scheduled_kwh || 0);
   const actual = Number(actual_kwh || 0);
-  const delta = actual - scheduled;
   const rate = Number(imbalance_rate || 0.45);
-  const withinTolerance = scheduled > 0 ? Math.abs(delta) / scheduled <= 0.03 : Math.abs(delta) < 10;
-  const charge = withinTolerance ? 0 : Math.round(Math.abs(delta) * rate * 100) / 100;
+  const { delta, withinTolerance, charge } = computeImbalance(scheduled, actual, rate);
   const id = 'gi_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
   await c.env.DB.prepare(`
     INSERT INTO grid_imbalance (id, period_start, period_end, participant_id, scheduled_kwh, actual_kwh, imbalance_kwh, imbalance_rate, imbalance_charge, within_tolerance, settled, created_at)
@@ -259,15 +269,13 @@ grid.put('/imbalance/:id', async (c) => {
   const scheduled_kwh = body.scheduled_kwh != null ? Number(body.scheduled_kwh) : Number(existing.scheduled_kwh);
   const actual_kwh = body.actual_kwh != null ? Number(body.actual_kwh) : Number(existing.actual_kwh);
   const imbalance_rate = body.imbalance_rate != null ? Number(body.imbalance_rate) : Number(existing.imbalance_rate);
-  const delta = actual_kwh - scheduled_kwh;
-  const withinTolerance = Math.abs(delta) / Math.max(1, scheduled_kwh) <= 0.03 ? 1 : 0;
-  const charge = withinTolerance ? 0 : Math.abs(delta) * imbalance_rate;
+  const { delta, withinTolerance, charge } = computeImbalance(scheduled_kwh, actual_kwh, imbalance_rate);
   await c.env.DB.prepare(`
     UPDATE grid_imbalance
        SET period_start = ?, period_end = ?, scheduled_kwh = ?, actual_kwh = ?,
            imbalance_kwh = ?, imbalance_rate = ?, imbalance_charge = ?, within_tolerance = ?
      WHERE id = ?
-  `).bind(period_start, period_end, scheduled_kwh, actual_kwh, delta, imbalance_rate, charge, withinTolerance, id).run();
+  `).bind(period_start, period_end, scheduled_kwh, actual_kwh, delta, imbalance_rate, charge, withinTolerance ? 1 : 0, id).run();
   const out = await c.env.DB.prepare('SELECT * FROM grid_imbalance WHERE id = ?').bind(id).first();
   return c.json({ success: true, data: out });
 });
