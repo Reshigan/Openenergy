@@ -391,7 +391,11 @@ contracts.post('/:id/sign', async (c) => {
     return c.json({ success: true, data });
   } catch (err) {
     if (err instanceof LockBusyError) {
-      switch (err.message) {
+      // LockBusyError is raised both by the withLock helper when the advisory
+      // lock is taken AND from inside the handler to carry structured
+      // validation failures — we distinguish via err.key (the raw key),
+      // not err.message (which is prefixed with "lock busy: " by the ctor).
+      switch (err.key) {
         case '__not_found__':
           return c.json({ success: false, error: 'Contract not found' }, 404);
         case '__not_signatory__':

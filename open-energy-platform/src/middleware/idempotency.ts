@@ -25,7 +25,15 @@ async function sha256Hex(text: string): Promise<string> {
 }
 
 function scopeFor(c: Context<HonoEnv>): string {
-  const user = c.get('user') as { id?: string; tenant_id?: string } | undefined;
+  // Auth context is populated by optionalAuth/authMiddleware under the 'auth'
+  // key, not 'user'. Previously this read c.get('user') which was always
+  // undefined, so every scope fell through to 'anon' and an Idempotency-Key
+  // could collide across unrelated authenticated callers. index.ts now runs
+  // optionalAuth globally before this middleware so JWT-bearing requests
+  // resolve to p:<participant_id>; anonymous requests (e.g. /auth/login,
+  // public polls) still fall through to 'anon', which is correct.
+  const auth = c.get('auth') as { user?: { id?: string; tenant_id?: string } } | undefined;
+  const user = auth?.user;
   if (user?.id) return `p:${user.id}`;
   if (user?.tenant_id) return `t:${user.tenant_id}`;
   return 'anon';

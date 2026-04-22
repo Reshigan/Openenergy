@@ -2,6 +2,7 @@
 import { Hono } from 'hono';
 import { corsMiddleware, securityHeaders, rateLimitMiddleware, requestLogger } from './middleware/security';
 import { idempotency } from './middleware/idempotency';
+import { optionalAuth } from './middleware/auth';
 import { HonoEnv } from './utils/types';
 
 // Route imports
@@ -45,6 +46,12 @@ app.use('*', securityHeaders);
 app.use('*', corsMiddleware);
 app.use('*', rateLimitMiddleware);
 app.use('*', requestLogger);
+// optionalAuth runs BEFORE idempotency so the idempotency middleware can
+// scope stored keys by authenticated participant (c.get('auth')?.user),
+// not fall back to 'anon' and collide across callers. optionalAuth is
+// non-failing (anonymous requests still pass through) so this is safe to
+// attach globally.
+app.use('*', optionalAuth);
 // Idempotency (no-op unless caller sends Idempotency-Key; see migration 013)
 app.use('*', idempotency);
 

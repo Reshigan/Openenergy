@@ -179,7 +179,9 @@ trading.post('/match', async (c) => {
     return c.json({ success: true, data: body }, 201);
   } catch (err) {
     if (err instanceof LockBusyError) {
-      switch (err.message) {
+      // Switch on err.key (the raw lock/validation identifier). err.message
+      // is the human-readable form ("lock busy: <key>") and won't match.
+      switch (err.key) {
         case '__not_found__':
           return c.json({ success: false, error: 'Order(s) not found' }, 404);
         case '__mismatched_sides__':

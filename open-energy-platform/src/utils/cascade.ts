@@ -251,22 +251,23 @@ export async function resolveDlqItem(
 }
 
 async function createAuditLog(ctx: CascadeContext, env: any): Promise<void> {
-  try {
-    await env.DB.prepare(`
-      INSERT INTO audit_logs (id, actor_id, action, entity_type, entity_id, changes, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      generateId(),
-      ctx.actor_id || null,
-      ctx.event,
-      ctx.entity_type,
-      ctx.entity_id,
-      JSON.stringify(ctx.data || {}),
-      new Date().toISOString()
-    ).run();
-  } catch (err) {
-    console.error('Audit log creation failed:', err);
-  }
+  // Intentionally NO inner try/catch here — runStage() wraps this call in its
+  // own retry + DLQ fallback loop (see runStage above), and swallowing errors
+  // locally turns that retry/DLQ machinery into dead code. Any DB failure
+  // must propagate so the audit-log stage can be retried and, if all retries
+  // fail, dead-lettered for support to inspect and replay.
+  await env.DB.prepare(`
+    INSERT INTO audit_logs (id, actor_id, action, entity_type, entity_id, changes, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    generateId(),
+    ctx.actor_id || null,
+    ctx.event,
+    ctx.entity_type,
+    ctx.entity_id,
+    JSON.stringify(ctx.data || {}),
+    new Date().toISOString()
+  ).run();
 }
 
 async function createNotifications(ctx: CascadeContext, env: any): Promise<void> {
