@@ -193,7 +193,7 @@ admin.post('/modules', async (c) => {
     typeof body.description === 'string' ? body.description : null,
     body.enabled === false ? 0 : 1,
     typeof body.required_role === 'string' && body.required_role ? body.required_role : null,
-    body.price_monthly != null && !Number.isNaN(Number(body.price_monthly)) ? Number(body.price_monthly) : 0,
+    body.price_monthly != null && !Number.isNaN(Number(body.price_monthly)) ? Number(body.price_monthly) : null,
   ).run();
   await auditLog(c.env, user.id, 'admin.module_created', 'modules', moduleKey, { id, ...body });
   return c.json({ success: true, data: { id, module_key: moduleKey } });
