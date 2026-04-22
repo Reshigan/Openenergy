@@ -143,17 +143,38 @@ function renderInline(src: string): React.ReactNode[] {
         </em>,
       );
     } else if (m[4] && m[5]) {
+      // URL scheme allowlist — LLM output can be prompt-injected into emitting
+      // [label](javascript:…) / [label](data:text/html,…) / [label](vbscript:…).
+      // React 18 only console-warns on those schemes, it does not block the
+      // click, so we hard-gate by scheme here. Relative links and fragment
+      // refs (#…) are accepted; anything else must be http/https/mailto/tel.
+      const href = m[5].trim();
+      const isSafe =
+        href.startsWith('#') ||
+        href.startsWith('/') ||
+        /^(https?|mailto|tel):/i.test(href);
       parts.push(
-        <a
-          key={`a${key++}`}
-          href={m[5]}
-          target="_blank"
-          rel="noreferrer"
-          className="underline"
-          style={{ color: '#5d36ff' }}
-        >
-          {m[4]}
-        </a>,
+        isSafe ? (
+          <a
+            key={`a${key++}`}
+            href={href}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="underline"
+            style={{ color: '#5d36ff' }}
+          >
+            {m[4]}
+          </a>
+        ) : (
+          <span
+            key={`a${key++}`}
+            className="underline"
+            style={{ color: '#5d36ff' }}
+            title="Link scheme blocked"
+          >
+            {m[4]}
+          </span>
+        ),
       );
     }
     last = m.index + m[0].length;
