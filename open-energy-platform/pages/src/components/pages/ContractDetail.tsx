@@ -5,6 +5,7 @@ import {
   CheckCircle2, Clock, Scale, FileText, Loader2, Send,
 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 import jsPDF from 'jspdf';
 
 type Contract = {
@@ -140,6 +141,8 @@ export function ContractDetail() {
   const [typedName, setTypedName] = useState('');
   const [agree, setAgree] = useState(false);
   const [phaseChanging, setPhaseChanging] = useState(false);
+
+  useEscapeKey(() => { setSignOpen(false); setTypedName(''); setAgree(false); }, signOpen);
 
   const load = async () => {
     if (!id) return;

@@ -13,14 +13,7 @@ export function useEscapeKey(onEscape: () => void, enabled = true) {
   useEffect(() => {
     if (!enabled) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        // stopImmediatePropagation stops other document-level listeners on
-        // the same event — important when modals stack (last-registered
-        // listener fires first, so the topmost modal handles Escape and the
-        // underlying one stays open).
-        e.stopImmediatePropagation();
-        onEscape();
-      }
+      if (e.key === 'Escape') onEscape();
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
