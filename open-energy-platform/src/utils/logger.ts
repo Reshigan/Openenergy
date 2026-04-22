@@ -97,45 +97,26 @@ export async function recordRequestStat(
     const bucket = bucketStart();
     const cls = statusClass(status);
     const slow = latencyMs > 1000 ? 1 : 0;
-    const existing = await db
-      .prepare(
-        `SELECT id, count, latency_ms_sum, latency_ms_max, slow_count
-           FROM request_stats
-          WHERE bucket_start = ? AND route = ? AND method = ? AND status_class = ?`,
-      )
-      .bind(bucket, route, method, cls)
-      .first<{
-        id: string;
-        count: number;
-        latency_ms_sum: number;
-        latency_ms_max: number;
-        slow_count: number;
-      }>();
+    const id = `rs_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
-    if (existing) {
-      await db
-        .prepare(
-          `UPDATE request_stats
-              SET count = count + 1,
-                  latency_ms_sum = latency_ms_sum + ?,
-                  latency_ms_max = MAX(latency_ms_max, ?),
-                  slow_count = slow_count + ?
-            WHERE id = ?`,
-        )
-        .bind(latencyMs, latencyMs, slow, existing.id)
-        .run();
-    } else {
-      const id = `rs_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-      await db
-        .prepare(
-          `INSERT INTO request_stats
-             (id, bucket_start, route, method, status_class,
-              count, latency_ms_sum, latency_ms_max, slow_count)
-           VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?)`,
-        )
-        .bind(id, bucket, route, method, cls, latencyMs, latencyMs, slow)
-        .run();
-    }
+    // Single-statement UPSERT: the unique index
+    // idx_request_stats_bucket(bucket_start, route, method, status_class) makes
+    // ON CONFLICT atomic, so two concurrent writes to the same bucket can't
+    // both hit the "insert" branch and lose one of them to a UNIQUE violation.
+    await db
+      .prepare(
+        `INSERT INTO request_stats
+           (id, bucket_start, route, method, status_class,
+            count, latency_ms_sum, latency_ms_max, slow_count)
+         VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?)
+         ON CONFLICT(bucket_start, route, method, status_class) DO UPDATE SET
+           count          = count + 1,
+           latency_ms_sum = latency_ms_sum + excluded.latency_ms_sum,
+           latency_ms_max = MAX(latency_ms_max, excluded.latency_ms_max),
+           slow_count     = slow_count + excluded.slow_count`,
+      )
+      .bind(id, bucket, route, method, cls, latencyMs, latencyMs, slow)
+      .run();
   } catch {
     /* swallow — stats are best-effort */
   }

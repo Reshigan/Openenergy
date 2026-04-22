@@ -185,11 +185,16 @@ export async function requestLogger(c: Context<HonoEnv>, next: Next) {
   });
 
   // Stats bucket is best-effort; skip the DB write for health checks to
-  // avoid drowning the table in noise.
+  // avoid drowning the table in noise. Prefer waitUntil so DB latency is
+  // outside the response path; fall back to await only when waitUntil is
+  // unavailable (e.g. unit tests or Workers outside a request scope).
   if (c.env?.DB && !path.startsWith('/api/health')) {
-    c.executionCtx?.waitUntil?.(
-      recordRequestStat(c.env.DB, route, method, status, duration).catch(() => {}),
-    ) ?? (await recordRequestStat(c.env.DB, route, method, status, duration).catch(() => {}));
+    const task = recordRequestStat(c.env.DB, route, method, status, duration).catch(() => {});
+    if (typeof c.executionCtx?.waitUntil === 'function') {
+      c.executionCtx.waitUntil(task);
+    } else {
+      await task;
+    }
   }
 }
 

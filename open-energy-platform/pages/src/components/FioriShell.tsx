@@ -151,10 +151,20 @@ export function FioriShell({ children }: { children: ReactNode }) {
     return Array.from(map.entries());
   }, [nav]);
 
-  const isActive = (path: string) =>
-    location.pathname === path || location.pathname.startsWith(path + '/');
+  // Match exact path or a sub-path — but only pick the single most specific
+  // nav entry so /admin/monitoring highlights Monitoring (not both Monitoring
+  // and Admin). A path counts as active for nav item `p` iff `p` is the
+  // longest registered nav prefix of the current location.
+  const activePath = useMemo(() => {
+    const candidates = nav
+      .map((n) => n.path)
+      .filter((p) => location.pathname === p || location.pathname.startsWith(p + '/'))
+      .sort((a, b) => b.length - a.length);
+    return candidates[0];
+  }, [nav, location.pathname]);
+  const isActive = (path: string) => path === activePath;
 
-  const currentLabel = nav.find((n) => isActive(n.path))?.label ?? 'Open Energy';
+  const currentLabel = nav.find((n) => n.path === activePath)?.label ?? 'Open Energy';
 
   const handleLogout = () => {
     logout();
