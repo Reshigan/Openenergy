@@ -124,7 +124,11 @@ intelligence.post('/:id/resolve', async (c) => {
   const id = c.req.param('id');
   const item = await c.env.DB.prepare('SELECT participant_id FROM intelligence_items WHERE id = ?').bind(id).first() as { participant_id: string | null } | null;
   if (!item) return c.json({ success: false, error: 'item_not_found' }, 404);
-  if (item.participant_id && item.participant_id !== user.id && user.role !== 'admin' && user.role !== 'regulator') {
+  const isPrivileged = user.role === 'admin' || user.role === 'regulator';
+  if (item.participant_id === null) {
+    // Platform-wide items (e.g. KYC stale alerts) are admin/regulator only.
+    if (!isPrivileged) return c.json({ success: false, error: 'forbidden' }, 403);
+  } else if (item.participant_id !== user.id && !isPrivileged) {
     return c.json({ success: false, error: 'forbidden' }, 403);
   }
   await c.env.DB.prepare(
