@@ -8,11 +8,15 @@ import { AppError, ErrorCode } from '../utils/types';
 import type { JWTPayload } from '../utils/types';
 
 const JWT_ALGORITHM = 'HS256';
-const TOKEN_EXPIRY_HOURS = 24;
+const DEFAULT_TOKEN_EXPIRY_SECONDS = 24 * 60 * 60;
 
-export async function signToken(payload: Omit<JWTPayload, 'iat' | 'exp'>, secret: string): Promise<string> {
+export async function signToken(
+  payload: Omit<JWTPayload, 'iat' | 'exp'>,
+  secret: string,
+  opts: { expiresInSeconds?: number } = {}
+): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
-  const expires = now + (TOKEN_EXPIRY_HOURS * 60 * 60);
+  const expires = now + (opts.expiresInSeconds ?? DEFAULT_TOKEN_EXPIRY_SECONDS);
 
   const header = base64UrlEncodeStr(JSON.stringify({ alg: JWT_ALGORITHM, typ: 'JWT' }));
   const body = base64UrlEncodeStr(JSON.stringify({ ...payload, iat: now, exp: expires }));
