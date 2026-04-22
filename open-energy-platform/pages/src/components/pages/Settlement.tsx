@@ -81,12 +81,34 @@ export function Settlement() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [disputes, setDisputes] = useState<Dispute[]>([]);
+  // Unfiltered datasets for the summary tiles — fetched independently of
+  // the active tab + filters so tiles are always accurate.
+  const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
+  const [allPayments, setAllPayments] = useState<Payment[]>([]);
+  const [allDisputes, setAllDisputes] = useState<Dispute[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [directionFilter, setDirectionFilter] = useState<'all' | 'incoming' | 'outgoing'>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [payInvoice, setPayInvoice] = useState<Invoice | null>(null);
   const [disputeInvoice, setDisputeInvoice] = useState<Invoice | null>(null);
+
+  const fetchSummary = useCallback(async () => {
+    try {
+      const [inv, pay, dsp] = await Promise.all([
+        api.get('/settlement/invoices'),
+        api.get('/settlement/payments'),
+        api.get('/settlement/disputes'),
+      ]);
+      setAllInvoices(inv.data?.data || []);
+      setAllPayments(pay.data?.data || []);
+      setAllDisputes(dsp.data?.data || []);
+    } catch (err: any) {
+      // Summary tile failures should not block the tab view; keep them silent.
+      // eslint-disable-next-line no-console
+      console.warn('Settlement summary fetch failed', err?.message || err);
+    }
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -115,26 +137,32 @@ export function Settlement() {
   }, [tab, directionFilter, statusFilter]);
 
   useEffect(() => { void fetchData(); }, [fetchData]);
+  // Summary loads once on mount; mutations refresh it explicitly.
+  useEffect(() => { void fetchSummary(); }, [fetchSummary]);
+
+  const refreshAll = useCallback(async () => {
+    await Promise.all([fetchData(), fetchSummary()]);
+  }, [fetchData, fetchSummary]);
 
   const reconcilePayment = useCallback(async (p: Payment) => {
     const bankRef = prompt('Bank statement reference (optional):', p.bank_reference || '');
     if (bankRef === null) return; // user cancelled — do NOT reconcile
     try {
       await api.post(`/settlement/payments/${p.id}/reconcile`, { bank_reference: bankRef || undefined });
-      await fetchData();
+      await refreshAll();
     } catch (err: any) {
       alert(err?.response?.data?.error || 'Failed to reconcile');
     }
-  }, [fetchData]);
+  }, [refreshAll]);
 
   const summary = useMemo(() => {
-    const outstanding = invoices.filter(i => ['issued', 'partial', 'overdue'].includes(i.status))
+    const outstanding = allInvoices.filter(i => ['issued', 'partial', 'overdue'].includes(i.status))
       .reduce((sum, i) => sum + (i.total_amount - Number(i.paid_amount || 0)), 0);
-    const overdue = invoices.filter(i => i.status === 'overdue').length;
-    const openDisputes = disputes.filter(d => ['open', 'under_review'].includes(d.status)).length;
-    const unreconciled = payments.filter(p => p.reconciled === 0 && p.from_participant_id === user?.id).length;
+    const overdue = allInvoices.filter(i => i.status === 'overdue').length;
+    const openDisputes = allDisputes.filter(d => ['open', 'under_review'].includes(d.status)).length;
+    const unreconciled = allPayments.filter(p => p.reconciled === 0 && p.from_participant_id === user?.id).length;
     return { outstanding, overdue, openDisputes, unreconciled };
-  }, [invoices, disputes, payments, user?.id]);
+  }, [allInvoices, allDisputes, allPayments, user?.id]);
 
   return (
     <div className="p-6 space-y-6">
@@ -143,7 +171,7 @@ export function Settlement() {
           <h1 className="text-2xl font-bold text-gray-900">Settlement</h1>
           <p className="text-ionex-text-mute">Invoices, payments, reconciliation and disputes.</p>
         </div>
-        <button onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
+        <button onClick={() => void refreshAll()} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
           <RefreshCw className="w-4 h-4" />
         </button>
       </div>
@@ -194,7 +222,7 @@ export function Settlement() {
       )}
 
       {loading && <Skeleton variant="card" rows={4} />}
-      {error && <ErrorBanner message={error} onRetry={fetchData} />}
+      {error && <ErrorBanner message={error} onRetry={() => void refreshAll()} />}
 
       {!loading && !error && tab === 'invoices' && (
         invoices.length === 0
@@ -213,10 +241,10 @@ export function Settlement() {
       )}
 
       {payInvoice && (
-        <RecordPaymentModal invoice={payInvoice} onClose={() => setPayInvoice(null)} onDone={() => { setPayInvoice(null); void fetchData(); }} />
+        <RecordPaymentModal invoice={payInvoice} onClose={() => setPayInvoice(null)} onDone={() => { setPayInvoice(null); void refreshAll(); }} />
       )}
       {disputeInvoice && (
-        <FileDisputeModal invoice={disputeInvoice} onClose={() => setDisputeInvoice(null)} onDone={() => { setDisputeInvoice(null); setTab('disputes'); }} />
+        <FileDisputeModal invoice={disputeInvoice} onClose={() => setDisputeInvoice(null)} onDone={() => { setDisputeInvoice(null); setTab('disputes'); void fetchSummary(); }} />
       )}
     </div>
   );

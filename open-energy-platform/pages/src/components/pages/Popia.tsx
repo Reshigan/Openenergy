@@ -78,13 +78,15 @@ export function Popia() {
     setSavingConsent(true);
     try {
       const merged = { ...consent, ...next };
-      await api.post('/popia/consent', {
+      const res = await api.post('/popia/consent', {
         marketing: merged.marketing,
         data_sharing: merged.data_sharing,
         third_party: merged.third_party,
         analytics: merged.analytics,
       });
-      setConsent(merged);
+      // Prefer server-authoritative updated_at; fall back to local now() if absent.
+      const updatedAt = res?.data?.data?.updated_at || new Date().toISOString();
+      setConsent({ ...merged, updated_at: updatedAt });
     } catch (err: any) {
       alert(err?.response?.data?.error || 'Failed to update consent');
     } finally {
