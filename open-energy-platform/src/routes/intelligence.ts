@@ -250,7 +250,11 @@ intelligence.post('/scan', async (c) => {
     FROM contract_documents
     WHERE phase = 'active' AND commercial_terms IS NOT NULL
   `);
+  // Normalize to UTC midnight so a contract whose end_date is today is still
+  // included (commercial_terms dates are stored as YYYY-MM-DD, which parses as
+  // midnight UTC — comparing against `new Date()` would skip today).
   const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
   const in90 = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000);
   for (const row of activeContractRows) {
     const k = row as { id: string; title: string; creator_id: string; counterparty_id: string; commercial_terms: string };
