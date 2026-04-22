@@ -7,6 +7,13 @@ pages_build_output_dir = "pages/dist"
 ENVIRONMENT = "production"
 PLATFORM_NAME = "Open Energy"
 DOMAIN = "oe.vantax.co.za"
+APP_BASE_URL = "https://oe.vantax.co.za"
+# Microsoft Entra ID SSO (client ID + tenant ID are semi-public and safe to
+# commit; AZURE_AD_CLIENT_SECRET must be set via `wrangler secret put` and
+# is never committed).
+AZURE_AD_CLIENT_ID = "0a0bcbd9-afcb-44b9-b0ad-16e1da612f98"
+AZURE_AD_TENANT_ID = "998b123c-e559-479d-bbb9-cf3330469a73"
+AZURE_AD_REDIRECT_URI = "https://oe.vantax.co.za/api/auth/sso/microsoft/callback"
 
 [[r2_buckets]]
 binding = "R2"

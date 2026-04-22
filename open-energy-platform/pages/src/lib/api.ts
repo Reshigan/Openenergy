@@ -87,6 +87,13 @@ export interface User {
   enabled_modules?: string[];
 }
 
+// Token bundle surfaced by the Microsoft SSO callback (see /sso-landing).
+export interface SsoTokenBundle {
+  token: string;
+  refresh_token?: string;
+  refresh_expires_at?: string;
+}
+
 // Auth context interface
 export interface AuthContextType {
   user: User | null;
@@ -96,6 +103,7 @@ export interface AuthContextType {
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  acceptSsoTokens: (bundle: SsoTokenBundle) => void;
 }
 
 // Register data interface

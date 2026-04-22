@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { api, User, AuthContextType, RegisterData, MfaRequiredError, LockoutError } from '../lib/api';
+import { api, User, AuthContextType, RegisterData, MfaRequiredError, LockoutError, SsoTokenBundle } from '../lib/api';
 
 export { api };
 
@@ -70,6 +70,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Accept a token bundle produced by an SSO callback (see /sso-landing).
+  // Mirrors the tail of `login()` but without a password round-trip.
+  //
+  // We flip `loading` back to true before setting the token so that any
+  // ProtectedRoute that renders between `setToken(...)` and the completion of
+  // `refreshUser()` (triggered by the useEffect on `token`) renders the
+  // loading spinner instead of redirecting to /login. Without this, the
+  // `SsoLanding` → `navigate('/cockpit')` path races with `refreshUser()`
+  // and the user is bounced back to /login on the first render where
+  // `loading === false && user === null` (Devin Review finding).
+  const acceptSsoTokens = (bundle: SsoTokenBundle) => {
+    localStorage.setItem('token', bundle.token);
+    if (bundle.refresh_token) localStorage.setItem('refresh_token', bundle.refresh_token);
+    if (bundle.refresh_expires_at) localStorage.setItem('refresh_expires_at', bundle.refresh_expires_at);
+    setLoading(true);
+    setToken(bundle.token);
+    // refreshUser() will run via the useEffect dependency on `token`.
+  };
+
   const logout = () => {
     const refreshToken = localStorage.getItem('refresh_token');
     // Best-effort server-side revoke; don't block the UI on it.
@@ -84,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, refreshUser, acceptSsoTokens }}>
       {children}
     </AuthContext.Provider>
   );
