@@ -92,15 +92,22 @@ export async function authMiddleware(c: Context<HonoEnv>, next: Next) {
     throw new AppError(ErrorCode.UNAUTHORIZED, 'Invalid or expired token', 401);
   }
   
-  // Look up tenant_id for isolation enforcement (single row, indexed PK)
-  let tenantId: string | undefined;
+  // Look up tenant_id for isolation enforcement (single row, indexed PK).
+  // Fail closed on DB error — silently defaulting to 'default' on a transient
+  // failure would let a tenant-A user bypass cross-tenant checks for the
+  // duration of the request.
+  let tenantId: string;
   try {
     const row = await c.env.DB.prepare('SELECT tenant_id FROM participants WHERE id = ?')
       .bind(payload.sub)
       .first<{ tenant_id: string | null }>();
-    tenantId = row?.tenant_id ?? 'default';
-  } catch {
-    tenantId = 'default';
+    if (!row) {
+      throw new AppError(ErrorCode.UNAUTHORIZED, 'Account no longer exists', 401);
+    }
+    tenantId = row.tenant_id ?? 'default';
+  } catch (e) {
+    if (e instanceof AppError) throw e;
+    throw new AppError(ErrorCode.INTERNAL_ERROR, 'Unable to resolve tenant', 500);
   }
 
   // Set auth context
