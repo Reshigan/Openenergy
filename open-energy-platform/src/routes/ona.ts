@@ -6,6 +6,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import { ask } from '../utils/ai';
+import { getTenantId, isAdmin } from '../utils/tenant';
 
 const ona = new Hono<HonoEnv>();
 
@@ -420,18 +421,25 @@ ona.post('/projects/:projectId/outreach', async (c) => {
     return c.json({ success: false, error: 'forbidden' }, 403);
   }
 
-  // Resolve targets
+  // Resolve targets. Tenant isolation: non-admins may only reach offtakers in
+  // their own tenant (admins may address the full platform).
   let targets: Array<{ id: string; name: string; email: string }> = [];
+  const admin = isAdmin(c);
+  const callerTenant = getTenantId(c);
   if (body.offtaker_ids && body.offtaker_ids.length > 0) {
     const placeholders = body.offtaker_ids.map(() => '?').join(',');
-    const r = await c.env.DB.prepare(
-      `SELECT id, name, email FROM participants WHERE role = 'offtaker' AND id IN (${placeholders})`
-    ).bind(...body.offtaker_ids).all();
+    const sql = admin
+      ? `SELECT id, name, email FROM participants WHERE role = 'offtaker' AND id IN (${placeholders})`
+      : `SELECT id, name, email FROM participants WHERE role = 'offtaker' AND id IN (${placeholders}) AND COALESCE(tenant_id, 'default') = ?`;
+    const binds = admin ? body.offtaker_ids : [...body.offtaker_ids, callerTenant];
+    const r = await c.env.DB.prepare(sql).bind(...binds).all();
     targets = (r.results || []) as typeof targets;
   } else {
-    const r = await c.env.DB.prepare(
-      `SELECT id, name, email FROM participants WHERE role = 'offtaker' LIMIT 25`
-    ).all();
+    const r = admin
+      ? await c.env.DB.prepare(`SELECT id, name, email FROM participants WHERE role = 'offtaker' LIMIT 25`).all()
+      : await c.env.DB.prepare(
+          `SELECT id, name, email FROM participants WHERE role = 'offtaker' AND COALESCE(tenant_id, 'default') = ? LIMIT 25`
+        ).bind(callerTenant).all();
     targets = (r.results || []) as typeof targets;
   }
 

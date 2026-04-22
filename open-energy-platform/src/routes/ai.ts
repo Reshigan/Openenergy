@@ -11,6 +11,7 @@ import { HonoEnv } from '../utils/types';
 import { ask, AiIntent } from '../utils/ai';
 import { extractBillProfile, buildDeterministicMix } from '../utils/offtaker-heuristics';
 import { fireCascade } from '../utils/cascade';
+import { assertSameTenantParticipant } from '../utils/tenant';
 
 const ai = new Hono<HonoEnv>();
 ai.use('*', authMiddleware);
@@ -244,8 +245,18 @@ ai.post('/offtaker/loi', async (c) => {
        FROM ipp_projects p
        LEFT JOIN participants part ON part.id = p.developer_id
        WHERE p.id = ?`,
-    ).bind(item.project_id).first();
+    ).bind(item.project_id).first() as any;
     if (!project) continue;
+
+    // Tenant isolation: skip projects whose developer is in a different tenant.
+    // Admin callers bypass (they can issue LOIs cross-tenant).
+    if (project.developer_id) {
+      try {
+        await assertSameTenantParticipant(c, project.developer_id as string);
+      } catch {
+        continue;
+      }
+    }
 
     const aiResult = await ask(c.env, {
       intent: 'offtaker.loi_draft',

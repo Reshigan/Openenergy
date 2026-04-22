@@ -4,6 +4,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { assertSameTenantParticipant, getTenantId } from '../utils/tenant';
 
 const invoices = new Hono<HonoEnv>();
 
@@ -68,15 +69,22 @@ invoices.post('/', async (c) => {
     return c.json({ success: false, error: 'total_amount is required' }, 400);
   }
 
+  // Tenant isolation: a tenant-A user cannot issue an invoice against a
+  // participant who lives in tenant B. Admins bypass the check.
+  if (to_participant_id && to_participant_id !== user.id) {
+    await assertSameTenantParticipant(c, to_participant_id);
+  }
+
   const invoiceId = 'inv_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
   const lineItemsJson = typeof line_items === 'string' ? line_items : (Array.isArray(line_items) ? JSON.stringify(line_items) : '[]');
   const vatAmount = subtotal * (vat_rate || 0.15);
   const effectiveDueDate = due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const tenantId = getTenantId(c);
 
-  await c.env.DB.prepare(`INSERT INTO invoices (id, invoice_number, invoice_type, from_participant_id, to_participant_id, project_id, period_start, period_end, line_items, subtotal, vat_rate, vat_amount, total_amount, currency, due_date, status, tenant_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', 'default', ?, ?)`).bind(
+  await c.env.DB.prepare(`INSERT INTO invoices (id, invoice_number, invoice_type, from_participant_id, to_participant_id, project_id, period_start, period_end, line_items, subtotal, vat_rate, vat_amount, total_amount, currency, due_date, status, tenant_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?)`).bind(
     invoiceId, invoice_number, invoice_type, user.id, to_participant_id || user.id, project_id || null,
     period_start, period_end, lineItemsJson, subtotal, vat_rate || 0.15, vatAmount, total_amount,
-    currency || 'ZAR', effectiveDueDate, new Date().toISOString(), new Date().toISOString()
+    currency || 'ZAR', effectiveDueDate, tenantId, new Date().toISOString(), new Date().toISOString()
   ).run();
 
   const invoice = await c.env.DB.prepare('SELECT * FROM invoices WHERE id = ?').bind(invoiceId).first();
