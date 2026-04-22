@@ -124,7 +124,7 @@ support.post('/participants/:id/reset-link', async (c) => {
 
   return c.json({
     success: true,
-    data: { reset_url: url, expires_in_minutes: 30, email: p.email },
+    data: { reset_url: url, expires_in_minutes: 60, email: p.email },
   });
 });
 

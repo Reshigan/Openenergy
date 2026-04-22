@@ -294,7 +294,7 @@ export function Support() {
                 </div>
                 {resetLink && (
                   <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                    <div className="flex items-center gap-1 text-yellow-800 font-semibold mb-1"><Mail size={12} /> One-off reset link (expires in 30 min)</div>
+                    <div className="flex items-center gap-1 text-yellow-800 font-semibold mb-1"><Mail size={12} /> One-off reset link (expires in 60 min)</div>
                     <code className="block break-all text-yellow-900">{resetLink}</code>
                   </div>
                 )}

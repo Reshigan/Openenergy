@@ -253,14 +253,17 @@ async function buildOfftaker(env: HonoEnv, participantId: string, scopeAll: bool
         ORDER BY created_at DESC LIMIT 100
       `).bind(participantId)).all<Row>();
 
+  // Column names come from migrations/007_lois.sql: loi_drafts uses
+  // `from_participant_id` (offtaker sender), `to_participant_id` (target IPP),
+  // `annual_mwh`, `blended_price` — NOT target_ipp_id/share_pct/offtaker_id.
   const lois = await (scopeAll
     ? env.DB.prepare(`
-        SELECT id, target_ipp_id, status, share_pct, created_at
+        SELECT id, to_participant_id, status, annual_mwh, blended_price, created_at
         FROM loi_drafts ORDER BY created_at DESC LIMIT 100
       `).all<Row>().catch(() => ({ results: [] as Row[] }))
     : env.DB.prepare(`
-        SELECT id, target_ipp_id, status, share_pct, created_at
-        FROM loi_drafts WHERE offtaker_id = ?
+        SELECT id, to_participant_id, status, annual_mwh, blended_price, created_at
+        FROM loi_drafts WHERE from_participant_id = ?
         ORDER BY created_at DESC LIMIT 100
       `).bind(participantId).all<Row>().catch(() => ({ results: [] as Row[] })));
 
