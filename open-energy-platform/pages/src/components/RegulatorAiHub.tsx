@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, Loader2, FileBarChart } from 'lucide-react';
 import { api } from '../lib/api';
+import { NarrativeText } from './NarrativeText';
 
 type FilingType = 'nersa_annual' | 'popia_pia' | 'jse_srl' | 'carbon_tax' | 'ipp_quarterly';
 
@@ -86,10 +87,9 @@ export function RegulatorAiHub() {
           <div className="text-[13px] rounded-md px-3 py-2" style={{ background: '#ffebeb', color: '#bb0000' }}>{error}</div>
         )}
         {result && (
-          <pre className="text-[12px] whitespace-pre-wrap p-3 rounded-md max-h-96 overflow-auto"
-               style={{ background: '#f7f8f9', color: '#32363a' }}>
-            {result.text}
-          </pre>
+          <div className="max-h-96 overflow-auto rounded-md p-3" style={{ background: '#f7f8f9' }}>
+            <NarrativeText text={result.text} />
+          </div>
         )}
       </div>
     </section>

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
+import { NarrativeText } from '../NarrativeText';
 
 type Loi = {
   id: string;
@@ -199,9 +200,11 @@ export function LoiDetail() {
           <h2 className="text-[13px] font-semibold text-[#32363a]">LOI body</h2>
           <span className="text-[11px] text-[#6a6d70]">Non-binding · subject to due diligence</span>
         </header>
-        <pre className="p-5 whitespace-pre-wrap text-[13px] leading-relaxed text-[#32363a] bg-white max-h-[480px] overflow-auto">
-          {loi.body_md || '(No body text attached to this LOI)'}
-        </pre>
+        <div className="p-5 bg-white max-h-[480px] overflow-auto">
+          {loi.body_md
+            ? <NarrativeText text={loi.body_md} />
+            : <div className="text-[13px] text-[#6a6d70]">(No body text attached to this LOI)</div>}
+        </div>
       </section>
 
       {mix && typeof mix === 'object' && 'project_id' in mix && (

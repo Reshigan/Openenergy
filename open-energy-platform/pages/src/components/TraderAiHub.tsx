@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Loader2, TrendingUp, ArrowRight } from 'lucide-react';
 import { api } from '../lib/api';
+import { NarrativeText } from './NarrativeText';
 
 type Recommendation = {
   action: 'match' | 'hedge' | 'place';
@@ -197,10 +198,7 @@ export function TraderAiHub() {
           </div>
         )}
         {narrativeText && (
-          <div className="text-[13px] leading-relaxed whitespace-pre-wrap p-3 rounded-md"
-               style={{ background: '#f7f8f9', color: '#32363a' }}>
-            {narrativeText}
-          </div>
+          <NarrativeText text={narrativeText} tone="bubble" />
         )}
         {result && recs.length === 0 && !narrativeText && !loading && (
           <div className="text-[13px]" style={{ color: '#6a6d70' }}>

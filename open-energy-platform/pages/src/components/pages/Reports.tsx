@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FileText, Loader2, Printer, Sparkles, Filter, Download, Table as TableIcon } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
+import { NarrativeText } from '../NarrativeText';
 
 type Period = '30d' | '90d' | '12m' | 'ytd';
 
@@ -294,12 +295,19 @@ export function Reports() {
             </span>
           )}
         </header>
-        <div className="p-5 prose prose-sm max-w-none">
-          {loading && <div className="text-[13px] text-[#6a6d70]"><Loader2 size={14} className="inline animate-spin mr-2" />Generating executive summary…</div>}
-          {!loading && aiData?.narrative?.text && (
-            <pre className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#32363a] font-sans">{aiData.narrative.text}</pre>
+        <div className="p-5">
+          {loading && (
+            <div className="text-[13px] text-[#6a6d70]">
+              <Loader2 size={14} className="inline animate-spin mr-2" />
+              Generating executive summary…
+            </div>
           )}
-          {!loading && !aiData?.narrative?.text && <div className="text-[13px] text-[#6a6d70]">No narrative generated.</div>}
+          {!loading && (
+            <NarrativeText
+              text={aiData?.narrative?.text}
+              emptyLabel="No narrative generated."
+            />
+          )}
         </div>
       </section>
 

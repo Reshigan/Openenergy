@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Sparkles, Leaf, Loader2, Coins, Flame, Target } from 'lucide-react';
 import { api } from '../lib/api';
+import { NarrativeText } from './NarrativeText';
 
 type Summary = {
   fund_id: string;
@@ -109,7 +110,7 @@ export function CarbonFundAiHub() {
           {navResult?.text && (
             <div className="mt-3 rounded-lg border border-emerald-100 bg-[#f5fbf7] p-3">
               {navResult.fallback && <span className="text-[10px] uppercase tracking-wider text-[#8b6d00] bg-[#fff4d6] rounded px-2 py-[2px] mr-2">Fallback</span>}
-              <pre className="whitespace-pre-wrap text-[12px] leading-relaxed text-[#32363a] font-sans">{navResult.text}</pre>
+              <NarrativeText text={navResult.text} />
             </div>
           )}
         </div>
@@ -130,7 +131,7 @@ export function CarbonFundAiHub() {
           {retireResult?.text && (
             <div className="mt-3 rounded-lg border border-pink-100 bg-[#fef5f8] p-3">
               {retireResult.fallback && <span className="text-[10px] uppercase tracking-wider text-[#8b6d00] bg-[#fff4d6] rounded px-2 py-[2px] mr-2">Fallback</span>}
-              <pre className="whitespace-pre-wrap text-[12px] leading-relaxed text-[#32363a] font-sans">{retireResult.text}</pre>
+              <NarrativeText text={retireResult.text} />
             </div>
           )}
         </div>
@@ -161,7 +162,7 @@ export function CarbonFundAiHub() {
           {pricing?.text && (
             <div className="mt-3 rounded-lg border border-indigo-100 bg-[#f3f6ff] p-3">
               {pricing.fallback && <span className="text-[10px] uppercase tracking-wider text-[#8b6d00] bg-[#fff4d6] rounded px-2 py-[2px] mr-2">Fallback</span>}
-              <pre className="whitespace-pre-wrap text-[12px] leading-relaxed text-[#32363a] font-sans">{pricing.text}</pre>
+              <NarrativeText text={pricing.text} />
             </div>
           )}
         </div>
@@ -174,7 +175,7 @@ export function CarbonFundAiHub() {
           {insights?.text && (
             <div className="mt-3 rounded-lg border border-amber-100 bg-[#fff9ec] p-3">
               {insights.fallback && <span className="text-[10px] uppercase tracking-wider text-[#8b6d00] bg-[#fff4d6] rounded px-2 py-[2px] mr-2">Fallback</span>}
-              <pre className="whitespace-pre-wrap text-[12px] leading-relaxed text-[#32363a] font-sans">{insights.text}</pre>
+              <NarrativeText text={insights.text} />
             </div>
           )}
         </div>
