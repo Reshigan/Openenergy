@@ -249,19 +249,66 @@ support.post('/participants/:id/impersonate', async (c) => {
   });
 });
 
-// ---------- DLQ LIST (audit_logs filtered on cascade failures) ----------
-// Placeholder until PR-Prod-3 introduces the proper cascade_dlq table. For
-// now we surface any audit_logs rows tagged as cascade errors so support has
-// at least _some_ visibility.
+// ---------- CASCADE DLQ (real table landed in migration 013) ----------
+// GET /cascade-dlq        — list rows, filter by status, newest first
+// POST /cascade-dlq/:id/retry   — re-run the failed stage
+// POST /cascade-dlq/:id/resolve — mark resolved/abandoned (support
+//                                 handled it out-of-band, no retry)
 support.get('/cascade-dlq', async (c) => {
-  const rows = await c.env.DB.prepare(
-    `SELECT id, actor_id, action, entity_type, entity_id, changes, created_at
-       FROM audit_logs
-      WHERE action LIKE 'cascade.%' OR action LIKE '%.failed'
-      ORDER BY created_at DESC
-      LIMIT 100`
-  ).all();
+  const status = (c.req.query('status') || 'pending').toLowerCase();
+  const validStatus = ['pending', 'resolved', 'abandoned', 'all'].includes(status) ? status : 'pending';
+
+  const rawLimit = parseInt(c.req.query('limit') || '100', 10);
+  const limit = Math.min(Math.max(Number.isFinite(rawLimit) ? rawLimit : 100, 1), 500);
+
+  const stmt = validStatus === 'all'
+    ? c.env.DB.prepare(
+        `SELECT id, event, entity_type, entity_id, actor_id, stage,
+                error_message, attempt_count, first_seen_at, last_attempt_at,
+                status, resolved_at, resolved_by
+           FROM cascade_dlq
+          ORDER BY first_seen_at DESC
+          LIMIT ?`,
+      ).bind(limit)
+    : c.env.DB.prepare(
+        `SELECT id, event, entity_type, entity_id, actor_id, stage,
+                error_message, attempt_count, first_seen_at, last_attempt_at,
+                status, resolved_at, resolved_by
+           FROM cascade_dlq
+          WHERE status = ?
+          ORDER BY first_seen_at DESC
+          LIMIT ?`,
+      ).bind(validStatus, limit);
+
+  const rows = await stmt.all();
   return c.json({ success: true, data: rows.results || [] });
+});
+
+support.post('/cascade-dlq/:id/retry', async (c) => {
+  const actor = getCurrentUser(c);
+  const id = c.req.param('id');
+  const { retryDlqItem } = await import('../utils/cascade');
+  const result = await retryDlqItem(c.env as any, id, actor.id);
+  await auditLog(c.env.DB, actor.id, 'support.cascade_retry', id, {
+    ok: result.ok,
+    error: result.error || null,
+  });
+  if (!result.ok) return c.json({ success: false, error: result.error || 'Retry failed' }, 400);
+  return c.json({ success: true });
+});
+
+support.post('/cascade-dlq/:id/resolve', async (c) => {
+  const actor = getCurrentUser(c);
+  const id = c.req.param('id');
+  const body = await c.req.json<{ status?: 'resolved' | 'abandoned'; note?: string }>().catch(() => ({}));
+  const status = body.status === 'abandoned' ? 'abandoned' : 'resolved';
+  const { resolveDlqItem } = await import('../utils/cascade');
+  await resolveDlqItem(c.env as any, id, actor.id, status, body.note);
+  await auditLog(c.env.DB, actor.id, 'support.cascade_resolve', id, {
+    status,
+    note: body.note || null,
+  });
+  return c.json({ success: true });
 });
 
 export default support;

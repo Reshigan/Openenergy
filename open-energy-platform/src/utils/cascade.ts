@@ -56,20 +56,198 @@ interface CascadeContext {
   env: any;
 }
 
+/**
+ * Fire all cascade effects for a domain event:
+ *   1. audit log   (durable record)
+ *   2. notifications (fan-out to recipients)
+ *   3. webhooks    (async external delivery; failures never block)
+ *   4. special handlers (entity-specific follow-ons)
+ *
+ * Each stage is wrapped in `runStage`, which retries with exponential
+ * backoff and, on terminal failure, persists to `cascade_dlq` so support
+ * can inspect / retry from the /support/cascade-dlq console.
+ *
+ * The one exception is webhook delivery — it's fire-and-forget so a slow
+ * external receiver never holds up the user's request. Webhook failures
+ * still reach DLQ but via runStage running inside the .catch chain.
+ */
 export async function fireCascade(ctx: CascadeContext): Promise<void> {
-  const { event, actor_id, entity_type, entity_id, data, env } = ctx;
-  
-  // 1. Create audit log entry
-  await createAuditLog(ctx, env);
-  
-  // 2. Create notification entries for relevant parties
-  await createNotifications(ctx, env);
-  
-  // 3. Trigger webhook delivery (async)
-  deliverWebhooks(ctx).catch(console.error);
-  
-  // 4. Handle special cascade logic
-  await handleSpecialCascades(ctx);
+  await runStage(ctx, 'audit', () => createAuditLog(ctx, ctx.env));
+  await runStage(ctx, 'notifications', () => createNotifications(ctx, ctx.env));
+
+  // Webhooks run async so user-facing responses aren't blocked on slow
+  // external endpoints. Terminal failure still lands in DLQ.
+  void runStage(ctx, 'webhooks', () => deliverWebhooks(ctx)).catch(() => {
+    /* runStage already persisted to DLQ; nothing else to do. */
+  });
+
+  await runStage(ctx, 'special', () => handleSpecialCascades(ctx));
+}
+
+interface RetryOptions {
+  maxAttempts?: number;
+  baseDelayMs?: number;
+}
+
+async function runStage<T>(
+  ctx: CascadeContext,
+  stage: 'audit' | 'notifications' | 'webhooks' | 'special',
+  fn: () => Promise<T>,
+  opts: RetryOptions = {},
+): Promise<T | undefined> {
+  const maxAttempts = opts.maxAttempts ?? 3;
+  const baseDelayMs = opts.baseDelayMs ?? 50;
+
+  let lastErr: unknown = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (attempt === maxAttempts) break;
+      const backoffMs = baseDelayMs * Math.pow(2, attempt - 1);
+      await new Promise((r) => setTimeout(r, backoffMs));
+    }
+  }
+
+  await writeToDlq(ctx, stage, lastErr, maxAttempts);
+  return undefined;
+}
+
+async function writeToDlq(
+  ctx: CascadeContext,
+  stage: 'audit' | 'notifications' | 'webhooks' | 'special',
+  err: unknown,
+  attemptCount: number,
+): Promise<void> {
+  const errorMessage = err instanceof Error ? err.message : String(err);
+  const errorStack = err instanceof Error ? err.stack || null : null;
+
+  try {
+    await ctx.env.DB.prepare(
+      `INSERT INTO cascade_dlq
+         (id, event, entity_type, entity_id, actor_id, payload, stage,
+          error_message, error_stack, attempt_count, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+    )
+      .bind(
+        generateId(),
+        ctx.event,
+        ctx.entity_type,
+        ctx.entity_id,
+        ctx.actor_id || null,
+        JSON.stringify(ctx.data || {}),
+        stage,
+        errorMessage,
+        errorStack,
+        attemptCount,
+      )
+      .run();
+  } catch (dlqErr) {
+    // Last resort — DLQ itself is down. Log, but never throw to the caller.
+    console.error(`DLQ write failed for ${ctx.event}/${stage}:`, dlqErr);
+    console.error('Original cascade error:', err);
+  }
+}
+
+/**
+ * Replay a DLQ row. Used by the support console. Re-runs the given stage
+ * only; on success flips the row to status='resolved'. On failure bumps
+ * attempt_count + last_attempt_at so staff can see the latest diagnostic.
+ */
+export async function retryDlqItem(
+  env: { DB: any },
+  dlqId: string,
+  operatorId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const row = await env.DB.prepare(
+    `SELECT id, event, entity_type, entity_id, actor_id, payload, stage, attempt_count, status
+       FROM cascade_dlq WHERE id = ?`,
+  )
+    .bind(dlqId)
+    .first<{
+      id: string;
+      event: string;
+      entity_type: string;
+      entity_id: string;
+      actor_id: string | null;
+      payload: string;
+      stage: 'audit' | 'notifications' | 'webhooks' | 'special';
+      attempt_count: number;
+      status: string;
+    }>();
+
+  if (!row) return { ok: false, error: 'DLQ row not found' };
+  if (row.status !== 'pending') return { ok: false, error: `Row is ${row.status}` };
+
+  const ctx: CascadeContext = {
+    event: row.event as EventType,
+    entity_type: row.entity_type,
+    entity_id: row.entity_id,
+    actor_id: row.actor_id || undefined,
+    data: (() => {
+      try { return JSON.parse(row.payload); } catch { return {}; }
+    })(),
+    env,
+  };
+
+  try {
+    switch (row.stage) {
+      case 'audit':
+        await createAuditLog(ctx, env);
+        break;
+      case 'notifications':
+        await createNotifications(ctx, env);
+        break;
+      case 'webhooks':
+        await deliverWebhooks(ctx);
+        break;
+      case 'special':
+        await handleSpecialCascades(ctx);
+        break;
+    }
+
+    await env.DB.prepare(
+      `UPDATE cascade_dlq
+          SET status = 'resolved', resolved_at = datetime('now'),
+              resolved_by = ?, last_attempt_at = datetime('now'),
+              attempt_count = attempt_count + 1
+        WHERE id = ?`,
+    )
+      .bind(operatorId, dlqId)
+      .run();
+    return { ok: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    await env.DB.prepare(
+      `UPDATE cascade_dlq
+          SET last_attempt_at = datetime('now'),
+              attempt_count = attempt_count + 1,
+              error_message = ?
+        WHERE id = ?`,
+    )
+      .bind(msg, dlqId)
+      .run();
+    return { ok: false, error: msg };
+  }
+}
+
+/** Resolve without retry — support marks a DLQ row as handled out-of-band. */
+export async function resolveDlqItem(
+  env: { DB: any },
+  dlqId: string,
+  operatorId: string,
+  status: 'resolved' | 'abandoned',
+  note?: string,
+): Promise<void> {
+  await env.DB.prepare(
+    `UPDATE cascade_dlq
+        SET status = ?, resolved_at = datetime('now'), resolved_by = ?,
+            resolution_note = ?
+      WHERE id = ? AND status = 'pending'`,
+  )
+    .bind(status, operatorId, note || null, dlqId)
+    .run();
 }
 
 async function createAuditLog(ctx: CascadeContext, env: any): Promise<void> {

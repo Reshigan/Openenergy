@@ -7,6 +7,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import { assertSameTenantParticipant, getTenantId } from '../utils/tenant';
+import { withLock, LockBusyError } from '../utils/locks';
 
 const contracts = new Hono<HonoEnv>();
 
@@ -322,50 +323,87 @@ contracts.post('/:id/phase', async (c) => {
   return c.json({ success: true, data: { id, phase } });
 });
 
-// POST /contracts/:id/sign — current user signs the document; fires contract.signed if all signed
+// POST /contracts/:id/sign — current user signs the document; fires contract.signed if all signed.
+// Serialized per contract via an advisory lock so two signatories who race on the
+// "last sign" don't both evaluate allSigned=true and fire the cascade twice.
 contracts.post('/:id/sign', async (c) => {
   const user = getCurrentUser(c);
   const id = c.req.param('id');
   const { signature_r2_key, document_hash } = await c.req.json().catch(() => ({}));
 
-  const contract = await c.env.DB.prepare('SELECT id, creator_id, counterparty_id FROM contract_documents WHERE id = ?').bind(id).first();
-  if (!contract) return c.json({ success: false, error: 'Contract not found' }, 404);
+  try {
+    const data = await withLock(
+      c.env,
+      `contract:sign:${id}`,
+      user.id,
+      async () => {
+        const contract = await c.env.DB.prepare(
+          'SELECT id, creator_id, counterparty_id FROM contract_documents WHERE id = ?',
+        )
+          .bind(id)
+          .first();
+        if (!contract) throw new LockBusyError('__not_found__');
 
-  const signatory = await c.env.DB.prepare(
-    'SELECT id, signed FROM document_signatories WHERE document_id = ? AND participant_id = ?'
-  ).bind(id, user.id).first();
-  if (!signatory) return c.json({ success: false, error: 'Not listed as a signatory on this contract' }, 403);
-  if (signatory.signed) return c.json({ success: false, error: 'Already signed' }, 400);
+        const signatory = await c.env.DB.prepare(
+          'SELECT id, signed FROM document_signatories WHERE document_id = ? AND participant_id = ?',
+        )
+          .bind(id, user.id)
+          .first<{ id: string; signed: number }>();
+        if (!signatory) throw new LockBusyError('__not_signatory__');
+        if (signatory.signed) throw new LockBusyError('__already_signed__');
 
-  await c.env.DB.prepare(`
-    UPDATE document_signatories
-    SET signed = 1, signed_at = ?, signature_r2_key = ?, document_hash_at_signing = ?
-    WHERE id = ?
-  `).bind(
-    new Date().toISOString(),
-    signature_r2_key || null,
-    document_hash || null,
-    signatory.id
-  ).run();
+        await c.env.DB.prepare(
+          `UPDATE document_signatories
+              SET signed = 1, signed_at = ?, signature_r2_key = ?, document_hash_at_signing = ?
+            WHERE id = ?`,
+        )
+          .bind(
+            new Date().toISOString(),
+            signature_r2_key || null,
+            document_hash || null,
+            signatory.id,
+          )
+          .run();
 
-  const pending = await c.env.DB.prepare(
-    'SELECT COUNT(*) as count FROM document_signatories WHERE document_id = ? AND signed = 0'
-  ).bind(id).first();
+        const pending = await c.env.DB.prepare(
+          'SELECT COUNT(*) as count FROM document_signatories WHERE document_id = ? AND signed = 0',
+        )
+          .bind(id)
+          .first<{ count: number }>();
+        const allSigned = !pending?.count || pending.count === 0;
 
-  const allSigned = !pending?.count || pending.count === 0;
+        if (allSigned) {
+          await fireCascade({
+            event: 'contract.signed',
+            actor_id: user.id,
+            entity_type: 'contract_documents',
+            entity_id: id,
+            data: { signed_by: user.id },
+            env: c.env,
+          });
+        }
 
-  if (allSigned) {
-    await fireCascade({
-      event: 'contract.signed',
-      actor_id: user.id,
-      entity_type: 'contract_documents',
-      entity_id: id,
-      data: { signed_by: user.id },
-      env: c.env,
-    });
+        return { signed_by: user.id, all_signed: allSigned };
+      },
+      { ttlSeconds: 15, context: { contract_id: id } },
+    );
+
+    return c.json({ success: true, data });
+  } catch (err) {
+    if (err instanceof LockBusyError) {
+      switch (err.message) {
+        case '__not_found__':
+          return c.json({ success: false, error: 'Contract not found' }, 404);
+        case '__not_signatory__':
+          return c.json({ success: false, error: 'Not listed as a signatory on this contract' }, 403);
+        case '__already_signed__':
+          return c.json({ success: false, error: 'Already signed' }, 400);
+        default:
+          return c.json({ success: false, error: 'Another signature is in progress — retry in a moment' }, 409);
+      }
+    }
+    throw err;
   }
-
-  return c.json({ success: true, data: { signed_by: user.id, all_signed: allSigned } });
 });
 
 // PUT /contracts/:id — Update contract
