@@ -200,6 +200,10 @@ sso.get('/microsoft/callback', async (c) => {
     });
   } else if (participant.status === 'suspended') {
     return c.redirect('/login?sso_error=account_suspended');
+  } else if (participant.status === 'rejected') {
+    // Match regular email+password login guard in auth.ts: rejected accounts
+    // must not be able to authenticate via SSO either (Devin Review finding).
+    return c.redirect('/login?sso_error=account_rejected');
   } else if (!participant.email_verified) {
     // A verified SSO login proves email ownership — flip the bit.
     await c.env.DB.prepare(`UPDATE participants SET email_verified = 1 WHERE id = ?`).bind(participant.id).run();
