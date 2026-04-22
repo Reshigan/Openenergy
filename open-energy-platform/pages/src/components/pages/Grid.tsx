@@ -92,7 +92,31 @@ export function Grid() {
   const [constraints, setConstraints] = useState<Constraint[]>([]);
   const [imbalance, setImbalance] = useState<Imbalance[]>([]);
 
+  // Summary tiles render over the full unfiltered dataset independent of the active tab,
+  // so counts stay accurate when the user has only loaded one tab's rows.
+  const [allConnections, setAllConnections] = useState<Connection[]>([]);
+  const [allWheeling, setAllWheeling] = useState<Wheeling[]>([]);
+  const [allConstraints, setAllConstraints] = useState<Constraint[]>([]);
+  const [allImbalance, setAllImbalance] = useState<Imbalance[]>([]);
+
   const [showConstraintModal, setShowConstraintModal] = useState(false);
+
+  const fetchSummary = useCallback(async () => {
+    try {
+      const [c, w, cn, im] = await Promise.all([
+        api.get('/grid/connections'),
+        api.get('/grid/wheeling'),
+        api.get('/grid/constraints'),
+        api.get('/grid/imbalance'),
+      ]);
+      setAllConnections(c.data?.data || []);
+      setAllWheeling(w.data?.data || []);
+      setAllConstraints(cn.data?.data || []);
+      setAllImbalance(im.data?.data || []);
+    } catch {
+      // tiles silently degrade to 0; tab-specific fetch surfaces the real error
+    }
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -118,12 +142,17 @@ export function Grid() {
     }
   }, [tab]);
 
+  const refreshAll = useCallback(async () => {
+    await Promise.all([fetchData(), fetchSummary()]);
+  }, [fetchData, fetchSummary]);
+
   useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { fetchSummary(); }, [fetchSummary]);
 
   const commissionConnection = async (id: string) => {
     try {
       await api.post(`/grid/connections/${id}/commission`, {});
-      await fetchData();
+      await refreshAll();
     } catch (err: any) {
       alert(err?.response?.data?.error || 'Failed to commission');
     }
@@ -132,7 +161,7 @@ export function Grid() {
   const activateWheeling = async (id: string) => {
     try {
       await api.post(`/grid/wheeling/${id}/activate`, {});
-      await fetchData();
+      await refreshAll();
     } catch (err: any) {
       alert(err?.response?.data?.error || 'Failed to activate');
     }
@@ -141,13 +170,13 @@ export function Grid() {
   const clearConstraint = async (id: string) => {
     try {
       await api.post(`/grid/constraints/${id}/clear`, {});
-      await fetchData();
+      await refreshAll();
     } catch (err: any) {
       alert(err?.response?.data?.error || 'Failed to clear constraint');
     }
   };
 
-  const criticalCount = useMemo(() => constraints.filter(x => x.severity === 'critical' || x.severity === 'high').length, [constraints]);
+  const criticalCount = useMemo(() => allConstraints.filter(x => x.severity === 'critical' || x.severity === 'high').length, [allConstraints]);
 
   return (
     <div className="p-6 space-y-6">
@@ -162,17 +191,17 @@ export function Grid() {
               <Plus size={14} /> Publish constraint
             </button>
           )}
-          <button onClick={fetchData} className="flex items-center gap-2 px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">
+          <button onClick={refreshAll} className="flex items-center gap-2 px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">
             <RefreshCw size={14} /> Refresh
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Tile icon={<Activity size={18} />} label="Connections" value={connections.length} hint={`${connections.filter(c => c.status === 'active').length} active`} />
-        <Tile icon={<MapPin size={18} />} label="Wheeling" value={wheeling.length} hint={`${wheeling.filter(w => w.status === 'active').length} active`} />
-        <Tile icon={<AlertTriangle size={18} />} label="High/critical constraints" value={criticalCount} hint={`${constraints.length} total`} tone={criticalCount > 0 ? 'warn' : 'ok'} />
-        <Tile icon={<Zap size={18} />} label="Imbalance events" value={imbalance.length} hint="last 200" />
+        <Tile icon={<Activity size={18} />} label="Connections" value={allConnections.length} hint={`${allConnections.filter(c => c.status === 'active').length} active`} />
+        <Tile icon={<MapPin size={18} />} label="Wheeling" value={allWheeling.length} hint={`${allWheeling.filter(w => w.status === 'active').length} active`} />
+        <Tile icon={<AlertTriangle size={18} />} label="High/critical constraints" value={criticalCount} hint={`${allConstraints.length} total`} tone={criticalCount > 0 ? 'warn' : 'ok'} />
+        <Tile icon={<Zap size={18} />} label="Imbalance events" value={allImbalance.length} hint="last 200" />
       </div>
 
       <div className="flex gap-1 border-b border-ionex-border-100">
@@ -182,7 +211,7 @@ export function Grid() {
       </div>
 
       {loading ? <Skeleton variant="card" rows={5} />
-        : error ? <ErrorBanner message={error} onRetry={fetchData} />
+        : error ? <ErrorBanner message={error} onRetry={refreshAll} />
           : (
             <>
               {tab === 'connections' && (
@@ -245,7 +274,7 @@ export function Grid() {
                       return (
                         <tr key={i.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
                           <Td>{i.participant_name || i.participant_id}</Td>
-                          <Td className="text-xs">{new Date(i.period_start).toLocaleString()} → {new Date(i.period_end).toLocaleTimeString()}</Td>
+                          <Td className="text-xs">{new Date(i.period_start).toLocaleString()} → {new Date(i.period_end).toLocaleString()}</Td>
                           <Td>{Number(i.scheduled_kwh || 0).toLocaleString()}</Td>
                           <Td>{Number(i.actual_kwh || 0).toLocaleString()}</Td>
                           <Td className={tone}>{sign}{Number(i.imbalance_kwh || 0).toLocaleString()}</Td>
@@ -259,7 +288,7 @@ export function Grid() {
             </>
           )}
 
-      {showConstraintModal && <ConstraintModal onClose={() => setShowConstraintModal(false)} onCreated={() => { setShowConstraintModal(false); fetchData(); }} />}
+      {showConstraintModal && <ConstraintModal onClose={() => setShowConstraintModal(false)} onCreated={() => { setShowConstraintModal(false); void refreshAll(); }} />}
     </div>
   );
 }
