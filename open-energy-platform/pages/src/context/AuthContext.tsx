@@ -1,34 +1,11 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// Auth Context Provider
+// Auth Context Provider — MFA challenge + refresh-token rotation + session revoke on logout
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import axios from 'axios';
-import { User, AuthContextType, RegisterData } from '../lib/api';
+import { api, User, AuthContextType, RegisterData, MfaRequiredError, LockoutError } from '../lib/api';
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-
-export const api = axios.create({
-  baseURL: API_BASE,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
+export { api };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -50,6 +27,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       setToken(null);
       localStorage.removeItem('token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('refresh_expires_at');
     } finally {
       setLoading(false);
     }
@@ -59,14 +38,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser();
   }, [token]);
 
-  const login = async (email: string, password: string) => {
-    const response = await api.post('/auth/login', { email, password });
-    if (response.data.success) {
-      setToken(response.data.data.token);
-      setUser(response.data.data.participant);
-      localStorage.setItem('token', response.data.data.token);
-    } else {
-      throw new Error(response.data.error || 'Login failed');
+  const login = async (email: string, password: string, mfaCode?: string) => {
+    const payload: Record<string, unknown> = { email, password };
+    if (mfaCode) payload.mfa_code = mfaCode;
+    try {
+      const response = await api.post('/auth/login', payload);
+      if (response.data.success) {
+        const { token: accessToken, refresh_token, refresh_expires_at, participant } = response.data.data;
+        setToken(accessToken);
+        setUser(participant);
+        localStorage.setItem('token', accessToken);
+        if (refresh_token) localStorage.setItem('refresh_token', refresh_token);
+        if (refresh_expires_at) localStorage.setItem('refresh_expires_at', refresh_expires_at);
+      } else {
+        throw new Error(response.data.error || 'Login failed');
+      }
+    } catch (err: unknown) {
+      const anyErr = err as { response?: { status?: number; data?: { error?: string; code?: string; retry_after_seconds?: number } }; message?: string };
+      const status = anyErr?.response?.status;
+      const data = anyErr?.response?.data;
+      if (status === 401 && data?.code === 'MFA_REQUIRED') throw new MfaRequiredError(email);
+      if (status === 429 && data?.code === 'LOCKED_OUT') throw new LockoutError(data.retry_after_seconds || 900);
+      throw new Error(data?.error || anyErr?.message || 'Login failed');
     }
   };
 
@@ -78,9 +71,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    const refreshToken = localStorage.getItem('refresh_token');
+    // Best-effort server-side revoke; don't block the UI on it.
+    if (refreshToken) {
+      api.post('/auth/logout', { refresh_token: refreshToken }).catch(() => {});
+    }
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('refresh_expires_at');
   };
 
   return (

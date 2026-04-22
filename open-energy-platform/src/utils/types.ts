@@ -28,6 +28,7 @@ export interface JWTPayload {
   email: string;
   role: ParticipantRole;
   name: string;
+  jti?: string;          // session-bound JWT ID (added in PR-Prod-1); older tokens without jti remain valid
   iat: number;
   exp: number;
 }

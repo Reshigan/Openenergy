@@ -28,6 +28,9 @@ import { Intelligence } from './components/pages/Intelligence';
 import { Settlement } from './components/pages/Settlement';
 import { Popia } from './components/pages/Popia';
 import { Briefing } from './components/pages/Briefing';
+import ForgotPassword from './components/pages/ForgotPassword';
+import ResetPassword from './components/pages/ResetPassword';
+import Security from './components/pages/Security';
 import { Skeleton } from './components/Skeleton';
 import { EmptyState } from './components/EmptyState';
 import { ErrorBanner } from './components/ErrorBanner';
@@ -221,6 +224,8 @@ function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaRequired, setMfaRequired] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -229,10 +234,15 @@ function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email, password, mfaRequired ? mfaCode : undefined);
       navigate('/cockpit');
     } catch (err: any) {
-      setError(err.message || 'Login failed');
+      if (err?.name === 'MfaRequiredError') {
+        setMfaRequired(true);
+        setError('Enter the 6-digit code from your authenticator app.');
+      } else {
+        setError(err.message || 'Login failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -368,7 +378,7 @@ function LoginPage() {
               <div className="flex items-center justify-between">
                 <label className="label">Password</label>
                 <Link
-                  to="#"
+                  to="/forgot-password"
                   className="text-[12px] font-semibold"
                   style={{ color: '#0a6ed1' }}
                 >
@@ -384,6 +394,23 @@ function LoginPage() {
                 required
               />
             </div>
+            {mfaRequired && (
+              <div>
+                <label className="label">Authenticator code</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value.replace(/[^0-9]/g, ''))}
+                  className="input tracking-[0.4em] font-mono text-center"
+                  placeholder="123456"
+                  autoFocus
+                  required
+                />
+              </div>
+            )}
             <button type="submit" className="btn btn-primary w-full" disabled={loading}>
               {loading ? (
                 <>
@@ -898,6 +925,9 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/settings/security" element={<ProtectedRoute><Layout><Security /></Layout></ProtectedRoute>} />
       <Route path="/cockpit" element={<ProtectedRoute><Layout><Cockpit /></Layout></ProtectedRoute>} />
       <Route path="/contracts" element={<ProtectedRoute><Layout><Contracts /></Layout></ProtectedRoute>} />
       <Route path="/contracts/:id" element={<ProtectedRoute><Layout><ContractDetail /></Layout></ProtectedRoute>} />

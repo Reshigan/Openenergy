@@ -238,6 +238,13 @@ export function FioriShell({ children }: { children: ReactNode }) {
                 >
                   <User size={14} /> My profile
                 </button>
+                <button
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left hover:bg-[#fafafa] transition-colors"
+                  style={{ color: '#32363a' }}
+                  onClick={() => navigate('/settings/security')}
+                >
+                  <ShieldCheck size={14} /> Security &amp; MFA
+                </button>
                 {user?.role === 'admin' && (
                   <button
                     className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left hover:bg-[#fafafa] transition-colors"
