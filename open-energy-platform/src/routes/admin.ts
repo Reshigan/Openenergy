@@ -115,8 +115,8 @@ admin.put('/modules/:key', async (c) => {
 
 // ---------- AUDIT LOGS ----------
 admin.get('/audit-logs', async (c) => {
-  const page = Math.max(parseInt(c.req.query('page') || '1'), 1);
-  const pageSize = Math.min(parseInt(c.req.query('page_size') || '50'), 200);
+  const page = Math.max(parseInt(c.req.query('page') || '1') || 1, 1);
+  const pageSize = Math.min(Math.max(parseInt(c.req.query('page_size') || '50') || 50, 1), 200);
   const entityType = c.req.query('entity_type');
   const actor = c.req.query('actor_id');
   const action = c.req.query('action');
