@@ -14,7 +14,10 @@
     "db:create": "wrangler d1 create open-energy-db",
     "kv:create": "wrangler kv:namespace create OE_KV",
     "r2:create": "wrangler r2 bucket create open-energy-vault",
-    "tail": "wrangler logs tail"
+    "tail": "wrangler logs tail",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20240620.0",
@@ -26,6 +29,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.6",
+    "@vitest/coverage-v8": "^1.6.1",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0",
     "wrangler": "^4.84.0"
