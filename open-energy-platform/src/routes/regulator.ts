@@ -152,7 +152,7 @@ function ensureFilingNarrative(
 }
 
 function scaffoldFiling(
-  type: FilingType,
+  type: FilingType | string,
   period: string,
   metrics: Record<string, unknown> | null,
 ): string {
@@ -164,7 +164,7 @@ function scaffoldFiling(
   const retirements = Number(m.retirements ?? 0);
   const esgReports = Number(m.esg_reports ?? 0);
   const activeConstraints = Number(m.active_constraints ?? 0);
-  const title = FILING_TITLES[type] || 'Regulatory Filing';
+  const title = FILING_TITLES[type as FilingType] || 'Regulatory Filing';
 
   switch (type) {
     case 'nersa_annual':
@@ -199,8 +199,8 @@ The undersigned certifies that the information is accurate in terms of **ERA 200
       return `# ${title} — ${period}
 
 ## 1. Legal basis
-Conducted under the **Protection of Personal Information Act 4 of 2013 (POPIA)**, in terms of the
-**Information Regulator**'s guidance note 1 of 2021 and King IV principle 5.
+Conducted under the **Protection of Personal Information Act 4 of 2013** (**POPIA 4 of 2013**),
+in terms of the **Information Regulator**'s guidance note 1 of 2021 and King IV principle 5.
 
 ## 2. Data subjects & categories
 - Demo tenant users: staff of the participant organisations (name, email, role, authentication hash).
@@ -304,6 +304,20 @@ reconciled against REIPPPP bid commitments.
 ## 5. Certifications
 Certified by the project company CEO and reviewed by the Lenders' Technical Adviser. Material
 deviations reported to **NERSA** under the generation licence.
+`;
+
+    default:
+      return `# Regulatory Filing — ${period}
+
+Filing type **${type}** has no pre-built scaffold available. Please supply the narrative manually.
+
+## Portfolio summary
+- Registered IPP projects: **${projects}** (of which **${cod}** at commercial operations)
+- Installed capacity: **${mw.toLocaleString()} MW**
+- Active bilateral/wheeling contracts: **${activeContracts}**
+- Retirements: **${retirements}**
+- ESG reports: **${esgReports}**
+- Active grid constraints: **${activeConstraints}**
 `;
   }
 }
