@@ -304,6 +304,13 @@ pa.put('/flags/:id', async (c) => {
   }
   binds.push(id);
   await c.env.DB.prepare(`UPDATE feature_flags SET ${sets.join(', ')} WHERE id = ?`).bind(...binds).run();
+  // Bust the cache — we need the flag key to delete the right entry.
+  const fkRow = await c.env.DB.prepare(
+    `SELECT flag_key FROM feature_flags WHERE id = ?`,
+  ).bind(id).first<{ flag_key: string }>();
+  if (fkRow?.flag_key) {
+    c.executionCtx?.waitUntil?.(invalidateFlagCache(c.env, fkRow.flag_key));
+  }
   return c.json({ success: true });
 });
 
@@ -324,22 +331,85 @@ pa.post('/flags/:id/overrides', async (c) => {
     id, flagId, b.tenant_id || null, b.participant_id || null,
     String(b.value), b.reason || null, b.expires_at || null,
   ).run();
+  // Bust the flag cache so the override applies on the next evaluation.
+  const fkRow = await c.env.DB.prepare(
+    `SELECT flag_key FROM feature_flags WHERE id = ?`,
+  ).bind(flagId).first<{ flag_key: string }>();
+  if (fkRow?.flag_key) {
+    c.executionCtx?.waitUntil?.(invalidateFlagCache(c.env, fkRow.flag_key));
+  }
   return c.json({ success: true, data: { id } }, 201);
 });
+
+// COST: SPA clients sometimes evaluate a single flag on every page load.
+// 3 D1 queries per call is excessive when the flag + its overrides + the
+// tenant's tier change rarely. We cache the flag definition + overrides
+// in KV (60 s TTL) and compute the per-user result in-memory. Admin flag
+// mutations bust the cache via invalidateFlagCache() below.
+//
+// Worst case reduction:
+//   Before: 3 D1 queries per evaluation.
+//   After:  0 D1 + 2 KV gets on cache hit  (~20× cheaper).
+const FLAG_CACHE_TTL_SECONDS = 60;
+const FLAG_CACHE_PREFIX = 'flag:def:';
+
+async function loadFlagDef(env: HonoEnv['Bindings'], flagKey: string): Promise<{
+  flag: (FlagDef & { id: string }) | null;
+  overrides: FlagOverride[];
+}> {
+  const key = FLAG_CACHE_PREFIX + flagKey;
+  try {
+    const cached = await env.KV.get(key, 'json') as
+      | { flag: (FlagDef & { id: string }) | null; overrides: FlagOverride[] }
+      | null;
+    if (cached) return cached;
+  } catch { /* fall through to D1 */ }
+
+  const flag = await env.DB.prepare(
+    `SELECT id, flag_key, description, default_value, rollout_strategy, rollout_config_json, enabled
+       FROM feature_flags WHERE flag_key = ?`,
+  ).bind(flagKey).first<FlagDef & { id: string }>();
+
+  let overrides: FlagOverride[] = [];
+  if (flag) {
+    const rs = await env.DB.prepare(
+      `SELECT tenant_id, participant_id, value, expires_at FROM feature_flag_overrides WHERE flag_id = ?`,
+    ).bind(flag.id).all<FlagOverride>();
+    overrides = rs.results || [];
+  }
+
+  const value = { flag, overrides };
+  try {
+    await env.KV.put(key, JSON.stringify(value), { expirationTtl: FLAG_CACHE_TTL_SECONDS });
+  } catch { /* soft */ }
+  return value;
+}
+
+const TIER_CACHE_PREFIX = 'tenant:tier:';
+async function loadTenantTier(env: HonoEnv['Bindings'], tenantId: string): Promise<string> {
+  const key = TIER_CACHE_PREFIX + tenantId;
+  try {
+    const cached = await env.KV.get(key);
+    if (cached) return cached;
+  } catch { /* */ }
+  const row = await env.DB.prepare(
+    `SELECT tier FROM tenants WHERE id = ?`,
+  ).bind(tenantId).first<{ tier: string | null }>();
+  const tier = row?.tier || 'standard';
+  try { await env.KV.put(key, tier, { expirationTtl: 300 }); } catch { /* */ }
+  return tier;
+}
+
+async function invalidateFlagCache(env: HonoEnv['Bindings'], flagKey: string): Promise<void> {
+  try { await env.KV.delete(FLAG_CACHE_PREFIX + flagKey); } catch { /* */ }
+}
 
 pa.get('/flags/evaluate/:flag_key', async (c) => {
   const user = getCurrentUser(c);
   const flagKey = c.req.param('flag_key');
-  const flag = await c.env.DB.prepare(
-    `SELECT * FROM feature_flags WHERE flag_key = ?`,
-  ).bind(flagKey).first<FlagDef & { id: string }>();
+  const { flag, overrides } = await loadFlagDef(c.env, flagKey);
   if (!flag) return c.json({ success: false, error: 'Flag not found' }, 404);
-  const overridesRs = await c.env.DB.prepare(
-    `SELECT tenant_id, participant_id, value, expires_at FROM feature_flag_overrides WHERE flag_id = ?`,
-  ).bind(flag.id).all<FlagOverride>();
-  const tier = (await c.env.DB.prepare(
-    `SELECT tier FROM tenants WHERE id = ?`,
-  ).bind(user.tenant_id || 'default').first<{ tier: string }>())?.tier || 'standard';
+  const tier = await loadTenantTier(c.env, user.tenant_id || 'default');
 
   const result = evaluateFlag(
     {
@@ -347,7 +417,7 @@ pa.get('/flags/evaluate/:flag_key', async (c) => {
       rollout_strategy: flag.rollout_strategy, rollout_config_json: flag.rollout_config_json,
       enabled: !!flag.enabled,
     },
-    overridesRs.results || [],
+    overrides,
     {
       tenant_id: user.tenant_id || 'default',
       participant_id: user.id,

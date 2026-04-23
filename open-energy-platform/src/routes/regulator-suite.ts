@@ -97,7 +97,26 @@ suite.post('/licences', async (c) => {
     `INSERT INTO regulator_licence_events (id, licence_id, event_type, event_date, details, actor_id)
      VALUES (?, ?, 'granted', ?, ?, ?)`,
   ).bind(genId('lev'), id, b.issue_date, `Licence ${b.licence_number} granted`, user.id).run();
-  const row = await c.env.DB.prepare('SELECT * FROM regulator_licences WHERE id = ?').bind(id).first();
+  // COST: skip the re-SELECT by echoing the values we just inserted.
+  // Defaults we didn't set explicitly (status, created_at) are filled in
+  // here to match the schema.
+  const row = {
+    id,
+    licence_number: b.licence_number,
+    licensee_participant_id: b.licensee_participant_id || null,
+    licensee_name: b.licensee_name,
+    licence_type: b.licence_type,
+    technology: b.technology || null,
+    capacity_mw: Number(b.capacity_mw ?? 0),
+    location: b.location || null,
+    issue_date: b.issue_date,
+    effective_date: b.effective_date || null,
+    expiry_date: b.expiry_date || null,
+    status: b.status || 'active',
+    notes: b.notes || null,
+    created_by: user.id,
+    created_at: new Date().toISOString(),
+  };
   await fireCascade({
     event: 'regulator.licence_granted',
     actor_id: user.id,
@@ -127,14 +146,18 @@ async function transitionLicence(
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   const existing = await c.env.DB
     .prepare('SELECT id, status, licence_number, licensee_participant_id FROM regulator_licences WHERE id = ?')
-    .bind(id).first<{ licence_number: string; licensee_participant_id: string | null }>();
+    .bind(id).first<{ licence_number: string; licensee_participant_id: string | null; status: string }>();
   if (!existing) return c.json({ success: false, error: 'Licence not found' }, 404);
-  await c.env.DB.prepare('UPDATE regulator_licences SET status = ? WHERE id = ?').bind(newStatus, id).run();
-  await c.env.DB.prepare(
-    `INSERT INTO regulator_licence_events (id, licence_id, event_type, event_date, details, actor_id)
-     VALUES (?, ?, ?, datetime('now'), ?, ?)`,
-  ).bind(genId('lev'), id, eventType, (b.details as string) || null, user.id).run();
-  const row = await c.env.DB.prepare('SELECT * FROM regulator_licences WHERE id = ?').bind(id).first();
+  // Batch the UPDATE + event INSERT in a single D1 round-trip, then skip
+  // the re-SELECT by returning the existing row with the new status.
+  await c.env.DB.batch([
+    c.env.DB.prepare('UPDATE regulator_licences SET status = ? WHERE id = ?').bind(newStatus, id),
+    c.env.DB.prepare(
+      `INSERT INTO regulator_licence_events (id, licence_id, event_type, event_date, details, actor_id)
+       VALUES (?, ?, ?, datetime('now'), ?, ?)`,
+    ).bind(genId('lev'), id, eventType, (b.details as string) || null, user.id),
+  ]);
+  const row = { ...existing, status: newStatus };
   const eventMap: Record<string, 'regulator.licence_varied' | 'regulator.licence_suspended' | 'regulator.licence_revoked' | 'regulator.licence_reinstated'> = {
     varied: 'regulator.licence_varied',
     suspended: 'regulator.licence_suspended',

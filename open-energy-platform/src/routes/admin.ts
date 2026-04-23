@@ -3,7 +3,7 @@
 // role=admin. Audit-log writer is idempotent across writes.
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
-import { authMiddleware, getCurrentUser, hashPassword } from '../middleware/auth';
+import { authMiddleware, getCurrentUser, hashPassword, invalidateTenantCache } from '../middleware/auth';
 import { createPasswordResetToken, randomOpaqueToken, revokeAllSessionsForParticipant } from '../utils/auth-tokens';
 import { logPiiAccess, logPiiAccessBatch, inferAccessType } from '../utils/popia-access';
 
@@ -97,6 +97,10 @@ admin.put('/users/:id', async (c) => {
     INSERT INTO audit_logs (id, actor_id, action, entity_type, entity_id, changes, created_at)
     VALUES (?, ?, 'admin.user_updated', 'participants', ?, ?, ?)
   `).bind('al_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6), user.id, id, JSON.stringify(body), new Date().toISOString()).run();
+  // Tenant cache invalidation: this PUT updates role / status, and can be
+  // used by the cross-tenant support tooling to move users. Either way the
+  // cached mapping is stale after this call.
+  c.executionCtx?.waitUntil?.(invalidateTenantCache(c.env, id));
   return c.json({ success: true });
 });
 

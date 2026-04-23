@@ -89,8 +89,21 @@ function d1Facade(db: Database.Database) {
         },
       };
     },
-    batch() {
-      throw new Error('batch() is not implemented in the test D1 façade');
+    async batch(
+      statements: Array<{
+        _sql: string;
+        _bindings: unknown[];
+        run: () => Promise<unknown>;
+      } | { run: () => Promise<unknown> }>,
+    ) {
+      // Execute sequentially. better-sqlite3 is synchronous so there's no
+      // real "batch" network round-trip — this just preserves the calling
+      // contract.
+      const results: unknown[] = [];
+      for (const s of statements) {
+        results.push(await s.run());
+      }
+      return results;
     },
   };
 }

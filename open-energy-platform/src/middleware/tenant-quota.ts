@@ -3,26 +3,41 @@
 //
 // Attach as:  app.use('/api/*', tenantQuotaMiddleware);
 //
-// Uses tenant_rate_limits table + KV state for the running bucket. Falls
-// open if no row is configured for the caller's tenant or route prefix.
+// Falls open when no rule is configured for the caller's tenant or route
+// prefix. The tenant_rate_limits rows are cached in KV for 120 s so the
+// D1 round-trip happens at most once per TTL window per tenant instead
+// of on every single request.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { Context, Next } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { tokenBucketCheck } from '../utils/data-tier';
 
+interface RateLimitRule {
+  route_prefix: string;
+  window_seconds: number;
+  max_requests: number;
+  burst_capacity: number;
+}
+
+const RULES_CACHE_TTL_SECONDS = 120;
+const RULES_CACHE_PREFIX = 'tenant_quota:rules:';
+const NO_RULES = '__none__';
+
 export async function tenantQuotaMiddleware(c: Context<HonoEnv>, next: Next): Promise<Response | void> {
   const auth = c.get('auth') as { user?: { tenant_id?: string } } | undefined;
   const tenantId = auth?.user?.tenant_id || 'anonymous';
   const path = c.req.path;
 
-  // Find most specific matching rule.
-  const rules = await c.env.DB.prepare(
-    `SELECT route_prefix, window_seconds, max_requests, burst_capacity
-       FROM tenant_rate_limits WHERE tenant_id = ?`,
-  ).bind(tenantId).all<{ route_prefix: string; window_seconds: number; max_requests: number; burst_capacity: number }>();
+  const rules = await loadRules(c.env, tenantId);
+  if (!rules || rules.length === 0) {
+    await next();
+    return;
+  }
 
-  const match = (rules.results || [])
+  // Find most specific matching rule. `*` is the wildcard; otherwise
+  // longest prefix wins.
+  const match = rules
     .filter((r) => r.route_prefix === '*' || path.startsWith(r.route_prefix))
     .sort((a, b) => (b.route_prefix === '*' ? 0 : b.route_prefix.length) - (a.route_prefix === '*' ? 0 : a.route_prefix.length))[0];
 
@@ -52,7 +67,7 @@ export async function tenantQuotaMiddleware(c: Context<HonoEnv>, next: Next): Pr
   }), { expirationTtl: match.window_seconds * 4 });
 
   if (!check.allowed) {
-    // Best-effort event log.
+    // Best-effort event log — not awaited so the 429 response goes out fast.
     c.executionCtx?.waitUntil?.(
       (async () => {
         try {
@@ -75,4 +90,49 @@ export async function tenantQuotaMiddleware(c: Context<HonoEnv>, next: Next): Pr
     );
   }
   await next();
+}
+
+/**
+ * KV-cached loader for a tenant's rate-limit rules. Tenants that have NO
+ * rows configured still get cached as the sentinel `__none__` so repeated
+ * hits don't all go to D1.
+ */
+async function loadRules(
+  env: HonoEnv['Bindings'],
+  tenantId: string,
+): Promise<RateLimitRule[] | null> {
+  const key = RULES_CACHE_PREFIX + tenantId;
+  try {
+    const cached = await env.KV.get(key);
+    if (cached === NO_RULES) return [];
+    if (cached) {
+      try { return JSON.parse(cached) as RateLimitRule[]; } catch { /* fall through */ }
+    }
+  } catch { /* KV miss → D1. */ }
+
+  try {
+    const rs = await env.DB.prepare(
+      `SELECT route_prefix, window_seconds, max_requests, burst_capacity
+         FROM tenant_rate_limits WHERE tenant_id = ?`,
+    ).bind(tenantId).all<RateLimitRule>();
+    const rows = rs.results || [];
+    const value = rows.length === 0 ? NO_RULES : JSON.stringify(rows);
+    try {
+      await env.KV.put(key, value, { expirationTtl: RULES_CACHE_TTL_SECONDS });
+    } catch { /* soft */ }
+    return rows;
+  } catch {
+    // DB failure → fall open. Rate limiting is not a security boundary;
+    // it's capacity shaping, so we prefer availability.
+    return null;
+  }
+}
+
+/** Drop the cached rules for a tenant. Called from the admin UI when
+ *  rate limits are updated so the change takes effect immediately. */
+export async function invalidateTenantRules(
+  env: HonoEnv['Bindings'],
+  tenantId: string,
+): Promise<void> {
+  try { await env.KV.delete(RULES_CACHE_PREFIX + tenantId); } catch { /* soft */ }
 }

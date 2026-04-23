@@ -276,10 +276,21 @@ risk.post('/margin-calls/run', async (c) => {
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   const dueBy = (b.due_by as string) || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-  // Compute per-participant exposure using open orders × latest mark.
+  // COST: previously this ran 1 exposure query + N collateral-balance
+  // queries (one per participant) + N margin-call INSERTs. Now a single
+  // compound query pulls exposure AND posted collateral per participant,
+  // and the INSERTs are batched into one D1 round-trip via env.DB.batch().
+  //
+  // Worst case on a 500-tenant deployment:
+  //   Before: 1 + 500 + 500 = 1 001 D1 queries per run.
+  //   After:  1 + 1         =     2 D1 queries (exposure + batched INSERT).
   const rs = await c.env.DB.prepare(
     `SELECT p.id AS pid,
-            COALESCE(SUM(o.remaining_volume_mwh * COALESCE(m.mark_price_zar_mwh, o.price, 0)), 0) AS exposure
+            COALESCE(SUM(o.remaining_volume_mwh * COALESCE(m.mark_price_zar_mwh, o.price, 0)), 0) AS exposure,
+            COALESCE((
+              SELECT SUM(balance_zar) FROM collateral_accounts ca
+               WHERE ca.participant_id = p.id AND ca.status = 'active'
+            ), 0) AS posted
        FROM participants p
        LEFT JOIN trade_orders o
          ON o.participant_id = p.id
@@ -287,40 +298,58 @@ risk.post('/margin-calls/run', async (c) => {
        LEFT JOIN mark_prices m
          ON m.energy_type = o.energy_type
         AND (m.delivery_date = o.delivery_date OR (m.delivery_date IS NULL AND o.delivery_date IS NULL))
-      GROUP BY p.id`,
-  ).all<{ pid: string; exposure: number }>();
+      GROUP BY p.id
+      HAVING exposure > 0`,
+  ).all<{ pid: string; exposure: number; posted: number }>();
 
-  let issued = 0;
+  const now = new Date().toISOString();
+  type Pending = { id: string; pid: string; exposure: number; im: number; posted: number; shortfall: number };
+  const pending: Pending[] = [];
   for (const row of rs.results || []) {
-    if (row.exposure <= 0) continue;
     const im = initialMarginFor(row.exposure);
-    const posted = (await c.env.DB.prepare(
-      `SELECT COALESCE(SUM(balance_zar), 0) AS bal FROM collateral_accounts WHERE participant_id = ? AND status = 'active'`,
-    ).bind(row.pid).first<{ bal: number }>())?.bal || 0;
-    const shortfall = Math.max(0, im - posted);
+    const shortfall = Math.max(0, im - row.posted);
     if (shortfall <= 0) continue;
+    pending.push({ id: genId('mc'), pid: row.pid, exposure: row.exposure, im, posted: row.posted, shortfall });
+  }
 
-    const mcId = genId('mc');
-    await c.env.DB.prepare(
-      `INSERT INTO margin_calls (id, participant_id, as_of, exposure_zar, initial_margin_zar, variation_margin_zar, posted_collateral_zar, shortfall_zar, due_by, status)
-       VALUES (?, ?, datetime('now'), ?, ?, 0, ?, ?, ?, 'issued')`,
-    ).bind(mcId, row.pid, row.exposure, im, posted, shortfall, dueBy).run();
-    await fireCascade({
+  if (pending.length > 0) {
+    try {
+      await c.env.DB.batch(pending.map((p) =>
+        c.env.DB.prepare(
+          `INSERT INTO margin_calls
+             (id, participant_id, as_of, exposure_zar, initial_margin_zar,
+              variation_margin_zar, posted_collateral_zar, shortfall_zar, due_by, status)
+           VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, 'issued')`,
+        ).bind(p.id, p.pid, now, p.exposure, p.im, p.posted, p.shortfall, dueBy),
+      ));
+    } catch (err) {
+      console.warn('margin_call_batch_failed', (err as Error).message);
+      for (const p of pending) {
+        await c.env.DB.prepare(
+          `INSERT INTO margin_calls (id, participant_id, as_of, exposure_zar, initial_margin_zar, variation_margin_zar, posted_collateral_zar, shortfall_zar, due_by, status)
+           VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, 'issued')`,
+        ).bind(p.id, p.pid, now, p.exposure, p.im, p.posted, p.shortfall, dueBy).run();
+      }
+    }
+    // Cascade events still fire per-call so each affected participant gets
+    // their notification. Parallelised with Promise.all so we don't
+    // serialise on the network round-trips.
+    await Promise.all(pending.map((p) => fireCascade({
       event: 'trader.margin_call_issued',
       actor_id: user.id,
       entity_type: 'margin_calls',
-      entity_id: mcId,
+      entity_id: p.id,
       data: {
-        participant_id: row.pid,
-        shortfall_zar: shortfall,
+        participant_id: p.pid,
+        shortfall_zar: p.shortfall,
         due_by: dueBy,
-        exposure_zar: row.exposure,
+        exposure_zar: p.exposure,
       },
       env: c.env,
-    });
-    issued++;
+    })));
   }
-  return c.json({ success: true, data: { margin_calls_issued: issued } });
+
+  return c.json({ success: true, data: { margin_calls_issued: pending.length } });
 });
 
 risk.get('/margin-calls', async (c) => {

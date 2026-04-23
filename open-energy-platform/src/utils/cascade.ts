@@ -308,25 +308,43 @@ async function createAuditLog(ctx: CascadeContext, env: any): Promise<void> {
 
 async function createNotifications(ctx: CascadeContext, env: any): Promise<void> {
   const recipients = await determineNotificationRecipients(ctx, env);
-  
-  for (const recipient_id of recipients) {
-    try {
-      const { title, body } = buildNotificationContent(ctx);
-      
-      await env.DB.prepare(`
-        INSERT INTO notifications (id, participant_id, type, title, body, data, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).bind(
-        generateId(),
-        recipient_id,
-        ctx.event.split('.')[0],
-        title,
-        body,
-        JSON.stringify(ctx.data || {}),
-        new Date().toISOString()
-      ).run();
-    } catch (err) {
-      console.error('Notification creation failed:', err);
+  if (recipients.length === 0) return;
+
+  // COST: batch every notification INSERT into a single D1 round-trip via
+  // env.DB.batch(). Previously this was N round-trips (one per recipient),
+  // which on a large-fanout event (e.g. curtailment notice broadcast to
+  // every grid operator + IPP developer) could mean 50+ D1 queries for a
+  // single domain event.
+  const { title, body } = buildNotificationContent(ctx);
+  const dataJson = JSON.stringify(ctx.data || {});
+  const type = ctx.event.split('.')[0];
+  const now = new Date().toISOString();
+
+  const statements = recipients.map((recipient_id) =>
+    env.DB.prepare(
+      `INSERT INTO notifications (id, participant_id, type, title, body, data, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ).bind(
+      generateId(),
+      recipient_id,
+      type,
+      title,
+      body,
+      dataJson,
+      now,
+    ),
+  );
+  try {
+    // D1 batch() runs all statements in a single server round-trip and
+    // wraps them in an implicit transaction — atomicity is a bonus.
+    await env.DB.batch(statements);
+  } catch (err) {
+    // If batch() isn't available (older D1 client, test stub) or fails
+    // mid-transaction, fall back to per-statement writes so the cascade
+    // still delivers as much as possible.
+    console.warn('notification_batch_failed', (err as Error).message);
+    for (const stmt of statements) {
+      try { await stmt.run(); } catch (e) { console.error('Notification creation failed:', e); }
     }
   }
 }

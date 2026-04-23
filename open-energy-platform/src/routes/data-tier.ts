@@ -14,6 +14,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { auditArchiveKey, dayBucket, meteringArchiveKey, monthBucket } from '../utils/data-tier';
+import { invalidateTenantRules } from '../middleware/tenant-quota';
 
 const dt = new Hono<HonoEnv>();
 dt.use('*', authMiddleware);
@@ -254,6 +255,8 @@ dt.post('/tenant-quotas', async (c) => {
     b.tenant_id, b.route_prefix, Number(b.window_seconds), Number(b.max_requests),
     b.burst_capacity == null ? null : Number(b.burst_capacity),
   ).run();
+  // Bust the cache so the new rule applies on the next request.
+  c.executionCtx?.waitUntil?.(invalidateTenantRules(c.env, String(b.tenant_id)));
   return c.json({ success: true });
 });
 

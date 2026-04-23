@@ -71,6 +71,76 @@ async function signWithHMAC(data: string, secret: string): Promise<ArrayBuffer> 
   return await crypto.subtle.sign('HMAC', keyData, new TextEncoder().encode(data));
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// Tenant-id cache
+//
+// The (participant_id → tenant_id) mapping is hit on every authenticated
+// request. We cache it in KV with a short TTL so the D1 round-trip
+// happens at most once per TTL window per participant instead of once
+// per request.
+//
+// TTL of 120 s is chosen so that:
+//   • at 1 rps per participant, we save ~240 D1 reads per cache fill.
+//   • a tenant move takes effect within 2 minutes OR the admin UI
+//     invalidates explicitly (see invalidateTenantCache()).
+//
+// Cache key: `auth:tenant:<participant_id>`.
+// Value shape: '<tenant_id>' (string) OR '__missing__' for hard-delete of
+// a participant (so repeated hits don't all go to D1).
+// ───────────────────────────────────────────────────────────────────────────
+const TENANT_CACHE_TTL_SECONDS = 120;
+const TENANT_CACHE_PREFIX = 'auth:tenant:';
+const TENANT_CACHE_MISSING = '__missing__';
+
+async function resolveTenantIdCached(
+  env: HonoEnv['Bindings'],
+  participantId: string,
+): Promise<string | null> {
+  const key = TENANT_CACHE_PREFIX + participantId;
+  try {
+    const cached = await env.KV.get(key);
+    if (cached === TENANT_CACHE_MISSING) return null;
+    if (cached) return cached;
+  } catch {
+    /* KV failure → fall through to D1. */
+  }
+  let tenantId: string | null;
+  try {
+    const row = await env.DB
+      .prepare('SELECT tenant_id FROM participants WHERE id = ?')
+      .bind(participantId)
+      .first<{ tenant_id: string | null }>();
+    if (!row) tenantId = null;
+    else tenantId = row.tenant_id || 'default';
+  } catch (e) {
+    // DB failure here is not a 401 — it's a 500. We throw so authMiddleware
+    // can surface it to the error handler.
+    throw new AppError(ErrorCode.INTERNAL_ERROR, 'Unable to resolve tenant', 500);
+  }
+  // Populate cache best-effort; don't block on it.
+  try {
+    await env.KV.put(
+      key,
+      tenantId ?? TENANT_CACHE_MISSING,
+      { expirationTtl: TENANT_CACHE_TTL_SECONDS },
+    );
+  } catch { /* soft */ }
+  return tenantId;
+}
+
+/**
+ * Drop the cached tenant mapping for a participant. Call from any
+ * admin/support mutation that changes tenant_id or suspends/removes the
+ * participant. Fire-and-forget — cache populates naturally on the next
+ * hit.
+ */
+export async function invalidateTenantCache(
+  env: HonoEnv['Bindings'],
+  participantId: string,
+): Promise<void> {
+  try { await env.KV.delete(TENANT_CACHE_PREFIX + participantId); } catch { /* soft */ }
+}
+
 // Auth middleware - must be used after KV binding check
 export async function authMiddleware(c: Context<HonoEnv>, next: Next) {
   const authHeader = c.req.header('Authorization');
@@ -92,27 +162,22 @@ export async function authMiddleware(c: Context<HonoEnv>, next: Next) {
     throw new AppError(ErrorCode.UNAUTHORIZED, 'Invalid or expired token', 401);
   }
   
-  // Look up tenant_id for isolation enforcement (single row, indexed PK).
-  // Fail closed on DB error — silently defaulting to 'default' on a transient
-  // failure would let a tenant-A user bypass cross-tenant checks for the
-  // duration of the request.
-  let tenantId: string;
-  try {
-    const row = await c.env.DB.prepare('SELECT tenant_id FROM participants WHERE id = ?')
-      .bind(payload.sub)
-      .first<{ tenant_id: string | null }>();
-    if (!row) {
-      throw new AppError(ErrorCode.UNAUTHORIZED, 'Account no longer exists', 401);
-    }
-    // Normalize with `||` (not `??`) so empty-string tenant_id collapses to
-    // 'default' — matches `getTenantId()` in utils/tenant.ts and prevents the
-    // SQL `COALESCE(tenant_id, 'default')` vs JS-`||` mismatch flagged by
-    // Devin Review (an empty-string DB value would bypass COALESCE and fail
-    // the equality comparison in WHERE clauses).
-    tenantId = row.tenant_id || 'default';
-  } catch (e) {
-    if (e instanceof AppError) throw e;
-    throw new AppError(ErrorCode.INTERNAL_ERROR, 'Unable to resolve tenant', 500);
+  // Look up tenant_id for isolation enforcement.
+  //
+  // COST: the authMiddleware fires on every authenticated request, so a
+  // single D1 SELECT here was previously the top-single source of D1
+  // queries on the platform. We cache the (participant_id → tenant_id)
+  // mapping in KV with a 120 s TTL. Tenant moves a participant ≤ once
+  // per lifecycle event, so 120 s staleness is acceptable and we tombstone
+  // by calling `invalidateTenantCache()` when a participant is moved
+  // (admin UIs already call that helper on the update paths).
+  //
+  // Fail-closed contract is preserved: if the KV miss AND the DB lookup
+  // both fail (or the participant no longer exists) we raise 401 — we
+  // never silently use 'default'.
+  const tenantId = await resolveTenantIdCached(c.env, payload.sub);
+  if (tenantId === null) {
+    throw new AppError(ErrorCode.UNAUTHORIZED, 'Account no longer exists', 401);
   }
 
   // Set auth context
@@ -140,30 +205,24 @@ export async function optionalAuth(c: Context<HonoEnv>, next: Next) {
     if (secret) {
       const payload = await verifyToken(token, secret);
       if (payload) {
-        // Mirror authMiddleware: resolve tenant_id so tenant helpers work under
-        // optionalAuth too. If the DB lookup fails or the participant vanished,
-        // treat the request as anonymous (consistent with this middleware's
-        // non-failing contract).
+        // Same KV-backed cache as authMiddleware. optionalAuth must never
+        // block an anonymous request, so on cache+DB miss we just leave
+        // the request as anonymous rather than 401.
         try {
-          const row = await c.env.DB.prepare('SELECT tenant_id FROM participants WHERE id = ?')
-            .bind(payload.sub)
-            .first<{ tenant_id: string | null }>();
-          if (row) {
+          const tenantId = await resolveTenantIdCached(c.env, payload.sub);
+          if (tenantId !== null) {
             c.set('auth', {
               user: {
                 id: payload.sub,
                 email: payload.email,
                 role: payload.role,
                 name: payload.name,
-                // `||` (not `??`) so empty-string DB values collapse to
-                // 'default' — matches authMiddleware line 112, getTenantId(),
-                // and SQL `COALESCE(NULLIF(tenant_id, ''), 'default')`.
-                tenant_id: row.tenant_id || 'default',
+                tenant_id: tenantId,
               },
             });
           }
         } catch {
-          // Swallow — optional auth must never block an anonymous request.
+          /* soft — leave anonymous */
         }
       }
     }
