@@ -265,6 +265,68 @@ export function AdminPlatformPage() {
       ],
     },
     {
+      key: 'monitoring_ops',
+      label: 'Ops monitoring',
+      endpoint: '/admin/monitoring/cron-health',
+      description:
+        'National-scale cron health — each scheduled job and the timestamp of its most recent side-effect. Other ops panels live in the sibling tabs.',
+      columns: [
+        { key: 'cron', label: 'Cron' },
+        { key: 'job', label: 'Job' },
+        { key: 'last_run', label: 'Last run' },
+      ],
+    },
+    {
+      key: 'cascade_dlq',
+      label: 'Cascade DLQ',
+      endpoint: '/admin/monitoring/cascade-dlq',
+      params: { status: 'pending' },
+      description: 'Pending cascade DLQ items — retry or resolve from the Support console.',
+      columns: [
+        { key: 'event', label: 'Event' },
+        { key: 'entity_type', label: 'Entity type' },
+        { key: 'entity_id', label: 'Entity ID' },
+        { key: 'stage', label: 'Stage' },
+        { key: 'attempt_count', label: 'Attempts', align: 'right' as const, number: true },
+        { key: 'error_message', label: 'Error' },
+        { key: 'created_at', label: 'Created' },
+        { key: 'last_attempt_at', label: 'Last attempt' },
+      ],
+    },
+    {
+      key: 'settlement_runs',
+      label: 'Settlement runs',
+      endpoint: '/admin/monitoring/settlement-runs',
+      description: 'Recent settlement runs + failure rate. Retry failed runs from the Settlement workbench.',
+      columns: [
+        { key: 'run_type', label: 'Type' },
+        { key: 'period_start', label: 'From', date: true },
+        { key: 'period_end', label: 'To', date: true },
+        { key: 'started_at', label: 'Started' },
+        { key: 'status', label: 'Status' },
+        { key: 'contracts_considered', label: 'Contracts', align: 'right' as const, number: true },
+        { key: 'invoices_generated', label: 'Invoices', align: 'right' as const, number: true },
+        { key: 'total_value_zar', label: 'Value', align: 'right' as const, currency: true },
+        { key: 'error_message', label: 'Error' },
+      ],
+    },
+    {
+      key: 'pii_access',
+      label: 'PII access log',
+      endpoint: '/admin/monitoring/pii-access',
+      description:
+        'POPIA s.19 accountability — recent privileged reads of another participant\'s data. Self-reads are never logged.',
+      columns: [
+        { key: 'created_at', label: 'When' },
+        { key: 'actor_email', label: 'Actor' },
+        { key: 'actor_role', label: 'Actor role' },
+        { key: 'subject_email', label: 'Subject' },
+        { key: 'subject_role', label: 'Subject role' },
+        { key: 'access_type', label: 'Type' },
+        { key: 'justification', label: 'Justification' },
+      ],
+    },
+    {
       key: 'quotas',
       label: 'Tenant quotas',
       endpoint: '/data-tier/tenant-quotas',
@@ -295,6 +357,8 @@ export function AdminPlatformPage() {
       title="Platform administration"
       subtitle="Tenants, provisioning, subscriptions, platform invoicing, feature flags, data tier and quotas."
       tabs={tabs}
+      aiBriefRole="admin"
+      aiBriefAccent={{ from: '#0a6ed1', to: '#ab218e' }}
     />
   );
 }

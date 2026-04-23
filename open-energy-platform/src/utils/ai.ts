@@ -25,7 +25,22 @@ export type AiIntent =
   | 'lender.covenant_check'
   | 'trader.order_recommendation'
   | 'regulator.compliance_narrative'
-  | 'generic.ask';
+  | 'generic.ask'
+  // ─── National-scale briefs ────────────────────────────────────────────
+  | 'brief.regulator'
+  | 'brief.grid_operator'
+  | 'brief.trader'
+  | 'brief.lender'
+  | 'brief.ipp_developer'
+  | 'brief.offtaker'
+  | 'brief.carbon_fund'
+  | 'brief.admin'
+  // ─── New regulator filing types ──────────────────────────────────────
+  | 'regulator.surveillance_summary'
+  | 'regulator.enforcement_case_summary'
+  | 'regulator.licence_condition_review'
+  | 'regulator.ancillary_market_summary'
+  | 'regulator.dispatch_compliance_report';
 
 export interface AiMessage { role: 'system' | 'user' | 'assistant'; content: string }
 
@@ -111,6 +126,114 @@ credit. Output JSON list of actions.`,
     `You draft a COMPLIANCE NARRATIVE for the South African regulator (NERSA/POPIA
 context). Map portfolio activities to ERA 2006 + POPIA requirements. Flag any
 gaps. Plain markdown.`,
+
+  // ─── National-scale role briefs ──────────────────────────────────────
+  // Each brief must: (1) summarise headline state in 2-3 lines, (2) list
+  // prioritised actions (JSON), (3) cite the specific records it considered.
+  // All outputs in markdown; JSON inside a \`\`\`json block.
+
+  'brief.regulator':
+    `You are the REGULATOR's morning briefing copilot. Given (a) active
+surveillance alerts, (b) open enforcement cases, (c) pending tariff submissions,
+(d) licences expiring in 90 days, produce: (1) a 2-line headline, (2) a
+prioritised action list as JSON { actions: [{ priority, title, entity_type,
+entity_id, rationale, statutory_basis }] }, (3) any inferred market-abuse
+patterns across the alerts. Cite ERA 2006 / NERSA Rules where relevant.`,
+
+  'brief.grid_operator':
+    `You are the SYSTEM OPERATOR's control-room briefing copilot. Given
+(a) today's dispatch schedules, (b) instructions pending acknowledgement or
+flagged non-compliant, (c) active curtailments, (d) open ancillary tenders,
+(e) active outages with affected load — produce: (1) a 2-line situation
+summary, (2) JSON { actions: [{ priority, title, entity_type, entity_id,
+rationale, eta_minutes? }] } prioritising safety + system security first,
+(3) estimated unserved MW. Use SA Grid Code framing.`,
+
+  'brief.trader':
+    `You are the TRADER's risk+opportunity briefing copilot. Given (a) my
+positions + unrealised P/L, (b) open margin calls + shortfall, (c) today's
+mark prices vs yesterday, (d) credit headroom remaining — produce: (1) 2-line
+P/L headline with direction, (2) JSON { actions: [{ priority, title, type,
+volume_mwh?, delivery_date?, rationale, est_pnl_zar? }] } covering hedges,
+margin posting, and new-order opportunities, (3) one-line risk flag if
+headroom < 10% of limit.`,
+
+  'brief.lender':
+    `You are the LENDER's portfolio-risk briefing copilot. Given (a) active
+covenants with their latest test result, (b) 30-day breaches/warnings,
+(c) pending IE certifications, (d) insurance policies expiring in 90 days —
+produce: (1) 2-line portfolio headline, (2) JSON { actions: [{ priority,
+title, project_id?, covenant_code?, rationale, recommended_remedy }] },
+(3) any MAE flags. Reference standard LMA project finance remedies.`,
+
+  'brief.ipp_developer':
+    `You are the IPP DEVELOPER's project-status briefing copilot. Given
+(a) active EPC contracts + pending variations + assessed LDs, (b) environmental
+conditions out of compliance, (c) insurance expiring in 90 days, (d) community
+follow-ups due, (e) ED/SED spend progress — produce: (1) 2-line project-file
+headline, (2) JSON { actions: [{ priority, title, domain ("EPC"|"EA"|"Insurance"
+|"Community"|"Land"), entity_id, rationale, due_by }] }, (3) any REIPPPP IA
+reporting risk.`,
+
+  'brief.offtaker':
+    `You are the OFF-TAKER's energy-cost briefing copilot. Given (a) site groups
++ delivery points, (b) recent consumption profile peaks, (c) active REC
+portfolio + retirements YTD, (d) budget-vs-actual variance for the current
+period, (e) current tariff mix — produce: (1) 2-line cost/sustainability
+headline, (2) JSON { actions: [{ priority, title, type ("tariff_switch"|
+"rec_retire"|"budget_review"|"load_shift"|"wheel"), site_group_id?, rationale,
+est_saving_zar?, est_tco2e_reduction? }] }, (3) one-line Scope 2 progress.`,
+
+  'brief.carbon_fund':
+    `You are the CARBON FUND's registry + tax briefing copilot. Given (a) active
+vintages by registry, (b) MRV submissions pending verification, (c) credits
+verified in last 90 days, (d) outstanding tax-offset claims — produce:
+(1) 2-line inventory headline, (2) JSON { actions: [{ priority, title, type
+("mrv"|"retirement"|"tax_offset"|"transfer"), entity_id, rationale,
+sa_carbon_tax_eligible? }] }, (3) any MRV readiness score estimate.
+Reference Carbon Tax Act 15/2019 s.13 where offsets are discussed.`,
+
+  'brief.admin':
+    `You are the PLATFORM ADMIN's operations briefing copilot. Given (a) tenant
+counts (active/suspended), (b) pending provisioning requests, (c) outstanding
+platform invoices, (d) failed settlement runs in last 7 days, (e) feature
+flags currently in progressive rollout — produce: (1) 2-line platform-health
+headline, (2) JSON { actions: [{ priority, title, type ("provisioning"|
+"billing"|"incident"|"flag_rollout"|"capacity"), entity_id?, rationale }] },
+(3) one-line capacity / SLA risk.`,
+
+  // ─── New regulator filing types (rich rationale, grounded in data) ────
+  'regulator.surveillance_summary':
+    `You draft a MARKET SURVEILLANCE SUMMARY for internal regulator distribution.
+Given open + recently-resolved surveillance alerts, group by rule_code and
+severity, identify any repeat-offender participants, and recommend enforcement
+escalation candidates. Markdown with numbered sections; cite the specific
+alert IDs you relied on.`,
+
+  'regulator.enforcement_case_summary':
+    `You draft an ENFORCEMENT CASE FILE SUMMARY. Given a case's allegations,
+events, severity and (if present) finding + penalty, produce: (1) legal basis
+section (cite ERA 2006 or cross-statute), (2) timeline of events, (3) findings
+narrative, (4) penalty rationale, (5) appeal posture. Markdown. No new facts
+beyond what you were given.`,
+
+  'regulator.licence_condition_review':
+    `You review LICENCE CONDITIONS and flag any that are breached, due for
+testing, or structurally ambiguous. Output: (1) table of conditions with
+status + recommended next test date, (2) any recommendations to amend or
+remove a condition (with rationale). Markdown.`,
+
+  'regulator.ancillary_market_summary':
+    `You draft a quarterly ANCILLARY SERVICES market summary. Given tender +
+award + delivery performance data, produce clearing prices by product,
+award concentration by participant, delivery-performance percentile, and
+any recommendations to the System Operator (SO) on tender design. Markdown.`,
+
+  'regulator.dispatch_compliance_report':
+    `You draft a DISPATCH COMPLIANCE report. Given issued instructions, ack
+rates, compliance assessments, and penalties over the period, produce:
+aggregate ack-rate, non-compliance count, penalties imposed (ZAR), worst-
+performing counterparty. Markdown with a ranked table at the end.`,
 };
 
 export function systemPromptFor(intent: AiIntent, role?: ParticipantRole | string): string {

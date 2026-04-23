@@ -211,6 +211,8 @@ export function OfftakerSuitePage() {
       title="Offtaker workbench"
       subtitle="Multi-site groups, tariff comparison, consumption profiles, REC retirement and Scope 2 disclosures."
       tabs={tabs}
+      aiBriefRole="offtaker"
+      aiBriefAccent={{ from: '#107e3e', to: '#5d36ff' }}
     />
   );
 }

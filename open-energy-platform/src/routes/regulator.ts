@@ -254,7 +254,18 @@ numbered. Stay factual — ground every claim in the metrics given.`,
 // If the LLM text is already long and hits the required citations, we keep
 // it verbatim. Otherwise we prepend a canonical scaffold.
 // ---------------------------------------------------------------------------
-type FilingType = 'nersa_annual' | 'popia_pia' | 'jse_srl' | 'carbon_tax' | 'ipp_quarterly';
+type FilingType =
+  | 'nersa_annual'
+  | 'popia_pia'
+  | 'jse_srl'
+  | 'carbon_tax'
+  | 'ipp_quarterly'
+  // ─── National-scale additions ────────────────────────────────────────
+  | 'surveillance_summary'
+  | 'enforcement_case_summary'
+  | 'licence_condition_review'
+  | 'ancillary_market_summary'
+  | 'dispatch_compliance_report';
 
 const REQUIRED_CITATIONS: Record<FilingType, string[]> = {
   nersa_annual: ['ERA 2006', 'NERSA', 'Companies Act 71/2008'],
@@ -262,6 +273,11 @@ const REQUIRED_CITATIONS: Record<FilingType, string[]> = {
   jse_srl: ['JSE-SRL', 'King IV'],
   carbon_tax: ['Carbon Tax Act 15/2019', 'SARS'],
   ipp_quarterly: ['REIPPPP', 'DMRE', 'NERSA'],
+  surveillance_summary: ['ERA 2006', 'NERSA'],
+  enforcement_case_summary: ['ERA 2006', 'NERSA Rules on Penalties', 'PAJA'],
+  licence_condition_review: ['ERA 2006 s.10', 'NERSA'],
+  ancillary_market_summary: ['SA Grid Code', 'NERSA'],
+  dispatch_compliance_report: ['SA Grid Code', 'NERSA'],
 };
 
 const FILING_TITLES: Record<FilingType, string> = {
@@ -270,6 +286,11 @@ const FILING_TITLES: Record<FilingType, string> = {
   jse_srl: 'JSE Sustainability Reporting Listings Report',
   carbon_tax: 'Carbon Tax Disclosure',
   ipp_quarterly: 'IPP Quarterly Compliance Filing',
+  surveillance_summary: 'Market Surveillance Summary',
+  enforcement_case_summary: 'Enforcement Case File Summary',
+  licence_condition_review: 'Licence Condition Review',
+  ancillary_market_summary: 'Ancillary Services Market Summary',
+  dispatch_compliance_report: 'Dispatch Compliance Report',
 };
 
 function ensureFilingNarrative(
@@ -444,6 +465,123 @@ reconciled against REIPPPP bid commitments.
 ## 5. Certifications
 Certified by the project company CEO and reviewed by the Lenders' Technical Adviser. Material
 deviations reported to **NERSA** under the generation licence.
+`;
+
+    case 'surveillance_summary':
+      return `# ${title} — ${period}
+
+## 1. Legal basis
+Compiled in exercise of the **NERSA** market-surveillance function under
+**ERA 2006** and the **NERSA** conduct rules for trading licensees.
+
+## 2. Open alerts by rule (snapshot)
+Grouped by rule_code and severity. See the accompanying alert export for
+IDs, participant IDs, and entity references.
+
+## 3. Patterns + escalation recommendations
+- Repeat-offender participants (≥ 2 open alerts in 30 days) should be
+  considered for formal enforcement.
+- Any rule whose open-alert count doubled in the last 7 days warrants a
+  rule-parameter review.
+
+## 4. Data lineage
+Alerts produced by the automated scanner every 15 minutes against the
+trade_orders / trade_matches corpus. Raw detector SQL in
+\`src/routes/regulator-suite.ts\`.
+`;
+
+    case 'enforcement_case_summary':
+      return `# ${title} — ${period}
+
+## 1. Legal basis
+Prepared in exercise of the **NERSA** enforcement powers under
+**ERA 2006 s.24** and the **NERSA Rules on Penalties (2018)**. Any
+administrative action issued pursuant to this case must comply with the
+**Promotion of Administrative Justice Act 3 of 2000** (**PAJA**).
+
+## 2. Allegations
+As captured in the case record.
+
+## 3. Procedural history
+Timeline of events logged on the case, including any hearing notices,
+evidence submissions, and decisions.
+
+## 4. Findings + penalty rationale
+If a finding has been issued, reproduce it verbatim and cite the
+statutory provision applied. Penalty rationale must reference the penalty
+cap in the **NERSA Rules on Penalties**.
+
+## 5. Appeal posture
+PAJA affords a 180-day judicial review window. Internal appeals to the
+Electricity Regulation Tribunal (where constituted) run under their own
+timeline.
+`;
+
+    case 'licence_condition_review':
+      return `# ${title} — ${period}
+
+## 1. Legal basis
+Licence conditions reviewed in terms of **ERA 2006 s.10** and the licence
+itself. Any amendment follows the s.13 variation procedure.
+
+## 2. Conditions in force
+Listed by condition_number with current compliance_status and last tested
+date. See the conditions export.
+
+## 3. Conditions flagged
+- **Breached**: immediate engagement with licensee; may trigger s.24.
+- **In review**: requires an evidence pack from the licensee within 30 days.
+- **Due for testing**: next scheduled test date.
+
+## 4. Recommendations
+Any condition that has been continuously compliant for ≥ 5 years with no
+evidence of risk may be considered for a light-touch regime. Any
+structurally ambiguous wording should be considered for amendment at the
+next licence renewal.
+`;
+
+    case 'ancillary_market_summary':
+      return `# ${title} — ${period}
+
+## 1. Framework
+Ancillary services procured under the **SA Grid Code — System Operations
+Code** by the System Operator. Tender design follows the **NERSA**-
+approved procurement methodology.
+
+## 2. Volumes + clearing
+Tender-by-tender breakdown of required MW, awarded MW, clearing prices
+(pay-as-cleared), and shortfall if any.
+
+## 3. Concentration
+Awarded capacity by participant; flag any participant holding >30% of a
+single product's awarded capacity.
+
+## 4. Delivery performance
+Delivered vs contracted MWh, availability percentile, and penalties
+imposed. Participants with availability < 95% over the period should be
+reviewed.
+`;
+
+    case 'dispatch_compliance_report':
+      return `# ${title} — ${period}
+
+## 1. Framework
+Dispatch instructions issued under the **SA Grid Code — System
+Operations Code**. Non-compliance can attract penalties under the
+**NERSA Rules on Penalties (2018)**.
+
+## 2. Instruction volume
+Total instructions issued, acknowledgement rate, and median time-to-ack.
+
+## 3. Compliance outcomes
+Compliant / non-compliant / pending counts. Penalties imposed (ZAR).
+Ranked table of the five worst-performing counterparties by count and
+by ZAR penalty.
+
+## 4. Recommendations
+Repeat non-compliance (≥ 3 instances in the period) escalates to the
+enforcement channel. System-wide non-compliance > 5% suggests a
+protocol or communications improvement is needed.
 `;
 
     default:

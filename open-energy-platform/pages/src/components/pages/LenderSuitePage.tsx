@@ -251,6 +251,8 @@ export function LenderSuitePage() {
       title="Lender workbench"
       subtitle="Covenant testing, IE certs, waterfalls, reserve accounts and stress scenarios."
       tabs={tabs}
+      aiBriefRole="lender"
+      aiBriefAccent={{ from: '#107e3e', to: '#0a6ed1' }}
     />
   );
 }

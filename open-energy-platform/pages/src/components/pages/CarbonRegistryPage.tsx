@@ -176,6 +176,8 @@ export function CarbonRegistryPage() {
       title="Carbon registry console"
       subtitle="Registry sync, vintages with serial tracking, MRV workflow, and Carbon Tax Act offset claims."
       tabs={tabs}
+      aiBriefRole="carbon_fund"
+      aiBriefAccent={{ from: '#107e3e', to: '#5d36ff' }}
     />
   );
 }

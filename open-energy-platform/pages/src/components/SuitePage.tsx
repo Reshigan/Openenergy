@@ -10,6 +10,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, AlertTriangle, RefreshCw, X, Plus } from 'lucide-react';
 import { api } from '../lib/api';
+import { AiBriefPanel, BriefRole } from './AiBriefPanel';
 
 // ─── Field & form specs ────────────────────────────────────────────────────
 export type FieldType =
@@ -101,6 +102,10 @@ export interface SuitePageProps {
   subtitle?: string;
   tabs: TabSpec[];
   initialTab?: string;
+  /** When set, renders the AI briefing panel at the top of the page. */
+  aiBriefRole?: BriefRole;
+  /** Optional colour overrides for the AI briefing panel gradient. */
+  aiBriefAccent?: { from: string; to: string };
 }
 
 export function SuitePage(props: SuitePageProps) {
@@ -116,6 +121,14 @@ export function SuitePage(props: SuitePageProps) {
         <h1 className="text-[22px] font-semibold text-[#32363a]">{props.title}</h1>
         {props.subtitle && <p className="text-[13px] text-[#6a6d70] mt-1">{props.subtitle}</p>}
       </header>
+
+      {props.aiBriefRole && (
+        <AiBriefPanel
+          role={props.aiBriefRole}
+          accentFrom={props.aiBriefAccent?.from}
+          accentTo={props.aiBriefAccent?.to}
+        />
+      )}
 
       <div className="flex items-center gap-1.5 border-b border-[#e5e5e5] overflow-x-auto">
         {props.tabs.map((tab) => {

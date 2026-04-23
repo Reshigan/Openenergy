@@ -362,6 +362,8 @@ export function RegulatorSuitePage() {
       title="Regulator workbench"
       subtitle="Licensing, tariff determinations, enforcement and market surveillance for the national energy sector."
       tabs={tabs}
+      aiBriefRole="regulator"
+      aiBriefAccent={{ from: '#107e3e', to: '#0a6ed1' }}
     />
   );
 }

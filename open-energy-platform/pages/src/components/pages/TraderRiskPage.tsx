@@ -216,6 +216,8 @@ export function TraderRiskPage() {
       title="Trader risk console"
       subtitle="Positions, marks, credit, collateral, margin and clearing — Financial Markets Act 19/2012 aligned."
       tabs={tabs}
+      aiBriefRole="trader"
+      aiBriefAccent={{ from: '#0a6ed1', to: '#5d36ff' }}
     />
   );
 }

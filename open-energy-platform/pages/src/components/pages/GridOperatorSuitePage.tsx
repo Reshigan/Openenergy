@@ -361,6 +361,8 @@ export function GridOperatorSuitePage() {
       title="System operator workbench"
       subtitle="Dispatch, ancillary markets, outages, curtailment and connections — aligned to the SA Grid Code."
       tabs={tabs}
+      aiBriefRole="grid_operator"
+      aiBriefAccent={{ from: '#b04e0f', to: '#bb0000' }}
     />
   );
 }
