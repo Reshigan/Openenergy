@@ -46,3 +46,16 @@ class_name = "OrderBook"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["OrderBook"]
+
+# Scheduled handlers — the Worker's `scheduled()` export in src/index.ts
+# dispatches by cron pattern. Each entry maps to a named job inside the
+# handler. Cloudflare runs these independently of HTTP traffic.
+[triggers]
+crons = [
+  "*/15 * * * *",   # 15-min: surveillance scan, order-book depth snapshot
+  "0 * * * *",      # hourly: mark-price VWAP run
+  "5 0 * * *",      # 00:05 daily: metering rollup, ONA rollup, audit archive prep
+  "10 0 * * *",     # 00:10 daily: settlement run for previous day
+  "30 0 * * *",     # 00:30 daily: usage snapshot, margin call run
+  "0 2 1 * *"       # 02:00 on day 1 of month: platform invoice run
+]

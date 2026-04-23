@@ -34,6 +34,14 @@ import ForgotPassword from './components/pages/ForgotPassword';
 import ResetPassword from './components/pages/ResetPassword';
 import Security from './components/pages/Security';
 import Settings from './components/pages/Settings';
+import { RegulatorSuitePage } from './components/pages/RegulatorSuitePage';
+import { GridOperatorSuitePage } from './components/pages/GridOperatorSuitePage';
+import { TraderRiskPage } from './components/pages/TraderRiskPage';
+import { LenderSuitePage } from './components/pages/LenderSuitePage';
+import { IppLifecyclePage } from './components/pages/IppLifecyclePage';
+import { OfftakerSuitePage } from './components/pages/OfftakerSuitePage';
+import { CarbonRegistryPage } from './components/pages/CarbonRegistryPage';
+import { AdminPlatformPage } from './components/pages/AdminPlatformPage';
 import { Skeleton } from './components/Skeleton';
 import { EmptyState } from './components/EmptyState';
 import { ErrorBanner } from './components/ErrorBanner';
@@ -94,8 +102,20 @@ function getNavigationForRole(role: string) {
     { path: '/reports', label: 'Reports', icon: ChartIcon },
   ];
 
+  // Role-specific national-scale workbenches.
+  const regulatorNav    = [{ path: '/regulator-suite',  label: 'Regulator workbench', icon: ShieldIcon }];
+  const gridOperatorNav = [{ path: '/grid-operator',    label: 'System operator',     icon: ZapIcon }];
+  const traderNav       = [{ path: '/trader-risk',      label: 'Trader risk',         icon: ChartIcon }];
+  const lenderNav       = [{ path: '/lender-suite',     label: 'Lender workbench',    icon: DollarIcon }];
+  const ippNav          = [{ path: '/ipp-lifecycle',    label: 'Project file',        icon: BuildingIcon }];
+  const offtakerNav     = [{ path: '/offtaker-suite',   label: 'Offtaker workbench',  icon: LeafIcon }];
+  const carbonNav       = [{ path: '/carbon-registry',  label: 'Carbon registry',     icon: LeafIcon }];
+  const adminPlatformNav= [{ path: '/admin-platform',   label: 'Platform admin',      icon: SettingsIcon }];
+
   const adminNav = [
     ...baseNav,
+    ...regulatorNav, ...gridOperatorNav, ...traderNav, ...lenderNav,
+    ...ippNav, ...offtakerNav, ...carbonNav, ...adminPlatformNav,
     { path: '/admin', label: 'Admin', icon: SettingsIcon },
   ];
 
@@ -103,22 +123,51 @@ function getNavigationForRole(role: string) {
     case 'admin':
       return adminNav;
     case 'ipp_developer':
-      return baseNav.filter((n) => !['/trading', '/funds', '/marketplace'].includes(n.path));
+      return [
+        ...baseNav.filter((n) => !['/trading', '/funds', '/marketplace'].includes(n.path)),
+        ...ippNav,
+      ];
     case 'lender':
-      return baseNav.filter((n) => ['/cockpit', '/projects', '/funds', '/om', '/intelligence', '/reports'].includes(n.path));
+      return [
+        ...baseNav.filter((n) => ['/cockpit', '/projects', '/funds', '/om', '/intelligence', '/reports'].includes(n.path)),
+        ...lenderNav,
+      ];
     case 'trader':
-      return baseNav.filter((n) => ['/cockpit', '/contracts', '/trading', '/settlement', '/intelligence', '/reports'].includes(n.path));
+      return [
+        ...baseNav.filter((n) => ['/cockpit', '/contracts', '/trading', '/settlement', '/intelligence', '/reports'].includes(n.path)),
+        ...traderNav,
+      ];
     case 'carbon_fund':
-      return baseNav.filter((n) => ['/cockpit', '/carbon', '/funds', '/intelligence', '/reports'].includes(n.path));
+      return [
+        ...baseNav.filter((n) => ['/cockpit', '/carbon', '/funds', '/intelligence', '/reports'].includes(n.path)),
+        ...carbonNav,
+      ];
     case 'grid_operator':
-      return baseNav.filter((n) => ['/cockpit', '/grid', '/intelligence', '/reports'].includes(n.path));
+      return [
+        ...baseNav.filter((n) => ['/cockpit', '/grid', '/intelligence', '/reports'].includes(n.path)),
+        ...gridOperatorNav,
+      ];
     case 'offtaker':
-      return baseNav.filter((n) => ['/cockpit', '/contracts', '/lois', '/procurement', '/marketplace', '/intelligence', '/reports'].includes(n.path));
+      return [
+        ...baseNav.filter((n) => ['/cockpit', '/contracts', '/lois', '/procurement', '/marketplace', '/intelligence', '/reports'].includes(n.path)),
+        ...offtakerNav,
+      ];
     case 'regulator':
-      return baseNav.filter((n) => ['/cockpit', '/esg', '/intelligence', '/reports'].includes(n.path));
+      return [
+        ...baseNav.filter((n) => ['/cockpit', '/esg', '/intelligence', '/reports'].includes(n.path)),
+        ...regulatorNav,
+      ];
     default:
       return [...baseNav.slice(0, 5), { path: '/reports', label: 'Reports', icon: ChartIcon }];
   }
+}
+
+function ShieldIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M12 3l8 3v6a9 9 0 01-8 9 9 9 0 01-8-9V6l8-3z" />
+    </svg>
+  );
 }
 
 // Icons
@@ -1110,6 +1159,15 @@ function AppRoutes() {
       <Route path="/intelligence" element={<ProtectedRoute><Layout><Intelligence /></Layout></ProtectedRoute>} />
       <Route path="/popia" element={<ProtectedRoute><Layout><Popia /></Layout></ProtectedRoute>} />
       <Route path="/briefing" element={<ProtectedRoute><Layout><Briefing /></Layout></ProtectedRoute>} />
+      {/* National-scale suite pages — role-guarded at the API layer. */}
+      <Route path="/regulator-suite" element={<ProtectedRoute><Layout><RegulatorSuitePage /></Layout></ProtectedRoute>} />
+      <Route path="/grid-operator" element={<ProtectedRoute><Layout><GridOperatorSuitePage /></Layout></ProtectedRoute>} />
+      <Route path="/trader-risk" element={<ProtectedRoute><Layout><TraderRiskPage /></Layout></ProtectedRoute>} />
+      <Route path="/lender-suite" element={<ProtectedRoute><Layout><LenderSuitePage /></Layout></ProtectedRoute>} />
+      <Route path="/ipp-lifecycle" element={<ProtectedRoute><Layout><IppLifecyclePage /></Layout></ProtectedRoute>} />
+      <Route path="/offtaker-suite" element={<ProtectedRoute><Layout><OfftakerSuitePage /></Layout></ProtectedRoute>} />
+      <Route path="/carbon-registry" element={<ProtectedRoute><Layout><CarbonRegistryPage /></Layout></ProtectedRoute>} />
+      <Route path="/admin-platform" element={<ProtectedRoute><Layout><AdminPlatformPage /></Layout></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/cockpit" replace />} />
       <Route path="*" element={<Navigate to="/cockpit" replace />} />
     </Routes>
