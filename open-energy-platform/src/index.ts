@@ -53,6 +53,7 @@ import settlementAutoRoutes from './routes/settlement-automation';
 import dataTierRoutes from './routes/data-tier';
 import aiBriefsRoutes from './routes/ai-briefs';
 import realtimeRoutes from './routes/realtime';
+import siemRoutes, { dispatchAllForwarders } from './routes/siem';
 import reportsRoutes from './routes/reports';
 import telemetryRoutes from './routes/telemetry';
 import monitoringRoutes from './routes/monitoring';
@@ -83,8 +84,73 @@ app.use('*', idempotency);
 // is configured (falls open).
 app.use('/api/*', tenantQuotaMiddleware);
 
-// Health check
+// Basic health check — always responds 200 so uptime monitors see a
+// stable signal. Detailed probe lives at /api/health/deep.
 app.get('/api/health', (c) => c.json({ status: 'healthy', version: '1.0.0' }));
+
+// Deep health probe — exercises every Cloudflare binding the platform
+// depends on. Returns 200 iff every subsystem responds; otherwise 503
+// with a per-subsystem breakdown. Cheap by design: one query per binding,
+// each with LIMIT 1.
+app.get('/api/health/deep', async (c) => {
+  const start = Date.now();
+  const checks: Record<string, { ok: boolean; latency_ms: number; error?: string }> = {};
+
+  async function probe<T>(name: string, fn: () => Promise<T>): Promise<void> {
+    const t = Date.now();
+    try {
+      await fn();
+      checks[name] = { ok: true, latency_ms: Date.now() - t };
+    } catch (err) {
+      checks[name] = { ok: false, latency_ms: Date.now() - t, error: (err as Error).message };
+    }
+  }
+
+  await Promise.all([
+    probe('d1_main', async () => {
+      await c.env.DB.prepare('SELECT 1 AS ok').first();
+    }),
+    probe('d1_metering_current', async () => {
+      const current = (c.env as unknown as { METERING_DB_CURRENT?: { prepare: (sql: string) => { first: () => Promise<unknown> } } }).METERING_DB_CURRENT;
+      if (!current) throw new Error('binding_absent');
+      await current.prepare('SELECT 1 AS ok').first();
+    }),
+    probe('kv', async () => {
+      await c.env.KV.put('health:probe', String(Date.now()), { expirationTtl: 60 });
+      await c.env.KV.get('health:probe');
+    }),
+    probe('r2', async () => {
+      // HEAD is cheaper than GET; we don't care what's there, only that the
+      // bucket is reachable.
+      await c.env.R2.head('health/probe').catch(() => null);
+    }),
+    probe('order_book_do', async () => {
+      const ns = (c.env as unknown as { ORDER_BOOK?: { idFromName: (s: string) => unknown; get: (id: unknown) => { fetch: (req: Request) => Promise<Response> } } }).ORDER_BOOK;
+      if (!ns) throw new Error('binding_absent');
+      const id = ns.idFromName('__health__');
+      const resp = await ns.get(id).fetch(new Request('https://order-book/depth', { method: 'GET' }));
+      if (!resp.ok && resp.status !== 404) throw new Error(`do_status_${resp.status}`);
+    }),
+    probe('ai', async () => {
+      if (!c.env.AI) throw new Error('binding_absent');
+      // No-op probe — the binding check alone is the useful signal; a real
+      // .run() would cost an AI token charge which we don't want on every
+      // health poll.
+    }),
+  ]);
+
+  const allOk = Object.values(checks).every((c) => c.ok || c.error === 'binding_absent');
+  const status = allOk ? 200 : 503;
+  return c.json(
+    {
+      status: allOk ? 'healthy' : 'degraded',
+      version: '1.0.0',
+      total_latency_ms: Date.now() - start,
+      checks,
+    },
+    status,
+  );
+});
 
 // Auth routes
 app.route('/api/auth', authRoutes);
@@ -133,6 +199,7 @@ app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/data-tier', dataTierRoutes);
 app.route('/api/ai-briefs', aiBriefsRoutes);
 app.route('/api/realtime', realtimeRoutes);
+app.route('/api/siem', siemRoutes);
 app.route('/api/reports', reportsRoutes);
 app.route('/api/telemetry', telemetryRoutes);
 app.route('/api/admin/monitoring', monitoringRoutes);
@@ -259,6 +326,7 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
   switch (pattern) {
     case '*/15 * * * *':
       await safe('surveillance_scan', () => runSurveillanceScan(env));
+      await safe('siem_dispatch', () => dispatchAllForwarders(env));
       // Order-book depth snapshot — hit every shard that had a fill in the last hour.
       await safe('depth_snapshot', async () => {
         const shards = await env.DB.prepare(

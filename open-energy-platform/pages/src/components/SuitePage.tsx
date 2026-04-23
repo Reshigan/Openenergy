@@ -116,10 +116,10 @@ export function SuitePage(props: SuitePageProps) {
   );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-5">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-5">
       <header>
-        <h1 className="text-[22px] font-semibold text-[#32363a]">{props.title}</h1>
-        {props.subtitle && <p className="text-[13px] text-[#6a6d70] mt-1">{props.subtitle}</p>}
+        <h1 className="text-[18px] sm:text-[22px] font-semibold text-[#32363a] leading-tight">{props.title}</h1>
+        {props.subtitle && <p className="text-[12px] sm:text-[13px] text-[#6a6d70] mt-1">{props.subtitle}</p>}
       </header>
 
       {props.aiBriefRole && (
@@ -130,14 +130,29 @@ export function SuitePage(props: SuitePageProps) {
         />
       )}
 
-      <div className="flex items-center gap-1.5 border-b border-[#e5e5e5] overflow-x-auto">
+      {/* Tabs — desktop: horizontal strip; mobile: a scrollable row with
+          momentum scroll. On very narrow screens we collapse to a select. */}
+      <div className="sm:hidden">
+        <select
+          value={active?.key || ''}
+          onChange={(e) => setActiveKey(e.target.value)}
+          className="w-full h-10 px-3 rounded-md border text-[13px] bg-white"
+          style={{ borderColor: '#d0d5dd', color: '#32363a' }}
+          aria-label="Select tab"
+        >
+          {props.tabs.map((tab) => (
+            <option key={tab.key} value={tab.key}>{tab.label}</option>
+          ))}
+        </select>
+      </div>
+      <div className="hidden sm:flex items-center gap-1.5 border-b border-[#e5e5e5] overflow-x-auto">
         {props.tabs.map((tab) => {
           const isActive = tab.key === active?.key;
           return (
             <button
               key={tab.key}
               onClick={() => setActiveKey(tab.key)}
-              className={`h-10 px-4 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
+              className={`h-11 px-4 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 isActive
                   ? 'border-[#0a6ed1] text-[#0a6ed1]'
                   : 'border-transparent text-[#6a6d70] hover:text-[#32363a]'
@@ -220,21 +235,21 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
   return (
     <div className="space-y-3">
       {(tab.description || tab.create) && (
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           {tab.description && (
             <p className="text-[12px] text-[#6a6d70] max-w-3xl">{tab.description}</p>
           )}
           <div className="flex items-center gap-2">
             <button
               onClick={() => void load()}
-              className="h-8 px-3 rounded-md text-[12px] font-semibold border border-[#d0d5dd] bg-white text-[#6a6d70] hover:bg-[#f5f6fa] inline-flex items-center gap-1.5"
+              className="h-9 px-3 rounded-md text-[12px] font-semibold border border-[#d0d5dd] bg-white text-[#6a6d70] hover:bg-[#f5f6fa] inline-flex items-center gap-1.5"
             >
               <RefreshCw size={12} /> Refresh
             </button>
             {tab.create && (
               <button
                 onClick={() => setModalForm({ form: tab.create!, title: tab.create!.title })}
-                className="h-8 px-3 rounded-md text-[12px] font-semibold bg-[#0a6ed1] text-white hover:bg-[#0956a3] inline-flex items-center gap-1"
+                className="h-9 px-3 rounded-md text-[12px] font-semibold bg-[#0a6ed1] text-white hover:bg-[#0956a3] inline-flex items-center gap-1"
               >
                 <Plus size={12} /> {tab.create.submitLabel || 'New'}
               </button>
@@ -265,70 +280,126 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
             {tab.emptyHint && <p className="text-[12px] mt-1 max-w-lg mx-auto">{tab.emptyHint}</p>}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-[13px]">
-              <thead className="bg-[#fafafa] text-[#6a6d70]">
-                <tr className="border-b border-[#f0f0f0]">
-                  {tab.columns.map((col) => (
-                    <th
-                      key={col.key}
-                      className={`px-4 py-2.5 font-semibold ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'}`}
-                    >
-                      {col.label}
-                    </th>
-                  ))}
-                  {tab.rowActions && tab.rowActions.length > 0 && (
-                    <th className="px-4 py-2.5 text-right font-semibold">Actions</th>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, i) => (
-                  <tr
-                    key={String(row.id ?? i)}
-                    className={`border-b border-[#f0f0f0] hover:bg-[#fafbfd] ${tab.detail ? 'cursor-pointer' : ''}`}
-                    onClick={(e) => {
-                      // Don't drill in if clicking an action button.
-                      if ((e.target as HTMLElement).closest('button')) return;
-                      if (tab.detail) setDetailRow(row);
-                    }}
-                  >
+          <>
+            {/* Desktop: proper table. Mobile (< sm): stacked cards since a
+                10-column table is unreadable even with overflow scroll. */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-[13px]">
+                <thead className="bg-[#fafafa] text-[#6a6d70]">
+                  <tr className="border-b border-[#f0f0f0]">
                     {tab.columns.map((col) => (
-                      <td
+                      <th
                         key={col.key}
-                        className={`px-4 py-2.5 text-[#32363a] ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''}`}
+                        className={`px-4 py-2.5 font-semibold ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'}`}
                       >
-                        {renderCell(row, col)}
-                      </td>
+                        {col.label}
+                      </th>
                     ))}
                     {tab.rowActions && tab.rowActions.length > 0 && (
-                      <td className="px-4 py-2.5 text-right">
-                        <div className="inline-flex items-center gap-1.5">
-                          {tab.rowActions
-                            .filter((a) => (a.show ? a.show(row) : true))
-                            .map((a, idx) => (
-                              <button
-                                key={idx}
-                                onClick={(e) => { e.stopPropagation(); void handleRowAction(a, row); }}
-                                className={`h-7 px-2.5 rounded-md text-[11px] font-semibold border transition-colors ${
-                                  a.tone === 'danger'
-                                    ? 'border-[#e9a2a2] bg-white text-[#bb0000] hover:bg-[#ffebee]'
-                                    : a.tone === 'primary'
-                                      ? 'border-[#0a6ed1] bg-[#0a6ed1] text-white hover:bg-[#0956a3]'
-                                      : 'border-[#d0d5dd] bg-white text-[#6a6d70] hover:bg-[#f5f6fa]'
-                                }`}
-                              >
-                                {a.label}
-                              </button>
-                            ))}
-                        </div>
-                      </td>
+                      <th className="px-4 py-2.5 text-right font-semibold">Actions</th>
                     )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {rows.map((row, i) => (
+                    <tr
+                      key={String(row.id ?? i)}
+                      className={`border-b border-[#f0f0f0] hover:bg-[#fafbfd] ${tab.detail ? 'cursor-pointer' : ''}`}
+                      onClick={(e) => {
+                        if ((e.target as HTMLElement).closest('button')) return;
+                        if (tab.detail) setDetailRow(row);
+                      }}
+                    >
+                      {tab.columns.map((col) => (
+                        <td
+                          key={col.key}
+                          className={`px-4 py-2.5 text-[#32363a] ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''}`}
+                        >
+                          {renderCell(row, col)}
+                        </td>
+                      ))}
+                      {tab.rowActions && tab.rowActions.length > 0 && (
+                        <td className="px-4 py-2.5 text-right">
+                          <div className="inline-flex items-center gap-1.5">
+                            {tab.rowActions
+                              .filter((a) => (a.show ? a.show(row) : true))
+                              .map((a, idx) => (
+                                <button
+                                  key={idx}
+                                  onClick={(e) => { e.stopPropagation(); void handleRowAction(a, row); }}
+                                  className={`h-8 px-2.5 rounded-md text-[11px] font-semibold border transition-colors ${
+                                    a.tone === 'danger'
+                                      ? 'border-[#e9a2a2] bg-white text-[#bb0000] hover:bg-[#ffebee]'
+                                      : a.tone === 'primary'
+                                        ? 'border-[#0a6ed1] bg-[#0a6ed1] text-white hover:bg-[#0956a3]'
+                                        : 'border-[#d0d5dd] bg-white text-[#6a6d70] hover:bg-[#f5f6fa]'
+                                  }`}
+                                >
+                                  {a.label}
+                                </button>
+                              ))}
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile: card list — each row becomes a stacked card with
+                label/value pairs. Tap the card to drill in (if detail is
+                configured). Actions flow as full-width buttons at the bottom. */}
+            <ul className="sm:hidden divide-y divide-[#f0f0f0]">
+              {rows.map((row, i) => (
+                <li
+                  key={String(row.id ?? i)}
+                  className={`p-4 ${tab.detail ? 'active:bg-[#fafbfd]' : ''}`}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest('button')) return;
+                    if (tab.detail) setDetailRow(row);
+                  }}
+                >
+                  <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                    {tab.columns.map((col) => {
+                      const cell = renderCell(row, col);
+                      const isEmpty =
+                        cell == null ||
+                        (typeof cell === 'object' && (cell as { props?: { children?: unknown } }).props?.children === '—');
+                      if (isEmpty) return null;
+                      return (
+                        <React.Fragment key={col.key}>
+                          <dt className="text-[11px] text-[#89919a] uppercase tracking-wider col-span-1">{col.label}</dt>
+                          <dd className="text-[13px] text-[#32363a] col-span-1 break-words">{cell}</dd>
+                        </React.Fragment>
+                      );
+                    })}
+                  </dl>
+                  {tab.rowActions && tab.rowActions.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {tab.rowActions
+                        .filter((a) => (a.show ? a.show(row) : true))
+                        .map((a, idx) => (
+                          <button
+                            key={idx}
+                            onClick={(e) => { e.stopPropagation(); void handleRowAction(a, row); }}
+                            className={`flex-1 min-w-[calc(50%-4px)] h-9 px-3 rounded-md text-[12px] font-semibold border transition-colors ${
+                              a.tone === 'danger'
+                                ? 'border-[#e9a2a2] bg-white text-[#bb0000]'
+                                : a.tone === 'primary'
+                                  ? 'border-[#0a6ed1] bg-[#0a6ed1] text-white'
+                                  : 'border-[#d0d5dd] bg-white text-[#6a6d70]'
+                            }`}
+                          >
+                            {a.label}
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
 
@@ -458,7 +529,9 @@ function FormModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div
-        className="bg-white rounded-2xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-white shadow-xl w-full flex flex-col overflow-hidden
+                   sm:rounded-2xl sm:max-w-xl sm:max-h-[90vh]
+                   h-full sm:h-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 py-3.5 border-b border-[#e5e5e5] flex items-center justify-between">
@@ -515,7 +588,7 @@ function FormField({ field, value, error, onChange }: {
   );
   const help = field.help && <p className="text-[11px] text-[#6a6d70] mt-1">{field.help}</p>;
   const errNode = error && <p className="text-[11px] text-[#bb0000] mt-1">{error}</p>;
-  const inputClass = `w-full h-9 px-3 rounded-md border text-[13px] bg-white ${
+  const inputClass = `w-full h-11 sm:h-10 px-3 rounded-md border text-[14px] sm:text-[13px] bg-white ${
     error ? 'border-[#e9a2a2]' : 'border-[#d0d5dd]'
   } focus:outline-none focus:border-[#0a6ed1]`;
 
@@ -673,7 +746,7 @@ function DetailDrawer({
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
       <div
-        className="bg-white w-full max-w-2xl h-full overflow-y-auto shadow-xl"
+        className="bg-white w-full sm:max-w-2xl h-full overflow-y-auto shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 py-3.5 border-b border-[#e5e5e5] flex items-center justify-between sticky top-0 bg-white z-10">

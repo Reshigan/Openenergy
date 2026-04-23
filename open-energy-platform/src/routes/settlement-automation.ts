@@ -19,7 +19,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { computeSettlementRun, PpaContract, PeriodReading } from '../utils/settlement-engine';
-import { insertMeteringReading } from '../utils/hyperdrive';
+import { insertMeteringReading, invalidateMonthlyAggregate } from '../utils/metering-router';
 
 const sa = new Hono<HonoEnv>();
 
@@ -235,15 +235,16 @@ sa.post('/ingest/push', async (c) => {
   let readingId: string | null = null;
   if (connection?.connection_id && typeof payload.export_kwh === 'number' && typeof payload.import_kwh === 'number') {
     readingId = genId('mr');
-    // Route via the Hyperdrive façade — writes to Postgres when the
-    // binding is present (dual-writing to D1 during the cut-over), or
-    // falls back to D1 when it isn't. See docs/runbooks/data-tier-scaling-plan.md.
+    const readingDate = (payload.timestamp_utc as string) || new Date().toISOString();
+    // Route to the METERING_DB_CURRENT shard when configured. When it
+    // isn't, writes fall through to env.DB. KV invalidation keeps
+    // dashboard rollups fresh.
     await insertMeteringReading(
-      c.env as unknown as { DB: HonoEnv['Bindings']['DB']; HYPERDRIVE_DB?: HonoEnv['Bindings']['HYPERDRIVE_DB'] },
+      c.env as unknown as { DB: HonoEnv['Bindings']['DB']; KV: HonoEnv['Bindings']['KV']; METERING_DB_CURRENT?: HonoEnv['Bindings']['METERING_DB_CURRENT'] },
       {
         id: readingId,
         connection_id: connection.connection_id,
-        reading_date: (payload.timestamp_utc as string) || new Date().toISOString(),
+        reading_date: readingDate,
         export_kwh: Number(payload.export_kwh),
         import_kwh: Number(payload.import_kwh),
         peak_demand_kw: payload.peak_demand_kw == null ? null : Number(payload.peak_demand_kw),
@@ -251,6 +252,13 @@ sa.post('/ingest/push', async (c) => {
         reading_type: 'actual',
         source: channelId,
       },
+    );
+    c.executionCtx?.waitUntil?.(
+      invalidateMonthlyAggregate(
+        c.env as unknown as { KV: HonoEnv['Bindings']['KV']; DB: HonoEnv['Bindings']['DB'] },
+        connection.connection_id,
+        readingDate,
+      ),
     );
     await c.env.DB.prepare(
       `UPDATE meter_ingest_raw SET normalised = 1, normalised_reading_id = ? WHERE id = ?`,

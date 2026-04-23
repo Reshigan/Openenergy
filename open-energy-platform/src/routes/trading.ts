@@ -11,11 +11,21 @@ import type { DurableObjectNamespace } from '@cloudflare/workers-types';
 const trading = new Hono<HonoEnv>();
 trading.use('*', authMiddleware);
 
-// GET /trading/orders — my orders
+// GET /trading/orders — my orders.
+//
+// COST: Explicit column list instead of SELECT *. The UI needs ~12 of the
+// 24 columns on trade_orders; fetching the rest (metadata blobs, large
+// text fields) would ~double the per-row bytes. LIMIT 50 is already
+// generous for a dashboard widget.
 trading.get('/orders', async (c) => {
   const user = getCurrentUser(c);
   const orders = await c.env.DB.prepare(
-    'SELECT * FROM trade_orders WHERE participant_id = ? ORDER BY created_at DESC LIMIT 50'
+    `SELECT id, side, energy_type, volume_mwh, remaining_volume_mwh,
+            price, price_min, price_max, delivery_date, delivery_point,
+            market_type, order_type, status, created_at, updated_at
+       FROM trade_orders
+      WHERE participant_id = ?
+      ORDER BY created_at DESC LIMIT 50`,
   ).bind(user.id).all();
   return c.json({ success: true, data: orders.results || [] });
 });

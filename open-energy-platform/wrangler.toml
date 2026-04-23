@@ -47,14 +47,17 @@ class_name = "OrderBook"
 tag = "v1"
 new_sqlite_classes = ["OrderBook"]
 
-# Hyperdrive — Postgres target for the high-volume metering_readings table.
-# Commented out until the operator has provisioned a Postgres (Neon or RDS)
-# and run `wrangler hyperdrive create`. See
-# docs/runbooks/data-tier-scaling-plan.md for the full cut-over.
-# [[hyperdrive]]
-# binding = "HYPERDRIVE_DB"
-# id = "<hyperdrive-id-returned-by-wrangler>"
-# localConnectionString = "postgres://oe:oe@127.0.0.1:5432/openenergy"
+# Metering shard — a second D1 dedicated to the hot current-month
+# metering_readings writes. When bound it isolates ingest load from the
+# main DB, keeping trade/settlement queries fast. Create with:
+#   wrangler d1 create open-energy-metering-current
+# then uncomment below with the returned id. Archive shards
+# (METERING_DB_ARCHIVE_YYYY_MM) follow the same pattern and are created
+# monthly by an operator job.
+# [[d1_databases]]
+# binding = "METERING_DB_CURRENT"
+# database_name = "open-energy-metering-current"
+# database_id = "<id-returned-by-wrangler-d1-create>"
 
 # Scheduled handlers — the Worker's `scheduled()` export in src/index.ts
 # dispatches by cron pattern. Each entry maps to a named job inside the

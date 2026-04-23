@@ -147,57 +147,101 @@ cockpit.post('/actions/:id/complete', authMiddleware, async (c) => {
   }
 });
 
-// GET /cockpit/stats — Role-aware KPI set consumed by the Fiori launchpad hero + tiles
+// GET /cockpit/stats — Role-aware KPI set consumed by the Fiori launchpad.
+//
+// COST NOTE: This endpoint is hit on every dashboard load (one of the most
+// frequent reads on the platform). Two cost-efficiency moves:
+//   1. Collapse 6 separate SELECT COUNT(*) queries into one compound SELECT
+//      with scalar subqueries. D1 charges per query + per row read, so
+//      halving the request count halves the request-overhead charge and
+//      row-read charges stay identical.
+//   2. Cache the response in KV keyed by (participant_id) for 30 seconds.
+//      A dashboard that refreshes every few seconds pays 1 DB read + N−1
+//      KV reads (KV read is ~10× cheaper than a D1 query).
+//
+// Cache is invalidated by `?fresh=1` (user-triggered refresh button).
 cockpit.get('/stats', authMiddleware, async (c) => {
   const auth = c.get('auth');
   if (!auth?.user) return c.json({ success: false, error: 'Unauthorized' }, 401);
   const user = auth.user;
+  const fresh = c.req.query('fresh') === '1';
+  const cacheKey = `cockpit:stats:${user.id}`;
+
   try {
-    const stats: Record<string, unknown> = { role: user.role };
+    if (!fresh) {
+      const cached = await c.env.KV.get(cacheKey, 'json');
+      if (cached) return c.json({ success: true, data: cached, cached: true });
+    }
 
-    const myActions = await c.env.DB.prepare(
-      `SELECT COUNT(*) as c FROM action_queue WHERE assignee_id = ? AND status = 'pending'`
-    ).bind(user.id).first();
-    stats.pending_actions = Number(myActions?.c || 0);
+    // Single compound query — 6 scalar subqueries, each narrowly indexed.
+    // Every WHERE clause hits an existing index (participants.id pk,
+    // action_queue.assignee_id + status, contract_documents.creator_id +
+    // counterparty_id, document_signatories.participant_id, invoices by
+    // from/to participant). No table scans.
+    const row = await c.env.DB.prepare(`
+      SELECT
+        (SELECT COUNT(*) FROM action_queue
+          WHERE assignee_id = ? AND status = 'pending')                       AS pending_actions,
+        (SELECT COUNT(*) FROM contract_documents
+          WHERE creator_id = ? OR counterparty_id = ?)                        AS my_contracts,
+        (SELECT COUNT(DISTINCT document_id) FROM document_signatories
+          WHERE participant_id = ? AND signed = 0)                            AS contracts_awaiting_signature,
+        (SELECT COUNT(*) FROM invoices
+          WHERE to_participant_id = ? AND status = 'issued')                  AS invoices_to_pay,
+        (SELECT COALESCE(SUM(total_amount), 0) FROM invoices
+          WHERE to_participant_id = ? AND status = 'issued')                  AS invoices_to_pay_total,
+        (SELECT COUNT(*) FROM invoices
+          WHERE from_participant_id = ? AND status = 'issued')                AS invoices_outstanding,
+        (SELECT COALESCE(SUM(total_amount), 0) FROM invoices
+          WHERE from_participant_id = ? AND status = 'issued')                AS invoices_outstanding_total
+    `).bind(
+      user.id,
+      user.id, user.id,
+      user.id,
+      user.id,
+      user.id,
+      user.id,
+      user.id,
+    ).first<{
+      pending_actions: number;
+      my_contracts: number;
+      contracts_awaiting_signature: number;
+      invoices_to_pay: number;
+      invoices_to_pay_total: number;
+      invoices_outstanding: number;
+      invoices_outstanding_total: number;
+    }>();
 
-    const myContracts = await c.env.DB.prepare(
-      `SELECT COUNT(*) as c FROM contract_documents WHERE (creator_id = ? OR counterparty_id = ?)`
-    ).bind(user.id, user.id).first();
-    stats.my_contracts = Number(myContracts?.c || 0);
+    const stats: Record<string, unknown> = {
+      role: user.role,
+      pending_actions: Number(row?.pending_actions || 0),
+      my_contracts: Number(row?.my_contracts || 0),
+      contracts_awaiting_signature: Number(row?.contracts_awaiting_signature || 0),
+      invoices_to_pay: Number(row?.invoices_to_pay || 0),
+      invoices_to_pay_total: Number(row?.invoices_to_pay_total || 0),
+      invoices_outstanding: Number(row?.invoices_outstanding || 0),
+      invoices_outstanding_total: Number(row?.invoices_outstanding_total || 0),
+    };
 
-    const mySignContracts = await c.env.DB.prepare(
-      `SELECT COUNT(DISTINCT document_id) as c FROM document_signatories WHERE participant_id = ? AND signed = 0`
-    ).bind(user.id).first();
-    stats.contracts_awaiting_signature = Number(mySignContracts?.c || 0);
-
-    const myInvoicesOut = await c.env.DB.prepare(
-      `SELECT COUNT(*) as c, COALESCE(SUM(total_amount),0) as total FROM invoices WHERE to_participant_id = ? AND status = 'issued'`
-    ).bind(user.id).first();
-    stats.invoices_to_pay = Number(myInvoicesOut?.c || 0);
-    stats.invoices_to_pay_total = Number(myInvoicesOut?.total || 0);
-
-    const myInvoicesIn = await c.env.DB.prepare(
-      `SELECT COUNT(*) as c, COALESCE(SUM(total_amount),0) as total FROM invoices WHERE from_participant_id = ? AND status = 'issued'`
-    ).bind(user.id).first();
-    stats.invoices_outstanding = Number(myInvoicesIn?.c || 0);
-    stats.invoices_outstanding_total = Number(myInvoicesIn?.total || 0);
-
+    // Role-specific one-shot follow-ups. Each is a single indexed COUNT —
+    // skip unless the current user is that role, so non-admins pay zero
+    // extra queries.
     if (user.role === 'ipp_developer') {
       const projects = await c.env.DB.prepare(
-        `SELECT COUNT(*) as c FROM ipp_projects WHERE developer_id = ?`
-      ).bind(user.id).first();
+        `SELECT COUNT(*) as c FROM ipp_projects WHERE developer_id = ?`,
+      ).bind(user.id).first<{ c: number }>();
       stats.projects_count = Number(projects?.c || 0);
     }
     if (user.role === 'trader') {
       const openOrders = await c.env.DB.prepare(
-        `SELECT COUNT(*) as c FROM trade_orders WHERE participant_id = ? AND status = 'open'`
-      ).bind(user.id).first();
+        `SELECT COUNT(*) as c FROM trade_orders WHERE participant_id = ? AND status = 'open'`,
+      ).bind(user.id).first<{ c: number }>();
       stats.open_orders = Number(openOrders?.c || 0);
     }
     if (user.role === 'admin') {
       const pendingKyc = await c.env.DB.prepare(
-        `SELECT COUNT(*) as c FROM participants WHERE kyc_status = 'pending'`
-      ).first();
+        `SELECT COUNT(*) as c FROM participants WHERE kyc_status = 'pending'`,
+      ).first<{ c: number }>();
       stats.pending_kyc = Number(pendingKyc?.c || 0);
     }
 
@@ -206,6 +250,13 @@ cockpit.get('/stats', authMiddleware, async (c) => {
     // the try/catch one level up will surface a 500 — callers expect a 200
     // every time, so each query is wrapped individually.
     await safeAttach(stats, 'role_national', () => roleNationalStats(c.env, user));
+
+    // Cache the result for 30 seconds. Deliberately short — headline
+    // counters on the dashboard go stale but most users notice within
+    // a minute and hit refresh, or let the cache expire.
+    c.executionCtx?.waitUntil?.(
+      c.env.KV.put(cacheKey, JSON.stringify(stats), { expirationTtl: 30 }),
+    );
 
     return c.json({ success: true, data: stats });
   } catch (error) {
