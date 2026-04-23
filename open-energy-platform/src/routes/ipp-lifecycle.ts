@@ -26,12 +26,14 @@ ipp.post('/epc', async (c) => {
     if (!b[k]) return c.json({ success: false, error: `${k} is required` }, 400);
   }
   const id = genId('epc');
+  const createdAt = new Date().toISOString();
+  const status = (b.status as string) || 'draft';
   await c.env.DB.prepare(
     `INSERT INTO epc_contracts
        (id, project_id, contract_document_id, epc_contractor_participant_id, contractor_name,
         lump_sum_zar, target_completion_date, commissioning_date, taking_over_certificate_date,
-        defects_liability_until, performance_security_zar, ld_cap_percentage, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, 'draft'))`,
+        defects_liability_until, performance_security_zar, ld_cap_percentage, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).bind(
     id, b.project_id, b.contract_document_id || null,
     b.epc_contractor_participant_id || null, b.contractor_name,
@@ -40,9 +42,24 @@ ipp.post('/epc', async (c) => {
     b.taking_over_certificate_date || null, b.defects_liability_until || null,
     b.performance_security_zar == null ? null : Number(b.performance_security_zar),
     b.ld_cap_percentage == null ? null : Number(b.ld_cap_percentage),
-    b.status || null,
+    status, createdAt,
   ).run();
-  const row = await c.env.DB.prepare('SELECT * FROM epc_contracts WHERE id = ?').bind(id).first();
+  const row = {
+    id,
+    project_id: b.project_id,
+    contract_document_id: b.contract_document_id || null,
+    epc_contractor_participant_id: b.epc_contractor_participant_id || null,
+    contractor_name: b.contractor_name,
+    lump_sum_zar: b.lump_sum_zar == null ? null : Number(b.lump_sum_zar),
+    target_completion_date: b.target_completion_date || null,
+    commissioning_date: b.commissioning_date || null,
+    taking_over_certificate_date: b.taking_over_certificate_date || null,
+    defects_liability_until: b.defects_liability_until || null,
+    performance_security_zar: b.performance_security_zar == null ? null : Number(b.performance_security_zar),
+    ld_cap_percentage: b.ld_cap_percentage == null ? null : Number(b.ld_cap_percentage),
+    status,
+    created_at: createdAt,
+  };
   return c.json({ success: true, data: row }, 201);
 });
 

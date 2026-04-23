@@ -194,12 +194,13 @@ lender.post('/ie-certifications', async (c) => {
     if (!b[k]) return c.json({ success: false, error: `${k} is required` }, 400);
   }
   const id = genId('ie');
+  const createdAt = new Date().toISOString();
   await c.env.DB.prepare(
     `INSERT INTO ie_certifications
        (id, disbursement_id, project_id, ie_participant_id, cert_number, cert_type, period,
         physical_progress_pct, financial_progress_pct, recommended_drawdown_zar, certified_amount_zar,
-        qualifications, site_visit_date, cert_issue_date, status, document_r2_key)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted', ?)`,
+        qualifications, site_visit_date, cert_issue_date, status, document_r2_key, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted', ?, ?)`,
   ).bind(
     id, b.disbursement_id || null, b.project_id, b.ie_participant_id || user.id,
     b.cert_number, b.cert_type, b.period || null,
@@ -208,9 +209,27 @@ lender.post('/ie-certifications', async (c) => {
     b.recommended_drawdown_zar == null ? null : Number(b.recommended_drawdown_zar),
     b.certified_amount_zar == null ? null : Number(b.certified_amount_zar),
     b.qualifications || null, b.site_visit_date || null, b.cert_issue_date,
-    b.document_r2_key || null,
+    b.document_r2_key || null, createdAt,
   ).run();
-  const row = await c.env.DB.prepare('SELECT * FROM ie_certifications WHERE id = ?').bind(id).first();
+  const row = {
+    id,
+    disbursement_id: b.disbursement_id || null,
+    project_id: b.project_id,
+    ie_participant_id: b.ie_participant_id || user.id,
+    cert_number: b.cert_number,
+    cert_type: b.cert_type,
+    period: b.period || null,
+    physical_progress_pct: b.physical_progress_pct == null ? null : Number(b.physical_progress_pct),
+    financial_progress_pct: b.financial_progress_pct == null ? null : Number(b.financial_progress_pct),
+    recommended_drawdown_zar: b.recommended_drawdown_zar == null ? null : Number(b.recommended_drawdown_zar),
+    certified_amount_zar: b.certified_amount_zar == null ? null : Number(b.certified_amount_zar),
+    qualifications: b.qualifications || null,
+    site_visit_date: b.site_visit_date || null,
+    cert_issue_date: b.cert_issue_date,
+    status: 'submitted',
+    document_r2_key: b.document_r2_key || null,
+    created_at: createdAt,
+  };
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -346,17 +365,29 @@ lender.post('/reserves', async (c) => {
     if (!b[k] && b[k] !== 0) return c.json({ success: false, error: `${k} is required` }, 400);
   }
   const id = genId('rsv');
+  const createdAt = new Date().toISOString();
+  const balance = b.current_balance_zar == null ? 0 : Number(b.current_balance_zar);
   await c.env.DB.prepare(
     `INSERT INTO reserve_accounts
-       (id, project_id, reserve_type, target_amount_zar, target_basis, current_balance_zar, custodian, account_number)
-     VALUES (?, ?, ?, ?, ?, COALESCE(?, 0), ?, ?)`,
+       (id, project_id, reserve_type, target_amount_zar, target_basis, current_balance_zar, custodian, account_number, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
   ).bind(
     id, b.project_id, b.reserve_type, Number(b.target_amount_zar),
-    b.target_basis || null,
-    b.current_balance_zar == null ? null : Number(b.current_balance_zar),
-    b.custodian || null, b.account_number || null,
+    b.target_basis || null, balance,
+    b.custodian || null, b.account_number || null, createdAt,
   ).run();
-  const row = await c.env.DB.prepare('SELECT * FROM reserve_accounts WHERE id = ?').bind(id).first();
+  const row = {
+    id,
+    project_id: b.project_id,
+    reserve_type: b.reserve_type,
+    target_amount_zar: Number(b.target_amount_zar),
+    target_basis: b.target_basis || null,
+    current_balance_zar: balance,
+    custodian: b.custodian || null,
+    account_number: b.account_number || null,
+    status: 'active',
+    created_at: createdAt,
+  };
   return c.json({ success: true, data: row }, 201);
 });
 

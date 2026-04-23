@@ -8,6 +8,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { cachedAll } from '../utils/reference-cache';
 
 const modules = new Hono<HonoEnv>();
 modules.use('*', authMiddleware);
@@ -25,8 +26,15 @@ const FALLBACK_MODULES = [
 ];
 
 modules.get('/', async (c) => {
-  const rows = await c.env.DB.prepare('SELECT module_key, display_name, description, enabled, required_role, price_monthly FROM modules ORDER BY display_name').all();
-  const catalogue = (rows.results && rows.results.length) ? rows.results : FALLBACK_MODULES;
+  // Modules catalogue is effectively immutable (operators add a new
+  // module once per release). Cache the full list for 1 h.
+  const rows = await cachedAll(
+    c.env as unknown as { DB: HonoEnv['Bindings']['DB']; KV: HonoEnv['Bindings']['KV'] },
+    'modules_catalogue',
+    'SELECT module_key, display_name, description, enabled, required_role, price_monthly FROM modules ORDER BY display_name',
+    { ttlSeconds: 3600 },
+  );
+  const catalogue = rows.length ? rows : FALLBACK_MODULES;
   return c.json({ success: true, data: catalogue });
 });
 
@@ -35,11 +43,17 @@ modules.get('/', async (c) => {
 // is enabled) AND (the module has no required_role OR the caller matches it).
 modules.get('/my', async (c) => {
   const user = getCurrentUser(c);
-  const [catalogueResult, overridesResult] = await Promise.all([
-    c.env.DB.prepare('SELECT module_key, required_role, enabled FROM modules').all(),
+  // Catalogue is cached (see above); per-user overrides still hit D1 but
+  // those are small and user-scoped.
+  const [catalogue, overridesResult] = await Promise.all([
+    cachedAll<{ module_key: string; required_role: string | null; enabled: number }>(
+      c.env as unknown as { DB: HonoEnv['Bindings']['DB']; KV: HonoEnv['Bindings']['KV'] },
+      'modules_catalogue_slim',
+      'SELECT module_key, required_role, enabled FROM modules',
+      { ttlSeconds: 3600 },
+    ),
     c.env.DB.prepare('SELECT module_id, enabled FROM platform_modules WHERE participant_id = ?').bind(user.id).all(),
   ]);
-  const catalogue = catalogueResult.results || [];
   const overrides = new Map<string, number>();
   for (const row of (overridesResult.results || [])) {
     const r = row as { module_id: string; enabled: number };

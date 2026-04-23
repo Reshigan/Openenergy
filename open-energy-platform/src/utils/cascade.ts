@@ -1438,14 +1438,17 @@ async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
     }
 
     case 'lender.covenant_breach': {
-      // Notify both the lender and the project developer.
+      // Notify both the lender and the project developer. Both assignees
+      // get the same action structure so we build the list up-front and
+      // batch the INSERTs into a single env.DB.batch() call.
       const lenderId = ctx.data?.lender_participant_id as string | null;
       const projectId = ctx.data?.project_id as string | null;
       const code = ctx.data?.covenant_code as string || '';
       const title = `Covenant breach: ${code}`;
       const desc = `Measured ${ctx.data?.measured_value ?? '—'} vs threshold ${ctx.data?.threshold ?? '—'} for ${ctx.data?.test_period || 'current period'}.`;
+      const assignments: EnqueueActionInput[] = [];
       if (lenderId) {
-        await enqueueAction(ctx.env.DB, {
+        assignments.push({
           type: 'covenant_breach',
           priority: ctx.data?.material_adverse_effect ? 'urgent' : 'high',
           actor_id: ctx.actor_id,
@@ -1458,51 +1461,44 @@ async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
         });
       }
       if (projectId) {
-        try {
-          const proj = await ctx.env.DB.prepare(
-            'SELECT developer_id FROM ipp_projects WHERE id = ?',
-          ).bind(projectId).first<{ developer_id: string }>();
-          if (proj?.developer_id) {
-            await enqueueAction(ctx.env.DB, {
-              type: 'covenant_breach',
-              priority: 'high',
-              actor_id: ctx.actor_id,
-              assignee_id: proj.developer_id,
-              entity_type: 'covenant_tests',
-              entity_id: ctx.entity_id,
-              title: `Action: ${title}`,
-              description: `${desc} — consider requesting a waiver or remedial plan.`,
-              due_date: daysFromNow(7),
-            });
-          }
-        } catch { /* soft — project may have been removed */ }
+        const dev = await cachedProjectDeveloper(ctx.env, projectId);
+        if (dev) {
+          assignments.push({
+            type: 'covenant_breach',
+            priority: 'high',
+            actor_id: ctx.actor_id,
+            assignee_id: dev,
+            entity_type: 'covenant_tests',
+            entity_id: ctx.entity_id,
+            title: `Action: ${title}`,
+            description: `${desc} — consider requesting a waiver or remedial plan.`,
+            due_date: daysFromNow(7),
+          });
+        }
       }
+      if (assignments.length > 0) await enqueueActions(ctx.env.DB, assignments);
       break;
     }
 
     case 'ipp.insurance_expiring': {
       const projectId = ctx.data?.project_id as string | null;
       if (projectId) {
-        try {
-          const proj = await ctx.env.DB.prepare(
-            'SELECT developer_id FROM ipp_projects WHERE id = ?',
-          ).bind(projectId).first<{ developer_id: string }>();
-          if (proj?.developer_id) {
-            await enqueueAction(ctx.env.DB, {
-              type: 'insurance_renewal',
-              priority: 'high',
-              actor_id: ctx.actor_id,
-              assignee_id: proj.developer_id,
-              entity_type: 'insurance_policies',
-              entity_id: ctx.entity_id,
-              title: `Insurance renewal due: ${ctx.data?.policy_number || ctx.entity_id}`,
-              description: `Policy expires ${ctx.data?.period_end || 'soon'}. Lender covenant requires continuous cover.`,
-              due_date: typeof ctx.data?.period_end === 'string'
-                ? (ctx.data.period_end as string).slice(0, 10)
-                : daysFromNow(30),
-            });
-          }
-        } catch { /* soft */ }
+        const dev = await cachedProjectDeveloper(ctx.env, projectId);
+        if (dev) {
+          await enqueueAction(ctx.env.DB, {
+            type: 'insurance_renewal',
+            priority: 'high',
+            actor_id: ctx.actor_id,
+            assignee_id: dev,
+            entity_type: 'insurance_policies',
+            entity_id: ctx.entity_id,
+            title: `Insurance renewal due: ${ctx.data?.policy_number || ctx.entity_id}`,
+            description: `Policy expires ${ctx.data?.period_end || 'soon'}. Lender covenant requires continuous cover.`,
+            due_date: typeof ctx.data?.period_end === 'string'
+              ? (ctx.data.period_end as string).slice(0, 10)
+              : daysFromNow(30),
+          });
+        }
       }
       break;
     }
@@ -1549,14 +1545,29 @@ interface EnqueueActionInput {
 }
 
 async function enqueueAction(db: any, input: EnqueueActionInput): Promise<void> {
-  try {
-    const id = generateId();
-    await db.prepare(`
+  await enqueueActions(db, [input]);
+}
+
+/**
+ * Batched variant — inserts many action_queue rows in a single
+ * env.DB.batch() round-trip. Used by cascade special handlers that
+ * assign the same event to multiple participants (covenant breach →
+ * lender + developer; ancillary award → N winners; enforcement
+ * finding → several investigators).
+ *
+ * Fallback to per-row INSERTs if batch() fails so forward progress is
+ * preserved.
+ */
+async function enqueueActions(db: any, inputs: EnqueueActionInput[]): Promise<void> {
+  if (inputs.length === 0) return;
+  const now = new Date().toISOString();
+  const stmts = inputs.map((input) =>
+    db.prepare(`
       INSERT INTO action_queue
         (id, type, priority, actor_id, assignee_id, entity_type, entity_id, title, description, status, due_date, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
     `).bind(
-      id,
+      generateId(),
       input.type,
       input.priority,
       input.actor_id || null,
@@ -1566,10 +1577,20 @@ async function enqueueAction(db: any, input: EnqueueActionInput): Promise<void> 
       input.title,
       input.description || null,
       input.due_date || null,
-      new Date().toISOString(),
-      new Date().toISOString(),
-    ).run();
+      now,
+      now,
+    ),
+  );
+  try {
+    if (typeof db.batch === 'function') {
+      await db.batch(stmts);
+      return;
+    }
   } catch (err) {
-    console.error('Action queue enqueue failed:', err);
+    console.warn('action_queue_batch_failed', (err as Error).message);
+  }
+  // Fallback: sequential.
+  for (const stmt of stmts) {
+    try { await stmt.run(); } catch (err) { console.error('Action queue enqueue failed:', err); }
   }
 }
