@@ -5,6 +5,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { logPiiAccess, inferAccessType } from '../utils/popia-access';
 
 const participants = new Hono<HonoEnv>();
 
@@ -72,6 +73,18 @@ participants.get('/:id', async (c) => {
 
   if (!participant) {
     return c.json({ success: false, error: 'Participant not found' }, 404);
+  }
+
+  // POPIA s.19 accountability — record when a privileged actor views another
+  // participant's profile. logPiiAccess is a no-op when actor_id === subject_id.
+  const user = getCurrentUser(c);
+  if (['admin', 'support', 'regulator'].includes(user.role)) {
+    await logPiiAccess(c.env, {
+      actor_id: user.id,
+      subject_id: id,
+      access_type: inferAccessType(user.role),
+      justification: 'Participant profile view',
+    });
   }
 
   return c.json({ success: true, data: participant });

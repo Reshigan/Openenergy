@@ -14,6 +14,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser, signToken } from '../middleware/auth';
 import { createPasswordResetToken } from '../utils/auth-tokens';
+import { logPiiAccess } from '../utils/popia-access';
 
 const support = new Hono<HonoEnv>();
 
@@ -231,6 +232,15 @@ support.post('/participants/:id/impersonate', async (c) => {
     reason,
     jti,
     ttl_seconds: IMPERSONATION_TTL_SECONDS,
+  });
+
+  // POPIA s.19 accountability — impersonation is the most invasive form of
+  // PII access; always log with the provided justification.
+  await logPiiAccess(c.env, {
+    actor_id: actor.id,
+    subject_id: target.id,
+    access_type: 'impersonation',
+    justification: reason,
   });
 
   return c.json({

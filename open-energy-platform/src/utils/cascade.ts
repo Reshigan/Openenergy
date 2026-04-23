@@ -1169,7 +1169,214 @@ async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
       }
       break;
     }
+
+    // ─── National-scale action items ──────────────────────────────────
+    // Each action enqueues a pending item for the affected participant's
+    // dashboard. Due dates are capped so the item ages out of the queue.
+    case 'regulator.licence_suspended':
+    case 'regulator.licence_revoked': {
+      const pid = ctx.data?.licensee_participant_id as string | null;
+      if (pid) {
+        await enqueueAction(ctx.env.DB, {
+          type: 'regulatory_action',
+          priority: 'urgent',
+          actor_id: ctx.actor_id,
+          assignee_id: pid,
+          entity_type: ctx.entity_type,
+          entity_id: ctx.entity_id,
+          title: ctx.event === 'regulator.licence_revoked' ? 'Licence revoked — cease operations' : 'Licence suspended — halt activities under this licence',
+          description: `Details: ${ctx.data?.details || 'Consult the Regulator workbench for the event record.'}`,
+          due_date: new Date().toISOString().slice(0, 10),
+        });
+      }
+      break;
+    }
+
+    case 'regulator.enforcement_finding': {
+      const pid = ctx.data?.respondent_participant_id as string | null;
+      if (pid) {
+        await enqueueAction(ctx.env.DB, {
+          type: 'enforcement_finding',
+          priority: 'urgent',
+          actor_id: ctx.actor_id,
+          assignee_id: pid,
+          entity_type: 'regulator_enforcement_cases',
+          entity_id: ctx.entity_id,
+          title: `Enforcement finding: ${ctx.data?.case_number || ctx.entity_id}`,
+          description: `Penalty: R${(ctx.data?.penalty_amount_zar as number) || 0}. Consider appeal within statutory window.`,
+          due_date: daysFromNow(30),
+        });
+      }
+      break;
+    }
+
+    case 'regulator.surveillance_escalated': {
+      const pid = ctx.data?.participant_id as string | null;
+      if (pid) {
+        await enqueueAction(ctx.env.DB, {
+          type: 'surveillance_escalation',
+          priority: 'high',
+          actor_id: ctx.actor_id,
+          assignee_id: pid,
+          entity_type: 'regulator_enforcement_cases',
+          entity_id: (ctx.data?.case_id as string) || ctx.entity_id,
+          title: `Case opened: ${ctx.data?.case_number || ctx.entity_id}`,
+          description: `Surveillance rule ${ctx.data?.rule_code || ''} escalated to enforcement. Respond to the investigating officer.`,
+          due_date: daysFromNow(14),
+        });
+      }
+      break;
+    }
+
+    case 'grid.instruction_issued': {
+      const pid = ctx.data?.participant_id as string | null;
+      if (pid) {
+        await enqueueAction(ctx.env.DB, {
+          type: 'dispatch_acknowledge',
+          priority: 'urgent',
+          actor_id: ctx.actor_id,
+          assignee_id: pid,
+          entity_type: 'dispatch_instructions',
+          entity_id: ctx.entity_id,
+          title: `Acknowledge dispatch: ${ctx.data?.instruction_number || ''}`,
+          description: `${ctx.data?.instruction_type || 'Action required'} — target ${ctx.data?.target_mw ?? 0} MW effective ${ctx.data?.effective_from || 'now'}.`,
+          due_date: daysFromNow(1),
+        });
+      }
+      break;
+    }
+
+    case 'grid.instruction_non_compliant': {
+      const pid = ctx.data?.participant_id as string | null;
+      if (pid) {
+        await enqueueAction(ctx.env.DB, {
+          type: 'non_compliance',
+          priority: 'urgent',
+          actor_id: ctx.actor_id,
+          assignee_id: pid,
+          entity_type: 'dispatch_instructions',
+          entity_id: ctx.entity_id,
+          title: 'Dispatch non-compliance — review and respond',
+          description: `Penalty assessed: R${(ctx.data?.penalty_amount_zar as number) || 0}. Provide evidence or appeal.`,
+          due_date: daysFromNow(7),
+        });
+      }
+      break;
+    }
+
+    case 'trader.margin_call_issued': {
+      const pid = ctx.data?.participant_id as string | null;
+      if (pid) {
+        await enqueueAction(ctx.env.DB, {
+          type: 'margin_call',
+          priority: 'urgent',
+          actor_id: ctx.actor_id,
+          assignee_id: pid,
+          entity_type: 'margin_calls',
+          entity_id: ctx.entity_id,
+          title: 'Margin call — post collateral',
+          description: `Shortfall R${(ctx.data?.shortfall_zar as number) || 0}. Due by ${ctx.data?.due_by || 'end of next business day'}.`,
+          due_date: typeof ctx.data?.due_by === 'string'
+            ? (ctx.data.due_by as string).slice(0, 10)
+            : daysFromNow(1),
+        });
+      }
+      break;
+    }
+
+    case 'lender.covenant_breach': {
+      // Notify both the lender and the project developer.
+      const lenderId = ctx.data?.lender_participant_id as string | null;
+      const projectId = ctx.data?.project_id as string | null;
+      const code = ctx.data?.covenant_code as string || '';
+      const title = `Covenant breach: ${code}`;
+      const desc = `Measured ${ctx.data?.measured_value ?? '—'} vs threshold ${ctx.data?.threshold ?? '—'} for ${ctx.data?.test_period || 'current period'}.`;
+      if (lenderId) {
+        await enqueueAction(ctx.env.DB, {
+          type: 'covenant_breach',
+          priority: ctx.data?.material_adverse_effect ? 'urgent' : 'high',
+          actor_id: ctx.actor_id,
+          assignee_id: lenderId,
+          entity_type: 'covenant_tests',
+          entity_id: ctx.entity_id,
+          title,
+          description: desc,
+          due_date: daysFromNow(7),
+        });
+      }
+      if (projectId) {
+        try {
+          const proj = await ctx.env.DB.prepare(
+            'SELECT developer_id FROM ipp_projects WHERE id = ?',
+          ).bind(projectId).first<{ developer_id: string }>();
+          if (proj?.developer_id) {
+            await enqueueAction(ctx.env.DB, {
+              type: 'covenant_breach',
+              priority: 'high',
+              actor_id: ctx.actor_id,
+              assignee_id: proj.developer_id,
+              entity_type: 'covenant_tests',
+              entity_id: ctx.entity_id,
+              title: `Action: ${title}`,
+              description: `${desc} — consider requesting a waiver or remedial plan.`,
+              due_date: daysFromNow(7),
+            });
+          }
+        } catch { /* soft — project may have been removed */ }
+      }
+      break;
+    }
+
+    case 'ipp.insurance_expiring': {
+      const projectId = ctx.data?.project_id as string | null;
+      if (projectId) {
+        try {
+          const proj = await ctx.env.DB.prepare(
+            'SELECT developer_id FROM ipp_projects WHERE id = ?',
+          ).bind(projectId).first<{ developer_id: string }>();
+          if (proj?.developer_id) {
+            await enqueueAction(ctx.env.DB, {
+              type: 'insurance_renewal',
+              priority: 'high',
+              actor_id: ctx.actor_id,
+              assignee_id: proj.developer_id,
+              entity_type: 'insurance_policies',
+              entity_id: ctx.entity_id,
+              title: `Insurance renewal due: ${ctx.data?.policy_number || ctx.entity_id}`,
+              description: `Policy expires ${ctx.data?.period_end || 'soon'}. Lender covenant requires continuous cover.`,
+              due_date: typeof ctx.data?.period_end === 'string'
+                ? (ctx.data.period_end as string).slice(0, 10)
+                : daysFromNow(30),
+            });
+          }
+        } catch { /* soft */ }
+      }
+      break;
+    }
+
+    case 'carbon.mrv_verified': {
+      const pid = ctx.data?.submitted_by as string | null;
+      if (pid) {
+        await enqueueAction(ctx.env.DB, {
+          type: 'mrv_followup',
+          priority: 'normal',
+          actor_id: ctx.actor_id,
+          assignee_id: pid,
+          entity_type: 'mrv_verifications',
+          entity_id: ctx.entity_id,
+          title: `MRV verified: ${ctx.data?.opinion || 'positive'}`,
+          description: `Verified ${ctx.data?.verified_reductions_tco2e ?? '—'} tCO₂e. Request issuance with your chosen registry.`,
+          due_date: daysFromNow(30),
+        });
+      }
+      break;
+    }
   }
+}
+
+/** Days-from-now helper for action_queue.due_date (YYYY-MM-DD). */
+function daysFromNow(days: number): string {
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
 function generateId(): string {

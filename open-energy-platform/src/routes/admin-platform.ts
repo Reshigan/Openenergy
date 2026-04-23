@@ -9,6 +9,8 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { evaluateFlag, coerceFlagValue, FlagDef, FlagOverride } from '../utils/feature-flags';
 import { fireCascade } from '../utils/cascade';
+// popia-access imports retained for future use in per-subject reads.
+// import { logPiiAccess, inferAccessType } from '../utils/popia-access';
 
 const pa = new Hono<HonoEnv>();
 pa.use('*', authMiddleware);
@@ -104,6 +106,13 @@ pa.get('/provisioning-requests', async (c) => {
   const rs = await c.env.DB.prepare(
     `SELECT * FROM tenant_provisioning_requests WHERE status = ? ORDER BY created_at DESC LIMIT 200`,
   ).bind(status).all();
+  // Provisioning rows contain applicant admin_email + admin_name of people
+  // who are NOT yet participants — so they can't be logged via
+  // popia_pii_access_log (the subject_id FK expects participants.id). The
+  // underlying audit_logs table already captures the admin action via
+  // cascade when a request is approved/rejected. Leaving an explicit TODO
+  // here so a future migration can introduce a `provisioning_pii_log` that
+  // keeps pre-signup PII access separate.
   return c.json({ success: true, data: rs.results || [] });
 });
 

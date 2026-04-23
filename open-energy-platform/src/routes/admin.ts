@@ -5,6 +5,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser, hashPassword } from '../middleware/auth';
 import { createPasswordResetToken, randomOpaqueToken, revokeAllSessionsForParticipant } from '../utils/auth-tokens';
+import { logPiiAccess, logPiiAccessBatch, inferAccessType } from '../utils/popia-access';
 
 function genId(prefix: string) {
   return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).substring(2, 8)}`;
@@ -65,6 +66,15 @@ admin.get('/users', async (c) => {
     FROM participants ${where}
     ORDER BY created_at DESC LIMIT 500
   `).bind(...bindings).all();
+  const user = getCurrentUser(c);
+  // POPIA s.19 accountability — record that the admin read this list of
+  // participants (each listed row contains PII). The KYC queue and any
+  // other privileged read endpoints do the same.
+  const subjectIds = (rows.results || []).map((r: Record<string, unknown>) => r.id as string);
+  await logPiiAccessBatch(
+    c.env, user.id, subjectIds, inferAccessType(user.role),
+    `Admin user list (role=${role || 'any'}, status=${status || 'any'}, q=${q || ''})`,
+  );
   return c.json({ success: true, data: rows.results || [] });
 });
 
@@ -97,6 +107,12 @@ admin.get('/kyc', async (c) => {
     SELECT id, email, name, company_name, role, kyc_status, created_at
     FROM participants WHERE kyc_status = ? ORDER BY created_at ASC LIMIT 200
   `).bind(status).all();
+  const actor = getCurrentUser(c);
+  const subjectIds = (users.results || []).map((r: Record<string, unknown>) => r.id as string);
+  await logPiiAccessBatch(
+    c.env, actor.id, subjectIds, inferAccessType(actor.role),
+    `KYC queue (status=${status})`,
+  );
   return c.json({ success: true, data: users.results || [] });
 });
 
