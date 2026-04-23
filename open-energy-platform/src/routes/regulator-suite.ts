@@ -22,6 +22,7 @@ import { Hono, Context } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { cachedAll, invalidateReference } from '../utils/reference-cache';
 
 const suite = new Hono<HonoEnv>();
 suite.use('*', authMiddleware);
@@ -525,6 +526,8 @@ suite.put('/surveillance/rules/:id', async (c) => {
   binds.push(id);
   await c.env.DB.prepare(`UPDATE regulator_surveillance_rules SET ${sets.join(', ')} WHERE id = ?`).bind(...binds).run();
   const row = await c.env.DB.prepare('SELECT * FROM regulator_surveillance_rules WHERE id = ?').bind(id).first();
+  // Bust the surveillance-rules cache so the next scan sees the change.
+  c.executionCtx?.waitUntil?.(invalidateReference(c.env, 'surveillance_rules_enabled'));
   return c.json({ success: true, data: row });
 });
 
@@ -616,13 +619,23 @@ suite.post('/surveillance/scan', async (c) => {
 export async function runSurveillanceScan(env: HonoEnv['Bindings']): Promise<Array<{
   rule_code: string; entity_id: string; participant_id: string | null; severity: string;
 }>> {
-  const rules = await env.DB.prepare(
+  // Rules are regulator-maintained and change maybe once a quarter.
+  // The scan runs every 15 min; caching for 5 min cuts 4 of every 5
+  // rule-set reads while keeping new rules within a single scan window
+  // of going live. Toggle via the /surveillance/rules PUT endpoint
+  // which busts the cache explicitly.
+  const rules = await cachedAll<{
+    id: string; rule_code: string; rule_type: string; severity: string; parameters_json: string | null;
+  }>(
+    env,
+    'surveillance_rules_enabled',
     'SELECT id, rule_code, rule_type, severity, parameters_json FROM regulator_surveillance_rules WHERE enabled = 1',
-  ).all<{ id: string; rule_code: string; rule_type: string; severity: string; parameters_json: string | null }>();
+    { ttlSeconds: 300 },
+  );
 
   const inserted: Array<{ rule_code: string; entity_id: string; participant_id: string | null; severity: string }> = [];
 
-  for (const rule of rules.results || []) {
+  for (const rule of rules) {
     const params = safeParseJson(rule.parameters_json);
     const findings = await detectForRule(env, rule.rule_type, rule.rule_code, params);
     for (const f of findings) {

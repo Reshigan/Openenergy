@@ -9,6 +9,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { evaluateFlag, coerceFlagValue, FlagDef, FlagOverride } from '../utils/feature-flags';
 import { fireCascade } from '../utils/cascade';
+import { cachedAll } from '../utils/reference-cache';
 // popia-access imports retained for future use in per-subject reads.
 // import { logPiiAccess, inferAccessType } from '../utils/popia-access';
 
@@ -183,8 +184,18 @@ pa.post('/provisioning-requests/:id/reject', async (c) => {
 
 // ─── Subscriptions & billing ───────────────────────────────────────────────
 pa.get('/plans', async (c) => {
-  const rs = await c.env.DB.prepare(`SELECT * FROM tenant_plans ORDER BY base_monthly_zar`).all();
-  return c.json({ success: true, data: rs.results || [] });
+  // Plans change rarely (pricing changes are a product decision, not a
+  // runtime event). Cache in KV for 1 hour.
+  const rows = await cachedAll(
+    c.env as unknown as { DB: HonoEnv['Bindings']['DB']; KV: HonoEnv['Bindings']['KV'] },
+    'tenant_plans',
+    `SELECT id, plan_code, plan_name, tier, base_monthly_zar,
+            included_seats, extra_seat_zar, included_participants,
+            extra_participant_zar, sla_uptime_pct, support_tier
+       FROM tenant_plans ORDER BY base_monthly_zar`,
+    { ttlSeconds: 3600 },
+  );
+  return c.json({ success: true, data: rows });
 });
 
 pa.post('/subscriptions', async (c) => {

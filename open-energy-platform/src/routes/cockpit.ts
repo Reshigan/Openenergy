@@ -288,26 +288,53 @@ async function roleNationalStats(
   env: HonoEnv['Bindings'],
   user: { id: string; role: string },
 ): Promise<Record<string, unknown>> {
+  // Two-layer cache:
+  //   - Role-scoped blocks (regulator, grid_operator, admin) → one cache
+  //     entry per role, shared across every user in that role. Cuts the
+  //     D1 read to 1 per role per 30 s no matter how many users poll.
+  //   - Participant-scoped blocks (trader, lender, ipp_developer, offtaker,
+  //     carbon_fund) → per-user cache, same 30 s TTL.
+  //
+  // The outer /stats endpoint also caches the full response per-user for
+  // 30 s, so the role-level cache here only matters when a user with a
+  // shared role polls more than once inside the outer TTL (rare). The
+  // real win is when many admins / regulators all hit the dashboard at
+  // once: previously O(users) identical D1 queries, now 1.
   switch (user.role) {
     case 'regulator':
-      return regulatorStats(env);
+      return cachedBlock(env, 'cockpit:role:regulator', 30, () => regulatorStats(env));
     case 'grid_operator':
-      return gridOperatorStats(env);
-    case 'trader':
-      return traderStats(env, user.id);
-    case 'lender':
-      return lenderStats(env, user.id);
-    case 'ipp_developer':
-      return ippStats(env, user.id);
-    case 'offtaker':
-      return offtakerStats(env, user.id);
-    case 'carbon_fund':
-      return carbonStats(env, user.id);
+      return cachedBlock(env, 'cockpit:role:grid_operator', 30, () => gridOperatorStats(env));
     case 'admin':
-      return adminStats(env);
+      return cachedBlock(env, 'cockpit:role:admin', 30, () => adminStats(env));
+    case 'trader':
+      return cachedBlock(env, `cockpit:user:trader:${user.id}`, 30, () => traderStats(env, user.id));
+    case 'lender':
+      return cachedBlock(env, `cockpit:user:lender:${user.id}`, 30, () => lenderStats(env, user.id));
+    case 'ipp_developer':
+      return cachedBlock(env, `cockpit:user:ipp:${user.id}`, 30, () => ippStats(env, user.id));
+    case 'offtaker':
+      return cachedBlock(env, `cockpit:user:offtaker:${user.id}`, 30, () => offtakerStats(env, user.id));
+    case 'carbon_fund':
+      return cachedBlock(env, `cockpit:user:carbon:${user.id}`, 30, () => carbonStats(env, user.id));
     default:
       return {};
   }
+}
+
+async function cachedBlock(
+  env: HonoEnv['Bindings'],
+  key: string,
+  ttlSeconds: number,
+  compute: () => Promise<Record<string, unknown>>,
+): Promise<Record<string, unknown>> {
+  try {
+    const hit = await env.KV.get(key, 'json') as Record<string, unknown> | null;
+    if (hit) return hit;
+  } catch { /* KV miss → DB */ }
+  const fresh = await compute();
+  try { await env.KV.put(key, JSON.stringify(fresh), { expirationTtl: ttlSeconds }); } catch { /* soft */ }
+  return fresh;
 }
 
 async function regulatorStats(env: HonoEnv['Bindings']): Promise<Record<string, unknown>> {

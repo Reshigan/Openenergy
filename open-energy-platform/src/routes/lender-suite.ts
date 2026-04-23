@@ -13,6 +13,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { evaluateCovenant, runWaterfall, dscr, llcr } from '../utils/covenants';
 import { fireCascade } from '../utils/cascade';
+import { cachedAll, invalidateReference } from '../utils/reference-cache';
 
 const lender = new Hono<HonoEnv>();
 lender.use('*', authMiddleware);
@@ -375,8 +376,15 @@ lender.get('/reserves', async (c) => {
 
 // ─── Stress scenarios ──────────────────────────────────────────────────────
 lender.get('/stress/scenarios', async (c) => {
-  const rs = await c.env.DB.prepare(`SELECT * FROM stress_scenarios ORDER BY scenario_name`).all();
-  return c.json({ success: true, data: rs.results || [] });
+  // Stress scenarios are defined centrally and rarely change. 1 h TTL.
+  const rows = await cachedAll(
+    c.env as unknown as { DB: HonoEnv['Bindings']['DB']; KV: HonoEnv['Bindings']['KV'] },
+    'stress_scenarios',
+    `SELECT id, scenario_name, description, parameters_json, created_at
+       FROM stress_scenarios ORDER BY scenario_name`,
+    { ttlSeconds: 3600 },
+  );
+  return c.json({ success: true, data: rows });
 });
 
 lender.post('/stress/scenarios', async (c) => {
@@ -394,6 +402,13 @@ lender.post('/stress/scenarios', async (c) => {
     user.id,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM stress_scenarios WHERE id = ?').bind(id).first();
+  // Bust the cache so the new scenario shows up on the next list call.
+  c.executionCtx?.waitUntil?.(
+    invalidateReference(
+      c.env as unknown as { DB: HonoEnv['Bindings']['DB']; KV: HonoEnv['Bindings']['KV'] },
+      'stress_scenarios',
+    ),
+  );
   return c.json({ success: true, data: row }, 201);
 });
 

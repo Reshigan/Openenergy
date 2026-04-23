@@ -11,6 +11,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { cachedAll } from '../utils/reference-cache';
 
 const gridOps = new Hono<HonoEnv>();
 gridOps.use('*', authMiddleware);
@@ -200,19 +201,39 @@ gridOps.post('/dispatch/instructions', async (c) => {
     if (!b[k]) return c.json({ success: false, error: `${k} is required` }, 400);
   }
   const id = genId('di');
+  const issuedAt = new Date().toISOString();
   await c.env.DB.prepare(
     `INSERT INTO dispatch_instructions
        (id, instruction_number, participant_id, site_id, instruction_type,
-        effective_from, effective_to, target_mw, reason, grid_constraint_id,
+        issued_at, effective_from, effective_to, target_mw, reason, grid_constraint_id,
         status, issued_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'issued', ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'issued', ?)`,
   ).bind(
     id, b.instruction_number, b.participant_id, b.site_id || null,
-    b.instruction_type, b.effective_from, b.effective_to || null,
+    b.instruction_type, issuedAt, b.effective_from, b.effective_to || null,
     b.target_mw == null ? null : Number(b.target_mw),
     b.reason, b.grid_constraint_id || null, user.id,
   ).run();
-  const row = await c.env.DB.prepare('SELECT * FROM dispatch_instructions WHERE id = ?').bind(id).first();
+  // Echo the inserted row directly — skips the re-SELECT round-trip.
+  const row = {
+    id,
+    instruction_number: b.instruction_number,
+    participant_id: b.participant_id,
+    site_id: b.site_id || null,
+    instruction_type: b.instruction_type,
+    issued_at: issuedAt,
+    effective_from: b.effective_from,
+    effective_to: b.effective_to || null,
+    target_mw: b.target_mw == null ? null : Number(b.target_mw),
+    reason: b.reason,
+    grid_constraint_id: b.grid_constraint_id || null,
+    status: 'issued',
+    issued_by: user.id,
+    acknowledged_at: null,
+    acknowledgement_by: null,
+    compliance_evidence_r2_key: null,
+    penalty_amount_zar: null,
+  };
   await fireCascade({
     event: 'grid.instruction_issued',
     actor_id: user.id,
@@ -309,18 +330,34 @@ gridOps.post('/curtailment-notices', async (c) => {
     if (!b[k]) return c.json({ success: false, error: `${k} is required` }, 400);
   }
   const id = genId('cn');
+  const issuedAt = new Date().toISOString();
+  const severity = (b.severity as string) || 'advisory';
   await c.env.DB.prepare(
     `INSERT INTO curtailment_notices
-       (id, notice_number, effective_from, effective_to, affected_zone,
+       (id, notice_number, issued_at, effective_from, effective_to, affected_zone,
         reason, curtailment_mw, severity, status, issued_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE(?, 'advisory'), 'active', ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
   ).bind(
-    id, b.notice_number, b.effective_from, b.effective_to || null,
+    id, b.notice_number, issuedAt, b.effective_from, b.effective_to || null,
     b.affected_zone || null, b.reason,
     b.curtailment_mw == null ? null : Number(b.curtailment_mw),
-    b.severity || null, user.id,
+    severity, user.id,
   ).run();
-  const row = await c.env.DB.prepare('SELECT * FROM curtailment_notices WHERE id = ?').bind(id).first();
+  // Echo inserted payload — saves the re-SELECT on a high-fan-out event.
+  const row = {
+    id,
+    notice_number: b.notice_number,
+    issued_at: issuedAt,
+    effective_from: b.effective_from,
+    effective_to: b.effective_to || null,
+    affected_zone: b.affected_zone || null,
+    reason: b.reason,
+    curtailment_mw: b.curtailment_mw == null ? null : Number(b.curtailment_mw),
+    severity,
+    status: 'active',
+    lifted_at: null,
+    issued_by: user.id,
+  };
   await fireCascade({
     event: 'grid.curtailment_issued',
     actor_id: user.id,
@@ -358,10 +395,17 @@ gridOps.get('/curtailment-notices', async (c) => {
 
 // ─── Ancillary services ────────────────────────────────────────────────────
 gridOps.get('/ancillary/products', async (c) => {
-  const rs = await c.env.DB.prepare(
-    `SELECT * FROM ancillary_service_products WHERE enabled = 1 ORDER BY service_type`,
-  ).all();
-  return c.json({ success: true, data: rs.results || [] });
+  // Ancillary products change ≤ once per regulatory cycle. Cache in KV
+  // for 1 hour so the tender-creation page doesn't hit D1 on every load.
+  const rows = await cachedAll(
+    c.env as unknown as { DB: HonoEnv['Bindings']['DB']; KV: HonoEnv['Bindings']['KV'] },
+    'ancillary_products',
+    `SELECT id, product_code, product_name, service_type, description,
+            min_capacity_mw, product_duration_hours, enabled
+       FROM ancillary_service_products WHERE enabled = 1 ORDER BY service_type`,
+    { ttlSeconds: 3600 },
+  );
+  return c.json({ success: true, data: rows });
 });
 
 gridOps.post('/ancillary/tenders', async (c) => {

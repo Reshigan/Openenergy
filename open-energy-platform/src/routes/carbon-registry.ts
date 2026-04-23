@@ -9,6 +9,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { applyOffsetAllowance, rangeOverlaps } from '../utils/carbon-tax';
 import { fireCascade } from '../utils/cascade';
+import { cachedAll } from '../utils/reference-cache';
 
 const cr = new Hono<HonoEnv>();
 cr.use('*', authMiddleware);
@@ -20,10 +21,18 @@ function genId(p: string) { return `${p}_${Date.now().toString(36)}${Math.random
 
 // ─── Registry metadata ─────────────────────────────────────────────────────
 cr.get('/registries', async (c) => {
-  const rs = await c.env.DB.prepare(
-    `SELECT * FROM carbon_registries WHERE enabled = 1 ORDER BY registry_name`,
-  ).all();
-  return c.json({ success: true, data: rs.results || [] });
+  // The registry catalog is operator-maintained and changes rarely
+  // (adding a new domestic registry is a once-per-year event). Cache
+  // in KV for 1 hour to eliminate the per-page D1 read.
+  const rows = await cachedAll(
+    c.env as unknown as { DB: HonoEnv['Bindings']['DB']; KV: HonoEnv['Bindings']['KV'] },
+    'carbon_registries',
+    `SELECT id, registry_code, registry_name, registry_type,
+            api_base_url, sa_carbon_tax_eligible, enabled
+       FROM carbon_registries WHERE enabled = 1 ORDER BY registry_name`,
+    { ttlSeconds: 3600 },
+  );
+  return c.json({ success: true, data: rows });
 });
 
 cr.post('/registries/sync', async (c) => {

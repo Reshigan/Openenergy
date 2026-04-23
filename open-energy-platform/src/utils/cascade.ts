@@ -108,8 +108,16 @@ interface CascadeContext {
  * still reach DLQ but via runStage running inside the .catch chain.
  */
 export async function fireCascade(ctx: CascadeContext): Promise<void> {
-  await runStage(ctx, 'audit', () => createAuditLog(ctx, ctx.env));
-  await runStage(ctx, 'notifications', () => createNotifications(ctx, ctx.env));
+  // Fast path: collect every durable write (audit + N notification rows)
+  // into a single env.DB.batch() call. That's 1 D1 round-trip total for
+  // the stage that used to cost 1 + N. Falls back to per-stage execution
+  // if batch() fails (older D1 client, schema drift, etc.), preserving
+  // the existing retry + DLQ semantics.
+  const batched = await tryBatchAuditAndNotifications(ctx);
+  if (!batched) {
+    await runStage(ctx, 'audit', () => createAuditLog(ctx, ctx.env));
+    await runStage(ctx, 'notifications', () => createNotifications(ctx, ctx.env));
+  }
 
   // Webhooks run async so user-facing responses aren't blocked on slow
   // external endpoints. Terminal failure still lands in DLQ.
@@ -118,6 +126,53 @@ export async function fireCascade(ctx: CascadeContext): Promise<void> {
   });
 
   await runStage(ctx, 'special', () => handleSpecialCascades(ctx));
+}
+
+async function tryBatchAuditAndNotifications(ctx: CascadeContext): Promise<boolean> {
+  const db = ctx.env?.DB;
+  if (!db || typeof db.batch !== 'function') return false;
+  let recipients: string[];
+  try {
+    recipients = await determineNotificationRecipients(ctx, ctx.env);
+  } catch {
+    return false;
+  }
+  const auditStmt = db.prepare(
+    `INSERT INTO audit_logs (id, actor_id, action, entity_type, entity_id, changes, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(
+    generateId(),
+    ctx.actor_id || null,
+    ctx.event,
+    ctx.entity_type,
+    ctx.entity_id,
+    JSON.stringify(ctx.data || {}),
+    new Date().toISOString(),
+  );
+  const stmts: unknown[] = [auditStmt];
+  if (recipients.length > 0) {
+    const { title, body } = buildNotificationContent(ctx);
+    const type = ctx.event.split('.')[0];
+    const now = new Date().toISOString();
+    const dataJson = JSON.stringify(ctx.data || {});
+    for (const rid of recipients) {
+      stmts.push(
+        db.prepare(
+          `INSERT INTO notifications (id, participant_id, type, title, body, data, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        ).bind(generateId(), rid, type, title, body, dataJson, now),
+      );
+    }
+  }
+  try {
+    await db.batch(stmts);
+    return true;
+  } catch (err) {
+    // Batch failed — let the per-stage retry path handle it. Log so we
+    // notice if batch() is consistently failing.
+    console.warn('cascade_batch_failed', (err as Error).message);
+    return false;
+  }
 }
 
 interface RetryOptions {
