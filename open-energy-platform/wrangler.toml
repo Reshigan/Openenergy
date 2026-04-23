@@ -34,3 +34,15 @@ database_id = "e0665a44-2f3e-4ab6-8ec5-101af4e8f951"
 # keys required.
 [ai]
 binding = "AI"
+
+# Durable Object: price-time-priority matching engine. One DO per shard
+# (energy_type × delivery_day) so writes into the same book are serialised
+# without distributed locks. Classes live in src/do/*.ts and are exported
+# from src/index.ts so wrangler can resolve them.
+[[durable_objects.bindings]]
+name = "ORDER_BOOK"
+class_name = "OrderBook"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["OrderBook"]

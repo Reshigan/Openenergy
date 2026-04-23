@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { corsMiddleware, securityHeaders, rateLimitMiddleware, requestLogger } from './middleware/security';
 import { idempotency } from './middleware/idempotency';
 import { optionalAuth } from './middleware/auth';
+import { tenantQuotaMiddleware } from './middleware/tenant-quota';
 import { HonoEnv } from './utils/types';
 
 // Route imports
@@ -38,11 +39,25 @@ import loiRoutes from './routes/lois';
 import offtakerRoutes from './routes/offtaker';
 import funderRoutes from './routes/funder';
 import regulatorRoutes from './routes/regulator';
+import regulatorSuiteRoutes from './routes/regulator-suite';
+import gridOperatorRoutes from './routes/grid-operator';
+import traderRiskRoutes from './routes/trader-risk';
+import lenderSuiteRoutes from './routes/lender-suite';
+import ippLifecycleRoutes from './routes/ipp-lifecycle';
+import offtakerSuiteRoutes from './routes/offtaker-suite';
+import carbonRegistryRoutes from './routes/carbon-registry';
+import adminPlatformRoutes from './routes/admin-platform';
+import settlementAutoRoutes from './routes/settlement-automation';
+import dataTierRoutes from './routes/data-tier';
 import reportsRoutes from './routes/reports';
 import telemetryRoutes from './routes/telemetry';
 import monitoringRoutes from './routes/monitoring';
 import { logger } from './utils/logger';
 import backupRoutes from './routes/backup';
+
+// Durable Object exports — required for Cloudflare to resolve the
+// [[durable_objects.bindings]] class_name references in wrangler.toml.
+export { OrderBook } from './do/order-book';
 
 const app = new Hono<HonoEnv>();
 
@@ -59,6 +74,10 @@ app.use('*', requestLogger);
 app.use('*', optionalAuth);
 // Idempotency (no-op unless caller sends Idempotency-Key; see migration 013)
 app.use('*', idempotency);
+// Tenant-scoped quotas — runs after optionalAuth so we know the tenant, and
+// after idempotency so replays skip the counter. No-op when no tenant rule
+// is configured (falls open).
+app.use('/api/*', tenantQuotaMiddleware);
 
 // Health check
 app.get('/api/health', (c) => c.json({ status: 'healthy', version: '1.0.0' }));
@@ -98,6 +117,16 @@ app.route('/api/lois', loiRoutes);
 app.route('/api/offtaker', offtakerRoutes);
 app.route('/api/funder', funderRoutes);
 app.route('/api/regulator', regulatorRoutes);
+app.route('/api/regulator', regulatorSuiteRoutes);
+app.route('/api/grid-operator', gridOperatorRoutes);
+app.route('/api/trader-risk', traderRiskRoutes);
+app.route('/api/lender', lenderSuiteRoutes);
+app.route('/api/ipp', ippLifecycleRoutes);
+app.route('/api/offtaker-suite', offtakerSuiteRoutes);
+app.route('/api/carbon-registry', carbonRegistryRoutes);
+app.route('/api/admin-platform', adminPlatformRoutes);
+app.route('/api/settlement-auto', settlementAutoRoutes);
+app.route('/api/data-tier', dataTierRoutes);
 app.route('/api/reports', reportsRoutes);
 app.route('/api/telemetry', telemetryRoutes);
 app.route('/api/admin/monitoring', monitoringRoutes);

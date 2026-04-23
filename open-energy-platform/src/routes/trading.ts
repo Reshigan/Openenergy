@@ -5,6 +5,8 @@ import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import { ask } from '../utils/ai';
 import { withLock, LockBusyError } from '../utils/locks';
+import { deriveShardKey, MatchingOrder } from '../utils/matching';
+import type { DurableObjectNamespace } from '@cloudflare/workers-types';
 
 const trading = new Hono<HonoEnv>();
 trading.use('*', authMiddleware);
@@ -54,33 +56,178 @@ trading.get('/matches', async (c) => {
   return c.json({ success: true, data: matches.results || [] });
 });
 
-// POST /trading/orders — place a new order
+// POST /trading/orders — place a new order.
+//
+// Two behaviours:
+//   - `auto_match: true` (new): persist the order with remaining_volume_mwh
+//     set, then route it into the OrderBook Durable Object for immediate
+//     price-time-priority matching. DO returns fills; DB rows mutate via the
+//     DO writing back through D1.
+//   - default: legacy bilateral-order behaviour — persisted open, matched
+//     manually via POST /trading/match. Preserved so existing UI flows still
+//     work.
+//
+// Body: { side, energy_type, volume_mwh, price?, price_min?, price_max?,
+//         delivery_date?, delivery_point?, market_type?, order_type?,
+//         time_in_force?, auto_match?, external_ref? }
 trading.post('/orders', async (c) => {
   const user = getCurrentUser(c);
-  const { side, energy_type, volume_mwh, price_min, price_max, delivery_date, delivery_point, market_type } = await c.req.json();
+  const body = await c.req.json();
+  const {
+    side, energy_type, volume_mwh,
+    price, price_min, price_max,
+    delivery_date, delivery_point, market_type,
+    order_type, time_in_force,
+    auto_match, external_ref,
+  } = body as Record<string, unknown>;
 
   if (!side || !energy_type || !volume_mwh) {
     return c.json({ success: false, error: 'side, energy_type, volume_mwh are required' }, 400);
   }
 
+  // Idempotency: if an external_ref was supplied and we've seen it, return
+  // the existing order row.
+  if (typeof external_ref === 'string' && external_ref.length > 0) {
+    const existing = await c.env.DB.prepare(
+      `SELECT id, status FROM trade_orders WHERE external_ref = ? AND participant_id = ?`,
+    ).bind(external_ref, user.id).first();
+    if (existing) {
+      return c.json({ success: true, data: existing, idempotent: true });
+    }
+  }
+
+  const effectivePrice =
+    price != null ? Number(price)
+    : price_min != null ? Number(price_min)
+    : price_max != null ? Number(price_max)
+    : null;
+
   const orderId = 'ord_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
   const now = new Date().toISOString();
+  const shardKey = deriveShardKey(String(energy_type), delivery_date as string | null | undefined);
+  const vol = Number(volume_mwh);
+  const orderType = (order_type as string) || 'limit';
 
   await c.env.DB.prepare(`
-    INSERT INTO trade_orders (id, participant_id, side, energy_type, volume_mwh, price_min, price_max, delivery_date, delivery_point, market_type, status, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?)
-  `).bind(orderId, user.id, side, energy_type, volume_mwh, price_min ?? null, price_max ?? null, delivery_date || null, delivery_point || null, market_type || 'bilateral', now, now).run();
+    INSERT INTO trade_orders
+      (id, participant_id, side, energy_type, volume_mwh, remaining_volume_mwh,
+       price, price_min, price_max, delivery_date, delivery_point, market_type,
+       order_type, time_in_force, shard_key, external_ref,
+       status, created_at, updated_at, posted_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?)
+  `).bind(
+    orderId, user.id, side, energy_type, vol, vol,
+    effectivePrice,
+    price_min == null ? null : Number(price_min),
+    price_max == null ? null : Number(price_max),
+    delivery_date || null, delivery_point || null, (market_type as string) || 'bilateral',
+    orderType, (time_in_force as string) || 'gtc', shardKey, external_ref || null,
+    now, now, now,
+  ).run();
 
   await fireCascade({
     event: 'trade.order_placed',
     actor_id: user.id,
     entity_type: 'trade_orders',
     entity_id: orderId,
-    data: { side, energy_type, volume_mwh },
+    data: { side, energy_type, volume_mwh: vol },
     env: c.env,
   });
 
+  // Auto-match via the OrderBook DO if requested.
+  if (auto_match === true) {
+    const doMatch = await routeThroughOrderBook(c.env, shardKey, {
+      id: orderId,
+      participant_id: user.id,
+      side: side as 'buy' | 'sell',
+      price: effectivePrice,
+      volume_mwh: vol,
+      remaining_volume_mwh: vol,
+      posted_at: now,
+      order_type: orderType as MatchingOrder['order_type'],
+      shard_key: shardKey,
+    });
+    return c.json({
+      success: true,
+      data: { id: orderId, status: doMatch?.taker_status || 'open', fills: doMatch?.fills || [] },
+    }, 201);
+  }
+
   return c.json({ success: true, data: { id: orderId, status: 'open' } }, 201);
+});
+
+// Helper — dispatch a new order to the shard's Durable Object for matching.
+// Falls through (returns null) if DO binding isn't available (local dev).
+async function routeThroughOrderBook(
+  env: HonoEnv['Bindings'],
+  shardKey: string,
+  order: MatchingOrder,
+): Promise<{ taker_status: string; fills: unknown[] } | null> {
+  const doBinding = (env as unknown as { ORDER_BOOK?: DurableObjectNamespace }).ORDER_BOOK;
+  if (!doBinding) return null;
+  const id = doBinding.idFromName(shardKey);
+  const stub = doBinding.get(id);
+  const resp = await stub.fetch('https://order-book/post', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(order),
+  });
+  if (!resp.ok) return null;
+  const data = (await resp.json()) as { data?: { taker_status?: string; fills?: unknown[] } };
+  return {
+    taker_status: data.data?.taker_status || 'open',
+    fills: data.data?.fills || [],
+  };
+}
+
+// GET /trading/orderbook-depth — depth snapshot for a given shard.
+// Query: shard_key=solar|2026-04-23
+trading.get('/orderbook-depth', async (c) => {
+  const shardKey = c.req.query('shard_key');
+  if (!shardKey) {
+    return c.json({ success: false, error: 'shard_key query param required' }, 400);
+  }
+  const env = c.env as unknown as { ORDER_BOOK?: DurableObjectNamespace };
+  if (env.ORDER_BOOK) {
+    const id = env.ORDER_BOOK.idFromName(shardKey);
+    const stub = env.ORDER_BOOK.get(id);
+    const resp = await stub.fetch('https://order-book/depth', { method: 'GET' });
+    if (resp.ok) {
+      const data = await resp.json() as { data?: unknown };
+      return c.json({ success: true, data: data.data || null });
+    }
+  }
+  // Fallback to last persisted snapshot.
+  const row = await c.env.DB.prepare(
+    `SELECT * FROM order_book_depth WHERE shard_key = ? ORDER BY snapshot_at DESC LIMIT 1`,
+  ).bind(shardKey).first();
+  return c.json({ success: true, data: row || null });
+});
+
+// GET /trading/prints — public ticker, per shard per minute.
+trading.get('/prints', async (c) => {
+  const shardKey = c.req.query('shard_key');
+  const limit = Math.min(500, Number(c.req.query('limit') || 100));
+  const rs = shardKey
+    ? await c.env.DB.prepare(
+        `SELECT * FROM market_prints WHERE shard_key = ? ORDER BY minute_bucket DESC LIMIT ?`,
+      ).bind(shardKey, limit).all()
+    : await c.env.DB.prepare(
+        `SELECT * FROM market_prints ORDER BY minute_bucket DESC LIMIT ?`,
+      ).bind(limit).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+// GET /trading/fills — my executions with counterparty info.
+trading.get('/fills', async (c) => {
+  const user = getCurrentUser(c);
+  const rs = await c.env.DB.prepare(
+    `SELECT f.*, o.participant_id AS owner_id
+       FROM trade_fills f JOIN trade_orders o ON o.id = f.order_id
+      WHERE o.participant_id = ?
+      ORDER BY f.executed_at DESC LIMIT 500`,
+  ).bind(user.id).all();
+  return c.json({ success: true, data: rs.results || [] });
 });
 
 // POST /trading/orders/:id/cancel — cancel own order
