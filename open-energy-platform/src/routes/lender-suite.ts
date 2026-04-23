@@ -35,12 +35,13 @@ lender.post('/covenants', async (c) => {
     if (!b[k]) return c.json({ success: false, error: `${k} is required` }, 400);
   }
   const id = genId('cov');
+  const createdAt = new Date().toISOString();
   await c.env.DB.prepare(
     `INSERT INTO covenants
        (id, project_id, lender_participant_id, covenant_code, covenant_name, covenant_type,
         operator, threshold, threshold_upper, measurement_frequency, first_test_date,
-        waivable, material_adverse_effect, status, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
+        waivable, material_adverse_effect, status, notes, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
   ).bind(
     id, b.project_id || null, b.lender_participant_id || user.id,
     b.covenant_code, b.covenant_name, b.covenant_type, b.operator,
@@ -48,9 +49,27 @@ lender.post('/covenants', async (c) => {
     b.threshold_upper == null ? null : Number(b.threshold_upper),
     b.measurement_frequency, b.first_test_date || null,
     b.waivable ? 1 : 0, b.material_adverse_effect ? 1 : 0,
-    b.notes || null,
+    b.notes || null, createdAt,
   ).run();
-  const row = await c.env.DB.prepare('SELECT * FROM covenants WHERE id = ?').bind(id).first();
+  // Echo — skip the re-SELECT.
+  const row = {
+    id,
+    project_id: b.project_id || null,
+    lender_participant_id: b.lender_participant_id || user.id,
+    covenant_code: b.covenant_code,
+    covenant_name: b.covenant_name,
+    covenant_type: b.covenant_type,
+    operator: b.operator,
+    threshold: b.threshold == null ? null : Number(b.threshold),
+    threshold_upper: b.threshold_upper == null ? null : Number(b.threshold_upper),
+    measurement_frequency: b.measurement_frequency,
+    first_test_date: b.first_test_date || null,
+    waivable: b.waivable ? 1 : 0,
+    material_adverse_effect: b.material_adverse_effect ? 1 : 0,
+    status: 'active',
+    notes: b.notes || null,
+    created_at: createdAt,
+  };
   return c.json({ success: true, data: row }, 201);
 });
 

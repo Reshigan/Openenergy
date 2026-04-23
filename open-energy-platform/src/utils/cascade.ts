@@ -463,8 +463,8 @@ async function determineNotificationRecipients(ctx: CascadeContext, env: any): P
       break;
     }
     case 'ipp_projects': {
-      const proj = await env.DB.prepare('SELECT developer_id FROM ipp_projects WHERE id = ?').bind(ctx.entity_id).first();
-      if (proj) recipients.add(proj.developer_id);
+      const dev = await cachedProjectDeveloper(env, ctx.entity_id);
+      if (dev) recipients.add(dev);
       // Notify lenders too
       const lenders = await env.DB.prepare('SELECT DISTINCT investor_participant_id FROM fund_commitments fc JOIN energy_funds ef ON fc.fund_id = ef.id').all();
       lenders.results?.forEach((l: any) => recipients.add(l.investor_participant_id));
@@ -493,8 +493,8 @@ async function determineNotificationRecipients(ctx: CascadeContext, env: any): P
     case 'ona_faults': {
       const fault = await env.DB.prepare('SELECT sf.project_id FROM ona_faults sf WHERE sf.id = ?').bind(ctx.entity_id).first();
       if (fault) {
-        const proj = await env.DB.prepare('SELECT developer_id FROM ipp_projects WHERE id = ?').bind(fault.project_id).first();
-        if (proj) recipients.add(proj.developer_id);
+        const dev = await cachedProjectDeveloper(env, fault.project_id);
+        if (dev) recipients.add(dev);
         // Notify lenders of DSCR impact
         const lenders = await env.DB.prepare('SELECT investor_participant_id FROM fund_commitments').all();
         lenders.results?.forEach((l: any) => recipients.add(l.investor_participant_id));
@@ -568,24 +568,16 @@ async function determineNotificationRecipients(ctx: CascadeContext, env: any): P
       // Lender + IPP developer of the linked project.
       if (ctx.data?.lender_participant_id) recipients.add(ctx.data.lender_participant_id as string);
       if (ctx.data?.project_id) {
-        try {
-          const proj = await env.DB.prepare(
-            'SELECT developer_id FROM ipp_projects WHERE id = ?',
-          ).bind(ctx.data.project_id).first();
-          if (proj?.developer_id) recipients.add(proj.developer_id as string);
-        } catch { /* */ }
+        const dev = await cachedProjectDeveloper(env, ctx.data.project_id as string);
+        if (dev) recipients.add(dev);
       }
       break;
     }
     case 'ie_certifications': {
       if (ctx.data?.ie_participant_id) recipients.add(ctx.data.ie_participant_id as string);
       if (ctx.data?.project_id) {
-        try {
-          const proj = await env.DB.prepare(
-            'SELECT developer_id FROM ipp_projects WHERE id = ?',
-          ).bind(ctx.data.project_id).first();
-          if (proj?.developer_id) recipients.add(proj.developer_id as string);
-        } catch { /* */ }
+        const dev = await cachedProjectDeveloper(env, ctx.data.project_id as string);
+        if (dev) recipients.add(dev);
       }
       await addRolesTo(env, recipients, ['lender']);
       break;
@@ -600,12 +592,8 @@ async function determineNotificationRecipients(ctx: CascadeContext, env: any): P
     case 'community_engagements':
     case 'ed_sed_spend': {
       if (ctx.data?.project_id) {
-        try {
-          const proj = await env.DB.prepare(
-            'SELECT developer_id FROM ipp_projects WHERE id = ?',
-          ).bind(ctx.data.project_id).first();
-          if (proj?.developer_id) recipients.add(proj.developer_id as string);
-        } catch { /* */ }
+        const dev = await cachedProjectDeveloper(env, ctx.data.project_id as string);
+        if (dev) recipients.add(dev);
       }
       break;
     }
@@ -637,16 +625,108 @@ async function determineNotificationRecipients(ctx: CascadeContext, env: any): P
   return Array.from(recipients);
 }
 
-/** Add every active participant holding any of the listed roles to the recipients set. */
+/**
+ * Cached lookup of a project's developer_id. ipp_projects.developer_id is
+ * essentially immutable (ownership transfer is a legal event, not a
+ * runtime one) so a 1-hour TTL is safe. The cascade resolver calls this
+ * for every project-scoped event — EPC variations, insurance claims,
+ * environmental compliance, community engagement, ED/SED spend.
+ *
+ * Cache key: `cascade:project_developer:<project_id>`.
+ * Sentinel `__missing__` prevents repeat D1 hits for deleted projects.
+ */
+const PROJECT_DEV_CACHE_PREFIX = 'cascade:project_developer:';
+const PROJECT_DEV_TTL_SECONDS = 3600;
+const PROJECT_DEV_MISSING = '__missing__';
+
+async function cachedProjectDeveloper(
+  env: { DB: any; KV: any },
+  projectId: string,
+): Promise<string | null> {
+  const key = PROJECT_DEV_CACHE_PREFIX + projectId;
+  try {
+    const cached = await env.KV.get(key);
+    if (cached === PROJECT_DEV_MISSING) return null;
+    if (cached) return cached;
+  } catch { /* KV miss → DB */ }
+  try {
+    const row = await env.DB
+      .prepare('SELECT developer_id FROM ipp_projects WHERE id = ?')
+      .bind(projectId)
+      .first() as { developer_id?: string } | null;
+    const dev = row?.developer_id || null;
+    try {
+      await env.KV.put(key, dev ?? PROJECT_DEV_MISSING, { expirationTtl: PROJECT_DEV_TTL_SECONDS });
+    } catch { /* soft */ }
+    return dev;
+  } catch {
+    return null;
+  }
+}
+
+/** Drop the cached developer_id for a project. Call from the one place that
+ *  can change it (admin re-assignment). */
+export async function invalidateProjectDeveloperCache(
+  env: { KV: { delete: (k: string) => Promise<unknown> } },
+  projectId: string,
+): Promise<void> {
+  try { await env.KV.delete(PROJECT_DEV_CACHE_PREFIX + projectId); } catch { /* soft */ }
+}
+
+/**
+ * Add every active participant holding any of the listed roles to the
+ * recipients set.
+ *
+ * COST: fireCascade() invokes this once per cascade for the "broadcast to
+ * role" recipient groups. On a busy day that's hundreds of calls, each
+ * issuing an identical `SELECT id FROM participants WHERE role IN (...)`
+ * query that changes only when someone creates / suspends an account.
+ *
+ * We cache the result per role-group in KV for 60 s. Cache key is the
+ * sorted role list joined with `|`. Admin mutations that change a
+ * participant's role/status invalidate via `invalidateRoleRosterCache()`.
+ */
+const ROLE_ROSTER_CACHE_PREFIX = 'cascade:role_roster:';
+const ROLE_ROSTER_TTL_SECONDS = 60;
+
 async function addRolesTo(env: any, recipients: Set<string>, roles: string[]): Promise<void> {
   if (roles.length === 0) return;
+  const sortedKey = ROLE_ROSTER_CACHE_PREFIX + [...roles].sort().join('|');
+
+  try {
+    const cached = await env.KV.get(sortedKey, 'json') as string[] | null;
+    if (cached) {
+      for (const id of cached) recipients.add(id);
+      return;
+    }
+  } catch { /* KV miss → fall through to D1. */ }
+
   const placeholders = roles.map(() => '?').join(',');
   try {
     const rows = await env.DB.prepare(
       `SELECT id FROM participants WHERE role IN (${placeholders}) AND status = 'active' LIMIT 50`,
     ).bind(...roles).all();
-    for (const r of (rows.results || []) as Array<{ id: string }>) recipients.add(r.id);
-  } catch { /* swallow — cascade still runs for explicit recipients */ }
+    const ids = ((rows.results || []) as Array<{ id: string }>).map((r) => r.id);
+    for (const id of ids) recipients.add(id);
+    try {
+      await env.KV.put(sortedKey, JSON.stringify(ids), { expirationTtl: ROLE_ROSTER_TTL_SECONDS });
+    } catch { /* soft */ }
+  } catch {
+    /* swallow — cascade still runs for explicit recipients */
+  }
+}
+
+/**
+ * Drop every role-roster cache entry. The admin UI calls this when a
+ * participant's role or status changes. Over-broad by design: there's no
+ * cheap way to know which role-lists the participant appears in, so we
+ * clear them all. The cache rebuilds naturally within the TTL.
+ */
+export async function invalidateRoleRosterCache(env: { KV: { list: (opts: { prefix: string }) => Promise<{ keys: Array<{ name: string }> }>; delete: (k: string) => Promise<unknown> } }): Promise<void> {
+  try {
+    const list = await env.KV.list({ prefix: ROLE_ROSTER_CACHE_PREFIX });
+    await Promise.all(list.keys.map((k) => env.KV.delete(k.name).catch(() => null)));
+  } catch { /* soft */ }
 }
 
 function buildNotificationContent(ctx: CascadeContext): { title: string; body: string } {

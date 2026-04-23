@@ -4,6 +4,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser, hashPassword, invalidateTenantCache } from '../middleware/auth';
+import { invalidateRoleRosterCache } from '../utils/cascade';
 import { createPasswordResetToken, randomOpaqueToken, revokeAllSessionsForParticipant } from '../utils/auth-tokens';
 import { logPiiAccess, logPiiAccessBatch, inferAccessType } from '../utils/popia-access';
 
@@ -99,8 +100,14 @@ admin.put('/users/:id', async (c) => {
   `).bind('al_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6), user.id, id, JSON.stringify(body), new Date().toISOString()).run();
   // Tenant cache invalidation: this PUT updates role / status, and can be
   // used by the cross-tenant support tooling to move users. Either way the
-  // cached mapping is stale after this call.
+  // cached mapping is stale after this call. We also drop the cascade
+  // role-roster cache whenever role/status changed, since the cached
+  // recipient lists may now be wrong.
   c.executionCtx?.waitUntil?.(invalidateTenantCache(c.env, id));
+  const changedRoleOrStatus = 'role' in body || 'status' in body;
+  if (changedRoleOrStatus) {
+    c.executionCtx?.waitUntil?.(invalidateRoleRosterCache(c.env));
+  }
   return c.json({ success: true });
 });
 

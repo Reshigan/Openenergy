@@ -635,47 +635,97 @@ export async function runSurveillanceScan(env: HonoEnv['Bindings']): Promise<Arr
 
   const inserted: Array<{ rule_code: string; entity_id: string; participant_id: string | null; severity: string }> = [];
 
+  // COST: the previous scan ran N+1 queries per rule (1 detector + 1 exists
+  // check per finding). For a rule with 20 findings that was 21 queries.
+  // Now we pull every open/investigating alert for all rules in ONE query
+  // up-front, build a Set of `(rule_code|entity_id)` keys, and check
+  // membership in-memory. Inserts are batched via env.DB.batch().
+  const openSet = new Set<string>();
+  try {
+    const open = await env.DB.prepare(
+      `SELECT rule_code, entity_id FROM regulator_surveillance_alerts
+        WHERE status IN ('open','investigating') LIMIT 5000`,
+    ).all<{ rule_code: string; entity_id: string }>();
+    for (const r of open.results || []) openSet.add(`${r.rule_code}|${r.entity_id}`);
+  } catch {
+    /* If the bulk open-alerts query fails we fall back to per-finding
+       existence checks below so the scanner still makes forward progress. */
+  }
+
+  type PendingInsert = {
+    id: string;
+    rule: typeof rules[number];
+    finding: { entity_type: string; entity_id: string; participant_id: string | null; details: Record<string, unknown> };
+  };
+  const pending: PendingInsert[] = [];
+
   for (const rule of rules) {
     const params = safeParseJson(rule.parameters_json);
     const findings = await detectForRule(env, rule.rule_type, rule.rule_code, params);
     for (const f of findings) {
-      const exists = await env.DB.prepare(
-        `SELECT id FROM regulator_surveillance_alerts
-           WHERE rule_code = ? AND entity_id = ? AND status IN ('open','investigating')`,
-      ).bind(rule.rule_code, f.entity_id).first();
-      if (exists) continue;
-      const id = `rsa_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
-      await env.DB.prepare(
-        `INSERT INTO regulator_surveillance_alerts
-           (id, rule_id, rule_code, participant_id, entity_type, entity_id, severity, details_json, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open')`,
-      ).bind(
-        id, rule.id, rule.rule_code, f.participant_id, f.entity_type, f.entity_id,
-        rule.severity, JSON.stringify(f.details),
-      ).run();
-      // Fire the cascade so regulators + flagged participants get a
-      // notification. Only critical/high alerts push — medium/low are
-      // viewable in the workbench but don't page people.
-      if (rule.severity === 'critical' || rule.severity === 'high') {
-        await fireCascade({
-          event: 'regulator.surveillance_alert_raised',
-          entity_type: 'regulator_surveillance_alerts',
-          entity_id: id,
-          data: {
-            rule_code: rule.rule_code,
-            severity: rule.severity,
-            participant_id: f.participant_id,
-          },
-          env,
-        });
+      const k = `${rule.rule_code}|${f.entity_id}`;
+      if (openSet.has(k)) continue;
+      // Mark as intended-inserted so two findings from different rules
+      // with the same (rule_code, entity_id) in the same scan don't
+      // double-insert.
+      openSet.add(k);
+      const id = `rsa_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}${pending.length}`;
+      pending.push({ id, rule, finding: f });
+    }
+  }
+
+  if (pending.length > 0) {
+    try {
+      await env.DB.batch(pending.map((p) =>
+        env.DB.prepare(
+          `INSERT INTO regulator_surveillance_alerts
+             (id, rule_id, rule_code, participant_id, entity_type, entity_id, severity, details_json, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open')`,
+        ).bind(
+          p.id, p.rule.id, p.rule.rule_code, p.finding.participant_id,
+          p.finding.entity_type, p.finding.entity_id,
+          p.rule.severity, JSON.stringify(p.finding.details),
+        ),
+      ));
+    } catch (err) {
+      console.warn('surveillance_insert_batch_failed', (err as Error).message);
+      for (const p of pending) {
+        try {
+          await env.DB.prepare(
+            `INSERT INTO regulator_surveillance_alerts
+               (id, rule_id, rule_code, participant_id, entity_type, entity_id, severity, details_json, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open')`,
+          ).bind(
+            p.id, p.rule.id, p.rule.rule_code, p.finding.participant_id,
+            p.finding.entity_type, p.finding.entity_id,
+            p.rule.severity, JSON.stringify(p.finding.details),
+          ).run();
+        } catch { /* skip */ }
       }
-      inserted.push({
-        rule_code: rule.rule_code,
-        entity_id: f.entity_id,
-        participant_id: f.participant_id,
-        severity: rule.severity,
+    }
+  }
+
+  for (const p of pending) {
+    // Cascade only for high/critical severity (see prior comment).
+    if (p.rule.severity === 'critical' || p.rule.severity === 'high') {
+      await fireCascade({
+        event: 'regulator.surveillance_alert_raised',
+        entity_type: 'regulator_surveillance_alerts',
+        entity_id: p.id,
+        data: {
+          rule_code: p.rule.rule_code,
+          severity: p.rule.severity,
+          participant_id: p.finding.participant_id,
+        },
+        env,
       });
     }
+    inserted.push({
+      rule_code: p.rule.rule_code,
+      entity_id: p.finding.entity_id,
+      participant_id: p.finding.participant_id,
+      severity: p.rule.severity,
+    });
   }
   return inserted;
 }
