@@ -34,14 +34,18 @@ import ForgotPassword from './components/pages/ForgotPassword';
 import ResetPassword from './components/pages/ResetPassword';
 import Security from './components/pages/Security';
 import Settings from './components/pages/Settings';
-import { RegulatorSuitePage } from './components/pages/RegulatorSuitePage';
-import { GridOperatorSuitePage } from './components/pages/GridOperatorSuitePage';
-import { TraderRiskPage } from './components/pages/TraderRiskPage';
-import { LenderSuitePage } from './components/pages/LenderSuitePage';
-import { IppLifecyclePage } from './components/pages/IppLifecyclePage';
-import { OfftakerSuitePage } from './components/pages/OfftakerSuitePage';
-import { CarbonRegistryPage } from './components/pages/CarbonRegistryPage';
-import { AdminPlatformPage } from './components/pages/AdminPlatformPage';
+
+// National-scale workbenches — code-split so the initial bundle stays small.
+// Each suite page pulls in a significant amount of form-builder code; users
+// only pay for the workbench relevant to their role.
+const RegulatorSuitePage   = React.lazy(() => import('./components/pages/RegulatorSuitePage').then(m => ({ default: m.RegulatorSuitePage })));
+const GridOperatorSuitePage = React.lazy(() => import('./components/pages/GridOperatorSuitePage').then(m => ({ default: m.GridOperatorSuitePage })));
+const TraderRiskPage        = React.lazy(() => import('./components/pages/TraderRiskPage').then(m => ({ default: m.TraderRiskPage })));
+const LenderSuitePage       = React.lazy(() => import('./components/pages/LenderSuitePage').then(m => ({ default: m.LenderSuitePage })));
+const IppLifecyclePage      = React.lazy(() => import('./components/pages/IppLifecyclePage').then(m => ({ default: m.IppLifecyclePage })));
+const OfftakerSuitePage     = React.lazy(() => import('./components/pages/OfftakerSuitePage').then(m => ({ default: m.OfftakerSuitePage })));
+const CarbonRegistryPage    = React.lazy(() => import('./components/pages/CarbonRegistryPage').then(m => ({ default: m.CarbonRegistryPage })));
+const AdminPlatformPage     = React.lazy(() => import('./components/pages/AdminPlatformPage').then(m => ({ default: m.AdminPlatformPage })));
 import { Skeleton } from './components/Skeleton';
 import { EmptyState } from './components/EmptyState';
 import { ErrorBanner } from './components/ErrorBanner';
@@ -52,6 +56,27 @@ import { EntityLink } from './components/EntityLink';
 
 // Export formatZAR utility
 export const formatZAR = (val: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(val);
+
+// LazyWorkbench — Suspense shell for the code-split national suite pages.
+// Shows a skeleton while the chunk downloads; chunks are ~50-80 KB each so
+// on a modern connection this is imperceptible but keeps first-paint fast.
+function LazyWorkbench({ children }: { children: ReactNode }) {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="p-6 max-w-7xl mx-auto space-y-4">
+          <div className="skeleton h-8 w-64" />
+          <div className="skeleton h-5 w-96" />
+          <div className="rounded-xl border border-[#e5e5e5] bg-white p-6 space-y-3">
+            {[1,2,3,4].map((i) => <div key={i} className="skeleton h-5 w-full" />)}
+          </div>
+        </div>
+      }
+    >
+      {children}
+    </React.Suspense>
+  );
+}
 
 // Protected Route Wrapper
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -1159,15 +1184,15 @@ function AppRoutes() {
       <Route path="/intelligence" element={<ProtectedRoute><Layout><Intelligence /></Layout></ProtectedRoute>} />
       <Route path="/popia" element={<ProtectedRoute><Layout><Popia /></Layout></ProtectedRoute>} />
       <Route path="/briefing" element={<ProtectedRoute><Layout><Briefing /></Layout></ProtectedRoute>} />
-      {/* National-scale suite pages — role-guarded at the API layer. */}
-      <Route path="/regulator-suite" element={<ProtectedRoute><Layout><RegulatorSuitePage /></Layout></ProtectedRoute>} />
-      <Route path="/grid-operator" element={<ProtectedRoute><Layout><GridOperatorSuitePage /></Layout></ProtectedRoute>} />
-      <Route path="/trader-risk" element={<ProtectedRoute><Layout><TraderRiskPage /></Layout></ProtectedRoute>} />
-      <Route path="/lender-suite" element={<ProtectedRoute><Layout><LenderSuitePage /></Layout></ProtectedRoute>} />
-      <Route path="/ipp-lifecycle" element={<ProtectedRoute><Layout><IppLifecyclePage /></Layout></ProtectedRoute>} />
-      <Route path="/offtaker-suite" element={<ProtectedRoute><Layout><OfftakerSuitePage /></Layout></ProtectedRoute>} />
-      <Route path="/carbon-registry" element={<ProtectedRoute><Layout><CarbonRegistryPage /></Layout></ProtectedRoute>} />
-      <Route path="/admin-platform" element={<ProtectedRoute><Layout><AdminPlatformPage /></Layout></ProtectedRoute>} />
+      {/* National-scale suite pages — code-split + role-guarded at the API layer. */}
+      <Route path="/regulator-suite" element={<ProtectedRoute><Layout><LazyWorkbench><RegulatorSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/grid-operator" element={<ProtectedRoute><Layout><LazyWorkbench><GridOperatorSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/trader-risk" element={<ProtectedRoute><Layout><LazyWorkbench><TraderRiskPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/lender-suite" element={<ProtectedRoute><Layout><LazyWorkbench><LenderSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/ipp-lifecycle" element={<ProtectedRoute><Layout><LazyWorkbench><IppLifecyclePage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/offtaker-suite" element={<ProtectedRoute><Layout><LazyWorkbench><OfftakerSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/carbon-registry" element={<ProtectedRoute><Layout><LazyWorkbench><CarbonRegistryPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/admin-platform" element={<ProtectedRoute><Layout><LazyWorkbench><AdminPlatformPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/cockpit" replace />} />
       <Route path="*" element={<Navigate to="/cockpit" replace />} />
     </Routes>

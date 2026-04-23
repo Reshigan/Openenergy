@@ -47,6 +47,15 @@ class_name = "OrderBook"
 tag = "v1"
 new_sqlite_classes = ["OrderBook"]
 
+# Hyperdrive — Postgres target for the high-volume metering_readings table.
+# Commented out until the operator has provisioned a Postgres (Neon or RDS)
+# and run `wrangler hyperdrive create`. See
+# docs/runbooks/data-tier-scaling-plan.md for the full cut-over.
+# [[hyperdrive]]
+# binding = "HYPERDRIVE_DB"
+# id = "<hyperdrive-id-returned-by-wrangler>"
+# localConnectionString = "postgres://oe:oe@127.0.0.1:5432/openenergy"
+
 # Scheduled handlers — the Worker's `scheduled()` export in src/index.ts
 # dispatches by cron pattern. Each entry maps to a named job inside the
 # handler. Cloudflare runs these independently of HTTP traffic.

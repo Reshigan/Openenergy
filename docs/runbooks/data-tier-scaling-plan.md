@@ -174,6 +174,26 @@ These stay on D1 — fine for national scale:
 
 ---
 
+## 7.5 · What's in-code today (PR-National-6)
+
+Shipped in advance of the cut-over:
+
+- **Postgres schema** — [migrations/postgres/001_metering_schema.sql](../../open-energy-platform/migrations/postgres/001_metering_schema.sql) declares the RANGE-partitioned `metering_readings` parent + monthly child partitions (−12 months through +3 months) plus the daily rollup mirror.
+- **Hyperdrive binding** — the `HYPERDRIVE_DB` binding is declared in [src/utils/types.ts](../../open-energy-platform/src/utils/types.ts) (`HonoEnv`) and reserved in [wrangler.toml](../../open-energy-platform/wrangler.toml) with a commented-out `[[hyperdrive]]` block ready to uncomment once the operator runs `wrangler hyperdrive create`.
+- **Dual-write façade** — [src/utils/hyperdrive.ts](../../open-energy-platform/src/utils/hyperdrive.ts) exports `insertMeteringReading()`. When the binding is present, it writes to Postgres (authoritative) and dual-writes to D1 for the overlap window. When absent it falls through to D1 transparently. Already wired into the HMAC-authenticated meter ingest endpoint (`POST /api/settlement-auto/ingest/push`).
+- **Read path switch** — `readFromHyperdrive(env)` reads the `METERING_READ_SOURCE` env var; operator flips it from unset → `hyperdrive` once satisfied with the dual-write window.
+- **Tests** — [tests/hyperdrive.test.ts](../../open-energy-platform/tests/hyperdrive.test.ts) exercises all four branches of the façade (D1-only, primary+dual, primary-only, Postgres-fail-fallback).
+
+Switch-over checklist once Hyperdrive is provisioned:
+
+1. `wrangler hyperdrive create open-energy-metering --connection-string "postgres://..."`
+2. Uncomment the `[[hyperdrive]]` block in wrangler.toml with the returned ID.
+3. `psql "$HYPERDRIVE_PG_URL" -f migrations/postgres/001_metering_schema.sql`.
+4. `wrangler deploy` — worker comes up with dual-write enabled.
+5. Verify: `SELECT COUNT(*) FROM metering_readings` in Postgres matches the D1 count + any new rows from the last 5 minutes.
+6. After 2 weeks of parity: `wrangler secret put METERING_READ_SOURCE` → `hyperdrive`. Dashboards now read from Postgres.
+7. After another 2 weeks: set `dualWrite: false` call-site in ingest, drop the D1 `metering_readings` rows, rely on Postgres + R2 archives.
+
 ## 8 · Exit criteria
 
 When the migration is done, the following are true:

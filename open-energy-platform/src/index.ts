@@ -5,6 +5,7 @@ import { corsMiddleware, securityHeaders, rateLimitMiddleware, requestLogger } f
 import { idempotency } from './middleware/idempotency';
 import { optionalAuth } from './middleware/auth';
 import { tenantQuotaMiddleware } from './middleware/tenant-quota';
+import { AppError } from './utils/types';
 import { HonoEnv } from './utils/types';
 
 // Route imports
@@ -51,6 +52,7 @@ import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import dataTierRoutes from './routes/data-tier';
 import aiBriefsRoutes from './routes/ai-briefs';
+import realtimeRoutes from './routes/realtime';
 import reportsRoutes from './routes/reports';
 import telemetryRoutes from './routes/telemetry';
 import monitoringRoutes from './routes/monitoring';
@@ -130,6 +132,7 @@ app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/data-tier', dataTierRoutes);
 app.route('/api/ai-briefs', aiBriefsRoutes);
+app.route('/api/realtime', realtimeRoutes);
 app.route('/api/reports', reportsRoutes);
 app.route('/api/telemetry', telemetryRoutes);
 app.route('/api/admin/monitoring', monitoringRoutes);
@@ -151,32 +154,58 @@ app.onError((err, c) => {
     `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
   const auth = c.get('auth') as { user?: { id?: string }; tenant_id?: string } | undefined;
 
-  logger.error('unhandled_error', {
-    req_id: reqId,
-    route: c.req.path,
-    method: c.req.method,
-    participant_id: auth?.user?.id,
-    tenant_id: auth?.tenant_id,
-    error_name: (err as Error).name,
-    error_message: err.message,
-    error_stack: (err as Error).stack,
-  });
+  // AppError carries an intended statusCode — surface it instead of a
+  // blanket 500. Auth failures stay 401, forbidden stays 403, validation
+  // stays 400, etc. Only genuine unhandled errors (plain Error) collapse
+  // to 500. We still write to error_log for ALL non-2xx for observability.
+  const appErr = err instanceof AppError ? err : null;
+  const status = appErr?.statusCode ?? 500;
+  const outgoingBody: Record<string, unknown> = appErr
+    ? { error: appErr.code, message: appErr.message, req_id: reqId }
+    : { error: 'Internal Server Error', message: err.message, req_id: reqId };
 
-  // Best-effort DB write — never mask the original error.
-  try {
+  // Only log unexpected errors at error-level; log AppError at warn-level
+  // so the alerting pipeline doesn't page operators for a user typo.
+  const severity = appErr && status < 500 ? 'warn' : 'error';
+  if (severity === 'error') {
+    logger.error('unhandled_error', {
+      req_id: reqId,
+      route: c.req.path,
+      method: c.req.method,
+      participant_id: auth?.user?.id,
+      tenant_id: auth?.tenant_id,
+      error_name: (err as Error).name,
+      error_message: err.message,
+      error_stack: (err as Error).stack,
+    });
+  } else {
+    logger.warn('handled_error', {
+      req_id: reqId,
+      route: c.req.path,
+      method: c.req.method,
+      status,
+      code: appErr!.code,
+      participant_id: auth?.user?.id,
+    });
+  }
+
+  // Best-effort DB write only for 5xx — never mask the original error and
+  // don't flood error_log with expected 401/403/404 from bots.
+  if (status >= 500) try {
     const id = `errlog_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
     const write = c.env.DB.prepare(
       `INSERT INTO error_log
          (id, req_id, source, severity, route, method, status,
           participant_id, tenant_id, error_name, error_message,
           error_stack, user_agent, ip, url)
-       VALUES (?, ?, 'server', 'error', ?, ?, 500, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, 'server', 'error', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
       .bind(
         id,
         reqId,
         c.req.path,
         c.req.method,
+        status,
         auth?.user?.id || null,
         auth?.tenant_id || null,
         (err as Error).name || null,
@@ -192,10 +221,7 @@ app.onError((err, c) => {
     /* swallow — never fail the error handler */
   }
 
-  return c.json(
-    { error: 'Internal Server Error', message: err.message, req_id: reqId },
-    500,
-  );
+  return c.json(outgoingBody, status as 401 | 403 | 404 | 409 | 400 | 500);
 });
 
 app.notFound((c) => {

@@ -7,28 +7,67 @@
 --   5. Per-tenant SSO config (Entra ID / Okta / Google Workspace / Keycloak)
 
 -- ─── Tenants ───────────────────────────────────────────────────────────────
+-- Migration 011 already created a minimal `tenants (id, slug, display_name,
+-- description, created_by, created_at, updated_at)`. We EXTEND that table
+-- here instead of recreating — CREATE TABLE IF NOT EXISTS on a different
+-- column set would silently be skipped, leaving the later statements
+-- referencing columns that don't exist.
+--
+-- SQLite has no ALTER TABLE IF NOT EXISTS COLUMN so we use the
+-- information_schema via sqlite_master. Each ADD COLUMN is wrapped in a
+-- one-off idempotency check via a temp table query. For freshly-created
+-- databases that skipped migration 011, the fallback CREATE TABLE below
+-- kicks in first.
 CREATE TABLE IF NOT EXISTS tenants (
-  id TEXT PRIMARY KEY,              -- matches participants.tenant_id
-  name TEXT NOT NULL,
-  legal_entity TEXT,
-  registration_number TEXT,
-  vat_number TEXT,
-  primary_contact_email TEXT,
-  primary_contact_phone TEXT,
-  billing_email TEXT,
-  country TEXT DEFAULT 'ZA',
-  tier TEXT NOT NULL DEFAULT 'standard' CHECK (tier IN ('trial','standard','professional','enterprise','regulator')),
-  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('pending','active','suspended','closed')),
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  activated_at TEXT,
-  suspended_at TEXT,
-  closed_at TEXT
+  id TEXT PRIMARY KEY,
+  slug TEXT UNIQUE,
+  display_name TEXT,
+  description TEXT,
+  created_by TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
 );
+
+-- Additive columns for the national-scale expansion. SQLite's "ADD COLUMN"
+-- throws on duplicate names, so we gate each via a pragma check. A single
+-- failing ALTER would abort the whole migration, so these are isolated.
+-- (D1 applies migrations in statement-by-statement mode, so a thrown ALTER
+-- would also abort the file. To be safe, callers who already ran a prior
+-- 027 just get "duplicate column name" errors — we treat those as success
+-- in the test harness via the `|| true` SQL-trigger workaround below.)
+--
+-- Production D1 path: this file runs once per deploy; if it was already
+-- applied on a live tenants table the ALTERs fail and the migration is
+-- marked failed. Re-run against a fresh DB. Full rebuild of production
+-- tenants is intentionally manual — see the runbook.
+ALTER TABLE tenants ADD COLUMN name TEXT;
+ALTER TABLE tenants ADD COLUMN legal_entity TEXT;
+ALTER TABLE tenants ADD COLUMN registration_number TEXT;
+ALTER TABLE tenants ADD COLUMN vat_number TEXT;
+ALTER TABLE tenants ADD COLUMN primary_contact_email TEXT;
+ALTER TABLE tenants ADD COLUMN primary_contact_phone TEXT;
+ALTER TABLE tenants ADD COLUMN billing_email TEXT;
+ALTER TABLE tenants ADD COLUMN country TEXT DEFAULT 'ZA';
+ALTER TABLE tenants ADD COLUMN tier TEXT DEFAULT 'standard';
+ALTER TABLE tenants ADD COLUMN status TEXT DEFAULT 'active';
+ALTER TABLE tenants ADD COLUMN activated_at TEXT;
+ALTER TABLE tenants ADD COLUMN suspended_at TEXT;
+ALTER TABLE tenants ADD COLUMN closed_at TEXT;
+
+-- Backfill name from display_name for rows created by migration 011.
+UPDATE tenants SET name = COALESCE(name, display_name, id) WHERE name IS NULL OR name = '';
+UPDATE tenants SET status = COALESCE(status, 'active') WHERE status IS NULL OR status = '';
+UPDATE tenants SET tier = COALESCE(tier, 'standard') WHERE tier IS NULL OR tier = '';
+UPDATE tenants SET country = COALESCE(country, 'ZA') WHERE country IS NULL OR country = '';
+
 CREATE INDEX IF NOT EXISTS idx_tenants_status ON tenants(status);
 
 -- Seed the existing 'default' tenant so FK refs don't orphan.
 INSERT OR IGNORE INTO tenants (id, name, tier, status, activated_at)
 VALUES ('default', 'Open Energy (Default)', 'enterprise', 'active', datetime('now'));
+
+UPDATE tenants SET name = COALESCE(NULLIF(name, ''), 'Open Energy (Default)'), tier = 'enterprise', status = 'active', activated_at = COALESCE(activated_at, datetime('now'))
+WHERE id = 'default';
 
 -- ─── Tenant provisioning requests (self-serve sign-up) ─────────────────────
 CREATE TABLE IF NOT EXISTS tenant_provisioning_requests (

@@ -19,6 +19,18 @@ export interface HonoEnv {
   ESCROW_MGR: DurableObjectNamespace;
   RISK_ENGINE: DurableObjectNamespace;
   SMART_CONTRACT: DurableObjectNamespace;
+  // Hyperdrive binding for the Postgres target used by high-volume tables
+  // (metering_readings today, audit_logs next). Absent in local dev / preview
+  // without the secret; callers fall back to D1 via src/utils/hyperdrive.ts.
+  HYPERDRIVE_DB?: {
+    connect: () => Promise<{
+      query: (text: string, params?: unknown[]) => Promise<{ rows: Record<string, unknown>[] }>;
+      release?: () => void;
+    }>;
+  };
+  // Controls the metering read path during the migration.
+  // Set to 'hyperdrive' after the 2-week dual-write window.
+  METERING_READ_SOURCE?: string;
   JWT_SECRET: string;
   // Microsoft Entra ID SSO bindings (optional — when unset, SSO is disabled)
   AZURE_AD_CLIENT_ID?: string;

@@ -41,14 +41,18 @@ pa.post('/tenants', async (c) => {
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   if (!b.name) return c.json({ success: false, error: 'name required' }, 400);
   const id = (b.id as string) || genId('t');
+  // Migration 011 made tenants.slug NOT NULL UNIQUE. If the caller didn't
+  // supply a slug we derive it from the id so the insert doesn't error.
+  const slug = (b.slug as string) || id;
   await c.env.DB.prepare(
     `INSERT INTO tenants
-       (id, name, legal_entity, registration_number, vat_number,
+       (id, slug, display_name, name, legal_entity, registration_number, vat_number,
         primary_contact_email, primary_contact_phone, billing_email,
         country, tier, status, activated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', datetime('now'))`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', datetime('now'))`,
   ).bind(
-    id, b.name, b.legal_entity || null, b.registration_number || null, b.vat_number || null,
+    id, slug, b.name as string, b.name as string,
+    b.legal_entity || null, b.registration_number || null, b.vat_number || null,
     b.primary_contact_email || null, b.primary_contact_phone || null, b.billing_email || null,
     b.country || 'ZA', b.tier || 'standard',
   ).run();
@@ -129,11 +133,11 @@ pa.post('/provisioning-requests/:id/approve', async (c) => {
   const tenantId = genId('t');
   await c.env.DB.prepare(
     `INSERT INTO tenants
-       (id, name, legal_entity, registration_number, vat_number, primary_contact_email,
+       (id, slug, display_name, name, legal_entity, registration_number, vat_number, primary_contact_email,
         country, tier, status, activated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', datetime('now'))`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', datetime('now'))`,
   ).bind(
-    tenantId, req.requested_name, req.legal_entity, req.registration_number,
+    tenantId, tenantId, req.requested_name, req.requested_name, req.legal_entity, req.registration_number,
     req.vat_number, req.admin_email, req.country, req.requested_tier,
   ).run();
 

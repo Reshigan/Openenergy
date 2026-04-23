@@ -19,6 +19,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { computeSettlementRun, PpaContract, PeriodReading } from '../utils/settlement-engine';
+import { insertMeteringReading } from '../utils/hyperdrive';
 
 const sa = new Hono<HonoEnv>();
 
@@ -234,17 +235,23 @@ sa.post('/ingest/push', async (c) => {
   let readingId: string | null = null;
   if (connection?.connection_id && typeof payload.export_kwh === 'number' && typeof payload.import_kwh === 'number') {
     readingId = genId('mr');
-    await c.env.DB.prepare(
-      `INSERT INTO metering_readings
-         (id, connection_id, reading_date, export_kwh, import_kwh, peak_demand_kw, power_factor, reading_type, validated, ona_ingested)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'actual', 0, 0)`,
-    ).bind(
-      readingId, connection.connection_id,
-      (payload.timestamp_utc as string) || new Date().toISOString(),
-      Number(payload.export_kwh), Number(payload.import_kwh),
-      payload.peak_demand_kw == null ? null : Number(payload.peak_demand_kw),
-      payload.power_factor == null ? null : Number(payload.power_factor),
-    ).run();
+    // Route via the Hyperdrive façade — writes to Postgres when the
+    // binding is present (dual-writing to D1 during the cut-over), or
+    // falls back to D1 when it isn't. See docs/runbooks/data-tier-scaling-plan.md.
+    await insertMeteringReading(
+      c.env as unknown as { DB: HonoEnv['Bindings']['DB']; HYPERDRIVE_DB?: HonoEnv['Bindings']['HYPERDRIVE_DB'] },
+      {
+        id: readingId,
+        connection_id: connection.connection_id,
+        reading_date: (payload.timestamp_utc as string) || new Date().toISOString(),
+        export_kwh: Number(payload.export_kwh),
+        import_kwh: Number(payload.import_kwh),
+        peak_demand_kw: payload.peak_demand_kw == null ? null : Number(payload.peak_demand_kw),
+        power_factor: payload.power_factor == null ? null : Number(payload.power_factor),
+        reading_type: 'actual',
+        source: channelId,
+      },
+    );
     await c.env.DB.prepare(
       `UPDATE meter_ingest_raw SET normalised = 1, normalised_reading_id = ? WHERE id = ?`,
     ).bind(readingId, rawId).run();
