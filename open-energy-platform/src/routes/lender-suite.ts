@@ -12,6 +12,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { evaluateCovenant, runWaterfall, dscr, llcr } from '../utils/covenants';
+import { fireCascade } from '../utils/cascade';
 
 const lender = new Hono<HonoEnv>();
 lender.use('*', authMiddleware);
@@ -72,8 +73,14 @@ lender.post('/covenants/:id/test', async (c) => {
     return c.json({ success: false, error: 'test_period and test_date are required' }, 400);
   }
   const def = await c.env.DB.prepare(
-    `SELECT operator, threshold, threshold_upper FROM covenants WHERE id = ?`,
-  ).bind(covenantId).first<{ operator: string; threshold: number | null; threshold_upper: number | null }>();
+    `SELECT covenant_code, operator, threshold, threshold_upper, project_id,
+            lender_participant_id, material_adverse_effect
+       FROM covenants WHERE id = ?`,
+  ).bind(covenantId).first<{
+    covenant_code: string; operator: string; threshold: number | null;
+    threshold_upper: number | null; project_id: string | null;
+    lender_participant_id: string | null; material_adverse_effect: number;
+  }>();
   if (!def) return c.json({ success: false, error: 'Covenant not found' }, 404);
 
   const measured = b.measured_value == null ? null : Number(b.measured_value);
@@ -94,6 +101,28 @@ lender.post('/covenants/:id/test', async (c) => {
     b.evidence_r2_key || null, b.narrative || null, user.id,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM covenant_tests WHERE id = ?').bind(id).first();
+
+  // Only fire cascade on warn or breach — passing tests don't need to page
+  // anyone. Breaches always reach the lender + project developer.
+  if (result === 'breach' || result === 'warn') {
+    await fireCascade({
+      event: result === 'breach' ? 'lender.covenant_breach' : 'lender.covenant_warn',
+      actor_id: user.id,
+      entity_type: 'covenant_tests',
+      entity_id: id,
+      data: {
+        covenant_id: covenantId,
+        covenant_code: def.covenant_code,
+        lender_participant_id: def.lender_participant_id,
+        project_id: def.project_id,
+        measured_value: measured,
+        threshold: def.threshold,
+        test_period: b.test_period,
+        material_adverse_effect: Boolean(def.material_adverse_effect),
+      },
+      env: c.env,
+    });
+  }
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -173,7 +202,26 @@ lender.post('/ie-certifications/:id/decide', async (c) => {
   const status = ['certified', 'qualified', 'rejected'].includes(String(b.status)) ? b.status : null;
   if (!status) return c.json({ success: false, error: 'status must be certified|qualified|rejected' }, 400);
   await c.env.DB.prepare(`UPDATE ie_certifications SET status = ? WHERE id = ?`).bind(status, id).run();
-  const row = await c.env.DB.prepare('SELECT * FROM ie_certifications WHERE id = ?').bind(id).first();
+  const row = await c.env.DB.prepare('SELECT * FROM ie_certifications WHERE id = ?').bind(id).first<{
+    cert_number: string; project_id: string; ie_participant_id: string;
+    certified_amount_zar: number | null;
+  }>();
+  const event = status === 'certified' ? 'lender.ie_certified'
+    : status === 'qualified' ? 'lender.ie_certified'
+    : 'lender.ie_rejected';
+  await fireCascade({
+    event,
+    actor_id: user.id,
+    entity_type: 'ie_certifications',
+    entity_id: id,
+    data: {
+      cert_number: row?.cert_number,
+      project_id: row?.project_id,
+      ie_participant_id: row?.ie_participant_id,
+      certified_amount_zar: row?.certified_amount_zar,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row });
 });
 

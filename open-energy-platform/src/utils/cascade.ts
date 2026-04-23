@@ -45,7 +45,43 @@ export type EventType =
   | 'pipeline.created' | 'pipeline.stage_changed' | 'pipeline.won' | 'pipeline.lost'
   // Threads / collaboration
   | 'thread.posted'
-  | 'intelligence.item_created' | 'action_queue.created';
+  | 'intelligence.item_created' | 'action_queue.created'
+  // ─── National-scale expansion (PR-National-1/2/3) ─────────────────────
+  // Regulator
+  | 'regulator.licence_granted' | 'regulator.licence_varied'
+  | 'regulator.licence_suspended' | 'regulator.licence_revoked' | 'regulator.licence_reinstated'
+  | 'regulator.tariff_submitted' | 'regulator.tariff_hearing_scheduled'
+  | 'regulator.tariff_determined' | 'regulator.determination_published'
+  | 'regulator.enforcement_opened' | 'regulator.enforcement_finding'
+  | 'regulator.enforcement_appealed'
+  | 'regulator.surveillance_alert_raised' | 'regulator.surveillance_escalated'
+  // Grid operator
+  | 'grid.schedule_published' | 'grid.instruction_issued' | 'grid.instruction_acked'
+  | 'grid.instruction_non_compliant' | 'grid.curtailment_issued' | 'grid.curtailment_lifted'
+  | 'grid.ancillary_tender_opened' | 'grid.ancillary_tender_cleared'
+  | 'grid.outage_reported' | 'grid.outage_restored'
+  | 'grid.connection_advanced'
+  // Trader risk
+  | 'trader.credit_limit_set' | 'trader.margin_call_issued' | 'trader.margin_call_met'
+  | 'trader.collateral_movement' | 'trader.clearing_run_complete'
+  // Lender
+  | 'lender.covenant_breach' | 'lender.covenant_warn' | 'lender.covenant_waived'
+  | 'lender.ie_submitted' | 'lender.ie_certified' | 'lender.ie_rejected'
+  | 'lender.waterfall_executed' | 'lender.reserve_drawn'
+  // IPP lifecycle
+  | 'ipp.epc_variation_raised' | 'ipp.ld_assessed'
+  | 'ipp.ea_granted' | 'ipp.ea_condition_breach' | 'ipp.insurance_expiring'
+  | 'ipp.insurance_claim_filed' | 'ipp.community_grievance_logged'
+  // Offtaker
+  | 'offtaker.rec_issued' | 'offtaker.rec_retired'
+  | 'offtaker.scope2_published' | 'offtaker.budget_exceeded'
+  // Carbon
+  | 'carbon.vintage_issued' | 'carbon.mrv_submitted' | 'carbon.mrv_verified'
+  | 'carbon.tax_claim_submitted'
+  // Platform admin
+  | 'tenant.provisioned' | 'tenant.suspended' | 'tenant.reactivated'
+  | 'tenant.subscription_created' | 'tenant.invoice_issued'
+  | 'flag.changed' | 'flag.override_set';
 
 interface CascadeContext {
   event: EventType;
@@ -395,11 +431,149 @@ async function determineNotificationRecipients(ctx: CascadeContext, env: any): P
       }
       break;
     }
+    // ─── National-scale recipient resolution ─────────────────────────────
+    case 'regulator_licences': {
+      try {
+        const row = await env.DB
+          .prepare('SELECT licensee_participant_id FROM regulator_licences WHERE id = ?')
+          .bind(ctx.entity_id).first();
+        if (row?.licensee_participant_id) recipients.add(row.licensee_participant_id as string);
+      } catch { /* schema missing on older deploys */ }
+      await addRolesTo(env, recipients, ['regulator']);
+      break;
+    }
+    case 'regulator_tariff_submissions':
+    case 'regulator_tariff_decisions': {
+      try {
+        const row = await env.DB
+          .prepare(`SELECT licensee_participant_id FROM regulator_tariff_submissions WHERE id = ?
+                    UNION ALL
+                    SELECT s.licensee_participant_id FROM regulator_tariff_decisions d
+                      JOIN regulator_tariff_submissions s ON s.id = d.submission_id
+                     WHERE d.id = ?`)
+          .bind(ctx.entity_id, ctx.entity_id).first();
+        if (row?.licensee_participant_id) recipients.add(row.licensee_participant_id as string);
+      } catch { /* */ }
+      await addRolesTo(env, recipients, ['regulator']);
+      break;
+    }
+    case 'regulator_enforcement_cases':
+    case 'regulator_surveillance_alerts': {
+      if (ctx.data?.respondent_participant_id) recipients.add(ctx.data.respondent_participant_id as string);
+      if (ctx.data?.participant_id) recipients.add(ctx.data.participant_id as string);
+      await addRolesTo(env, recipients, ['regulator']);
+      break;
+    }
+    case 'dispatch_instructions': {
+      if (ctx.data?.participant_id) recipients.add(ctx.data.participant_id as string);
+      await addRolesTo(env, recipients, ['grid_operator']);
+      break;
+    }
+    case 'curtailment_notices':
+    case 'grid_outages': {
+      // National / zonal — notify all grid operators + IPPs.
+      await addRolesTo(env, recipients, ['grid_operator', 'ipp_developer']);
+      break;
+    }
+    case 'ancillary_service_tenders': {
+      // Open tenders are broadcast to active generators.
+      await addRolesTo(env, recipients, ['ipp_developer', 'grid_operator', 'trader']);
+      break;
+    }
+    case 'margin_calls': {
+      if (ctx.data?.participant_id) recipients.add(ctx.data.participant_id as string);
+      await addRolesTo(env, recipients, ['admin']);
+      break;
+    }
+    case 'credit_limits': {
+      if (ctx.data?.participant_id) recipients.add(ctx.data.participant_id as string);
+      break;
+    }
+    case 'covenants':
+    case 'covenant_tests':
+    case 'covenant_waivers': {
+      // Lender + IPP developer of the linked project.
+      if (ctx.data?.lender_participant_id) recipients.add(ctx.data.lender_participant_id as string);
+      if (ctx.data?.project_id) {
+        try {
+          const proj = await env.DB.prepare(
+            'SELECT developer_id FROM ipp_projects WHERE id = ?',
+          ).bind(ctx.data.project_id).first();
+          if (proj?.developer_id) recipients.add(proj.developer_id as string);
+        } catch { /* */ }
+      }
+      break;
+    }
+    case 'ie_certifications': {
+      if (ctx.data?.ie_participant_id) recipients.add(ctx.data.ie_participant_id as string);
+      if (ctx.data?.project_id) {
+        try {
+          const proj = await env.DB.prepare(
+            'SELECT developer_id FROM ipp_projects WHERE id = ?',
+          ).bind(ctx.data.project_id).first();
+          if (proj?.developer_id) recipients.add(proj.developer_id as string);
+        } catch { /* */ }
+      }
+      await addRolesTo(env, recipients, ['lender']);
+      break;
+    }
+    case 'epc_contracts':
+    case 'epc_variations':
+    case 'epc_liquidated_damages':
+    case 'environmental_authorisations':
+    case 'environmental_compliance':
+    case 'insurance_policies':
+    case 'insurance_claims':
+    case 'community_engagements':
+    case 'ed_sed_spend': {
+      if (ctx.data?.project_id) {
+        try {
+          const proj = await env.DB.prepare(
+            'SELECT developer_id FROM ipp_projects WHERE id = ?',
+          ).bind(ctx.data.project_id).first();
+          if (proj?.developer_id) recipients.add(proj.developer_id as string);
+        } catch { /* */ }
+      }
+      break;
+    }
+    case 'rec_retirements':
+    case 'scope2_disclosures': {
+      if (ctx.data?.retiring_participant_id) recipients.add(ctx.data.retiring_participant_id as string);
+      if (ctx.data?.participant_id) recipients.add(ctx.data.participant_id as string);
+      break;
+    }
+    case 'mrv_submissions':
+    case 'mrv_verifications':
+    case 'carbon_tax_offset_claims': {
+      if (ctx.data?.submitted_by) recipients.add(ctx.data.submitted_by as string);
+      if (ctx.data?.taxpayer_participant_id) recipients.add(ctx.data.taxpayer_participant_id as string);
+      await addRolesTo(env, recipients, ['carbon_fund']);
+      break;
+    }
+    case 'tenants':
+    case 'tenant_subscriptions':
+    case 'tenant_invoices':
+    case 'feature_flags': {
+      await addRolesTo(env, recipients, ['admin']);
+      break;
+    }
     default:
       break;
   }
-  
+
   return Array.from(recipients);
+}
+
+/** Add every active participant holding any of the listed roles to the recipients set. */
+async function addRolesTo(env: any, recipients: Set<string>, roles: string[]): Promise<void> {
+  if (roles.length === 0) return;
+  const placeholders = roles.map(() => '?').join(',');
+  try {
+    const rows = await env.DB.prepare(
+      `SELECT id FROM participants WHERE role IN (${placeholders}) AND status = 'active' LIMIT 50`,
+    ).bind(...roles).all();
+    for (const r of (rows.results || []) as Array<{ id: string }>) recipients.add(r.id);
+  } catch { /* swallow — cascade still runs for explicit recipients */ }
 }
 
 function buildNotificationContent(ctx: CascadeContext): { title: string; body: string } {
@@ -494,12 +668,125 @@ function buildNotificationContent(ctx: CascadeContext): { title: string; body: s
       title: `Intelligence: ${ctx.data?.severity || 'Info'}`, 
       body: ctx.data?.title as string || 'New intelligence item created.' 
     }),
-    'action_queue.created': () => ({ 
-      title: 'Action Required', 
-      body: ctx.data?.title as string || 'A new action has been assigned to you.' 
+    'action_queue.created': () => ({
+      title: 'Action Required',
+      body: ctx.data?.title as string || 'A new action has been assigned to you.'
+    }),
+
+    // ─── National-scale notifications ──────────────────────────────────
+    'regulator.licence_suspended': () => ({
+      title: 'Licence suspended',
+      body: `Licence ${ctx.data?.licence_number || ctx.entity_id} has been suspended by the regulator.`,
+    }),
+    'regulator.licence_revoked': () => ({
+      title: 'Licence revoked',
+      body: `Licence ${ctx.data?.licence_number || ctx.entity_id} has been revoked. Operations under this licence must cease immediately.`,
+    }),
+    'regulator.tariff_determined': () => ({
+      title: 'Tariff determination issued',
+      body: `Determination ${ctx.data?.decision_number || ''} effective ${ctx.data?.effective_from || 'soon'}.`,
+    }),
+    'regulator.enforcement_finding': () => ({
+      title: 'Enforcement finding issued',
+      body: `Case ${ctx.entity_id}: penalty R${ctx.data?.penalty_amount_zar || 0}. See the case file for details.`,
+    }),
+    'regulator.surveillance_alert_raised': () => ({
+      title: `Surveillance alert: ${ctx.data?.rule_code || 'market abuse'}`,
+      body: `Severity ${ctx.data?.severity || 'medium'}. Review in the Regulator workbench.`,
+    }),
+    'regulator.surveillance_escalated': () => ({
+      title: 'Alert escalated to enforcement',
+      body: `Surveillance alert escalated to formal enforcement case ${ctx.data?.case_id || ''}.`,
+    }),
+
+    'grid.instruction_issued': () => ({
+      title: `Dispatch instruction: ${ctx.data?.instruction_type || 'action required'}`,
+      body: `Target ${ctx.data?.target_mw || 0} MW effective ${ctx.data?.effective_from || 'now'}. Acknowledge in the Grid workbench.`,
+    }),
+    'grid.instruction_non_compliant': () => ({
+      title: 'Dispatch non-compliance flagged',
+      body: `Instruction ${ctx.entity_id} assessed non-compliant. Penalty: R${ctx.data?.penalty_amount_zar || 0}.`,
+    }),
+    'grid.curtailment_issued': () => ({
+      title: `Curtailment notice — ${ctx.data?.severity || 'advisory'}`,
+      body: `Zone ${ctx.data?.affected_zone || 'national'}: ${ctx.data?.curtailment_mw || 0} MW curtailment in effect.`,
+    }),
+    'grid.outage_reported': () => ({
+      title: 'Grid outage reported',
+      body: `Outage ${ctx.data?.outage_number || ctx.entity_id}: ${ctx.data?.affected_load_mw || 0} MW / ${ctx.data?.affected_customers || 0} customers affected.`,
+    }),
+
+    'trader.margin_call_issued': () => ({
+      title: 'Margin call issued',
+      body: `Shortfall R${ctx.data?.shortfall_zar || 0}. Due by ${ctx.data?.due_by || 'end of next business day'}.`,
+    }),
+    'trader.credit_limit_set': () => ({
+      title: 'Trading credit limit updated',
+      body: `New limit R${ctx.data?.limit_zar || 0} effective ${ctx.data?.effective_from || 'immediately'}.`,
+    }),
+    'trader.clearing_run_complete': () => ({
+      title: 'Clearing run settled',
+      body: `Trading day ${ctx.data?.trading_day || ''}: net R${ctx.data?.total_net_zar || 0} across ${ctx.data?.obligations_count || 0} participants.`,
+    }),
+
+    'lender.covenant_breach': () => ({
+      title: `Covenant breach: ${ctx.data?.covenant_code || ''}`,
+      body: `Measured ${ctx.data?.measured_value ?? 'n/a'} vs threshold ${ctx.data?.threshold ?? 'n/a'}. Material-adverse-effect: ${ctx.data?.material_adverse_effect ? 'YES' : 'no'}.`,
+    }),
+    'lender.covenant_warn': () => ({
+      title: `Covenant warning: ${ctx.data?.covenant_code || ''}`,
+      body: `Approaching threshold. Measured ${ctx.data?.measured_value ?? 'n/a'} vs ${ctx.data?.threshold ?? 'n/a'}.`,
+    }),
+    'lender.covenant_waived': () => ({
+      title: 'Covenant waiver granted',
+      body: `Waiver for ${ctx.data?.covenant_code || ''} until ${ctx.data?.requested_until || 'further notice'}.`,
+    }),
+    'lender.ie_certified': () => ({
+      title: 'IE certification approved',
+      body: `Certificate ${ctx.data?.cert_number || ''}: drawdown of R${ctx.data?.certified_amount_zar || 0} cleared.`,
+    }),
+
+    'ipp.ea_condition_breach': () => ({
+      title: 'Environmental Authorisation condition breached',
+      body: `Condition ${ctx.data?.condition_reference || ''} flagged non-compliant. Compliance and reporting action required.`,
+    }),
+    'ipp.insurance_expiring': () => ({
+      title: 'Insurance policy expiring soon',
+      body: `Policy ${ctx.data?.policy_number || ''} expires ${ctx.data?.period_end || 'soon'} — renew to stay covenant-compliant.`,
+    }),
+    'ipp.ld_assessed': () => ({
+      title: 'Liquidated damages assessed',
+      body: `R${ctx.data?.capped_amount_zar || ctx.data?.calculated_amount_zar || 0} assessed under EPC ${ctx.data?.epc_contract_id || ''}.`,
+    }),
+
+    'offtaker.rec_retired': () => ({
+      title: 'RECs retired',
+      body: `${ctx.data?.consumption_mwh || 0} MWh retired against ${ctx.data?.retirement_purpose || 'Scope 2'} claim.`,
+    }),
+    'offtaker.budget_exceeded': () => ({
+      title: 'Energy budget exceeded',
+      body: `Period ${ctx.data?.period || ''} consumption exceeded budget by ${ctx.data?.variance_pct || 0}%.`,
+    }),
+
+    'carbon.mrv_verified': () => ({
+      title: 'MRV verification issued',
+      body: `Opinion: ${ctx.data?.opinion || 'unknown'}. Verified reductions: ${ctx.data?.verified_reductions_tco2e || 0} tCO₂e.`,
+    }),
+    'carbon.tax_claim_submitted': () => ({
+      title: 'Carbon Tax offset claim submitted',
+      body: `Tax year ${ctx.data?.tax_year || ''}: R${ctx.data?.offset_applied_zar || 0} offset applied, net R${ctx.data?.net_tax_liability_zar || 0}.`,
+    }),
+
+    'tenant.provisioned': () => ({
+      title: 'Tenant provisioned',
+      body: `Tenant ${ctx.data?.tenant_id || ctx.entity_id} is active on the ${ctx.data?.tier || 'standard'} plan.`,
+    }),
+    'tenant.invoice_issued': () => ({
+      title: 'Platform invoice issued',
+      body: `Invoice ${ctx.data?.invoice_number || ''} — R${ctx.data?.total_zar || 0} due ${ctx.data?.due_at || 'in 30 days'}.`,
     }),
   };
-  
+
   const handler = eventHandlers[ctx.event];
   return handler ? handler() : { title: ctx.event, body: `Event ${ctx.event} on ${ctx.entity_type}:${ctx.entity_id}` };
 }

@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { evaluateFlag, coerceFlagValue, FlagDef, FlagOverride } from '../utils/feature-flags';
+import { fireCascade } from '../utils/cascade';
 
 const pa = new Hono<HonoEnv>();
 pa.use('*', authMiddleware);
@@ -141,6 +142,15 @@ pa.post('/provisioning-requests/:id/approve', async (c) => {
         SET status = 'approved', approved_tenant_id = ?, approved_by = ?, approved_at = datetime('now')
       WHERE id = ?`,
   ).bind(tenantId, user.id, id).run();
+
+  await fireCascade({
+    event: 'tenant.provisioned',
+    actor_id: user.id,
+    entity_type: 'tenants',
+    entity_id: tenantId,
+    data: { tenant_id: tenantId, tier: req.requested_tier },
+    env: c.env,
+  });
 
   return c.json({ success: true, data: { tenant_id: tenantId } });
 });

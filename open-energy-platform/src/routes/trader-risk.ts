@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { canOpenTrade, initialMarginFor, markToMarket, nettingReduce, utilisationPercentage } from '../utils/trader-risk';
+import { fireCascade } from '../utils/cascade';
 
 const risk = new Hono<HonoEnv>();
 risk.use('*', authMiddleware);
@@ -148,6 +149,19 @@ risk.post('/credit-limits', async (c) => {
     user.id, b.basis || 'unsecured', b.counterparty_specific_id || null, b.notes || null,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM credit_limits WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'trader.credit_limit_set',
+    actor_id: user.id,
+    entity_type: 'credit_limits',
+    entity_id: id,
+    data: {
+      participant_id: b.participant_id,
+      limit_zar: Number(b.limit_zar),
+      effective_from: b.effective_from,
+      basis: b.basis || 'unsecured',
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -286,10 +300,24 @@ risk.post('/margin-calls/run', async (c) => {
     const shortfall = Math.max(0, im - posted);
     if (shortfall <= 0) continue;
 
+    const mcId = genId('mc');
     await c.env.DB.prepare(
       `INSERT INTO margin_calls (id, participant_id, as_of, exposure_zar, initial_margin_zar, variation_margin_zar, posted_collateral_zar, shortfall_zar, due_by, status)
        VALUES (?, ?, datetime('now'), ?, ?, 0, ?, ?, ?, 'issued')`,
-    ).bind(genId('mc'), row.pid, row.exposure, im, posted, shortfall, dueBy).run();
+    ).bind(mcId, row.pid, row.exposure, im, posted, shortfall, dueBy).run();
+    await fireCascade({
+      event: 'trader.margin_call_issued',
+      actor_id: user.id,
+      entity_type: 'margin_calls',
+      entity_id: mcId,
+      data: {
+        participant_id: row.pid,
+        shortfall_zar: shortfall,
+        due_by: dueBy,
+        exposure_zar: row.exposure,
+      },
+      env: c.env,
+    });
     issued++;
   }
   return c.json({ success: true, data: { margin_calls_issued: issued } });
@@ -339,6 +367,20 @@ risk.post('/clearing/run', async (c) => {
             total_gross_zar = ?, total_net_zar = ?, netting_ratio = ?
       WHERE id = ?`,
   ).bind(netted.total_gross, netted.total_net, netted.netting_ratio, runId).run();
+
+  await fireCascade({
+    event: 'trader.clearing_run_complete',
+    actor_id: user.id,
+    entity_type: 'clearing_runs',
+    entity_id: runId,
+    data: {
+      trading_day: tradingDay,
+      total_gross_zar: netted.total_gross,
+      total_net_zar: netted.total_net,
+      obligations_count: Object.keys(netted.nets).length,
+    },
+    env: c.env,
+  });
 
   return c.json({
     success: true,

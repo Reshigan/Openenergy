@@ -201,11 +201,190 @@ cockpit.get('/stats', authMiddleware, async (c) => {
       stats.pending_kyc = Number(pendingKyc?.c || 0);
     }
 
+    // Role-specific national-scale KPIs. Each block is idempotent: if the
+    // backing table is absent on an older deploy, the SELECT will throw and
+    // the try/catch one level up will surface a 500 — callers expect a 200
+    // every time, so each query is wrapped individually.
+    await safeAttach(stats, 'role_national', () => roleNationalStats(c.env, user));
+
     return c.json({ success: true, data: stats });
   } catch (error) {
     console.error('Cockpit stats error:', error);
     return c.json({ success: false, error: 'Failed to load stats', details: String(error) }, 500);
   }
 });
+
+// ───────────────────────────────────────────────────────────────────────────
+// National-scale KPI helpers. Each role sees the counts that matter to their
+// workbench. Queries are one-shot aggregate reads — no joins against the
+// heavy fact tables — so they stay well inside the 50 ms Workers CPU budget.
+// ───────────────────────────────────────────────────────────────────────────
+async function safeAttach<T>(
+  target: Record<string, unknown>,
+  key: string,
+  fn: () => Promise<T>,
+): Promise<void> {
+  try {
+    target[key] = await fn();
+  } catch (e) {
+    // Older deploys may be missing some tables (019+). Surface the error as
+    // a hint in telemetry, but don't break the whole cockpit payload.
+    console.warn(`cockpit_${key}_unavailable`, (e as Error).message);
+  }
+}
+
+async function roleNationalStats(
+  env: HonoEnv['Bindings'],
+  user: { id: string; role: string },
+): Promise<Record<string, unknown>> {
+  switch (user.role) {
+    case 'regulator':
+      return regulatorStats(env);
+    case 'grid_operator':
+      return gridOperatorStats(env);
+    case 'trader':
+      return traderStats(env, user.id);
+    case 'lender':
+      return lenderStats(env, user.id);
+    case 'ipp_developer':
+      return ippStats(env, user.id);
+    case 'offtaker':
+      return offtakerStats(env, user.id);
+    case 'carbon_fund':
+      return carbonStats(env, user.id);
+    case 'admin':
+      return adminStats(env);
+    default:
+      return {};
+  }
+}
+
+async function regulatorStats(env: HonoEnv['Bindings']): Promise<Record<string, unknown>> {
+  const row = await env.DB.prepare(`
+    SELECT
+      (SELECT COUNT(*) FROM regulator_licences WHERE status IN ('active','varied')) AS active_licences,
+      (SELECT COUNT(*) FROM regulator_licences WHERE status = 'active'
+        AND expiry_date IS NOT NULL AND expiry_date <= date('now','+90 days')) AS licences_expiring,
+      (SELECT COUNT(*) FROM regulator_tariff_submissions WHERE status IN ('submitted','public_hearing')) AS pending_tariff,
+      (SELECT COUNT(*) FROM regulator_enforcement_cases WHERE status IN ('open','investigating','hearing')) AS open_cases,
+      (SELECT COUNT(*) FROM regulator_surveillance_alerts WHERE status = 'open') AS open_alerts,
+      (SELECT COUNT(*) FROM regulator_surveillance_alerts WHERE status = 'open' AND severity IN ('high','critical')) AS critical_alerts
+  `).first<Record<string, number>>();
+  return row || {};
+}
+
+async function gridOperatorStats(env: HonoEnv['Bindings']): Promise<Record<string, unknown>> {
+  const row = await env.DB.prepare(`
+    SELECT
+      (SELECT COUNT(*) FROM dispatch_schedules WHERE trading_day = date('now')) AS schedules_today,
+      (SELECT COUNT(*) FROM dispatch_instructions WHERE status = 'issued') AS instructions_pending_ack,
+      (SELECT COUNT(*) FROM dispatch_instructions WHERE status = 'non_compliant') AS non_compliant,
+      (SELECT COUNT(*) FROM curtailment_notices WHERE status = 'active') AS active_curtailments,
+      (SELECT COUNT(*) FROM ancillary_service_tenders WHERE status = 'open') AS open_tenders,
+      (SELECT COUNT(*) FROM grid_outages WHERE status IN ('open','investigating','in_progress','partial_restoration')) AS active_outages,
+      (SELECT COUNT(*) FROM grid_connection_applications WHERE status NOT IN ('energised','rejected','withdrawn')) AS in_flight_connections
+  `).first<Record<string, number>>();
+  return row || {};
+}
+
+async function traderStats(env: HonoEnv['Bindings'], participantId: string): Promise<Record<string, unknown>> {
+  const row = await env.DB.prepare(`
+    SELECT
+      (SELECT COUNT(*) FROM trader_positions WHERE participant_id = ?) AS positions,
+      (SELECT COALESCE(SUM(net_volume_mwh), 0) FROM trader_positions WHERE participant_id = ?) AS net_exposure_mwh,
+      (SELECT COALESCE(SUM(unrealised_pnl_zar), 0) FROM trader_positions WHERE participant_id = ?) AS unrealised_pnl_zar,
+      (SELECT COUNT(*) FROM margin_calls WHERE participant_id = ? AND status IN ('issued','acknowledged')) AS open_margin_calls,
+      (SELECT COALESCE(SUM(shortfall_zar), 0) FROM margin_calls WHERE participant_id = ? AND status IN ('issued','acknowledged')) AS margin_shortfall_zar,
+      (SELECT COALESCE(SUM(balance_zar), 0) FROM collateral_accounts WHERE participant_id = ? AND status = 'active') AS collateral_balance_zar
+  `).bind(participantId, participantId, participantId, participantId, participantId, participantId).first<Record<string, number>>();
+  return row || {};
+}
+
+async function lenderStats(env: HonoEnv['Bindings'], participantId: string): Promise<Record<string, unknown>> {
+  const row = await env.DB.prepare(`
+    SELECT
+      (SELECT COUNT(*) FROM covenants WHERE lender_participant_id = ? AND status = 'active') AS active_covenants,
+      (SELECT COUNT(*) FROM covenant_tests ct
+        JOIN covenants c ON c.id = ct.covenant_id
+        WHERE c.lender_participant_id = ? AND ct.result = 'breach'
+          AND ct.test_date >= date('now', '-30 days')) AS covenant_breaches_30d,
+      (SELECT COUNT(*) FROM covenant_tests ct
+        JOIN covenants c ON c.id = ct.covenant_id
+        WHERE c.lender_participant_id = ? AND ct.result = 'warn'
+          AND ct.test_date >= date('now', '-30 days')) AS covenant_warns_30d,
+      (SELECT COUNT(*) FROM ie_certifications WHERE status IN ('submitted','under_review')) AS ie_certs_pending_review,
+      (SELECT COUNT(*) FROM covenant_waivers WHERE status = 'requested') AS waivers_pending
+  `).bind(participantId, participantId, participantId).first<Record<string, number>>();
+  return row || {};
+}
+
+async function ippStats(env: HonoEnv['Bindings'], participantId: string): Promise<Record<string, unknown>> {
+  const row = await env.DB.prepare(`
+    SELECT
+      (SELECT COUNT(*) FROM epc_contracts ec
+        JOIN ipp_projects p ON p.id = ec.project_id
+        WHERE p.developer_id = ? AND ec.status NOT IN ('closed','terminated')) AS active_epc,
+      (SELECT COUNT(*) FROM epc_variations ev
+        JOIN epc_contracts ec ON ec.id = ev.epc_contract_id
+        JOIN ipp_projects p ON p.id = ec.project_id
+        WHERE p.developer_id = ? AND ev.status = 'proposed') AS pending_epc_variations,
+      (SELECT COUNT(*) FROM insurance_policies ip
+        JOIN ipp_projects p ON p.id = ip.project_id
+        WHERE p.developer_id = ? AND ip.status = 'active'
+          AND ip.period_end <= date('now','+90 days')) AS insurance_expiring_90d,
+      (SELECT COUNT(*) FROM environmental_compliance ec
+        JOIN environmental_authorisations ea ON ea.id = ec.authorisation_id
+        JOIN ipp_projects p ON p.id = ea.project_id
+        WHERE p.developer_id = ? AND ec.compliance_status = 'non_compliant') AS ea_non_compliant,
+      (SELECT COUNT(*) FROM community_engagements ce
+        JOIN ipp_projects p ON p.id = ce.project_id
+        WHERE p.developer_id = ? AND ce.follow_up_date IS NOT NULL
+          AND ce.follow_up_date <= date('now','+14 days')) AS community_follow_ups_14d
+  `).bind(participantId, participantId, participantId, participantId, participantId).first<Record<string, number>>();
+  return row || {};
+}
+
+async function offtakerStats(env: HonoEnv['Bindings'], participantId: string): Promise<Record<string, unknown>> {
+  const row = await env.DB.prepare(`
+    SELECT
+      (SELECT COUNT(*) FROM offtaker_site_groups WHERE participant_id = ?) AS site_groups,
+      (SELECT COUNT(*) FROM offtaker_delivery_points WHERE participant_id = ?) AS delivery_points,
+      (SELECT COUNT(*) FROM rec_certificates WHERE owner_participant_id = ? AND status IN ('issued','transferred')) AS active_recs,
+      (SELECT COALESCE(SUM(mwh_represented), 0) FROM rec_certificates WHERE owner_participant_id = ? AND status IN ('issued','transferred')) AS active_rec_mwh,
+      (SELECT COUNT(*) FROM rec_retirements WHERE retiring_participant_id = ?) AS retirements_count,
+      (SELECT COUNT(*) FROM scope2_disclosures WHERE participant_id = ? AND status = 'published') AS published_scope2
+  `).bind(participantId, participantId, participantId, participantId, participantId, participantId).first<Record<string, number>>();
+  return row || {};
+}
+
+async function carbonStats(env: HonoEnv['Bindings'], participantId: string): Promise<Record<string, unknown>> {
+  const row = await env.DB.prepare(`
+    SELECT
+      (SELECT COUNT(*) FROM credit_vintages) AS vintages,
+      (SELECT COALESCE(SUM(credits_issued - credits_retired), 0) FROM credit_vintages) AS credits_active,
+      (SELECT COUNT(*) FROM mrv_submissions WHERE submitted_by = ? AND status IN ('submitted','validation')) AS mrv_pending,
+      (SELECT COUNT(*) FROM mrv_verifications mv
+        JOIN mrv_submissions ms ON ms.id = mv.submission_id
+        WHERE ms.submitted_by = ? AND mv.opinion IN ('positive','qualified')
+          AND mv.verification_date >= date('now','-90 days')) AS verified_90d,
+      (SELECT COUNT(*) FROM carbon_tax_offset_claims WHERE taxpayer_participant_id = ? AND status = 'submitted') AS tax_claims_submitted
+  `).bind(participantId, participantId, participantId).first<Record<string, number>>();
+  return row || {};
+}
+
+async function adminStats(env: HonoEnv['Bindings']): Promise<Record<string, unknown>> {
+  const row = await env.DB.prepare(`
+    SELECT
+      (SELECT COUNT(*) FROM tenants WHERE status = 'active') AS active_tenants,
+      (SELECT COUNT(*) FROM tenants WHERE status = 'suspended') AS suspended_tenants,
+      (SELECT COUNT(*) FROM tenant_provisioning_requests WHERE status = 'pending') AS provisioning_pending,
+      (SELECT COUNT(*) FROM tenant_subscriptions WHERE status = 'active') AS active_subscriptions,
+      (SELECT COUNT(*) FROM tenant_invoices WHERE status IN ('issued','overdue')) AS outstanding_platform_invoices,
+      (SELECT COALESCE(SUM(total_zar), 0) FROM tenant_invoices WHERE status IN ('issued','overdue')) AS outstanding_platform_zar,
+      (SELECT COUNT(*) FROM feature_flags WHERE enabled = 1) AS active_feature_flags,
+      (SELECT COUNT(*) FROM settlement_runs WHERE status = 'failed' AND started_at >= date('now','-7 days')) AS failed_settlement_runs_7d
+  `).first<Record<string, number>>();
+  return row || {};
+}
 
 export default cockpit;

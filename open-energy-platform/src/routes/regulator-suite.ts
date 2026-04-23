@@ -21,6 +21,7 @@
 import { Hono, Context } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { fireCascade } from '../utils/cascade';
 
 const suite = new Hono<HonoEnv>();
 suite.use('*', authMiddleware);
@@ -97,6 +98,14 @@ suite.post('/licences', async (c) => {
      VALUES (?, ?, 'granted', ?, ?, ?)`,
   ).bind(genId('lev'), id, b.issue_date, `Licence ${b.licence_number} granted`, user.id).run();
   const row = await c.env.DB.prepare('SELECT * FROM regulator_licences WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'regulator.licence_granted',
+    actor_id: user.id,
+    entity_type: 'regulator_licences',
+    entity_id: id,
+    data: { licence_number: b.licence_number, licensee_participant_id: b.licensee_participant_id || null },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -117,7 +126,8 @@ async function transitionLicence(
   const id = c.req.param('id');
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   const existing = await c.env.DB
-    .prepare('SELECT id, status FROM regulator_licences WHERE id = ?').bind(id).first();
+    .prepare('SELECT id, status, licence_number, licensee_participant_id FROM regulator_licences WHERE id = ?')
+    .bind(id).first<{ licence_number: string; licensee_participant_id: string | null }>();
   if (!existing) return c.json({ success: false, error: 'Licence not found' }, 404);
   await c.env.DB.prepare('UPDATE regulator_licences SET status = ? WHERE id = ?').bind(newStatus, id).run();
   await c.env.DB.prepare(
@@ -125,6 +135,27 @@ async function transitionLicence(
      VALUES (?, ?, ?, datetime('now'), ?, ?)`,
   ).bind(genId('lev'), id, eventType, (b.details as string) || null, user.id).run();
   const row = await c.env.DB.prepare('SELECT * FROM regulator_licences WHERE id = ?').bind(id).first();
+  const eventMap: Record<string, 'regulator.licence_varied' | 'regulator.licence_suspended' | 'regulator.licence_revoked' | 'regulator.licence_reinstated'> = {
+    varied: 'regulator.licence_varied',
+    suspended: 'regulator.licence_suspended',
+    revoked: 'regulator.licence_revoked',
+    granted: 'regulator.licence_reinstated',
+  };
+  const event = eventMap[eventType];
+  if (event) {
+    await fireCascade({
+      event,
+      actor_id: user.id,
+      entity_type: 'regulator_licences',
+      entity_id: id,
+      data: {
+        licence_number: existing.licence_number,
+        licensee_participant_id: existing.licensee_participant_id,
+        details: b.details || null,
+      },
+      env: c.env,
+    });
+  }
   return c.json({ success: true, data: row });
 }
 
@@ -234,6 +265,20 @@ suite.post('/tariff-submissions/:id/determine', async (c) => {
     `UPDATE regulator_tariff_submissions SET status = 'determined' WHERE id = ?`,
   ).bind(submissionId).run();
   const row = await c.env.DB.prepare('SELECT * FROM regulator_tariff_decisions WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'regulator.tariff_determined',
+    actor_id: user.id,
+    entity_type: 'regulator_tariff_decisions',
+    entity_id: id,
+    data: {
+      submission_id: submissionId,
+      decision_number: b.decision_number,
+      effective_from: b.effective_from,
+      approved_revenue_zar: approvedRev,
+      approved_tariff_c_per_kwh: approvedTariff,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -333,6 +378,18 @@ suite.post('/enforcement-cases', async (c) => {
      VALUES (?, ?, 'complaint', datetime('now'), ?, ?)`,
   ).bind(genId('eev'), id, 'Case opened', user.id).run();
   const row = await c.env.DB.prepare('SELECT * FROM regulator_enforcement_cases WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'regulator.enforcement_opened',
+    actor_id: user.id,
+    entity_type: 'regulator_enforcement_cases',
+    entity_id: id,
+    data: {
+      case_number: b.case_number,
+      respondent_participant_id: b.respondent_participant_id || null,
+      severity: b.severity || 'medium',
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -376,7 +433,22 @@ suite.post('/enforcement-cases/:id/finding', async (c) => {
     `INSERT INTO regulator_enforcement_events (id, case_id, event_type, event_date, description, actor_id)
      VALUES (?, ?, 'decision', ?, ?, ?)`,
   ).bind(genId('eev'), id, b.finding_date, String(b.finding).slice(0, 500), user.id).run();
-  const row = await c.env.DB.prepare('SELECT * FROM regulator_enforcement_cases WHERE id = ?').bind(id).first();
+  const row = await c.env.DB.prepare('SELECT * FROM regulator_enforcement_cases WHERE id = ?').bind(id).first<{
+    case_number: string; respondent_participant_id: string | null;
+  }>();
+  await fireCascade({
+    event: 'regulator.enforcement_finding',
+    actor_id: user.id,
+    entity_type: 'regulator_enforcement_cases',
+    entity_id: id,
+    data: {
+      case_number: row?.case_number,
+      respondent_participant_id: row?.respondent_participant_id,
+      penalty_amount_zar: penalty,
+      finding: String(b.finding).slice(0, 500),
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row });
 });
 
@@ -491,6 +563,19 @@ suite.post('/surveillance/alerts/:id/escalate', async (c) => {
   ).bind(caseId, id).run();
   const enfCase = await c.env.DB
     .prepare('SELECT * FROM regulator_enforcement_cases WHERE id = ?').bind(caseId).first();
+  await fireCascade({
+    event: 'regulator.surveillance_escalated',
+    actor_id: user.id,
+    entity_type: 'regulator_surveillance_alerts',
+    entity_id: id,
+    data: {
+      case_id: caseId,
+      case_number: caseNum,
+      participant_id: alert.participant_id,
+      rule_code: alert.rule_code,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { case: enfCase, alert_id: id } }, 201);
 });
 
@@ -532,6 +617,22 @@ export async function runSurveillanceScan(env: HonoEnv['Bindings']): Promise<Arr
         id, rule.id, rule.rule_code, f.participant_id, f.entity_type, f.entity_id,
         rule.severity, JSON.stringify(f.details),
       ).run();
+      // Fire the cascade so regulators + flagged participants get a
+      // notification. Only critical/high alerts push — medium/low are
+      // viewable in the workbench but don't page people.
+      if (rule.severity === 'critical' || rule.severity === 'high') {
+        await fireCascade({
+          event: 'regulator.surveillance_alert_raised',
+          entity_type: 'regulator_surveillance_alerts',
+          entity_id: id,
+          data: {
+            rule_code: rule.rule_code,
+            severity: rule.severity,
+            participant_id: f.participant_id,
+          },
+          env,
+        });
+      }
       inserted.push({
         rule_code: rule.rule_code,
         entity_id: f.entity_id,

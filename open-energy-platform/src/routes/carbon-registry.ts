@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { applyOffsetAllowance, rangeOverlaps } from '../utils/carbon-tax';
+import { fireCascade } from '../utils/cascade';
 
 const cr = new Hono<HonoEnv>();
 cr.use('*', authMiddleware);
@@ -248,6 +249,22 @@ cr.post('/mrv/submissions/:id/verify', async (c) => {
   await c.env.DB.prepare(
     `UPDATE mrv_submissions SET status = ? WHERE id = ?`,
   ).bind(status, submissionId).run();
+  const submissionRow = await c.env.DB.prepare(
+    `SELECT submitted_by FROM mrv_submissions WHERE id = ?`,
+  ).bind(submissionId).first<{ submitted_by: string }>();
+  await fireCascade({
+    event: 'carbon.mrv_verified',
+    actor_id: user.id,
+    entity_type: 'mrv_verifications',
+    entity_id: id,
+    data: {
+      submission_id: submissionId,
+      submitted_by: submissionRow?.submitted_by,
+      opinion: b.opinion,
+      verified_reductions_tco2e: b.verified_reductions_tco2e,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { verification_id: id, submission_status: status } }, 201);
 });
 
@@ -366,6 +383,26 @@ cr.post('/tax-claims/:id/submit', async (c) => {
         SET status = 'submitted', submitted_at = datetime('now'), sars_reference = ?
       WHERE id = ?`,
   ).bind((b.sars_reference as string) || null, id).run();
+  const claimRow = await c.env.DB.prepare(
+    `SELECT taxpayer_participant_id, tax_year, offset_applied_zar, net_tax_liability_zar
+       FROM carbon_tax_offset_claims WHERE id = ?`,
+  ).bind(id).first<{
+    taxpayer_participant_id: string; tax_year: number;
+    offset_applied_zar: number; net_tax_liability_zar: number;
+  }>();
+  await fireCascade({
+    event: 'carbon.tax_claim_submitted',
+    actor_id: user.id,
+    entity_type: 'carbon_tax_offset_claims',
+    entity_id: id,
+    data: {
+      taxpayer_participant_id: claimRow?.taxpayer_participant_id,
+      tax_year: claimRow?.tax_year,
+      offset_applied_zar: claimRow?.offset_applied_zar,
+      net_tax_liability_zar: claimRow?.net_tax_liability_zar,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 

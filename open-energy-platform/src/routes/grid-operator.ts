@@ -10,6 +10,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { fireCascade } from '../utils/cascade';
 
 const gridOps = new Hono<HonoEnv>();
 gridOps.use('*', authMiddleware);
@@ -212,6 +213,20 @@ gridOps.post('/dispatch/instructions', async (c) => {
     b.reason, b.grid_constraint_id || null, user.id,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM dispatch_instructions WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'grid.instruction_issued',
+    actor_id: user.id,
+    entity_type: 'dispatch_instructions',
+    entity_id: id,
+    data: {
+      participant_id: b.participant_id,
+      instruction_type: b.instruction_type,
+      instruction_number: b.instruction_number,
+      target_mw: b.target_mw,
+      effective_from: b.effective_from,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -249,7 +264,22 @@ gridOps.post('/dispatch/instructions/:id/compliance', async (c) => {
     b.penalty_amount_zar == null ? null : Number(b.penalty_amount_zar),
     id,
   ).run();
-  const row = await c.env.DB.prepare('SELECT * FROM dispatch_instructions WHERE id = ?').bind(id).first();
+  const row = await c.env.DB.prepare('SELECT * FROM dispatch_instructions WHERE id = ?').bind(id).first<{
+    participant_id: string;
+  }>();
+  if (status === 'non_compliant') {
+    await fireCascade({
+      event: 'grid.instruction_non_compliant',
+      actor_id: user.id,
+      entity_type: 'dispatch_instructions',
+      entity_id: id,
+      data: {
+        participant_id: row?.participant_id,
+        penalty_amount_zar: b.penalty_amount_zar == null ? 0 : Number(b.penalty_amount_zar),
+      },
+      env: c.env,
+    });
+  }
   return c.json({ success: true, data: row });
 });
 
@@ -291,6 +321,20 @@ gridOps.post('/curtailment-notices', async (c) => {
     b.severity || null, user.id,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM curtailment_notices WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'grid.curtailment_issued',
+    actor_id: user.id,
+    entity_type: 'curtailment_notices',
+    entity_id: id,
+    data: {
+      notice_number: b.notice_number,
+      affected_zone: b.affected_zone,
+      curtailment_mw: b.curtailment_mw,
+      severity: b.severity || 'advisory',
+      effective_from: b.effective_from,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -489,6 +533,19 @@ gridOps.post('/outages', async (c) => {
     b.cause || null, b.status || null, user.id,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM grid_outages WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'grid.outage_reported',
+    actor_id: user.id,
+    entity_type: 'grid_outages',
+    entity_id: id,
+    data: {
+      outage_number: b.outage_number,
+      affected_load_mw: b.affected_load_mw,
+      affected_customers: b.affected_customers,
+      severity: b.severity,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
