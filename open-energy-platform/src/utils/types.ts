@@ -24,6 +24,10 @@ export interface HonoEnv {
   // settlement. Optional: when absent, callers fall back to env.DB.
   // See src/utils/metering-router.ts for the routing logic.
   METERING_DB_CURRENT?: D1Database;
+  // Static assets binding — Cloudflare's Worker+assets model serves the
+  // React SPA through this binding. Everything under /api/* is handled
+  // by the Hono router; anything else falls through to ASSETS.
+  ASSETS?: { fetch: (req: Request) => Promise<Response> };
   JWT_SECRET: string;
   // Microsoft Entra ID SSO bindings (optional — when unset, SSO is disabled)
   AZURE_AD_CLIENT_ID?: string;

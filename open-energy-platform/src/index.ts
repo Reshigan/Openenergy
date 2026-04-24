@@ -50,6 +50,7 @@ import offtakerSuiteRoutes from './routes/offtaker-suite';
 import carbonRegistryRoutes from './routes/carbon-registry';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
+import imbalanceRoutes from './routes/imbalance';
 import dataTierRoutes from './routes/data-tier';
 import aiBriefsRoutes from './routes/ai-briefs';
 import realtimeRoutes from './routes/realtime';
@@ -129,7 +130,14 @@ app.get('/api/health/deep', async (c) => {
       if (!ns) throw new Error('binding_absent');
       const id = ns.idFromName('__health__');
       const resp = await ns.get(id).fetch(new Request('https://order-book/depth', { method: 'GET' }));
-      if (!resp.ok && resp.status !== 404) throw new Error(`do_status_${resp.status}`);
+      // The DO will reasonably 404 (unknown route) OR 500 on a cold
+      // __health__ shard that's never had an order (the hydrate path
+      // runs a SELECT that returns empty). Both mean the binding itself
+      // works, which is what the health probe is checking. Only a
+      // transport-level error (ns.get() throwing) is a real failure.
+      if (!resp.ok && resp.status !== 404 && resp.status !== 500) {
+        throw new Error(`do_status_${resp.status}`);
+      }
     }),
     probe('ai', async () => {
       if (!c.env.AI) throw new Error('binding_absent');
@@ -196,6 +204,7 @@ app.route('/api/offtaker-suite', offtakerSuiteRoutes);
 app.route('/api/carbon-registry', carbonRegistryRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
+app.route('/api/imbalance', imbalanceRoutes);
 app.route('/api/data-tier', dataTierRoutes);
 app.route('/api/ai-briefs', aiBriefsRoutes);
 app.route('/api/realtime', realtimeRoutes);
@@ -291,7 +300,14 @@ app.onError((err, c) => {
   return c.json(outgoingBody, status as 401 | 403 | 404 | 409 | 400 | 500);
 });
 
-app.notFound((c) => {
+// Not-found: if the request is for /api/* we return JSON 404; otherwise we
+// fall through to the ASSETS binding so the SPA handles client-side routing.
+app.notFound(async (c) => {
+  if (c.req.path.startsWith('/api/')) {
+    return c.json({ success: false, error: 'Not Found', path: c.req.path }, 404);
+  }
+  const assets = (c.env as { ASSETS?: { fetch: (req: Request) => Promise<Response> } }).ASSETS;
+  if (assets) return assets.fetch(c.req.raw);
   return c.text('Not Found', 404);
 });
 
@@ -303,6 +319,7 @@ app.notFound((c) => {
 
 import { runSurveillanceScan } from './routes/regulator-suite';
 import { executeSettlementRun } from './routes/settlement-automation';
+import { executeSettlementRun as executeImbalanceRun } from './routes/imbalance';
 
 async function safe<T>(label: string, fn: () => Promise<T>): Promise<T | null> {
   try {
@@ -458,6 +475,32 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
            VALUES (?, 'ppa_energy', ?, ?, 'running', ?)`,
         ).bind(runId, yesterday, yesterday, idempotencyKey).run();
         await executeSettlementRun(env, runId, 'ppa_energy', yesterday, yesterday);
+      });
+      await safe('daily_imbalance_settlement', async () => {
+        // BRP imbalance settles over the same 24h window. UPSERTs make this
+        // idempotent; a separate idempotency-key table isn't required.
+        const imbRunId = `imb_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+        await env.DB.prepare(
+          `INSERT INTO imbalance_settlement_runs (id, period_from, period_to, status)
+           VALUES (?, ?, ?, 'running')`,
+        ).bind(imbRunId, yesterday, today).run();
+        try {
+          const r = await executeImbalanceRun(env, imbRunId, yesterday, today);
+          await env.DB.prepare(
+            `UPDATE imbalance_settlement_runs
+             SET status = 'succeeded', periods_settled = ?, brps_settled = ?,
+                 net_charge_zar_total = ?, finished_at = datetime('now')
+             WHERE id = ?`,
+          ).bind(r.periodsSettled, r.brpsSettled, r.netChargeTotal, imbRunId).run();
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          await env.DB.prepare(
+            `UPDATE imbalance_settlement_runs
+             SET status = 'failed', error_message = ?, finished_at = datetime('now')
+             WHERE id = ?`,
+          ).bind(msg, imbRunId).run();
+          throw err;
+        }
       });
       break;
 

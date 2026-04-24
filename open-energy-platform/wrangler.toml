@@ -1,7 +1,23 @@
 name = "open-energy-platform"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = "pages/dist"
+
+# Worker-with-static-assets deployment.
+#
+# Pre-2024 this project was Cloudflare Pages + Pages Functions. We moved to
+# the unified Worker model because Pages Functions don't natively support
+# the `export default { fetch, scheduled }` shape used by src/index.ts
+# (required for cron triggers + Durable Object exports).
+#
+# The Worker handles /api/* via the Hono app in src/index.ts; any path not
+# matched by an API route falls through to the ASSETS binding which serves
+# the React SPA from pages/dist. Deploy via `wrangler deploy`.
+main = "src/index.ts"
+
+[assets]
+directory = "pages/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
 
 [vars]
 ENVIRONMENT = "production"
@@ -27,6 +43,7 @@ id = "aa6172248d474199a39c5f6aeafb2ec2"
 binding = "DB"
 database_name = "open-energy-db"
 database_id = "e0665a44-2f3e-4ab6-8ec5-101af4e8f951"
+migrations_dir = "migrations"
 
 # Workers AI binding for role-aware AI analysis (offtaker bill optimisation,
 # IPP project simulation, carbon fund NAV, lender cashflow, trader signals,

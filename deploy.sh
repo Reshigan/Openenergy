@@ -1,30 +1,38 @@
 #!/bin/bash
-# Cloudflare Pages Deployment Setup Script
-# Run this script locally if you have wrangler installed
+# Open Energy Platform — Cloudflare Worker + static-assets deploy.
+#
+# This script:
+#   1. builds the React SPA into open-energy-platform/pages/dist
+#   2. runs a wrangler dry-run to catch binding / config regressions
+#   3. deploys as a single Worker (fetch + scheduled + Durable Objects
+#      + static-assets binding for the SPA)
+#
+# Pre-reqs (one-time):
+#   npm install -g wrangler
+#   wrangler login
+#   # Provision backing stores:
+#   wrangler d1 create open-energy-db           (if not already created)
+#   wrangler kv:namespace create OE_KV          (if not already created)
+#   wrangler r2 bucket create open-energy-vault (if not already created)
+#   # Apply migrations (idempotent — safe to re-run):
+#   cd open-energy-platform && wrangler d1 migrations apply open-energy-db --remote
+#   # Secrets:
+#   wrangler secret put JWT_SECRET
+#   wrangler secret put AZURE_AD_CLIENT_SECRET
+#   wrangler secret put BACKUP_TOKEN
 
 set -e
+cd "$(dirname "$0")"/open-energy-platform
 
-echo "Open Energy Platform - Cloudflare Setup"
-echo "========================================"
+echo "▸ Building SPA..."
+cd pages && npm install --silent --no-audit --no-fund && npm run build
+cd ..
 
-# Check if wrangler is installed
-if ! command -v wrangler &> /dev/null; then
-    echo "Error: wrangler CLI is not installed"
-    echo "Install it with: npm install -g wrangler"
-    exit 1
-fi
+echo "▸ Wrangler dry-run (catches config regressions without deploying)..."
+npx wrangler deploy --dry-run
 
-# Build the frontend
-echo ""
-echo "Step 1: Building frontend..."
-cd open-energy-platform/pages
-npm run build
+echo "▸ Deploying..."
+npx wrangler deploy
 
-# Deploy to Cloudflare Pages
-echo ""
-echo "Step 2: Deploying to Cloudflare Pages..."
-wrangler pages deploy pages/dist --project-name=open-energy-platform
-
-echo ""
-echo "Deployment complete!"
-echo "Your site should be available at: https://open-energy-platform.pages.dev"
+echo "✓ Deploy complete. Worker is now live."
+echo "  Verify /api/health/deep returns 200 across all bindings."
