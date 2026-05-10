@@ -217,7 +217,7 @@ export function TraderRiskPage() {
       subtitle="Positions, marks, credit, collateral, margin and clearing — Financial Markets Act 19/2012 aligned."
       tabs={tabs}
       aiBriefRole="trader"
-      aiBriefAccent={{ from: '#0a6ed1', to: '#5d36ff' }}
+      aiBriefAccent={{ from: '#3b82c4', to: '#1f9b95' }}
     />
   );
 }

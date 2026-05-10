@@ -161,23 +161,23 @@ export function OfftakerAiHub() {
   }, [mix]);
 
   return (
-    <section className="rounded-xl border border-[#e5e5e5] bg-white/95 backdrop-blur-sm overflow-hidden">
+    <section className="rounded-xl border border-[#dde4ec] bg-white/95 backdrop-blur-sm overflow-hidden">
       <header className="flex items-center gap-3 px-5 py-4 border-b border-[#f0f0f0] bg-gradient-to-r from-[#f5f6fa] to-[#eaf0ff]">
-        <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-[#0a6ed1] to-[#5d36ff] grid place-items-center text-white">
+        <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-[#3b82c4] to-[#1f9b95] grid place-items-center text-white">
           <Sparkles size={18} />
         </div>
         <div className="flex-1">
-          <h2 className="text-[15px] font-semibold text-[#32363a]">Offtaker AI — Bill → Mix → LOI</h2>
-          <p className="text-[12px] text-[#6a6d70]">
+          <h2 className="text-[15px] font-semibold text-[#0f1c2e]">Offtaker AI — Bill → Mix → LOI</h2>
+          <p className="text-[12px] text-[#6b7685]">
             Upload your electricity bill. We extract tariff shape, recommend an optimal mix across
             operating / under-construction / financial-close projects, and draft Letters of Intent.
           </p>
         </div>
-        <ol className="hidden md:flex items-center gap-3 text-[11px] text-[#6a6d70]">
+        <ol className="hidden md:flex items-center gap-3 text-[11px] text-[#6b7685]">
           {(['upload', 'profile', 'mix', 'lois'] as const).map((s, i) => (
-            <li key={s} className={`flex items-center gap-2 ${stage === s ? 'text-[#0a6ed1] font-semibold' : ''}`}>
+            <li key={s} className={`flex items-center gap-2 ${stage === s ? 'text-[#3b82c4] font-semibold' : ''}`}>
               <span className={`inline-block w-5 h-5 rounded-full grid place-items-center text-[10px] font-bold
-                ${stage === s ? 'bg-[#0a6ed1] text-white' : 'bg-[#e5e5e5] text-[#6a6d70]'}`}>{i + 1}</span>
+                ${stage === s ? 'bg-[#3b82c4] text-white' : 'bg-[#dde4ec] text-[#6b7685]'}`}>{i + 1}</span>
               <span className="uppercase tracking-wider">{s}</span>
             </li>
           ))}
@@ -185,7 +185,7 @@ export function OfftakerAiHub() {
       </header>
 
       {error && (
-        <div className="px-5 py-2 text-[12px] text-[#bb0000] bg-[#ffebee] border-b border-[#ffcdd2]">
+        <div className="px-5 py-2 text-[12px] text-[#c0392b] bg-[#ffebee] border-b border-[#ffcdd2]">
           {error}
         </div>
       )}
@@ -195,7 +195,7 @@ export function OfftakerAiHub() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
               onClick={() => fileRef.current?.click()}
-              className="flex flex-col items-center justify-center gap-2 h-36 rounded-lg border-2 border-dashed border-[#d0d5dd] hover:border-[#0a6ed1] hover:bg-[#f8fbff] transition-colors text-[13px] text-[#6a6d70]"
+              className="flex flex-col items-center justify-center gap-2 h-36 rounded-lg border-2 border-dashed border-[#d0d5dd] hover:border-[#3b82c4] hover:bg-[#f8fbff] transition-colors text-[13px] text-[#6b7685]"
             >
               <FileUp size={24} />
               <span>Click to upload PDF or CSV</span>
@@ -209,18 +209,18 @@ export function OfftakerAiHub() {
               onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
             />
             <div className="flex flex-col gap-2">
-              <label className="text-[12px] text-[#6a6d70]">Or paste bill text</label>
+              <label className="text-[12px] text-[#6b7685]">Or paste bill text</label>
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 rows={5}
                 placeholder="Paste the key figures from your bill — annual kWh, peak/off-peak split, average tariff, demand charges."
-                className="w-full rounded-lg border border-[#d0d5dd] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0a6ed1]"
+                className="w-full rounded-lg border border-[#d0d5dd] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#3b82c4]"
               />
               <button
                 onClick={handleText}
                 disabled={loading}
-                className="self-start h-9 px-4 rounded-lg bg-[#0a6ed1] text-white text-[13px] font-semibold hover:bg-[#085bab] disabled:opacity-50 inline-flex items-center gap-2"
+                className="self-start h-9 px-4 rounded-lg bg-[#3b82c4] text-white text-[13px] font-semibold hover:bg-[#085bab] disabled:opacity-50 inline-flex items-center gap-2"
               >
                 {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                 Analyse bill
@@ -241,14 +241,14 @@ export function OfftakerAiHub() {
               <button
                 onClick={runOptimize}
                 disabled={loading}
-                className="h-10 px-5 rounded-lg bg-[#0a6ed1] text-white text-[13px] font-semibold hover:bg-[#085bab] disabled:opacity-50 inline-flex items-center gap-2"
+                className="h-10 px-5 rounded-lg bg-[#3b82c4] text-white text-[13px] font-semibold hover:bg-[#085bab] disabled:opacity-50 inline-flex items-center gap-2"
               >
                 {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                 Recommend optimal mix
               </button>
               <button
                 onClick={() => { setStage('upload'); setProfile(null); setBillId(null); }}
-                className="h-10 px-4 rounded-lg border border-[#d0d5dd] text-[13px] text-[#6a6d70] hover:bg-[#f5f6fa]"
+                className="h-10 px-4 rounded-lg border border-[#d0d5dd] text-[13px] text-[#6b7685] hover:bg-[#f5f6fa]"
               >
                 Upload different bill
               </button>
@@ -270,9 +270,9 @@ export function OfftakerAiHub() {
               <ProfileKpi label="Projects in mix" value={`${mix.filter((m) => m.share_pct > 0).length} / ${mix.length}`} />
               <ProfileKpi label="Horizon" value="15 years" />
             </div>
-            <div className="rounded-lg border border-[#e5e5e5] overflow-hidden">
+            <div className="rounded-lg border border-[#dde4ec] overflow-hidden">
               <table className="w-full text-[13px]">
-                <thead className="bg-[#fafafa] text-[#6a6d70]">
+                <thead className="bg-[#eef2f7] text-[#6b7685]">
                   <tr>
                     <th className="text-left px-3 py-2 font-semibold">Project</th>
                     <th className="text-left px-3 py-2 font-semibold">Stage</th>
@@ -285,15 +285,15 @@ export function OfftakerAiHub() {
                 <tbody>
                   {mix.map((m) => (
                     <tr key={m.project_id} className="border-t border-[#f0f0f0]">
-                      <td className="px-3 py-2 text-[#32363a] font-medium">{m.project_name || m.project_id}</td>
-                      <td className="px-3 py-2 text-[#6a6d70]">{m.stage || '—'}</td>
+                      <td className="px-3 py-2 text-[#0f1c2e] font-medium">{m.project_name || m.project_id}</td>
+                      <td className="px-3 py-2 text-[#6b7685]">{m.stage || '—'}</td>
                       <td className="px-3 py-2 text-right">{m.share_pct}%</td>
                       <td className="px-3 py-2 text-right">{Math.round(m.mwh_per_year).toLocaleString()}</td>
                       <td className="px-3 py-2 text-right">R{m.blended_price}</td>
                       <td className="px-3 py-2 text-right">
                         <button
                           onClick={() => toggleMix(m.project_id)}
-                          className={`h-7 px-3 rounded-md text-[11px] font-semibold ${m.share_pct > 0 ? 'bg-[#0a6ed1] text-white' : 'bg-[#e5e5e5] text-[#6a6d70]'}`}
+                          className={`h-7 px-3 rounded-md text-[11px] font-semibold ${m.share_pct > 0 ? 'bg-[#3b82c4] text-white' : 'bg-[#dde4ec] text-[#6b7685]'}`}
                         >
                           {m.share_pct > 0 ? 'In mix' : 'Add'}
                         </button>
@@ -307,14 +307,14 @@ export function OfftakerAiHub() {
               <button
                 onClick={sendLois}
                 disabled={loading || mix.filter((m) => m.share_pct > 0).length === 0}
-                className="h-10 px-5 rounded-lg bg-[#107e3e] text-white text-[13px] font-semibold hover:bg-[#0b6430] disabled:opacity-50 inline-flex items-center gap-2"
+                className="h-10 px-5 rounded-lg bg-[#1a8a5b] text-white text-[13px] font-semibold hover:bg-[#0b6430] disabled:opacity-50 inline-flex items-center gap-2"
               >
                 {loading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                 Generate LOIs for selected projects
               </button>
               <button
                 onClick={() => setStage('profile')}
-                className="h-10 px-4 rounded-lg border border-[#d0d5dd] text-[13px] text-[#6a6d70] hover:bg-[#f5f6fa]"
+                className="h-10 px-4 rounded-lg border border-[#d0d5dd] text-[13px] text-[#6b7685] hover:bg-[#f5f6fa]"
               >
                 Back to bill profile
               </button>
@@ -324,17 +324,17 @@ export function OfftakerAiHub() {
 
         {stage === 'lois' && (
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-[13px] text-[#107e3e] font-semibold">
+            <div className="flex items-center gap-2 text-[13px] text-[#1a8a5b] font-semibold">
               <CheckCircle2 size={16} /> {lois.length} LOI draft{lois.length === 1 ? '' : 's'} generated and queued for IPP review
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {lois.map((l) => (
-                <article key={l.loi_id} className="rounded-lg border border-[#e5e5e5] p-4 bg-white">
+                <article key={l.loi_id} className="rounded-lg border border-[#dde4ec] p-4 bg-white">
                   <header className="flex items-center gap-2 mb-2">
-                    <span className="h-6 w-6 rounded-md bg-[#e7f4ea] text-[#107e3e] grid place-items-center"><CheckCircle2 size={14} /></span>
-                    <h3 className="text-[14px] font-semibold text-[#32363a]">{l.project_name}</h3>
+                    <span className="h-6 w-6 rounded-md bg-[#e7f4ea] text-[#1a8a5b] grid place-items-center"><CheckCircle2 size={14} /></span>
+                    <h3 className="text-[14px] font-semibold text-[#0f1c2e]">{l.project_name}</h3>
                   </header>
-                  <div className="max-h-64 overflow-auto bg-[#fafafa] rounded p-2 border border-[#f0f0f0]">
+                  <div className="max-h-64 overflow-auto bg-[#eef2f7] rounded p-2 border border-[#f0f0f0]">
                     <NarrativeText text={l.body_md} />
                   </div>
                 </article>
@@ -342,7 +342,7 @@ export function OfftakerAiHub() {
             </div>
             <button
               onClick={() => { setStage('upload'); setMix([]); setLois([]); setOpt(null); setProfile(null); setBillId(null); setText(''); }}
-              className="h-9 px-4 rounded-lg border border-[#d0d5dd] text-[13px] text-[#6a6d70] hover:bg-[#f5f6fa]"
+              className="h-9 px-4 rounded-lg border border-[#d0d5dd] text-[13px] text-[#6b7685] hover:bg-[#f5f6fa]"
             >
               Start a new analysis
             </button>
@@ -355,9 +355,9 @@ export function OfftakerAiHub() {
 
 function ProfileKpi({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-[#e5e5e5] bg-[#fafbfd] p-3">
-      <div className="text-[10px] uppercase tracking-wider text-[#6a6d70]">{label}</div>
-      <div className="mt-1 text-[16px] font-semibold text-[#32363a]">{value}</div>
+    <div className="rounded-lg border border-[#dde4ec] bg-[#fafbfd] p-3">
+      <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{label}</div>
+      <div className="mt-1 text-[16px] font-semibold text-[#0f1c2e]">{value}</div>
     </div>
   );
 }

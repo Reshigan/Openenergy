@@ -39,10 +39,10 @@ type Loi = {
 };
 
 const statusPill: Record<string, { bg: string; text: string; label: string }> = {
-  drafted:  { bg: '#eef1f4', text: '#6a6d70', label: 'Drafted' },
-  sent:     { bg: '#e5f0fa', text: '#0a6ed1', label: 'Awaiting response' },
-  signed:   { bg: '#e7f4ea', text: '#107e3e', label: 'Accepted' },
-  withdrawn:{ bg: '#fde7e9', text: '#bb0000', label: 'Declined / withdrawn' },
+  drafted:  { bg: '#eef1f4', text: '#6b7685', label: 'Drafted' },
+  sent:     { bg: '#d4e7f6', text: '#3b82c4', label: 'Awaiting response' },
+  signed:   { bg: '#e7f4ea', text: '#1a8a5b', label: 'Accepted' },
+  withdrawn:{ bg: '#fde7e9', text: '#c0392b', label: 'Declined / withdrawn' },
   expired:  { bg: '#fef3e6', text: '#b04e0f', label: 'Expired' },
 };
 
@@ -120,7 +120,7 @@ export function LoiDetail() {
 
   if (loading) {
     return (
-      <div className="p-8 text-[13px] text-[#6a6d70] flex items-center gap-2">
+      <div className="p-8 text-[13px] text-[#6b7685] flex items-center gap-2">
         <Loader2 size={14} className="animate-spin" /> Loading LOI…
       </div>
     );
@@ -129,10 +129,10 @@ export function LoiDetail() {
   if (error && !loi) {
     return (
       <div className="p-8">
-        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] px-4 py-3 text-[13px] text-[#bb0000] inline-flex items-center gap-2">
+        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] px-4 py-3 text-[13px] text-[#c0392b] inline-flex items-center gap-2">
           <AlertTriangle size={14} /> {error}
         </div>
-        <button onClick={() => navigate('/lois')} className="mt-4 text-[13px] text-[#0a6ed1] hover:underline">
+        <button onClick={() => navigate('/lois')} className="mt-4 text-[13px] text-[#3b82c4] hover:underline">
           Back to LOIs
         </button>
       </div>
@@ -147,16 +147,16 @@ export function LoiDetail() {
     <div className="p-6 max-w-5xl mx-auto space-y-5">
       <button
         onClick={() => navigate('/lois')}
-        className="inline-flex items-center gap-1.5 text-[12px] text-[#6a6d70] hover:text-[#0a6ed1]"
+        className="inline-flex items-center gap-1.5 text-[12px] text-[#6b7685] hover:text-[#3b82c4]"
       >
         <ArrowLeft size={14} /> All LOIs
       </button>
 
-      <header className="rounded-xl border border-[#e5e5e5] bg-white overflow-hidden">
+      <header className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
         <div className="flex items-start justify-between px-6 py-5 bg-gradient-to-r from-[#f5f6fa] to-[#eaf0ff] border-b border-[#f0f0f0]">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-1">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6a6d70]">Letter of Intent</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6b7685]">Letter of Intent</span>
               <span
                 className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full"
                 style={{ background: pill.bg, color: pill.text }}
@@ -164,17 +164,17 @@ export function LoiDetail() {
                 {pill.label}
               </span>
             </div>
-            <h1 className="text-[22px] font-semibold text-[#32363a]">
+            <h1 className="text-[22px] font-semibold text-[#0f1c2e]">
               {loi.project_name || 'Indicative offtake proposal'}
             </h1>
-            <p className="text-[13px] text-[#6a6d70] mt-1">
+            <p className="text-[13px] text-[#6b7685] mt-1">
               From <strong>{loi.from_name || '—'}</strong> → <strong>{loi.to_name || '—'}</strong> · drafted {new Date(loi.created_at).toLocaleDateString('en-ZA')}
             </p>
           </div>
           {loi.status === 'signed' && loi.resulting_contract_document_id && (
             <Link
               to={`/contracts/${loi.resulting_contract_document_id}`}
-              className="h-9 px-4 rounded-lg bg-[#0a6ed1] text-white text-[13px] font-semibold hover:bg-[#085bab] inline-flex items-center gap-2"
+              className="h-9 px-4 rounded-lg bg-[#3b82c4] text-white text-[13px] font-semibold hover:bg-[#085bab] inline-flex items-center gap-2"
             >
               <FileSignature size={14} /> Open contract
             </Link>
@@ -190,33 +190,33 @@ export function LoiDetail() {
       </header>
 
       {error && (
-        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] px-4 py-2 text-[13px] text-[#bb0000] inline-flex items-center gap-2">
+        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] px-4 py-2 text-[13px] text-[#c0392b] inline-flex items-center gap-2">
           <AlertTriangle size={14} /> {error}
         </div>
       )}
 
-      <section className="rounded-xl border border-[#e5e5e5] bg-white overflow-hidden">
-        <header className="flex items-center gap-2 px-5 py-3 border-b border-[#f0f0f0] bg-[#fafafa]">
-          <h2 className="text-[13px] font-semibold text-[#32363a]">LOI body</h2>
-          <span className="text-[11px] text-[#6a6d70]">Non-binding · subject to due diligence</span>
+      <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+        <header className="flex items-center gap-2 px-5 py-3 border-b border-[#f0f0f0] bg-[#eef2f7]">
+          <h2 className="text-[13px] font-semibold text-[#0f1c2e]">LOI body</h2>
+          <span className="text-[11px] text-[#6b7685]">Non-binding · subject to due diligence</span>
         </header>
         <div className="p-5 bg-white max-h-[480px] overflow-auto">
           {loi.body_md
             ? <NarrativeText text={loi.body_md} />
-            : <div className="text-[13px] text-[#6a6d70]">(No body text attached to this LOI)</div>}
+            : <div className="text-[13px] text-[#6b7685]">(No body text attached to this LOI)</div>}
         </div>
       </section>
 
       {mix && typeof mix === 'object' && 'project_id' in mix && (
-        <section className="rounded-xl border border-[#e5e5e5] bg-white overflow-hidden">
-          <header className="px-5 py-3 border-b border-[#f0f0f0] bg-[#fafafa]">
-            <h2 className="text-[13px] font-semibold text-[#32363a]">Mix item</h2>
+        <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+          <header className="px-5 py-3 border-b border-[#f0f0f0] bg-[#eef2f7]">
+            <h2 className="text-[13px] font-semibold text-[#0f1c2e]">Mix item</h2>
           </header>
           <dl className="grid grid-cols-2 md:grid-cols-4 divide-x divide-[#f0f0f0]">
             {Object.entries(mix as Record<string, unknown>).map(([k, v]) => (
               <div key={k} className="px-4 py-3">
-                <dt className="text-[11px] uppercase tracking-wider text-[#6a6d70]">{k.replace(/_/g, ' ')}</dt>
-                <dd className="text-[13px] text-[#32363a] mt-0.5 break-all">{String(v)}</dd>
+                <dt className="text-[11px] uppercase tracking-wider text-[#6b7685]">{k.replace(/_/g, ' ')}</dt>
+                <dd className="text-[13px] text-[#0f1c2e] mt-0.5 break-all">{String(v)}</dd>
               </div>
             ))}
           </dl>
@@ -225,12 +225,12 @@ export function LoiDetail() {
 
       {loi.decline_reason && (
         <section className="rounded-xl border border-[#ffcdd2] bg-[#fff8f8] px-5 py-4">
-          <h3 className="text-[13px] font-semibold text-[#bb0000] inline-flex items-center gap-2">
+          <h3 className="text-[13px] font-semibold text-[#c0392b] inline-flex items-center gap-2">
             <XCircle size={14} /> Declined
           </h3>
-          <p className="text-[13px] text-[#32363a] mt-1">{loi.decline_reason}</p>
+          <p className="text-[13px] text-[#0f1c2e] mt-1">{loi.decline_reason}</p>
           {loi.resolved_at && (
-            <p className="text-[11px] text-[#6a6d70] mt-1">
+            <p className="text-[11px] text-[#6b7685] mt-1">
               {new Date(loi.resolved_at).toLocaleString('en-ZA')}
             </p>
           )}
@@ -238,12 +238,12 @@ export function LoiDetail() {
       )}
 
       {canRespond && (
-        <section className="rounded-xl border border-[#0a6ed1]/30 bg-[#f4f9ff] px-5 py-4 space-y-3">
+        <section className="rounded-xl border border-[#3b82c4]/30 bg-[#f4f9ff] px-5 py-4 space-y-3">
           <div className="flex items-center gap-2">
-            <FileSignature size={16} className="text-[#0a6ed1]" />
-            <h3 className="text-[14px] font-semibold text-[#32363a]">Respond to this LOI</h3>
+            <FileSignature size={16} className="text-[#3b82c4]" />
+            <h3 className="text-[14px] font-semibold text-[#0f1c2e]">Respond to this LOI</h3>
           </div>
-          <p className="text-[12px] text-[#6a6d70]">
+          <p className="text-[12px] text-[#6b7685]">
             Accepting creates a draft Term Sheet on your Contracts page (phase: term_sheet) that you and the counterparty can progress to full PPA.
           </p>
           {!showDeclineForm ? (
@@ -251,7 +251,7 @@ export function LoiDetail() {
               <button
                 onClick={accept}
                 disabled={busy !== null}
-                className="h-10 px-5 rounded-lg bg-[#107e3e] text-white text-[13px] font-semibold hover:bg-[#0b6430] disabled:opacity-50 inline-flex items-center gap-2"
+                className="h-10 px-5 rounded-lg bg-[#1a8a5b] text-white text-[13px] font-semibold hover:bg-[#0b6430] disabled:opacity-50 inline-flex items-center gap-2"
               >
                 {busy === 'accept' ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                 Accept &amp; create term sheet
@@ -259,33 +259,33 @@ export function LoiDetail() {
               <button
                 onClick={() => setShowDeclineForm(true)}
                 disabled={busy !== null}
-                className="h-10 px-4 rounded-lg border border-[#bb0000] text-[#bb0000] text-[13px] font-semibold hover:bg-[#fef3f3] disabled:opacity-50 inline-flex items-center gap-2"
+                className="h-10 px-4 rounded-lg border border-[#c0392b] text-[#c0392b] text-[13px] font-semibold hover:bg-[#fef3f3] disabled:opacity-50 inline-flex items-center gap-2"
               >
                 <XCircle size={14} /> Decline
               </button>
             </div>
           ) : (
             <div className="space-y-2">
-              <label className="text-[12px] font-semibold text-[#6a6d70]">Reason for declining</label>
+              <label className="text-[12px] font-semibold text-[#6b7685]">Reason for declining</label>
               <textarea
                 value={declineReason}
                 onChange={(e) => setDeclineReason(e.target.value)}
                 rows={3}
                 placeholder="e.g. Volume exceeds our current offtake envelope; revisit in Q3 post-budget."
-                className="w-full rounded-lg border border-[#d0d5dd] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#0a6ed1]"
+                className="w-full rounded-lg border border-[#d0d5dd] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#3b82c4]"
               />
               <div className="flex items-center gap-3">
                 <button
                   onClick={decline}
                   disabled={busy !== null || !declineReason.trim()}
-                  className="h-9 px-4 rounded-lg bg-[#bb0000] text-white text-[13px] font-semibold hover:bg-[#9a0000] disabled:opacity-50 inline-flex items-center gap-2"
+                  className="h-9 px-4 rounded-lg bg-[#c0392b] text-white text-[13px] font-semibold hover:bg-[#9a0000] disabled:opacity-50 inline-flex items-center gap-2"
                 >
                   {busy === 'decline' ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
                   Confirm decline
                 </button>
                 <button
                   onClick={() => { setShowDeclineForm(false); setDeclineReason(''); }}
-                  className="h-9 px-4 rounded-lg border border-[#d0d5dd] text-[13px] text-[#6a6d70] hover:bg-[#f5f6fa]"
+                  className="h-9 px-4 rounded-lg border border-[#d0d5dd] text-[13px] text-[#6b7685] hover:bg-[#f5f6fa]"
                 >
                   Cancel
                 </button>
@@ -301,10 +301,10 @@ export function LoiDetail() {
 function Fact({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
     <div className="px-4 py-3">
-      <div className="text-[11px] uppercase tracking-wider text-[#6a6d70] inline-flex items-center gap-1">
+      <div className="text-[11px] uppercase tracking-wider text-[#6b7685] inline-flex items-center gap-1">
         {icon} {label}
       </div>
-      <div className="text-[14px] font-semibold text-[#32363a] mt-0.5 truncate">{value}</div>
+      <div className="text-[14px] font-semibold text-[#0f1c2e] mt-0.5 truncate">{value}</div>
     </div>
   );
 }

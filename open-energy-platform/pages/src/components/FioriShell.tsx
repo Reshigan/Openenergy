@@ -1,48 +1,55 @@
 import React, { useState, useMemo, useEffect, useRef, ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import {
-  LayoutDashboard, FileText, TrendingUp, CircleDollarSign, Leaf, Building2,
-  BarChart3, Zap, PiggyBank, GitBranch, ShoppingCart, Store, Settings,
-  Search, Bell, HelpCircle, LogOut, User, ChevronLeft, ChevronRight, Sparkles,
-  Menu, Wrench, FileBarChart, Activity, ShieldCheck, Sun, LifeBuoy, Gauge,
-} from 'lucide-react';
 import { useAuth } from '../lib/useAuth';
+import { LogoMark } from './Logo';
+
+/* ════════════════════════════════════════════════════════════════════════
+ * Open Energy Platform — App Shell
+ * Forest Green gradient header · IBM Plex Sans / Metropolis · Material Symbols
+ * Industrial-Fintech aesthetic — sized for data-dense workflows
+ *
+ * Filename retained as `FioriShell` for compat with existing imports.
+ * ═══════════════════════════════════════════════════════════════════════ */
 
 type NavItem = {
   path: string;
   label: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: string;       // Material Symbols name
   section: string;
   badge?: string;
 };
 
+/**
+ * Master navigation. Sections track the Stitch Launchpad grouping:
+ * Home → Commerce → Operations → Sustainability → Finance → Insights → Compliance → System
+ */
 const BASE_NAV: NavItem[] = [
-  { path: '/cockpit',     label: 'Launchpad',    icon: LayoutDashboard, section: 'Home' },
-  { path: '/contracts',   label: 'Contracts',    icon: FileText,        section: 'Commerce' },
-  { path: '/trading',     label: 'Trading',      icon: TrendingUp,      section: 'Commerce' },
-  { path: '/settlement',  label: 'Settlement',   icon: CircleDollarSign, section: 'Commerce' },
-  { path: '/procurement', label: 'Procurement',  icon: ShoppingCart,    section: 'Commerce' },
-  { path: '/marketplace', label: 'Marketplace',  icon: Store,           section: 'Commerce' },
-  { path: '/projects',    label: 'IPP Projects', icon: Building2,       section: 'Operations' },
-  { path: '/pipeline',    label: 'Pipeline',     icon: GitBranch,       section: 'Operations' },
-  { path: '/grid',        label: 'Grid',         icon: Zap,             section: 'Operations' },
-  { path: '/om',          label: 'O&M',          icon: Wrench,          section: 'Operations' },
-  { path: '/carbon',      label: 'Carbon',       icon: Leaf,            section: 'Sustainability' },
-  { path: '/esg',         label: 'ESG',          icon: BarChart3,       section: 'Sustainability' },
-  { path: '/funds',       label: 'Funds',        icon: PiggyBank,       section: 'Finance' },
-  { path: '/intelligence', label: 'Intelligence', icon: Activity,       section: 'Insights' },
-  { path: '/briefing',    label: 'Briefing',     icon: Sun,             section: 'Insights' },
-  { path: '/reports',     label: 'Reports',      icon: FileBarChart,    section: 'Insights' },
-  { path: '/popia',       label: 'POPIA',        icon: ShieldCheck,     section: 'Compliance' },
-  { path: '/admin',       label: 'Admin',        icon: Settings,        section: 'System' },
-  { path: '/support',     label: 'Support',      icon: LifeBuoy,        section: 'System' },
-  { path: '/admin/monitoring', label: 'Monitoring', icon: Gauge,       section: 'System' },
+  { path: '/cockpit',      label: 'Launchpad',     icon: 'dashboard',          section: 'Home' },
+  { path: '/contracts',    label: 'Contracts',     icon: 'description',        section: 'Commerce' },
+  { path: '/lois',         label: 'Letters of Intent', icon: 'assignment',     section: 'Commerce' },
+  { path: '/trading',      label: 'Trading',       icon: 'trending_up',        section: 'Commerce' },
+  { path: '/settlement',   label: 'Settlement',    icon: 'receipt_long',       section: 'Commerce' },
+  { path: '/procurement',  label: 'Procurement',   icon: 'shopping_cart',      section: 'Commerce' },
+  { path: '/marketplace',  label: 'Marketplace',   icon: 'storefront',         section: 'Commerce' },
+  { path: '/projects',     label: 'IPP Projects',  icon: 'apartment',          section: 'Operations' },
+  { path: '/pipeline',     label: 'Pipeline',      icon: 'account_tree',       section: 'Operations' },
+  { path: '/grid',         label: 'Grid',          icon: 'bolt',               section: 'Operations' },
+  { path: '/om',           label: 'O&M',           icon: 'build',              section: 'Operations' },
+  { path: '/carbon',       label: 'Carbon',        icon: 'eco',                section: 'Sustainability' },
+  { path: '/esg',          label: 'ESG',           icon: 'public',             section: 'Sustainability' },
+  { path: '/funds',        label: 'Funds',         icon: 'savings',            section: 'Finance' },
+  { path: '/intelligence', label: 'Intelligence',  icon: 'insights',           section: 'Insights' },
+  { path: '/briefing',     label: 'Briefing',      icon: 'wb_sunny',           section: 'Insights' },
+  { path: '/reports',      label: 'Reports',       icon: 'bar_chart',          section: 'Insights' },
+  { path: '/popia',        label: 'POPIA',         icon: 'privacy_tip',        section: 'Compliance' },
+  { path: '/admin',        label: 'Admin',         icon: 'settings',           section: 'System' },
+  { path: '/support',      label: 'Support',       icon: 'support_agent',      section: 'System' },
+  { path: '/admin/monitoring', label: 'Monitoring', icon: 'monitor_heart',     section: 'System' },
 ];
 
 function navForRole(role: string | undefined): NavItem[] {
-  // /admin is admin-only; /support is admin + support only. Everyone else
-  // gets a curated list without either. POPIA is visible to every role
-  // because every user has personal data rights.
+  // /admin is admin-only; /support is admin + support only. POPIA is visible
+  // to every role because every user has personal data rights.
   const nonSystem = BASE_NAV.filter(
     (n) => n.path !== '/admin' && n.path !== '/support' && n.path !== '/admin/monitoring',
   );
@@ -51,10 +58,6 @@ function navForRole(role: string | undefined): NavItem[] {
     case 'admin':
       return BASE_NAV;
     case 'support':
-      // Support staff see a narrow console: their /support page, the action
-      // queues and audit surfaces, the shared /admin/monitoring dashboard,
-      // and read-only Intelligence/Briefing so they can see what the user is
-      // seeing when triaging tickets.
       return BASE_NAV.filter((n) =>
         ['/cockpit', '/support', '/admin/monitoring', '/intelligence', '/briefing', '/popia'].includes(n.path),
       );
@@ -64,9 +67,7 @@ function navForRole(role: string | undefined): NavItem[] {
       );
     case 'ipp_developer':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/projects', '/contracts', '/settlement', '/grid', '/om', '/marketplace', '/esg', '/intelligence', '/reports', '/popia', '/briefing'].includes(
-          n.path,
-        ),
+        ['/cockpit', '/projects', '/contracts', '/settlement', '/grid', '/om', '/marketplace', '/esg', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
       );
     case 'carbon_fund':
       return BASE_NAV.filter((n) =>
@@ -74,9 +75,7 @@ function navForRole(role: string | undefined): NavItem[] {
       );
     case 'offtaker':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/contracts', '/procurement', '/marketplace', '/settlement', '/esg', '/intelligence', '/reports', '/popia', '/briefing'].includes(
-          n.path,
-        ),
+        ['/cockpit', '/contracts', '/lois', '/procurement', '/marketplace', '/settlement', '/esg', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
       );
     case 'lender':
       return BASE_NAV.filter((n) =>
@@ -85,7 +84,6 @@ function navForRole(role: string | undefined): NavItem[] {
     case 'grid_operator':
       return BASE_NAV.filter((n) => ['/cockpit', '/grid', '/settlement', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path));
     case 'regulator':
-      // Regulators see the marketplace, ESG, intelligence feed, POPIA and the compliance dashboard — not the admin console.
       return BASE_NAV.filter((n) =>
         ['/cockpit', '/marketplace', '/esg', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
       );
@@ -105,6 +103,18 @@ function initialsOf(name: string | undefined): string {
     .toUpperCase();
 }
 
+function MIcon({ name, className = '', filled, size = 20 }: { name: string; className?: string; filled?: boolean; size?: number }) {
+  return (
+    <span
+      className={`mat-icon ${filled ? 'filled' : ''} ${className}`}
+      aria-hidden="true"
+      style={{ fontSize: size }}
+    >
+      {name}
+    </span>
+  );
+}
+
 export function FioriShell({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -112,17 +122,11 @@ export function FioriShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [query, setQuery] = useState('');
   const [userMenu, setUserMenu] = useState(false);
-  // menuOpen drives the hamburger dropdown (full nav list grouped by section).
-  // It exists in addition to `collapsed` so the hamburger works on any
-  // viewport — even when the rail is already collapsed to icons.
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  // Close the hamburger dropdown on route change or outside click—without
-  // this it stays open after selecting an item.
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [location.pathname]);
+  // Close hamburger on route change / outside click / Escape.
+  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
   useEffect(() => {
     if (!menuOpen) return;
     function onDown(ev: MouseEvent) {
@@ -141,6 +145,27 @@ export function FioriShell({ children }: { children: ReactNode }) {
     };
   }, [menuOpen]);
 
+  // Close user menu on outside click.
+  useEffect(() => {
+    if (!userMenu) return;
+    function onDown() { setUserMenu(false); }
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [userMenu]);
+
+  // Cmd/Ctrl-K → focus search.
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    function onKey(ev: KeyboardEvent) {
+      if ((ev.metaKey || ev.ctrlKey) && ev.key === 'k') {
+        ev.preventDefault();
+        searchRef.current?.focus();
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
   const nav = useMemo(() => navForRole(user?.role), [user?.role]);
   const sections = useMemo(() => {
     const map = new Map<string, NavItem[]>();
@@ -151,10 +176,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
     return Array.from(map.entries());
   }, [nav]);
 
-  // Match exact path or a sub-path — but only pick the single most specific
-  // nav entry so /admin/monitoring highlights Monitoring (not both Monitoring
-  // and Admin). A path counts as active for nav item `p` iff `p` is the
-  // longest registered nav prefix of the current location.
+  // Active nav item = longest registered prefix matching the current location.
   const activePath = useMemo(() => {
     const candidates = nav
       .map((n) => n.path)
@@ -173,64 +195,72 @@ export function FioriShell({ children }: { children: ReactNode }) {
 
   const sidebarWidth = collapsed ? 56 : 256;
 
+  // Submit search → /intelligence?q= for now (keeps wiring minimal).
+  function onSearchSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!query.trim()) return;
+    navigate(`/intelligence?q=${encodeURIComponent(query.trim())}`);
+  }
+
   return (
-    <div className="min-h-screen" style={{ background: '#f5f6f7' }}>
+    <div className="min-h-screen" style={{ background: 'var(--oe-surface)' }}>
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-[#0a6ed1] focus:px-3 focus:py-2 focus:rounded-md focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#0a6ed1]"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-primary focus:px-3 focus:py-2 focus:rounded-md focus:shadow-lg focus:outline-none"
+        style={{ color: 'var(--oe-primary)' }}
       >
         Skip to main content
       </a>
-      {/* Shell Bar */}
+
+      {/* ════════════ Shell Bar — Open Energy header ════════════ */}
       <header
         role="banner"
-        className="fiori-shell fixed top-0 left-0 right-0 z-50 flex items-center h-11 px-2 sm:px-4"
+        className="oe-shell fixed top-0 left-0 right-0 z-50 flex items-center px-2 sm:px-4"
+        style={{ height: 'var(--shell-height)' }}
       >
+        {/* Hamburger / nav menu */}
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            className="flex items-center justify-center w-9 h-9 rounded-md text-white/90 hover:bg-white/10 transition-colors"
+            className="flex items-center justify-center w-10 h-10 rounded-md text-white/90 hover:bg-white/10 transition-colors"
             aria-label="Open navigation menu"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
           >
-            <Menu size={18} />
+            <MIcon name="menu" />
           </button>
 
           {menuOpen && (
             <div
               role="menu"
               aria-label="Primary navigation"
-              className="fixed sm:absolute left-0 sm:left-0 top-11 sm:top-11 mt-1 w-[90vw] sm:w-[320px] max-h-[calc(100vh-56px)] overflow-y-auto bg-white rounded-md shadow-xl border border-[#e5e7eb] z-50"
-              style={{ boxShadow: '0 12px 32px rgba(15,23,42,0.18)' }}
+              className="fixed sm:absolute left-0 top-14 sm:top-12 mt-1 w-[90vw] sm:w-[340px] max-h-[calc(100vh-72px)] overflow-y-auto bg-white rounded-md shadow-xl border z-50"
+              style={{ borderColor: 'var(--oe-outline-variant)', boxShadow: '0 12px 32px rgba(25,28,24,0.18)' }}
             >
-              <div className="px-3 py-2 border-b border-[#f0f1f2] flex items-center justify-between">
-                <span className="text-[11px] uppercase tracking-[0.08em] text-[#64748b] font-semibold">
+              <div className="px-3 py-2 border-b flex items-center justify-between" style={{ borderColor: 'var(--oe-surface-container)' }}>
+                <span className="font-headline text-[11px] uppercase tracking-[0.08em] font-bold" style={{ color: 'var(--oe-on-surface-variant)' }}>
                   Navigation
                 </span>
                 <button
                   type="button"
-                  onClick={() => {
-                    setCollapsed((v) => !v);
-                    setMenuOpen(false);
-                  }}
-                  className="text-[11px] text-[#0a6ed1] hover:underline"
+                  onClick={() => { setCollapsed((v) => !v); setMenuOpen(false); }}
+                  className="text-[11px] font-semibold hover:underline"
+                  style={{ color: 'var(--oe-primary)' }}
                 >
                   {collapsed ? 'Expand rail' : 'Collapse rail'}
                 </button>
               </div>
               {sections.length === 0 && (
-                <div className="px-4 py-4 text-[13px] text-[#64748b]">
+                <div className="px-4 py-4 text-[13px]" style={{ color: 'var(--oe-on-surface-variant)' }}>
                   Sign in to see navigation.
                 </div>
               )}
               {sections.map(([section, items]) => (
                 <div key={section} className="py-1">
-                  <div className="px-3 py-1.5 text-[10px] uppercase tracking-[0.1em] text-[#89919a] font-semibold">
+                  <div className="px-3 py-1.5 font-headline text-[10px] uppercase tracking-[0.08em] font-bold" style={{ color: 'var(--oe-outline)' }}>
                     {section}
                   </div>
                   {items.map((item) => {
-                    const Icon = item.icon;
                     const active = isActive(item.path);
                     return (
                       <Link
@@ -238,29 +268,30 @@ export function FioriShell({ children }: { children: ReactNode }) {
                         to={item.path}
                         role="menuitem"
                         onClick={() => setMenuOpen(false)}
-                        className={`flex items-center gap-2 px-3 py-2 text-[13px] ${
-                          active
-                            ? 'bg-[#eff6ff] text-[#0a6ed1] font-semibold'
-                            : 'text-[#32363a] hover:bg-[#f5f6f7]'
-                        }`}
+                        className="flex items-center gap-2 px-3 py-2 text-[13px] transition-colors"
+                        style={{
+                          background: active ? 'var(--oe-primary-container)' : 'transparent',
+                          color: active ? 'var(--oe-on-primary-container)' : 'var(--oe-on-surface)',
+                          fontWeight: active ? 600 : 400,
+                        }}
                       >
-                        <Icon size={15} className="shrink-0" />
+                        <MIcon name={item.icon} size={18} />
                         <span className="truncate">{item.label}</span>
                       </Link>
                     );
                   })}
                 </div>
               ))}
-              <div className="border-t border-[#f0f1f2] p-2">
+              <div className="border-t p-2" style={{ borderColor: 'var(--oe-surface-container)' }}>
                 <button
                   type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    handleLogout();
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-[#b91c1c] hover:bg-[#fef2f2] rounded-sm"
+                  onClick={() => { setMenuOpen(false); handleLogout(); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] rounded-sm transition-colors"
+                  style={{ color: 'var(--oe-error)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--oe-error-container)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <LogOut size={14} />
+                  <MIcon name="logout" size={16} />
                   Sign out
                 </button>
               </div>
@@ -268,83 +299,86 @@ export function FioriShell({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        <div className="flex items-center gap-2 ml-1 mr-4 select-none">
+        {/* Brand mark — actual three-ring OE logomark + wordmark */}
+        <Link to="/cockpit" className="flex items-center gap-2.5 ml-1 mr-4 select-none group" aria-label="Open Energy — Launchpad">
           <div
-            className="w-7 h-7 rounded-md flex items-center justify-center"
+            className="flex items-center justify-center rounded p-0.5"
             style={{
-              background: 'linear-gradient(135deg,#0a6ed1 0%,#5d36ff 100%)',
-              boxShadow: '0 0 0 1px rgba(255,255,255,0.2), 0 2px 6px rgba(10,110,209,0.5)',
+              background: 'rgba(255,255,255,0.96)',
+              boxShadow: '0 0 0 1px rgba(255,255,255,0.30), 0 2px 6px rgba(0,0,0,0.18)',
             }}
           >
-            <Sparkles size={15} className="text-white" />
+            <LogoMark size={28} variant="colour" />
           </div>
-          <div className="leading-tight">
-            <div className="fiori-shell-title text-[13px] text-white">Open Energy</div>
-            <div className="text-[10px] text-white/60 -mt-0.5 tracking-widest uppercase">
-              Exchange
-            </div>
+          <div className="leading-[0.95]">
+            <div className="oe-shell-title text-[13px] text-white">OPEN</div>
+            <div className="text-[13px] text-white/85 font-display font-extrabold">ENERGY</div>
           </div>
-        </div>
+        </Link>
 
         <div className="hidden md:flex items-center gap-2 text-white/70 text-[13px] ml-2">
-          <span className="opacity-60">/</span>
-          <span className="text-white/90 font-medium">{currentLabel}</span>
+          <span className="opacity-50">/</span>
+          <span className="text-white/95 font-medium">{currentLabel}</span>
         </div>
 
-        <div className="flex-1 flex justify-center px-3">
-          <div className="relative w-full max-w-md">
-            <Search
-              size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 pointer-events-none"
-            />
+        {/* Search */}
+        <form onSubmit={onSearchSubmit} className="flex-1 flex justify-center px-3" role="search">
+          <div className="relative w-full max-w-xl">
+            <MIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/65 pointer-events-none" />
             <input
+              ref={searchRef}
               type="search"
               aria-label="Search across Open Energy"
-              placeholder="Search across Open Energy …"
+              placeholder="Search projects, contracts, counterparties, settlements…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full h-8 pl-9 pr-3 rounded-md bg-white/10 text-white placeholder-white/50 text-[13px] border border-white/10 focus:outline-none focus:bg-white/15 focus:border-white/30 transition-colors"
+              className="w-full h-9 pl-10 pr-12 rounded-md bg-white/12 text-white placeholder-white/55 text-[13px] border border-white/15 focus:outline-none focus:bg-white/18 focus:border-white/35 transition-colors font-body"
             />
-            <kbd className="hidden sm:inline absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-white/50 border border-white/15 rounded px-1.5 py-[1px]">
+            <kbd className="hidden sm:inline absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-white/55 border border-white/20 rounded px-1.5 py-[1px] font-mono">
               ⌘K
             </kbd>
           </div>
-        </div>
+        </form>
 
+        {/* Action icons */}
         <div className="flex items-center gap-1">
           <button
             type="button"
             aria-label="Notifications"
-            className="relative w-9 h-9 rounded-md text-white/85 hover:bg-white/10 flex items-center justify-center transition-colors"
+            onClick={() => navigate('/cockpit')}
+            className="relative w-10 h-10 rounded-md text-white/90 hover:bg-white/10 flex items-center justify-center transition-colors"
           >
-            <Bell size={16} aria-hidden="true" />
+            <MIcon name="notifications" size={18} />
             <span
               aria-hidden="true"
               className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
-              style={{ background: '#ff9800', boxShadow: '0 0 0 2px #354a5f' }}
+              style={{ background: '#5fa8e8', boxShadow: '0 0 0 2px #0f2540' }}
             />
           </button>
           <button
             type="button"
             aria-label="Help"
-            className="w-9 h-9 rounded-md text-white/85 hover:bg-white/10 flex items-center justify-center transition-colors"
+            onClick={() => navigate('/support')}
+            className="w-10 h-10 rounded-md text-white/90 hover:bg-white/10 flex items-center justify-center transition-colors"
           >
-            <HelpCircle size={16} aria-hidden="true" />
+            <MIcon name="help_outline" size={18} />
           </button>
-          <div className="relative">
+
+          {/* User menu */}
+          <div className="relative" onMouseDown={(e) => e.stopPropagation()}>
             <button
               type="button"
               onClick={() => setUserMenu((v) => !v)}
               aria-label="User menu"
               aria-haspopup="menu"
               aria-expanded={userMenu}
-              className="flex items-center gap-2 ml-1 pl-1 pr-2 h-9 rounded-md hover:bg-white/10 transition-colors"
+              className="flex items-center gap-2 ml-1 pl-1 pr-2 h-10 rounded-md hover:bg-white/10 transition-colors"
             >
               <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white font-headline"
                 style={{
-                  background: 'linear-gradient(135deg,#ab218e 0%,#e9730c 100%)',
-                  boxShadow: '0 0 0 2px rgba(255,255,255,0.15)',
+                  background: 'linear-gradient(135deg,#5fa8e8 0%,#1a5d97 100%)',
+                  boxShadow: '0 0 0 2px rgba(255,255,255,0.18)',
                 }}
               >
                 {initialsOf(user?.name)}
@@ -353,7 +387,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
                 <div className="text-[12px] text-white font-semibold">
                   {user?.name?.split(' ')[0] ?? 'Guest'}
                 </div>
-                <div className="text-[10px] text-white/60 capitalize">
+                <div className="text-[10px] text-white/65 capitalize font-mono tracking-wide">
                   {user?.role?.replace(/_/g, ' ') ?? '—'}
                 </div>
               </div>
@@ -362,52 +396,55 @@ export function FioriShell({ children }: { children: ReactNode }) {
               <div
                 role="menu"
                 aria-label="User menu"
-                className="absolute right-0 top-full mt-1 w-60 rounded-lg shadow-lg border overflow-hidden"
-                style={{ background: '#ffffff', borderColor: '#e5e5e5' }}
-                onMouseLeave={() => setUserMenu(false)}
+                className="absolute right-0 top-full mt-1 w-64 rounded-md shadow-lg border overflow-hidden bg-white"
+                style={{ borderColor: 'var(--oe-outline-variant)' }}
               >
-                <div className="p-3 border-b" style={{ borderColor: '#f0f1f2' }}>
-                  <div className="text-[13px] font-semibold" style={{ color: '#32363a' }}>
+                <div className="p-3 border-b" style={{ borderColor: 'var(--oe-surface-container)' }}>
+                  <div className="font-headline text-[14px] font-semibold" style={{ color: 'var(--oe-on-surface)' }}>
                     {user?.name ?? 'Guest'}
                   </div>
-                  <div className="text-[11px]" style={{ color: '#6a6d70' }}>
+                  <div className="text-[12px]" style={{ color: 'var(--oe-on-surface-variant)' }}>
                     {user?.email}
                   </div>
-                  <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                    style={{ background: '#efeafe', color: '#5d36ff' }}>
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#5d36ff' }} />
+                  <div
+                    className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                    style={{ background: 'var(--oe-primary-container)', color: 'var(--oe-on-primary-container)' }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--oe-primary)' }} />
                     {user?.role?.replace(/_/g, ' ') ?? '—'}
                   </div>
                 </div>
                 <button
-                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left hover:bg-[#fafafa] transition-colors"
-                  style={{ color: '#32363a' }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left transition-colors hover:bg-[var(--oe-surface-container-low)]"
+                  style={{ color: 'var(--oe-on-surface)' }}
                   onClick={() => { setUserMenu(false); navigate('/settings'); }}
                 >
-                  <User size={14} /> Profile &amp; preferences
+                  <MIcon name="person" size={16} /> Profile &amp; preferences
                 </button>
                 <button
-                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left hover:bg-[#fafafa] transition-colors"
-                  style={{ color: '#32363a' }}
-                  onClick={() => navigate('/settings/security')}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left transition-colors hover:bg-[var(--oe-surface-container-low)]"
+                  style={{ color: 'var(--oe-on-surface)' }}
+                  onClick={() => { setUserMenu(false); navigate('/settings/security'); }}
                 >
-                  <ShieldCheck size={14} /> Security &amp; MFA
+                  <MIcon name="security" size={16} /> Security &amp; MFA
                 </button>
                 {user?.role === 'admin' && (
                   <button
-                    className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left hover:bg-[#fafafa] transition-colors"
-                    style={{ color: '#32363a' }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left transition-colors hover:bg-[var(--oe-surface-container-low)]"
+                    style={{ color: 'var(--oe-on-surface)' }}
                     onClick={() => { setUserMenu(false); navigate('/admin'); }}
                   >
-                    <Settings size={14} /> Admin console
+                    <MIcon name="admin_panel_settings" size={16} /> Admin console
                   </button>
                 )}
                 <button
-                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left hover:bg-[#ffebeb] transition-colors border-t"
-                  style={{ color: '#bb0000', borderColor: '#f0f1f2' }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left transition-colors border-t"
+                  style={{ color: 'var(--oe-error)', borderColor: 'var(--oe-surface-container)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--oe-error-container)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   onClick={handleLogout}
                 >
-                  <LogOut size={14} /> Sign out
+                  <MIcon name="logout" size={16} /> Sign out
                 </button>
               </div>
             )}
@@ -415,39 +452,39 @@ export function FioriShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {/* Sidebar */}
+      {/* ════════════ Sidebar rail ════════════ */}
       <aside
-        className={`fiori-rail fixed left-0 bottom-0 overflow-y-auto flex flex-col ${collapsed ? 'collapsed' : ''}`}
+        className={`oe-rail fiori-rail fixed left-0 bottom-0 overflow-y-auto flex flex-col ${collapsed ? 'collapsed' : ''}`}
         style={{
-          top: 44,
+          top: 'var(--shell-height)',
           width: sidebarWidth,
           transition: 'width 200ms cubic-bezier(0.4,0,0.2,1)',
+          zIndex: 40,
         }}
       >
-        <nav className="flex-1 py-3">
+        <nav className="flex-1 py-3" aria-label="Primary">
           {sections.length === 0 && !collapsed && (
-            <div className="px-4 py-3 text-[12px]" style={{ color: '#89919a' }}>
+            <div className="px-4 py-3 text-[12px]" style={{ color: 'var(--oe-on-surface-variant)' }}>
               Loading navigation…
             </div>
           )}
           {sections.map(([section, items]) => (
             <div key={section} className="mb-2">
               {!collapsed && (
-                <div className="fiori-rail-section">{section}</div>
+                <div className="oe-rail-section">{section}</div>
               )}
               {collapsed && (
-                <div className="mx-3 my-1 h-px" style={{ background: '#f0f1f2' }} />
+                <div className="mx-3 my-1 h-px" style={{ background: 'var(--oe-surface-container)' }} />
               )}
               {items.map((item) => {
-                const Icon = item.icon;
                 return (
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`fiori-rail-item ${isActive(item.path) ? 'active' : ''}`}
+                    className={`oe-rail-item fiori-rail-item ${isActive(item.path) ? 'active' : ''}`}
                     title={collapsed ? item.label : undefined}
                   >
-                    <Icon size={16} className="shrink-0" />
+                    <MIcon name={item.icon} size={18} />
                     {!collapsed && <span className="truncate">{item.label}</span>}
                   </Link>
                 );
@@ -456,31 +493,34 @@ export function FioriShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        <div className="p-3 border-t" style={{ borderColor: '#f0f1f2' }}>
+        <div className="p-3 border-t" style={{ borderColor: 'var(--oe-surface-container)' }}>
           <button
             onClick={() => setCollapsed((v) => !v)}
-            className="w-full flex items-center gap-2 h-8 px-2 rounded-md text-[12px] hover:bg-[#eff1f2] transition-colors"
-            style={{ color: '#6a6d70' }}
+            className="w-full flex items-center gap-2 h-9 px-2 rounded-md text-[12px] transition-colors hover:bg-[var(--oe-surface-container-low)]"
+            style={{ color: 'var(--oe-on-surface-variant)' }}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+            <MIcon name={collapsed ? 'chevron_right' : 'chevron_left'} size={16} />
             {!collapsed && <span>Collapse</span>}
           </button>
         </div>
       </aside>
 
-      {/* Canvas */}
+      {/* ════════════ Canvas ════════════ */}
       <main
         id="main-content"
         tabIndex={-1}
-        className="fiori-canvas-ambient min-h-screen"
+        className="oe-canvas-ambient fiori-canvas-ambient min-h-screen"
         style={{
-          paddingTop: 44,
+          paddingTop: 'var(--shell-height)',
           paddingLeft: sidebarWidth,
           transition: 'padding-left 200ms cubic-bezier(0.4,0,0.2,1)',
           ['--sidebar-width' as any]: `${sidebarWidth}px`,
         }}
       >
-        <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8 py-6 fade-in">{children}</div>
+        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 py-6 fade-in">
+          {children}
+        </div>
       </main>
     </div>
   );

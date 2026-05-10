@@ -35,10 +35,10 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: '#f5f6f7' }}>
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border p-8" style={{ borderColor: '#e5e5e5' }}>
-        <h2 className="text-[24px] font-bold" style={{ color: '#32363a' }}>Reset password</h2>
-        <p className="mt-1 text-[13px]" style={{ color: '#6a6d70' }}>Enter your new password below.</p>
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: '#f5f8fb' }}>
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border p-8" style={{ borderColor: '#dde4ec' }}>
+        <h2 className="text-[24px] font-bold" style={{ color: '#0f1c2e' }}>Reset password</h2>
+        <p className="mt-1 text-[13px]" style={{ color: '#6b7685' }}>Enter your new password below.</p>
 
         {done ? (
           <div className="mt-6 rounded-lg border px-3 py-3 text-[13px]" style={{ background: '#ebf7ef', borderColor: '#9ec9a8', color: '#0e6027' }}>
@@ -47,7 +47,7 @@ export default function ResetPassword() {
         ) : (
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             {error && (
-              <div className="rounded-lg border px-3 py-2 text-[13px]" style={{ background: '#ffebeb', borderColor: '#e9a2a2', color: '#bb0000' }}>
+              <div className="rounded-lg border px-3 py-2 text-[13px]" style={{ background: '#fde0db', borderColor: '#e8a59b', color: '#c0392b' }}>
                 {error}
               </div>
             )}
@@ -67,7 +67,7 @@ export default function ResetPassword() {
               {loading ? 'Resetting…' : 'Reset password'}
             </button>
             <div className="text-center">
-              <Link to="/login" className="text-[13px] font-semibold" style={{ color: '#0a6ed1' }}>Back to sign in</Link>
+              <Link to="/login" className="text-[13px] font-semibold" style={{ color: '#3b82c4' }}>Back to sign in</Link>
             </div>
           </form>
         )}

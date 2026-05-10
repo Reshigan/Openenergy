@@ -118,8 +118,8 @@ export function SuitePage(props: SuitePageProps) {
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-5">
       <header>
-        <h1 className="text-[18px] sm:text-[22px] font-semibold text-[#32363a] leading-tight">{props.title}</h1>
-        {props.subtitle && <p className="text-[12px] sm:text-[13px] text-[#6a6d70] mt-1">{props.subtitle}</p>}
+        <h1 className="text-[18px] sm:text-[22px] font-semibold text-[#0f1c2e] leading-tight">{props.title}</h1>
+        {props.subtitle && <p className="text-[12px] sm:text-[13px] text-[#6b7685] mt-1">{props.subtitle}</p>}
       </header>
 
       {props.aiBriefRole && (
@@ -137,7 +137,7 @@ export function SuitePage(props: SuitePageProps) {
           value={active?.key || ''}
           onChange={(e) => setActiveKey(e.target.value)}
           className="w-full h-10 px-3 rounded-md border text-[13px] bg-white"
-          style={{ borderColor: '#d0d5dd', color: '#32363a' }}
+          style={{ borderColor: '#d0d5dd', color: '#0f1c2e' }}
           aria-label="Select tab"
         >
           {props.tabs.map((tab) => (
@@ -145,7 +145,7 @@ export function SuitePage(props: SuitePageProps) {
           ))}
         </select>
       </div>
-      <div className="hidden sm:flex items-center gap-1.5 border-b border-[#e5e5e5] overflow-x-auto">
+      <div className="hidden sm:flex items-center gap-1.5 border-b border-[#dde4ec] overflow-x-auto">
         {props.tabs.map((tab) => {
           const isActive = tab.key === active?.key;
           return (
@@ -154,8 +154,8 @@ export function SuitePage(props: SuitePageProps) {
               onClick={() => setActiveKey(tab.key)}
               className={`h-11 px-4 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 isActive
-                  ? 'border-[#0a6ed1] text-[#0a6ed1]'
-                  : 'border-transparent text-[#6a6d70] hover:text-[#32363a]'
+                  ? 'border-[#3b82c4] text-[#3b82c4]'
+                  : 'border-transparent text-[#6b7685] hover:text-[#0f1c2e]'
               }`}
             >
               {tab.label}
@@ -237,19 +237,19 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
       {(tab.description || tab.create) && (
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           {tab.description && (
-            <p className="text-[12px] text-[#6a6d70] max-w-3xl">{tab.description}</p>
+            <p className="text-[12px] text-[#6b7685] max-w-3xl">{tab.description}</p>
           )}
           <div className="flex items-center gap-2">
             <button
               onClick={() => void load()}
-              className="h-9 px-3 rounded-md text-[12px] font-semibold border border-[#d0d5dd] bg-white text-[#6a6d70] hover:bg-[#f5f6fa] inline-flex items-center gap-1.5"
+              className="h-9 px-3 rounded-md text-[12px] font-semibold border border-[#d0d5dd] bg-white text-[#6b7685] hover:bg-[#f5f6fa] inline-flex items-center gap-1.5"
             >
               <RefreshCw size={12} /> Refresh
             </button>
             {tab.create && (
               <button
                 onClick={() => setModalForm({ form: tab.create!, title: tab.create!.title })}
-                className="h-9 px-3 rounded-md text-[12px] font-semibold bg-[#0a6ed1] text-white hover:bg-[#0956a3] inline-flex items-center gap-1"
+                className="h-9 px-3 rounded-md text-[12px] font-semibold bg-[#3b82c4] text-white hover:bg-[#0956a3] inline-flex items-center gap-1"
               >
                 <Plus size={12} /> {tab.create.submitLabel || 'New'}
               </button>
@@ -259,24 +259,24 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
       )}
 
       {error && (
-        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] px-4 py-2 text-[13px] text-[#bb0000] inline-flex items-center gap-2">
+        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] px-4 py-2 text-[13px] text-[#c0392b] inline-flex items-center gap-2">
           <AlertTriangle size={14} /> {error}
         </div>
       )}
       {success && (
-        <div className="rounded-lg border border-[#c8e6c9] bg-[#e7f4ea] px-4 py-2 text-[13px] text-[#107e3e]">
+        <div className="rounded-lg border border-[#c8e6c9] bg-[#e7f4ea] px-4 py-2 text-[13px] text-[#1a8a5b]">
           {success}
         </div>
       )}
 
-      <div className="rounded-xl border border-[#e5e5e5] bg-white overflow-hidden">
+      <div className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
         {loading ? (
-          <div className="p-6 text-[13px] text-[#6a6d70] flex items-center gap-2">
+          <div className="p-6 text-[13px] text-[#6b7685] flex items-center gap-2">
             <Loader2 size={14} className="animate-spin" /> Loading…
           </div>
         ) : rows.length === 0 ? (
-          <div className="p-10 text-center text-[#6a6d70]">
-            <p className="text-[14px] font-semibold text-[#32363a]">No records yet</p>
+          <div className="p-10 text-center text-[#6b7685]">
+            <p className="text-[14px] font-semibold text-[#0f1c2e]">No records yet</p>
             {tab.emptyHint && <p className="text-[12px] mt-1 max-w-lg mx-auto">{tab.emptyHint}</p>}
           </div>
         ) : (
@@ -285,7 +285,7 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
                 10-column table is unreadable even with overflow scroll. */}
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-[13px]">
-                <thead className="bg-[#fafafa] text-[#6a6d70]">
+                <thead className="bg-[#eef2f7] text-[#6b7685]">
                   <tr className="border-b border-[#f0f0f0]">
                     {tab.columns.map((col) => (
                       <th
@@ -313,7 +313,7 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
                       {tab.columns.map((col) => (
                         <td
                           key={col.key}
-                          className={`px-4 py-2.5 text-[#32363a] ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''}`}
+                          className={`px-4 py-2.5 text-[#0f1c2e] ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''}`}
                         >
                           {renderCell(row, col)}
                         </td>
@@ -329,10 +329,10 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
                                   onClick={(e) => { e.stopPropagation(); void handleRowAction(a, row); }}
                                   className={`h-8 px-2.5 rounded-md text-[11px] font-semibold border transition-colors ${
                                     a.tone === 'danger'
-                                      ? 'border-[#e9a2a2] bg-white text-[#bb0000] hover:bg-[#ffebee]'
+                                      ? 'border-[#e8a59b] bg-white text-[#c0392b] hover:bg-[#ffebee]'
                                       : a.tone === 'primary'
-                                        ? 'border-[#0a6ed1] bg-[#0a6ed1] text-white hover:bg-[#0956a3]'
-                                        : 'border-[#d0d5dd] bg-white text-[#6a6d70] hover:bg-[#f5f6fa]'
+                                        ? 'border-[#3b82c4] bg-[#3b82c4] text-white hover:bg-[#0956a3]'
+                                        : 'border-[#d0d5dd] bg-white text-[#6b7685] hover:bg-[#f5f6fa]'
                                   }`}
                                 >
                                   {a.label}
@@ -369,8 +369,8 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
                       if (isEmpty) return null;
                       return (
                         <React.Fragment key={col.key}>
-                          <dt className="text-[11px] text-[#89919a] uppercase tracking-wider col-span-1">{col.label}</dt>
-                          <dd className="text-[13px] text-[#32363a] col-span-1 break-words">{cell}</dd>
+                          <dt className="text-[11px] text-[#6b7685] uppercase tracking-wider col-span-1">{col.label}</dt>
+                          <dd className="text-[13px] text-[#0f1c2e] col-span-1 break-words">{cell}</dd>
                         </React.Fragment>
                       );
                     })}
@@ -385,10 +385,10 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
                             onClick={(e) => { e.stopPropagation(); void handleRowAction(a, row); }}
                             className={`flex-1 min-w-[calc(50%-4px)] h-9 px-3 rounded-md text-[12px] font-semibold border transition-colors ${
                               a.tone === 'danger'
-                                ? 'border-[#e9a2a2] bg-white text-[#bb0000]'
+                                ? 'border-[#e8a59b] bg-white text-[#c0392b]'
                                 : a.tone === 'primary'
-                                  ? 'border-[#0a6ed1] bg-[#0a6ed1] text-white'
-                                  : 'border-[#d0d5dd] bg-white text-[#6a6d70]'
+                                  ? 'border-[#3b82c4] bg-[#3b82c4] text-white'
+                                  : 'border-[#d0d5dd] bg-white text-[#6b7685]'
                             }`}
                           >
                             {a.label}
@@ -534,8 +534,8 @@ function FormModal({
                    h-full sm:h-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-5 py-3.5 border-b border-[#e5e5e5] flex items-center justify-between">
-          <h2 className="text-[15px] font-semibold text-[#32363a]">{title}</h2>
+        <div className="px-5 py-3.5 border-b border-[#dde4ec] flex items-center justify-between">
+          <h2 className="text-[15px] font-semibold text-[#0f1c2e]">{title}</h2>
           <button onClick={onClose} className="p-1.5 rounded hover:bg-[#f5f6fa]">
             <X size={16} />
           </button>
@@ -553,17 +553,17 @@ function FormModal({
           ))}
         </div>
 
-        <div className="px-5 py-3 border-t border-[#e5e5e5] flex items-center justify-end gap-2">
+        <div className="px-5 py-3 border-t border-[#dde4ec] flex items-center justify-end gap-2">
           <button
             onClick={onClose}
-            className="h-9 px-4 rounded-md text-[13px] font-semibold border border-[#d0d5dd] bg-white text-[#6a6d70] hover:bg-[#f5f6fa]"
+            className="h-9 px-4 rounded-md text-[13px] font-semibold border border-[#d0d5dd] bg-white text-[#6b7685] hover:bg-[#f5f6fa]"
           >
             Cancel
           </button>
           <button
             onClick={submit}
             disabled={submitting}
-            className="h-9 px-4 rounded-md text-[13px] font-semibold bg-[#0a6ed1] text-white hover:bg-[#0956a3] disabled:opacity-50 inline-flex items-center gap-1.5"
+            className="h-9 px-4 rounded-md text-[13px] font-semibold bg-[#3b82c4] text-white hover:bg-[#0956a3] disabled:opacity-50 inline-flex items-center gap-1.5"
           >
             {submitting && <Loader2 size={14} className="animate-spin" />}
             {form.submitLabel || 'Save'}
@@ -581,16 +581,16 @@ function FormField({ field, value, error, onChange }: {
   onChange: (v: unknown) => void;
 }) {
   const labelRow = (
-    <label className="text-[12px] font-semibold text-[#32363a] flex items-center gap-1">
+    <label className="text-[12px] font-semibold text-[#0f1c2e] flex items-center gap-1">
       {field.label}
-      {field.required && <span className="text-[#bb0000]">*</span>}
+      {field.required && <span className="text-[#c0392b]">*</span>}
     </label>
   );
-  const help = field.help && <p className="text-[11px] text-[#6a6d70] mt-1">{field.help}</p>;
-  const errNode = error && <p className="text-[11px] text-[#bb0000] mt-1">{error}</p>;
+  const help = field.help && <p className="text-[11px] text-[#6b7685] mt-1">{field.help}</p>;
+  const errNode = error && <p className="text-[11px] text-[#c0392b] mt-1">{error}</p>;
   const inputClass = `w-full h-11 sm:h-10 px-3 rounded-md border text-[14px] sm:text-[13px] bg-white ${
-    error ? 'border-[#e9a2a2]' : 'border-[#d0d5dd]'
-  } focus:outline-none focus:border-[#0a6ed1]`;
+    error ? 'border-[#e8a59b]' : 'border-[#d0d5dd]'
+  } focus:outline-none focus:border-[#3b82c4]`;
 
   switch (field.type) {
     case 'textarea':
@@ -749,8 +749,8 @@ function DetailDrawer({
         className="bg-white w-full sm:max-w-2xl h-full overflow-y-auto shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-5 py-3.5 border-b border-[#e5e5e5] flex items-center justify-between sticky top-0 bg-white z-10">
-          <h2 className="text-[15px] font-semibold text-[#32363a]">Record detail</h2>
+        <div className="px-5 py-3.5 border-b border-[#dde4ec] flex items-center justify-between sticky top-0 bg-white z-10">
+          <h2 className="text-[15px] font-semibold text-[#0f1c2e]">Record detail</h2>
           <button onClick={onClose} className="p-1.5 rounded hover:bg-[#f5f6fa]">
             <X size={16} />
           </button>
@@ -758,21 +758,21 @@ function DetailDrawer({
 
         <div className="p-5 space-y-5">
           {loading ? (
-            <div className="text-[13px] text-[#6a6d70] inline-flex items-center gap-2">
+            <div className="text-[13px] text-[#6b7685] inline-flex items-center gap-2">
               <Loader2 size={14} className="animate-spin" /> Loading…
             </div>
           ) : (
             <>
               <section>
-                <h3 className="text-[12px] uppercase tracking-wider text-[#6a6d70] mb-2">Summary</h3>
+                <h3 className="text-[12px] uppercase tracking-wider text-[#6b7685] mb-2">Summary</h3>
                 <dl className="grid grid-cols-2 gap-3 text-[13px]">
                   {summaryFields.map((k) => {
                     const v = detail?.[k];
                     if (v == null || v === '') return null;
                     return (
                       <div key={k}>
-                        <dt className="text-[11px] text-[#89919a]">{k}</dt>
-                        <dd className="text-[#32363a] break-all">
+                        <dt className="text-[11px] text-[#6b7685]">{k}</dt>
+                        <dd className="text-[#0f1c2e] break-all">
                           {typeof v === 'object' ? JSON.stringify(v) : String(v)}
                         </dd>
                       </div>
@@ -785,15 +785,15 @@ function DetailDrawer({
                 const items = (detail?.[child.dataKey] as Record<string, unknown>[]) || [];
                 return (
                   <section key={child.dataKey}>
-                    <h3 className="text-[12px] uppercase tracking-wider text-[#6a6d70] mb-2">
+                    <h3 className="text-[12px] uppercase tracking-wider text-[#6b7685] mb-2">
                       {child.label} ({items.length})
                     </h3>
                     {items.length === 0 ? (
-                      <p className="text-[13px] text-[#6a6d70]">—</p>
+                      <p className="text-[13px] text-[#6b7685]">—</p>
                     ) : (
-                      <div className="rounded-lg border border-[#e5e5e5] overflow-hidden">
+                      <div className="rounded-lg border border-[#dde4ec] overflow-hidden">
                         <table className="w-full text-[12px]">
-                          <thead className="bg-[#fafafa] text-[#6a6d70]">
+                          <thead className="bg-[#eef2f7] text-[#6b7685]">
                             <tr>
                               {child.columns.map((col) => (
                                 <th key={col.key} className={`px-3 py-2 font-semibold ${col.align === 'right' ? 'text-right' : 'text-left'}`}>
@@ -830,11 +830,11 @@ function DetailDrawer({
 // ─── Status pill helper ────────────────────────────────────────────────────
 export function StatusPill({ status, tone }: { status: string; tone?: 'good' | 'warn' | 'bad' | 'info' | 'neutral' }) {
   const palette: Record<string, { bg: string; text: string }> = {
-    good:    { bg: '#e7f4ea', text: '#107e3e' },
+    good:    { bg: '#e7f4ea', text: '#1a8a5b' },
     warn:    { bg: '#fef3e6', text: '#b04e0f' },
-    bad:     { bg: '#fde7e9', text: '#bb0000' },
-    info:    { bg: '#e5f0fa', text: '#0a6ed1' },
-    neutral: { bg: '#eef1f4', text: '#6a6d70' },
+    bad:     { bg: '#fde7e9', text: '#c0392b' },
+    info:    { bg: '#d4e7f6', text: '#3b82c4' },
+    neutral: { bg: '#eef1f4', text: '#6b7685' },
   };
   const inferTone = (): keyof typeof palette => {
     const s = status.toLowerCase();

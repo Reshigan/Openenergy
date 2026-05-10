@@ -125,7 +125,7 @@ function renderInline(src: string): React.ReactNode[] {
         <code
           key={`c${key++}`}
           className="px-1 py-[1px] rounded font-mono text-[12px]"
-          style={{ background: '#eef0f3', color: '#32363a' }}
+          style={{ background: '#eef0f3', color: '#0f1c2e' }}
         >
           {m[1]}
         </code>,
@@ -163,7 +163,7 @@ function renderInline(src: string): React.ReactNode[] {
             target="_blank"
             rel="noreferrer noopener"
             className="underline"
-            style={{ color: '#5d36ff' }}
+            style={{ color: '#1f9b95' }}
           >
             {m[4]}
           </a>
@@ -171,7 +171,7 @@ function renderInline(src: string): React.ReactNode[] {
           <span
             key={`a${key++}`}
             className="underline"
-            style={{ color: '#5d36ff' }}
+            style={{ color: '#1f9b95' }}
             title="Link scheme blocked"
           >
             {m[4]}
@@ -200,7 +200,7 @@ export function NarrativeText({ text, className, tone = 'default', emptyLabel }:
 
   if (!text || !text.trim() || tokens.length === 0) {
     return emptyLabel ? (
-      <div className="text-[13px]" style={{ color: '#6a6d70' }}>
+      <div className="text-[13px]" style={{ color: '#6b7685' }}>
         {emptyLabel}
       </div>
     ) : null;
@@ -214,7 +214,7 @@ export function NarrativeText({ text, className, tone = 'default', emptyLabel }:
         : '';
   const containerStyle =
     tone === 'card'
-      ? { borderColor: '#e5e5e5' }
+      ? { borderColor: '#dde4ec' }
       : tone === 'bubble'
         ? { background: '#f7f8f9' }
         : {};
@@ -222,7 +222,7 @@ export function NarrativeText({ text, className, tone = 'default', emptyLabel }:
   return (
     <div
       className={`text-[13px] leading-relaxed space-y-2 ${container} ${className || ''}`.trim()}
-      style={{ color: '#32363a', ...containerStyle }}
+      style={{ color: '#0f1c2e', ...containerStyle }}
     >
       {tokens.map((tok, idx) => {
         if (tok.type === 'h') {
@@ -290,7 +290,7 @@ export function NarrativeText({ text, className, tone = 'default', emptyLabel }:
           );
         }
         if (tok.type === 'hr') {
-          return <hr key={idx} style={{ borderColor: '#e5e5e5', margin: '6px 0' }} />;
+          return <hr key={idx} style={{ borderColor: '#dde4ec', margin: '6px 0' }} />;
         }
         return null;
       })}

@@ -21,10 +21,10 @@ type LoiRow = {
 };
 
 const statusPill: Record<string, { bg: string; text: string; label: string }> = {
-  drafted:  { bg: '#eef1f4', text: '#6a6d70', label: 'Drafted' },
-  sent:     { bg: '#e5f0fa', text: '#0a6ed1', label: 'Awaiting response' },
-  signed:   { bg: '#e7f4ea', text: '#107e3e', label: 'Accepted' },
-  withdrawn:{ bg: '#fde7e9', text: '#bb0000', label: 'Declined' },
+  drafted:  { bg: '#eef1f4', text: '#6b7685', label: 'Drafted' },
+  sent:     { bg: '#d4e7f6', text: '#3b82c4', label: 'Awaiting response' },
+  signed:   { bg: '#e7f4ea', text: '#1a8a5b', label: 'Accepted' },
+  withdrawn:{ bg: '#fde7e9', text: '#c0392b', label: 'Declined' },
   expired:  { bg: '#fef3e6', text: '#b04e0f', label: 'Expired' },
 };
 
@@ -65,8 +65,8 @@ export function Lois() {
     <div className="p-6 max-w-6xl mx-auto space-y-5">
       <header className="flex items-start justify-between">
         <div>
-          <h1 className="text-[22px] font-semibold text-[#32363a]">Letters of Intent</h1>
-          <p className="text-[13px] text-[#6a6d70] mt-1">
+          <h1 className="text-[22px] font-semibold text-[#0f1c2e]">Letters of Intent</h1>
+          <p className="text-[13px] text-[#6b7685] mt-1">
             Non-binding indications of offtake / supply. Accept to spawn a draft Term Sheet on your contracts list.
           </p>
         </div>
@@ -77,8 +77,8 @@ export function Lois() {
               onClick={() => setDirection(d)}
               className={`h-8 px-3 rounded-md text-[12px] font-semibold border transition-colors ${
                 direction === d
-                  ? 'bg-[#0a6ed1] text-white border-[#0a6ed1]'
-                  : 'bg-white text-[#6a6d70] border-[#d0d5dd] hover:bg-[#f5f6fa]'
+                  ? 'bg-[#3b82c4] text-white border-[#3b82c4]'
+                  : 'bg-white text-[#6b7685] border-[#d0d5dd] hover:bg-[#f5f6fa]'
               }`}
             >
               {d === 'all' ? 'All' : d === 'received' ? 'Received' : 'Sent'}
@@ -95,19 +95,19 @@ export function Lois() {
       </div>
 
       {error && (
-        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] px-4 py-2 text-[13px] text-[#bb0000] inline-flex items-center gap-2">
+        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] px-4 py-2 text-[13px] text-[#c0392b] inline-flex items-center gap-2">
           <AlertTriangle size={14} /> {error}
         </div>
       )}
 
-      <div className="rounded-xl border border-[#e5e5e5] bg-white overflow-hidden">
+      <div className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
         {loading ? (
-          <div className="p-6 text-[13px] text-[#6a6d70] flex items-center gap-2">
+          <div className="p-6 text-[13px] text-[#6b7685] flex items-center gap-2">
             <Loader2 size={14} className="animate-spin" /> Loading LOIs…
           </div>
         ) : rows.length === 0 ? (
-          <div className="p-10 text-center text-[#6a6d70]">
-            <p className="text-[14px] font-semibold text-[#32363a]">No Letters of Intent yet</p>
+          <div className="p-10 text-center text-[#6b7685]">
+            <p className="text-[14px] font-semibold text-[#0f1c2e]">No Letters of Intent yet</p>
             <p className="text-[12px] mt-1">
               {user?.role === 'offtaker'
                 ? 'Use the Offtaker AI copilot on your cockpit to upload a bill and generate LOIs from the optimal mix.'
@@ -118,7 +118,7 @@ export function Lois() {
           </div>
         ) : (
           <table className="w-full text-[13px]">
-            <thead className="bg-[#fafafa] text-[#6a6d70]">
+            <thead className="bg-[#eef2f7] text-[#6b7685]">
               <tr className="border-b border-[#f0f0f0]">
                 <th className="text-left px-4 py-2.5 font-semibold">From → To</th>
                 <th className="text-left px-4 py-2.5 font-semibold">Project</th>
@@ -135,12 +135,12 @@ export function Lois() {
                 const pill = statusPill[r.status] || statusPill.drafted;
                 return (
                   <tr key={r.id} className="border-b border-[#f0f0f0] hover:bg-[#fafbfd]">
-                    <td className="px-4 py-2.5 text-[#32363a]">
+                    <td className="px-4 py-2.5 text-[#0f1c2e]">
                       <span className="font-medium">{r.from_name || '—'}</span>
-                      <span className="text-[#6a6d70]"> → </span>
+                      <span className="text-[#6b7685]"> → </span>
                       <span className="font-medium">{r.to_name || '—'}</span>
                     </td>
-                    <td className="px-4 py-2.5 text-[#32363a]">{r.project_name || '—'}</td>
+                    <td className="px-4 py-2.5 text-[#0f1c2e]">{r.project_name || '—'}</td>
                     <td className="px-4 py-2.5 text-right">{r.annual_mwh ? Math.round(r.annual_mwh).toLocaleString() : '—'}</td>
                     <td className="px-4 py-2.5 text-right">{r.blended_price ? `R${Number(r.blended_price).toFixed(0)}` : '—'}</td>
                     <td className="px-4 py-2.5 text-right">{r.horizon_years ? `${r.horizon_years}y` : '—'}</td>
@@ -152,13 +152,13 @@ export function Lois() {
                         {pill.label}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-[#6a6d70]">
+                    <td className="px-4 py-2.5 text-[#6b7685]">
                       {new Date(r.created_at).toLocaleDateString('en-ZA')}
                     </td>
                     <td className="px-4 py-2.5 text-right">
                       <Link
                         to={`/lois/${r.id}`}
-                        className="text-[12px] font-semibold text-[#0a6ed1] hover:underline inline-flex items-center gap-1"
+                        className="text-[12px] font-semibold text-[#3b82c4] hover:underline inline-flex items-center gap-1"
                       >
                         Open <ArrowRight size={12} />
                       </Link>
@@ -176,11 +176,11 @@ export function Lois() {
 
 function Kpi({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: number; tone?: 'good' }) {
   return (
-    <div className="rounded-xl border border-[#e5e5e5] bg-white px-4 py-3">
-      <div className="text-[11px] uppercase tracking-wider text-[#6a6d70] inline-flex items-center gap-1.5">
+    <div className="rounded-xl border border-[#dde4ec] bg-white px-4 py-3">
+      <div className="text-[11px] uppercase tracking-wider text-[#6b7685] inline-flex items-center gap-1.5">
         {icon} {label}
       </div>
-      <div className={`text-[22px] font-semibold mt-1 ${tone === 'good' ? 'text-[#107e3e]' : 'text-[#32363a]'}`}>
+      <div className={`text-[22px] font-semibold mt-1 ${tone === 'good' ? 'text-[#1a8a5b]' : 'text-[#0f1c2e]'}`}>
         {value}
       </div>
     </div>

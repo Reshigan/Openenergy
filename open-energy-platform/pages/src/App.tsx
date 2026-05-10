@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './lib/useAuth';
 import { api } from './lib/api';
 import { FioriShell } from './components/FioriShell';
+import { LogoMark, LogoBanner } from './components/Logo';
 
 // Import page components
 import { Cockpit } from './components/pages/Cockpit';
@@ -67,7 +68,7 @@ function LazyWorkbench({ children }: { children: ReactNode }) {
         <div className="p-6 max-w-7xl mx-auto space-y-4">
           <div className="skeleton h-8 w-64" />
           <div className="skeleton h-5 w-96" />
-          <div className="rounded-xl border border-[#e5e5e5] bg-white p-6 space-y-3">
+          <div className="rounded-xl border border-[#dde4ec] bg-white p-6 space-y-3">
             {[1,2,3,4].map((i) => <div key={i} className="skeleton h-5 w-full" />)}
           </div>
         </div>
@@ -379,46 +380,45 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-[1.1fr_0.9fr]" style={{ background: '#f5f6f7' }}>
-      {/* Brand panel */}
+    <div className="min-h-screen grid lg:grid-cols-[1.1fr_0.9fr]" style={{ background: '#f5f8fb' }}>
+      {/* Brand panel — Navy with Teal/Sky accents */}
       <div
         className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden text-white"
         style={{
           background:
-            'radial-gradient(circle at 15% 15%, rgba(10,110,209,0.85) 0%, transparent 45%),' +
-            'radial-gradient(circle at 85% 25%, rgba(93,54,255,0.80) 0%, transparent 50%),' +
-            'radial-gradient(circle at 70% 90%, rgba(171,33,142,0.80) 0%, transparent 50%),' +
-            'radial-gradient(circle at 95% 95%, rgba(233,115,12,0.55) 0%, transparent 45%),' +
-            'linear-gradient(135deg, #0a1930 0%, #152030 40%, #354a5f 100%)',
+            'radial-gradient(circle at 15% 15%, rgba(95,168,232,0.30) 0%, transparent 45%),' +
+            'radial-gradient(circle at 85% 25%, rgba(31,155,149,0.32) 0%, transparent 50%),' +
+            'radial-gradient(circle at 70% 90%, rgba(59,130,196,0.32) 0%, transparent 50%),' +
+            'radial-gradient(circle at 95% 95%, rgba(95,168,232,0.25) 0%, transparent 45%),' +
+            'linear-gradient(135deg, #061528 0%, #0a1c30 40%, #1a3a5c 100%)',
         }}
       >
         <div className="aurora" />
         <div className="relative z-10">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-11 h-11 rounded-xl flex items-center justify-center"
-              style={{
-                background: 'linear-gradient(135deg,#0a6ed1,#5d36ff)',
-                boxShadow: '0 8px 24px rgba(10,110,209,0.45)',
-              }}
-            >
-              <Sparkles size={22} className="text-white" />
+          <div
+            className="inline-flex items-center gap-3 rounded-md px-3 py-2"
+            style={{
+              background: 'rgba(255,255,255,0.96)',
+              boxShadow: '0 8px 24px rgba(15,28,46,0.40), 0 0 0 1px rgba(255,255,255,0.20)',
+            }}
+          >
+            <LogoMark size={40} variant="colour" />
+            <div className="leading-[0.95]">
+              <div className="text-[20px] font-display font-extrabold" style={{ color: '#1a3a5c' }}>OPEN</div>
+              <div className="text-[20px] font-display font-extrabold" style={{ color: '#3b82c4' }}>ENERGY</div>
             </div>
-            <div>
-              <div className="text-[18px] font-bold tracking-tight">Open Energy</div>
-              <div className="text-[11px] uppercase tracking-[0.2em] text-white/60">
-                Exchange · Vanta X
-              </div>
-            </div>
+          </div>
+          <div className="text-[11px] uppercase tracking-[0.2em] text-white/65 font-mono mt-3">
+            Exchange · Vanta X
           </div>
         </div>
 
         <div className="relative z-10 max-w-xl">
-          <h1 className="text-[42px] lg:text-[52px] font-bold leading-[1.05] tracking-tight">
+          <h1 className="text-[42px] lg:text-[52px] font-bold leading-[1.05] tracking-tight font-display">
             South Africa's{' '}
             <span
               style={{
-                background: 'linear-gradient(90deg,#9cc6ff 0%,#c6b8ff 50%,#ffc6eb 100%)',
+                background: 'linear-gradient(90deg,#9bc8ee 0%,#7fd5cf 50%,#5fa8e8 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
@@ -428,15 +428,15 @@ function LoginPage() {
             </span>
             .
           </h1>
-          <p className="mt-5 text-white/80 text-[16px] max-w-lg leading-relaxed">
+          <p className="mt-5 text-white/85 text-[16px] max-w-lg leading-relaxed">
             Trade power, carbon and RECs, originate IPP projects, run procurement,
             and settle with confidence — all on one enterprise-grade platform.
           </p>
           <div className="mt-8 grid grid-cols-2 gap-3 max-w-lg">
-            <FeatureBadge icon={Activity} label="Live trading" tint="#9cc6ff" />
-            <FeatureBadge icon={Leaf} label="Carbon & ESG" tint="#9cecb4" />
-            <FeatureBadge icon={Zap} label="Grid & settlement" tint="#ffd27a" />
-            <FeatureBadge icon={ShieldCheck} label="POPIA & NERSA" tint="#ffc6eb" />
+            <FeatureBadge icon={Activity} label="Live trading" tint="#5fa8e8" />
+            <FeatureBadge icon={Leaf} label="Carbon & ESG" tint="#7fd5cf" />
+            <FeatureBadge icon={Zap} label="Grid & settlement" tint="#9bc8ee" />
+            <FeatureBadge icon={ShieldCheck} label="POPIA & NERSA" tint="#b8eae6" />
           </div>
         </div>
 
@@ -449,27 +449,14 @@ function LoginPage() {
       <div className="flex items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-md">
           {/* Mobile brand */}
-          <div className="flex lg:hidden items-center gap-3 mb-8">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg,#0a6ed1,#5d36ff)' }}
-            >
-              <Sparkles size={18} className="text-white" />
-            </div>
-            <div>
-              <div className="text-[16px] font-bold" style={{ color: '#32363a' }}>
-                Open Energy
-              </div>
-              <div className="text-[11px] uppercase tracking-widest" style={{ color: '#89919a' }}>
-                Exchange
-              </div>
-            </div>
+          <div className="flex lg:hidden items-center mb-8">
+            <LogoBanner height={42} variant="colour" />
           </div>
 
-          <h2 className="text-[28px] font-bold tracking-tight" style={{ color: '#32363a' }}>
+          <h2 className="text-[28px] font-bold tracking-tight font-display" style={{ color: '#0f1c2e' }}>
             Sign in
           </h2>
-          <p className="mt-1 text-[14px]" style={{ color: '#6a6d70' }}>
+          <p className="mt-1 text-[14px]" style={{ color: '#3d4756' }}>
             Welcome back. Use your Open Energy credentials to continue.
           </p>
 
@@ -477,11 +464,11 @@ function LoginPage() {
             <div
               role="alert"
               aria-live="polite"
-              className="mt-5 rounded-lg border px-3 py-2 text-[13px]"
+              className="mt-5 rounded border px-3 py-2 text-[13px]"
               style={{
-                background: '#ffebeb',
-                borderColor: '#e9a2a2',
-                color: '#bb0000',
+                background: '#fde0db',
+                borderColor: '#c0392b',
+                color: '#410e08',
               }}
             >
               {error}
@@ -511,7 +498,7 @@ function LoginPage() {
                 <Link
                   to="/forgot-password"
                   className="text-[12px] font-semibold"
-                  style={{ color: '#0a6ed1' }}
+                  style={{ color: '#1a3a5c' }}
                 >
                   Forgot?
                 </Link>
@@ -567,30 +554,30 @@ function LoginPage() {
           {ssoEnabled && (
             <>
               <div className="mt-5 flex items-center gap-3">
-                <div className="flex-1 h-px" style={{ background: '#e5e5e5' }} />
-                <span className="text-[11px] uppercase tracking-widest" style={{ color: '#89919a' }}>
+                <div className="flex-1 h-px" style={{ background: '#c5cdd6' }} />
+                <span className="text-[11px] uppercase tracking-widest font-mono" style={{ color: '#6b7685' }}>
                   or
                 </span>
-                <div className="flex-1 h-px" style={{ background: '#e5e5e5' }} />
+                <div className="flex-1 h-px" style={{ background: '#c5cdd6' }} />
               </div>
               <button
                 type="button"
                 onClick={handleMicrosoftSso}
                 disabled={ssoLoading}
-                className="mt-4 flex items-center justify-center gap-2.5 w-full h-11 rounded-lg border text-[14px] font-semibold transition-all hover:-translate-y-0.5"
+                className="mt-4 flex items-center justify-center gap-2.5 w-full h-11 rounded border text-[14px] font-semibold transition-all hover:-translate-y-0.5"
                 style={{
                   background: '#ffffff',
-                  borderColor: '#8c8c8c',
-                  color: '#32363a',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                  borderColor: '#6b7685',
+                  color: '#0f1c2e',
+                  boxShadow: '0 1px 2px rgba(25,28,24,0.05)',
                 }}
               >
                 {/* Microsoft 4-colour logo */}
                 <svg width="18" height="18" viewBox="0 0 21 21" aria-hidden="true">
-                  <rect x="1"  y="1"  width="9" height="9" fill="#f25022" />
-                  <rect x="11" y="1"  width="9" height="9" fill="#7fba00" />
-                  <rect x="1"  y="11" width="9" height="9" fill="#00a4ef" />
-                  <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+                  <rect x="1"  y="1"  width="9" height="9" fill="#c0392b" />
+                  <rect x="11" y="1"  width="9" height="9" fill="#1a8a5b" />
+                  <rect x="1"  y="11" width="9" height="9" fill="#3b82c4" />
+                  <rect x="11" y="11" width="9" height="9" fill="#5fa8e8" />
                 </svg>
                 {ssoLoading ? 'Opening Microsoft…' : 'Sign in with Microsoft'}
               </button>
@@ -598,49 +585,49 @@ function LoginPage() {
           )}
 
           <div className="mt-6 flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ background: '#e5e5e5' }} />
-            <span className="text-[11px] uppercase tracking-widest" style={{ color: '#89919a' }}>
+            <div className="flex-1 h-px" style={{ background: '#c5cdd6' }} />
+            <span className="text-[11px] uppercase tracking-widest font-mono" style={{ color: '#6b7685' }}>
               or use a demo account
             </span>
-            <div className="flex-1 h-px" style={{ background: '#e5e5e5' }} />
+            <div className="flex-1 h-px" style={{ background: '#c5cdd6' }} />
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-2">
             {[
-              { label: 'Admin',         email: 'admin@openenergy.co.za',     tint: 'indigo'  },
-              { label: 'Trader',        email: 'trader@openenergy.co.za',    tint: 'blue'    },
-              { label: 'IPP Developer', email: 'ipp@openenergy.co.za',       tint: 'teal'    },
-              { label: 'Carbon Fund',   email: 'carbon@openenergy.co.za',    tint: 'green'   },
+              { label: 'Admin',         email: 'admin@openenergy.co.za',     tint: 'forest'  },
+              { label: 'Trader',        email: 'trader@openenergy.co.za',    tint: 'info'    },
+              { label: 'IPP Developer', email: 'ipp@openenergy.co.za',       tint: 'forest'  },
+              { label: 'Carbon Fund',   email: 'carbon@openenergy.co.za',    tint: 'good'    },
               { label: 'Offtaker',      email: 'offtaker@openenergy.co.za',  tint: 'amber'   },
-              { label: 'Grid Operator', email: 'grid@openenergy.co.za',      tint: 'plum'    },
+              { label: 'Grid Operator', email: 'grid@openenergy.co.za',      tint: 'critical'},
             ].map((r) => (
               <button
                 key={r.email}
                 type="button"
                 onClick={() => fillDemo(r.email)}
-                className="flex items-center justify-between gap-2 h-10 px-3 rounded-lg text-[13px] font-semibold border transition-all hover:-translate-y-0.5"
+                className="flex items-center justify-between gap-2 h-10 px-3 rounded text-[13px] font-semibold border transition-all hover:-translate-y-0.5"
                 style={{
                   background: '#ffffff',
-                  borderColor: '#e5e5e5',
-                  color: '#32363a',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                  borderColor: '#c5cdd6',
+                  color: '#0f1c2e',
+                  boxShadow: '0 1px 2px rgba(25,28,24,0.04)',
                 }}
               >
                 <span className="flex items-center gap-2">
-                  <span className={`fiori-chip ${r.tint === 'indigo' ? 'indigo' : r.tint === 'blue' ? 'info' : r.tint === 'teal' ? 'info' : r.tint === 'green' ? 'good' : r.tint === 'amber' ? 'critical' : 'info'}`} style={{ height: 18, padding: '0 6px', fontSize: 10 }}>
+                  <span className={`fiori-chip ${r.tint}`} style={{ height: 18, padding: '0 6px', fontSize: 10 }}>
                     {r.label}
                   </span>
                 </span>
-                <span style={{ color: '#6a6d70', fontWeight: 500 }} className="truncate text-[11px]">
+                <span style={{ color: '#6b7685', fontWeight: 500 }} className="truncate text-[11px] font-mono">
                   {r.email.split('@')[0]}
                 </span>
               </button>
             ))}
           </div>
 
-          <p className="mt-6 text-center text-[13px]" style={{ color: '#6a6d70' }}>
+          <p className="mt-6 text-center text-[13px]" style={{ color: '#3d4756' }}>
             Don't have an account?{' '}
-            <Link to="/register" className="font-semibold" style={{ color: '#0a6ed1' }}>
+            <Link to="/register" className="font-semibold" style={{ color: '#1a3a5c' }}>
               Request access
             </Link>
           </p>
@@ -705,14 +692,14 @@ function SsoLanding() {
   }, [acceptSsoTokens, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#f5f6f7' }}>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#f5f8fb' }}>
       <div className="text-center">
         {error ? (
-          <p className="text-[14px]" style={{ color: '#bb0000' }}>{error}</p>
+          <p className="text-[14px]" style={{ color: '#c0392b' }}>{error}</p>
         ) : (
           <>
             <div className="spinner mx-auto mb-4" />
-            <p className="text-[14px]" style={{ color: '#6a6d70' }}>Completing Microsoft sign-in…</p>
+            <p className="text-[14px]" style={{ color: '#3d4756' }}>Completing Microsoft sign-in…</p>
           </>
         )}
       </div>
@@ -749,11 +736,20 @@ function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-oe-forest to-oe-forest-dark flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div
+      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      style={{
+        background:
+          'radial-gradient(circle at 20% 20%, rgba(95,168,232,0.32) 0%, transparent 45%),' +
+          'radial-gradient(circle at 80% 80%, rgba(95,168,232,0.25) 0%, transparent 50%),' +
+          'linear-gradient(135deg, #061528 0%, #0f2540 50%, #1a3a5c 100%)',
+      }}
+    >
+      <div className="aurora" />
+      <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-display font-bold text-white mb-2">Open Energy</h1>
-          <p className="text-white/70">Energy Exchange Platform</p>
+          <p className="text-white/75 font-mono text-[12px] uppercase tracking-[0.2em]">Industrial Energy Exchange</p>
         </div>
 
         <div className="card p-8">
@@ -821,7 +817,7 @@ function RegisterPage() {
                 required
                 minLength={8}
               />
-              <p id="register-password-hint" className="text-[11px] text-[#6a6d70] mt-1">
+              <p id="register-password-hint" className="text-[11px] text-[#3d4756] mt-1">
                 Minimum 8 characters.
               </p>
             </div>
@@ -850,10 +846,10 @@ function RegisterPage() {
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-600 mt-6">
+          <p className="text-center text-sm mt-6" style={{ color: '#3d4756' }}>
             Already have an account?{' '}
-            <Link to="/login" className="text-ionex-brand hover:underline">
-              Sign In
+            <Link to="/login" className="font-semibold hover:underline" style={{ color: '#1a3a5c' }}>
+              Sign in
             </Link>
           </p>
         </div>

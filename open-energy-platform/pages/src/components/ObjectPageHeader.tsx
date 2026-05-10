@@ -22,18 +22,18 @@ interface ObjectPageHeaderProps {
 }
 
 const toneColor: Record<NonNullable<ObjectKPI['tone']>, string> = {
-  default: '#32363a',
-  good: '#107e3e',
-  critical: '#e9730c',
-  negative: '#bb0000',
-  info: '#0a6ed1',
+  default: '#0f1c2e',
+  good: '#1a8a5b',
+  critical: '#c97a14',
+  negative: '#c0392b',
+  info: '#3b82c4',
 };
 
 export function ObjectPageHeader({
   title,
   subtitle,
   icon: Icon,
-  iconColor = 'linear-gradient(135deg,#0a6ed1 0%,#5d36ff 100%)',
+  iconColor = 'linear-gradient(135deg,#3b82c4 0%,#1f9b95 100%)',
   badge,
   kpis,
   actions,
@@ -50,7 +50,7 @@ export function ObjectPageHeader({
             className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
             style={{
               background: iconColor,
-              boxShadow: '0 6px 16px rgba(10,110,209,0.25)',
+              boxShadow: '0 6px 16px rgba(59,130,196,0.25)',
             }}
           >
             <Icon size={26} className="text-white" />
@@ -60,7 +60,7 @@ export function ObjectPageHeader({
           <div className="flex items-center gap-3 flex-wrap">
             <h1
               className="text-[24px] font-bold tracking-tight"
-              style={{ color: '#32363a' }}
+              style={{ color: '#0f1c2e' }}
             >
               {title}
             </h1>
@@ -69,7 +69,7 @@ export function ObjectPageHeader({
             )}
           </div>
           {subtitle && (
-            <p className="text-[14px] mt-1" style={{ color: '#6a6d70' }}>
+            <p className="text-[14px] mt-1" style={{ color: '#6b7685' }}>
               {subtitle}
             </p>
           )}
@@ -83,7 +83,7 @@ export function ObjectPageHeader({
             <div key={i} className="min-w-[120px]">
               <div
                 className="text-[11px] font-semibold uppercase tracking-wider"
-                style={{ color: '#89919a' }}
+                style={{ color: '#6b7685' }}
               >
                 {kpi.label}
               </div>
@@ -95,7 +95,7 @@ export function ObjectPageHeader({
                   {kpi.value}
                 </span>
                 {kpi.unit && (
-                  <span className="text-[12px]" style={{ color: '#6a6d70' }}>
+                  <span className="text-[12px]" style={{ color: '#6b7685' }}>
                     {kpi.unit}
                   </span>
                 )}

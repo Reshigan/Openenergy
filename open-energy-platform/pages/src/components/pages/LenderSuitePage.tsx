@@ -252,7 +252,7 @@ export function LenderSuitePage() {
       subtitle="Covenant testing, IE certs, waterfalls, reserve accounts and stress scenarios."
       tabs={tabs}
       aiBriefRole="lender"
-      aiBriefAccent={{ from: '#107e3e', to: '#0a6ed1' }}
+      aiBriefAccent={{ from: '#1a8a5b', to: '#3b82c4' }}
     />
   );
 }

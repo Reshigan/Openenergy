@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Open Energy">
+  <title>Open Energy</title>
+  <!-- Three interlocking rings: blue (top-left), teal (top-right), navy (bottom),
+       plus a small navy disc + sky-blue centre dot. Stroke widths and overlapping
+       order reproduce the OE brand mark. -->
+  <g fill="none" stroke-linecap="round">
+    <!-- Top-left ring — blue -->
+    <circle cx="142" cy="148" r="92" stroke="#3b82c4" stroke-width="22"
+            stroke-dasharray="430 200" stroke-dashoffset="-50" />
+    <!-- Top-right ring — teal -->
+    <circle cx="258" cy="148" r="92" stroke="#1f9b95" stroke-width="22"
+            stroke-dasharray="430 200" stroke-dashoffset="80" />
+    <!-- Bottom ring — navy -->
+    <circle cx="200" cy="252" r="92" stroke="#1a3a5c" stroke-width="22"
+            stroke-dasharray="430 200" stroke-dashoffset="200" />
+  </g>
+  <!-- Centre cluster -->
+  <circle cx="200" cy="200" r="22" fill="#1a3a5c" />
+  <circle cx="200" cy="200" r="9"  fill="#5fa8e8" />
+</svg>

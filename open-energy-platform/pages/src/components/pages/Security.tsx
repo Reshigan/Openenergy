@@ -123,13 +123,13 @@ export default function Security() {
       <header className="flex items-center gap-3">
         <ShieldCheck className="text-blue-600" />
         <div>
-          <h1 className="text-[22px] font-bold" style={{ color: '#32363a' }}>Security</h1>
-          <p className="text-[13px]" style={{ color: '#6a6d70' }}>Two-factor authentication, password, and active sessions.</p>
+          <h1 className="text-[22px] font-bold" style={{ color: '#0f1c2e' }}>Security</h1>
+          <p className="text-[13px]" style={{ color: '#6b7685' }}>Two-factor authentication, password, and active sessions.</p>
         </div>
       </header>
 
       {/* MFA */}
-      <section className="bg-white border rounded-xl p-5" style={{ borderColor: '#e5e5e5' }}>
+      <section className="bg-white border rounded-xl p-5" style={{ borderColor: '#dde4ec' }}>
         <div className="flex items-center gap-2 mb-3">
           <Smartphone size={18} className="text-purple-600" />
           <h2 className="text-[16px] font-semibold">Two-factor authentication (TOTP)</h2>
@@ -144,7 +144,7 @@ export default function Security() {
         )}
         {!mfaEnabled && mfaSetup && (
           <div className="flex flex-col md:flex-row gap-6 items-start">
-            <div className="w-[180px] h-[180px] border rounded-lg p-2 bg-white flex items-center justify-center" style={{ borderColor: '#e5e5e5' }}>
+            <div className="w-[180px] h-[180px] border rounded-lg p-2 bg-white flex items-center justify-center" style={{ borderColor: '#dde4ec' }}>
               <QRCodeSVG value={mfaSetup.otpauth_uri} size={160} level="M" includeMargin={false} />
             </div>
             <div className="flex-1 space-y-3">
@@ -152,7 +152,7 @@ export default function Security() {
                 <div className="text-[12px] font-semibold text-gray-500 uppercase tracking-widest">Manual secret</div>
                 <div className="font-mono text-[13px] break-all select-all">{mfaSetup.secret}</div>
               </div>
-              <p className="text-[13px]" style={{ color: '#6a6d70' }}>
+              <p className="text-[13px]" style={{ color: '#6b7685' }}>
                 Scan the QR with Google Authenticator / Authy / 1Password, then enter the 6-digit code below to confirm.
               </p>
               <div className="flex gap-2">
@@ -164,7 +164,7 @@ export default function Security() {
         )}
         {mfaEnabled && (
           <div className="flex flex-col gap-3">
-            <p className="text-[13px]" style={{ color: '#6a6d70' }}>Two-factor authentication is active on this account. You'll be challenged for a 6-digit code at every login.</p>
+            <p className="text-[13px]" style={{ color: '#6b7685' }}>Two-factor authentication is active on this account. You'll be challenged for a 6-digit code at every login.</p>
             <div>
               <button className="btn btn-secondary" onClick={disableMfa}>Disable MFA</button>
             </div>
@@ -181,7 +181,7 @@ export default function Security() {
       </section>
 
       {/* Change password */}
-      <section className="bg-white border rounded-xl p-5" style={{ borderColor: '#e5e5e5' }}>
+      <section className="bg-white border rounded-xl p-5" style={{ borderColor: '#dde4ec' }}>
         <div className="flex items-center gap-2 mb-3">
           <KeyRound size={18} className="text-blue-600" />
           <h2 className="text-[16px] font-semibold">Change password</h2>
@@ -205,7 +205,7 @@ export default function Security() {
       </section>
 
       {/* Sessions */}
-      <section className="bg-white border rounded-xl p-5" style={{ borderColor: '#e5e5e5' }}>
+      <section className="bg-white border rounded-xl p-5" style={{ borderColor: '#dde4ec' }}>
         <div className="flex items-center gap-2 mb-3">
           <Laptop size={18} className="text-slate-700" />
           <h2 className="text-[16px] font-semibold">Active sessions</h2>

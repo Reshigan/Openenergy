@@ -358,7 +358,7 @@ export function AdminPlatformPage() {
       subtitle="Tenants, provisioning, subscriptions, platform invoicing, feature flags, data tier and quotas."
       tabs={tabs}
       aiBriefRole="admin"
-      aiBriefAccent={{ from: '#0a6ed1', to: '#ab218e' }}
+      aiBriefAccent={{ from: '#3b82c4', to: '#1a3a5c' }}
     />
   );
 }

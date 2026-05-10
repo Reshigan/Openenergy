@@ -561,4 +561,120 @@ function buildDeterministicRecommendations(args: {
   return out;
 }
 
+// ════════════════════════════════════════════════════════════════════════
+// Algo rules — per-trader algorithmic strategy definitions
+//
+// Persisted in `trader_algo_rules` (auto-created if absent). The matching
+// engine cron job reads enabled rules each tick and submits orders when
+// triggers fire. The UI is a CRUD over these rows.
+// ════════════════════════════════════════════════════════════════════════
+
+async function ensureAlgoTable(env: HonoEnv['Bindings']) {
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS trader_algo_rules (
+      id TEXT PRIMARY KEY,
+      trader_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      side TEXT NOT NULL CHECK (side IN ('buy','sell')),
+      energy_type TEXT,
+      trigger_below REAL,
+      trigger_above REAL,
+      size_mwh REAL NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      last_fired_at TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )
+  `).run();
+}
+
+trading.get('/algo-rules', async (c) => {
+  const user = getCurrentUser(c);
+  await ensureAlgoTable(c.env);
+  const rows = await c.env.DB.prepare(
+    `SELECT id, name, side, energy_type, trigger_below, trigger_above, size_mwh, enabled, last_fired_at, created_at
+       FROM trader_algo_rules WHERE trader_id = ? ORDER BY created_at DESC`,
+  ).bind(user.id).all();
+  // SQLite returns 0/1; serialise as bool for the UI.
+  const data = (rows.results || []).map((r) => ({ ...(r as Record<string, unknown>), enabled: !!Number((r as { enabled?: number }).enabled || 0) }));
+  return c.json({ success: true, data });
+});
+
+trading.post('/algo-rules', async (c) => {
+  const user = getCurrentUser(c);
+  await ensureAlgoTable(c.env);
+  const body = (await c.req.json().catch(() => ({}))) as Partial<{
+    name: string; side: 'buy' | 'sell'; energy_type: string;
+    trigger_below: number; trigger_above: number; size_mwh: number; enabled: boolean;
+  }>;
+  if (!body.name || !body.side || !body.size_mwh) {
+    return c.json({ success: false, error: 'name, side and size_mwh are required' }, 400);
+  }
+  if (!body.trigger_below && !body.trigger_above) {
+    return c.json({ success: false, error: 'at_least_one_trigger_required' }, 400);
+  }
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO trader_algo_rules (id, trader_id, name, side, energy_type, trigger_below, trigger_above, size_mwh, enabled)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(
+    id, user.id, body.name, body.side, body.energy_type || 'solar',
+    body.trigger_below || null, body.trigger_above || null, body.size_mwh,
+    body.enabled === false ? 0 : 1,
+  ).run();
+  await fireCascade({
+    event: 'trader.algo_rule_created',
+    actor_id: user.id, entity_type: 'trader_algo_rules', entity_id: id,
+    data: { name: body.name, side: body.side }, env: c.env,
+  });
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+trading.put('/algo-rules/:id', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  await ensureAlgoTable(c.env);
+  const owner = await c.env.DB.prepare(`SELECT trader_id FROM trader_algo_rules WHERE id = ?`).bind(id).first();
+  if (!owner) return c.json({ success: false, error: 'not_found' }, 404);
+  if ((owner as { trader_id: string }).trader_id !== user.id && user.role !== 'admin') {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as Partial<{
+    name: string; side: 'buy' | 'sell'; energy_type: string;
+    trigger_below: number | null; trigger_above: number | null; size_mwh: number; enabled: boolean;
+  }>;
+  await c.env.DB.prepare(
+    `UPDATE trader_algo_rules
+        SET name = COALESCE(?, name),
+            side = COALESCE(?, side),
+            energy_type = COALESCE(?, energy_type),
+            trigger_below = ?,
+            trigger_above = ?,
+            size_mwh = COALESCE(?, size_mwh),
+            enabled = COALESCE(?, enabled),
+            updated_at = datetime('now')
+      WHERE id = ?`,
+  ).bind(
+    body.name ?? null, body.side ?? null, body.energy_type ?? null,
+    body.trigger_below ?? null, body.trigger_above ?? null,
+    body.size_mwh ?? null,
+    body.enabled === undefined ? null : body.enabled ? 1 : 0,
+    id,
+  ).run();
+  return c.json({ success: true });
+});
+
+trading.delete('/algo-rules/:id', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  await ensureAlgoTable(c.env);
+  const owner = await c.env.DB.prepare(`SELECT trader_id FROM trader_algo_rules WHERE id = ?`).bind(id).first();
+  if (!owner) return c.json({ success: false, error: 'not_found' }, 404);
+  if ((owner as { trader_id: string }).trader_id !== user.id && user.role !== 'admin') {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
+  await c.env.DB.prepare(`DELETE FROM trader_algo_rules WHERE id = ?`).bind(id).run();
+  return c.json({ success: true });
+});
+
 export default trading;

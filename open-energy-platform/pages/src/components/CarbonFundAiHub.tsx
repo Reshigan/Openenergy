@@ -78,8 +78,8 @@ export function CarbonFundAiHub() {
   ];
 
   return (
-    <section className="rounded-2xl border border-[#e5e5e5] bg-white overflow-hidden shadow-[0_8px_32px_rgba(16,126,62,0.06)]">
-      <header className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-[#107e3e] via-[#179f52] to-[#31c46f] text-white">
+    <section className="rounded-2xl border border-[#dde4ec] bg-white overflow-hidden shadow-[0_8px_32px_rgba(16,126,62,0.06)]">
+      <header className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-[#1a8a5b] via-[#179f52] to-[#31c46f] text-white">
         <Sparkles size={18} />
         <div>
           <div className="text-[12px] uppercase tracking-[0.2em] text-emerald-50/80">Carbon Fund Copilot</div>
@@ -93,17 +93,17 @@ export function CarbonFundAiHub() {
               <t.icon size={18} />
             </div>
             <div className="min-w-0">
-              <div className="text-[11px] uppercase tracking-wider text-[#6a6d70]">{t.label}</div>
-              <div className="text-[15px] font-semibold text-[#32363a] truncate">{t.value}</div>
+              <div className="text-[11px] uppercase tracking-wider text-[#6b7685]">{t.label}</div>
+              <div className="text-[15px] font-semibold text-[#0f1c2e] truncate">{t.value}</div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border-t border-[#e5e5e5]">
-        <div className="p-5 border-b md:border-b-0 md:border-r border-[#e5e5e5]">
-          <div className="flex items-center gap-2 mb-2"><Coins size={15} className="text-emerald-700" /><h4 className="text-[14px] font-semibold text-[#32363a]">AI NAV computation</h4></div>
-          <p className="text-[12px] text-[#6a6d70] mb-3">Computes per-methodology/vintage spot + applies vintage discount. Persists latest snapshot.</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border-t border-[#dde4ec]">
+        <div className="p-5 border-b md:border-b-0 md:border-r border-[#dde4ec]">
+          <div className="flex items-center gap-2 mb-2"><Coins size={15} className="text-emerald-700" /><h4 className="text-[14px] font-semibold text-[#0f1c2e]">AI NAV computation</h4></div>
+          <p className="text-[12px] text-[#6b7685] mb-3">Computes per-methodology/vintage spot + applies vintage discount. Persists latest snapshot.</p>
           <button onClick={runNav} disabled={navBusy} className="h-9 px-4 rounded-lg bg-emerald-600 text-white text-[13px] font-semibold inline-flex items-center gap-2 disabled:opacity-50">
             {navBusy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} Recompute NAV
           </button>
@@ -116,12 +116,12 @@ export function CarbonFundAiHub() {
         </div>
 
         <div className="p-5">
-          <div className="flex items-center gap-2 mb-2"><Flame size={15} className="text-pink-700" /><h4 className="text-[14px] font-semibold text-[#32363a]">Retirement optimiser</h4></div>
+          <div className="flex items-center gap-2 mb-2"><Flame size={15} className="text-pink-700" /><h4 className="text-[14px] font-semibold text-[#0f1c2e]">Retirement optimiser</h4></div>
           <div className="grid grid-cols-2 gap-2">
-            <label className="text-[12px] text-[#6a6d70]">Target tCO₂e
+            <label className="text-[12px] text-[#6b7685]">Target tCO₂e
               <input type="number" value={retireTarget} onChange={(e) => setRetireTarget(Number(e.target.value))} className="mt-1 w-full h-9 px-2 rounded-md border border-[#d0d5dd] text-[13px]" />
             </label>
-            <label className="text-[12px] text-[#6a6d70]">Beneficiary
+            <label className="text-[12px] text-[#6b7685]">Beneficiary
               <input value={retireBeneficiary} onChange={(e) => setRetireBeneficiary(e.target.value)} className="mt-1 w-full h-9 px-2 rounded-md border border-[#d0d5dd] text-[13px]" />
             </label>
           </div>
@@ -137,11 +137,11 @@ export function CarbonFundAiHub() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border-t border-[#e5e5e5]">
-        <div className="p-5 border-b md:border-b-0 md:border-r border-[#e5e5e5]">
-          <div className="flex items-center gap-2 mb-2"><Target size={15} className="text-indigo-700" /><h4 className="text-[14px] font-semibold text-[#32363a]">VCU tranche pricing</h4></div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border-t border-[#dde4ec]">
+        <div className="p-5 border-b md:border-b-0 md:border-r border-[#dde4ec]">
+          <div className="flex items-center gap-2 mb-2"><Target size={15} className="text-indigo-700" /><h4 className="text-[14px] font-semibold text-[#0f1c2e]">VCU tranche pricing</h4></div>
           <div className="grid grid-cols-3 gap-2">
-            <label className="text-[12px] text-[#6a6d70]">Methodology
+            <label className="text-[12px] text-[#6b7685]">Methodology
               <select value={methodology} onChange={(e) => setMethodology(e.target.value)} className="mt-1 w-full h-9 px-2 rounded-md border border-[#d0d5dd] text-[13px]">
                 <option value="VCS-ACM0002">VCS-ACM0002</option>
                 <option value="VCS-VM0042">VCS-VM0042</option>
@@ -149,10 +149,10 @@ export function CarbonFundAiHub() {
                 <option value="CDM-AMS">CDM-AMS</option>
               </select>
             </label>
-            <label className="text-[12px] text-[#6a6d70]">Vintage
+            <label className="text-[12px] text-[#6b7685]">Vintage
               <input type="number" value={vintage} onChange={(e) => setVintage(Number(e.target.value))} className="mt-1 w-full h-9 px-2 rounded-md border border-[#d0d5dd] text-[13px]" />
             </label>
-            <label className="text-[12px] text-[#6a6d70]">Volume (t)
+            <label className="text-[12px] text-[#6b7685]">Volume (t)
               <input type="number" value={volume} onChange={(e) => setVolume(Number(e.target.value))} className="mt-1 w-full h-9 px-2 rounded-md border border-[#d0d5dd] text-[13px]" />
             </label>
           </div>
@@ -168,7 +168,7 @@ export function CarbonFundAiHub() {
         </div>
 
         <div className="p-5">
-          <div className="flex items-center gap-2 mb-2"><Sparkles size={15} className="text-amber-700" /><h4 className="text-[14px] font-semibold text-[#32363a]">Control-room insights</h4></div>
+          <div className="flex items-center gap-2 mb-2"><Sparkles size={15} className="text-amber-700" /><h4 className="text-[14px] font-semibold text-[#0f1c2e]">Control-room insights</h4></div>
           <button onClick={runInsights} disabled={insBusy} className="h-9 px-4 rounded-lg bg-amber-600 text-white text-[13px] font-semibold inline-flex items-center gap-2 disabled:opacity-50">
             {insBusy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} Generate brief
           </button>

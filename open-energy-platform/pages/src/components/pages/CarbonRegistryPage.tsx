@@ -177,7 +177,7 @@ export function CarbonRegistryPage() {
       subtitle="Registry sync, vintages with serial tracking, MRV workflow, and Carbon Tax Act offset claims."
       tabs={tabs}
       aiBriefRole="carbon_fund"
-      aiBriefAccent={{ from: '#107e3e', to: '#5d36ff' }}
+      aiBriefAccent={{ from: '#1a8a5b', to: '#1f9b95' }}
     />
   );
 }

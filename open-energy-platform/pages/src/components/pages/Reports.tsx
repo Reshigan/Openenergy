@@ -204,18 +204,18 @@ export function Reports() {
     <div className="min-h-screen bg-[#f5f6fa] p-6 lg:p-10 space-y-6">
       <header className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
         <div>
-          <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6a6d70] bg-white border border-[#e5e5e5] rounded-full px-3 py-1">
+          <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6b7685] bg-white border border-[#dde4ec] rounded-full px-3 py-1">
             <FileText size={12} /> {role.replace('_', ' ')} — deep reporting
           </div>
-          <h1 className="mt-2 text-[24px] font-semibold text-[#32363a]">{title}</h1>
-          <p className="text-[13px] text-[#6a6d70]">AI-narrated executive summary, detailed tables and CSV export — grounded in live platform data.</p>
+          <h1 className="mt-2 text-[24px] font-semibold text-[#0f1c2e]">{title}</h1>
+          <p className="text-[13px] text-[#6b7685]">AI-narrated executive summary, detailed tables and CSV export — grounded in live platform data.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {isAdminLike && (
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="h-9 px-3 rounded-lg border border-[#d0d5dd] bg-white text-[13px] text-[#32363a]"
+              className="h-9 px-3 rounded-lg border border-[#d0d5dd] bg-white text-[13px] text-[#0f1c2e]"
               aria-label="Select role to report on"
             >
               {SELECTABLE_ROLES.map((r) => (
@@ -223,12 +223,12 @@ export function Reports() {
               ))}
             </select>
           )}
-          <div className="inline-flex items-center gap-1 bg-white border border-[#e5e5e5] rounded-lg p-1">
+          <div className="inline-flex items-center gap-1 bg-white border border-[#dde4ec] rounded-lg p-1">
             {(['30d', '90d', '12m', 'ytd'] as Period[]).map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
-                className={`h-8 px-3 rounded-md text-[12px] font-semibold ${period === p ? 'bg-[#0a6ed1] text-white' : 'text-[#6a6d70] hover:bg-[#f5f6fa]'}`}
+                className={`h-8 px-3 rounded-md text-[12px] font-semibold ${period === p ? 'bg-[#3b82c4] text-white' : 'text-[#6b7685] hover:bg-[#f5f6fa]'}`}
               >
                 {p.toUpperCase()}
               </button>
@@ -236,7 +236,7 @@ export function Reports() {
           </div>
           <button
             onClick={() => window.print()}
-            className="h-9 px-3 rounded-lg border border-[#d0d5dd] text-[13px] text-[#6a6d70] hover:bg-white inline-flex items-center gap-2"
+            className="h-9 px-3 rounded-lg border border-[#d0d5dd] text-[13px] text-[#6b7685] hover:bg-white inline-flex items-center gap-2"
           >
             <Printer size={14} /> Print / PDF
           </button>
@@ -244,7 +244,7 @@ export function Reports() {
       </header>
 
       {error && (
-        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] text-[13px] text-[#bb0000] px-4 py-2">
+        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] text-[13px] text-[#c0392b] px-4 py-2">
           {error}
         </div>
       )}
@@ -252,12 +252,12 @@ export function Reports() {
       {/* KPI matrix (from AI report) */}
       <section className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         {loading && layout.map((l) => (
-          <div key={l.key} className="rounded-lg border border-[#e5e5e5] bg-white p-4 animate-pulse h-[88px]" />
+          <div key={l.key} className="rounded-lg border border-[#dde4ec] bg-white p-4 animate-pulse h-[88px]" />
         ))}
         {!loading && kpis.map((k) => (
-          <div key={k.label} className="rounded-lg border border-[#e5e5e5] bg-white p-4">
-            <div className="text-[10px] uppercase tracking-wider text-[#6a6d70]">{k.label}</div>
-            <div className="mt-1 text-[18px] font-semibold text-[#32363a]">{k.value}</div>
+          <div key={k.label} className="rounded-lg border border-[#dde4ec] bg-white p-4">
+            <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{k.label}</div>
+            <div className="mt-1 text-[18px] font-semibold text-[#0f1c2e]">{k.value}</div>
           </div>
         ))}
       </section>
@@ -268,14 +268,14 @@ export function Reports() {
       {!detailedLoading && detailed && (
         <section>
           <div className="flex items-center gap-2 mb-2">
-            <TableIcon size={14} className="text-[#6a6d70]" />
-            <h2 className="text-[13px] uppercase tracking-wider text-[#6a6d70] font-semibold">Key metrics</h2>
+            <TableIcon size={14} className="text-[#6b7685]" />
+            <h2 className="text-[13px] uppercase tracking-wider text-[#6b7685] font-semibold">Key metrics</h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3">
             {Object.entries(detailed.summary).map(([k, v]) => (
-              <div key={k} className="rounded-lg border border-[#e5e5e5] bg-white p-4">
-                <div className="text-[10px] uppercase tracking-wider text-[#6a6d70]">{k.replace(/_/g, ' ')}</div>
-                <div className="mt-1 text-[18px] font-semibold text-[#32363a]">
+              <div key={k} className="rounded-lg border border-[#dde4ec] bg-white p-4">
+                <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{k.replace(/_/g, ' ')}</div>
+                <div className="mt-1 text-[18px] font-semibold text-[#0f1c2e]">
                   {typeof v === 'number' ? num(v) : String(v)}
                 </div>
               </div>
@@ -285,10 +285,10 @@ export function Reports() {
       )}
 
       {/* AI executive summary */}
-      <section className="rounded-xl border border-[#e5e5e5] bg-white overflow-hidden">
+      <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
         <header className="flex items-center gap-2 px-5 py-3 border-b border-[#f0f0f0] bg-gradient-to-r from-[#f5f6fa] to-[#eaf0ff]">
-          <Sparkles size={16} className="text-[#5d36ff]" />
-          <h2 className="text-[14px] font-semibold text-[#32363a]">Executive summary</h2>
+          <Sparkles size={16} className="text-[#1f9b95]" />
+          <h2 className="text-[14px] font-semibold text-[#0f1c2e]">Executive summary</h2>
           {aiData?.narrative?.fallback && (
             <span className="ml-auto text-[10px] uppercase tracking-wider text-[#8b6d00] bg-[#fff4d6] rounded px-2 py-[2px]">
               Deterministic fallback
@@ -297,7 +297,7 @@ export function Reports() {
         </header>
         <div className="p-5">
           {loading && (
-            <div className="text-[13px] text-[#6a6d70]">
+            <div className="text-[13px] text-[#6b7685]">
               <Loader2 size={14} className="inline animate-spin mr-2" />
               Generating executive summary…
             </div>
@@ -313,27 +313,27 @@ export function Reports() {
 
       {/* Detailed sections with CSV export */}
       {detailedError && (
-        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] text-[13px] text-[#bb0000] px-4 py-2">
+        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] text-[13px] text-[#c0392b] px-4 py-2">
           {detailedError}
         </div>
       )}
 
       {detailedLoading && (
-        <div className="rounded-xl border border-[#e5e5e5] bg-white p-6 text-[13px] text-[#6a6d70]">
+        <div className="rounded-xl border border-[#dde4ec] bg-white p-6 text-[13px] text-[#6b7685]">
           <Loader2 size={14} className="inline animate-spin mr-2" />Loading detailed tables…
         </div>
       )}
 
       {!detailedLoading && detailed && detailed.sections.map((section) => (
-        <section key={section.key} className="rounded-xl border border-[#e5e5e5] bg-white overflow-hidden">
+        <section key={section.key} className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
           <header className="flex items-center gap-2 px-5 py-3 border-b border-[#f0f0f0]">
-            <TableIcon size={14} className="text-[#6a6d70]" />
-            <h2 className="text-[14px] font-semibold text-[#32363a]">{section.label}</h2>
-            <span className="text-[11px] text-[#6a6d70] ml-1">({section.rows.length} rows)</span>
+            <TableIcon size={14} className="text-[#6b7685]" />
+            <h2 className="text-[14px] font-semibold text-[#0f1c2e]">{section.label}</h2>
+            <span className="text-[11px] text-[#6b7685] ml-1">({section.rows.length} rows)</span>
             <button
               onClick={() => downloadCsv(section.key)}
               disabled={csvBusy === section.key || section.rows.length === 0}
-              className="ml-auto h-7 px-3 rounded-md border border-[#d0d5dd] text-[12px] text-[#6a6d70] hover:bg-[#f5f6fa] inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="ml-auto h-7 px-3 rounded-md border border-[#d0d5dd] text-[12px] text-[#6b7685] hover:bg-[#f5f6fa] inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label={`Download ${section.label} as CSV`}
             >
               {csvBusy === section.key ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
@@ -341,14 +341,14 @@ export function Reports() {
             </button>
           </header>
           {section.rows.length === 0 ? (
-            <div className="p-5 text-[13px] text-[#6a6d70]">No data for this period.</div>
+            <div className="p-5 text-[13px] text-[#6b7685]">No data for this period.</div>
           ) : (
             <div className="overflow-auto max-h-[480px]">
               <table className="w-full text-[12px]">
                 <thead className="bg-[#fafbfd] sticky top-0">
                   <tr>
                     {Object.keys(section.rows[0]).map((col) => (
-                      <th key={col} className="text-left px-3 py-2 border-b border-[#f0f0f0] text-[10px] uppercase tracking-wider text-[#6a6d70] font-semibold">
+                      <th key={col} className="text-left px-3 py-2 border-b border-[#f0f0f0] text-[10px] uppercase tracking-wider text-[#6b7685] font-semibold">
                         {col.replace(/_/g, ' ')}
                       </th>
                     ))}
@@ -358,7 +358,7 @@ export function Reports() {
                   {section.rows.slice(0, 200).map((row, i) => (
                     <tr key={i} className="border-b border-[#f5f6fa] hover:bg-[#fafbfd]">
                       {Object.keys(section.rows[0]).map((col) => (
-                        <td key={col} className="px-3 py-1.5 text-[#32363a] whitespace-nowrap">
+                        <td key={col} className="px-3 py-1.5 text-[#0f1c2e] whitespace-nowrap">
                           {formatCell(row[col])}
                         </td>
                       ))}
@@ -367,7 +367,7 @@ export function Reports() {
                 </tbody>
               </table>
               {section.rows.length > 200 && (
-                <div className="px-3 py-2 text-[11px] text-[#6a6d70] bg-[#fafbfd] border-t border-[#f0f0f0]">
+                <div className="px-3 py-2 text-[11px] text-[#6b7685] bg-[#fafbfd] border-t border-[#f0f0f0]">
                   Showing first 200 rows — download CSV for the full set.
                 </div>
               )}
@@ -377,12 +377,12 @@ export function Reports() {
       ))}
 
       {/* Raw KPI dump (drill-down) */}
-      <section className="rounded-xl border border-[#e5e5e5] bg-white overflow-hidden">
+      <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
         <header className="flex items-center gap-2 px-5 py-3 border-b border-[#f0f0f0]">
-          <Filter size={14} className="text-[#6a6d70]" />
-          <h2 className="text-[14px] font-semibold text-[#32363a]">Raw AI KPI payload</h2>
+          <Filter size={14} className="text-[#6b7685]" />
+          <h2 className="text-[14px] font-semibold text-[#0f1c2e]">Raw AI KPI payload</h2>
         </header>
-        <pre className="px-5 py-4 text-[11px] leading-relaxed text-[#6a6d70] max-h-96 overflow-auto bg-[#fafbfd]">
+        <pre className="px-5 py-4 text-[11px] leading-relaxed text-[#6b7685] max-h-96 overflow-auto bg-[#fafbfd]">
           {aiData ? JSON.stringify(aiData.kpis, null, 2) : ''}
         </pre>
       </section>

@@ -50,7 +50,7 @@ interface StatsResp {
 
 const cardStyle: React.CSSProperties = {
   background: 'white',
-  border: '1px solid #e5e7eb',
+  border: '1px solid #dde4ec',
   borderRadius: 10,
   padding: 16,
 };
@@ -60,7 +60,7 @@ const thStyle: React.CSSProperties = {
   padding: '8px 10px',
   fontSize: 12,
   color: '#64748b',
-  borderBottom: '1px solid #e5e7eb',
+  borderBottom: '1px solid #dde4ec',
   textTransform: 'uppercase',
   letterSpacing: 0.4,
 };
@@ -185,7 +185,7 @@ export function Monitoring(): JSX.Element {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 380px)', gap: 16 }}>
         <div style={{ ...cardStyle, padding: 0 }}>
-          <div style={{ padding: '14px 16px', borderBottom: '1px solid #e5e7eb', fontWeight: 600 }}>
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid #dde4ec', fontWeight: 600 }}>
             Recent errors ({errors.length})
           </div>
           {loading ? (
@@ -256,7 +256,7 @@ export function Monitoring(): JSX.Element {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ ...cardStyle, padding: 0 }}>
-            <div style={{ padding: '12px 14px', borderBottom: '1px solid #e5e7eb', fontWeight: 600 }}>
+            <div style={{ padding: '12px 14px', borderBottom: '1px solid #dde4ec', fontWeight: 600 }}>
               Top routes by traffic
             </div>
             {stats && stats.by_route.length ? (
@@ -288,7 +288,7 @@ export function Monitoring(): JSX.Element {
 
           {selected && (
             <div style={{ ...cardStyle, padding: 0 }}>
-              <div style={{ padding: '12px 14px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ padding: '12px 14px', borderBottom: '1px solid #dde4ec', display: 'flex', justifyContent: 'space-between' }}>
                 <div style={{ fontWeight: 600 }}>Error detail</div>
                 <button
                   type="button"

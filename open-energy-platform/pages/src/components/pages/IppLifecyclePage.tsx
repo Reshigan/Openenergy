@@ -332,7 +332,7 @@ export function IppLifecyclePage() {
       subtitle="EPC, environmental, land, insurance and community — the full project-finance evidence pack."
       tabs={tabs}
       aiBriefRole="ipp_developer"
-      aiBriefAccent={{ from: '#5d36ff', to: '#ab218e' }}
+      aiBriefAccent={{ from: '#1f9b95', to: '#1a3a5c' }}
     />
   );
 }

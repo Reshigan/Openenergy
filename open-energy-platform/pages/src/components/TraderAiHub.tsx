@@ -161,16 +161,16 @@ export function TraderAiHub() {
   };
 
   return (
-    <section className="rounded-xl border bg-white overflow-hidden" style={{ borderColor: '#e5e5e5' }}>
-      <header className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: '#f0f1f2' }}>
+    <section className="rounded-xl border bg-white overflow-hidden" style={{ borderColor: '#dde4ec' }}>
+      <header className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: '#e5ebf2' }}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white"
-               style={{ background: 'linear-gradient(135deg,#0a6ed1 0%,#5d36ff 100%)' }}>
+               style={{ background: 'linear-gradient(135deg,#3b82c4 0%,#1f9b95 100%)' }}>
             <Sparkles size={18} />
           </div>
           <div className="leading-tight">
-            <h2 className="text-[15px] font-semibold" style={{ color: '#32363a' }}>Trader AI copilot</h2>
-            <p className="text-[12px]" style={{ color: '#6a6d70' }}>
+            <h2 className="text-[15px] font-semibold" style={{ color: '#0f1c2e' }}>Trader AI copilot</h2>
+            <p className="text-[12px]" style={{ color: '#6b7685' }}>
               Match / hedge / place recommendations from the live order book
             </p>
           </div>
@@ -179,7 +179,7 @@ export function TraderAiHub() {
           onClick={runRecommend}
           disabled={loading}
           className="h-9 px-4 rounded-lg text-[13px] font-semibold text-white inline-flex items-center gap-2"
-          style={{ background: 'linear-gradient(135deg,#0a6ed1 0%,#5d36ff 100%)' }}
+          style={{ background: 'linear-gradient(135deg,#3b82c4 0%,#1f9b95 100%)' }}
         >
           {loading ? <Loader2 size={14} className="animate-spin" /> : <TrendingUp size={14} />}
           {loading ? 'Analysing…' : 'Recommend actions'}
@@ -188,12 +188,12 @@ export function TraderAiHub() {
 
       <div className="p-5 space-y-3">
         {error && (
-          <div className="text-[13px] rounded-md px-3 py-2" style={{ background: '#ffebeb', color: '#bb0000' }}>
+          <div className="text-[13px] rounded-md px-3 py-2" style={{ background: '#fde0db', color: '#c0392b' }}>
             {error}
           </div>
         )}
         {!result && !loading && (
-          <div className="text-[13px]" style={{ color: '#6a6d70' }}>
+          <div className="text-[13px]" style={{ color: '#6b7685' }}>
             Hit "Recommend actions" to get AI-ranked opportunities across your open orders and the book.
           </div>
         )}
@@ -201,7 +201,7 @@ export function TraderAiHub() {
           <NarrativeText text={narrativeText} tone="bubble" />
         )}
         {result && recs.length === 0 && !narrativeText && !loading && (
-          <div className="text-[13px]" style={{ color: '#6a6d70' }}>
+          <div className="text-[13px]" style={{ color: '#6b7685' }}>
             No actionable recommendations from the current order book — try again once more orders are posted.
           </div>
         )}
@@ -209,19 +209,19 @@ export function TraderAiHub() {
           <div className="space-y-2">
             {recs.map((r, i) => (
               <div key={i} className="flex items-center gap-3 p-3 rounded-md border"
-                   style={{ borderColor: '#e5e5e5', background: '#fafafa' }}>
+                   style={{ borderColor: '#dde4ec', background: '#eef2f7' }}>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-semibold" style={{ color: '#32363a' }}>
+                  <div className="text-[13px] font-semibold" style={{ color: '#0f1c2e' }}>
                     {(r.action || 'place').toUpperCase()}
                     {r.volume_mwh ? ` · ${r.volume_mwh} MWh` : ''}
                     {r.indicative_price ? ` @ R${r.indicative_price}/MWh` : ''}
                   </div>
                   {r.rationale && (
-                    <div className="text-[12px] truncate" style={{ color: '#6a6d70' }}>{r.rationale}</div>
+                    <div className="text-[12px] truncate" style={{ color: '#6b7685' }}>{r.rationale}</div>
                   )}
                   {typeof r.estimated_pnl_zar === 'number' && (
                     <div className="text-[11px] mt-1 font-semibold"
-                         style={{ color: r.estimated_pnl_zar >= 0 ? '#107e3e' : '#bb0000' }}>
+                         style={{ color: r.estimated_pnl_zar >= 0 ? '#1a8a5b' : '#c0392b' }}>
                       P&L est. R{r.estimated_pnl_zar.toLocaleString()}
                     </div>
                   )}
@@ -230,7 +230,7 @@ export function TraderAiHub() {
                   onClick={() => oneClickAction(r, i)}
                   disabled={creating === `${i}`}
                   className="text-[12px] font-semibold px-3 h-8 rounded-md inline-flex items-center gap-1"
-                  style={{ background: '#e5f0fa', color: '#0a6ed1' }}
+                  style={{ background: '#d4e7f6', color: '#3b82c4' }}
                 >
                   {creating === `${i}`
                     ? 'Executing…'

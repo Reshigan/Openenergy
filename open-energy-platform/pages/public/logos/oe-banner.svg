@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 240" role="img" aria-label="Open Energy">
+  <title>Open Energy</title>
+  <!-- Mark group, vertically centred at left -->
+  <g transform="translate(20,20) scale(0.5)">
+    <g fill="none" stroke-linecap="round">
+      <circle cx="142" cy="148" r="92" stroke="#3b82c4" stroke-width="22"
+              stroke-dasharray="430 200" stroke-dashoffset="-50" />
+      <circle cx="258" cy="148" r="92" stroke="#1f9b95" stroke-width="22"
+              stroke-dasharray="430 200" stroke-dashoffset="80" />
+      <circle cx="200" cy="252" r="92" stroke="#1a3a5c" stroke-width="22"
+              stroke-dasharray="430 200" stroke-dashoffset="200" />
+    </g>
+    <circle cx="200" cy="200" r="22" fill="#1a3a5c" />
+    <circle cx="200"  cy="200" r="9" fill="#5fa8e8" />
+  </g>
+  <!-- Wordmark — Metropolis-style geometric sans -->
+  <g font-family="Metropolis, 'IBM Plex Sans', Inter, sans-serif" font-weight="800" letter-spacing="0">
+    <text x="240" y="100" fill="#1a3a5c" font-size="72">OPEN</text>
+    <text x="240" y="190" fill="#3b82c4" font-size="72">ENERGY</text>
+  </g>
+</svg>

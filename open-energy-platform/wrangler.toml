@@ -14,6 +14,13 @@ compatibility_flags = ["nodejs_compat"]
 # the React SPA from pages/dist. Deploy via `wrangler deploy`.
 main = "src/index.ts"
 
+# workers.dev URL is enabled so we always have a stable fallback during
+# domain-rebinding work. Production hostname `oe.vantax.co.za` is bound via
+# the Cloudflare dashboard (Workers → Custom Domains) because the wrangler
+# CLI can't yet pass `override_existing_dns_record` and the zone's DNS
+# record was originally provisioned by the now-removed Pages project.
+workers_dev = true
+
 [assets]
 directory = "pages/dist"
 binding = "ASSETS"
@@ -30,6 +37,13 @@ APP_BASE_URL = "https://oe.vantax.co.za"
 AZURE_AD_CLIENT_ID = "0a0bcbd9-afcb-44b9-b0ad-16e1da612f98"
 AZURE_AD_TENANT_ID = "998b123c-e559-479d-bbb9-cf3330469a73"
 AZURE_AD_REDIRECT_URI = "https://oe.vantax.co.za/api/auth/sso/microsoft/callback"
+
+# ASOBA Cloud (Ona) integration. ASOBA_API_KEY is a secret — set with
+# `wrangler secret put ASOBA_API_KEY`. The two base URLs are tenant-specific
+# (different API Gateways for different ASOBA tenants); these defaults match
+# the public production endpoints documented in the @asoba/ona-sdk repo.
+ASOBA_TELEMETRY_BASE = "https://af5jy5ob3e.execute-api.af-south-1.amazonaws.com/prod"
+ASOBA_OODA_BASE = "https://3lpq00xevg.execute-api.af-south-1.amazonaws.com/prod"
 
 [[r2_buckets]]
 binding = "R2"

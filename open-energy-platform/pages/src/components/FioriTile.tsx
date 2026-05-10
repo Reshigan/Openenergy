@@ -1,15 +1,23 @@
 import React, { ReactNode } from 'react';
 import { ArrowUpRight, ArrowDownRight, ArrowRight } from 'lucide-react';
 
+/**
+ * Tile accent palette — Open Energy semantic.
+ * Legacy names ('blue', 'indigo', 'pink') still accepted; they alias onto
+ * Forest/Teal/Plum tokens via CSS so existing call sites keep working.
+ */
 export type FioriAccent =
-  | 'blue'
-  | 'indigo'
+  | 'forest'
+  | 'amber'
   | 'teal'
   | 'plum'
+  | 'sage'
+  | 'red'
+  /* legacy aliases */
+  | 'blue'
+  | 'indigo'
   | 'pink'
-  | 'amber'
-  | 'green'
-  | 'red';
+  | 'green';
 
 export type FioriTileVariant = 'kpi' | 'feature' | 'action' | 'news';
 
@@ -24,7 +32,7 @@ interface FioriTileProps {
   icon?: React.ComponentType<{ size?: number; className?: string }>;
   accent?: FioriAccent;
   variant?: FioriTileVariant;
-  featureBg?: 'indigo' | 'teal' | 'sunset' | 'ocean';
+  featureBg?: 'forest' | 'amber' | 'teal' | 'sunset' | 'indigo' | 'ocean';
   onClick?: () => void;
   children?: ReactNode;
   className?: string;
@@ -40,7 +48,7 @@ export function FioriTile({
   trendValue,
   footer,
   icon: Icon,
-  accent = 'blue',
+  accent = 'forest',
   variant = 'kpi',
   featureBg,
   onClick,
@@ -65,9 +73,9 @@ export function FioriTile({
           <div className="kpi-label truncate">{title}</div>
           {subtitle && (
             <div
-              className="text-[12px] mt-0.5 truncate"
+              className="text-[12px] mt-0.5 truncate font-body"
               style={{
-                color: variant === 'feature' ? 'rgba(255,255,255,0.75)' : '#6a6d70',
+                color: variant === 'feature' ? 'rgba(255,255,255,0.78)' : 'var(--oe-on-surface-variant)',
               }}
             >
               {subtitle}
@@ -77,11 +85,11 @@ export function FioriTile({
         <div className="flex items-center gap-1.5 shrink-0">
           {badge && (
             <span
-              className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+              className="text-[10px] font-bold px-1.5 py-0.5 rounded font-headline tracking-wider"
               style={{
                 background:
-                  variant === 'feature' ? 'rgba(255,255,255,0.22)' : '#efeafe',
-                color: variant === 'feature' ? '#ffffff' : '#5d36ff',
+                  variant === 'feature' ? 'rgba(255,255,255,0.22)' : 'var(--oe-secondary-container)',
+                color: variant === 'feature' ? '#ffffff' : 'var(--oe-secondary-deep)',
               }}
             >
               {badge}
@@ -90,7 +98,8 @@ export function FioriTile({
           {Icon && (
             <Icon
               size={18}
-              className={variant === 'feature' ? 'text-white/85' : 'text-[#89919a]'}
+              className={variant === 'feature' ? 'text-white/85' : ''}
+              style={variant === 'feature' ? undefined : { color: 'var(--oe-outline)' }}
             />
           )}
         </div>
@@ -104,7 +113,7 @@ export function FioriTile({
               <div
                 className="text-[14px] font-semibold"
                 style={{
-                  color: variant === 'feature' ? 'rgba(255,255,255,0.75)' : '#6a6d70',
+                  color: variant === 'feature' ? 'rgba(255,255,255,0.78)' : 'var(--oe-on-surface-variant)',
                 }}
               >
                 {unit}
@@ -126,7 +135,7 @@ export function FioriTile({
           <span
             className="text-[12px] truncate"
             style={{
-              color: variant === 'feature' ? 'rgba(255,255,255,0.75)' : '#6a6d70',
+              color: variant === 'feature' ? 'rgba(255,255,255,0.78)' : 'var(--oe-on-surface-variant)',
             }}
           >
             {footer}
@@ -166,13 +175,13 @@ export function FioriTileGroup({
       <div className="flex items-end justify-between mb-3 px-0.5">
         <div>
           <h2
-            className="text-[18px] font-bold tracking-tight"
-            style={{ color: '#32363a' }}
+            className="font-headline text-[20px] font-bold tracking-tight"
+            style={{ color: 'var(--oe-on-surface)' }}
           >
             {title}
           </h2>
           {description && (
-            <p className="text-[13px] mt-0.5" style={{ color: '#6a6d70' }}>
+            <p className="text-[13px] mt-0.5 font-body" style={{ color: 'var(--oe-on-surface-variant)' }}>
               {description}
             </p>
           )}

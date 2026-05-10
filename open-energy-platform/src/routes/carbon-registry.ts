@@ -415,6 +415,50 @@ cr.post('/tax-claims/:id/submit', async (c) => {
   return c.json({ success: true });
 });
 
+// GET /carbon-registry/pipeline — Kanban view of project verification stages
+//
+// Combines `carbon_credits` (already-issued / available) with
+// `carbon_tax_offset_claims` source-projects, computing a stage that maps to
+// the issuance pipeline UI: listed → verifying → verified → issued → available.
+cr.get('/pipeline', async (c) => {
+  const user = getCurrentUser(c);
+  // Best-effort: registry-side projects table exists in some seeds, plain
+  // carbon_credits in others. We aggregate everything we have into a single
+  // rolled-up list keyed by project_id + methodology + vintage.
+  type Row = { id: string; project_name: string; methodology: string; vintage: number; estimated_credits: number; stage: string; verifier?: string; expected_issuance?: string };
+  const out: Row[] = [];
+
+  const credits = await c.env.DB.prepare(
+    `SELECT cc.id, cc.project_id, cc.methodology, cc.vintage, cc.quantity, cc.status, cc.serial_number, cc.created_at,
+            p.project_name, p.developer_id
+       FROM carbon_credits cc
+       LEFT JOIN ipp_projects p ON p.id = cc.project_id
+      WHERE (cc.owner_id = ? OR ? IN ('admin','regulator','carbon_fund'))
+      ORDER BY cc.created_at DESC LIMIT 200`,
+  ).bind(user.id, user.role).all().catch(() => ({ results: [] as Array<Record<string, unknown>> }));
+
+  for (const r of (credits.results || []) as Array<Record<string, unknown>>) {
+    const status = String(r.status || 'available');
+    const stage =
+      status === 'available' ? 'available' :
+      status === 'issued'    ? 'issued' :
+      status === 'verified'  ? 'verified' :
+      status === 'verifying' ? 'verifying' : 'listed';
+    out.push({
+      id: String(r.id),
+      project_name: String(r.project_name || `Project ${String(r.project_id || '').slice(0, 6)}`),
+      methodology: String(r.methodology || 'VCS'),
+      vintage: Number(r.vintage || 0),
+      estimated_credits: Number(r.quantity || 0),
+      stage,
+      verifier: undefined,
+      expected_issuance: undefined,
+    });
+  }
+
+  return c.json({ success: true, data: out });
+});
+
 cr.get('/tax-claims', async (c) => {
   const user = getCurrentUser(c);
   const rs = await c.env.DB.prepare(

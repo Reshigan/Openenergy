@@ -43,12 +43,15 @@ const marketData = [
   { month: 'Aug', solar: 2080, wind: 1940, hybrid: 2000, thermal: 2120 },
 ];
 
+/* Open Energy data-viz palette: Forest / Teal / Amber for renewables, plum
+ * for carbon, sage for storage. Keeps the Stitch colour intent: Forest = base,
+ * Amber = kinetic energy, Teal = growth/environment. */
 const portfolioData = [
-  { name: 'Solar',   value: 42, color: '#0a6ed1' },
-  { name: 'Wind',    value: 28, color: '#5d36ff' },
-  { name: 'Hybrid',  value: 18, color: '#0d7b84' },
-  { name: 'Storage', value: 8,  color: '#e9730c' },
-  { name: 'Carbon',  value: 4,  color: '#ab218e' },
+  { name: 'Solar',   value: 42, color: '#5fa8e8' }, /* Energy Amber */
+  { name: 'Wind',    value: 28, color: '#1f9b95' }, /* Teal */
+  { name: 'Hybrid',  value: 18, color: '#1a3a5c' }, /* Forest */
+  { name: 'Storage', value: 8,  color: '#5d4099' }, /* Plum */
+  { name: 'Carbon',  value: 4,  color: '#7faac9' }, /* Sage */
 ];
 
 const volumeData = [
@@ -138,14 +141,19 @@ export function Cockpit() {
             <div className="mt-5 flex flex-wrap gap-2">
               <button
                 onClick={() => navigate(primaryActionFor(role).path)}
-                className="h-9 px-4 rounded-lg text-[13px] font-semibold text-[#0a2540] bg-white hover:bg-white/90 transition-colors inline-flex items-center gap-2 shadow-[0_8px_20px_rgba(0,0,0,0.25)]"
+                className="h-10 px-5 rounded text-[13px] font-semibold text-white inline-flex items-center gap-2 transition-all hover:brightness-110"
+                style={{
+                  background: 'linear-gradient(135deg,#5fa8e8 0%,#1a5d97 100%)',
+                  boxShadow: '0 8px 20px rgba(95,168,232,0.35)',
+                  fontFamily: 'IBM Plex Sans, sans-serif',
+                }}
               >
                 {primaryActionFor(role).label}
                 <ArrowRight size={14} />
               </button>
               <button
                 onClick={() => navigate('/marketplace')}
-                className="h-9 px-4 rounded-lg text-[13px] font-semibold text-white border border-white/30 hover:bg-white/10 transition-colors inline-flex items-center gap-2"
+                className="h-10 px-5 rounded text-[13px] font-semibold text-white border border-white/35 hover:bg-white/10 transition-colors inline-flex items-center gap-2"
               >
                 Explore Marketplace
               </button>
@@ -153,14 +161,14 @@ export function Cockpit() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-3 min-w-0 lg:min-w-[560px]">
-            <HeroKPI label="Active Projects" value={stats?.activeProjects ?? 12} tint="#9cecb4" />
-            <HeroKPI label="Open Trades" value={stats?.openTrades ?? 38} tint="#ffd27a" />
-            <HeroKPI label="Pending Invoices" value={stats?.pendingInvoices ?? 6} tint="#ffb4b4" />
+            <HeroKPI label="Active Projects" value={stats?.activeProjects ?? 12} tint="#cdf0dd" />
+            <HeroKPI label="Open Trades" value={stats?.openTrades ?? 38} tint="#dbecfb" />
+            <HeroKPI label="Pending Invoices" value={stats?.pendingInvoices ?? 6} tint="#ffbab2" />
             <HeroKPI
               label="Portfolio Value"
               value={formatCompact(stats?.totalValue ?? 2_450_000)}
               suffix="ZAR"
-              tint="#c6b8ff"
+              tint="#b8eae6"
             />
           </div>
         </div>
@@ -190,7 +198,7 @@ export function Cockpit() {
           trend="up"
           trendValue="+4.2%"
           footer="vs. last week"
-          accent="blue"
+          accent="amber"
           icon={TrendingUp}
           onClick={() => navigate('/trading')}
         />
@@ -202,7 +210,7 @@ export function Cockpit() {
           trend="up"
           trendValue="+12.8%"
           footer="peak @ 14:00"
-          accent="indigo"
+          accent="forest"
           icon={Activity}
           onClick={() => navigate('/trading')}
         />
@@ -214,7 +222,7 @@ export function Cockpit() {
           trend="up"
           trendValue="+1.4pp"
           footer="solar dominant"
-          accent="green"
+          accent="sage"
           icon={Sun}
           onClick={() => navigate('/grid')}
         />
@@ -238,7 +246,7 @@ export function Cockpit() {
           trend="up"
           trendValue="+8.1%"
           footer="vs. grid baseline"
-          accent="plum"
+          accent="forest"
           icon={Leaf}
           onClick={() => navigate('/carbon')}
         />
@@ -250,7 +258,7 @@ export function Cockpit() {
           trend="up"
           trendValue="+3 pts"
           footer="leader quartile"
-          accent="pink"
+          accent="plum"
           icon={ShieldCheck}
           onClick={() => navigate('/esg')}
         />
@@ -261,22 +269,23 @@ export function Cockpit() {
         <div className="fiori-glass lg:col-span-2 p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-[16px] font-bold" style={{ color: '#32363a' }}>
+              <h2 className="font-headline text-[18px] font-bold" style={{ color: 'var(--oe-on-surface)' }}>
                 Energy Market Price
               </h2>
-              <p className="text-[12px]" style={{ color: '#6a6d70' }}>
+              <p className="text-[12px] font-body" style={{ color: 'var(--oe-on-surface-variant)' }}>
                 R / MWh · by source · last 8 months
               </p>
             </div>
-            <div className="flex gap-1 rounded-lg p-0.5" style={{ background: '#eff1f2' }}>
+            <div className="flex gap-1 rounded p-0.5" style={{ background: 'var(--oe-surface-container)' }}>
               {['6M', '1Y', 'YTD'].map((r, i) => (
                 <button
                   key={r}
-                  className="h-7 px-3 rounded-md text-[12px] font-semibold transition-colors"
+                  className="h-7 px-3 rounded text-[12px] font-semibold transition-colors"
                   style={{
                     background: i === 0 ? '#ffffff' : 'transparent',
-                    color: i === 0 ? '#0a6ed1' : '#6a6d70',
-                    boxShadow: i === 0 ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                    color: i === 0 ? 'var(--oe-primary)' : 'var(--oe-on-surface-variant)',
+                    boxShadow: i === 0 ? '0 1px 2px rgba(25,28,24,0.08)' : 'none',
+                    fontFamily: 'IBM Plex Sans, sans-serif',
                   }}
                 >
                   {r}
@@ -288,22 +297,22 @@ export function Cockpit() {
             <AreaChart data={marketData}>
               <defs>
                 <linearGradient id="gradSolar" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0a6ed1" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#0a6ed1" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#5fa8e8" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#5fa8e8" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gradWind" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#5d36ff" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#5d36ff" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#1f9b95" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#1f9b95" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gradHybrid" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0d7b84" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#0d7b84" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#1a3a5c" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#1a3a5c" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7ea" />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6a6d70' }} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#dde4ec" />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#3d4756', fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
               <YAxis
-                tick={{ fontSize: 11, fill: '#6a6d70' }}
+                tick={{ fontSize: 11, fill: '#3d4756', fontFamily: 'JetBrains Mono' }}
                 tickFormatter={(v) => `R${v}`}
                 axisLine={false}
                 tickLine={false}
@@ -311,17 +320,18 @@ export function Cockpit() {
               <Tooltip
                 contentStyle={{
                   background: 'rgba(255,255,255,0.95)',
-                  border: '1px solid #e5e5e5',
-                  borderRadius: 8,
-                  boxShadow: '0 8px 24px rgba(53,74,95,0.12)',
+                  border: '1px solid #c5cdd6',
+                  borderRadius: 4,
+                  boxShadow: '0 8px 24px rgba(25,28,24,0.10)',
                   fontSize: 12,
+                  fontFamily: 'IBM Plex Sans',
                 }}
                 formatter={(v: number) => [`R${v}/MWh`]}
               />
               <Area
                 type="monotone"
                 dataKey="solar"
-                stroke="#0a6ed1"
+                stroke="#5fa8e8"
                 strokeWidth={2}
                 fill="url(#gradSolar)"
                 dot={false}
@@ -329,7 +339,7 @@ export function Cockpit() {
               <Area
                 type="monotone"
                 dataKey="wind"
-                stroke="#5d36ff"
+                stroke="#1f9b95"
                 strokeWidth={2}
                 fill="url(#gradWind)"
                 dot={false}
@@ -337,25 +347,25 @@ export function Cockpit() {
               <Area
                 type="monotone"
                 dataKey="hybrid"
-                stroke="#0d7b84"
+                stroke="#1a3a5c"
                 strokeWidth={2}
                 fill="url(#gradHybrid)"
                 dot={false}
               />
             </AreaChart>
           </ResponsiveContainer>
-          <div className="flex items-center gap-4 pt-2 text-[12px]" style={{ color: '#6a6d70' }}>
-            <LegendDot color="#0a6ed1" label="Solar" />
-            <LegendDot color="#5d36ff" label="Wind" />
-            <LegendDot color="#0d7b84" label="Hybrid" />
+          <div className="flex items-center gap-4 pt-2 text-[12px] font-body" style={{ color: 'var(--oe-on-surface-variant)' }}>
+            <LegendDot color="#5fa8e8" label="Solar" />
+            <LegendDot color="#1f9b95" label="Wind" />
+            <LegendDot color="#1a3a5c" label="Hybrid" />
           </div>
         </div>
 
         <div className="fiori-glass p-5">
-          <h2 className="text-[16px] font-bold" style={{ color: '#32363a' }}>
+          <h2 className="font-headline text-[18px] font-bold" style={{ color: 'var(--oe-on-surface)' }}>
             Portfolio Allocation
           </h2>
-          <p className="text-[12px] mb-2" style={{ color: '#6a6d70' }}>
+          <p className="text-[12px] mb-2 font-body" style={{ color: 'var(--oe-on-surface-variant)' }}>
             Share of dispatched MWh
           </p>
           <ResponsiveContainer width="100%" height={200}>
@@ -378,9 +388,10 @@ export function Cockpit() {
               <Tooltip
                 contentStyle={{
                   background: 'rgba(255,255,255,0.95)',
-                  border: '1px solid #e5e5e5',
-                  borderRadius: 8,
+                  border: '1px solid #c5cdd6',
+                  borderRadius: 4,
                   fontSize: 12,
+                  fontFamily: 'IBM Plex Sans',
                 }}
                 formatter={(v: number, n: string) => [`${v}%`, n]}
               />
@@ -394,9 +405,9 @@ export function Cockpit() {
                     className="w-2.5 h-2.5 rounded-sm"
                     style={{ background: p.color }}
                   />
-                  <span style={{ color: '#32363a' }}>{p.name}</span>
+                  <span className="font-body" style={{ color: 'var(--oe-on-surface)' }}>{p.name}</span>
                 </div>
-                <span className="font-semibold" style={{ color: '#32363a' }}>
+                <span className="font-semibold num-mono" style={{ color: 'var(--oe-on-surface)' }}>
                   {p.value}%
                 </span>
               </div>
@@ -409,14 +420,14 @@ export function Cockpit() {
       <div className="fiori-glass p-5">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-[16px] font-bold" style={{ color: '#32363a' }}>
+            <h2 className="font-headline text-[18px] font-bold" style={{ color: 'var(--oe-on-surface)' }}>
               Dispatch Profile (24h)
             </h2>
-            <p className="text-[12px]" style={{ color: '#6a6d70' }}>
+            <p className="text-[12px] font-body" style={{ color: 'var(--oe-on-surface-variant)' }}>
               Aggregate generation in MW, last 24 hours
             </p>
           </div>
-          <span className="fiori-chip info">
+          <span className="fiori-chip amber">
             Peak 1.15 GW @ 14:00
           </span>
         </div>
@@ -424,33 +435,34 @@ export function Cockpit() {
           <BarChart data={volumeData} barSize={24}>
             <defs>
               <linearGradient id="gradBar" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#5d36ff" stopOpacity={1} />
-                <stop offset="100%" stopColor="#0a6ed1" stopOpacity={1} />
+                <stop offset="0%" stopColor="#1a3a5c" stopOpacity={1} />
+                <stop offset="100%" stopColor="#1a3a5c" stopOpacity={1} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7ea" vertical={false} />
-            <XAxis dataKey="hour" tick={{ fontSize: 11, fill: '#6a6d70' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: '#6a6d70' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}`} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#dde4ec" vertical={false} />
+            <XAxis dataKey="hour" tick={{ fontSize: 11, fill: '#3d4756', fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: '#3d4756', fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}`} />
             <Tooltip
-              cursor={{ fill: '#f5f6f7' }}
+              cursor={{ fill: 'var(--oe-surface-container-low)' }}
               contentStyle={{
                 background: 'rgba(255,255,255,0.95)',
-                border: '1px solid #e5e5e5',
-                borderRadius: 8,
+                border: '1px solid #c5cdd6',
+                borderRadius: 4,
                 fontSize: 12,
+                fontFamily: 'IBM Plex Sans',
               }}
               formatter={(v: number) => [`${v} MW`]}
             />
-            <Bar dataKey="mw" fill="url(#gradBar)" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="mw" fill="url(#gradBar)" radius={[2, 2, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Quick actions */}
+      {/* Quick actions — feature tiles use Open Energy gradients */}
       <FioriTileGroup title="Jump to" description="Your most-used workspaces">
         <FioriTile
           variant="feature"
-          featureBg="ocean"
+          featureBg="forest"
           title="Trading Desk"
           subtitle="Place orders & manage positions"
           icon={TrendingUp}
@@ -460,7 +472,7 @@ export function Cockpit() {
         />
         <FioriTile
           variant="feature"
-          featureBg="indigo"
+          featureBg="amber"
           title="Procurement Hub"
           subtitle="RFPs, bid evaluation, contracts"
           icon={ShoppingCart}
@@ -497,7 +509,7 @@ export function Cockpit() {
           value={stats?.activeContracts ?? 24}
           subtitle="4 awaiting signature"
           icon={FileText}
-          accent="blue"
+          accent="forest"
           footer="View contracts →"
           onClick={() => navigate('/contracts')}
         />
@@ -506,7 +518,7 @@ export function Cockpit() {
           value={stats?.pipelineProjects ?? 9}
           subtitle="Projects in origination"
           icon={GitBranch}
-          accent="indigo"
+          accent="teal"
           footer="View pipeline →"
           onClick={() => navigate('/pipeline')}
         />
@@ -515,7 +527,7 @@ export function Cockpit() {
           value={formatZAR(stats?.settled ?? 18_450_000)}
           subtitle="Cleared last 30 days"
           icon={CircleDollarSign}
-          accent="green"
+          accent="sage"
           footer="Settlement log →"
           onClick={() => navigate('/settlement')}
         />

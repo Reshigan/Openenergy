@@ -128,8 +128,8 @@ export function FunderAiHub() {
   ];
 
   return (
-    <section className="rounded-2xl border border-[#e5e5e5] bg-white overflow-hidden shadow-[0_8px_32px_rgba(10,110,209,0.06)]">
-      <header className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-[#0a6ed1] via-[#2b7ad4] to-[#4a9adc] text-white">
+    <section className="rounded-2xl border border-[#dde4ec] bg-white overflow-hidden shadow-[0_8px_32px_rgba(59,130,196,0.06)]">
+      <header className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-[#3b82c4] via-[#2b7ad4] to-[#4a9adc] text-white">
         <Sparkles size={18} />
         <div>
           <div className="text-[12px] uppercase tracking-[0.2em] text-blue-50/80">Funder Copilot</div>
@@ -144,39 +144,39 @@ export function FunderAiHub() {
               <t.icon size={18} />
             </div>
             <div className="min-w-0">
-              <div className="text-[11px] uppercase tracking-wider text-[#6a6d70]">{t.label}</div>
-              <div className="text-[15px] font-semibold text-[#32363a] truncate">{t.value}</div>
+              <div className="text-[11px] uppercase tracking-wider text-[#6b7685]">{t.label}</div>
+              <div className="text-[15px] font-semibold text-[#0f1c2e] truncate">{t.value}</div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-0 border-t border-[#e5e5e5]">
-        <div className="p-5 border-b xl:border-b-0 xl:border-r border-[#e5e5e5]">
-          <h4 className="text-[14px] font-semibold text-[#32363a] mb-2">Facility book</h4>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-0 border-t border-[#dde4ec]">
+        <div className="p-5 border-b xl:border-b-0 xl:border-r border-[#dde4ec]">
+          <h4 className="text-[14px] font-semibold text-[#0f1c2e] mb-2">Facility book</h4>
           {facilities.length === 0 ? (
-            <p className="text-[12px] text-[#6a6d70]">No facilities yet. Seed data will populate this list.</p>
+            <p className="text-[12px] text-[#6b7685]">No facilities yet. Seed data will populate this list.</p>
           ) : (
             <div className="space-y-2 max-h-[280px] overflow-y-auto">
               {facilities.map((f) => (
                 <button
                   key={f.id}
                   onClick={() => setSelectedFacility(f.id)}
-                  className={`w-full text-left rounded-lg border p-3 transition ${selectedFacility === f.id ? 'border-blue-500 bg-[#eef5ff]' : 'border-[#e5e5e5] hover:border-blue-200 hover:bg-[#f5f9ff]'}`}
+                  className={`w-full text-left rounded-lg border p-3 transition ${selectedFacility === f.id ? 'border-blue-500 bg-[#eef5ff]' : 'border-[#dde4ec] hover:border-blue-200 hover:bg-[#f5f9ff]'}`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <div className="text-[13px] font-semibold text-[#32363a] truncate">{f.facility_name}</div>
+                    <div className="text-[13px] font-semibold text-[#0f1c2e] truncate">{f.facility_name}</div>
                     {(f.breached_covenants ?? 0) > 0 && <span className="text-[10px] uppercase bg-rose-50 text-rose-700 rounded px-2 py-[2px]">{f.breached_covenants} breached</span>}
                   </div>
-                  <div className="text-[11px] text-[#6a6d70]">{f.project_name || 'Unattached'} · R{zar(f.committed_amount || 0)} committed · drawn R{zar(f.drawn_amount || 0)}</div>
+                  <div className="text-[11px] text-[#6b7685]">{f.project_name || 'Unattached'} · R{zar(f.committed_amount || 0)} committed · drawn R{zar(f.drawn_amount || 0)}</div>
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        <div className="p-5 border-b xl:border-b-0 xl:border-r border-[#e5e5e5]">
-          <h4 className="text-[14px] font-semibold text-[#32363a] mb-2">AI analysis</h4>
+        <div className="p-5 border-b xl:border-b-0 xl:border-r border-[#dde4ec]">
+          <h4 className="text-[14px] font-semibold text-[#0f1c2e] mb-2">AI analysis</h4>
           <div className="flex flex-wrap gap-2">
             <button onClick={runCashflow} disabled={!selectedFacility || !!busy['cf']} className="h-9 px-3 rounded-lg bg-blue-600 text-white text-[12px] font-semibold inline-flex items-center gap-1 disabled:opacity-50">
               {busy['cf'] ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} Cashflow 60m
@@ -210,16 +210,16 @@ export function FunderAiHub() {
 
         <div className="p-5 space-y-4">
           <div>
-            <h4 className="text-[14px] font-semibold text-[#32363a] mb-2">Covenant watchlist</h4>
+            <h4 className="text-[14px] font-semibold text-[#0f1c2e] mb-2">Covenant watchlist</h4>
             {covenants.length === 0 ? (
-              <p className="text-[12px] text-[#6a6d70]">No tracked covenants.</p>
+              <p className="text-[12px] text-[#6b7685]">No tracked covenants.</p>
             ) : (
               <div className="space-y-2 max-h-[140px] overflow-y-auto">
                 {covenants.map((cv) => (
-                  <div key={cv.id} className="rounded-lg border border-[#e5e5e5] p-3 flex items-center justify-between gap-2">
+                  <div key={cv.id} className="rounded-lg border border-[#dde4ec] p-3 flex items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="text-[12px] font-semibold text-[#32363a]">{cv.covenant_type} · {cv.facility_name}</div>
-                      <div className="text-[11px] text-[#6a6d70]">threshold {cv.threshold ?? '—'} · last {cv.last_value ?? '—'} · <span className={cv.status === 'breached' ? 'text-rose-700 font-semibold' : cv.status === 'watch' ? 'text-amber-700' : 'text-emerald-700'}>{cv.status}</span></div>
+                      <div className="text-[12px] font-semibold text-[#0f1c2e]">{cv.covenant_type} · {cv.facility_name}</div>
+                      <div className="text-[11px] text-[#6b7685]">threshold {cv.threshold ?? '—'} · last {cv.last_value ?? '—'} · <span className={cv.status === 'breached' ? 'text-rose-700 font-semibold' : cv.status === 'watch' ? 'text-amber-700' : 'text-emerald-700'}>{cv.status}</span></div>
                     </div>
                     <button onClick={() => checkCovenant(cv.id)} disabled={!!busy[`cov_${cv.id}`]} className="h-7 px-2 rounded-md bg-rose-50 text-rose-700 text-[11px] font-semibold inline-flex items-center gap-1 disabled:opacity-50">
                       {busy[`cov_${cv.id}`] ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} Triage
@@ -231,16 +231,16 @@ export function FunderAiHub() {
           </div>
 
           <div>
-            <h4 className="text-[14px] font-semibold text-[#32363a] mb-2">Disbursement queue</h4>
+            <h4 className="text-[14px] font-semibold text-[#0f1c2e] mb-2">Disbursement queue</h4>
             {disbursements.length === 0 ? (
-              <p className="text-[12px] text-[#6a6d70]">No pending disbursements.</p>
+              <p className="text-[12px] text-[#6b7685]">No pending disbursements.</p>
             ) : (
               <div className="space-y-2 max-h-[140px] overflow-y-auto">
                 {disbursements.map((d) => (
-                  <div key={d.id} className="rounded-lg border border-[#e5e5e5] p-3 flex items-center justify-between gap-2">
+                  <div key={d.id} className="rounded-lg border border-[#dde4ec] p-3 flex items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="text-[12px] font-semibold text-[#32363a]">{d.project_name || d.facility_name}</div>
-                      <div className="text-[11px] text-[#6a6d70]">R{zar(Number(d.amount || 0))}</div>
+                      <div className="text-[12px] font-semibold text-[#0f1c2e]">{d.project_name || d.facility_name}</div>
+                      <div className="text-[11px] text-[#6b7685]">R{zar(Number(d.amount || 0))}</div>
                     </div>
                     <button onClick={() => approveDisbursement(d.id)} disabled={!!busy[`disb_${d.id}`]} className="h-7 px-2 rounded-md bg-emerald-600 text-white text-[11px] font-semibold inline-flex items-center gap-1 disabled:opacity-50">
                       {busy[`disb_${d.id}`] ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />} Approve

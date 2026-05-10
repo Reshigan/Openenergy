@@ -212,7 +212,7 @@ export function OfftakerSuitePage() {
       subtitle="Multi-site groups, tariff comparison, consumption profiles, REC retirement and Scope 2 disclosures."
       tabs={tabs}
       aiBriefRole="offtaker"
-      aiBriefAccent={{ from: '#107e3e', to: '#5d36ff' }}
+      aiBriefAccent={{ from: '#1a8a5b', to: '#1f9b95' }}
     />
   );
 }

@@ -37,7 +37,7 @@ interface BriefResponse {
   structured?: { actions?: BriefAction[] };
 }
 
-export function AiBriefPanel({ role, accentFrom = '#0a6ed1', accentTo = '#5d36ff' }: {
+export function AiBriefPanel({ role, accentFrom = '#3b82c4', accentTo = '#1f9b95' }: {
   role: BriefRole;
   accentFrom?: string;
   accentTo?: string;
@@ -67,11 +67,11 @@ export function AiBriefPanel({ role, accentFrom = '#0a6ed1', accentTo = '#5d36ff
   return (
     <section
       className="rounded-xl border bg-white overflow-hidden"
-      style={{ borderColor: '#e5e5e5' }}
+      style={{ borderColor: '#dde4ec' }}
     >
       <header
         className="px-5 py-3.5 border-b flex items-center justify-between gap-3"
-        style={{ borderColor: '#f0f1f2' }}
+        style={{ borderColor: '#e5ebf2' }}
       >
         <div className="flex items-center gap-3 min-w-0">
           <div
@@ -81,10 +81,10 @@ export function AiBriefPanel({ role, accentFrom = '#0a6ed1', accentTo = '#5d36ff
             <Sparkles size={18} />
           </div>
           <div className="leading-tight min-w-0">
-            <h2 className="text-[14px] font-semibold" style={{ color: '#32363a' }}>
+            <h2 className="text-[14px] font-semibold" style={{ color: '#0f1c2e' }}>
               AI briefing — {role.replace('_', ' ')}
             </h2>
-            <p className="text-[12px] truncate" style={{ color: '#6a6d70' }}>
+            <p className="text-[12px] truncate" style={{ color: '#6b7685' }}>
               Prioritised actions drawn from your live workbench data.
               {brief?.fallback ? ' (Deterministic fallback — AI binding unavailable.)' : ''}
             </p>
@@ -95,7 +95,7 @@ export function AiBriefPanel({ role, accentFrom = '#0a6ed1', accentTo = '#5d36ff
             <button
               onClick={() => setOpen((v) => !v)}
               className="h-8 w-8 rounded-md border flex items-center justify-center"
-              style={{ borderColor: '#d0d5dd', color: '#6a6d70' }}
+              style={{ borderColor: '#d0d5dd', color: '#6b7685' }}
               aria-label={open ? 'Collapse brief' : 'Expand brief'}
             >
               {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -116,7 +116,7 @@ export function AiBriefPanel({ role, accentFrom = '#0a6ed1', accentTo = '#5d36ff
       {error && (
         <div
           className="px-5 py-3 text-[13px] inline-flex items-center gap-2"
-          style={{ background: '#ffebee', color: '#bb0000' }}
+          style={{ background: '#ffebee', color: '#c0392b' }}
         >
           <AlertTriangle size={14} /> {error}
         </div>
@@ -134,7 +134,7 @@ export function AiBriefPanel({ role, accentFrom = '#0a6ed1', accentTo = '#5d36ff
             <div>
               <h3
                 className="text-[11px] uppercase tracking-wider mb-2"
-                style={{ color: '#6a6d70' }}
+                style={{ color: '#6b7685' }}
               >
                 Prioritised actions ({actions.length})
               </h3>
@@ -143,19 +143,19 @@ export function AiBriefPanel({ role, accentFrom = '#0a6ed1', accentTo = '#5d36ff
                   <li
                     key={i}
                     className="rounded-lg border p-3 flex items-start gap-3"
-                    style={{ borderColor: '#e5e5e5' }}
+                    style={{ borderColor: '#dde4ec' }}
                   >
                     <PriorityDot priority={a.priority} />
                     <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-semibold" style={{ color: '#32363a' }}>
+                      <div className="text-[13px] font-semibold" style={{ color: '#0f1c2e' }}>
                         {a.title || 'Action'}
                       </div>
                       {a.rationale && (
-                        <p className="text-[12px] mt-0.5" style={{ color: '#6a6d70' }}>
+                        <p className="text-[12px] mt-0.5" style={{ color: '#6b7685' }}>
                           {a.rationale}
                         </p>
                       )}
-                      <div className="text-[11px] mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5" style={{ color: '#89919a' }}>
+                      <div className="text-[11px] mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5" style={{ color: '#6b7685' }}>
                         {a.entity_type && a.entity_id && (
                           <span>{a.entity_type} · {a.entity_id}</span>
                         )}
@@ -181,10 +181,10 @@ export function AiBriefPanel({ role, accentFrom = '#0a6ed1', accentTo = '#5d36ff
 }
 
 function PriorityDot({ priority }: { priority?: string }) {
-  const color = priority === 'urgent' ? '#bb0000'
+  const color = priority === 'urgent' ? '#c0392b'
     : priority === 'high' ? '#b04e0f'
-    : priority === 'normal' ? '#0a6ed1'
-    : '#89919a';
+    : priority === 'normal' ? '#3b82c4'
+    : '#6b7685';
   return (
     <span
       className="mt-1.5 w-2 h-2 rounded-full shrink-0"

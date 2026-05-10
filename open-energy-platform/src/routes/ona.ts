@@ -7,6 +7,7 @@ import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import { ask } from '../utils/ai';
 import { getTenantId, isAdmin } from '../utils/tenant';
+import * as asoba from '../utils/asoba';
 
 const ona = new Hono<HonoEnv>();
 
@@ -515,6 +516,298 @@ tenor, COD and one credible sustainability hook.`,
     drafts.push({ loi_id: id, offtaker_id: t.id, offtaker_name: t.name, body_md: result.text, fallback: result.fallback });
   }
   return c.json({ success: true, data: { drafts } });
+});
+
+// ════════════════════════════════════════════════════════════════════════
+// ASOBA Cloud (Ona) live proxy routes
+//
+// These pass through to the ASOBA Cloud REST API (telemetry + OODA alerts)
+// using ASOBA_API_KEY held as a Worker secret. All routes are scoped to
+// sites the caller can see in `ona_sites` so the API key is never exposed
+// to the browser and arbitrary site_ids can't be queried.
+// ════════════════════════════════════════════════════════════════════════
+
+/**
+ * Resolve the ASOBA `site_id` for one of our internal site rows. Returns the
+ * row if the caller can see it; null if not found or not authorised.
+ */
+async function resolveAsobaSite(
+  env: HonoEnv['Bindings'],
+  user: { id: string; role: string },
+  siteId: string,
+): Promise<{ id: string; ona_site_id: string | null; site_name: string; project_id: string | null } | null> {
+  const scope = await scopedSiteClause(env, user);
+  const row = await env.DB.prepare(`
+    SELECT os.id, os.ona_site_id, os.site_name, os.project_id
+    FROM ona_sites os WHERE os.id = ? AND ${scope.where}
+  `).bind(siteId, ...scope.params).first();
+  return (row as { id: string; ona_site_id: string | null; site_name: string; project_id: string | null } | null) || null;
+}
+
+// GET /api/ona/asoba/status — quick "is the integration configured?" probe
+ona.get('/asoba/status', (c) => {
+  return c.json({
+    success: true,
+    data: {
+      configured: asoba.isAsobaConfigured(c.env),
+      telemetry_base: c.env.ASOBA_TELEMETRY_BASE || null,
+      ooda_base: c.env.ASOBA_OODA_BASE || null,
+    },
+  });
+});
+
+// GET /api/ona/asoba/sites/:siteId/data-period — earliest/latest record window
+// Combines telemetry + OODA bounds so the UI knows what timeframe to query.
+ona.get('/asoba/sites/:siteId/data-period', async (c) => {
+  const user = getCurrentUser(c);
+  const site = await resolveAsobaSite(c.env, user, c.req.param('siteId'));
+  if (!site || !site.ona_site_id) return c.json({ success: false, error: 'site_not_linked' }, 404);
+  try {
+    const [telemetry, ooda] = await Promise.all([
+      asoba.telemetryDataPeriod(c.env, { site_id: site.ona_site_id }).catch(() => null),
+      asoba.oodaDataPeriod(c.env, { site_id: site.ona_site_id }).catch(() => null),
+    ]);
+    return c.json({ success: true, data: { telemetry, ooda } });
+  } catch (err) {
+    const e = err as asoba.AsobaError;
+    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, e.status || 502);
+  }
+});
+
+// GET /api/ona/asoba/sites/:siteId/telemetry — site-aggregated telemetry.
+// Query: start, end (ISO 8601), resolution=5min|daily, limit<=1000, aggregate=1
+// When aggregate=1 the response also includes a flat power/kWh time series
+// summed across inverters (handy for the headline chart).
+ona.get('/asoba/sites/:siteId/telemetry', async (c) => {
+  const user = getCurrentUser(c);
+  const site = await resolveAsobaSite(c.env, user, c.req.param('siteId'));
+  if (!site || !site.ona_site_id) return c.json({ success: false, error: 'site_not_linked' }, 404);
+
+  const start = c.req.query('start');
+  const end = c.req.query('end');
+  if (!start || !end) return c.json({ success: false, error: 'start_and_end_required' }, 400);
+
+  const resolution = (c.req.query('resolution') as asoba.Resolution5Min) || '5min';
+  const limit = Math.min(Number(c.req.query('limit') || 1000), 1000);
+
+  try {
+    const data = await asoba.siteTelemetry(c.env, {
+      site_id: site.ona_site_id,
+      start, end, resolution, limit,
+    });
+    const aggregate = c.req.query('aggregate') === '1';
+    return c.json({
+      success: true,
+      data: aggregate ? { ...data, aggregate: asoba.aggregateSitePower(data.records) } : data,
+    });
+  } catch (err) {
+    const e = err as asoba.AsobaError;
+    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, e.status || 502);
+  }
+});
+
+// GET /api/ona/asoba/sites/:siteId/inverter/:assetId/telemetry — single-inverter detail.
+ona.get('/asoba/sites/:siteId/inverter/:assetId/telemetry', async (c) => {
+  const user = getCurrentUser(c);
+  const site = await resolveAsobaSite(c.env, user, c.req.param('siteId'));
+  if (!site || !site.ona_site_id) return c.json({ success: false, error: 'site_not_linked' }, 404);
+
+  const assetId = c.req.param('assetId');
+  const start = c.req.query('start');
+  const end = c.req.query('end');
+  if (!start || !end) return c.json({ success: false, error: 'start_and_end_required' }, 400);
+  const resolution = (c.req.query('resolution') as asoba.Resolution5Min) || '5min';
+  const limit = Math.min(Number(c.req.query('limit') || 1000), 1000);
+  const cursor = c.req.query('cursor') || undefined;
+
+  try {
+    const data = await asoba.inverterTelemetry(c.env, {
+      site_id: site.ona_site_id, asset_id: assetId,
+      start, end, resolution, limit, cursor,
+    });
+    return c.json({ success: true, data });
+  } catch (err) {
+    const e = err as asoba.AsobaError;
+    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, e.status || 502);
+  }
+});
+
+// GET /api/ona/asoba/sites/:siteId/alerts — site-wide OODA fault feed.
+ona.get('/asoba/sites/:siteId/alerts', async (c) => {
+  const user = getCurrentUser(c);
+  const site = await resolveAsobaSite(c.env, user, c.req.param('siteId'));
+  if (!site || !site.ona_site_id) return c.json({ success: false, error: 'site_not_linked' }, 404);
+
+  const start = c.req.query('start');
+  const end = c.req.query('end');
+  if (!start || !end) return c.json({ success: false, error: 'start_and_end_required' }, 400);
+  const resolution = (c.req.query('resolution') as asoba.ResolutionOoda) || 'minute';
+  const limit = Math.min(Number(c.req.query('limit') || 1000), 1000);
+
+  try {
+    const data = await asoba.siteAlerts(c.env, {
+      site_id: site.ona_site_id, start, end, resolution, limit,
+    });
+    // Flatten for UI tables
+    const flat = Object.entries(data.alerts || {}).flatMap(([deviceId, list]) =>
+      (list as Array<Record<string, unknown>>).map((a) => ({ ...a, terminal_device_id: deviceId }))
+    );
+    return c.json({ success: true, data: { ...data, flat } });
+  } catch (err) {
+    const e = err as asoba.AsobaError;
+    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, e.status || 502);
+  }
+});
+
+// GET /api/ona/asoba/sites/:siteId/alerts/:terminalId — single-device drilldown.
+ona.get('/asoba/sites/:siteId/alerts/:terminalId', async (c) => {
+  const user = getCurrentUser(c);
+  const site = await resolveAsobaSite(c.env, user, c.req.param('siteId'));
+  if (!site || !site.ona_site_id) return c.json({ success: false, error: 'site_not_linked' }, 404);
+
+  const terminalId = c.req.param('terminalId');
+  const start = c.req.query('start');
+  const end = c.req.query('end');
+  if (!start || !end) return c.json({ success: false, error: 'start_and_end_required' }, 400);
+  const resolution = (c.req.query('resolution') as asoba.ResolutionOoda) || 'minute';
+  const limit = Math.min(Number(c.req.query('limit') || 1000), 1000);
+  const cursor = c.req.query('cursor') || undefined;
+
+  try {
+    const data = await asoba.terminalAlerts(c.env, {
+      site_id: site.ona_site_id, terminal_device_id: terminalId,
+      start, end, resolution, limit, cursor,
+    });
+    return c.json({ success: true, data });
+  } catch (err) {
+    const e = err as asoba.AsobaError;
+    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, e.status || 502);
+  }
+});
+
+// POST /api/ona/asoba/sites/:siteId/sync — pull latest telemetry + OODA alerts
+// from ASOBA into our local tables so role dashboards (lender NAV impact,
+// trader generation outlook, regulator forensics) can read from D1 without
+// each one fanning out to ASOBA. Idempotent — uses (site_id, timestamp) UPSERT.
+ona.post('/asoba/sites/:siteId/sync', async (c) => {
+  const user = getCurrentUser(c);
+  const site = await resolveAsobaSite(c.env, user, c.req.param('siteId'));
+  if (!site || !site.ona_site_id) return c.json({ success: false, error: 'site_not_linked' }, 404);
+
+  // 24h window of 5-min telemetry + minute-grain alerts. Caller can override.
+  const body = await c.req.json().catch(() => ({} as { hours?: number }));
+  const hours = Math.min(Math.max(Number(body.hours || 24), 1), 24 * 31); // cap at API's 31-day limit
+  const end = new Date();
+  const start = new Date(end.getTime() - hours * 3_600_000);
+  const startIso = start.toISOString();
+  const endIso = end.toISOString();
+
+  let telemetryCount = 0;
+  let alertCount = 0;
+
+  try {
+    const telemetry = await asoba.siteTelemetry(c.env, {
+      site_id: site.ona_site_id, start: startIso, end: endIso,
+      resolution: '5min', limit: 1000,
+    });
+    const flat = Object.entries(telemetry.records || {}).flatMap(([assetId, list]) =>
+      (list as Array<Record<string, unknown>>).map((r) => ({
+        asset_id: assetId,
+        timestamp: r.timestamp as string,
+        power: Number(r.power || 0),
+        kwh: Number(r.kWh || 0),
+        run_state: (r.run_state || r.inverter_state || null) as string | null,
+        error_code: (r.error_code || null) as string | null,
+      }))
+    );
+    if (flat.length > 0) {
+      await c.env.DB.prepare(`CREATE TABLE IF NOT EXISTS ona_asoba_telemetry (
+        site_id TEXT NOT NULL, asset_id TEXT NOT NULL, timestamp TEXT NOT NULL,
+        power REAL, kwh REAL, run_state TEXT, error_code TEXT,
+        synced_at TEXT DEFAULT (datetime('now')),
+        PRIMARY KEY (site_id, asset_id, timestamp)
+      )`).run();
+      const stmt = c.env.DB.prepare(`
+        INSERT OR REPLACE INTO ona_asoba_telemetry (site_id, asset_id, timestamp, power, kwh, run_state, error_code)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
+      const batch = flat.map((r) => stmt.bind(site.id, r.asset_id, r.timestamp, r.power, r.kwh, r.run_state, r.error_code));
+      // D1 batches max ~50 statements per transaction; chunk if needed.
+      for (let i = 0; i < batch.length; i += 50) {
+        await c.env.DB.batch(batch.slice(i, i + 50));
+      }
+      telemetryCount = flat.length;
+    }
+
+    const alerts = await asoba.siteAlerts(c.env, {
+      site_id: site.ona_site_id, start: startIso, end: endIso,
+      resolution: 'minute', limit: 1000,
+    });
+    const flatAlerts = Object.entries(alerts.alerts || {}).flatMap(([deviceId, list]) =>
+      (list as Array<Record<string, unknown>>).map((a) => ({
+        terminal_device_id: deviceId,
+        timestamp: a.timestamp as string,
+        severity: (a.severity || 'medium') as string,
+        alert_type: (a.alert_type || a.fault_type || null) as string | null,
+        description: (a.description || a.message || null) as string | null,
+      }))
+    );
+    if (flatAlerts.length > 0) {
+      await c.env.DB.prepare(`CREATE TABLE IF NOT EXISTS ona_asoba_alerts (
+        site_id TEXT NOT NULL, terminal_device_id TEXT NOT NULL, timestamp TEXT NOT NULL,
+        severity TEXT, alert_type TEXT, description TEXT,
+        synced_at TEXT DEFAULT (datetime('now')),
+        PRIMARY KEY (site_id, terminal_device_id, timestamp)
+      )`).run();
+      const stmt = c.env.DB.prepare(`
+        INSERT OR REPLACE INTO ona_asoba_alerts (site_id, terminal_device_id, timestamp, severity, alert_type, description)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+      const batch = flatAlerts.map((a) => stmt.bind(site.id, a.terminal_device_id, a.timestamp, a.severity, a.alert_type, a.description));
+      for (let i = 0; i < batch.length; i += 50) {
+        await c.env.DB.batch(batch.slice(i, i + 50));
+      }
+      alertCount = flatAlerts.length;
+
+      // Promote critical/high alerts into ona_faults so they hit the action
+      // queue + cascade engine just like manually-logged faults.
+      for (const a of flatAlerts.filter((x) => x.severity === 'critical' || x.severity === 'high')) {
+        const exists = await c.env.DB.prepare(
+          `SELECT id FROM ona_faults WHERE site_id = ? AND fault_code = ? AND start_time = ?`
+        ).bind(site.id, `ASOBA_${a.alert_type || 'ALERT'}`, a.timestamp).first();
+        if (exists) continue;
+        const id = crypto.randomUUID();
+        // Try with `source` column first; fall back if migration 033 isn't
+        // applied yet so production keeps working without the new column.
+        try {
+          await c.env.DB.prepare(`
+            INSERT INTO ona_faults (id, site_id, fault_code, fault_description, severity, start_time, status, source)
+            VALUES (?, ?, ?, ?, ?, ?, 'open', 'asoba')
+          `).bind(id, site.id, `ASOBA_${a.alert_type || 'ALERT'}`, a.description || 'ASOBA OODA alert', a.severity, a.timestamp).run();
+        } catch {
+          await c.env.DB.prepare(`
+            INSERT INTO ona_faults (id, site_id, fault_code, fault_description, severity, start_time, status)
+            VALUES (?, ?, ?, ?, ?, ?, 'open')
+          `).bind(id, site.id, `ASOBA_${a.alert_type || 'ALERT'}`, a.description || 'ASOBA OODA alert', a.severity, a.timestamp).run().catch(() => {});
+        }
+        await fireCascade({
+          event: 'ona.fault_created',
+          actor_id: user.id,
+          entity_type: 'ona_faults',
+          entity_id: id,
+          data: { source: 'asoba', severity: a.severity, terminal_device_id: a.terminal_device_id },
+          env: c.env,
+        });
+      }
+    }
+
+    await c.env.DB.prepare(`UPDATE ona_sites SET last_sync_at = datetime('now') WHERE id = ?`).bind(site.id).run();
+
+    return c.json({ success: true, data: { telemetry_records: telemetryCount, alerts: alertCount, window: { start: startIso, end: endIso } } });
+  } catch (err) {
+    const e = err as asoba.AsobaError;
+    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, e.status || 502);
+  }
 });
 
 // ---------------- Legacy link endpoints (kept for back-compat) ----------------

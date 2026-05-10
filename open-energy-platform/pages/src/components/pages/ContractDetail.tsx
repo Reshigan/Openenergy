@@ -332,7 +332,7 @@ export function ContractDetail() {
             <Download className="w-4 h-4" /> Download PDF
           </button>
           {mySignatory && !mySignatory.signed && data.can_sign && (
-            <button onClick={() => setSignOpen(true)} className="flex items-center gap-2 px-3 py-1.5 bg-[#0a6ed1] text-white rounded-md text-sm hover:bg-[#0854a0]">
+            <button onClick={() => setSignOpen(true)} className="flex items-center gap-2 px-3 py-1.5 bg-[#3b82c4] text-white rounded-md text-sm hover:bg-[#1a5d97]">
               <FileSignature className="w-4 h-4" /> Sign now
             </button>
           )}
@@ -342,13 +342,13 @@ export function ContractDetail() {
       {/* Object page header */}
       <section
         className="rounded-xl border bg-white overflow-hidden"
-        style={{ borderColor: '#e5e5e5', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
+        style={{ borderColor: '#dde4ec', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
       >
         <div className="p-5 sm:p-6">
           <div className="flex items-start gap-4">
             <div
               className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: 'linear-gradient(135deg,#0a6ed1 0%,#5d36ff 100%)', color: '#fff' }}
+              style={{ background: 'linear-gradient(135deg,#3b82c4 0%,#1f9b95 100%)', color: '#fff' }}
             >
               <FileText className="w-6 h-6" />
             </div>
@@ -393,7 +393,7 @@ export function ContractDetail() {
                 <div className="font-semibold text-sm">You are a signatory on this contract</div>
                 <div className="text-xs mt-0.5">Review the document below and use "Sign now" when you're ready.</div>
               </div>
-              <button onClick={() => setSignOpen(true)} className="text-xs font-semibold px-2.5 py-1 bg-[#e9730c] text-white rounded hover:bg-[#c75f08]">
+              <button onClick={() => setSignOpen(true)} className="text-xs font-semibold px-2.5 py-1 bg-[#c97a14] text-white rounded hover:bg-[#c75f08]">
                 Sign now
               </button>
             </div>
@@ -404,9 +404,9 @@ export function ContractDetail() {
         {template && (
           <div className="px-5 sm:px-6 py-3 border-t bg-gray-50" style={{ borderColor: '#ebebeb' }}>
             <div className="flex flex-wrap items-start gap-x-6 gap-y-2 text-xs text-gray-700">
-              <div className="flex items-start gap-2"><Scale className="w-4 h-4 mt-0.5 text-[#0a6ed1]" /><span><span className="font-semibold">Governing law:</span> {template.governing_law || 'Laws of the Republic of South Africa'}</span></div>
+              <div className="flex items-start gap-2"><Scale className="w-4 h-4 mt-0.5 text-[#3b82c4]" /><span><span className="font-semibold">Governing law:</span> {template.governing_law || 'Laws of the Republic of South Africa'}</span></div>
               {template.sa_law_references && (
-                <div className="flex items-start gap-2"><ShieldCheck className="w-4 h-4 mt-0.5 text-[#107e3e]" /><span><span className="font-semibold">SA references:</span> {template.sa_law_references}</span></div>
+                <div className="flex items-start gap-2"><ShieldCheck className="w-4 h-4 mt-0.5 text-[#1a8a5b]" /><span><span className="font-semibold">SA references:</span> {template.sa_law_references}</span></div>
               )}
             </div>
           </div>
@@ -414,19 +414,19 @@ export function ContractDetail() {
       </section>
 
       {/* Signatory roster */}
-      <section className="rounded-xl border bg-white p-5 sm:p-6" style={{ borderColor: '#e5e5e5' }}>
+      <section className="rounded-xl border bg-white p-5 sm:p-6" style={{ borderColor: '#dde4ec' }}>
         <h2 className="text-[15px] font-semibold text-gray-900 mb-3">Signatories</h2>
         {signatories.length === 0 ? (
           <p className="text-sm text-gray-500">No signatories registered for this contract yet.</p>
         ) : (
-          <ul className="divide-y" style={{ borderColor: '#f0f1f2' }}>
+          <ul className="divide-y" style={{ borderColor: '#e5ebf2' }}>
             {signatories.map((s) => (
               <li key={s.id} className="py-3 flex items-center gap-3">
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
                   style={{
                     background: s.signed ? '#e5f7ec' : '#eef1f4',
-                    color: s.signed ? '#107e3e' : '#6a6d70',
+                    color: s.signed ? '#1a8a5b' : '#6b7685',
                   }}
                 >
                   {s.signed ? <CheckCircle2 className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
@@ -443,7 +443,7 @@ export function ContractDetail() {
                 <div className="text-xs text-right shrink-0">
                   {s.signed ? (
                     <>
-                      <div className="font-semibold text-[#107e3e]">Signed</div>
+                      <div className="font-semibold text-[#1a8a5b]">Signed</div>
                       <div className="text-gray-500">{s.signed_at?.slice(0, 10)}</div>
                     </>
                   ) : (
@@ -457,7 +457,7 @@ export function ContractDetail() {
       </section>
 
       {/* Document body */}
-      <section className="rounded-xl border bg-white p-6 sm:p-8" style={{ borderColor: '#e5e5e5' }}>
+      <section className="rounded-xl border bg-white p-6 sm:p-8" style={{ borderColor: '#dde4ec' }}>
         <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Document body</div>
         <article className="prose prose-sm max-w-none">
           {renderMarkdownLite(data.rendered_body)}
@@ -466,7 +466,7 @@ export function ContractDetail() {
 
       {/* Phase advance actions */}
       {data.can_sign && !allSigned && (
-        <section className="rounded-xl border bg-white p-5 sm:p-6" style={{ borderColor: '#e5e5e5' }}>
+        <section className="rounded-xl border bg-white p-5 sm:p-6" style={{ borderColor: '#dde4ec' }}>
           <h3 className="text-[14px] font-semibold text-gray-900 mb-3">Lifecycle actions</h3>
           <div className="flex flex-wrap gap-2">
             {['legal_review', 'statutory_check', 'execution', 'active'].filter((p) => p !== contract.phase).map((p) => (
@@ -475,7 +475,7 @@ export function ContractDetail() {
                 onClick={() => advancePhase(p)}
                 disabled={phaseChanging}
                 className="text-xs font-semibold px-3 py-1.5 rounded-md border hover:bg-gray-50 disabled:opacity-50"
-                style={{ borderColor: '#ccc', color: '#32363a' }}
+                style={{ borderColor: '#ccc', color: '#0f1c2e' }}
               >
                 <Send className="w-3 h-3 inline mr-1" /> Move to {p.replace(/_/g, ' ')}
               </button>
@@ -513,7 +513,7 @@ export function ContractDetail() {
               <button
                 onClick={sign}
                 disabled={!typedName.trim() || !agree || signing}
-                className="px-4 py-1.5 bg-[#0a6ed1] text-white rounded-md text-sm font-semibold flex items-center gap-2 disabled:opacity-50 hover:bg-[#0854a0]"
+                className="px-4 py-1.5 bg-[#3b82c4] text-white rounded-md text-sm font-semibold flex items-center gap-2 disabled:opacity-50 hover:bg-[#1a5d97]"
               >
                 {signing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSignature className="w-4 h-4" />}
                 {signing ? 'Signing…' : 'Sign contract'}
@@ -528,7 +528,7 @@ export function ContractDetail() {
 
 function KpiTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border p-3" style={{ borderColor: '#e5e5e5', background: '#fafbfc' }}>
+    <div className="rounded-lg border p-3" style={{ borderColor: '#dde4ec', background: '#f5f8fb' }}>
       <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">{label}</div>
       <div className="text-[13px] font-semibold text-gray-900 mt-1 break-words">{value}</div>
     </div>

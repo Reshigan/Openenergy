@@ -363,7 +363,7 @@ export function RegulatorSuitePage() {
       subtitle="Licensing, tariff determinations, enforcement and market surveillance for the national energy sector."
       tabs={tabs}
       aiBriefRole="regulator"
-      aiBriefAccent={{ from: '#107e3e', to: '#0a6ed1' }}
+      aiBriefAccent={{ from: '#1a8a5b', to: '#3b82c4' }}
     />
   );
 }
