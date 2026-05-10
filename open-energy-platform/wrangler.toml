@@ -14,12 +14,15 @@ compatibility_flags = ["nodejs_compat"]
 # the React SPA from pages/dist. Deploy via `wrangler deploy`.
 main = "src/index.ts"
 
-# workers.dev URL is enabled so we always have a stable fallback during
-# domain-rebinding work. Production hostname `oe.vantax.co.za` is bound via
-# the Cloudflare dashboard (Workers → Custom Domains) because the wrangler
-# CLI can't yet pass `override_existing_dns_record` and the zone's DNS
-# record was originally provisioned by the now-removed Pages project.
+# workers.dev URL stays enabled as a fallback target for smoke tests.
 workers_dev = true
+
+# Production custom domain. The orphan CNAME left over from the legacy Pages
+# deployment was removed via the Cloudflare Global API; this binding now
+# provisions DNS + cert for the Worker on next deploy.
+[[routes]]
+pattern = "oe.vantax.co.za"
+custom_domain = true
 
 [assets]
 directory = "pages/dist"
