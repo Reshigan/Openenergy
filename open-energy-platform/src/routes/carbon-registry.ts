@@ -428,13 +428,16 @@ cr.get('/pipeline', async (c) => {
   type Row = { id: string; project_name: string; methodology: string; vintage: number; estimated_credits: number; stage: string; verifier?: string; expected_issuance?: string };
   const out: Row[] = [];
 
+  // Pull from the live `carbon_holdings` + `carbon_projects` tables (legacy
+  // `carbon_credits` was renamed in v2 and the join target is the carbon
+  // registry project, not the IPP project).
   const credits = await c.env.DB.prepare(
-    `SELECT cc.id, cc.project_id, cc.methodology, cc.vintage, cc.quantity, cc.status, cc.serial_number, cc.created_at,
-            p.project_name, p.developer_id
-       FROM carbon_credits cc
-       LEFT JOIN ipp_projects p ON p.id = cc.project_id
-      WHERE (cc.owner_id = ? OR ? IN ('admin','regulator','carbon_fund'))
-      ORDER BY cc.created_at DESC LIMIT 200`,
+    `SELECT h.id, h.project_id, h.vintage_year AS vintage, h.quantity, h.status, h.created_at,
+            p.project_name, p.methodology, p.project_type, p.developer_id, p.project_number AS serial_number
+       FROM carbon_holdings h
+       LEFT JOIN carbon_projects p ON p.id = h.project_id
+      WHERE (h.participant_id = ? OR ? IN ('admin','regulator','carbon_fund'))
+      ORDER BY h.created_at DESC LIMIT 200`,
   ).bind(user.id, user.role).all().catch(() => ({ results: [] as Array<Record<string, unknown>> }));
 
   for (const r of (credits.results || []) as Array<Record<string, unknown>>) {

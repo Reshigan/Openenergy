@@ -8,11 +8,37 @@ import { ask } from '../utils/ai';
 const carbon = new Hono<HonoEnv>();
 carbon.use('*', authMiddleware);
 
-// GET /carbon/credits - List user's credits
+// GET /carbon/credits — list the caller's carbon holdings, shaped for the UI.
+//
+// The actual table is `carbon_holdings` (renamed in v2 from the legacy
+// `carbon_credits`). We JOIN onto `carbon_projects` so the UI gets the
+// project name + methodology + registry it expects, and alias columns onto
+// the legacy field names so the existing front-end shape doesn't change.
 carbon.get('/credits', async (c) => {
   const user = getCurrentUser(c);
   const credits = await c.env.DB.prepare(`
-    SELECT * FROM carbon_credits WHERE owner_id = ? ORDER BY created_at DESC
+    SELECT h.id,
+           h.participant_id    AS owner_id,
+           h.project_id,
+           p.project_name,
+           p.project_number    AS registry,
+           p.methodology,
+           p.project_type,
+           h.credit_type,
+           h.vintage_year      AS vintage,
+           h.quantity          AS quantity,
+           h.quantity          AS amount_tonnes,
+           h.quantity          AS available_quantity,
+           h.cost_basis        AS price_per_credit,
+           h.status,
+           h.acquisition_date,
+           h.created_at,
+           NULL                AS serial_number,
+           NULL                AS retirement_certificate_url
+      FROM carbon_holdings h
+      LEFT JOIN carbon_projects p ON p.id = h.project_id
+     WHERE h.participant_id = ?
+     ORDER BY h.created_at DESC
   `).bind(user.id).all();
   return c.json({ success: true, data: credits.results || [] });
 });
@@ -90,32 +116,77 @@ carbon.delete('/credits/:id', async (c) => {
   return c.json({ success: true, data: { id, deleted: true } });
 });
 
-// POST /carbon/retire - Retire credits
+// POST /carbon/credits/:id/retire — retire a holding, write the retirement
+// row and fire the cascade. Body: { quantity, reason, beneficiary } (legacy
+// `amount_tonnes`, `retirement_purpose`, `retirement_beneficiary` keys are
+// also accepted so the older UI doesn't break).
 carbon.post('/credits/:id/retire', async (c) => {
   const user = getCurrentUser(c);
   const id = c.req.param('id');
-  const { amount_tonnes, retirement_purpose, retirement_beneficiary } = await c.req.json();
-  
-  const credit = await c.env.DB.prepare('SELECT * FROM carbon_credits WHERE id = ? AND owner_id = ?').bind(id, user.id).first();
-  if (!credit) return c.json({ success: false, error: 'Credit not found' }, 404);
-  
-  const newQty = (credit.available_quantity || 0) - amount_tonnes;
-  await c.env.DB.prepare('UPDATE carbon_credits SET available_quantity = ?, status = ? WHERE id = ?').bind(newQty, newQty <= 0 ? 'retired' : 'active', id).run();
-  
+  const body = (await c.req.json().catch(() => ({}))) as {
+    quantity?: number; amount_tonnes?: number;
+    reason?: string; retirement_purpose?: string;
+    beneficiary?: string; retirement_beneficiary?: string;
+  };
+  const qty = Number(body.quantity ?? body.amount_tonnes ?? 0);
+  const reason = body.reason ?? body.retirement_purpose ?? null;
+  const beneficiary = body.beneficiary ?? body.retirement_beneficiary ?? null;
+  if (!qty || qty <= 0) return c.json({ success: false, error: 'quantity_required' }, 400);
+
+  const holding = await c.env.DB.prepare(
+    `SELECT id, project_id, quantity, status FROM carbon_holdings WHERE id = ? AND participant_id = ?`,
+  ).bind(id, user.id).first() as { id?: string; project_id?: string; quantity?: number; status?: string } | null;
+  if (!holding) return c.json({ success: false, error: 'credit_not_found' }, 404);
+  if ((holding.status || 'available') === 'retired') return c.json({ success: false, error: 'already_retired' }, 400);
+  if (qty > Number(holding.quantity || 0)) return c.json({ success: false, error: 'insufficient_balance' }, 400);
+
+  const newQty = Number(holding.quantity || 0) - qty;
+  await c.env.DB.prepare(
+    `UPDATE carbon_holdings SET quantity = ?, status = ? WHERE id = ?`,
+  ).bind(newQty, newQty <= 0 ? 'retired' : 'available', id).run();
+
+  const retId = 'cr_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const cert = `OE-${retId.slice(-8).toUpperCase()}`;
   await c.env.DB.prepare(`
-    INSERT INTO carbon_retirements (id, credit_id, participant_id, amount_tonnes, retirement_purpose, retirement_beneficiary, retirement_date, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind('cr_' + Date.now().toString(36), id, user.id, amount_tonnes, retirement_purpose, retirement_beneficiary, new Date().toISOString(), new Date().toISOString()).run();
-  
-  await fireCascade({ event: 'carbon.retired', actor_id: user.id, entity_type: 'carbon_credits', entity_id: id, data: { amount_tonnes, retirement_purpose }, env: c.env });
-  
-  return c.json({ success: true, data: { retired: amount_tonnes } });
+    INSERT INTO carbon_retirements
+      (id, participant_id, project_id, quantity, retirement_reason, certificate_number, beneficiary_name, retirement_date, created_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), ?)
+  `).bind(retId, user.id, holding.project_id, qty, reason, cert, beneficiary, user.id).run();
+
+  await fireCascade({
+    event: 'carbon.retired', actor_id: user.id,
+    entity_type: 'carbon_holdings', entity_id: id,
+    data: { quantity: qty, reason, certificate_number: cert },
+    env: c.env,
+  });
+  return c.json({ success: true, data: { retired: qty, certificate_number: cert, retirement_id: retId } });
 });
 
-// GET /carbon/options - List options
+// GET /carbon/options — caller's open + recently-closed options.
+//
+// Schema uses `seller_id` (writer) + `option_type` + `strike_price` +
+// `expiry_date`. The UI reads `type`, `strike`, `expiry`, `delta`, `gamma`,
+// so we alias columns and return delta/gamma as null until the pricer wires
+// them in (the UI already shows '—' for missing greeks).
 carbon.get('/options', async (c) => {
   const user = getCurrentUser(c);
-  const options = await c.env.DB.prepare('SELECT * FROM carbon_options WHERE writer_id = ? OR holder_id = ? ORDER BY expiry ASC').bind(user.id, user.id).all();
+  const options = await c.env.DB.prepare(
+    `SELECT id,
+            seller_id,
+            project_id,
+            option_type     AS type,
+            strike_price    AS strike,
+            volume_tco2     AS volume,
+            expiry_date     AS expiry,
+            premium_per_tco2 AS premium,
+            status,
+            NULL            AS delta,
+            NULL            AS gamma,
+            created_at
+       FROM carbon_options
+      WHERE seller_id = ?
+      ORDER BY expiry_date ASC`,
+  ).bind(user.id).all();
   return c.json({ success: true, data: options.results || [] });
 });
 

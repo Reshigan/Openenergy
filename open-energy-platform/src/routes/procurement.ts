@@ -1,238 +1,242 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// Procurement — RFP Creation, Bidding, Award, and LOI Auto-creation
+// Procurement — RFP creation, bidding, multi-criteria evaluation, award.
+//
+// Backed by `procurement_rfps` + `procurement_bids` (the names the schema
+// settled on after the v2 refactor; older code referred to `rfp_requests` /
+// `rfp_bids` which no longer exist).
+//
+// All endpoints use the platform's standard auth context: `c.get('auth').user`
+// (NOT `c.get('participant')` — that key was never set by authMiddleware).
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 
 const procurement = new Hono<HonoEnv>();
 
-// All procurement endpoints require auth. authMiddleware is a middleware
-// function (not a factory) — applying it once at the sub-app level avoids
-// the per-route `authMiddleware()` invocation pattern that previously
-// produced "handler is not a function" 500s on every endpoint here.
 procurement.use('*', authMiddleware);
 
-// GET /procurement/rfps — List all RFPs
+function genId(p: string) { return `${p}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`; }
+
+// Ensure evaluation columns exist; safe to run on every cold start.
+async function ensureEvaluationColumns(env: HonoEnv['Bindings']) {
+  for (const col of ['technical_score', 'sustainability_score', 'delivery_score', 'overall_score']) {
+    await env.DB.prepare(`ALTER TABLE procurement_bids ADD COLUMN ${col} REAL`).run().catch(() => undefined);
+  }
+}
+
+// ─── List RFPs ─────────────────────────────────────────────────────────────
+//
+// GET /procurement/rfps?status=&search=
+//
+// Returns RFPs the caller can see — admins/regulators/grid_operators see all,
+// everyone else sees published RFPs + their own drafts.
 procurement.get('/rfps', async (c) => {
-  const participant = c.get('participant');
+  const user = getCurrentUser(c);
   const { status, search } = c.req.query();
-  
+
   let query = `
-    SELECT r.*, p.name as creator_name, p.company_name as creator_company,
-           (SELECT COUNT(*) FROM rfp_bids WHERE rfp_id = r.id) as bid_count
-    FROM rfp_requests r
-    JOIN participants p ON r.creator_id = p.id
-    WHERE 1=1
+    SELECT r.*, p.name AS creator_name, p.company_name AS creator_company,
+           (SELECT COUNT(*) FROM procurement_bids WHERE rfp_id = r.id) AS bid_count
+      FROM procurement_rfps r
+      JOIN participants p ON p.id = r.created_by
+     WHERE 1=1
   `;
-  const bindings: any[] = [];
-  
-  if (participant.role !== 'admin' && participant.role !== 'grid_operator' && participant.role !== 'regulator') {
-    query += ` AND (r.visibility = 'public' OR r.creator_id = ?)`;
-    bindings.push(participant.id);
+  const bind: unknown[] = [];
+
+  if (user.role !== 'admin' && user.role !== 'grid_operator' && user.role !== 'regulator') {
+    query += ` AND (r.status != 'draft' OR r.created_by = ?)`;
+    bind.push(user.id);
   }
-  
-  if (status) {
-    query += ` AND r.status = ?`;
-    bindings.push(status);
-  }
-  
-  if (search) {
-    query += ` AND (r.title LIKE ? OR r.description LIKE ?)`;
-    bindings.push(`%${search}%`, `%${search}%`);
-  }
-  
+  if (status)  { query += ` AND r.status = ?`; bind.push(status); }
+  if (search)  { query += ` AND (r.title LIKE ? OR r.description LIKE ?)`; bind.push(`%${search}%`, `%${search}%`); }
   query += ` ORDER BY r.created_at DESC`;
-  
-  const rfps = await c.env.DB.prepare(query).bind(...bindings).all();
+
+  const rfps = await c.env.DB.prepare(query).bind(...bind).all();
   return c.json({ success: true, data: rfps.results || [] });
 });
 
-// POST /procurement/rfps — Create new RFP
+// ─── Create RFP ────────────────────────────────────────────────────────────
+//
+// POST /procurement/rfps
+// body: { title, description, deadline, budget_min, budget_max, project_type, requirements }
+//
+// `deadline` maps onto `procurement_rfps.closing_date` and `budget_max` onto
+// `procurement_rfps.budget` so the existing UI doesn't need to know the
+// schema renames.
 procurement.post('/rfps', async (c) => {
-  const participant = c.get('participant');
-  const body = await c.req.json();
-  const { title, description, requirements, budget_min, budget_max, deadline, project_type, visibility } = body;
-  
-  if (!title || !description || !deadline) {
-    return c.json({ success: false, error: 'Title, description, and deadline required' }, 400);
+  const user = getCurrentUser(c);
+  const body = (await c.req.json().catch(() => ({}))) as {
+    title?: string; description?: string; deadline?: string;
+    budget_min?: number; budget_max?: number;
+    project_type?: string; requirements?: string;
+  };
+  if (!body.title || !body.description || !body.deadline) {
+    return c.json({ success: false, error: 'title, description and deadline required' }, 400);
   }
-  
-  const rfpId = 'rfp_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
-  
+  const id = genId('rfp');
   await c.env.DB.prepare(`
-    INSERT INTO rfp_requests (id, title, description, requirements, budget_min, budget_max, deadline, project_type, visibility, status, creator_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
-  `).bind(rfpId, title, description, requirements || '', budget_min || null, budget_max || null, deadline, project_type || 'ppa', visibility || 'public', participant.id).run();
-  
+    INSERT INTO procurement_rfps (id, title, description, rfp_reference, created_by, closing_date, budget, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'published')
+  `).bind(
+    id, body.title, body.description,
+    `RFP-${id.slice(-8).toUpperCase()}`,
+    user.id, body.deadline,
+    body.budget_max ?? body.budget_min ?? null,
+  ).run();
+
   await fireCascade({
-    event: 'marketplace.bid',
-    actor_id: participant.id,
-    entity_type: 'rfp_requests',
-    entity_id: rfpId,
-    data: { title, deadline },
+    event: 'marketplace.bid', actor_id: user.id,
+    entity_type: 'procurement_rfps', entity_id: id,
+    data: { title: body.title, deadline: body.deadline },
     env: c.env,
   });
-  
-  return c.json({ success: true, data: { rfp_id: rfpId } });
+  return c.json({ success: true, data: { rfp_id: id } });
 });
 
-// GET /procurement/rfps/:id — Get RFP details
+// ─── RFP detail (with bids) ────────────────────────────────────────────────
 procurement.get('/rfps/:id', async (c) => {
-  const { id } = c.req.param();
-  
+  await ensureEvaluationColumns(c.env);
+  const id = c.req.param('id');
   const rfp = await c.env.DB.prepare(`
-    SELECT r.*, p.name as creator_name, p.company_name as creator_company
-    FROM rfp_requests r
-    JOIN participants p ON r.creator_id = p.id
-    WHERE r.id = ?
+    SELECT r.*, p.name AS creator_name, p.company_name AS creator_company
+      FROM procurement_rfps r
+      JOIN participants p ON p.id = r.created_by
+     WHERE r.id = ?
   `).bind(id).first();
-  
-  if (!rfp) {
-    return c.json({ success: false, error: 'RFP not found' }, 404);
-  }
-  
+  if (!rfp) return c.json({ success: false, error: 'rfp_not_found' }, 404);
+
   const bids = await c.env.DB.prepare(`
-    SELECT b.*, p.name as bidder_name, p.company_name as bidder_company, p.bbbee_level
-    FROM rfp_bids b
-    JOIN participants p ON b.bidder_id = p.id
-    WHERE b.rfp_id = ?
-    ORDER BY b.created_at DESC
+    SELECT b.*, p.name AS bidder_name, p.company_name AS bidder_company, p.bbbee_level
+      FROM procurement_bids b
+      JOIN participants p ON p.id = b.participant_id
+     WHERE b.rfp_id = ?
+     ORDER BY b.created_at DESC
   `).bind(id).all();
-  
   return c.json({ success: true, data: { ...rfp, bids: bids.results || [] } });
 });
 
-// POST /procurement/rfps/:id/bid — Submit bid
+// ─── Submit a bid ──────────────────────────────────────────────────────────
+//
+// POST /procurement/rfps/:id/bid
+// body: { proposed_price, proposed_terms, technical_proposal_key }
 procurement.post('/rfps/:id/bid', async (c) => {
-  const participant = c.get('participant');
-  const { id } = c.req.param();
-  const body = await c.req.json();
-  const { proposed_price, proposed_terms, timeline, experience } = body;
-  
-  if (!proposed_price) {
-    return c.json({ success: false, error: 'Proposed price required' }, 400);
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as {
+    proposed_price?: number; bid_amount?: number;
+    proposed_terms?: string; technical_proposal_key?: string;
+    commercial_proposal_key?: string;
+  };
+  const amount = body.proposed_price ?? body.bid_amount;
+  if (!amount) return c.json({ success: false, error: 'proposed_price required' }, 400);
+
+  const rfp = await c.env.DB.prepare(`SELECT id, status FROM procurement_rfps WHERE id = ?`).bind(id).first();
+  if (!rfp) return c.json({ success: false, error: 'rfp_not_found' }, 404);
+  if ((rfp as { status?: string }).status !== 'published' && (rfp as { status?: string }).status !== 'evaluation') {
+    return c.json({ success: false, error: 'rfp_closed_to_bids' }, 400);
   }
-  
-  const rfp = await c.env.DB.prepare('SELECT * FROM rfp_requests WHERE id = ?').bind(id).first();
-  if (!rfp) {
-    return c.json({ success: false, error: 'RFP not found' }, 404);
-  }
-  
-  if (rfp.status !== 'open') {
-    return c.json({ success: false, error: 'RFP is not accepting bids' }, 400);
-  }
-  
-  const bidId = 'bid_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
-  
+
+  const bidId = genId('bid');
   await c.env.DB.prepare(`
-    INSERT INTO rfp_bids (id, rfp_id, bidder_id, proposed_price, proposed_terms, timeline, experience)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).bind(bidId, id, participant.id, proposed_price, proposed_terms || '', timeline || '', experience || '').run();
-  
+    INSERT INTO procurement_bids (id, rfp_id, participant_id, technical_proposal_key, commercial_proposal_key, bid_amount, status, submitted_at)
+    VALUES (?, ?, ?, ?, ?, ?, 'submitted', datetime('now'))
+  `).bind(
+    bidId, id, user.id,
+    body.technical_proposal_key || body.proposed_terms || null,
+    body.commercial_proposal_key || null,
+    amount,
+  ).run();
+
   await fireCascade({
-    event: 'marketplace.bid',
-    actor_id: participant.id,
-    entity_type: 'rfp_bids',
-    entity_id: bidId,
-    data: { rfp_id: id, proposed_price },
+    event: 'marketplace.bid', actor_id: user.id,
+    entity_type: 'procurement_bids', entity_id: bidId,
+    data: { rfp_id: id, bid_amount: amount },
     env: c.env,
   });
-  
   return c.json({ success: true, data: { bid_id: bidId } });
 });
 
-// POST /procurement/rfps/:id/award — Award RFP to bidder (creates LOI)
+// ─── Award ─────────────────────────────────────────────────────────────────
 procurement.post('/rfps/:id/award', async (c) => {
-  const participant = c.get('participant');
-  const { id } = c.req.param();
-  const body = await c.req.json();
-  const { bid_id } = body;
-  
-  if (!bid_id) {
-    return c.json({ success: false, error: 'Bid ID required' }, 400);
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as { bid_id?: string };
+  if (!body.bid_id) return c.json({ success: false, error: 'bid_id required' }, 400);
+
+  const rfp = await c.env.DB.prepare(`SELECT id, created_by, title FROM procurement_rfps WHERE id = ?`).bind(id).first();
+  if (!rfp) return c.json({ success: false, error: 'rfp_not_found' }, 404);
+  if ((rfp as { created_by?: string }).created_by !== user.id && user.role !== 'admin') {
+    return c.json({ success: false, error: 'forbidden' }, 403);
   }
-  
-  const rfp = await c.env.DB.prepare('SELECT * FROM rfp_requests WHERE id = ?').bind(id).first();
-  if (!rfp) {
-    return c.json({ success: false, error: 'RFP not found' }, 404);
-  }
-  
-  if (participant.role !== 'admin' && rfp.creator_id !== participant.id) {
-    return c.json({ success: false, error: 'Not authorized to award this RFP' }, 403);
-  }
-  
-  const bid = await c.env.DB.prepare('SELECT * FROM rfp_bids WHERE id = ? AND rfp_id = ?').bind(bid_id, id).first();
-  if (!bid) {
-    return c.json({ success: false, error: 'Bid not found' }, 404);
-  }
-  
-  // Update RFP status
-  await c.env.DB.prepare('UPDATE rfp_requests SET status = ?, awarded_to = ?, awarded_at = ? WHERE id = ?')
-    .bind('awarded', bid_id, new Date().toISOString(), id).run();
-  
-  // Create LOI automatically
-  const loiId = 'loi_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
-  
+  const bid = await c.env.DB.prepare(
+    `SELECT id, participant_id, bid_amount, technical_proposal_key FROM procurement_bids WHERE id = ? AND rfp_id = ?`,
+  ).bind(body.bid_id, id).first();
+  if (!bid) return c.json({ success: false, error: 'bid_not_found' }, 404);
+
+  await c.env.DB.prepare(`UPDATE procurement_rfps SET status = 'awarded', updated_at = datetime('now') WHERE id = ?`).bind(id).run();
+  await c.env.DB.prepare(`UPDATE procurement_bids SET status = 'awarded' WHERE id = ?`).bind(body.bid_id).run();
+  await c.env.DB.prepare(`UPDATE procurement_bids SET status = 'rejected' WHERE rfp_id = ? AND id != ? AND status NOT IN ('rejected')`).bind(id, body.bid_id).run();
+
+  // Auto-create LOI document
+  const loiId = genId('loi');
   await c.env.DB.prepare(`
-    INSERT INTO contract_documents (id, title, document_type, phase, creator_id, counterparty_id, project_id, commercial_terms)
-    VALUES (?, ?, 'loi', 'loi', ?, ?, ?, ?)
+    INSERT INTO contract_documents (id, title, document_type, phase, creator_id, counterparty_id, commercial_terms)
+    VALUES (?, ?, 'loi', 'loi', ?, ?, ?)
   `).bind(
-    loiId, 
-    `LOI: ${rfp.title}`,
-    rfp.creator_id,
-    bid.bidder_id,
-    rfp.project_id || null,
-    JSON.stringify({ rfp_id: id, bid_id: bid_id, awarded_price: bid.proposed_price, terms: bid.proposed_terms })
-  ).run();
-  
+    loiId,
+    `LOI: ${(rfp as { title?: string }).title || id}`,
+    user.id,
+    (bid as { participant_id?: string }).participant_id || null,
+    JSON.stringify({
+      rfp_id: id, bid_id: body.bid_id,
+      awarded_amount: (bid as { bid_amount?: number }).bid_amount,
+      terms: (bid as { technical_proposal_key?: string }).technical_proposal_key,
+    }),
+  ).run().catch(() => undefined); // contract_documents schema variant — degrade gracefully.
+
   await fireCascade({
-    event: 'contract.created',
-    actor_id: participant.id,
-    entity_type: 'contract_documents',
-    entity_id: loiId,
-    data: { type: 'loi', rfp_id: id, bid_id: bid_id },
+    event: 'contract.created', actor_id: user.id,
+    entity_type: 'contract_documents', entity_id: loiId,
+    data: { type: 'loi', rfp_id: id, bid_id: body.bid_id },
     env: c.env,
   });
-  
-  return c.json({ success: true, data: { loi_id: loiId, message: 'RFP awarded and LOI created' } });
+  return c.json({ success: true, data: { loi_id: loiId, message: 'Awarded and LOI drafted' } });
 });
 
-// GET /procurement/bids — List my bids
+// ─── My bids ───────────────────────────────────────────────────────────────
 procurement.get('/bids', async (c) => {
-  const participant = c.get('participant');
-  
+  await ensureEvaluationColumns(c.env);
+  const user = getCurrentUser(c);
   const bids = await c.env.DB.prepare(`
-    SELECT b.*, r.title as rfp_title, r.status as rfp_status
-    FROM rfp_bids b
-    JOIN rfp_requests r ON b.rfp_id = r.id
-    WHERE b.bidder_id = ?
-    ORDER BY b.created_at DESC
-  `).bind(participant.id).all();
-  
+    SELECT b.*, r.title AS rfp_title, r.status AS rfp_status, r.closing_date AS rfp_deadline
+      FROM procurement_bids b
+      JOIN procurement_rfps r ON r.id = b.rfp_id
+     WHERE b.participant_id = ?
+     ORDER BY b.created_at DESC LIMIT 200
+  `).bind(user.id).all();
   return c.json({ success: true, data: bids.results || [] });
 });
 
-// POST /procurement/rfps/:id/evaluate — persist multi-criteria scores against
-// each bid. Accepts { scoring: { [bid_id]: { technical, sustainability, delivery } } }.
-// Stores the scores back on rfp_bids; the platform combines them with a 40%
-// price-weighted overall score on the UI.
+// ─── Multi-criteria evaluation ─────────────────────────────────────────────
 //
-// Idempotent — re-posting overwrites prior scores. Only the issuing offtaker
-// (or admin) can evaluate.
+// POST /procurement/rfps/:id/evaluate
+// body: { scoring: { [bid_id]: { technical, sustainability, delivery } } }
+//
+// Persists per-criterion scores plus a 40% price-weighted overall score
+// (matches the UI's live ranker so the persisted result stays consistent).
 procurement.post('/rfps/:id/evaluate', async (c) => {
+  await ensureEvaluationColumns(c.env);
+  const user = getCurrentUser(c);
   const id = c.req.param('id');
-  const participant = c.get('participant') as { id?: string; role?: string } | undefined;
-  if (!participant?.id) return c.json({ success: false, error: 'unauthorized' }, 401);
 
-  // The schema uses `creator_id` for the RFP issuer.
   const rfp = await c.env.DB.prepare(
-    `SELECT id, creator_id, status FROM rfp_requests WHERE id = ?`,
+    `SELECT id, created_by, status FROM procurement_rfps WHERE id = ?`,
   ).bind(id).first();
   if (!rfp) return c.json({ success: false, error: 'rfp_not_found' }, 404);
-  if ((rfp as { creator_id?: string }).creator_id !== participant.id && participant.role !== 'admin') {
+  if ((rfp as { created_by?: string }).created_by !== user.id && user.role !== 'admin') {
     return c.json({ success: false, error: 'forbidden' }, 403);
   }
 
@@ -241,18 +245,11 @@ procurement.post('/rfps/:id/evaluate', async (c) => {
   };
   if (!body.scoring) return c.json({ success: false, error: 'scoring_required' }, 400);
 
-  // Ensure score columns exist (some seeds predate them).
-  for (const col of ['technical_score', 'sustainability_score', 'delivery_score', 'overall_score']) {
-    await c.env.DB.prepare(`ALTER TABLE rfp_bids ADD COLUMN ${col} REAL`).run().catch(() => undefined);
-  }
-
-  // Compute overall using the same weights as the UI for consistency
-  // (40% price, 25% technical, 20% sustainability, 15% delivery).
   const allBids = await c.env.DB.prepare(
-    `SELECT id, proposed_price FROM rfp_bids WHERE rfp_id = ?`,
+    `SELECT id, bid_amount FROM procurement_bids WHERE rfp_id = ?`,
   ).bind(id).all();
-  const list = (allBids.results || []) as Array<{ id: string; proposed_price: number }>;
-  const minPrice = list.reduce((m, b) => Math.min(m, b.proposed_price || Infinity), Infinity);
+  const list = (allBids.results || []) as Array<{ id: string; bid_amount: number }>;
+  const minPrice = list.reduce((m, b) => Math.min(m, b.bid_amount || Infinity), Infinity);
 
   let updated = 0;
   for (const [bidId, s] of Object.entries(body.scoring)) {
@@ -261,20 +258,16 @@ procurement.post('/rfps/:id/evaluate', async (c) => {
     const tech = Number(s?.technical ?? 70);
     const sus  = Number(s?.sustainability ?? 70);
     const del  = Number(s?.delivery ?? 70);
-    const priceScore = bid.proposed_price ? (minPrice / bid.proposed_price) * 100 : 0;
+    const priceScore = bid.bid_amount ? (minPrice / bid.bid_amount) * 100 : 0;
     const overall = (priceScore * 0.40) + (tech * 0.25) + (sus * 0.20) + (del * 0.15);
     await c.env.DB.prepare(
-      `UPDATE rfp_bids SET technical_score = ?, sustainability_score = ?, delivery_score = ?, overall_score = ? WHERE id = ?`,
-    ).bind(tech, sus, del, overall, bidId).run();
+      `UPDATE procurement_bids SET technical_score = ?, sustainability_score = ?, delivery_score = ?, overall_score = ?, score = ? WHERE id = ?`,
+    ).bind(tech, sus, del, overall, overall, bidId).run();
     updated++;
   }
-
-  // Move the RFP into 'evaluation' state so the issuer's dashboard reflects
-  // the new phase (closed-but-being-scored, distinct from 'open').
-  if ((rfp as { status?: string }).status === 'open') {
-    await c.env.DB.prepare(`UPDATE rfp_requests SET status = 'evaluation' WHERE id = ?`).bind(id).run();
+  if ((rfp as { status?: string }).status === 'published') {
+    await c.env.DB.prepare(`UPDATE procurement_rfps SET status = 'evaluation' WHERE id = ?`).bind(id).run();
   }
-
   return c.json({ success: true, data: { updated } });
 });
 
