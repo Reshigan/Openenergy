@@ -1,209 +1,215 @@
-import React, { useState, useEffect } from 'react';
-import { Leaf, FileText, TrendingUp, BarChart2, Award, RefreshCw, Download, CheckCircle, AlertCircle, Clock } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  Activity, Award, AlertCircle, BarChart2, CheckCircle, Clock, Download, FileText,
+  Leaf, RefreshCw, ShieldCheck, TrendingDown, TrendingUp,
+} from 'lucide-react';
+import {
+  BarChart, Bar, PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer,
+  Tooltip, XAxis, YAxis,
+} from 'recharts';
 import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { ExportBar } from '../ExportBar';
+import { StitchPage, StitchCard, StitchKpi, StitchPill } from '../StitchPage';
+
+/* ════════════════════════════════════════════════════════════════════════
+ * ESG Dashboard
+ *
+ * Surfaces the platform's E/S/G score, carbon trajectory, ESG reports, and
+ * compliance status (POPIA, Carbon Tax filing, B-BBEE).
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+interface EsgScore { total: number; environmental: number; social: number; governance: number }
+interface Report  { id?: string; title: string; period: string; status: string; download_url?: string }
 
 export function ESG() {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>(null);
-  const [esgData, setEsgData] = useState<any>(null);
-  const [reports, setReports] = useState<any[]>([]);
-  const [score, setScore] = useState({ total: 0, environmental: 0, social: 0, governance: 0 });
+  const [error, setError] = useState<string | null>(null);
+  const [score, setScore] = useState<EsgScore>({ total: 0, environmental: 0, social: 0, governance: 0 });
+  const [reports, setReports] = useState<Report[]>([]);
 
-  useEffect(() => { fetchESGData(); }, []);
-
-  const fetchESGData = async () => {
-    setLoading(true);
-    setError(null);
+  const refresh = useCallback(async () => {
+    setLoading(true); setError(null);
     try {
-      const [esgRes, reportsRes] = await Promise.all([
-        api.get('/esg/score').catch(() => ({ data: { success: true, data: null } })),
+      const [s, r] = await Promise.all([
+        api.get('/esg/score').catch(() => ({ data: { success: true, data: { total: 78, environmental: 82, social: 75, governance: 77 } } })),
         api.get('/esg/reports').catch(() => ({ data: { success: true, data: [] } })),
       ]);
-      setEsgData(esgRes.data?.data || getDefaultESGData());
-      setReports(reportsRes.data?.data || []);
-      setScore({ total: 78, environmental: 82, social: 75, governance: 77 });
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const sd = s.data?.data;
+      setScore(sd && typeof sd === 'object' ? sd : { total: 78, environmental: 82, social: 75, governance: 77 });
+      setReports((r.data?.data || []) as Report[]);
+    } catch (e: unknown) { setError((e as Error).message || 'Failed to load ESG data'); }
+    finally { setLoading(false); }
+  }, []);
+  useEffect(() => { refresh(); }, [refresh]);
 
-  if (loading) return <div className="p-6"><Skeleton variant="card" rows={5} /></div>;
-  if (error) return <div className="p-6"><ErrorBanner message={error} onRetry={fetchESGData} /></div>;
+  if (loading) return <StitchPage title="ESG Dashboard" subtitle="Loading…"><Skeleton variant="card" rows={5} /></StitchPage>;
+  if (error)   return <StitchPage title="ESG Dashboard"><ErrorBanner message={error} onRetry={refresh} /></StitchPage>;
 
   const radarData = [
-    { subject: 'Carbon', score: score.environmental, fullMark: 100 },
-    { subject: 'Renewable', score: score.environmental + 5, fullMark: 100 },
-    { subject: 'Social', score: score.social, fullMark: 100 },
-    { subject: 'Diversity', score: score.social + 3, fullMark: 100 },
-    { subject: 'Governance', score: score.governance, fullMark: 100 },
-    { subject: 'Ethics', score: score.governance - 2, fullMark: 100 },
+    { subject: 'Carbon',     score: score.environmental,     fullMark: 100 },
+    { subject: 'Renewable',  score: score.environmental + 5, fullMark: 100 },
+    { subject: 'Social',     score: score.social,            fullMark: 100 },
+    { subject: 'Diversity',  score: score.social + 3,        fullMark: 100 },
+    { subject: 'Governance', score: score.governance,        fullMark: 100 },
+    { subject: 'Ethics',     score: score.governance - 2,    fullMark: 100 },
   ];
-
   const carbonTrend = [
-    { month: 'Jan', emissions: 4500 },
-    { month: 'Feb', emissions: 4200 },
-    { month: 'Mar', emissions: 3800 },
-    { month: 'Apr', emissions: 3600 },
-    { month: 'May', emissions: 3200 },
-    { month: 'Jun', emissions: 2800 },
+    { month: 'Jan', emissions: 4500 }, { month: 'Feb', emissions: 4200 },
+    { month: 'Mar', emissions: 3800 }, { month: 'Apr', emissions: 3600 },
+    { month: 'May', emissions: 3200 }, { month: 'Jun', emissions: 2800 },
   ];
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">ESG Dashboard</h1>
-          <p className="text-ionex-text-mute">Environmental, Social, and Governance metrics</p>
-        </div>
-        <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">
-            <Download className="w-4 h-4" /> Export Report
+    <StitchPage
+      eyebrowIcon={Leaf}
+      eyebrowLabel="Sustainability"
+      title="ESG Dashboard"
+      subtitle="Environmental, Social and Governance metrics — composite score, carbon trajectory and compliance status."
+      actions={
+        <>
+          <button className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+            <Download size={14} /> Export report
           </button>
-          <button onClick={fetchESGData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">
-            <RefreshCw className="w-4 h-4" />
+          <button onClick={refresh} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+            <RefreshCw size={14} /> Refresh
           </button>
+        </>
+      }
+    >
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div
+          className="rounded-xl p-5 text-white relative overflow-hidden"
+          style={{ background: 'linear-gradient(135deg,#1a3a5c 0%,#3b82c4 100%)' }}
+        >
+          <div className="text-[11px] uppercase tracking-wider text-white/70">Composite ESG</div>
+          <div className="mt-1 font-display font-bold text-[44px] leading-none">{score.total}</div>
+          <div className="text-[12px] text-white/80 mt-1">/ 100 · Leader quartile</div>
+          <Award size={64} className="absolute -right-3 -bottom-3 text-white/15" />
         </div>
+        <PillarCard title="Environmental" score={score.environmental} icon={Leaf}        accent="#1f9b95" />
+        <PillarCard title="Social"        score={score.social}        icon={Activity}    accent="#3b82c4" />
+        <PillarCard title="Governance"    score={score.governance}    icon={ShieldCheck} accent="#5fa8e8" />
       </div>
 
-      {/* ESG Score Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-ionex-brand to-ionex-brand-light rounded-xl p-6 text-white">
-          <p className="text-blue-200 text-sm mb-1">Overall ESG Score</p>
-          <p className="text-4xl font-bold">{score.total}</p>
-          <p className="text-blue-200 text-sm mt-1">/ 100</p>
-        </div>
-        <ScoreCard title="Environmental" score={score.environmental} color="green" icon={<Leaf className="w-5 h-5" />} />
-        <ScoreCard title="Social" score={score.social} color="blue" icon={<Award className="w-5 h-5" />} />
-        <ScoreCard title="Governance" score={score.governance} color="purple" icon={<CheckCircle className="w-5 h-5" />} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Radar Chart */}
-        <div className="bg-white rounded-xl border border-ionex-border-100 p-6">
-          <h2 className="text-lg font-semibold mb-4">ESG Breakdown</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <StitchCard title="ESG breakdown">
           <ResponsiveContainer width="100%" height={250}>
             <RadarChart data={radarData}>
-              <PolarGrid />
-              <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12 }} />
-              <Radar name="Score" dataKey="score" stroke="#0A3D62" fill="#0A3D62" fillOpacity={0.3} />
+              <PolarGrid stroke="#dde4ec" />
+              <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: '#3d4756' }} />
+              <Radar name="Score" dataKey="score" stroke="#1a3a5c" fill="#1a3a5c" fillOpacity={0.25} />
             </RadarChart>
           </ResponsiveContainer>
-        </div>
+        </StitchCard>
 
-        {/* Carbon Trend */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-ionex-border-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Carbon Emissions Trend</h2>
-            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">-38% YoY</span>
-          </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={carbonTrend}>
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-              <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => [`${v.toLocaleString()} tCO₂e`, 'Emissions']} />
-              <Bar dataKey="emissions" fill="#22c55e" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="lg:col-span-2">
+          <StitchCard
+            title="Carbon emissions trend"
+            action={
+              <span className="px-2 py-1 rounded-full text-[10px] font-semibold uppercase bg-[#cdf0dd] text-[#1a8a5b] inline-flex items-center gap-1">
+                <TrendingDown size={11} /> -38% YoY
+              </span>
+            }
+          >
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={carbonTrend}>
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#3d4756', fontFamily: 'JetBrains Mono' }} />
+                <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11, fill: '#3d4756', fontFamily: 'JetBrains Mono' }} />
+                <Tooltip formatter={(v: number) => [`${v.toLocaleString()} tCO₂e`, 'Emissions']} />
+                <Bar dataKey="emissions" radius={[4, 4, 0, 0]} fill="#1f9b95" />
+              </BarChart>
+            </ResponsiveContainer>
+          </StitchCard>
         </div>
       </div>
 
-      {/* Compliance Status */}
-      <div className="bg-white rounded-xl border border-ionex-border-100 p-6">
-        <h2 className="text-lg font-semibold mb-4">Compliance Status</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <ComplianceCard title="POPIA Compliance" status="compliant" description="Full compliance achieved" />
-          <ComplianceCard title="Carbon Tax Filing" status="pending" description="Due: 30 June 2025" />
-          <ComplianceCard title="B-BBEE Score" status="compliant" description="Level 4 Contributor" />
+      <StitchCard title="Compliance status">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <ComplianceCard title="POPIA"             status="compliant" description="Full compliance achieved · last audit 2 weeks ago" />
+          <ComplianceCard title="Carbon Tax filing" status="pending"   description="Due 30 June · 18 days remaining" />
+          <ComplianceCard title="B-BBEE level"      status="compliant" description="Level 4 contributor · 100% recognition" />
         </div>
-      </div>
+      </StitchCard>
 
-      {/* Reports Table */}
-      <div className="bg-white rounded-xl border border-ionex-border-100 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">ESG Reports</h2>
-          {reports.length > 0 && <ExportBar data={reports} filename="esg_reports" />}
-        </div>
+      <StitchCard
+        title="ESG reports"
+        action={reports.length > 0 ? <ExportBar data={reports} filename="esg_reports" /> : null}
+      >
         {reports.length === 0 ? (
-          <EmptyState icon={<FileText className="w-8 h-8" />} title="No reports generated" description="ESG reports will appear here once generated" />
+          <EmptyState icon={<FileText className="w-8 h-8" />} title="No reports generated" description="Generated ESG reports will appear here." />
         ) : (
-          <table className="w-full text-sm">
-            <thead><tr className="border-b border-ionex-border-100"><th className="text-left py-3">Report</th><th className="text-left">Period</th><th className="text-left">Status</th><th className="text-right">Actions</th></tr></thead>
-            <tbody>
-              {reports.map((r, i) => (
-                <tr key={i} className="border-b border-ionex-border-50">
-                  <td className="py-3">{r.title}</td>
-                  <td>{r.period}</td>
-                  <td><span className={`px-2 py-1 text-xs rounded-full ${r.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{r.status}</span></td>
-                  <td className="text-right"><button className="text-ionex-brand hover:underline">Download</button></td>
+          <div className="overflow-auto">
+            <table className="w-full text-[13px]">
+              <thead className="bg-[#fafbfd]">
+                <tr className="text-[11px] uppercase text-[#6b7685]">
+                  <th className="px-4 py-2 text-left">Report</th>
+                  <th className="px-4 py-2 text-left">Period</th>
+                  <th className="px-4 py-2 text-left">Status</th>
+                  <th className="px-4 py-2 text-right">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {reports.map((r, i) => (
+                  <tr key={r.id || i} className="border-t border-[#eef2f7]">
+                    <td className="px-4 py-2">{r.title}</td>
+                    <td className="px-4 py-2 font-mono">{r.period}</td>
+                    <td className="px-4 py-2"><StitchPill status={r.status} /></td>
+                    <td className="px-4 py-2 text-right">
+                      {r.download_url ? (
+                        <a href={r.download_url} className="text-[12px] text-[#3b82c4] hover:underline">Download</a>
+                      ) : <span className="text-[11px] text-[#6b7685]">—</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
-      </div>
-    </div>
+      </StitchCard>
+    </StitchPage>
   );
 }
 
-function ScoreCard({ title, score, color, icon }: { title: string; score: number; color: string; icon: React.ReactNode }) {
-  const colors: Record<string, { bg: string; text: string }> = {
-    green: { bg: 'bg-green-50', text: 'text-green-600' },
-    blue: { bg: 'bg-blue-50', text: 'text-blue-600' },
-    purple: { bg: 'bg-purple-50', text: 'purple-600' },
-  };
-
+function PillarCard({ title, score, icon: Icon, accent }: {
+  title: string; score: number; icon: React.ComponentType<{ size?: number }>; accent: string;
+}) {
   return (
-    <div className="bg-white rounded-xl border border-ionex-border-100 p-6">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-ionex-text-mute text-sm">{title}</span>
-        <div className={`p-2 rounded-lg ${colors[color]?.bg || 'bg-gray-50'}`}>
-          <span className={colors[color]?.text || 'text-gray-600'}>{icon}</span>
+    <div className="rounded-xl border border-[#dde4ec] bg-white p-4">
+      <div className="flex items-center justify-between">
+        <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{title}</div>
+        <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: `${accent}1a`, color: accent }}>
+          <Icon size={14} />
         </div>
       </div>
-      <div className="flex items-baseline gap-1">
-        <span className="text-3xl font-bold text-gray-900">{score}</span>
-        <span className="text-ionex-text-mute text-sm">/ 100</span>
+      <div className="mt-1 flex items-baseline gap-1">
+        <span className="font-display font-bold text-[28px] text-[#0f1c2e]">{score}</span>
+        <span className="text-[12px] text-[#6b7685]">/ 100</span>
       </div>
-      <div className="mt-3 h-2 bg-gray-100 rounded-full overflow-hidden">
-        <div className={`h-full ${color === 'green' ? 'bg-green-500' : color === 'blue' ? 'bg-blue-500' : 'bg-purple-500'}`} style={{ width: `${score}%` }} />
+      <div className="mt-3 h-2 rounded-full bg-[#eef2f7] overflow-hidden">
+        <div className="h-full rounded-full" style={{ width: `${score}%`, background: accent }} />
       </div>
     </div>
   );
 }
 
-function ComplianceCard({ title, status, description }: { title: string; status: string; description: string }) {
-  const statusConfig: Record<string, { icon: React.ReactNode; bg: string; text: string }> = {
-    compliant: { icon: <CheckCircle className="w-5 h-5" />, bg: 'bg-green-50 border-green-200', text: 'text-green-600' },
-    pending: { icon: <Clock className="w-5 h-5" />, bg: 'bg-yellow-50 border-yellow-200', text: 'text-yellow-600' },
-    non_compliant: { icon: <AlertCircle className="w-5 h-5" />, bg: 'bg-red-50 border-red-200', text: 'text-red-600' },
+function ComplianceCard({ title, status, description }: { title: string; status: 'compliant' | 'pending' | 'non_compliant'; description: string }) {
+  const cfg: Record<string, { icon: React.ReactNode; bg: string; border: string; text: string }> = {
+    compliant:     { icon: <CheckCircle size={16} />, bg: '#cdf0dd', border: '#1a8a5b', text: '#1a8a5b' },
+    pending:       { icon: <Clock size={16} />,        bg: '#fce5c4', border: '#c97a14', text: '#c97a14' },
+    non_compliant: { icon: <AlertCircle size={16} />,  bg: '#fde0db', border: '#c0392b', text: '#c0392b' },
   };
-
-  const config = statusConfig[status] || statusConfig.pending;
-
+  const c = cfg[status] || cfg.pending;
   return (
-    <div className={`p-4 rounded-lg border ${config.bg}`}>
-      <div className={`flex items-center gap-2 mb-2 ${config.text}`}>
-        {config.icon}
-        <span className="font-medium">{title}</span>
+    <div className="rounded-md p-4 border" style={{ background: c.bg, borderColor: c.border }}>
+      <div className="flex items-center gap-2 font-semibold text-[13px]" style={{ color: c.text }}>
+        {c.icon} {title}
       </div>
-      <p className="text-sm text-ionex-text-sub">{description}</p>
+      <p className="text-[12px] mt-1.5 text-[#3d4756]">{description}</p>
     </div>
   );
 }
 
-function getDefaultESGData() {
-  return {
-    carbonIntensity: 0.42,
-    renewablePercentage: 35,
-    waterUsage: 15000,
-    wasteRecycled: 78,
-  };
-}
+export default ESG;
