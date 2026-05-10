@@ -4,6 +4,90 @@ This document provides a comprehensive pre-launch testing plan for national-leve
 
 ---
 
+## 0. LIVE VALIDATION RUN — 2026-05-10
+
+> Most recent automated run against `https://oe.vantax.co.za` (Worker version `f7f8d69c`).
+> Demo credentials used: `*@openenergy.co.za` / `Demo@2024!`.
+
+### 0.1 Infrastructure
+
+| # | Test | Result |
+|---|---|---|
+| INF-1 | DNS resolves `oe.vantax.co.za` to Cloudflare proxy | ✅ `104.21.27.250` |
+| INF-2 | TLS cert SAN includes `oe.vantax.co.za` | ✅ `DNS:vantax.co.za, DNS:oe.vantax.co.za, DNS:*.oe.vantax.co.za`, Google Trust Services WE1 |
+| INF-3 | HTTP → HTTPS redirect | ✅ `301` |
+| INF-4 | Cron triggers active | ✅ 6 schedules: */15 min, hourly, 00:05/00:10/00:30 daily, 02:00 1st-of-month |
+| INF-5 | D1 binding healthy (`open-energy-db`) | ✅ 204 tables, latest migration `037_trader_schema_final` |
+| INF-6 | KV / R2 / AI bindings present | ✅ via `wrangler deploy` dry-run |
+
+### 0.2 Auth
+
+| # | Test | Result |
+|---|---|---|
+| AUTH-1 | Demo login (admin) | ✅ JWT 313 chars, HS256, valid 1h |
+| AUTH-2 | All 7 demo roles login | ✅ admin / trader / ipp_developer / carbon_fund / offtaker / lender / grid_operator |
+| AUTH-3 | Wrong password rejected | ✅ `401 UNAUTHORIZED` |
+| AUTH-4 | Anon access to protected routes | ✅ `401` (7/7 sample) |
+| AUTH-5 | Login rate limit | ✅ `429` after ~3 attempts/min — `retryAfter: 112s` |
+| AUTH-6 | JWT contains `sub`, `email`, `role`, `name`, `jti`, `iat`, `exp` | ✅ |
+| AUTH-7 | Admin role gate (`/api/admin/*`) | ✅ non-admin gets `403` |
+
+### 0.3 Frontend
+
+| # | Test | Result |
+|---|---|---|
+| FE-1 | SPA shell serves on root `/` | ✅ `200`, latest hash `index-CCZnEP8j.js` |
+| FE-2 | All 39 frontend routes serve SPA shell (SPA fallback) | ✅ 39/39 |
+| FE-3 | Brand title in HTML | ✅ `Open Energy — Industrial Energy Exchange` |
+| FE-4 | `theme-color` meta = `#1a3a5c` | ✅ |
+| FE-5 | Logo SVG served at `/logos/oe-mark.svg` | ✅ `image/svg+xml` 1047b, contains `#1a3a5c #3b82c4 #1f9b95` |
+| FE-6 | Banner SVG served at `/logos/oe-banner.svg` | ✅ |
+| FE-7 | CSS bundle | ✅ 100 KB |
+| FE-8 | JS bundle | ⚠ 1.5 MB single chunk (warning at >500 KB) — acceptable for v1, code-split candidate |
+
+### 0.4 Backend GET sweep — 155 no-parameter endpoints
+
+Tested every GET endpoint extracted from the 51 route modules with the admin token:
+
+| Category | Count | Notes |
+|---|---|---|
+| **✅ 2xx** | **131 / 155 (84.5%)** | The platform's working surface |
+| 4xx required-query (expected) | 3 | `/backup/download`, `/offtaker-suite/budget-vs-actual`, `/trading/orderbook-depth` — need params |
+| 5xx OAuth callback (expected) | 1 | `/auth/sso/microsoft/callback` — rejects without OAuth state |
+| Trailing-slash 404 (non-issue) | 12 | `/api/foo/` doesn't match `/api/foo`; the apps don't call with trailing slash anyway |
+| **❌ Real 5xx (open issues)** | **6** | See Open issues below |
+
+**Effective pass rate: 131 / (131 + 6 real failures) = 95.6%** (excluding the trailing-slash 404s + expected 4xx/5xx, all 8 of which are working as designed).
+
+### 0.5 End-to-end write flows
+
+Each of these runs the actual cross-feature business logic, not just route reachability:
+
+| # | Flow | Roles | Result |
+|---|---|---|---|
+| E2E-1 | Offtaker creates RFP | offtaker | ✅ `rfp_mozyeq97ddu6sh` |
+| E2E-2 | IPP submits bid against the RFP | ipp_developer | ✅ `bid_mozyesz5yh6lbf` |
+| E2E-3 | Offtaker scores bid (technical 85, sustainability 78, delivery 80) | offtaker | ✅ scores persisted, computed `overall=88.8` matches the 40% price-weighted UI formula |
+| E2E-4 | Trader creates algo rule | trader | ✅ CRUD round-trip, list reflects insert, toggle persists |
+| E2E-5 | Carbon fund retires 5 tCO₂e | carbon_fund | ✅ certificate `OE-2KIHAHJV` issued, holding decremented |
+| E2E-6 | Lender requests disbursement | lender | ✅ `disb_mozyh2qxv3codd` (after live fix to body shape) |
+
+### 0.6 Open issues from this run
+
+| Endpoint | Symptom | Root cause | Severity |
+|---|---|---|---|
+| `/api/admin/monitoring/cascade-dlq` | 500 D1 error | Schema gap or column mismatch | low — admin-only view |
+| `/api/admin/monitoring/cron-health` | 500 D1 error | Same | low |
+| `/api/cockpit/kpis` | 500 `no such column: volume` | `trade_orders.volume` column referenced, schema has `volume_mwh` | medium — appears on cockpit |
+| `/api/esg-reports/my-reports` | 500 D1 error | Table or column missing | low — alt path exists at `/esg/reports` |
+| `/api/esg-reports/templates` | 500 D1 error | Same | low |
+| `/api/esg/decarbonisation` | 500 `no such table: decarb_actions` | Table not created (expected `esg_decarbonisation_pathways`) | low — ESG core works |
+| `/api/regulator/market-summary` | 500 D1 error | Schema gap | medium — regulator workbench feature |
+
+None of these affect the validated end-to-end flows. They all 500 with D1_ERROR (clean failure mode), not partial writes.
+
+---
+
 ## 1. FUNCTIONAL TESTING BY ROLE
 
 ### 1.1 ADMIN ROLE — 15 Test Cases

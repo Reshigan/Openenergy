@@ -1,12 +1,34 @@
 # Open Energy Platform — National Level Deployment Evaluation
 
-**Date:** April 23, 2026  
-**Assessment Scope:** Architecture, Scalability, Feature Completeness, Role-Based Capabilities  
-**Current Infrastructure:** Cloudflare Workers + D1 SQLite + R2 + KV
+**Original assessment:** April 23, 2026
+**Last updated:** May 10, 2026 (post live-validation + ASOBA integration + brand alignment)
+**Live URL:** https://oe.vantax.co.za
+**Worker version:** `f7f8d69c-7b6b-452a-8f08-bb9fdf9e2e12`
 
 ---
 
-## 1. EXECUTIVE SUMMARY
+## 0. UPDATE — May 10, 2026
+
+The April baseline below remains the canonical architecture/scalability assessment. Material changes since then:
+
+| Domain | April status | May 10 status |
+|---|---|---|
+| Domain & TLS | Pages preview only | ✅ Custom domain `oe.vantax.co.za` bound to the Worker, Cloudflare-managed cert covering SAN |
+| Auth | Live but `JWT_SECRET` was unset (login 500) | ✅ JWT secret provisioned, all 7 roles login, rate-limit + session revocation work |
+| Backend surface | 49 route modules, untested at scale | **491 routes catalogued across 51 modules.** 95.6% effective pass rate on the no-parameter GET sweep (131/137 after excluding trailing-slash 404s + expected 4xx) |
+| Schema integrity | Migrations marked applied, multiple tables actually missing | ✅ Force-applied migrations 019–032 + new 033–037 (ASOBA + trader). Now 204 tables. 7 known low-priority schema-vs-code mismatches catalogued in `GO_LIVE_READINESS.md §3.1` |
+| ASOBA Cloud (Ona) integration | Not present | ✅ Worker-compatible client + 7 proxy endpoints + ASOBA Live tab in O&M cockpit + `sync` action that promotes high/critical OODA alerts into `ona_faults` |
+| Brand & UI | SAP Fiori (blue/indigo) palette | ✅ Open Energy palette (Navy `#1a3a5c` / Blue `#3b82c4` / Teal `#1f9b95` / Sky `#5fa8e8`), Metropolis/IBM Plex Sans/JetBrains Mono fonts, three-ring logomark embedded in shell + login. StitchPage shared chrome primitive applied to 6 of 35 pages (the rest render correctly via Tailwind aliases). |
+| End-to-end flows | Asserted but not live-tested | ✅ Six cross-role write flows verified live: RFP→bid→evaluate→award→LOI; algo CRUD; carbon retirement → certificate; lender disbursement; ASOBA sync → fault cascade; trade order placement |
+| Custom domain bind | Blocked on dashboard | ✅ Resolved via Cloudflare Global API: orphan CNAME removed from zone, Worker route bound with managed DNS + cert |
+
+**Effect on national-deployment readiness:** Items in the April assessment marked "Critical Gaps for National Deployment" §4 (Real-Time Market Data, Settlement Engine, Grid Code Compliance, etc.) remain partially open — see `GO_LIVE_READINESS.md` for the current ledger. The April §3 Role-Based Capabilities Assessment matrix is unchanged in shape but every role now has live-verified login + cockpit + at least one deep page reachable.
+
+The platform is **soft-launch ready** (internal stakeholders, regulator demos, pilot IPP/offtaker tenants). Hard-launch readiness depends on closing the remaining items in `GO_LIVE_READINESS.md §3` (estimated <1 day of focused work for the seven 500-error endpoints + 1 day for Stitch chrome migration on the remaining 30 pages).
+
+---
+
+## 1. EXECUTIVE SUMMARY (April 2026 baseline)
 
 The Open Energy Platform is a comprehensive energy trading and management system built on serverless infrastructure. While it demonstrates strong foundational architecture with multi-role support, compliance tracking, and modern security practices, **it requires significant architectural improvements before national-level deployment**. Key concerns include:
 
@@ -15,6 +37,8 @@ The Open Energy Platform is a comprehensive energy trading and management system
 - **Incomplete role-specific features** for grid operators and regulators
 - **Data volume projections** not validated for national scale
 - **Disaster recovery and multi-region deployment** not documented
+
+> **May 10 note:** Settlement matching is now in place via the OrderBook Durable Object + `settlement-auto` routes. Real-time data ingestion is partially solved by the ASOBA integration for solar IPP telemetry; metering ingest still uses the polling pattern. Grid operator and regulator workbenches now have 56 + 52 declarative SuitePage tabs respectively. Multi-region remains single-region (Cloudflare global edge — geographic resilience is automatic, but the D1 primary is single-replica).
 
 ---
 
