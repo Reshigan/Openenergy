@@ -392,19 +392,38 @@ funder.post('/disbursements/:id/approve', async (c) => {
 funder.post('/disbursements', async (c) => {
   await ensureTables(c.env);
   const user = getCurrentUser(c);
-  const body = await c.req.json();
+  const body = (await c.req.json().catch(() => ({}))) as {
+    facility_id?: string; project_id?: string; milestone_id?: string;
+    amount?: number; requested_amount?: number;
+    currency?: string; reason?: string; due_at?: string;
+  };
+  // The Funds.tsx UI sends `requested_amount`; older callers use `amount`.
+  // Accept both so the contract drift doesn't 500 the request.
+  const amount = body.amount ?? body.requested_amount;
+  if (!body.facility_id) return c.json({ success: false, error: 'facility_id required' }, 400);
+  if (amount === undefined || amount === null) return c.json({ success: false, error: 'amount (or requested_amount) required' }, 400);
+
   const id = uid('disb');
   await c.env.DB.prepare(`
-    INSERT INTO disbursement_requests (id, facility_id, project_id, milestone_id, amount, currency, requested_by, status, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'))
-  `).bind(id, body.facility_id, body.project_id || null, body.milestone_id || null, body.amount, body.currency || 'ZAR', user.id).run();
+    INSERT INTO disbursement_requests (id, facility_id, project_id, milestone_id, amount, currency, requested_by, reason, due_at, status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'))
+  `).bind(
+    id, body.facility_id, body.project_id || null, body.milestone_id || null,
+    amount, body.currency || 'ZAR', user.id, body.reason || null, body.due_at || null,
+  ).run().catch(async () => {
+    // Fall back if `reason`/`due_at` columns don't exist on this schema variant.
+    await c.env.DB.prepare(`
+      INSERT INTO disbursement_requests (id, facility_id, project_id, milestone_id, amount, currency, requested_by, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'))
+    `).bind(id, body.facility_id, body.project_id || null, body.milestone_id || null, amount, body.currency || 'ZAR', user.id).run();
+  });
 
   await fireCascade({
     event: 'disbursement.requested',
     actor_id: user.id,
     entity_type: 'disbursement_requests',
     entity_id: id,
-    data: { amount: body.amount, facility_id: body.facility_id, project_id: body.project_id },
+    data: { amount, facility_id: body.facility_id, project_id: body.project_id, reason: body.reason },
     env: c.env,
   });
   return c.json({ success: true, data: { id, status: 'pending' } }, 201);
