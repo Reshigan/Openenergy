@@ -23,6 +23,7 @@ import esgRoutes from './routes/esg';
 import esgReportsRoutes from './routes/esg-reports';
 import watershedRoutes, { cpPortal as counterpartyPortalRoutes } from './routes/watershed';
 import platformRoutes from './routes/platform';
+import roleCompletionsRoutes from './routes/role-completions';
 import gridRoutes from './routes/grid';
 import procurementRoutes from './routes/procurement';
 import dealroomRoutes from './routes/dealroom';
@@ -186,6 +187,13 @@ app.route('/api/portal', counterpartyPortalRoutes);
 // audit chain, anomaly detection) — promotes Watershed primitives to all
 // modules so each role's UI tab can use the same building blocks.
 app.route('/api/platform', platformRoutes);
+// Role-specific daily-workflow endpoints — IPP (epc/land/insurance/community),
+// Offtaker (PPA market, demand response, bill validation), Lender
+// (origination, syndication, SLL, workouts), Carbon (buffer pool, DD,
+// permanence, attribution), Grid (queue, FCR, voltage, NDP), Regulator
+// (consultations, hearings, determinations, fees), Trader (day-ahead,
+// intraday, pre-trade-check, confirmations).
+app.route('/api/roles', roleCompletionsRoutes);
 app.route('/api/grid', gridRoutes);
 app.route('/api/procurement', procurementRoutes);
 app.route('/api/dealroom', dealroomRoutes);

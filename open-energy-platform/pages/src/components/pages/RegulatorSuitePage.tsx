@@ -1,6 +1,7 @@
 import React from 'react';
 import { SuitePage, StatusPill, Column, TabSpec } from '../SuitePage';
 import { platformTabs } from '../platformTabs';
+import { regulatorCompletionTabs } from '../roleCompletionTabs';
 
 export function RegulatorSuitePage() {
   const tabs: TabSpec[] = [
@@ -356,6 +357,7 @@ export function RegulatorSuitePage() {
         },
       ],
     },
+    ...regulatorCompletionTabs(),
     ...platformTabs('regulator_tariff'),
   ];
 

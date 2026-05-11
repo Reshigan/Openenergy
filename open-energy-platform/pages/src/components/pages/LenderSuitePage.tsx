@@ -1,6 +1,7 @@
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
 import { platformTabs } from '../platformTabs';
+import { lenderCompletionTabs } from '../roleCompletionTabs';
 
 export function LenderSuitePage() {
   const tabs: TabSpec[] = [
@@ -363,6 +364,7 @@ export function LenderSuitePage() {
         ],
       },
     },
+    ...lenderCompletionTabs(),
     ...platformTabs('lender_credit'),
   ];
   return (

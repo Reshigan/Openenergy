@@ -1,6 +1,7 @@
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
 import { platformTabs } from '../platformTabs';
+import { carbonCompletionTabs } from '../roleCompletionTabs';
 
 export function CarbonRegistryPage() {
   const tabs: TabSpec[] = [
@@ -171,6 +172,7 @@ export function CarbonRegistryPage() {
         },
       ],
     },
+    ...carbonCompletionTabs(),
     ...platformTabs('trading'),
   ];
   return (
