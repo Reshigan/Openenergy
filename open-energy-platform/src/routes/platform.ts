@@ -403,4 +403,109 @@ platform.get('/summary', async (c) => {
   }});
 });
 
+// ─── Universal pathway library (044) ───────────────────────────────────
+
+platform.get('/pathways', async (c) => {
+  const domain = c.req.query('domain');
+  const code = c.req.query('pathway');
+  let sql = `SELECT * FROM universal_pathways WHERE 1=1`;
+  const binds: any[] = [];
+  if (domain) { sql += ` AND domain = ?`; binds.push(domain); }
+  if (code) { sql += ` AND pathway_code = ?`; binds.push(code); }
+  sql += ` ORDER BY domain, pathway_code, series_name, year`;
+  const r = await c.env.DB.prepare(sql).bind(...binds).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+
+platform.get('/pathways/index', async (c) => {
+  // Catalog of distinct pathway codes per domain — used by UI pickers.
+  const r = await c.env.DB.prepare(`
+    SELECT domain, pathway_code, MIN(year) AS first_year, MAX(year) AS last_year,
+           COUNT(*) AS point_count, MIN(unit) AS unit
+    FROM universal_pathways GROUP BY domain, pathway_code ORDER BY domain, pathway_code
+  `).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+
+// ─── Universal regulatory filings (044) ────────────────────────────────
+
+platform.get('/filings/bodies', async (c) => {
+  const kind = c.req.query('kind');
+  const role = c.req.query('role');
+  let sql = `SELECT * FROM regulatory_bodies WHERE 1=1`;
+  const binds: any[] = [];
+  if (kind) { sql += ` AND kind = ?`; binds.push(kind); }
+  if (role) { sql += ` AND (applies_to_roles LIKE ? OR applies_to_roles LIKE '%all%')`; binds.push(`%${role}%`); }
+  sql += ` ORDER BY kind, name`;
+  const r = await c.env.DB.prepare(sql).bind(...binds).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+
+platform.get('/filings', async (c) => {
+  const user = getCurrentUser(c);
+  const status = c.req.query('status');
+  let sql = `SELECT f.*, b.name AS body_name, b.kind, b.jurisdiction, b.frequency
+             FROM regulatory_filings f JOIN regulatory_bodies b ON b.code = f.body_code
+             WHERE f.participant_id = ?`;
+  const binds: any[] = [user.id];
+  if (status) { sql += ` AND f.status = ?`; binds.push(status); }
+  sql += ` ORDER BY f.due_date ASC, f.created_at DESC LIMIT 200`;
+  const r = await c.env.DB.prepare(sql).bind(...binds).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+
+platform.post('/filings', async (c) => {
+  const user = getCurrentUser(c);
+  const body = await c.req.json().catch(() => ({} as any));
+  const { body_code, reporting_period, due_date, notes } = body;
+  if (!body_code || !reporting_period) {
+    return c.json({ success: false, error: 'body_code and reporting_period required' }, 400);
+  }
+  const id = rid('fil');
+  await c.env.DB.prepare(`
+    INSERT INTO regulatory_filings (id, participant_id, body_code, reporting_period, due_date, notes, filed_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, body_code, reporting_period, due_date ?? null, notes ?? null, user.id).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+platform.post('/filings/:id/submit', async (c) => {
+  const user = getCurrentUser(c);
+  const { id } = c.req.param();
+  const body = await c.req.json().catch(() => ({} as any));
+  await c.env.DB.prepare(`
+    UPDATE regulatory_filings
+    SET status = 'submitted', submitted_at = datetime('now'),
+        external_reference = ?, filing_pack_r2_key = ?
+    WHERE id = ? AND participant_id = ?
+  `).bind(body.external_reference ?? null, body.filing_pack_r2_key ?? null, id, user.id).run();
+  return c.json({ success: true });
+});
+
+platform.patch('/filings/:id', async (c) => {
+  const user = getCurrentUser(c);
+  const { id } = c.req.param();
+  const body = await c.req.json().catch(() => ({} as any));
+  const sets: string[] = []; const binds: any[] = [];
+  for (const k of ['status','submitted_at','acknowledged_at','external_reference','filing_pack_r2_key','notes','due_date']) {
+    if (body[k] !== undefined) { sets.push(`${k} = ?`); binds.push(body[k]); }
+  }
+  if (!sets.length) return c.json({ success: false, error: 'no fields to update' }, 400);
+  binds.push(id, user.id);
+  await c.env.DB.prepare(`UPDATE regulatory_filings SET ${sets.join(', ')} WHERE id = ? AND participant_id = ?`).bind(...binds).run();
+  return c.json({ success: true });
+});
+
+// ─── Universal category registry (044) ─────────────────────────────────
+
+platform.get('/categories', async (c) => {
+  const domain = c.req.query('domain');
+  let sql = `SELECT * FROM universal_categories WHERE 1=1`;
+  const binds: any[] = [];
+  if (domain) { sql += ` AND domain = ?`; binds.push(domain); }
+  sql += ` ORDER BY domain, display_order, code`;
+  const r = await c.env.DB.prepare(sql).bind(...binds).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+
 export default platform;
