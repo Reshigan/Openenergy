@@ -149,6 +149,384 @@ roles.get('/ipp/portfolio', async (c) => {
   }});
 });
 
+// ─── IPP full project lifecycle (migration 046) ────────────────────────
+
+// Pre-development
+roles.get('/ipp/sites', async (c) => c.json({ success: true, data: await listFor(c, 'ipp_site_assessments') }));
+roles.post('/ipp/sites', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.site_name) return c.json({ success: false, error: 'site_name required' }, 400);
+  // Auto-suggest preliminary LCOE if enough inputs given. Utility-scale
+  // PV typically yields ≈ GHI × performance_ratio × DC/AC ratio MWh per MW:
+  //   Karoo GHI 2280 × 0.83 PR × 1.25 DC/AC ≈ 2365 MWh/MW/yr
+  // So we use a factor of ~1.04 (= 0.83 × 1.25) for the rough conversion.
+  let lcoe = b.preliminary_lcoe_zar_per_mwh;
+  if (!lcoe && b.capex_estimate_zar_per_mw && b.ghi_kwh_per_m2_yr) {
+    const annualMWhPerMW = b.ghi_kwh_per_m2_yr * 1.04;          // MWh per MW per yr
+    const life = 25;
+    const opexPerMWyr = b.capex_estimate_zar_per_mw * 0.02;     // assume 2% opex
+    const totalCost = b.capex_estimate_zar_per_mw + opexPerMWyr * life;
+    const totalMWh = annualMWhPerMW * life;
+    lcoe = totalCost / totalMWh;                                 // ZAR per MWh
+  }
+  const id = rid('site');
+  await c.env.DB.prepare(`
+    INSERT INTO ipp_site_assessments (id, participant_id, site_name, lat, lng, province, technology,
+      hectares, grid_distance_km, nearest_substation, substation_capacity_mw, ghi_kwh_per_m2_yr,
+      dni_kwh_per_m2_yr, avg_wind_speed_ms, wind_class, capex_estimate_zar_per_mw,
+      preliminary_lcoe_zar_per_mwh, go_decision, rating_score, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.site_name, b.lat ?? null, b.lng ?? null, b.province ?? null,
+    b.technology ?? null, b.hectares ?? null, b.grid_distance_km ?? null,
+    b.nearest_substation ?? null, b.substation_capacity_mw ?? null,
+    b.ghi_kwh_per_m2_yr ?? null, b.dni_kwh_per_m2_yr ?? null,
+    b.avg_wind_speed_ms ?? null, b.wind_class ?? null,
+    b.capex_estimate_zar_per_mw ?? null, lcoe ?? null,
+    b.go_decision ?? null, b.rating_score ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, preliminary_lcoe_zar_per_mwh: lcoe } }, 201);
+});
+
+roles.get('/ipp/resource-campaigns', async (c) => c.json({ success: true, data: await listFor(c, 'ipp_resource_campaigns') }));
+roles.post('/ipp/resource-campaigns', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.campaign_name || !b.campaign_type || !b.start_date) {
+    return c.json({ success: false, error: 'campaign_name, campaign_type, start_date required' }, 400);
+  }
+  const id = rid('rsc');
+  await c.env.DB.prepare(`
+    INSERT INTO ipp_resource_campaigns (id, participant_id, site_assessment_id, campaign_name, campaign_type,
+      start_date, end_date, installed_height_m, data_recovery_pct, raw_data_r2_key, status, vendor, cost_zar, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.site_assessment_id ?? null, b.campaign_name, b.campaign_type,
+    b.start_date, b.end_date ?? null, b.installed_height_m ?? null,
+    b.data_recovery_pct ?? null, b.raw_data_r2_key ?? null,
+    b.status ?? 'planning', b.vendor ?? null, b.cost_zar ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/ipp/yield-estimates', async (c) => c.json({ success: true, data: await listFor(c, 'ipp_yield_estimates') }));
+roles.post('/ipp/yield-estimates', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.capacity_mw || !b.p50_gwh_yr) {
+    return c.json({ success: false, error: 'capacity_mw and p50_gwh_yr required' }, 400);
+  }
+  // Auto-derive capacity factor + P75/P90 if not provided
+  const cf = b.net_capacity_factor ?? (b.p50_gwh_yr * 1000 / (b.capacity_mw * 8760));
+  const p75 = b.p75_gwh_yr ?? b.p50_gwh_yr * 0.93;
+  const p90 = b.p90_gwh_yr ?? b.p50_gwh_yr * 0.88;
+  const id = rid('yie');
+  await c.env.DB.prepare(`
+    INSERT INTO ipp_yield_estimates (id, participant_id, site_assessment_id, project_id, estimate_round,
+      capacity_mw, p50_gwh_yr, p75_gwh_yr, p90_gwh_yr, net_capacity_factor, module_or_turbine,
+      inverter_or_converter, module_count, turbine_count, pr_or_availability, losses_pct,
+      long_term_correction_pct, software, software_version, report_r2_key, status, certified_by, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.site_assessment_id ?? null, b.project_id ?? null, b.estimate_round ?? 1,
+    b.capacity_mw, b.p50_gwh_yr, p75, p90, cf, b.module_or_turbine ?? null,
+    b.inverter_or_converter ?? null, b.module_count ?? null, b.turbine_count ?? null,
+    b.pr_or_availability ?? null, b.losses_pct ?? null, b.long_term_correction_pct ?? null,
+    b.software ?? null, b.software_version ?? null, b.report_r2_key ?? null,
+    b.status ?? 'preliminary', b.certified_by ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, p75_gwh_yr: p75, p90_gwh_yr: p90, net_capacity_factor: cf } }, 201);
+});
+
+// Development
+roles.get('/ipp/financial-models', async (c) => c.json({ success: true, data: await listFor(c, 'ipp_financial_models') }));
+roles.post('/ipp/financial-models', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.model_version || !b.capacity_mw || !b.capex_zar) {
+    return c.json({ success: false, error: 'model_version, capacity_mw, capex_zar required' }, 400);
+  }
+  // Compute LCOE + IRR + NPV + payback if enough inputs supplied.
+  let lcoe = null, irr = null, npv = null, payback = null;
+  const life = b.operating_life_yrs ?? 25;
+  const opex = b.opex_zar_yr ?? (b.capex_zar * 0.02);
+  const yieldId = b.yield_estimate_id;
+  let p50Gwh = b.p50_gwh_yr;
+  if (yieldId && !p50Gwh) {
+    const y = await c.env.DB.prepare(`SELECT p50_gwh_yr FROM ipp_yield_estimates WHERE id = ?`).bind(yieldId).first<any>();
+    p50Gwh = y?.p50_gwh_yr || (b.capacity_mw * 8760 * 0.27 / 1000);
+  } else if (!p50Gwh) {
+    p50Gwh = b.capacity_mw * 8760 * 0.27 / 1000;
+  }
+  const annualMWh = p50Gwh * 1000;
+  if (b.ppa_tariff_zar_mwh) {
+    const annualRev = annualMWh * b.ppa_tariff_zar_mwh;
+    const annualCash = annualRev - opex;
+    // LCOE = (capex + sum(opex / (1+r)^t)) / sum(MWh / (1+r)^t). Use 10% real discount.
+    const r = 0.10;
+    let pvCost = b.capex_zar, pvMwh = 0;
+    for (let t = 1; t <= life; t++) { pvCost += opex / Math.pow(1 + r, t); pvMwh += annualMWh / Math.pow(1 + r, t); }
+    lcoe = pvCost / pvMwh;
+    // Simple IRR approximation: average cash flow / capex × 100
+    irr = annualCash > 0 ? (annualCash / b.capex_zar) * 100 : null;
+    npv = -b.capex_zar + annualCash * (1 - Math.pow(1 + r, -life)) / r;
+    payback = annualCash > 0 ? b.capex_zar / annualCash : null;
+  }
+  const id = rid('fm');
+  await c.env.DB.prepare(`
+    INSERT INTO ipp_financial_models (id, participant_id, project_id, model_version, yield_estimate_id,
+      capacity_mw, capex_zar, opex_zar_yr, ppa_tariff_zar_mwh, tariff_escalation_pct, operating_life_yrs,
+      debt_ratio_pct, debt_tenor_yrs, interest_rate_pct, tax_rate_pct, lcoe_zar_per_mwh, project_irr_pct,
+      equity_irr_pct, npv_zar, payback_years, min_dscr, avg_dscr, scenario_set_json, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.project_id ?? null, b.model_version, yieldId ?? null,
+    b.capacity_mw, b.capex_zar, opex, b.ppa_tariff_zar_mwh ?? null,
+    b.tariff_escalation_pct ?? 0, life, b.debt_ratio_pct ?? 70,
+    b.debt_tenor_yrs ?? null, b.interest_rate_pct ?? null, b.tax_rate_pct ?? 27,
+    lcoe, irr, b.equity_irr_pct ?? null, npv, payback,
+    b.min_dscr ?? null, b.avg_dscr ?? null,
+    b.scenario_set_json ? JSON.stringify(b.scenario_set_json) : null,
+    b.status ?? 'draft', b.notes ?? null).run();
+  return c.json({ success: true, data: {
+    id, lcoe_zar_per_mwh: lcoe, project_irr_pct: irr, npv_zar: npv, payback_years: payback,
+  }}, 201);
+});
+
+roles.get('/ipp/tenders', async (c) => c.json({ success: true, data: await listFor(c, 'ipp_tenders') }));
+roles.post('/ipp/tenders', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.tender_name || !b.tender_type) return c.json({ success: false, error: 'tender_name and tender_type required' }, 400);
+  const id = rid('tnd');
+  await c.env.DB.prepare(`
+    INSERT INTO ipp_tenders (id, participant_id, project_id, tender_name, tender_type, scope,
+      issued_at, closing_at, expected_award_zar, evaluation_criteria, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.project_id ?? null, b.tender_name, b.tender_type, b.scope ?? null,
+    b.issued_at ?? null, b.closing_at ?? null, b.expected_award_zar ?? null,
+    b.evaluation_criteria ? JSON.stringify(b.evaluation_criteria) : null,
+    b.status ?? 'drafting', b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.post('/ipp/tenders/:id/bidders', async (c) => {
+  const { id } = c.req.param();
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.bidder_name) return c.json({ success: false, error: 'bidder_name required' }, 400);
+  // Compute weighted total: 50% commercial, 30% technical, 10% BBBEE, 10% experience.
+  const tot = (b.commercial_score ?? 0) * 0.5 + (b.technical_score ?? 0) * 0.3 +
+              (b.bbbee_score ?? 0) * 0.1 + (b.experience_score ?? 0) * 0.1;
+  const bid = rid('bdr');
+  await c.env.DB.prepare(`
+    INSERT INTO ipp_tender_bidders (id, tender_id, bidder_name, contractor_id, bid_amount_zar,
+      bid_tenor_years, bid_warranties_years, technical_score, commercial_score, bbbee_score,
+      experience_score, total_score, rank, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(bid, id, b.bidder_name, b.contractor_id ?? null, b.bid_amount_zar ?? null,
+    b.bid_tenor_years ?? null, b.bid_warranties_years ?? null,
+    b.technical_score ?? null, b.commercial_score ?? null, b.bbbee_score ?? null,
+    b.experience_score ?? null, tot, b.rank ?? null,
+    b.status ?? 'submitted', b.notes ?? null).run();
+  return c.json({ success: true, data: { id: bid, total_score: tot } }, 201);
+});
+
+roles.get('/ipp/tenders/:id/bidders', async (c) => {
+  const { id } = c.req.param();
+  const r = await c.env.DB.prepare(`SELECT * FROM ipp_tender_bidders WHERE tender_id = ? ORDER BY total_score DESC`).bind(id).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+
+roles.get('/ipp/permits', async (c) => c.json({ success: true, data: await listFor(c, 'ipp_permits') }));
+roles.post('/ipp/permits', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.permit_type) return c.json({ success: false, error: 'permit_type required' }, 400);
+  const id = rid('per');
+  await c.env.DB.prepare(`
+    INSERT INTO ipp_permits (id, participant_id, project_id, permit_type, application_no, authority,
+      applied_at, expected_decision_at, decided_at, outcome, conditions, valid_from, valid_to,
+      document_r2_key, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.project_id ?? null, b.permit_type, b.application_no ?? null,
+    b.authority ?? null, b.applied_at ?? null, b.expected_decision_at ?? null,
+    b.decided_at ?? null, b.outcome ?? 'pending', b.conditions ?? null,
+    b.valid_from ?? null, b.valid_to ?? null, b.document_r2_key ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/ipp/info-memorandums', async (c) => c.json({ success: true, data: await listFor(c, 'ipp_info_memorandums') }));
+roles.post('/ipp/info-memorandums', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.im_version || !b.im_title) return c.json({ success: false, error: 'im_version and im_title required' }, 400);
+  const token = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(x => x.toString(16).padStart(2, '0')).join('');
+  const id = rid('im');
+  await c.env.DB.prepare(`
+    INSERT INTO ipp_info_memorandums (id, participant_id, project_id, im_version, im_title,
+      executive_summary, project_description, capacity_mw, capex_zar, funding_requested_zar,
+      ppa_summary, yield_estimate_id, financial_model_id, prepared_by, shared_with_lenders,
+      share_link_token, status, document_r2_key, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.project_id ?? null, b.im_version, b.im_title,
+    b.executive_summary ?? null, b.project_description ?? null, b.capacity_mw ?? null,
+    b.capex_zar ?? null, b.funding_requested_zar ?? null, b.ppa_summary ?? null,
+    b.yield_estimate_id ?? null, b.financial_model_id ?? null, b.prepared_by ?? null,
+    b.shared_with_lenders ? JSON.stringify(b.shared_with_lenders) : null,
+    token, b.status ?? 'drafting', b.document_r2_key ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, share_link_token: token, share_url: `/portal/im/${token}` } }, 201);
+});
+
+roles.get('/ipp/drawdowns', async (c) => c.json({ success: true, data: await listFor(c, 'ipp_drawdown_requests') }));
+roles.post('/ipp/drawdowns', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.requested_amount_zar) return c.json({ success: false, error: 'requested_amount_zar required' }, 400);
+  // Auto-number per loan: last drawdown_no + 1
+  let ddNo = b.drawdown_no;
+  if (!ddNo && b.loan_id) {
+    const last = await c.env.DB.prepare(
+      `SELECT COALESCE(MAX(drawdown_no), 0) AS n FROM ipp_drawdown_requests WHERE loan_id = ?`
+    ).bind(b.loan_id).first<any>();
+    ddNo = (last?.n || 0) + 1;
+  } else if (!ddNo) {
+    ddNo = 1;
+  }
+  const id = rid('dd');
+  await c.env.DB.prepare(`
+    INSERT INTO ipp_drawdown_requests (id, participant_id, project_id, loan_id, drawdown_no,
+      requested_amount_zar, purpose, supporting_invoices_r2_key, ie_cert_id, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.project_id ?? null, b.loan_id ?? null, ddNo,
+    b.requested_amount_zar, b.purpose ?? null, b.supporting_invoices_r2_key ?? null,
+    b.ie_cert_id ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, drawdown_no: ddNo } }, 201);
+});
+
+roles.patch('/ipp/drawdowns/:id', async (c) => {
+  const user = getCurrentUser(c);
+  const { id } = c.req.param();
+  const b = await c.req.json().catch(() => ({} as any));
+  const sets: string[] = []; const binds: any[] = [];
+  for (const k of ['status','approved_amount_zar','approved_at','approved_by',
+                   'disbursed_amount_zar','disbursed_at','rejection_reason','notes']) {
+    if (b[k] !== undefined) { sets.push(`${k} = ?`); binds.push(b[k]); }
+  }
+  if (b.status === 'approved' && b.approved_at === undefined) { sets.push(`approved_at = datetime('now')`); }
+  if (b.status === 'disbursed' && b.disbursed_at === undefined) { sets.push(`disbursed_at = datetime('now')`); }
+  if (!sets.length) return c.json({ success: false, error: 'no fields to update' }, 400);
+  binds.push(id, user.id);
+  await c.env.DB.prepare(`UPDATE ipp_drawdown_requests SET ${sets.join(', ')} WHERE id = ? AND participant_id = ?`).bind(...binds).run();
+  return c.json({ success: true });
+});
+
+// Construction → Operation
+roles.get('/ipp/commissioning', async (c) => c.json({ success: true, data: await listFor(c, 'ipp_commissioning_tests') }));
+roles.post('/ipp/commissioning', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.test_phase || !b.test_name) return c.json({ success: false, error: 'test_phase and test_name required' }, 400);
+  const id = rid('com');
+  await c.env.DB.prepare(`
+    INSERT INTO ipp_commissioning_tests (id, participant_id, project_id, test_phase, test_name,
+      test_code, scheduled_at, executed_at, witnesses, pass_fail, measured_value, target_value,
+      unit, evidence_r2_key, punch_list_items, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.project_id ?? null, b.test_phase, b.test_name, b.test_code ?? null,
+    b.scheduled_at ?? null, b.executed_at ?? null, b.witnesses ?? null,
+    b.pass_fail ?? null, b.measured_value ?? null, b.target_value ?? null, b.unit ?? null,
+    b.evidence_r2_key ?? null,
+    b.punch_list_items ? JSON.stringify(b.punch_list_items) : null,
+    b.status ?? 'scheduled', b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/ipp/nominations', async (c) => c.json({ success: true, data: await listFor(c, 'ipp_nominations') }));
+roles.post('/ipp/nominations', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.delivery_date || !b.nomination_type || !b.hourly_mwh) {
+    return c.json({ success: false, error: 'delivery_date, nomination_type, hourly_mwh required' }, 400);
+  }
+  // Accept array or object indexed 0..23 of MWh
+  const arr = Array.isArray(b.hourly_mwh) ? b.hourly_mwh : Array.from({ length: 24 }, (_, i) => b.hourly_mwh[i] ?? 0);
+  if (arr.length !== 24) return c.json({ success: false, error: 'hourly_mwh must be 24 values' }, 400);
+  const total = arr.reduce((s: number, v: number) => s + (v || 0), 0);
+  const id = rid('nom');
+  await c.env.DB.prepare(`
+    INSERT INTO ipp_nominations (id, participant_id, project_id, delivery_date, nomination_type,
+      hourly_mwh_json, total_mwh, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.project_id ?? null, b.delivery_date, b.nomination_type,
+    JSON.stringify(arr), total, b.status ?? 'submitted', b.notes ?? null).run();
+  return c.json({ success: true, data: { id, total_mwh: total } }, 201);
+});
+
+roles.get('/ipp/work-orders', async (c) => c.json({ success: true, data: await listFor(c, 'ipp_work_orders') }));
+roles.post('/ipp/work-orders', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.wo_type) return c.json({ success: false, error: 'wo_type required' }, 400);
+  const total = (b.labour_cost_zar || 0) + (b.parts_cost_zar || 0) + (b.external_cost_zar || 0);
+  const id = rid('wo');
+  await c.env.DB.prepare(`
+    INSERT INTO ipp_work_orders (id, participant_id, project_id, wo_number, wo_type, asset_id,
+      asset_descr, failure_mode, priority, scheduled_start, scheduled_end, actual_start, actual_end,
+      downtime_hours, energy_loss_mwh, labour_hours, labour_cost_zar, parts_cost_zar,
+      external_cost_zar, total_cost_zar, technicians, status, root_cause, corrective_action, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.project_id ?? null, b.wo_number ?? null, b.wo_type, b.asset_id ?? null,
+    b.asset_descr ?? null, b.failure_mode ?? null, b.priority ?? 'medium',
+    b.scheduled_start ?? null, b.scheduled_end ?? null, b.actual_start ?? null, b.actual_end ?? null,
+    b.downtime_hours ?? null, b.energy_loss_mwh ?? null,
+    b.labour_hours ?? null, b.labour_cost_zar ?? null, b.parts_cost_zar ?? null,
+    b.external_cost_zar ?? null, total, b.technicians ?? null, b.status ?? 'open',
+    b.root_cause ?? null, b.corrective_action ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, total_cost_zar: total } }, 201);
+});
+
+roles.get('/ipp/spares', async (c) => c.json({ success: true, data: await listFor(c, 'ipp_spares_inventory') }));
+roles.post('/ipp/spares', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.description) return c.json({ success: false, error: 'description required' }, 400);
+  // Auto-status based on on_hand vs reorder_point
+  let status = b.status;
+  if (!status && b.on_hand_qty !== undefined && b.reorder_point !== undefined) {
+    if (b.on_hand_qty <= 0) status = 'out_of_stock';
+    else if (b.on_hand_qty <= b.reorder_point) status = 'low_stock';
+    else status = 'in_stock';
+  }
+  const id = rid('spr');
+  await c.env.DB.prepare(`
+    INSERT INTO ipp_spares_inventory (id, participant_id, project_id, part_number, description,
+      manufacturer, category, location, unit_of_measure, on_hand_qty, reorder_point, reorder_qty,
+      unit_cost_zar, last_received_at, last_issued_at, shelf_life_months, warranty_until, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.project_id ?? null, b.part_number ?? null, b.description,
+    b.manufacturer ?? null, b.category ?? null, b.location ?? null, b.unit_of_measure ?? null,
+    b.on_hand_qty ?? 0, b.reorder_point ?? null, b.reorder_qty ?? null,
+    b.unit_cost_zar ?? null, b.last_received_at ?? null, b.last_issued_at ?? null,
+    b.shelf_life_months ?? null, b.warranty_until ?? null,
+    status ?? 'in_stock', b.notes ?? null).run();
+  return c.json({ success: true, data: { id, status } }, 201);
+});
+
+roles.get('/ipp/decommissioning', async (c) => c.json({ success: true, data: await listFor(c, 'ipp_decommissioning_plans') }));
+roles.post('/ipp/decommissioning', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.plan_version || !b.strategy) return c.json({ success: false, error: 'plan_version and strategy required' }, 400);
+  const id = rid('dec');
+  await c.env.DB.prepare(`
+    INSERT INTO ipp_decommissioning_plans (id, participant_id, project_id, plan_version, strategy,
+      expected_eol_date, estimated_decom_cost_zar, decom_provision_zar, module_residual_zar,
+      steel_residual_zar, inverter_residual_zar, bess_residual_zar, recycling_partner,
+      rehab_obligations, status, approved_by, approved_at, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.project_id ?? null, b.plan_version, b.strategy,
+    b.expected_eol_date ?? null, b.estimated_decom_cost_zar ?? null,
+    b.decom_provision_zar ?? null, b.module_residual_zar ?? null,
+    b.steel_residual_zar ?? null, b.inverter_residual_zar ?? null, b.bess_residual_zar ?? null,
+    b.recycling_partner ?? null, b.rehab_obligations ?? null, b.status ?? 'planning',
+    b.approved_by ?? null, b.approved_at ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
 // ─── Offtaker ──────────────────────────────────────────────────────────
 
 roles.get('/offtaker/ppa-market', async (c) => {
