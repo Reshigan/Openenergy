@@ -15,6 +15,7 @@ import { Trading } from './components/pages/Trading';
 import { Carbon } from './components/pages/Carbon';
 import { ProcurementHub } from './components/pages/ProcurementHub';
 import { Projects } from './components/pages/Projects';
+import { ProjectDetail } from './components/pages/ProjectDetail';
 import { Grid } from './components/pages/Grid';
 import { ESG } from './components/pages/ESG';
 import { Funds } from './components/pages/Funds';
@@ -1164,6 +1165,7 @@ function AppRoutes() {
       <Route path="/settlement" element={<ProtectedRoute><Layout><Settlement /></Layout></ProtectedRoute>} />
       <Route path="/carbon" element={<ProtectedRoute><Layout><Carbon /></Layout></ProtectedRoute>} />
       <Route path="/projects" element={<ProtectedRoute><Layout><Projects /></Layout></ProtectedRoute>} />
+      <Route path="/projects/:id" element={<ProtectedRoute><Layout><ProjectDetail /></Layout></ProtectedRoute>} />
       <Route path="/esg" element={<ProtectedRoute><Layout><ESG /></Layout></ProtectedRoute>} />
       <Route path="/grid" element={<ProtectedRoute><Layout><Grid /></Layout></ProtectedRoute>} />
       <Route path="/funds" element={<ProtectedRoute><Layout><Funds /></Layout></ProtectedRoute>} />

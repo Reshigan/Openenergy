@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef, ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/useAuth';
 import { LogoMark } from './Logo';
+import { MatIcon } from './OEIcon';
 
 /* ════════════════════════════════════════════════════════════════════════
  * Open Energy Platform — App Shell
@@ -103,16 +104,13 @@ function initialsOf(name: string | undefined): string {
     .toUpperCase();
 }
 
+/* The MIcon helper used to render the Material Symbols icon font. We now
+ * route every call through the custom OE icon set so nothing in the shell
+ * depends on Google's icon font or any stock library. All previous Material
+ * Symbol names (`dashboard`, `bolt`, `eco` etc.) are mapped onto our OE
+ * SVGs in OEIcon.tsx::MATERIAL_MAP. */
 function MIcon({ name, className = '', filled, size = 20 }: { name: string; className?: string; filled?: boolean; size?: number }) {
-  return (
-    <span
-      className={`mat-icon ${filled ? 'filled' : ''} ${className}`}
-      aria-hidden="true"
-      style={{ fontSize: size }}
-    >
-      {name}
-    </span>
-  );
+  return <MatIcon name={name} size={size} className={className} filled={filled} />;
 }
 
 export function FioriShell({ children }: { children: ReactNode }) {

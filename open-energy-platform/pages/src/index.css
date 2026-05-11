@@ -7,7 +7,10 @@
 
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..700,0..1,-25..200&display=swap');
+/* Material Symbols icon font intentionally removed in favour of the custom
+ * OE SVG icon set (src/components/OEIcon.tsx). Every previous Material name
+ * is mapped through MatIcon() so existing call sites keep working without
+ * pulling in Google's icon font. */
 
 @font-face {
   font-family: 'Metropolis';
@@ -148,19 +151,11 @@ h1, h2, h3, h4, h5, h6, .font-display, .font-headline {
   font-feature-settings: 'tnum' 1;
 }
 
-/* Material Symbols */
-.mat-icon {
-  font-family: 'Material Symbols Outlined';
-  font-weight: normal; font-style: normal; font-size: 20px; line-height: 1;
-  letter-spacing: normal; text-transform: none; display: inline-block;
-  white-space: nowrap; word-wrap: normal; direction: ltr;
-  -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased;
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-}
-.mat-icon.filled { font-variation-settings: 'FILL' 1, 'wght' 500; }
-.mat-icon.bold { font-variation-settings: 'wght' 600; }
-.mat-icon.sm { font-size: 16px; }
-.mat-icon.lg { font-size: 24px; }
+/* Legacy `.mat-icon` class kept as a no-op so any third-party snippets that
+ * inherited this class still render. Shell + page chrome use the custom OE
+ * SVG icons via <OEIcon> / <MatIcon> (src/components/OEIcon.tsx) — no
+ * external icon font is loaded. */
+.mat-icon { display: inline-block; line-height: 1; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
