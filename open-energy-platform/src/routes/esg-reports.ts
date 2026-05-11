@@ -9,8 +9,14 @@ import { fireCascade } from '../utils/cascade';
 
 const esgReports = new Hono<HonoEnv>();
 
+// All endpoints require auth. authMiddleware is a middleware function
+// (not a factory) — applying it once at the sub-app level avoids the
+// per-route `authMiddleware()` invocation pattern that previously produced
+// `handler is not a function` 500s.
+esgReports.use('*', authMiddleware);
+
 // GET /esg-reports/templates — List available report templates
-esgReports.get('/templates', authMiddleware(), async (c) => {
+esgReports.get('/templates', async (c) => {
   const templates = [
     { id: 'tcfd', name: 'TCFD Report', description: 'Task Force on Climate-related Financial Disclosures', standards: ['TCFD'] },
     { id: 'cdp', name: 'CDP Questionnaire', description: 'Carbon Disclosure Project annual questionnaire', standards: ['CDP'] },
@@ -23,7 +29,7 @@ esgReports.get('/templates', authMiddleware(), async (c) => {
 });
 
 // GET /esg-reports/my-reports — List participant's generated reports
-esgReports.get('/my-reports', authMiddleware(), async (c) => {
+esgReports.get('/my-reports', async (c) => {
   const participant = c.get('participant');
   
   const reports = await c.env.DB.prepare(`
@@ -37,7 +43,7 @@ esgReports.get('/my-reports', authMiddleware(), async (c) => {
 });
 
 // POST /esg-reports/generate — Generate a new ESG report
-esgReports.post('/generate', authMiddleware(), async (c) => {
+esgReports.post('/generate', async (c) => {
   const participant = c.get('participant');
   const body = await c.req.json();
   const { template_id, period_start, period_end, include_narrative } = body;
@@ -138,7 +144,7 @@ esgReports.post('/generate', authMiddleware(), async (c) => {
 });
 
 // GET /esg-reports/:id — Get specific report details
-esgReports.get('/:id', authMiddleware(), async (c) => {
+esgReports.get('/:id', async (c) => {
   const participant = c.get('participant');
   const { id } = c.req.param();
 
@@ -159,7 +165,7 @@ esgReports.get('/:id', authMiddleware(), async (c) => {
 });
 
 // GET /esg-reports/:id/download — Download report as PDF
-esgReports.get('/:id/download', authMiddleware(), async (c) => {
+esgReports.get('/:id/download', async (c) => {
   const { id } = c.req.param();
   
   const report = await c.env.DB.prepare('SELECT * FROM esg_reports WHERE id = ?').bind(id).first();

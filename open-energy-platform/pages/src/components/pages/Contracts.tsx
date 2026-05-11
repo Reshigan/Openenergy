@@ -221,17 +221,23 @@ function CreateContractModal({ onClose, onCreated }: { onClose: () => void; onCr
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            {/* document_type values are constrained by the v2 schema CHECK:
+                 loi, term_sheet, hoa, ppa_wheeling, ppa_btm, carbon_purchase,
+                 carbon_option_isda, forward, epc, wheeling_agreement,
+                 offtake_agreement, nda                                       */}
             <select value={formData.document_type} onChange={e => setFormData({ ...formData, document_type: e.target.value, contract_type: e.target.value })} className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg">
-              <option value="ppa_wheeling">PPA Wheeling</option>
-              <option value="ppa_btm">PPA BTM</option>
-              <option value="direct_supply">Direct Supply</option>
-              <option value="loi">LOI</option>
+              <option value="ppa_wheeling">PPA — Wheeling</option>
+              <option value="ppa_btm">PPA — Behind-the-Meter</option>
+              <option value="offtake_agreement">Direct Offtake Agreement</option>
+              <option value="wheeling_agreement">Wheeling Agreement</option>
+              <option value="loi">Letter of Intent</option>
               <option value="term_sheet">Term Sheet</option>
               <option value="hoa">Heads of Agreement</option>
-              <option value="nda">NDA</option>
+              <option value="nda">Non-Disclosure</option>
               <option value="epc">EPC</option>
-              <option value="om">O&amp;M</option>
-              <option value="erpa">ERPA / Carbon Sale</option>
+              <option value="forward">Forward / Derivative</option>
+              <option value="carbon_purchase">Carbon Purchase (ERPA)</option>
+              <option value="carbon_option_isda">Carbon Option (ISDA)</option>
               <option value="intercreditor">Intercreditor</option>
               <option value="facility">Facility Agreement</option>
               <option value="security">Security Agreement</option>

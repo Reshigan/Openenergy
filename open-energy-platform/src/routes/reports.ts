@@ -472,6 +472,217 @@ async function buildFor(env: HonoEnv, role: ParticipantRole, participantId: stri
   }
 }
 
+// ════════════════════════════════════════════════════════════════════════
+// Cross-module ledger + report catalog
+//
+// The per-role buildXyz() reports above are bespoke aggregations of the
+// module-specific tables. The endpoints below complement them with:
+//
+//   GET  /reports/catalog            — list every canonical report code
+//                                       the role can produce
+//   GET  /reports/ledger             — universal transaction ledger view
+//                                       across every module the caller can
+//                                       see (this is the "audit pull" the
+//                                       regulator / financier wants)
+//   POST /reports/generate           — record a generated report in the
+//                                       registry for distribution + audit
+//   GET  /reports/registry           — list past generated reports
+//
+// All endpoints respect the same tenant + role guards as the bespoke role
+// reports.
+// ════════════════════════════════════════════════════════════════════════
+
+reports.get('/catalog', async (c) => {
+  const user = getCurrentUser(c);
+  const isAdminLike = ADMIN_LIKE.has(user.role as ParticipantRole);
+  const rs = await c.env.DB.prepare(
+    isAdminLike
+      ? `SELECT * FROM report_catalog ORDER BY role, module, code`
+      : `SELECT * FROM report_catalog WHERE role = ? OR module = 'esg' ORDER BY module, code`,
+  ).bind(...(isAdminLike ? [] : [user.role])).all().catch(() => ({ results: [] as unknown[] }));
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+// GET /reports/ledger?module=&from=&to=&participant=&q=&limit=
+reports.get('/ledger', async (c) => {
+  const user = getCurrentUser(c);
+  const isAdminLike = ADMIN_LIKE.has(user.role as ParticipantRole);
+  const isRegulator = user.role === 'regulator';
+
+  const module = c.req.query('module');
+  const from = c.req.query('from');
+  const to = c.req.query('to');
+  const target = c.req.query('participant');
+  const q = c.req.query('q');
+  const limit = Math.min(Number(c.req.query('limit') || 200), 500);
+
+  const filters: string[] = [];
+  const binds: unknown[] = [];
+
+  // Scope: regulator + admin see everything, everyone else sees only rows
+  // where they are actor OR party_a OR party_b OR a tenant-shared admin.
+  if (!isAdminLike && !isRegulator) {
+    filters.push('(actor_id = ? OR party_a_id = ? OR party_b_id = ?)');
+    binds.push(user.id, user.id, user.id);
+  } else if (target) {
+    filters.push('(actor_id = ? OR party_a_id = ? OR party_b_id = ?)');
+    binds.push(target, target, target);
+  }
+  if (module)  { filters.push('module = ?'); binds.push(module); }
+  if (from)    { filters.push('date(business_date) >= date(?)'); binds.push(from); }
+  if (to)      { filters.push('date(business_date) <= date(?)'); binds.push(to); }
+  if (q)       {
+    filters.push('(event_type LIKE ? OR external_reference LIKE ? OR notes LIKE ?)');
+    binds.push(`%${q}%`, `%${q}%`, `%${q}%`);
+  }
+  const where = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+
+  const rs = await c.env.DB.prepare(`
+    SELECT id, tenant_id, module, event_type, business_date, effective_date,
+           actor_id, actor_role, party_a_id, party_a_role, party_b_id, party_b_role,
+           amount_zar, amount_currency, quantity, quantity_unit, price, price_unit,
+           source_table, source_id, contract_id, project_id, rfp_id, loi_id, invoice_id,
+           facility_id, certificate_id, status, external_reference, notes, created_at
+      FROM ledger_transactions
+      ${where}
+      ORDER BY business_date DESC, created_at DESC
+      LIMIT ?
+  `).bind(...binds, limit).all().catch(() => ({ results: [] as unknown[] }));
+
+  // Aggregates (top-row KPIs the UI displays)
+  const aggregateSql = `
+    SELECT module,
+           COUNT(*) AS n,
+           COALESCE(SUM(amount_zar), 0) AS total_zar,
+           COALESCE(SUM(quantity), 0) AS total_qty
+      FROM ledger_transactions
+      ${where}
+      GROUP BY module
+      ORDER BY n DESC
+  `;
+  const agg = await c.env.DB.prepare(aggregateSql).bind(...binds).all()
+    .catch(() => ({ results: [] as unknown[] }));
+
+  return c.json({
+    success: true,
+    data: {
+      transactions: rs.results || [],
+      aggregates: agg.results || [],
+      scope: isAdminLike || isRegulator ? 'platform' : 'self',
+    },
+  });
+});
+
+// POST /reports/generate
+// body: { code, period_start?, period_end?, framework?, params? }
+//
+// Generates the underlying report (delegates to buildFor()) then records a
+// reports_registry row so it appears in the role's Reports history and can
+// be re-served / distributed.
+reports.post('/generate', async (c) => {
+  const user = getCurrentUser(c);
+  const body = (await c.req.json().catch(() => ({}))) as {
+    code?: string; period_start?: string; period_end?: string;
+    framework?: string; params?: Record<string, unknown>;
+  };
+  if (!body.code) return c.json({ success: false, error: 'code required' }, 400);
+
+  const catRow = await c.env.DB.prepare(
+    `SELECT * FROM report_catalog WHERE code = ?`,
+  ).bind(body.code).first() as { code: string; role: string; module: string; name: string; framework?: string } | null;
+  if (!catRow) return c.json({ success: false, error: 'unknown_report_code' }, 404);
+
+  // Authorisation: admin/support can generate any; otherwise role must
+  // match the catalogued role.
+  const isAdminLike = ADMIN_LIKE.has(user.role as ParticipantRole);
+  if (!isAdminLike && user.role !== catRow.role && catRow.module !== 'esg') {
+    return c.json({ success: false, error: 'forbidden_for_role' }, 403);
+  }
+
+  // Pull the appropriate report payload. For role-aggregated reports we
+  // delegate to buildFor() so the sections match what the role page shows.
+  let payload: unknown = null;
+  let rowCount = 0;
+  let totalZar: number | null = null;
+  try {
+    if (catRow.module === 'esg') {
+      const year = body.period_end ? new Date(body.period_end).getFullYear() : new Date().getFullYear();
+      const r = await c.env.DB.prepare(
+        `SELECT * FROM esg_annual_rollup WHERE participant_id = ? AND reporting_year = ?`,
+      ).bind(user.id, year).first();
+      payload = { rollup: r, period: { year } };
+    } else {
+      const report = await buildFor(c.env, catRow.role as ParticipantRole, user.id, isAdminLike);
+      payload = report;
+      rowCount = report.sections.reduce((s, x) => s + (x.rows?.length || 0), 0);
+    }
+  } catch (e) {
+    return c.json({ success: false, error: 'generation_failed', detail: String(e) }, 500);
+  }
+
+  const id = 'rep_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  await c.env.DB.prepare(`
+    INSERT INTO reports_registry (id, participant_id, module, report_code, report_name,
+                                   reporting_period_start, reporting_period_end, framework,
+                                   params, payload_json, row_count, total_value_zar, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'generated')
+  `).bind(
+    id, user.id, catRow.module, catRow.code, catRow.name,
+    body.period_start || null, body.period_end || null, body.framework || catRow.framework || null,
+    body.params ? JSON.stringify(body.params) : null,
+    JSON.stringify(payload), rowCount, totalZar,
+  ).run().catch(() => undefined);
+
+  return c.json({ success: true, data: { id, code: catRow.code, payload } });
+});
+
+// GET /reports/registry?module=&code=&limit=
+reports.get('/registry', async (c) => {
+  const user = getCurrentUser(c);
+  const isAdminLike = ADMIN_LIKE.has(user.role as ParticipantRole);
+  const module = c.req.query('module');
+  const code = c.req.query('code');
+  const limit = Math.min(Number(c.req.query('limit') || 100), 500);
+
+  const filters: string[] = [];
+  const binds: unknown[] = [];
+  if (!isAdminLike) { filters.push('participant_id = ?'); binds.push(user.id); }
+  if (module) { filters.push('module = ?'); binds.push(module); }
+  if (code) { filters.push('report_code = ?'); binds.push(code); }
+  const where = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+
+  const rs = await c.env.DB.prepare(`
+    SELECT id, participant_id, module, report_code, report_name,
+           reporting_period_start, reporting_period_end, framework,
+           row_count, total_value_zar, status, generated_at
+      FROM reports_registry
+      ${where}
+      ORDER BY generated_at DESC
+      LIMIT ?
+  `).bind(...binds, limit).all().catch(() => ({ results: [] as unknown[] }));
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+// GET /reports/registry/:id — fetch a previously generated report
+reports.get('/registry/:id', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const row = await c.env.DB.prepare(
+    `SELECT * FROM reports_registry WHERE id = ?`,
+  ).bind(id).first() as { id: string; participant_id: string; payload_json?: string } | null;
+  if (!row) return c.json({ success: false, error: 'not_found' }, 404);
+  if (row.participant_id !== user.id && !ADMIN_LIKE.has(user.role as ParticipantRole) && user.role !== 'regulator') {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
+  return c.json({
+    success: true,
+    data: {
+      ...row,
+      payload: row.payload_json ? JSON.parse(row.payload_json) : null,
+    },
+  });
+});
+
 reports.get('/:role', async (c) => {
   const role = c.req.param('role') as ParticipantRole;
   const allowed: ParticipantRole[] = ['admin','trader','ipp_developer','offtaker','lender','carbon_fund','grid_operator','regulator','support'];

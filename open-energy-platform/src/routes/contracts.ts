@@ -242,6 +242,35 @@ contracts.post('/', async (c) => {
     return c.json({ success: false, error: 'Title, phase, and contract_type are required' }, 400);
   }
 
+  // Validate contract_type against the schema's CHECK constraint up-front
+  // so the UI gets a clear 400 instead of a 500 from D1.
+  const allowedDocumentTypes = new Set([
+    'loi','term_sheet','hoa',
+    'ppa_wheeling','ppa_btm',
+    'carbon_purchase','carbon_option_isda',
+    'forward','epc',
+    'wheeling_agreement','offtake_agreement','nda',
+  ]);
+  if (!allowedDocumentTypes.has(contract_type)) {
+    return c.json({
+      success: false,
+      error: 'invalid_contract_type',
+      detail: `contract_type must be one of: ${[...allowedDocumentTypes].join(', ')}`,
+    }, 400);
+  }
+
+  // Validate phase too (CHECK in schema: draft|loi|term_sheet|hoa|legal_review|execution|active|amended|terminated|expired)
+  const allowedPhases = new Set([
+    'draft','loi','term_sheet','hoa','legal_review','execution','active','amended','terminated','expired',
+  ]);
+  if (!allowedPhases.has(phase)) {
+    return c.json({
+      success: false,
+      error: 'invalid_phase',
+      detail: `phase must be one of: ${[...allowedPhases].join(', ')}`,
+    }, 400);
+  }
+
   if (counterparty_id && counterparty_id !== user.id) {
     await assertSameTenantParticipant(c, counterparty_id);
   }

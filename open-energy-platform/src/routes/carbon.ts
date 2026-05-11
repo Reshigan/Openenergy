@@ -44,17 +44,32 @@ carbon.get('/credits', async (c) => {
 });
 
 // POST /carbon/credits - Create/list credit
+// POST /carbon/credits — record a new carbon holding.
+//
+// v2 schema renamed `carbon_credits` → `carbon_holdings` and stripped a
+// number of fields (registry/project_name/methodology now live on the
+// linked `carbon_projects` row). This route still accepts the legacy
+// payload but writes to the new table — `project_id` is required so the
+// holding can join back to the project metadata.
 carbon.post('/credits', async (c) => {
   const user = getCurrentUser(c);
-  const { registry, project_name, methodology, vintage_year, amount_tonnes, price_cents } = await c.req.json();
-  
+  const body = await c.req.json().catch(() => ({} as Record<string, unknown>));
+  const project_id = (body.project_id as string) || (body.project_name as string);
+  const quantity = (body.quantity as number) ?? (body.amount_tonnes as number);
+  const credit_type = (body.credit_type as string) || 'VCU';
+  const vintage_year = body.vintage_year as number | undefined;
+  if (!project_id || quantity === undefined) {
+    return c.json({ success: false, error: 'project_id (or project_name) and quantity (or amount_tonnes) are required' }, 400);
+  }
   const id = 'cc_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
-  
   await c.env.DB.prepare(`
-    INSERT INTO carbon_credits (id, owner_id, registry, project_name, methodology, vintage_year, amount_tonnes, available_quantity, price_cents, status, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)
-  `).bind(id, user.id, registry, project_name, methodology, vintage_year, amount_tonnes, amount_tonnes, price_cents, new Date().toISOString(), new Date().toISOString()).run();
-  
+    INSERT INTO carbon_holdings (id, participant_id, project_id, credit_type, quantity, vintage_year, acquisition_date, cost_basis, status)
+    VALUES (?, ?, ?, ?, ?, ?, datetime('now'), ?, 'available')
+  `).bind(
+    id, user.id, project_id, credit_type, Number(quantity),
+    vintage_year ?? null,
+    (body.price_cents as number | undefined) ? Number(body.price_cents) / 100 : (body.cost_basis as number | undefined) ?? null,
+  ).run();
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -198,14 +213,18 @@ carbon.get('/fund/nav', async (c) => {
 
 // POST /carbon/fund/nav - Update NAV
 carbon.post('/fund/nav', async (c) => {
-  const { fund_id, nav_date, nav_per_unit, total_units, assets_under_management } = await c.req.json();
-  
+  const body = await c.req.json().catch(() => ({} as Record<string, unknown>));
+  const { fund_id, nav_date, nav_per_unit, total_units, assets_under_management } = body as {
+    fund_id?: string; nav_date?: string; nav_per_unit?: number; total_units?: number; assets_under_management?: number;
+  };
+  if (!fund_id || !nav_date || nav_per_unit === undefined) {
+    return c.json({ success: false, error: 'fund_id, nav_date and nav_per_unit are required' }, 400);
+  }
   const id = 'nf_' + Date.now().toString(36);
   await c.env.DB.prepare(`
     INSERT INTO carbon_fund_nav (id, fund_id, nav_date, total_units, nav_per_unit, assets_under_management, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).bind(id, fund_id, nav_date, total_units, nav_per_unit, assets_under_management, new Date().toISOString()).run();
-  
+  `).bind(id, fund_id, nav_date, total_units ?? null, nav_per_unit, assets_under_management ?? null, new Date().toISOString()).run();
   return c.json({ success: true, data: { id } }, 201);
 });
 

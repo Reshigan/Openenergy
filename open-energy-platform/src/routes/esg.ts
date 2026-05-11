@@ -26,17 +26,19 @@ esg.get('/data', async (c) => {
   return c.json({ success: true, data: data.results || [] });
 });
 
-// POST /esg/data - Add ESG data
+// POST /esg/data - Add ESG data (legacy endpoint; new code uses /esg/transactions)
 esg.post('/data', async (c) => {
   const user = getCurrentUser(c);
-  const { metric_id, reporting_period, value, quality_evidence } = await c.req.json();
-  
+  const body = await c.req.json().catch(() => ({} as Record<string, unknown>));
+  const { metric_id, reporting_period, value, quality_evidence } = body as { metric_id?: string; reporting_period?: string; value?: number; quality_evidence?: string };
+  if (!metric_id || !reporting_period || value === undefined) {
+    return c.json({ success: false, error: 'metric_id, reporting_period and value are required' }, 400);
+  }
   const id = 'esgd_' + Date.now().toString(36);
   await c.env.DB.prepare(`
     INSERT INTO esg_data (id, participant_id, metric_id, reporting_period, value, quality_evidence, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).bind(id, user.id, metric_id, reporting_period, value, quality_evidence, new Date().toISOString()).run();
-  
+  `).bind(id, user.id, metric_id, reporting_period, value, quality_evidence ?? null, new Date().toISOString()).run();
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -63,19 +65,20 @@ esg.get('/reports', async (c) => {
   return c.json({ success: true, data: reports.results || [] });
 });
 
-// POST /esg/reports - Create report
+// POST /esg/reports - Create report (legacy; new code uses /esg/disclosures)
 esg.post('/reports', async (c) => {
   const user = getCurrentUser(c);
-  const { report_type, reporting_period } = await c.req.json();
-  
+  const body = await c.req.json().catch(() => ({} as Record<string, unknown>));
+  const { report_type, reporting_period } = body as { report_type?: string; reporting_period?: string };
+  if (!report_type || !reporting_period) {
+    return c.json({ success: false, error: 'report_type and reporting_period are required' }, 400);
+  }
   const id = 'esgr_' + Date.now().toString(36);
   await c.env.DB.prepare(`
     INSERT INTO esg_reports (id, participant_id, report_type, reporting_period, status, created_at)
     VALUES (?, ?, ?, ?, 'draft', ?)
   `).bind(id, user.id, report_type, reporting_period, new Date().toISOString()).run();
-  
   await fireCascade({ event: 'esg.report_published', actor_id: user.id, entity_type: 'esg_reports', entity_id: id, data: { report_type, reporting_period }, env: c.env });
-  
   return c.json({ success: true, data: { id } }, 201);
 });
 
