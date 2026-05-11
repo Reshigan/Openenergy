@@ -6,6 +6,7 @@ import { useAuth } from './lib/useAuth';
 import { api } from './lib/api';
 import { FioriShell } from './components/FioriShell';
 import { LogoMark, LogoBanner } from './components/Logo';
+import { OEIcon, type IconName } from './components/OEIcon';
 
 // Import page components
 import { Cockpit } from './components/pages/Cockpit';
@@ -588,43 +589,16 @@ function LoginPage() {
           <div className="mt-6 flex items-center gap-3">
             <div className="flex-1 h-px" style={{ background: '#c5cdd6' }} />
             <span className="text-[11px] uppercase tracking-widest font-mono" style={{ color: '#6b7685' }}>
-              or use a demo account
+              or sign in as a demo persona
             </span>
             <div className="flex-1 h-px" style={{ background: '#c5cdd6' }} />
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {[
-              { label: 'Admin',         email: 'admin@openenergy.co.za',     tint: 'forest'  },
-              { label: 'Trader',        email: 'trader@openenergy.co.za',    tint: 'info'    },
-              { label: 'IPP Developer', email: 'ipp@openenergy.co.za',       tint: 'forest'  },
-              { label: 'Carbon Fund',   email: 'carbon@openenergy.co.za',    tint: 'good'    },
-              { label: 'Offtaker',      email: 'offtaker@openenergy.co.za',  tint: 'amber'   },
-              { label: 'Grid Operator', email: 'grid@openenergy.co.za',      tint: 'critical'},
-            ].map((r) => (
-              <button
-                key={r.email}
-                type="button"
-                onClick={() => fillDemo(r.email)}
-                className="flex items-center justify-between gap-2 h-10 px-3 rounded text-[13px] font-semibold border transition-all hover:-translate-y-0.5"
-                style={{
-                  background: '#ffffff',
-                  borderColor: '#c5cdd6',
-                  color: '#0f1c2e',
-                  boxShadow: '0 1px 2px rgba(25,28,24,0.04)',
-                }}
-              >
-                <span className="flex items-center gap-2">
-                  <span className={`fiori-chip ${r.tint}`} style={{ height: 18, padding: '0 6px', fontSize: 10 }}>
-                    {r.label}
-                  </span>
-                </span>
-                <span style={{ color: '#6b7685', fontWeight: 500 }} className="truncate text-[11px] font-mono">
-                  {r.email.split('@')[0]}
-                </span>
-              </button>
-            ))}
-          </div>
+          <DemoPersonaGrid onPick={fillDemo} />
+
+          <p className="mt-4 text-center text-[11px]" style={{ color: '#6b7685' }}>
+            All demo accounts use the same password · <code className="font-mono text-[#1a3a5c]">Demo@2024!</code>
+          </p>
 
           <p className="mt-6 text-center text-[13px]" style={{ color: '#3d4756' }}>
             Don't have an account?{' '}
@@ -663,6 +637,89 @@ function FeatureBadge({
         <Icon size={16} />
       </div>
       <span className="text-[13px] font-semibold text-white/90">{label}</span>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+ * DemoPersonaGrid — the row of one-click demo accounts on the login page
+ *
+ * Every seeded demo participant gets a tile here so reviewers can sign in
+ * as any role without remembering the email. Tiles render with the custom
+ * OE icon set; no stock library is used. The full set covers all 9 demo
+ * personas from migration 003_seed.sql — including the two IPP variants
+ * (solar generator + wind generator).
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+interface Persona {
+  email: string;
+  label: string;
+  subtitle: string;
+  icon: IconName;
+  accent: string;   // hex used for the icon background + border accent
+  group: 'Producers' | 'Markets' | 'Capital' | 'Network' | 'Oversight';
+}
+
+const PERSONAS: Persona[] = [
+  // Producers — solar + wind IPPs
+  { email: 'ipp@openenergy.co.za',       label: 'Solar Generator', subtitle: 'RenewCo Solar (Pty) Ltd',          icon: 'sun',      accent: '#c97a14', group: 'Producers' },
+  { email: 'wind@openenergy.co.za',      label: 'Wind Generator',  subtitle: 'WindCapital (Pty) Ltd',            icon: 'wind',     accent: '#1f9b95', group: 'Producers' },
+  // Markets — trader, carbon fund
+  { email: 'trader@openenergy.co.za',    label: 'Trader',          subtitle: 'Mkhize Energy Traders',            icon: 'trending-up', accent: '#3b82c4', group: 'Markets' },
+  { email: 'carbon@openenergy.co.za',    label: 'Carbon Fund',     subtitle: 'GreenFunds Carbon Fund',           icon: 'leaf',     accent: '#1a8a5b', group: 'Markets' },
+  { email: 'offtaker@openenergy.co.za',  label: 'Offtaker',        subtitle: 'City Energy Municipality',         icon: 'building', accent: '#5d3a7e', group: 'Markets' },
+  // Capital
+  { email: 'lender@openenergy.co.za',    label: 'Lender',          subtitle: 'Infrastructure Capital Partners',  icon: 'piggy-bank', accent: '#a8385c', group: 'Capital' },
+  // Network
+  { email: 'grid@openenergy.co.za',      label: 'Grid Operator',   subtitle: 'Eskom Holdings',                   icon: 'gridmap',  accent: '#1a3a5c', group: 'Network' },
+  // Oversight
+  { email: 'regulator@openenergy.co.za', label: 'Regulator',       subtitle: 'NERSA / Energy Research Institute', icon: 'shield',  accent: '#0e6d68', group: 'Oversight' },
+  { email: 'admin@openenergy.co.za',     label: 'Platform Admin',  subtitle: 'Open Energy Platform',             icon: 'settings', accent: '#0f2540', group: 'Oversight' },
+];
+
+const GROUP_ORDER: Persona['group'][] = ['Producers', 'Markets', 'Capital', 'Network', 'Oversight'];
+
+function DemoPersonaGrid({ onPick }: { onPick: (email: string) => void }) {
+  const groups = GROUP_ORDER
+    .map((g) => ({ name: g, items: PERSONAS.filter((p) => p.group === g) }))
+    .filter((g) => g.items.length > 0);
+
+  return (
+    <div className="mt-4 space-y-4">
+      {groups.map((g) => (
+        <div key={g.name}>
+          <div className="text-[10px] uppercase tracking-[0.1em] font-bold mb-1.5" style={{ color: '#6b7685' }}>
+            {g.name}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {g.items.map((p) => (
+              <button
+                key={p.email}
+                type="button"
+                onClick={() => onPick(p.email)}
+                aria-label={`Use ${p.label} demo account`}
+                className="group flex items-center gap-2.5 px-2.5 py-2 rounded-md text-left transition-all hover:-translate-y-0.5"
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #c5cdd6',
+                  boxShadow: '0 1px 2px rgba(15,28,46,0.04)',
+                }}
+              >
+                <span
+                  className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform"
+                  style={{ background: `${p.accent}1a`, color: p.accent }}
+                >
+                  <OEIcon name={p.icon} size={16} />
+                </span>
+                <span className="min-w-0 flex-1 leading-tight">
+                  <span className="block text-[12px] font-semibold truncate" style={{ color: '#0f1c2e' }}>{p.label}</span>
+                  <span className="block text-[10px] font-mono truncate" style={{ color: '#6b7685' }}>{p.email.split('@')[0]}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
