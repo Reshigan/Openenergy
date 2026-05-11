@@ -1,5 +1,6 @@
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
+import { platformTabs } from '../platformTabs';
 
 export function TraderRiskPage() {
   const tabs: TabSpec[] = [
@@ -210,6 +211,7 @@ export function TraderRiskPage() {
         ],
       },
     },
+    ...platformTabs('trading'),
   ];
   return (
     <SuitePage

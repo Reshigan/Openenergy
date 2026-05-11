@@ -1,5 +1,6 @@
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
+import { platformTabs } from '../platformTabs';
 
 const instructionTypes = [
   { value: 'curtail', label: 'Curtail' },
@@ -354,6 +355,7 @@ export function GridOperatorSuitePage() {
         },
       ],
     },
+    ...platformTabs('grid'),
   ];
 
   return (

@@ -1,5 +1,6 @@
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
+import { platformTabs } from '../platformTabs';
 
 export function CarbonRegistryPage() {
   const tabs: TabSpec[] = [
@@ -170,6 +171,7 @@ export function CarbonRegistryPage() {
         },
       ],
     },
+    ...platformTabs('trading'),
   ];
   return (
     <SuitePage

@@ -1,5 +1,6 @@
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
+import { platformTabs } from '../platformTabs';
 
 export function OfftakerSuitePage() {
   const tabs: TabSpec[] = [
@@ -205,6 +206,7 @@ export function OfftakerSuitePage() {
         ],
       },
     },
+    ...platformTabs('offtaker_demand'),
   ];
   return (
     <SuitePage

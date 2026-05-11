@@ -1,5 +1,6 @@
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
+import { platformTabs } from '../platformTabs';
 
 export function IppLifecyclePage() {
   const tabs: TabSpec[] = [
@@ -325,6 +326,7 @@ export function IppLifecyclePage() {
         ],
       },
     },
+    ...platformTabs('ipp_project'),
   ];
   return (
     <SuitePage

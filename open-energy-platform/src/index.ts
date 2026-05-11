@@ -22,6 +22,7 @@ import carbonRoutes from './routes/carbon';
 import esgRoutes from './routes/esg';
 import esgReportsRoutes from './routes/esg-reports';
 import watershedRoutes, { cpPortal as counterpartyPortalRoutes } from './routes/watershed';
+import platformRoutes from './routes/platform';
 import gridRoutes from './routes/grid';
 import procurementRoutes from './routes/procurement';
 import dealroomRoutes from './routes/dealroom';
@@ -181,6 +182,10 @@ app.route('/api/watershed', watershedRoutes);
 // Mounted outside watershedRoutes so its blanket authMiddleware does not
 // apply to /api/portal/counterparty/:token.
 app.route('/api/portal', counterpartyPortalRoutes);
+// Platform-wide cross-module infrastructure (AI classifier, scenarios,
+// audit chain, anomaly detection) — promotes Watershed primitives to all
+// modules so each role's UI tab can use the same building blocks.
+app.route('/api/platform', platformRoutes);
 app.route('/api/grid', gridRoutes);
 app.route('/api/procurement', procurementRoutes);
 app.route('/api/dealroom', dealroomRoutes);
