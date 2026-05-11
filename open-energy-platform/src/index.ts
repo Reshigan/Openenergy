@@ -21,7 +21,7 @@ import settlementRoutes from './routes/settlement';
 import carbonRoutes from './routes/carbon';
 import esgRoutes from './routes/esg';
 import esgReportsRoutes from './routes/esg-reports';
-import watershedRoutes from './routes/watershed';
+import watershedRoutes, { cpPortal as counterpartyPortalRoutes } from './routes/watershed';
 import gridRoutes from './routes/grid';
 import procurementRoutes from './routes/procurement';
 import dealroomRoutes from './routes/dealroom';
@@ -177,6 +177,10 @@ app.route('/api/carbon', carbonRoutes);
 app.route('/api/esg', esgRoutes);
 app.route('/api/esg-reports', esgReportsRoutes);
 app.route('/api/watershed', watershedRoutes);
+// Public counterparty data-collection portal — uses share_token, no JWT.
+// Mounted outside watershedRoutes so its blanket authMiddleware does not
+// apply to /api/portal/counterparty/:token.
+app.route('/api/portal', counterpartyPortalRoutes);
 app.route('/api/grid', gridRoutes);
 app.route('/api/procurement', procurementRoutes);
 app.route('/api/dealroom', dealroomRoutes);
@@ -555,6 +559,102 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
             `mc_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
             row.pid, row.exposure, im, posted, shortfall, dueBy,
           ).run();
+        }
+      });
+      break;
+
+    case '45 0 * * *':
+      // Watershed nightly: anomaly scan + maturity refresh per tenant participant.
+      await safe('watershed_anomaly_scan', async () => {
+        const parts = await env.DB.prepare(`SELECT DISTINCT participant_id FROM esg_activity_transactions LIMIT 200`).all<{ participant_id: string }>();
+        for (const p of (parts.results || [])) {
+          // Spike rule
+          const spikes = await env.DB.prepare(`
+            WITH monthly AS (
+              SELECT id, activity_code, substr(activity_date, 1, 7) AS ym, emissions_kg_co2e
+              FROM esg_activity_transactions WHERE participant_id = ?
+            )
+            SELECT m.id, m.ym, m.emissions_kg_co2e AS emissions,
+                   (SELECT AVG(m2.emissions_kg_co2e) FROM monthly m2 WHERE m2.activity_code = m.activity_code AND m2.ym < m.ym) AS prior_avg
+            FROM monthly m
+          `).bind(p.participant_id).all<{ id: string; ym: string; emissions: number; prior_avg: number }>();
+          for (const row of (spikes.results || [])) {
+            if (row.prior_avg && row.emissions > row.prior_avg * 4) {
+              await env.DB.prepare(`
+                INSERT OR IGNORE INTO esg_anomaly_flags (id, transaction_id, participant_id, rule, severity, detail, expected_value, observed_value)
+                VALUES (?, ?, ?, 'spike_30d', 'high', ?, ?, ?)
+              `).bind(
+                `anf_cron_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
+                row.id, p.participant_id, `Cron-detected spike vs ${row.ym} prior-month avg`, row.prior_avg, row.emissions,
+              ).run();
+            }
+          }
+        }
+      });
+
+      await safe('watershed_maturity_refresh', async () => {
+        const year = new Date().getFullYear();
+        const parts = await env.DB.prepare(`SELECT id FROM participants WHERE status = 'active' LIMIT 200`).all<{ id: string }>();
+        for (const p of (parts.results || [])) {
+          // Re-compute using same heuristic as POST /api/watershed/maturity/score
+          const txByScope = await env.DB.prepare(
+            `SELECT scope, COUNT(*) AS n FROM esg_activity_transactions WHERE participant_id = ? AND substr(activity_date, 1, 4) = ? GROUP BY scope`,
+          ).bind(p.id, String(year)).all<{ scope: number; n: number }>();
+          const scopes = new Set((txByScope.results || []).map(r => r.scope));
+          let measurement = (scopes.has(1) ? 30 : 0) + (scopes.has(2) ? 30 : 0) + (scopes.has(3) ? 40 : 0);
+          const disc = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM esg_disclosures WHERE participant_id = ?`).bind(p.id).first<{ n: number }>())?.n || 0;
+          const tgt = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM esg_targets WHERE participant_id = ?`).bind(p.id).first<{ n: number }>())?.n || 0;
+          const init = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM esg_initiatives WHERE participant_id = ? AND status = 'completed'`).bind(p.id).first<{ n: number }>())?.n || 0;
+          const jur = (await env.DB.prepare(`SELECT COUNT(DISTINCT jurisdiction) AS n FROM disclosure_submissions WHERE participant_id = ? AND status IN ('submitted','accepted')`).bind(p.id).first<{ n: number }>())?.n || 0;
+          const governance = Math.min(100, disc * 25);
+          const target = Math.min(100, tgt * 30);
+          const action = Math.min(100, init * 20);
+          const disclosure = Math.min(100, jur * 20);
+          const overall = (measurement * 0.25) + (governance * 0.15) + (target * 0.20) + (action * 0.25) + (disclosure * 0.15);
+          const band = overall >= 80 ? 'leader' : overall >= 60 ? 'advanced' : overall >= 40 ? 'intermediate' : overall >= 20 ? 'beginner' : 'starter';
+          await env.DB.prepare(`
+            INSERT INTO climate_maturity_assessments (id, participant_id, reporting_year, measurement_score, governance_score, target_score, action_score, disclosure_score, overall_score, band, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            `mat_cron_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
+            p.id, year, measurement, governance, target, action, disclosure, overall, band,
+            'Nightly cron refresh',
+          ).run();
+        }
+      });
+
+      await safe('watershed_cfe_monthly_rollup', async () => {
+        // Roll up the prior month's hourly load/gen into cfe_match_summary
+        // for any participant with hourly data.
+        const monthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+        const monthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59).toISOString();
+        const parts = await env.DB.prepare(
+          `SELECT DISTINCT participant_id FROM cfe_hourly_load WHERE hour_utc >= ? AND hour_utc <= ? LIMIT 200`,
+        ).bind(monthStart, monthEnd).all<{ participant_id: string }>();
+        for (const p of (parts.results || [])) {
+          const load = await env.DB.prepare(
+            `SELECT hour_utc, SUM(load_kwh) AS l FROM cfe_hourly_load WHERE participant_id = ? AND hour_utc >= ? AND hour_utc <= ? GROUP BY hour_utc`,
+          ).bind(p.participant_id, monthStart, monthEnd).all<{ hour_utc: string; l: number }>();
+          const gen = await env.DB.prepare(
+            `SELECT hour_utc, SUM(generation_kwh) AS g FROM cfe_hourly_generation WHERE participant_id = ? AND hour_utc >= ? AND hour_utc <= ? GROUP BY hour_utc`,
+          ).bind(p.participant_id, monthStart, monthEnd).all<{ hour_utc: string; g: number }>();
+          const lm = new Map<string, number>(); for (const r of load.results || []) lm.set(r.hour_utc, r.l || 0);
+          const gm = new Map<string, number>(); for (const r of gen.results || []) gm.set(r.hour_utc, r.g || 0);
+          let totalL = 0, totalCF = 0, full = 0, zero = 0;
+          for (const [h, l] of lm) {
+            const g = gm.get(h) || 0;
+            totalL += l; totalCF += Math.min(l, g);
+            if (g >= l && l > 0) full++;
+            if (g === 0) zero++;
+          }
+          if (totalL <= 0) continue;
+          const matchPct = (totalCF / totalL) * 100;
+          const gridK = 0.92;
+          const avoided = (totalCF * gridK) / 1000;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO cfe_match_summary (participant_id, reporting_period_start, reporting_period_end, total_load_kwh, total_carbon_free_kwh, cfe_match_pct, hours_with_full_match, hours_with_zero_match, avg_grid_intensity_kg_kwh, emissions_avoided_tco2e)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(p.participant_id, monthStart, monthEnd, totalL, totalCF, matchPct, full, zero, gridK, avoided).run();
         }
       });
       break;

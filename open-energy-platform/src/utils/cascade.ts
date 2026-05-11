@@ -91,7 +91,14 @@ export type EventType =
   | 'assurance.engagement_opened' | 'assurance.finding_raised' | 'assurance.opinion_issued'
   | 'maturity.assessed'
   | 'anomaly.detected'
-  | 'disclosure.jurisdiction_filed';
+  | 'disclosure.jurisdiction_filed'
+  // ─── Watershed advanced (migration 042) ───────────────────────────────
+  | 'pcaf.insurance_recorded'
+  | 'pcaf.counterparty_data_request_sent' | 'pcaf.counterparty_data_submitted'
+  | 'scenario.run_completed'
+  | 'ai.classification_logged'
+  | 'audit_chain.appended'
+  | 'rec_market.listed' | 'rec_market.traded';
 
 interface CascadeContext {
   event: EventType;

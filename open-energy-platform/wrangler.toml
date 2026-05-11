@@ -103,5 +103,6 @@ crons = [
   "5 0 * * *",      # 00:05 daily: metering rollup, ONA rollup, audit archive prep
   "10 0 * * *",     # 00:10 daily: settlement run for previous day
   "30 0 * * *",     # 00:30 daily: usage snapshot, margin call run
+  "45 0 * * *",     # 00:45 daily: watershed anomaly scan + maturity refresh
   "0 2 1 * *"       # 02:00 on day 1 of month: platform invoice run
 ]

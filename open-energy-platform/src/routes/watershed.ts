@@ -914,4 +914,530 @@ watershed.get('/overview', async (c) => {
   });
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Advanced features (migration 042)
+//
+//   11. PCAF Part C — Insurance-associated emissions
+//   12. NGFS scenario analysis
+//   13. Counterparty data-collection portal
+//   14. AI carbon-accountant classifier
+//   15. Marginal abatement cost (MACC) curve data
+//   16. Sectoral pathway library
+//   17. Hash-chain immutable audit trail
+//   18. Hourly REC marketplace
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── 11. PCAF Part C — Insurance-associated emissions ──────────────────
+
+watershed.get('/pcaf/insurance', async (c) => {
+  const user = getCurrentUser(c);
+  const year = c.req.query('year');
+  let sql = `SELECT * FROM pcaf_insurance_emissions WHERE participant_id = ?`;
+  const binds: any[] = [user.id];
+  if (year) { sql += ` AND reporting_year = ?`; binds.push(Number(year)); }
+  sql += ` ORDER BY reporting_year DESC, insurance_associated_tco2e DESC`;
+  const r = await c.env.DB.prepare(sql).bind(...binds).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+
+watershed.post('/pcaf/insurance', async (c) => {
+  const user = getCurrentUser(c);
+  const body = await c.req.json().catch(() => ({} as any));
+  const {
+    reporting_year, line_of_business, insured_name, insured_country, insured_sector_nace,
+    policy_reference, premium_zar, attribution_method, insured_revenue_zar,
+    insured_scope1_tco2e, insured_scope2_tco2e, insured_scope3_tco2e,
+    emissions_data_source, pcaf_data_quality_score, notes,
+  } = body;
+  if (!reporting_year || !line_of_business || !insured_name || premium_zar === undefined) {
+    return c.json({ success: false, error: 'reporting_year, line_of_business, insured_name, premium_zar required' }, 400);
+  }
+  // PCAF Part C: attribution = premium / customer_revenue (or revenue-minus-claims).
+  const method = attribution_method || 'premium_to_revenue';
+  const denom = insured_revenue_zar || premium_zar;
+  const attrib = denom > 0 ? premium_zar / denom : 1;
+  const totalIssuer = (insured_scope1_tco2e || 0) + (insured_scope2_tco2e || 0) + (insured_scope3_tco2e || 0);
+  const associated = totalIssuer * attrib;
+
+  const id = rid('pcafi');
+  await c.env.DB.prepare(`
+    INSERT INTO pcaf_insurance_emissions (id, participant_id, reporting_year, line_of_business,
+      insured_name, insured_country, insured_sector_nace, policy_reference, premium_zar,
+      attribution_method, insured_revenue_zar, insured_scope1_tco2e, insured_scope2_tco2e,
+      insured_scope3_tco2e, emissions_data_source, pcaf_data_quality_score, attribution_factor,
+      insurance_associated_tco2e, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    id, user.id, reporting_year, line_of_business, insured_name, insured_country ?? null,
+    insured_sector_nace ?? null, policy_reference ?? null, premium_zar, method,
+    insured_revenue_zar ?? null, insured_scope1_tco2e ?? null, insured_scope2_tco2e ?? null,
+    insured_scope3_tco2e ?? null, emissions_data_source ?? null, pcaf_data_quality_score ?? null,
+    attrib, associated, notes ?? null,
+  ).run();
+  return c.json({ success: true, data: { id, attribution_factor: attrib, insurance_associated_tco2e: associated } }, 201);
+});
+
+// ─── 12. NGFS scenario analysis ────────────────────────────────────────
+
+watershed.get('/scenarios', async (c) => {
+  const r = await c.env.DB.prepare(`SELECT * FROM climate_scenarios ORDER BY family, temperature_2100_c`).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+
+watershed.get('/scenarios/runs', async (c) => {
+  const user = getCurrentUser(c);
+  const r = await c.env.DB.prepare(
+    `SELECT sr.*, cs.name AS scenario_name, cs.family
+     FROM scenario_runs sr
+     JOIN climate_scenarios cs ON cs.code = sr.scenario_code
+     WHERE sr.participant_id = ?
+     ORDER BY sr.computed_at DESC LIMIT 50`
+  ).bind(user.id).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+
+watershed.post('/scenarios/run', async (c) => {
+  const user = getCurrentUser(c);
+  const body = await c.req.json().catch(() => ({} as any));
+  const { scenario_code, horizon_years } = body;
+  if (!scenario_code) return c.json({ success: false, error: 'scenario_code required' }, 400);
+
+  const scenario = await c.env.DB.prepare(`SELECT * FROM climate_scenarios WHERE code = ?`).bind(scenario_code).first<any>();
+  if (!scenario) return c.json({ success: false, error: 'scenario not found' }, 404);
+
+  const horizon = horizon_years || 10;
+  const baseYear = new Date().getFullYear();
+  const targetYear = baseYear + horizon;
+
+  // Pull current PCAF portfolio totals by sector
+  const portfolio = await c.env.DB.prepare(`
+    SELECT counterparty_sector_nace AS sector,
+           COALESCE(SUM(outstanding_amount_zar), 0) AS exposure_zar,
+           COALESCE(SUM(financed_total_tco2e), 0) AS emissions_tco2e
+    FROM pcaf_financed_emissions
+    WHERE participant_id = ? AND reporting_year = ?
+    GROUP BY counterparty_sector_nace
+  `).bind(user.id, baseYear).all<any>();
+
+  let baseEmissions = 0, targetEmissions = 0, atRisk = 0, financialVar = 0;
+  const sectorImpacts: any[] = [];
+  let worstSector: string | null = null, worstVar = 0;
+
+  // Scenario-driven impact factors (qualitative coarse-grain). Watershed
+  // would use more sophisticated bottom-up sectoral pathways; this is a
+  // reasonable approximation built on the seeded pathway library.
+  const transitionMultiplier: Record<string, number> = {
+    very_high: 0.40, high: 0.25, medium: 0.12, low: 0.04,
+  };
+  const tmult = transitionMultiplier[scenario.transition_risk] || 0.10;
+  const carbonPrice2030 = scenario.carbon_price_2030_usd || 50;
+
+  for (const row of (portfolio.results || [])) {
+    baseEmissions += row.emissions_tco2e;
+    // Apply NZE-style trajectory: linear decline toward 2050 net-zero (~80% reduction by 2050).
+    const yearsToHorizon = horizon;
+    const reductionPct = Math.min(0.80, yearsToHorizon * 0.025);  // 2.5%/yr typical NZE decline
+    const projected = row.emissions_tco2e * (1 - reductionPct);
+    targetEmissions += projected;
+
+    // Emissions-at-risk: difference if transition is disorderly.
+    const sectorRisk = row.emissions_tco2e * tmult;
+    atRisk += sectorRisk;
+
+    // Financial VaR: exposure × carbon price × emissions ratio.
+    const sectorVar = row.exposure_zar * tmult * (carbonPrice2030 / 100) / 1000;
+    financialVar += sectorVar;
+    if (sectorVar > worstVar) { worstVar = sectorVar; worstSector = row.sector; }
+
+    sectorImpacts.push({
+      sector: row.sector || 'unclassified',
+      exposure_zar: row.exposure_zar,
+      base_emissions_tco2e: row.emissions_tco2e,
+      target_emissions_tco2e: projected,
+      emissions_at_risk_tco2e: sectorRisk,
+      financial_var_zar: sectorVar,
+    });
+  }
+
+  const id = rid('scen');
+  await c.env.DB.prepare(`
+    INSERT INTO scenario_runs (id, participant_id, scenario_code, horizon_years, base_year,
+      portfolio_emissions_base_tco2e, portfolio_emissions_target_tco2e, emissions_at_risk_tco2e,
+      financial_value_at_risk_zar, worst_sector_nace, worst_sector_var_zar, sector_impacts_json, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'complete')
+  `).bind(
+    id, user.id, scenario_code, horizon, baseYear,
+    baseEmissions, targetEmissions, atRisk, financialVar,
+    worstSector, worstVar, JSON.stringify(sectorImpacts),
+  ).run();
+
+  return c.json({
+    success: true,
+    data: {
+      id, scenario_code, horizon_years: horizon, base_year: baseYear, target_year: targetYear,
+      portfolio_emissions_base_tco2e: baseEmissions,
+      portfolio_emissions_target_tco2e: targetEmissions,
+      emissions_at_risk_tco2e: atRisk,
+      financial_value_at_risk_zar: financialVar,
+      worst_sector_nace: worstSector,
+      worst_sector_var_zar: worstVar,
+      sector_impacts: sectorImpacts,
+    },
+  }, 201);
+});
+
+// ─── 13. Counterparty data-collection portal ───────────────────────────
+
+watershed.get('/counterparties/requests', async (c) => {
+  const user = getCurrentUser(c);
+  const r = await c.env.DB.prepare(`
+    SELECT r.*, s.scope1_tco2e AS submitted_scope1, s.scope2_tco2e AS submitted_scope2,
+           s.scope3_tco2e AS submitted_scope3, s.submitted_at
+    FROM counterparty_data_requests r
+    LEFT JOIN counterparty_submissions s ON s.request_id = r.id
+    WHERE r.requestor_id = ?
+    ORDER BY r.created_at DESC
+  `).bind(user.id).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+
+watershed.post('/counterparties/requests', async (c) => {
+  const user = getCurrentUser(c);
+  const body = await c.req.json().catch(() => ({} as any));
+  const { counterparty_name, counterparty_email, reporting_year, scope_requested, asset_class, exposure_zar, notes } = body;
+  if (!counterparty_name || !reporting_year || !scope_requested) {
+    return c.json({ success: false, error: 'counterparty_name, reporting_year, scope_requested required' }, 400);
+  }
+  const id = rid('cpreq');
+  // Random URL-safe token; client builds share link with this.
+  const token = Array.from(crypto.getRandomValues(new Uint8Array(24)))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+  const expiresAt = new Date(Date.now() + 30 * 86_400_000).toISOString();
+  await c.env.DB.prepare(`
+    INSERT INTO counterparty_data_requests (id, requestor_id, counterparty_name, counterparty_email,
+      share_token, reporting_year, scope_requested, asset_class, exposure_zar, sent_at, expires_at, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'sent', ?)
+  `).bind(id, user.id, counterparty_name, counterparty_email ?? null, token, reporting_year,
+    scope_requested, asset_class ?? null, exposure_zar ?? null,
+    new Date().toISOString(), expiresAt, notes ?? null).run();
+  await fireCascade({
+    event: 'pcaf.counterparty_data_request_sent' as any,
+    actor_id: user.id, entity_type: 'counterparty_data_requests', entity_id: id,
+    data: { counterparty_name, share_token: token }, env: c.env,
+  }).catch(() => {});
+  return c.json({ success: true, data: { id, share_token: token, share_url: `/portal/counterparty/${token}`, expires_at: expiresAt } }, 201);
+});
+
+// PUBLIC endpoint — uses share_token, not JWT. Exported separately and
+// mounted at /api/portal/* in src/index.ts so the blanket authMiddleware
+// inside `watershed` doesn't shadow it.
+export const cpPortal = new Hono<HonoEnv>();
+
+cpPortal.get('/counterparty/:token', async (c) => {
+  const { token } = c.req.param();
+  const r = await c.env.DB.prepare(`
+    SELECT id, counterparty_name, reporting_year, scope_requested, asset_class,
+           status, expires_at FROM counterparty_data_requests WHERE share_token = ?
+  `).bind(token).first<any>();
+  if (!r) return c.json({ success: false, error: 'invalid or expired token' }, 404);
+  if (r.expires_at && new Date(r.expires_at) < new Date()) {
+    return c.json({ success: false, error: 'token expired' }, 410);
+  }
+  // Mark as viewed if first view
+  if (r.status === 'sent') {
+    await c.env.DB.prepare(`UPDATE counterparty_data_requests SET status = 'viewed' WHERE id = ?`).bind(r.id).run();
+  }
+  return c.json({ success: true, data: r });
+});
+
+cpPortal.post('/counterparty/:token/submit', async (c) => {
+  const { token } = c.req.param();
+  const body = await c.req.json().catch(() => ({} as any));
+  const req = await c.env.DB.prepare(`SELECT id, status, expires_at FROM counterparty_data_requests WHERE share_token = ?`).bind(token).first<any>();
+  if (!req) return c.json({ success: false, error: 'invalid token' }, 404);
+  if (req.expires_at && new Date(req.expires_at) < new Date()) {
+    return c.json({ success: false, error: 'token expired' }, 410);
+  }
+  const subId = rid('cpsub');
+  const ip = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || null;
+  const ua = c.req.header('user-agent') || null;
+  await c.env.DB.prepare(`
+    INSERT INTO counterparty_submissions (id, request_id, submitter_email, submitter_role,
+      revenue_zar, evic_zar, scope1_tco2e, scope2_tco2e, scope3_tco2e, reporting_standard,
+      assurance_provider, assurance_level, attestation, ip_address, user_agent)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(subId, req.id, body.submitter_email ?? null, body.submitter_role ?? null,
+    body.revenue_zar ?? null, body.evic_zar ?? null,
+    body.scope1_tco2e ?? null, body.scope2_tco2e ?? null, body.scope3_tco2e ?? null,
+    body.reporting_standard ?? null, body.assurance_provider ?? null,
+    body.assurance_level ?? null, body.attestation ?? null, ip, ua).run();
+  await c.env.DB.prepare(`UPDATE counterparty_data_requests SET status = 'submitted' WHERE id = ?`).bind(req.id).run();
+  return c.json({ success: true, data: { submission_id: subId } }, 201);
+});
+
+// ─── 14. AI carbon-accountant classifier ───────────────────────────────
+
+watershed.post('/ai/classify', async (c) => {
+  const user = getCurrentUser(c);
+  const body = await c.req.json().catch(() => ({} as any));
+  const { description, amount, unit } = body;
+  if (!description) return c.json({ success: false, error: 'description required' }, 400);
+
+  // esg_emission_factors stores the rate in `factor` (per unit_in → kgCO2e)
+  // and the input unit in `unit_in`.
+  const factors = await c.env.DB.prepare(
+    `SELECT activity_code, factor, unit_in, source, scope, scope3_category FROM esg_emission_factors LIMIT 200`
+  ).all<any>();
+  const factorList = (factors.results || []).map(f =>
+    `${f.activity_code} (scope ${f.scope}${f.scope3_category ? ', cat ' + f.scope3_category : ''}, ${f.unit_in})`).slice(0, 80).join('\n');
+
+  // Compose prompt
+  const prompt = `You are a GHG carbon accountant. Given the spend description below, choose the best activity_code from the allowed list. Reply ONLY with a JSON object: {"activity_code": "...", "scope": 1|2|3, "scope3_category": int|null, "confidence": 0-1, "reasoning": "one sentence", "alternatives": ["code2","code3"]}.
+
+DESCRIPTION: ${description}
+AMOUNT: ${amount ?? 'unknown'} ${unit ?? ''}
+
+ALLOWED ACTIVITY CODES:
+${factorList}`;
+
+  let aiOut: any = null, modelId = '@cf/meta/llama-3.1-8b-instruct';
+  try {
+    const ai: any = c.env.AI;
+    const resp: any = await ai.run(modelId, { messages: [
+      { role: 'system', content: 'You are a precise GHG accounting assistant. Reply only with valid JSON.' },
+      { role: 'user', content: prompt },
+    ] });
+    const txt = String(resp?.response || resp?.result || resp || '').trim();
+    const m = txt.match(/\{[\s\S]*\}/);
+    if (m) aiOut = JSON.parse(m[0]);
+  } catch (e: any) {
+    // AI binding may be unavailable — fall back to regex spend-hints.
+    aiOut = null;
+  }
+
+  if (!aiOut) {
+    // Regex fallback using spend_category_hints.
+    const hints = await c.env.DB.prepare(`SELECT * FROM spend_category_hints`).all<any>();
+    const d = description.toLowerCase();
+    let best: any = null;
+    for (const h of (hints.results || [])) {
+      let hit = false;
+      try {
+        if (h.pattern_type === 'exact') hit = d === String(h.pattern).toLowerCase();
+        else if (h.pattern_type === 'regex') hit = new RegExp(h.pattern, 'i').test(d);
+        else hit = d.includes(String(h.pattern).toLowerCase());
+      } catch { /* invalid regex */ }
+      if (hit && (!best || h.confidence > best.confidence)) {
+        best = { activity_code: h.suggested_activity_code, scope: h.suggested_scope, scope3_category: h.suggested_scope3_category, confidence: h.confidence };
+      }
+    }
+    aiOut = best
+      ? { ...best, reasoning: 'Matched regex spend-hint (AI fallback).', alternatives: [] }
+      : { activity_code: 'spend.services.zar', scope: 3, scope3_category: 1, confidence: 0.3, reasoning: 'No strong match — defaulted to generic purchased services.', alternatives: [] };
+    modelId = 'regex-fallback';
+  }
+
+  const id = rid('aicls');
+  await c.env.DB.prepare(`
+    INSERT INTO ai_classification_logs (id, participant_id, input_text, input_amount, input_unit,
+      model_id, suggested_activity_code, suggested_scope, suggested_scope3_category,
+      confidence, reasoning, alternatives_json)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, description, amount ?? null, unit ?? null, modelId,
+    aiOut.activity_code ?? null, aiOut.scope ?? null, aiOut.scope3_category ?? null,
+    aiOut.confidence ?? null, aiOut.reasoning ?? null,
+    JSON.stringify(aiOut.alternatives || [])).run();
+
+  return c.json({ success: true, data: { id, model_id: modelId, ...aiOut } });
+});
+
+watershed.patch('/ai/classify/:id', async (c) => {
+  const { id } = c.req.param();
+  const body = await c.req.json().catch(() => ({} as any));
+  await c.env.DB.prepare(`
+    UPDATE ai_classification_logs
+    SET user_accepted = ?, user_override_code = ?, resolved_at = datetime('now')
+    WHERE id = ?
+  `).bind(body.accepted ? 1 : 0, body.override_code ?? null, id).run();
+  return c.json({ success: true });
+});
+
+watershed.get('/ai/classify', async (c) => {
+  const user = getCurrentUser(c);
+  const r = await c.env.DB.prepare(
+    `SELECT * FROM ai_classification_logs WHERE participant_id = ? ORDER BY created_at DESC LIMIT 100`
+  ).bind(user.id).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+
+// ─── 15. Marginal abatement cost curve ─────────────────────────────────
+
+watershed.get('/macc', async (c) => {
+  const user = getCurrentUser(c);
+  // Reads from existing esg_initiatives + esg_decarbonisation tables and
+  // returns a chart-ready MACC: sorted ascending by cost per tCO2e.
+  const r = await c.env.DB.prepare(`
+    SELECT id, name, category,
+           abatement_tco2e_yr, capex_zar, opex_zar_yr, lifetime_years,
+           marginal_abatement_cost_zar_tco2e, status
+    FROM esg_initiatives
+    WHERE participant_id = ? AND abatement_tco2e_yr IS NOT NULL
+    ORDER BY marginal_abatement_cost_zar_tco2e ASC, abatement_tco2e_yr DESC
+  `).bind(user.id).all<any>();
+
+  // Compute cumulative abatement so the chart can render width = abatement.
+  let cum = 0;
+  const enriched = (r.results || []).map((row: any) => {
+    const cost = row.marginal_abatement_cost_zar_tco2e ?? (row.capex_zar && row.abatement_tco2e_yr && row.lifetime_years
+      ? (row.capex_zar / (row.lifetime_years * row.abatement_tco2e_yr)) + (row.opex_zar_yr / row.abatement_tco2e_yr)
+      : null);
+    cum += row.abatement_tco2e_yr || 0;
+    return { ...row, computed_macc_zar_per_tco2e: cost, cumulative_abatement_tco2e: cum };
+  });
+  return c.json({ success: true, data: enriched });
+});
+
+// ─── 16. Sectoral pathway library ──────────────────────────────────────
+
+watershed.get('/pathways', async (c) => {
+  const pathway = c.req.query('pathway');
+  const sector = c.req.query('sector');
+  let sql = `SELECT * FROM sectoral_pathways WHERE 1=1`;
+  const binds: any[] = [];
+  if (pathway) { sql += ` AND pathway_code = ?`; binds.push(pathway); }
+  if (sector) { sql += ` AND sector = ?`; binds.push(sector); }
+  sql += ` ORDER BY pathway_code, sector, year`;
+  const r = await c.env.DB.prepare(sql).bind(...binds).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+
+// ─── 17. Hash-chain immutable audit trail ──────────────────────────────
+
+// Compute SHA-256 hex of a string using Web Crypto (Workers runtime).
+async function sha256Hex(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+watershed.post('/audit-chain/append', async (c) => {
+  const user = getCurrentUser(c);
+  const body = await c.req.json().catch(() => ({} as any));
+  const { entity_table, entity_id, operation, payload } = body;
+  if (!entity_table || !entity_id || !operation) {
+    return c.json({ success: false, error: 'entity_table, entity_id, operation required' }, 400);
+  }
+  const last = await c.env.DB.prepare(
+    `SELECT sequence_no, this_hash FROM audit_chain WHERE tenant_id = 'default' ORDER BY sequence_no DESC LIMIT 1`
+  ).first<any>();
+  const seq = (last?.sequence_no || 0) + 1;
+  const prev = last?.this_hash || 'genesis';
+  const payloadJson = JSON.stringify(payload || {});
+  const hash = await sha256Hex(`${prev}|${entity_table}|${entity_id}|${operation}|${payloadJson}`);
+  const id = rid('ach');
+  await c.env.DB.prepare(`
+    INSERT INTO audit_chain (id, participant_id, sequence_no, entity_table, entity_id, operation,
+      actor_id, payload_json, prev_hash, this_hash)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, seq, entity_table, entity_id, operation, user.id, payloadJson, prev, hash).run();
+  return c.json({ success: true, data: { id, sequence_no: seq, this_hash: hash } }, 201);
+});
+
+watershed.get('/audit-chain', async (c) => {
+  const limit = Math.min(500, Number(c.req.query('limit')) || 100);
+  const r = await c.env.DB.prepare(
+    `SELECT * FROM audit_chain WHERE tenant_id = 'default' ORDER BY sequence_no DESC LIMIT ?`
+  ).bind(limit).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+
+watershed.get('/audit-chain/verify', async (c) => {
+  // Walk the chain from genesis, recomputing each hash. Reports the first
+  // break (or "valid" if the chain is intact).
+  const r = await c.env.DB.prepare(
+    `SELECT * FROM audit_chain WHERE tenant_id = 'default' ORDER BY sequence_no ASC`
+  ).all<any>();
+  let prev = 'genesis';
+  for (const row of (r.results || [])) {
+    const expected = await sha256Hex(`${prev}|${row.entity_table}|${row.entity_id}|${row.operation}|${row.payload_json}`);
+    if (expected !== row.this_hash) {
+      return c.json({ success: true, data: { valid: false, broken_at_sequence: row.sequence_no, entity: `${row.entity_table}/${row.entity_id}` } });
+    }
+    prev = row.this_hash;
+  }
+  return c.json({ success: true, data: { valid: true, chain_length: r.results?.length || 0 } });
+});
+
+// ─── 18. Hourly REC marketplace ────────────────────────────────────────
+
+watershed.get('/rec-market/listings', async (c) => {
+  const gridZone = c.req.query('grid_zone');
+  const status = c.req.query('status') || 'listed,partial';
+  const sql = `SELECT l.*, p.name AS seller_name FROM rec_hourly_listings l
+               LEFT JOIN participants p ON p.id = l.seller_id
+               WHERE l.status IN (${status.split(',').map(() => '?').join(',')})
+               ${gridZone ? 'AND l.grid_zone = ?' : ''}
+               ORDER BY l.hour_utc DESC, l.price_zar_per_kwh ASC LIMIT 200`;
+  const binds = status.split(',');
+  if (gridZone) binds.push(gridZone);
+  const r = await c.env.DB.prepare(sql).bind(...binds).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+
+watershed.post('/rec-market/listings', async (c) => {
+  const user = getCurrentUser(c);
+  const body = await c.req.json().catch(() => ({} as any));
+  const { technology, grid_zone, hour_utc, available_kwh, price_zar_per_kwh, certificate_ref } = body;
+  if (!technology || !grid_zone || !hour_utc || !available_kwh || !price_zar_per_kwh) {
+    return c.json({ success: false, error: 'technology, grid_zone, hour_utc, available_kwh, price_zar_per_kwh required' }, 400);
+  }
+  const id = rid('recl');
+  await c.env.DB.prepare(`
+    INSERT INTO rec_hourly_listings (id, seller_id, technology, grid_zone, hour_utc,
+      available_kwh, remaining_kwh, price_zar_per_kwh, certificate_ref)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, technology, grid_zone, hour_utc, available_kwh, available_kwh, price_zar_per_kwh, certificate_ref ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+watershed.post('/rec-market/buy', async (c) => {
+  const user = getCurrentUser(c);
+  const body = await c.req.json().catch(() => ({} as any));
+  const { listing_id, kwh, retire, retirement_purpose } = body;
+  if (!listing_id || !kwh) return c.json({ success: false, error: 'listing_id and kwh required' }, 400);
+
+  const listing = await c.env.DB.prepare(`SELECT * FROM rec_hourly_listings WHERE id = ?`).bind(listing_id).first<any>();
+  if (!listing) return c.json({ success: false, error: 'listing not found' }, 404);
+  if (listing.status === 'sold_out' || listing.status === 'withdrawn') {
+    return c.json({ success: false, error: `listing is ${listing.status}` }, 400);
+  }
+  if (kwh > (listing.remaining_kwh || 0)) {
+    return c.json({ success: false, error: `only ${listing.remaining_kwh} kWh remaining` }, 400);
+  }
+
+  const total = kwh * listing.price_zar_per_kwh;
+  const tradeId = rid('rect');
+  await c.env.DB.prepare(`
+    INSERT INTO rec_hourly_trades (id, listing_id, buyer_id, kwh, price_zar_per_kwh, total_zar,
+      hour_utc, retired_at, retirement_purpose)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(tradeId, listing_id, user.id, kwh, listing.price_zar_per_kwh, total, listing.hour_utc,
+    retire ? new Date().toISOString() : null, retire ? (retirement_purpose || '24/7 CFE matching') : null).run();
+
+  const newRemaining = (listing.remaining_kwh || 0) - kwh;
+  const newStatus = newRemaining <= 0 ? 'sold_out' : 'partial';
+  await c.env.DB.prepare(`UPDATE rec_hourly_listings SET remaining_kwh = ?, status = ? WHERE id = ?`).bind(newRemaining, newStatus, listing_id).run();
+
+  return c.json({ success: true, data: { trade_id: tradeId, kwh, total_zar: total, retired: !!retire } }, 201);
+});
+
+watershed.get('/rec-market/trades', async (c) => {
+  const user = getCurrentUser(c);
+  const r = await c.env.DB.prepare(`
+    SELECT t.*, l.technology, l.grid_zone, l.certificate_ref
+    FROM rec_hourly_trades t JOIN rec_hourly_listings l ON l.id = t.listing_id
+    WHERE t.buyer_id = ? ORDER BY t.created_at DESC LIMIT 200
+  `).bind(user.id).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+
 export default watershed;

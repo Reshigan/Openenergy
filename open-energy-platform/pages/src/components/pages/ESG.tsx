@@ -28,20 +28,28 @@ import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 type Tab =
   | 'overview' | 'transactions' | 'targets' | 'initiatives' | 'suppliers' | 'recs' | 'disclosures' | 'risks'
-  | 'financed' | 'removals' | 'cfe' | 'pcf' | 'assurance' | 'maturity' | 'jurisdictions' | 'anomalies';
+  | 'financed' | 'removals' | 'cfe' | 'pcf' | 'assurance' | 'maturity' | 'jurisdictions' | 'anomalies'
+  | 'scenarios' | 'counterparties' | 'macc' | 'pathways' | 'ai_classifier' | 'rec_market' | 'audit_chain';
 
 const TABS: { id: Tab; label: string; icon: IconName }[] = [
   { id: 'overview',     label: 'Overview',      icon: 'chart-bar' },
   { id: 'transactions', label: 'Transactions',  icon: 'database' },
+  { id: 'ai_classifier',label: 'AI classify',   icon: 'brain' },
   { id: 'targets',      label: 'Targets',       icon: 'target' },
   { id: 'initiatives',  label: 'Initiatives',   icon: 'spark' },
+  { id: 'macc',         label: 'MACC',          icon: 'chart-line' },
   { id: 'financed',     label: 'Financed Emissions', icon: 'piggy-bank' },
+  { id: 'scenarios',    label: 'Scenarios',     icon: 'workflow' },
+  { id: 'counterparties',label:'Counterparties',icon: 'people' },
   { id: 'removals',     label: 'Removals',      icon: 'eco' },
   { id: 'cfe',          label: '24/7 CFE',      icon: 'bolt' },
+  { id: 'rec_market',   label: 'REC market',    icon: 'store' },
   { id: 'pcf',          label: 'Product PCF',   icon: 'tag' },
+  { id: 'pathways',     label: 'Pathways',      icon: 'trending-down' },
   { id: 'suppliers',    label: 'Suppliers',     icon: 'team' },
   { id: 'recs',         label: 'RECs',          icon: 'badge' },
   { id: 'assurance',    label: 'Assurance',     icon: 'shield' },
+  { id: 'audit_chain',  label: 'Audit chain',   icon: 'layers' },
   { id: 'maturity',     label: 'Maturity',      icon: 'spark' },
   { id: 'disclosures',  label: 'Disclosures',   icon: 'report' },
   { id: 'jurisdictions',label: 'Jurisdictions', icon: 'globe' },
@@ -149,6 +157,13 @@ export function ESG() {
       {tab === 'disclosures'  && <DisclosuresTab />}
       {tab === 'jurisdictions'&& <JurisdictionsTab />}
       {tab === 'anomalies'    && <AnomaliesTab />}
+      {tab === 'scenarios'    && <ScenariosTab />}
+      {tab === 'counterparties' && <CounterpartiesTab />}
+      {tab === 'macc'         && <MACCTab />}
+      {tab === 'pathways'     && <PathwaysTab />}
+      {tab === 'ai_classifier'&& <AIClassifierTab />}
+      {tab === 'rec_market'   && <RecMarketTab />}
+      {tab === 'audit_chain'  && <AuditChainTab />}
       {tab === 'risks'        && <RisksTab />}
     </StitchPage>
   );
@@ -1927,6 +1942,473 @@ function AnomaliesTab() {
                     <button onClick={() => update(r.id, 'resolved')} className="text-green-700 text-[12px] hover:underline">Resolve</button>
                     <button onClick={() => update(r.id, 'dismissed')} className="text-[#6b7685] text-[12px] hover:underline">Dismiss</button>
                   </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </StitchCard>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// Watershed advanced tabs (migration 042)
+// ════════════════════════════════════════════════════════════════════════
+
+// ─── 17. Scenarios ──────────────────────────────────────────────────────
+function ScenariosTab() {
+  const scenarios = useWatershed<any[]>(`/scenarios`, []);
+  const runs = useWatershed<any[]>(`/scenarios/runs`, []);
+  const [open, setOpen] = useState(false);
+  const [detail, setDetail] = useState<any>(null);
+  return (
+    <div className="space-y-5">
+      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">NGFS / IEA / IPCC scenario analysis. Runs your portfolio through orderly / disorderly / hot-house pathways to compute emissions-at-risk and financial VaR.</p><button onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Run scenario</button></div>
+
+      <StitchCard title="Reference scenarios">
+        {scenarios.loading ? <Skeleton /> : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {(scenarios.data || []).map((s: any) => (
+              <div key={s.code} className="border border-[#eef2f7] rounded-lg p-3">
+                <div className="flex justify-between mb-1">
+                  <div className="font-display font-semibold text-[13px]">{s.name}</div>
+                  <StitchPill label={`${s.temperature_2100_c}°C`} tone={s.temperature_2100_c <= 1.5 ? 'good' : s.temperature_2100_c <= 2 ? 'info' : 'warn'} />
+                </div>
+                <div className="text-[12px] text-[#6b7685] mb-1">{s.family} · {s.category}</div>
+                <div className="text-[12px] flex gap-3">
+                  <span>Transition: {s.transition_risk}</span><span>Physical: {s.physical_risk}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </StitchCard>
+
+      <StitchCard title="My scenario runs">
+        {(runs.data || []).length === 0 ? <EmptyState icon="workflow" title="No scenario runs yet" subtitle="Run a scenario against your financed-emissions portfolio." /> : (
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Scenario</th><th>Horizon</th><th>Base tCO₂e</th><th>Target tCO₂e</th><th>At risk</th><th>Financial VaR</th><th>Worst sector</th><th></th></tr></thead>
+            <tbody>
+              {(runs.data || []).map((r: any) => (
+                <tr key={r.id} className="border-t border-[#eef2f7]">
+                  <td className="py-2"><div className="font-medium">{r.scenario_name}</div><div className="text-[12px] text-[#6b7685]">{r.family}</div></td>
+                  <td>{r.horizon_years}y</td>
+                  <td>{fmtN(r.portfolio_emissions_base_tco2e, 1)}</td>
+                  <td>{fmtN(r.portfolio_emissions_target_tco2e, 1)}</td>
+                  <td className="text-amber-700">{fmtN(r.emissions_at_risk_tco2e, 1)}</td>
+                  <td className="text-red-700">{fmtZ(r.financial_value_at_risk_zar, 0)}</td>
+                  <td>{r.worst_sector_nace || '—'}</td>
+                  <td><button onClick={() => setDetail(r)} className="text-blue-600 text-[12px] hover:underline">Details</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </StitchCard>
+
+      {open && <RunScenarioModal scenarios={scenarios.data || []} onClose={() => { setOpen(false); runs.refresh(); }} />}
+      {detail && <ScenarioDetailModal run={detail} onClose={() => setDetail(null)} />}
+    </div>
+  );
+}
+
+function RunScenarioModal({ scenarios, onClose }: { scenarios: any[]; onClose: () => void }) {
+  useEscapeKey(onClose);
+  const [f, setF] = useState<any>({ scenario_code: scenarios[0]?.code || 'NGFS_NET_ZERO', horizon_years: 10 });
+  const [busy, setBusy] = useState(false);
+  const go = async () => {
+    setBusy(true);
+    try { await api.post('/api/watershed/scenarios/run', f); onClose(); }
+    catch (e: any) { alert(e?.message || 'Failed'); }
+    finally { setBusy(false); }
+  };
+  return (
+    <Modal title="Run climate scenario" onClose={onClose}>
+      <div className="space-y-3">
+        <label className="block"><div className="text-[12px] mb-1">Scenario</div>
+          <select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.scenario_code} onChange={e => setF({ ...f, scenario_code: e.target.value })}>
+            {scenarios.map((s: any) => <option key={s.code} value={s.code}>{s.name} ({s.temperature_2100_c}°C)</option>)}
+          </select>
+        </label>
+        <Field label="Horizon (years)" type="number" value={f.horizon_years} onChange={e => setF({ ...f, horizon_years: Number(e.target.value) })} />
+      </div>
+      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={go} disabled={busy} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg disabled:opacity-50">{busy ? 'Running…' : 'Run'}</button></div>
+    </Modal>
+  );
+}
+
+function ScenarioDetailModal({ run, onClose }: { run: any; onClose: () => void }) {
+  useEscapeKey(onClose);
+  let impacts: any[] = [];
+  try { impacts = JSON.parse(run.sector_impacts_json || '[]'); } catch { /* ignore */ }
+  return (
+    <Modal title={`${run.scenario_name} — ${run.horizon_years}y horizon`} onClose={onClose} wide>
+      <div className="grid grid-cols-4 gap-3 mb-4">
+        <StitchKpi label="Base tCO₂e" value={fmtN(run.portfolio_emissions_base_tco2e, 1)} />
+        <StitchKpi label="Target tCO₂e" value={fmtN(run.portfolio_emissions_target_tco2e, 1)} tone="up" />
+        <StitchKpi label="At risk" value={fmtN(run.emissions_at_risk_tco2e, 1)} tone="warn" />
+        <StitchKpi label="Financial VaR" value={fmtZ(run.financial_value_at_risk_zar, 0)} tone="down" />
+      </div>
+      <table className="w-full text-sm">
+        <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Sector</th><th>Exposure</th><th>Base tCO₂e</th><th>Target tCO₂e</th><th>At risk</th><th>Financial VaR</th></tr></thead>
+        <tbody>
+          {impacts.map((s: any, i: number) => (
+            <tr key={i} className="border-t border-[#eef2f7]">
+              <td className="py-2 font-mono text-[12px]">{s.sector}</td>
+              <td>{fmtZ(s.exposure_zar, 0)}</td>
+              <td>{fmtN(s.base_emissions_tco2e, 1)}</td>
+              <td>{fmtN(s.target_emissions_tco2e, 1)}</td>
+              <td className="text-amber-700">{fmtN(s.emissions_at_risk_tco2e, 1)}</td>
+              <td className="text-red-700">{fmtZ(s.financial_var_zar, 0)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Modal>
+  );
+}
+
+// ─── 18. Counterparties ─────────────────────────────────────────────────
+function CounterpartiesTab() {
+  const requests = useWatershed<any[]>(`/counterparties/requests`, []);
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="space-y-5">
+      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Send share-links to counterparties so they can submit their emissions (PCAF data-quality 1-2).</p><button onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ Request data</button></div>
+      <StitchCard title="Open requests">
+        {requests.loading ? <Skeleton /> : (requests.data || []).length === 0 ? <EmptyState icon="people" title="No counterparty requests" subtitle="Send your first data request to a financed counterparty." /> : (
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Counterparty</th><th>Email</th><th>Year</th><th>Scope</th><th>Status</th><th>Sent</th><th>Share link</th></tr></thead>
+            <tbody>
+              {(requests.data || []).map((r: any) => (
+                <tr key={r.id} className="border-t border-[#eef2f7]">
+                  <td className="py-2 font-medium">{r.counterparty_name}</td>
+                  <td className="text-[12px]">{r.counterparty_email || '—'}</td>
+                  <td>{r.reporting_year}</td>
+                  <td className="text-[12px]">{r.scope_requested}</td>
+                  <td><StitchPill status={r.status} /></td>
+                  <td className="text-[12px]">{r.sent_at?.slice(0, 10) || '—'}</td>
+                  <td><button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/api/portal/counterparty/${r.share_token}`); alert('Share link copied'); }} className="text-blue-600 text-[12px] hover:underline">Copy link</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </StitchCard>
+      {open && <RequestDataModal onClose={() => { setOpen(false); requests.refresh(); }} />}
+    </div>
+  );
+}
+
+function RequestDataModal({ onClose }: { onClose: () => void }) {
+  useEscapeKey(onClose);
+  const [f, setF] = useState<any>({ reporting_year: new Date().getFullYear(), scope_requested: 'all_scopes' });
+  const save = async () => {
+    try {
+      const r = await api.post('/api/watershed/counterparties/requests', f);
+      const data = r?.data || r;
+      alert(`Share link created:\n${window.location.origin}${data.share_url}`);
+      onClose();
+    } catch (e: any) { alert(e?.message || 'Failed'); }
+  };
+  return (
+    <Modal title="Request counterparty data" onClose={onClose}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Field label="Counterparty name" value={f.counterparty_name || ''} onChange={e => setF({ ...f, counterparty_name: e.target.value })} />
+        <Field label="Email" value={f.counterparty_email || ''} onChange={e => setF({ ...f, counterparty_email: e.target.value })} />
+        <Field label="Reporting year" type="number" value={f.reporting_year} onChange={e => setF({ ...f, reporting_year: Number(e.target.value) })} />
+        <label className="block"><div className="text-[12px] mb-1">Scope requested</div><select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.scope_requested} onChange={e => setF({ ...f, scope_requested: e.target.value })}><option value="scope1_only">Scope 1 only</option><option value="scope1_and_2">Scope 1+2</option><option value="all_scopes">All scopes (1-3)</option><option value="custom">Custom</option></select></label>
+        <Field label="Asset class" value={f.asset_class || ''} onChange={e => setF({ ...f, asset_class: e.target.value })} />
+        <Field label="Exposure (ZAR)" type="number" value={f.exposure_zar || ''} onChange={e => setF({ ...f, exposure_zar: Number(e.target.value) })} />
+      </div>
+      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Generate share link</button></div>
+    </Modal>
+  );
+}
+
+// ─── 19. MACC ──────────────────────────────────────────────────────────
+function MACCTab() {
+  const rows = useWatershed<any[]>(`/macc`, []);
+  return (
+    <div className="space-y-5">
+      <p className="text-sm text-[#6b7685]">Marginal abatement cost curve — initiatives sorted by ZAR/tCO₂e. Bars to the left of zero are net-negative (saves money while reducing).</p>
+      <StitchCard title="MACC chart">
+        {rows.loading ? <Skeleton /> : (rows.data || []).length === 0 ? <EmptyState icon="chart-line" title="No initiatives with abatement data" subtitle="Add initiatives with abatement_tco2e_yr and capex to populate the MACC." /> : (
+          <ResponsiveContainer width="100%" height={380}>
+            <BarChart data={(rows.data || []).map((r: any) => ({ name: r.name, cost: r.computed_macc_zar_per_tco2e || 0, abatement: r.abatement_tco2e_yr || 0 }))}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" height={70} />
+              <YAxis label={{ value: 'ZAR / tCO₂e', angle: -90, position: 'insideLeft' }} />
+              <Tooltip />
+              <Bar dataKey="cost" name="MACC (ZAR/tCO₂e)">
+                {(rows.data || []).map((r: any, i: number) => (
+                  <Cell key={i} fill={(r.computed_macc_zar_per_tco2e || 0) < 0 ? '#1a8a5b' : (r.computed_macc_zar_per_tco2e || 0) < 500 ? '#3b82c4' : '#c97a14'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </StitchCard>
+      <StitchCard title="Initiatives in order of cost-effectiveness">
+        {(rows.data || []).length > 0 && (
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Initiative</th><th>Abatement t/yr</th><th>Cumulative t/yr</th><th>Capex</th><th>MACC (ZAR/tCO₂e)</th><th>Status</th></tr></thead>
+            <tbody>
+              {(rows.data || []).map((r: any) => (
+                <tr key={r.id} className="border-t border-[#eef2f7]">
+                  <td className="py-2">{r.name}</td>
+                  <td>{fmtN(r.abatement_tco2e_yr, 1)}</td>
+                  <td>{fmtN(r.cumulative_abatement_tco2e, 1)}</td>
+                  <td>{fmtZ(r.capex_zar || 0)}</td>
+                  <td className={r.computed_macc_zar_per_tco2e < 0 ? 'text-green-700 font-semibold' : ''}>{r.computed_macc_zar_per_tco2e != null ? fmtZ(r.computed_macc_zar_per_tco2e, 0) : '—'}</td>
+                  <td><StitchPill status={r.status} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </StitchCard>
+    </div>
+  );
+}
+
+// ─── 20. Pathways ──────────────────────────────────────────────────────
+function PathwaysTab() {
+  const [pathway, setPathway] = useState('IEA_NZE_2050');
+  const [sector, setSector] = useState('power');
+  const data = useWatershed<any[]>(`/pathways?pathway=${pathway}`, []);
+  const sectorData = (data.data || []).filter((r: any) => r.sector === sector);
+  return (
+    <div className="space-y-5">
+      <div className="flex gap-3">
+        <label><div className="text-[12px] mb-1">Pathway</div><select className="border rounded-lg px-2 py-1 text-sm" value={pathway} onChange={e => setPathway(e.target.value)}><option value="IEA_NZE_2050">IEA NZE 2050</option><option value="NGFS_NET_ZERO">NGFS Net Zero</option></select></label>
+        <label><div className="text-[12px] mb-1">Sector</div><select className="border rounded-lg px-2 py-1 text-sm" value={sector} onChange={e => setSector(e.target.value)}><option value="power">Power</option><option value="steel">Steel</option><option value="cement">Cement</option><option value="aluminum">Aluminum</option><option value="aviation">Aviation</option><option value="shipping">Shipping</option><option value="road_freight">Road freight</option><option value="oil_gas">Oil & gas</option><option value="buildings">Buildings</option></select></label>
+      </div>
+      <StitchCard title={`${pathway} — ${sector} intensity pathway`}>
+        {data.loading ? <Skeleton /> : sectorData.length === 0 ? <EmptyState icon="trending-down" title="No data for this combination" subtitle="Try another sector or pathway." /> : (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={sectorData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="year" />
+              <YAxis label={{ value: sectorData[0]?.unit || '', angle: -90, position: 'insideLeft' }} />
+              <Tooltip />
+              <Bar dataKey="intensity_value" fill="#0f1c2e" name="Intensity" />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </StitchCard>
+    </div>
+  );
+}
+
+// ─── 21. AI Classifier ──────────────────────────────────────────────────
+function AIClassifierTab() {
+  const [desc, setDesc] = useState('');
+  const [amount, setAmount] = useState('');
+  const [unit, setUnit] = useState('');
+  const [result, setResult] = useState<any>(null);
+  const [busy, setBusy] = useState(false);
+  const logs = useWatershed<any[]>(`/ai/classify`, []);
+  const classify = async () => {
+    if (!desc) return;
+    setBusy(true);
+    try {
+      const r = await api.post('/api/watershed/ai/classify', { description: desc, amount: amount ? Number(amount) : undefined, unit });
+      setResult(r?.data || r);
+      logs.refresh();
+    } catch (e: any) { alert(e?.message || 'Failed'); }
+    finally { setBusy(false); }
+  };
+  const accept = async (id: string, override?: string) => {
+    try { await api.patch(`/api/watershed/ai/classify/${id}`, { accepted: true, override_code: override }); logs.refresh(); }
+    catch (e: any) { alert(e?.message || 'Failed'); }
+  };
+  return (
+    <div className="space-y-5">
+      <p className="text-sm text-[#6b7685]">AI carbon-accountant — paste any invoice line, expense description, or activity. Returns suggested activity code, scope, and confidence.</p>
+      <StitchCard title="Classify">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+          <div className="md:col-span-3"><Field label="Description" value={desc} onChange={e => setDesc(e.target.value)} placeholder="e.g. Sasol natural gas Q1 invoice" /></div>
+          <Field label="Amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} />
+          <Field label="Unit" value={unit} onChange={e => setUnit(e.target.value)} placeholder="kWh, litre, ZAR" />
+          <div className="flex items-end"><button onClick={classify} disabled={busy || !desc} className="w-full h-9 px-3 bg-[#0f1c2e] text-white rounded-lg text-sm disabled:opacity-50">{busy ? 'Classifying…' : 'Classify'}</button></div>
+        </div>
+        {result && (
+          <div className="mt-4 p-3 bg-[#f6f9fc] rounded-lg">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <div className="text-[11px] text-[#6b7685] uppercase tracking-wide">Suggested activity code</div>
+                <div className="font-mono text-[14px] font-semibold">{result.activity_code}</div>
+                <div className="text-[12px] text-[#6b7685] mt-1">Scope {result.scope}{result.scope3_category ? ', cat ' + result.scope3_category : ''} · model: {result.model_id}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[11px] text-[#6b7685]">Confidence</div>
+                <div className={`text-[20px] font-bold ${result.confidence >= 0.8 ? 'text-green-700' : result.confidence >= 0.5 ? 'text-amber-700' : 'text-red-700'}`}>{((result.confidence || 0) * 100).toFixed(0)}%</div>
+              </div>
+            </div>
+            <div className="text-[12px] mb-2">{result.reasoning}</div>
+            <div className="flex gap-2"><button onClick={() => accept(result.id)} className="px-2 py-1 text-[12px] bg-green-700 text-white rounded">Accept</button><button onClick={() => accept(result.id, prompt('Override activity code:') || '')} className="px-2 py-1 text-[12px] border rounded">Override</button></div>
+          </div>
+        )}
+      </StitchCard>
+      <StitchCard title="Recent classifications">
+        {(logs.data || []).length === 0 ? <div className="text-sm text-[#6b7685]">No classifications yet.</div> : (
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Input</th><th>Suggested</th><th>Scope</th><th>Conf</th><th>Model</th><th>Accepted</th></tr></thead>
+            <tbody>
+              {(logs.data || []).map((l: any) => (
+                <tr key={l.id} className="border-t border-[#eef2f7]">
+                  <td className="py-2 text-[12px] max-w-xs truncate">{l.input_text}</td>
+                  <td className="font-mono text-[12px]">{l.suggested_activity_code}</td>
+                  <td>{l.suggested_scope}</td>
+                  <td>{l.confidence ? ((l.confidence * 100).toFixed(0) + '%') : '—'}</td>
+                  <td className="text-[10px] font-mono text-[#6b7685]">{l.model_id}</td>
+                  <td>{l.user_accepted ? <StitchPill label="Accepted" tone="good" /> : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </StitchCard>
+    </div>
+  );
+}
+
+// ─── 22. REC Hourly Marketplace ─────────────────────────────────────────
+function RecMarketTab() {
+  const listings = useWatershed<any[]>(`/rec-market/listings`, []);
+  const trades = useWatershed<any[]>(`/rec-market/trades`, []);
+  const [open, setOpen] = useState(false);
+  const [buyOpen, setBuyOpen] = useState<any>(null);
+  return (
+    <div className="space-y-5">
+      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Hourly REC marketplace — time-matched energy attribute certificates for 24/7 CFE.</p><button onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ List RECs</button></div>
+      <StitchCard title="Active listings">
+        {listings.loading ? <Skeleton /> : (listings.data || []).length === 0 ? <EmptyState icon="store" title="No listings" subtitle="Be the first to list hourly RECs." /> : (
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Hour</th><th>Zone</th><th>Tech</th><th>Available kWh</th><th>Remaining</th><th>Price ZAR/kWh</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              {(listings.data || []).map((l: any) => (
+                <tr key={l.id} className="border-t border-[#eef2f7]">
+                  <td className="py-2 text-[12px] font-mono">{l.hour_utc?.slice(0, 13)}h</td>
+                  <td>{l.grid_zone}</td>
+                  <td>{l.technology}</td>
+                  <td>{fmtN(l.available_kwh)}</td>
+                  <td>{fmtN(l.remaining_kwh)}</td>
+                  <td>{l.price_zar_per_kwh?.toFixed(2)}</td>
+                  <td><StitchPill status={l.status} /></td>
+                  <td><button onClick={() => setBuyOpen(l)} disabled={l.status === 'sold_out'} className="text-blue-600 text-[12px] hover:underline disabled:opacity-40">Buy</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </StitchCard>
+      <StitchCard title="My trades">
+        {(trades.data || []).length === 0 ? <div className="text-sm text-[#6b7685]">No trades yet.</div> : (
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Hour</th><th>Zone</th><th>Tech</th><th>kWh</th><th>Total</th><th>Retired</th></tr></thead>
+            <tbody>
+              {(trades.data || []).map((t: any) => (
+                <tr key={t.id} className="border-t border-[#eef2f7]">
+                  <td className="py-2 text-[12px] font-mono">{t.hour_utc?.slice(0, 13)}h</td>
+                  <td>{t.grid_zone}</td><td>{t.technology}</td>
+                  <td>{fmtN(t.kwh)}</td>
+                  <td>{fmtZ(t.total_zar)}</td>
+                  <td>{t.retired_at ? <StitchPill label="Retired" tone="good" /> : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </StitchCard>
+      {open && <ListRecModal onClose={() => { setOpen(false); listings.refresh(); }} />}
+      {buyOpen && <BuyRecModal listing={buyOpen} onClose={() => { setBuyOpen(null); listings.refresh(); trades.refresh(); }} />}
+    </div>
+  );
+}
+
+function ListRecModal({ onClose }: { onClose: () => void }) {
+  useEscapeKey(onClose);
+  const [f, setF] = useState<any>({ technology: 'solar', grid_zone: 'ZA-NPC', hour_utc: '', available_kwh: 100, price_zar_per_kwh: 0.85 });
+  const save = async () => {
+    try { await api.post('/api/watershed/rec-market/listings', f); onClose(); }
+    catch (e: any) { alert(e?.message || 'Failed'); }
+  };
+  return (
+    <Modal title="List hourly RECs" onClose={onClose}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <label className="block"><div className="text-[12px] mb-1">Technology</div><select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.technology} onChange={e => setF({ ...f, technology: e.target.value })}><option>solar</option><option>wind</option><option>hydro</option><option>nuclear</option><option>geothermal</option><option>battery</option></select></label>
+        <Field label="Grid zone" value={f.grid_zone} onChange={e => setF({ ...f, grid_zone: e.target.value })} />
+        <Field label="Hour (UTC ISO)" value={f.hour_utc} onChange={e => setF({ ...f, hour_utc: e.target.value })} placeholder="2026-05-01T10:00:00Z" />
+        <Field label="Available kWh" type="number" value={f.available_kwh} onChange={e => setF({ ...f, available_kwh: Number(e.target.value) })} />
+        <Field label="Price ZAR/kWh" type="number" value={f.price_zar_per_kwh} onChange={e => setF({ ...f, price_zar_per_kwh: Number(e.target.value) })} />
+        <Field label="Certificate ref" value={f.certificate_ref || ''} onChange={e => setF({ ...f, certificate_ref: e.target.value })} />
+      </div>
+      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">List</button></div>
+    </Modal>
+  );
+}
+
+function BuyRecModal({ listing, onClose }: { listing: any; onClose: () => void }) {
+  useEscapeKey(onClose);
+  const [kwh, setKwh] = useState(Math.min(100, listing.remaining_kwh));
+  const [retire, setRetire] = useState(true);
+  const total = kwh * listing.price_zar_per_kwh;
+  const save = async () => {
+    try { await api.post('/api/watershed/rec-market/buy', { listing_id: listing.id, kwh, retire, retirement_purpose: '24/7 CFE matching' }); onClose(); }
+    catch (e: any) { alert(e?.message || 'Failed'); }
+  };
+  return (
+    <Modal title={`Buy ${listing.technology} RECs · ${listing.hour_utc?.slice(0, 13)}h`} onClose={onClose}>
+      <div className="space-y-3">
+        <Field label="kWh to buy" type="number" value={kwh} onChange={e => setKwh(Number(e.target.value))} />
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={retire} onChange={e => setRetire(e.target.checked)} /> Retire immediately for 24/7 CFE matching</label>
+        <div className="text-sm text-[#0f1c2e]">Total: <strong>{fmtZ(total, 2)}</strong> ({fmtN(kwh)} kWh @ {listing.price_zar_per_kwh.toFixed(2)}/kWh)</div>
+      </div>
+      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Buy</button></div>
+    </Modal>
+  );
+}
+
+// ─── 23. Audit Chain ────────────────────────────────────────────────────
+function AuditChainTab() {
+  const chain = useWatershed<any[]>(`/audit-chain?limit=100`, []);
+  const [verify, setVerify] = useState<any>(null);
+  const [busy, setBusy] = useState(false);
+  const doVerify = async () => {
+    setBusy(true);
+    try { const r = await api.get('/api/watershed/audit-chain/verify'); setVerify(r?.data || r); }
+    catch (e: any) { alert(e?.message || 'Failed'); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="space-y-5">
+      <div className="flex justify-between">
+        <p className="text-sm text-[#6b7685]">Hash-chained immutable audit log. Each entry stores SHA-256(prev_hash · payload), enabling external auditors to detect tampering.</p>
+        <button onClick={doVerify} disabled={busy} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg disabled:opacity-50">{busy ? 'Verifying…' : 'Verify chain'}</button>
+      </div>
+      {verify && (
+        <div className={`p-3 rounded-lg ${verify.valid ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+          {verify.valid
+            ? <div className="text-green-800 text-sm">✓ Chain valid — {verify.chain_length} records, all hashes intact.</div>
+            : <div className="text-red-800 text-sm">✗ Chain broken at sequence {verify.broken_at_sequence} (entity: {verify.entity}). Possible tampering.</div>}
+        </div>
+      )}
+      <StitchCard title="Audit chain entries">
+        {chain.loading ? <Skeleton /> : (chain.data || []).length === 0 ? <EmptyState icon="layers" title="No chain entries yet" subtitle="Audit-chain entries are created as records are appended via /audit-chain/append." /> : (
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Seq</th><th>Table</th><th>Entity ID</th><th>Op</th><th>Hash</th><th>Time</th></tr></thead>
+            <tbody>
+              {(chain.data || []).map((r: any) => (
+                <tr key={r.id} className="border-t border-[#eef2f7]">
+                  <td className="py-2 font-mono">{r.sequence_no}</td>
+                  <td className="font-mono text-[12px]">{r.entity_table}</td>
+                  <td className="font-mono text-[12px]">{r.entity_id}</td>
+                  <td>{r.operation}</td>
+                  <td className="font-mono text-[10px] text-[#6b7685]">{r.this_hash?.slice(0, 12)}…</td>
+                  <td className="text-[12px]">{r.created_at?.slice(0, 16)}</td>
                 </tr>
               ))}
             </tbody>
