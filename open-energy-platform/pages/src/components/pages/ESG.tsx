@@ -26,16 +26,26 @@ import { useEscapeKey } from '../../hooks/useEscapeKey';
  *   8. Risks         — TCFD physical + transition risk register
  * ═══════════════════════════════════════════════════════════════════════ */
 
-type Tab = 'overview' | 'transactions' | 'targets' | 'initiatives' | 'suppliers' | 'recs' | 'disclosures' | 'risks';
+type Tab =
+  | 'overview' | 'transactions' | 'targets' | 'initiatives' | 'suppliers' | 'recs' | 'disclosures' | 'risks'
+  | 'financed' | 'removals' | 'cfe' | 'pcf' | 'assurance' | 'maturity' | 'jurisdictions' | 'anomalies';
 
 const TABS: { id: Tab; label: string; icon: IconName }[] = [
   { id: 'overview',     label: 'Overview',      icon: 'chart-bar' },
   { id: 'transactions', label: 'Transactions',  icon: 'database' },
   { id: 'targets',      label: 'Targets',       icon: 'target' },
   { id: 'initiatives',  label: 'Initiatives',   icon: 'spark' },
+  { id: 'financed',     label: 'Financed Emissions', icon: 'piggy-bank' },
+  { id: 'removals',     label: 'Removals',      icon: 'eco' },
+  { id: 'cfe',          label: '24/7 CFE',      icon: 'bolt' },
+  { id: 'pcf',          label: 'Product PCF',   icon: 'tag' },
   { id: 'suppliers',    label: 'Suppliers',     icon: 'team' },
   { id: 'recs',         label: 'RECs',          icon: 'badge' },
+  { id: 'assurance',    label: 'Assurance',     icon: 'shield' },
+  { id: 'maturity',     label: 'Maturity',      icon: 'spark' },
   { id: 'disclosures',  label: 'Disclosures',   icon: 'report' },
+  { id: 'jurisdictions',label: 'Jurisdictions', icon: 'globe' },
+  { id: 'anomalies',    label: 'Anomalies',     icon: 'alert' },
   { id: 'risks',        label: 'Risks',         icon: 'alert' },
 ];
 
@@ -128,9 +138,17 @@ export function ESG() {
       {tab === 'transactions' && <TransactionsTab />}
       {tab === 'targets'      && <TargetsTab />}
       {tab === 'initiatives'  && <InitiativesTab />}
+      {tab === 'financed'     && <FinancedEmissionsTab />}
+      {tab === 'removals'     && <RemovalsTab />}
+      {tab === 'cfe'          && <CFETab />}
+      {tab === 'pcf'          && <PCFTab />}
       {tab === 'suppliers'    && <SuppliersTab />}
       {tab === 'recs'         && <RecsTab />}
+      {tab === 'assurance'    && <AssuranceTab />}
+      {tab === 'maturity'     && <MaturityTab />}
       {tab === 'disclosures'  && <DisclosuresTab />}
+      {tab === 'jurisdictions'&& <JurisdictionsTab />}
+      {tab === 'anomalies'    && <AnomaliesTab />}
       {tab === 'risks'        && <RisksTab />}
     </StitchPage>
   );
@@ -1163,6 +1181,758 @@ function Modal({ title, children, onClose, wide }: { title: string; children: Re
         </header>
         <div className="p-5">{children}</div>
       </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// Watershed-parity tabs (migration 040)
+// ════════════════════════════════════════════════════════════════════════
+
+// Compact input that fits the StitchPage visual style. Used inside the
+// modals on the Watershed-parity tabs; lets us pass `value`/`onChange`
+// without an explicit child input.
+function Field({ label, value, onChange, type = 'text', placeholder, className }: {
+  label: string;
+  value: string | number | undefined;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  type?: string;
+  placeholder?: string;
+  className?: string;
+}) {
+  return (
+    <label className={`block ${className || ''}`}>
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6b7685]">{label}</span>
+      <input
+        type={type}
+        value={value ?? ''}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="mt-1 h-9 w-full px-3 rounded-md border border-[#dde4ec] text-[13px] focus:outline-none focus:ring-2 focus:ring-[#1a3a5c]/30"
+      />
+    </label>
+  );
+}
+
+function useWatershed<T>(path: string, initial: T): { data: T; loading: boolean; error: string | null; refresh: () => void } {
+  const [data, setData] = useState<T>(initial);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const refresh = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const r = await api.get(`/api/watershed${path}`);
+      setData((r && (r.data ?? r)) as T);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load');
+    } finally { setLoading(false); }
+  }, [path]);
+  useEffect(() => { refresh(); }, [refresh]);
+  return { data, loading, error, refresh };
+}
+
+// ─── 9. Financed Emissions (PCAF) ───────────────────────────────────────
+function FinancedEmissionsTab() {
+  const [year, setYear] = useState(new Date().getFullYear());
+  const coverage = useWatershed<any[]>(`/pcaf/coverage?year=${year}`, []);
+  const rows = useWatershed<any[]>(`/pcaf/financed?year=${year}`, []);
+  const targets = useWatershed<any[]>(`/pcaf/targets`, []);
+  const temp = useWatershed<any[]>(`/pcaf/temperature`, []);
+  const [open, setOpen] = useState(false);
+  const [tgtOpen, setTgtOpen] = useState(false);
+
+  const totalFinanced = (coverage.data || []).reduce((s, c) => s + (c.financed_total_tco2e || 0), 0);
+  const totalExposure = (coverage.data || []).reduce((s, c) => s + (c.total_exposure_zar || 0), 0);
+  const coveredClasses = (coverage.data || []).filter(c => c.rows_recorded > 0).length;
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <StitchField label="Year" value={year} onChange={e => setYear(Number(e.target.value))} type="number" className="w-28" />
+          <button onClick={() => { coverage.refresh(); rows.refresh(); }} className="text-sm text-blue-600 hover:underline">Refresh</button>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setTgtOpen(true)} className="px-3 py-1.5 text-sm border rounded-lg">+ NZBA/SBTi-FI target</button>
+          <button onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ Record exposure</button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <StitchKpi label="Financed tCO₂e" value={fmtN(totalFinanced, 1)} tone="up" />
+        <StitchKpi label="Exposure" value={fmtZ(totalExposure / 1e9, 1) + 'B'}  />
+        <StitchKpi label="Asset Classes Covered" value={`${coveredClasses}/10`}  />
+        <StitchKpi label="Targets" value={(targets.data || []).length} tone="warn" />
+      </div>
+
+      <StitchCard title="PCAF coverage by asset class">
+        {coverage.loading ? <Skeleton /> : (
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Asset class</th><th>Rows</th><th>Exposure (ZAR)</th><th>Financed tCO₂e</th><th>Avg PCAF DQ</th></tr></thead>
+            <tbody>
+              {(coverage.data || []).map((c: any) => (
+                <tr key={c.code} className="border-t border-[#eef2f7]">
+                  <td className="py-2"><div className="font-medium text-[#0f1c2e]">{c.name}</div><div className="text-[12px] text-[#6b7685]">{c.category}</div></td>
+                  <td>{c.rows_recorded || 0}</td>
+                  <td>{fmtZ(c.total_exposure_zar || 0)}</td>
+                  <td>{fmtN(c.financed_total_tco2e || 0, 2)}</td>
+                  <td>{c.avg_data_quality ? c.avg_data_quality.toFixed(1) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </StitchCard>
+
+      <StitchCard title="Recent exposures">
+        {(rows.data || []).length === 0
+          ? <EmptyState icon="database" title="No exposures recorded" subtitle="Add your first financed exposure to start computing PCAF financed emissions." />
+          : (
+            <table className="w-full text-sm">
+              <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Counterparty</th><th>Asset class</th><th>Exposure</th><th>Attribution</th><th>Financed tCO₂e</th><th>DQ</th></tr></thead>
+              <tbody>
+                {(rows.data || []).map((r: any) => (
+                  <tr key={r.id} className="border-t border-[#eef2f7]">
+                    <td className="py-2"><div className="font-medium">{r.counterparty_name}</div><div className="text-[12px] text-[#6b7685]">{r.counterparty_sector_nace || ''}</div></td>
+                    <td>{r.asset_class}</td>
+                    <td>{fmtZ(r.outstanding_amount_zar)}</td>
+                    <td>{r.attribution_factor ? (r.attribution_factor * 100).toFixed(2) + '%' : '—'}</td>
+                    <td>{fmtN(r.financed_total_tco2e || 0, 2)}</td>
+                    <td>{r.pcaf_data_quality_score ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+      </StitchCard>
+
+      <StitchCard title="Portfolio temperature alignment">
+        {(temp.data || []).length === 0
+          ? <div className="text-sm text-[#6b7685]">No temperature alignment records yet.</div>
+          : (
+            <table className="w-full text-sm">
+              <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Year</th><th>Sector</th><th>Methodology</th><th>Implied °C</th><th>Pathway</th></tr></thead>
+              <tbody>
+                {(temp.data || []).map((t: any) => (
+                  <tr key={t.id} className="border-t border-[#eef2f7]">
+                    <td className="py-2">{t.reporting_year}</td><td>{t.sector || 'portfolio'}</td><td>{t.methodology || '—'}</td>
+                    <td><span className={t.temperature_c <= 1.5 ? 'text-green-600 font-semibold' : t.temperature_c <= 2 ? 'text-amber-600' : 'text-red-600 font-semibold'}>{t.temperature_c?.toFixed(2)}°C</span></td>
+                    <td>{t.pathway || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+      </StitchCard>
+
+      {open && <ExposureModal year={year} onClose={() => { setOpen(false); coverage.refresh(); rows.refresh(); }} />}
+      {tgtOpen && <PcafTargetModal onClose={() => { setTgtOpen(false); targets.refresh(); }} />}
+    </div>
+  );
+}
+
+function ExposureModal({ year, onClose }: { year: number; onClose: () => void }) {
+  useEscapeKey(onClose);
+  const [f, setF] = useState<any>({ reporting_year: year, asset_class: 'business_loans', attribution_method: 'evic' });
+  const [classes, setClasses] = useState<any[]>([]);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { api.get('/api/watershed/pcaf/asset-classes').then(r => setClasses((r?.data || r) ?? [])); }, []);
+  const save = async () => {
+    setBusy(true);
+    try { await api.post('/api/watershed/pcaf/financed', f); onClose(); }
+    catch (e: any) { alert(e?.message || 'Failed'); }
+    finally { setBusy(false); }
+  };
+  return (
+    <Modal title="Record PCAF exposure" onClose={onClose}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Field label="Reporting year" type="number" value={f.reporting_year} onChange={e => setF({ ...f, reporting_year: Number(e.target.value) })} />
+        <label className="block">
+          <div className="text-[12px] font-medium text-[#0f1c2e] mb-1">Asset class</div>
+          <select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.asset_class} onChange={e => setF({ ...f, asset_class: e.target.value })}>
+            {classes.map((c: any) => <option key={c.code} value={c.code}>{c.name}</option>)}
+          </select>
+        </label>
+        <Field label="Counterparty name" value={f.counterparty_name || ''} onChange={e => setF({ ...f, counterparty_name: e.target.value })} />
+        <Field label="Country" value={f.counterparty_country || ''} onChange={e => setF({ ...f, counterparty_country: e.target.value })} />
+        <Field label="NACE sector" value={f.counterparty_sector_nace || ''} onChange={e => setF({ ...f, counterparty_sector_nace: e.target.value })} />
+        <Field label="Revenue (ZAR)" type="number" value={f.counterparty_revenue_zar || ''} onChange={e => setF({ ...f, counterparty_revenue_zar: Number(e.target.value) })} />
+        <Field label="EVIC (ZAR)" type="number" value={f.counterparty_evic_zar || ''} onChange={e => setF({ ...f, counterparty_evic_zar: Number(e.target.value) })} />
+        <Field label="Outstanding (ZAR)" type="number" value={f.outstanding_amount_zar || ''} onChange={e => setF({ ...f, outstanding_amount_zar: Number(e.target.value) })} />
+        <label className="block">
+          <div className="text-[12px] font-medium text-[#0f1c2e] mb-1">Attribution method</div>
+          <select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.attribution_method} onChange={e => setF({ ...f, attribution_method: e.target.value })}>
+            <option value="evic">EVIC</option><option value="total_equity">Total equity</option><option value="property_value">Property value</option><option value="vehicle_value">Vehicle value</option><option value="revenue">Revenue</option><option value="asset_value">Asset value</option>
+          </select>
+        </label>
+        <Field label="Scope 1 (tCO₂e)" type="number" value={f.counterparty_scope1_tco2e || ''} onChange={e => setF({ ...f, counterparty_scope1_tco2e: Number(e.target.value) })} />
+        <Field label="Scope 2 (tCO₂e)" type="number" value={f.counterparty_scope2_tco2e || ''} onChange={e => setF({ ...f, counterparty_scope2_tco2e: Number(e.target.value) })} />
+        <Field label="Scope 3 (tCO₂e)" type="number" value={f.counterparty_scope3_tco2e || ''} onChange={e => setF({ ...f, counterparty_scope3_tco2e: Number(e.target.value) })} />
+        <label className="block">
+          <div className="text-[12px] font-medium text-[#0f1c2e] mb-1">Data source</div>
+          <select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.emissions_data_source || 'reported'} onChange={e => setF({ ...f, emissions_data_source: e.target.value })}>
+            <option value="reported">Counterparty reported</option><option value="CDP">CDP</option><option value="proxy">Proxy</option><option value="sector_average">Sector average</option>
+          </select>
+        </label>
+        <Field label="PCAF data quality (1–5)" type="number" value={f.pcaf_data_quality_score || ''} onChange={e => setF({ ...f, pcaf_data_quality_score: Number(e.target.value) })} />
+      </div>
+      <div className="mt-4 flex justify-end gap-2">
+        <button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button>
+        <button onClick={save} disabled={busy} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg disabled:opacity-50">{busy ? 'Saving…' : 'Record exposure'}</button>
+      </div>
+    </Modal>
+  );
+}
+
+function PcafTargetModal({ onClose }: { onClose: () => void }) {
+  useEscapeKey(onClose);
+  const [f, setF] = useState<any>({ framework: 'NZBA', scope: 'sector', base_year: 2020, target_year: 2030 });
+  const save = async () => {
+    try { await api.post('/api/watershed/pcaf/targets', f); onClose(); }
+    catch (e: any) { alert(e?.message || 'Failed'); }
+  };
+  return (
+    <Modal title="PCAF / NZBA target" onClose={onClose}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <label className="block"><div className="text-[12px] font-medium text-[#0f1c2e] mb-1">Framework</div>
+          <select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.framework} onChange={e => setF({ ...f, framework: e.target.value })}>
+            <option>NZBA</option><option>SBTi_FI</option><option>GFANZ</option>
+          </select>
+        </label>
+        <label className="block"><div className="text-[12px] font-medium text-[#0f1c2e] mb-1">Scope</div>
+          <select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.scope} onChange={e => setF({ ...f, scope: e.target.value })}>
+            <option value="portfolio_wide">Portfolio-wide</option><option value="sector">Sector</option><option value="asset_class">Asset class</option>
+          </select>
+        </label>
+        <Field label="Sector" value={f.sector || ''} onChange={e => setF({ ...f, sector: e.target.value })} />
+        <Field label="Asset class" value={f.asset_class || ''} onChange={e => setF({ ...f, asset_class: e.target.value })} />
+        <Field label="Base year" type="number" value={f.base_year} onChange={e => setF({ ...f, base_year: Number(e.target.value) })} />
+        <Field label="Base intensity" type="number" value={f.base_intensity || ''} onChange={e => setF({ ...f, base_intensity: Number(e.target.value) })} />
+        <Field label="Target year" type="number" value={f.target_year} onChange={e => setF({ ...f, target_year: Number(e.target.value) })} />
+        <Field label="Target intensity" type="number" value={f.target_intensity || ''} onChange={e => setF({ ...f, target_intensity: Number(e.target.value) })} />
+        <Field label="Pathway alignment" value={f.pathway_alignment || ''} onChange={e => setF({ ...f, pathway_alignment: e.target.value })} />
+      </div>
+      <div className="mt-4 flex justify-end gap-2">
+        <button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button>
+        <button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Save target</button>
+      </div>
+    </Modal>
+  );
+}
+
+// ─── 10. Removals (CDR) ─────────────────────────────────────────────────
+function RemovalsTab() {
+  const projects = useWatershed<any[]>(`/removals/projects`, []);
+  const offtakes = useWatershed<any[]>(`/removals/offtakes`, []);
+  const portfolio = useWatershed<any>(`/removals/portfolio`, {});
+  const [offtakeOpen, setOfftakeOpen] = useState<string | null>(null);
+  const [retireOpen, setRetireOpen] = useState<string | null>(null);
+
+  const summary = (portfolio.data as any)?.summary || {};
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <StitchKpi label="Committed tCO₂e" value={fmtN(summary.total_committed_tco2e, 1)} tone="up" />
+        <StitchKpi label="Retired" value={fmtN(summary.total_retired_tco2e, 1)}  />
+        <StitchKpi label="Spend" value={fmtZ(summary.total_zar)}  />
+        <StitchKpi label="Tech diversity" value={`${summary.technology_count || 0} tech / ${summary.category_count || 0} cat`} tone="warn" />
+      </div>
+
+      <StitchCard title="Marketplace — available projects">
+        {projects.loading ? <Skeleton /> : (projects.data || []).length === 0 ? <EmptyState icon="leaf" title="No CDR projects listed" subtitle="No removals projects in the marketplace yet." /> : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {(projects.data || []).map((p: any) => (
+              <div key={p.id} className="border border-[#eef2f7] rounded-xl p-3 hover:border-[#0f1c2e] transition">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-display font-semibold text-[14px]">{p.project_name}</div>
+                  <StitchPill label={p.category} tone={p.category === 'engineered' ? 'info' : p.category === 'nature' ? 'good' : 'warn'} />
+                </div>
+                <div className="text-[12px] text-[#6b7685] mb-2">{p.technology} · {p.host_country || 'Global'} · {p.permanence_years || 0}y</div>
+                <div className="text-[13px] text-[#0f1c2e] mb-2 line-clamp-2">{p.description}</div>
+                <div className="flex items-center justify-between text-[12px] mb-2">
+                  <span>{fmtZ(p.price_zar_per_tco2e || 0)}/tCO₂e</span>
+                  <span>{fmtN(p.expected_tco2e_yr || 0)} t/yr</span>
+                </div>
+                <button onClick={() => setOfftakeOpen(p.id)} disabled={p.status !== 'listed'} className="w-full px-2 py-1.5 text-[12px] bg-[#0f1c2e] text-white rounded-lg disabled:opacity-40">{p.status === 'listed' ? 'Sign offtake' : p.status}</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </StitchCard>
+
+      <StitchCard title="My offtake agreements">
+        {(offtakes.data || []).length === 0 ? <div className="text-sm text-[#6b7685]">No offtakes signed.</div> : (
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Project</th><th>Tech</th><th>Committed</th><th>Retired</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              {(offtakes.data || []).map((o: any) => (
+                <tr key={o.id} className="border-t border-[#eef2f7]">
+                  <td className="py-2 font-medium">{o.project_name}</td>
+                  <td>{o.technology}</td>
+                  <td>{fmtN(o.total_tco2e, 1)}</td>
+                  <td>{fmtN(o.retired_tco2e, 1)}</td>
+                  <td><StitchPill status={o.status} /></td>
+                  <td><button onClick={() => setRetireOpen(o.id)} className="text-blue-600 text-[12px] hover:underline">Retire</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </StitchCard>
+
+      {offtakeOpen && <OfftakeModal projectId={offtakeOpen} onClose={() => { setOfftakeOpen(null); offtakes.refresh(); projects.refresh(); portfolio.refresh(); }} />}
+      {retireOpen && <RetireModal offtakeId={retireOpen} onClose={() => { setRetireOpen(null); offtakes.refresh(); portfolio.refresh(); }} />}
+    </div>
+  );
+}
+
+function OfftakeModal({ projectId, onClose }: { projectId: string; onClose: () => void }) {
+  useEscapeKey(onClose);
+  const [f, setF] = useState<any>({ project_id: projectId, total_tco2e: 1000, price_zar_per_tco2e: 1500, start_vintage_year: new Date().getFullYear() });
+  const save = async () => {
+    try { await api.post('/api/watershed/removals/offtakes', f); onClose(); }
+    catch (e: any) { alert(e?.message || 'Failed'); }
+  };
+  return (
+    <Modal title="Sign CDR offtake" onClose={onClose}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Field label="Total tCO₂e" type="number" value={f.total_tco2e} onChange={e => setF({ ...f, total_tco2e: Number(e.target.value) })} />
+        <Field label="Price ZAR/tCO₂e" type="number" value={f.price_zar_per_tco2e} onChange={e => setF({ ...f, price_zar_per_tco2e: Number(e.target.value) })} />
+        <Field label="Start vintage" type="number" value={f.start_vintage_year} onChange={e => setF({ ...f, start_vintage_year: Number(e.target.value) })} />
+        <Field label="End vintage" type="number" value={f.end_vintage_year || ''} onChange={e => setF({ ...f, end_vintage_year: Number(e.target.value) })} />
+      </div>
+      <div className="mt-3 text-sm text-[#0f1c2e]">Total: <strong>{fmtZ(f.total_tco2e * f.price_zar_per_tco2e)}</strong></div>
+      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Sign offtake</button></div>
+    </Modal>
+  );
+}
+
+function RetireModal({ offtakeId, onClose }: { offtakeId: string; onClose: () => void }) {
+  useEscapeKey(onClose);
+  const [f, setF] = useState<any>({ tco2e_retired: 100, reporting_year: new Date().getFullYear(), beneficiary: '', reason: '' });
+  const save = async () => {
+    try { await api.post(`/api/watershed/removals/offtakes/${offtakeId}/retire`, f); onClose(); }
+    catch (e: any) { alert(e?.message || 'Failed'); }
+  };
+  return (
+    <Modal title="Retire CDR units" onClose={onClose}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Field label="tCO₂e to retire" type="number" value={f.tco2e_retired} onChange={e => setF({ ...f, tco2e_retired: Number(e.target.value) })} />
+        <Field label="Reporting year" type="number" value={f.reporting_year} onChange={e => setF({ ...f, reporting_year: Number(e.target.value) })} />
+        <Field label="Vintage year" type="number" value={f.vintage_year || ''} onChange={e => setF({ ...f, vintage_year: Number(e.target.value) })} />
+        <Field label="Serial number" value={f.serial_number || ''} onChange={e => setF({ ...f, serial_number: e.target.value })} />
+        <Field label="Beneficiary" value={f.beneficiary} onChange={e => setF({ ...f, beneficiary: e.target.value })} />
+        <Field label="Reason" value={f.reason} onChange={e => setF({ ...f, reason: e.target.value })} />
+      </div>
+      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Retire</button></div>
+    </Modal>
+  );
+}
+
+// ─── 11. CFE — 24/7 hourly matching ─────────────────────────────────────
+function CFETab() {
+  const summary = useWatershed<any[]>(`/cfe/summary`, []);
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="space-y-5">
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-[#6b7685]">24/7 carbon-free energy hourly matching — load vs. carbon-free generation, hour by hour.</p>
+        <button onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Compute CFE score</button>
+      </div>
+      <StitchCard title="Recent CFE periods">
+        {summary.loading ? <Skeleton /> : (summary.data || []).length === 0 ? <EmptyState icon="bolt" title="No CFE scores yet" subtitle="Upload hourly load & generation data, then compute a CFE score for the period." /> : (
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Period</th><th>Load MWh</th><th>Carbon-free MWh</th><th>Match %</th><th>Full-match hrs</th><th>Avoided tCO₂e</th></tr></thead>
+            <tbody>
+              {(summary.data || []).map((s: any, i: number) => (
+                <tr key={i} className="border-t border-[#eef2f7]">
+                  <td className="py-2">{s.reporting_period_start?.slice(0, 10)} → {s.reporting_period_end?.slice(0, 10)}</td>
+                  <td>{fmtN((s.total_load_kwh || 0) / 1000, 1)}</td>
+                  <td>{fmtN((s.total_carbon_free_kwh || 0) / 1000, 1)}</td>
+                  <td><span className={s.cfe_match_pct >= 80 ? 'text-green-600 font-semibold' : s.cfe_match_pct >= 50 ? 'text-amber-600' : 'text-red-600'}>{(s.cfe_match_pct || 0).toFixed(1)}%</span></td>
+                  <td>{s.hours_with_full_match || 0}</td>
+                  <td>{fmtN(s.emissions_avoided_tco2e || 0, 2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </StitchCard>
+      {open && <CFEScoreModal onClose={() => { setOpen(false); summary.refresh(); }} />}
+    </div>
+  );
+}
+
+function CFEScoreModal({ onClose }: { onClose: () => void }) {
+  useEscapeKey(onClose);
+  const [f, setF] = useState<any>({ period_start: '2026-01-01', period_end: '2026-01-31', grid_intensity_kg_kwh: 0.92 });
+  const [result, setResult] = useState<any>(null);
+  const save = async () => {
+    try {
+      const r = await api.post('/api/watershed/cfe/score', f);
+      setResult(r?.data || r);
+    } catch (e: any) { alert(e?.message || 'Failed'); }
+  };
+  return (
+    <Modal title="Compute 24/7 CFE score" onClose={onClose}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Field label="Period start" value={f.period_start} onChange={e => setF({ ...f, period_start: e.target.value })} />
+        <Field label="Period end" value={f.period_end} onChange={e => setF({ ...f, period_end: e.target.value })} />
+        <Field label="Grid intensity (kg/kWh)" type="number" value={f.grid_intensity_kg_kwh} onChange={e => setF({ ...f, grid_intensity_kg_kwh: Number(e.target.value) })} />
+      </div>
+      {result && (
+        <div className="mt-4 p-3 bg-[#f6f9fc] rounded-lg text-sm">
+          <div>Load: <strong>{fmtN(result.total_load_kwh / 1000, 2)} MWh</strong></div>
+          <div>Carbon-free: <strong>{fmtN(result.total_carbon_free_kwh / 1000, 2)} MWh</strong></div>
+          <div>Match: <strong>{(result.cfe_match_pct || 0).toFixed(1)}%</strong></div>
+          <div>Avoided emissions: <strong>{fmtN(result.emissions_avoided_tco2e, 2)} tCO₂e</strong></div>
+        </div>
+      )}
+      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Close</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Compute</button></div>
+    </Modal>
+  );
+}
+
+// ─── 12. Product Carbon Footprints ──────────────────────────────────────
+function PCFTab() {
+  const rows = useWatershed<any[]>(`/pcf`, []);
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="space-y-5">
+      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">SKU-level lifecycle carbon — cradle-to-gate per ISO 14067.</p><button onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ Add product</button></div>
+      <StitchCard title="Product footprints">
+        {rows.loading ? <Skeleton /> : (rows.data || []).length === 0 ? <EmptyState icon="tag" title="No PCFs yet" subtitle="Add a product to compute its lifecycle carbon footprint." /> : (
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">SKU</th><th>Product</th><th>Unit</th><th>Year</th><th>tCO₂e/unit</th><th>Lifecycle tCO₂e</th><th>DQ</th></tr></thead>
+            <tbody>
+              {(rows.data || []).map((r: any) => (
+                <tr key={r.id} className="border-t border-[#eef2f7]">
+                  <td className="py-2 font-mono text-[12px]">{r.product_code}</td><td>{r.product_name}</td><td>{r.functional_unit}</td><td>{r.reporting_year}</td>
+                  <td>{(r.total_tco2e_per_unit || 0).toFixed(4)}</td>
+                  <td>{r.total_lifecycle_tco2e ? fmtN(r.total_lifecycle_tco2e, 2) : '—'}</td>
+                  <td>{r.data_quality_score ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </StitchCard>
+      {open && <PCFModal onClose={() => { setOpen(false); rows.refresh(); }} />}
+    </div>
+  );
+}
+
+function PCFModal({ onClose }: { onClose: () => void }) {
+  useEscapeKey(onClose);
+  const [f, setF] = useState<any>({ reporting_year: new Date().getFullYear(), methodology: 'ISO 14067', functional_unit: '1 unit' });
+  const save = async () => {
+    try { await api.post('/api/watershed/pcf', f); onClose(); }
+    catch (e: any) { alert(e?.message || 'Failed'); }
+  };
+  return (
+    <Modal title="Add product footprint" onClose={onClose}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Field label="Product code (SKU)" value={f.product_code || ''} onChange={e => setF({ ...f, product_code: e.target.value })} />
+        <Field label="Product name" value={f.product_name || ''} onChange={e => setF({ ...f, product_name: e.target.value })} />
+        <Field label="Functional unit" value={f.functional_unit} onChange={e => setF({ ...f, functional_unit: e.target.value })} />
+        <Field label="Reporting year" type="number" value={f.reporting_year} onChange={e => setF({ ...f, reporting_year: Number(e.target.value) })} />
+        <label className="block"><div className="text-[12px] font-medium mb-1">Methodology</div><select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.methodology} onChange={e => setF({ ...f, methodology: e.target.value })}><option>ISO 14067</option><option>PEFCR</option><option>PAS 2050</option><option>custom</option></select></label>
+        <Field label="Upstream tCO₂e/unit" type="number" value={f.upstream_tco2e_per_unit || ''} onChange={e => setF({ ...f, upstream_tco2e_per_unit: Number(e.target.value) })} />
+        <Field label="Manufacturing tCO₂e/unit" type="number" value={f.manufacturing_tco2e_per_unit || ''} onChange={e => setF({ ...f, manufacturing_tco2e_per_unit: Number(e.target.value) })} />
+        <Field label="Distribution tCO₂e/unit" type="number" value={f.distribution_tco2e_per_unit || ''} onChange={e => setF({ ...f, distribution_tco2e_per_unit: Number(e.target.value) })} />
+        <Field label="Use phase tCO₂e/unit" type="number" value={f.use_phase_tco2e_per_unit || ''} onChange={e => setF({ ...f, use_phase_tco2e_per_unit: Number(e.target.value) })} />
+        <Field label="End-of-life tCO₂e/unit" type="number" value={f.end_of_life_tco2e_per_unit || ''} onChange={e => setF({ ...f, end_of_life_tco2e_per_unit: Number(e.target.value) })} />
+        <Field label="Units sold" type="number" value={f.units_sold || ''} onChange={e => setF({ ...f, units_sold: Number(e.target.value) })} />
+        <Field label="Data quality (0–100)" type="number" value={f.data_quality_score || ''} onChange={e => setF({ ...f, data_quality_score: Number(e.target.value) })} />
+      </div>
+      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Save PCF</button></div>
+    </Modal>
+  );
+}
+
+// ─── 13. Assurance ──────────────────────────────────────────────────────
+function AssuranceTab() {
+  const eng = useWatershed<any[]>(`/assurance/engagements`, []);
+  const [open, setOpen] = useState(false);
+  const [findingsOpen, setFindingsOpen] = useState<string | null>(null);
+
+  return (
+    <div className="space-y-5">
+      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Auditor engagements with finding tracking and evidence-pack assembly (ISAE 3000/3410, AA1000AS, ISO 14064-3).</p><button onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ Open engagement</button></div>
+      <StitchCard title="Engagements">
+        {eng.loading ? <Skeleton /> : (eng.data || []).length === 0 ? <EmptyState icon="shield" title="No engagements" subtitle="Open your first assurance engagement to start the audit trail." /> : (
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Year</th><th>Scope</th><th>Auditor</th><th>Standard</th><th>Level</th><th>Status</th><th>Opinion</th><th></th></tr></thead>
+            <tbody>
+              {(eng.data || []).map((e: any) => (
+                <tr key={e.id} className="border-t border-[#eef2f7]">
+                  <td className="py-2">{e.reporting_year}</td><td>{e.scope}</td><td>{e.auditor_name || '—'}</td><td>{e.assurance_standard}</td>
+                  <td><StitchPill label={e.assurance_level} tone={e.assurance_level === 'reasonable' ? 'good' : 'info'} /></td>
+                  <td>{e.engagement_status}</td>
+                  <td>{e.opinion || '—'}</td>
+                  <td><button onClick={() => setFindingsOpen(e.id)} className="text-blue-600 text-[12px] hover:underline">Findings</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </StitchCard>
+      {open && <EngagementModal onClose={() => { setOpen(false); eng.refresh(); }} />}
+      {findingsOpen && <FindingsModal engagementId={findingsOpen} onClose={() => setFindingsOpen(null)} />}
+    </div>
+  );
+}
+
+function EngagementModal({ onClose }: { onClose: () => void }) {
+  useEscapeKey(onClose);
+  const [f, setF] = useState<any>({ reporting_year: new Date().getFullYear(), assurance_standard: 'ISAE_3000', assurance_level: 'limited', scope: 'scope1' });
+  const save = async () => {
+    try { await api.post('/api/watershed/assurance/engagements', f); onClose(); }
+    catch (e: any) { alert(e?.message || 'Failed'); }
+  };
+  return (
+    <Modal title="Open assurance engagement" onClose={onClose}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Field label="Reporting year" type="number" value={f.reporting_year} onChange={e => setF({ ...f, reporting_year: Number(e.target.value) })} />
+        <label className="block"><div className="text-[12px] font-medium mb-1">Scope</div><select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.scope} onChange={e => setF({ ...f, scope: e.target.value })}><option value="scope1">Scope 1</option><option value="scope2_location">Scope 2 location-based</option><option value="scope2_market">Scope 2 market-based</option><option value="scope3_all">Scope 3 (all)</option><option value="scope3_cat1">Scope 3 cat. 1</option><option value="financed_emissions">Financed emissions</option></select></label>
+        <Field label="Auditor name" value={f.auditor_name || ''} onChange={e => setF({ ...f, auditor_name: e.target.value })} />
+        <Field label="Auditor email" value={f.auditor_email || ''} onChange={e => setF({ ...f, auditor_email: e.target.value })} />
+        <label className="block"><div className="text-[12px] font-medium mb-1">Standard</div><select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.assurance_standard} onChange={e => setF({ ...f, assurance_standard: e.target.value })}><option>ISAE_3000</option><option>ISAE_3410</option><option>AA1000AS</option><option>ISO_14064_3</option><option>custom</option></select></label>
+        <label className="block"><div className="text-[12px] font-medium mb-1">Level</div><select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.assurance_level} onChange={e => setF({ ...f, assurance_level: e.target.value })}><option value="limited">Limited</option><option value="reasonable">Reasonable</option></select></label>
+      </div>
+      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Open engagement</button></div>
+    </Modal>
+  );
+}
+
+function FindingsModal({ engagementId, onClose }: { engagementId: string; onClose: () => void }) {
+  useEscapeKey(onClose);
+  const [findings, setFindings] = useState<any[]>([]);
+  const [adding, setAdding] = useState(false);
+  const [f, setF] = useState<any>({ severity: 'observation', category: 'data_quality' });
+  const refresh = useCallback(async () => {
+    const r = await api.get(`/api/watershed/assurance/engagements/${engagementId}/findings`);
+    setFindings((r?.data || r) ?? []);
+  }, [engagementId]);
+  useEffect(() => { refresh(); }, [refresh]);
+  const add = async () => {
+    try { await api.post(`/api/watershed/assurance/engagements/${engagementId}/findings`, f); setAdding(false); refresh(); }
+    catch (e: any) { alert(e?.message || 'Failed'); }
+  };
+  return (
+    <Modal title="Audit findings" onClose={onClose}>
+      <div className="space-y-2 mb-3">
+        {findings.length === 0 && <div className="text-sm text-[#6b7685]">No findings yet.</div>}
+        {findings.map((x: any) => (
+          <div key={x.id} className="border border-[#eef2f7] rounded-lg p-3">
+            <div className="flex items-center justify-between mb-1">
+              <div className="font-medium text-sm">{x.title}</div>
+              <StitchPill label={x.severity} tone={x.severity === 'critical' || x.severity === 'material' ? 'critical' : x.severity === 'significant' ? 'warn' : 'info'} />
+            </div>
+            <div className="text-[12px] text-[#6b7685]">{x.category} · {x.status}</div>
+            {x.description && <div className="text-[13px] mt-1">{x.description}</div>}
+          </div>
+        ))}
+      </div>
+      {adding ? (
+        <div className="border-t pt-3 space-y-2">
+          <Field label="Title" value={f.title || ''} onChange={e => setF({ ...f, title: e.target.value })} />
+          <Field label="Description" value={f.description || ''} onChange={e => setF({ ...f, description: e.target.value })} />
+          <div className="grid grid-cols-2 gap-2">
+            <label><div className="text-[12px] mb-1">Severity</div><select className="w-full border rounded px-2 py-1 text-sm" value={f.severity} onChange={e => setF({ ...f, severity: e.target.value })}><option>observation</option><option>minor</option><option>significant</option><option>material</option><option>critical</option></select></label>
+            <label><div className="text-[12px] mb-1">Category</div><select className="w-full border rounded px-2 py-1 text-sm" value={f.category} onChange={e => setF({ ...f, category: e.target.value })}><option>data_quality</option><option>methodology</option><option>boundary</option><option>factor_age</option><option>restatement</option></select></label>
+          </div>
+          <div className="flex justify-end gap-2"><button onClick={() => setAdding(false)} className="px-2 py-1 text-sm border rounded">Cancel</button><button onClick={add} className="px-2 py-1 text-sm bg-[#0f1c2e] text-white rounded">Add</button></div>
+        </div>
+      ) : (
+        <div className="flex justify-end"><button onClick={() => setAdding(true)} className="text-sm text-blue-600 hover:underline">+ Add finding</button></div>
+      )}
+    </Modal>
+  );
+}
+
+// ─── 14. Maturity ───────────────────────────────────────────────────────
+function MaturityTab() {
+  const assessments = useWatershed<any[]>(`/maturity`, []);
+  const benchmarks = useWatershed<any[]>(`/benchmarks`, []);
+  const [busy, setBusy] = useState(false);
+  const score = async () => {
+    setBusy(true);
+    try { await api.post('/api/watershed/maturity/score', { reporting_year: new Date().getFullYear() }); assessments.refresh(); }
+    catch (e: any) { alert(e?.message || 'Failed'); }
+    finally { setBusy(false); }
+  };
+  const latest = (assessments.data || [])[0];
+  const pillarData = latest ? [
+    { pillar: 'Measurement', score: latest.measurement_score },
+    { pillar: 'Governance',  score: latest.governance_score },
+    { pillar: 'Targets',     score: latest.target_score },
+    { pillar: 'Action',      score: latest.action_score },
+    { pillar: 'Disclosure',  score: latest.disclosure_score },
+  ] : [];
+
+  return (
+    <div className="space-y-5">
+      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Climate maturity assessment — five pillars graded against your platform activity, not self-reported.</p><button onClick={score} disabled={busy} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg disabled:opacity-50">{busy ? 'Scoring…' : 'Compute current score'}</button></div>
+
+      {latest && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <StitchCard title={`${latest.reporting_year} — ${latest.band.toUpperCase()}`}>
+            <div className="flex items-center justify-center my-2">
+              <div className="text-center">
+                <div className="text-[44px] font-display font-bold text-[#0f1c2e]">{(latest.overall_score || 0).toFixed(0)}</div>
+                <div className="text-[12px] text-[#6b7685] uppercase tracking-wide">Overall climate maturity</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-5 gap-2 text-center text-[12px]">
+              <div><div className="font-semibold">{(latest.measurement_score || 0).toFixed(0)}</div><div className="text-[#6b7685]">Measure</div></div>
+              <div><div className="font-semibold">{(latest.governance_score || 0).toFixed(0)}</div><div className="text-[#6b7685]">Govern</div></div>
+              <div><div className="font-semibold">{(latest.target_score || 0).toFixed(0)}</div><div className="text-[#6b7685]">Target</div></div>
+              <div><div className="font-semibold">{(latest.action_score || 0).toFixed(0)}</div><div className="text-[#6b7685]">Act</div></div>
+              <div><div className="font-semibold">{(latest.disclosure_score || 0).toFixed(0)}</div><div className="text-[#6b7685]">Disclose</div></div>
+            </div>
+          </StitchCard>
+          <StitchCard title="Pillar radar">
+            <ResponsiveContainer width="100%" height={240}>
+              <RadarChart data={pillarData}>
+                <PolarGrid /><PolarAngleAxis dataKey="pillar" />
+                <Radar name="Score" dataKey="score" stroke="#0f1c2e" fill="#0f1c2e" fillOpacity={0.3} />
+                <Tooltip />
+              </RadarChart>
+            </ResponsiveContainer>
+          </StitchCard>
+        </div>
+      )}
+
+      <StitchCard title="Industry benchmarks">
+        {benchmarks.loading ? <Skeleton /> : (
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Sector</th><th>Region</th><th>Year</th><th>Metric</th><th>P25</th><th>P50</th><th>P75</th><th>Unit</th></tr></thead>
+            <tbody>
+              {(benchmarks.data || []).map((b: any) => (
+                <tr key={b.id} className="border-t border-[#eef2f7]">
+                  <td className="py-2">{b.sector_name}</td><td>{b.region}</td><td>{b.reporting_year}</td><td className="text-[12px]">{b.metric}</td>
+                  <td>{b.p25}</td><td className="font-semibold">{b.p50}</td><td>{b.p75}</td><td className="text-[12px]">{b.unit}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </StitchCard>
+    </div>
+  );
+}
+
+// ─── 15. Jurisdictions ──────────────────────────────────────────────────
+function JurisdictionsTab() {
+  const jurs = useWatershed<any[]>(`/jurisdictions`, []);
+  const subs = useWatershed<any[]>(`/jurisdictions/submissions`, []);
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="space-y-5">
+      <div className="flex justify-between">
+        <p className="text-sm text-[#6b7685]">File one fiscal-year dataset to many regulators — CSRD, SEC, CA SB-253, UK SECR, SGX, Japan TCFD, JSE-SRL.</p>
+        <button onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ New submission</button>
+      </div>
+
+      <StitchCard title="My submissions">
+        {subs.loading ? <Skeleton /> : (subs.data || []).length === 0 ? <EmptyState icon="globe" title="No submissions filed yet" subtitle="Create a submission against any registered jurisdiction." /> : (
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Jurisdiction</th><th>Region</th><th>Year</th><th>Status</th><th>Submitted</th><th>Reference</th></tr></thead>
+            <tbody>
+              {(subs.data || []).map((s: any) => (
+                <tr key={s.id} className="border-t border-[#eef2f7]">
+                  <td className="py-2"><div className="font-medium">{s.jurisdiction_name}</div><div className="text-[12px] text-[#6b7685]">{s.jurisdiction}</div></td>
+                  <td>{s.region}</td><td>{s.reporting_year}</td>
+                  <td><StitchPill status={s.status} /></td>
+                  <td className="text-[12px]">{s.submitted_at?.slice(0, 10) || '—'}</td>
+                  <td className="font-mono text-[12px]">{s.external_reference || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </StitchCard>
+
+      <StitchCard title="Available jurisdictions">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+          {(jurs.data || []).map((j: any) => (
+            <div key={j.code} className="border border-[#eef2f7] rounded-lg p-3">
+              <div className="flex items-start justify-between mb-1">
+                <div className="font-display font-semibold text-[13px]">{j.name}</div>
+                {j.mandatory ? <StitchPill label="Mandatory" tone="critical" /> : <StitchPill label="Voluntary" tone="info" />}
+              </div>
+              <div className="text-[12px] text-[#6b7685] mb-1">{j.region} · {j.effective_year}</div>
+              <div className="text-[12px] text-[#0f1c2e]">{j.description}</div>
+            </div>
+          ))}
+        </div>
+      </StitchCard>
+
+      {open && <SubmissionModal onClose={() => { setOpen(false); subs.refresh(); }} jurisdictions={jurs.data || []} />}
+    </div>
+  );
+}
+
+function SubmissionModal({ jurisdictions, onClose }: { jurisdictions: any[]; onClose: () => void }) {
+  useEscapeKey(onClose);
+  const [f, setF] = useState<any>({ reporting_year: new Date().getFullYear(), jurisdiction: jurisdictions[0]?.code || 'CDP' });
+  const save = async () => {
+    try { await api.post('/api/watershed/jurisdictions/submissions', f); onClose(); }
+    catch (e: any) { alert(e?.message || 'Failed'); }
+  };
+  return (
+    <Modal title="New disclosure submission" onClose={onClose}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <label className="block"><div className="text-[12px] mb-1">Jurisdiction</div><select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.jurisdiction} onChange={e => setF({ ...f, jurisdiction: e.target.value })}>{jurisdictions.map((j: any) => <option key={j.code} value={j.code}>{j.name}</option>)}</select></label>
+        <Field label="Reporting year" type="number" value={f.reporting_year} onChange={e => setF({ ...f, reporting_year: Number(e.target.value) })} />
+        <Field label="Notes" value={f.notes || ''} onChange={e => setF({ ...f, notes: e.target.value })} />
+      </div>
+      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Create</button></div>
+    </Modal>
+  );
+}
+
+// ─── 16. Anomalies ──────────────────────────────────────────────────────
+function AnomaliesTab() {
+  const rows = useWatershed<any[]>(`/anomalies?status=open`, []);
+  const [busy, setBusy] = useState(false);
+  const scan = async () => {
+    setBusy(true);
+    try { await api.post('/api/watershed/anomalies/scan', {}); rows.refresh(); }
+    catch (e: any) { alert(e?.message || 'Failed'); }
+    finally { setBusy(false); }
+  };
+  const update = async (id: string, status: string) => {
+    try { await api.patch(`/api/watershed/anomalies/${id}`, { status }); rows.refresh(); }
+    catch (e: any) { alert(e?.message || 'Failed'); }
+  };
+  return (
+    <div className="space-y-5">
+      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Heuristic anomaly detection — spikes, duplicates, impossible values, factor mismatches.</p><button onClick={scan} disabled={busy} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg disabled:opacity-50">{busy ? 'Scanning…' : 'Run scan'}</button></div>
+      <StitchCard title="Open anomalies">
+        {rows.loading ? <Skeleton /> : (rows.data || []).length === 0 ? <EmptyState icon="check-circle" title="No open anomalies" subtitle="All your ESG transactions pass the anomaly heuristics." /> : (
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Rule</th><th>Severity</th><th>Detail</th><th>Expected</th><th>Observed</th><th>Detected</th><th></th></tr></thead>
+            <tbody>
+              {(rows.data || []).map((r: any) => (
+                <tr key={r.id} className="border-t border-[#eef2f7]">
+                  <td className="py-2 font-mono text-[12px]">{r.rule}</td>
+                  <td><StitchPill label={r.severity} tone={r.severity === 'critical' ? 'critical' : r.severity === 'high' ? 'warn' : 'info'} /></td>
+                  <td className="text-[12px]">{r.detail}</td>
+                  <td>{r.expected_value ? fmtN(r.expected_value, 2) : '—'}</td>
+                  <td>{r.observed_value ? fmtN(r.observed_value, 2) : '—'}</td>
+                  <td className="text-[12px]">{r.detected_at?.slice(0, 16) || '—'}</td>
+                  <td className="space-x-2">
+                    <button onClick={() => update(r.id, 'resolved')} className="text-green-700 text-[12px] hover:underline">Resolve</button>
+                    <button onClick={() => update(r.id, 'dismissed')} className="text-[#6b7685] text-[12px] hover:underline">Dismiss</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </StitchCard>
     </div>
   );
 }

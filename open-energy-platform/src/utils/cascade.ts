@@ -81,7 +81,17 @@ export type EventType =
   // Platform admin
   | 'tenant.provisioned' | 'tenant.suspended' | 'tenant.reactivated'
   | 'tenant.subscription_created' | 'tenant.invoice_issued'
-  | 'flag.changed' | 'flag.override_set';
+  | 'flag.changed' | 'flag.override_set'
+  // ─── Watershed parity (migration 040) ────────────────────────────────
+  | 'pcaf.financed_emissions_recorded' | 'pcaf.facilitated_emissions_recorded'
+  | 'pcaf.target_committed'
+  | 'cdr.project_listed' | 'cdr.offtake_signed' | 'cdr.retirement_recorded'
+  | 'cfe.score_computed'
+  | 'pcf.published'
+  | 'assurance.engagement_opened' | 'assurance.finding_raised' | 'assurance.opinion_issued'
+  | 'maturity.assessed'
+  | 'anomaly.detected'
+  | 'disclosure.jurisdiction_filed';
 
 interface CascadeContext {
   event: EventType;
