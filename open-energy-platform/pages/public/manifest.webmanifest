@@ -1,0 +1,72 @@
+{
+  "name": "Open Energy — Industrial Energy Exchange",
+  "short_name": "Open Energy",
+  "description": "Unified South African energy exchange — power trading, carbon markets, IPP project lifecycle, settlement, regulatory compliance.",
+  "start_url": "/cockpit",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f5f8fb",
+  "theme_color": "#1a3a5c",
+  "lang": "en-ZA",
+  "dir": "ltr",
+  "categories": ["business", "finance", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/logos/oe-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/logos/oe-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logos/oe-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logos/oe-icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Launchpad",
+      "short_name": "Launchpad",
+      "description": "Open the launchpad cockpit",
+      "url": "/cockpit",
+      "icons": [{ "src": "/logos/oe-mark.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Trading Terminal",
+      "short_name": "Trade",
+      "description": "Energy trading desk",
+      "url": "/trading",
+      "icons": [{ "src": "/logos/oe-mark.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "O&M Cockpit",
+      "short_name": "O&M",
+      "description": "Solar + wind asset operations",
+      "url": "/om",
+      "icons": [{ "src": "/logos/oe-mark.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Marketplace",
+      "short_name": "Market",
+      "description": "Browse listings",
+      "url": "/marketplace",
+      "icons": [{ "src": "/logos/oe-mark.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

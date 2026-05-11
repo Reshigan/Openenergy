@@ -2,7 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { registerServiceWorker } from './lib/pwa';
 import './index.css';
+
+registerServiceWorker();
 
 // Global handlers for errors that bypass React's render tree
 // (async callbacks, setTimeout, unhandled promise rejections). They log

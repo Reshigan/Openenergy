@@ -609,8 +609,12 @@ regulator.get('/market-summary', async (c) => {
            (SELECT COUNT(*) FROM ipp_projects) AS projects,
            (SELECT COALESCE(SUM(capacity_mw),0) FROM ipp_projects) AS total_mw,
            (SELECT COUNT(*) FROM trade_orders WHERE status='open') AS open_orders,
-           (SELECT COUNT(*) FROM invoices WHERE status='paid' AND strftime('%Y', issue_date)=strftime('%Y','now')) AS paid_ytd,
-           (SELECT COALESCE(SUM(amount),0) FROM invoices WHERE status='paid') AS gmv_paid_zar,
+           /* invoices table uses issued_at (not the legacy issue_date) */
+           /* and total_amount (not amount). Both renamed in v2 schema.   */
+           (SELECT COUNT(*) FROM invoices WHERE status='paid'
+              AND issued_at IS NOT NULL
+              AND strftime('%Y', issued_at) = strftime('%Y','now')) AS paid_ytd,
+           (SELECT COALESCE(SUM(total_amount),0) FROM invoices WHERE status='paid') AS gmv_paid_zar,
            (SELECT COUNT(*) FROM grid_constraints WHERE status='active') AS active_grid_constraints
   `).first();
 

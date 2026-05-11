@@ -150,8 +150,10 @@ monitoring.get('/cascade-dlq', async (c) => {
   const limit = Math.min(parseInt(c.req.query('limit') || '100', 10) || 100, 500);
   const rs = await c.env.DB.prepare(
     `SELECT id, event, entity_type, entity_id, actor_id, stage, error_message,
-            attempt_count, status, created_at, last_attempt_at
-       FROM cascade_dlq WHERE status = ? ORDER BY created_at DESC LIMIT ?`,
+            attempt_count, status,
+            first_seen_at AS created_at,
+            last_attempt_at
+       FROM cascade_dlq WHERE status = ? ORDER BY first_seen_at DESC LIMIT ?`,
   ).bind(status, limit).all();
   const byStageQ = await c.env.DB.prepare(
     `SELECT stage, COUNT(*) AS n FROM cascade_dlq WHERE status = 'pending' GROUP BY stage`,
@@ -206,7 +208,8 @@ monitoring.get('/cron-health', async (c) => {
     `SELECT MAX(as_of) AS last_run FROM margin_calls`,
   ).first<{ last_run: string | null }>();
   const mp = await c.env.DB.prepare(
-    `SELECT MAX(created_at) AS last_run FROM mark_prices WHERE source = 'vwap'`,
+    // mark_prices uses `computed_at` (created in migration 037), not `created_at`.
+    `SELECT MAX(computed_at) AS last_run FROM mark_prices WHERE source = 'vwap'`,
   ).first<{ last_run: string | null }>();
   const ti = await c.env.DB.prepare(
     `SELECT MAX(issued_at) AS last_run FROM tenant_invoices`,

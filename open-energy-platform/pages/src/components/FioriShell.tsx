@@ -113,6 +113,24 @@ function MIcon({ name, className = '', filled, size = 20 }: { name: string; clas
   return <MatIcon name={name} size={size} className={className} filled={filled} />;
 }
 
+/** Track whether the viewport is sub-md (Tailwind's md breakpoint = 768px).
+ *  When mobile, the side rail is hidden in favour of the hamburger drawer
+ *  + the bottom-nav strip, and the canvas reclaims the left padding. */
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window === 'undefined' ? false : window.innerWidth < breakpoint,
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mql = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mql.addEventListener('change', handler);
+    setIsMobile(mql.matches);
+    return () => mql.removeEventListener('change', handler);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 export function FioriShell({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -122,6 +140,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
   const [userMenu, setUserMenu] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const isMobile = useIsMobile();
 
   // Close hamburger on route change / outside click / Escape.
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
@@ -450,9 +469,9 @@ export function FioriShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {/* ════════════ Sidebar rail ════════════ */}
+      {/* ════════════ Sidebar rail (desktop ≥ 768px only) ════════════ */}
       <aside
-        className={`oe-rail fiori-rail fixed left-0 bottom-0 overflow-y-auto flex flex-col ${collapsed ? 'collapsed' : ''}`}
+        className={`oe-rail fiori-rail hidden md:flex fixed left-0 bottom-0 overflow-y-auto flex-col ${collapsed ? 'collapsed' : ''}`}
         style={{
           top: 'var(--shell-height)',
           width: sidebarWidth,
@@ -511,16 +530,101 @@ export function FioriShell({ children }: { children: ReactNode }) {
         className="oe-canvas-ambient fiori-canvas-ambient min-h-screen"
         style={{
           paddingTop: 'var(--shell-height)',
-          paddingLeft: sidebarWidth,
+          // On mobile the side rail is hidden, so the canvas gets full width.
+          // A bottom nav adds 64px of safe padding for mobile-only.
+          paddingLeft: isMobile ? 0 : sidebarWidth,
+          paddingBottom: isMobile ? 'calc(64px + env(safe-area-inset-bottom))' : 0,
           transition: 'padding-left 200ms cubic-bezier(0.4,0,0.2,1)',
-          ['--sidebar-width' as any]: `${sidebarWidth}px`,
+          ['--sidebar-width' as any]: isMobile ? '0px' : `${sidebarWidth}px`,
         }}
       >
-        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 py-6 fade-in">
+        <div className="mx-auto max-w-[1440px] px-3 sm:px-6 lg:px-8 py-4 sm:py-6 fade-in">
           {children}
         </div>
       </main>
+
+      {/* ════════════ Mobile bottom nav (sub-md only) ════════════ */}
+      <MobileBottomNav nav={nav} isActive={isActive} />
     </div>
+  );
+}
+
+/**
+ * Sub-md bottom navigation — five most-used destinations per role plus a
+ * "More" button that opens the same hamburger drawer the header uses.
+ *
+ * Mirrors the desktop rail's role gating: takes the first 4 nav entries
+ * from the role-scoped list and pins them; a "More" tile opens the menu.
+ * The bar respects `env(safe-area-inset-bottom)` for iOS Home indicator.
+ */
+function MobileBottomNav({
+  nav,
+  isActive,
+}: {
+  nav: NavItem[];
+  isActive: (path: string) => boolean;
+}) {
+  // First 4 of the role-scoped nav, but always include /cockpit if present.
+  const top4 = (() => {
+    const cockpit = nav.find((n) => n.path === '/cockpit');
+    const others = nav.filter((n) => n.path !== '/cockpit').slice(0, cockpit ? 3 : 4);
+    return cockpit ? [cockpit, ...others] : others;
+  })();
+  if (top4.length === 0) return null;
+
+  return (
+    <nav
+      className="md:hidden fixed left-0 right-0 bottom-0 bg-white border-t flex items-stretch justify-around"
+      style={{
+        borderColor: 'var(--oe-outline-variant)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        zIndex: 45,
+        boxShadow: '0 -2px 8px rgba(15,28,46,0.08)',
+      }}
+      role="navigation"
+      aria-label="Primary mobile navigation"
+    >
+      {top4.map((item) => {
+        const active = isActive(item.path);
+        return (
+          <Link
+            key={item.path}
+            to={item.path}
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 transition-colors"
+            style={{
+              color: active ? 'var(--oe-primary)' : 'var(--oe-on-surface-variant)',
+              background: active ? 'var(--oe-primary-container)' : 'transparent',
+            }}
+          >
+            <MIcon name={item.icon} size={20} filled={active} />
+            <span className="text-[10px] font-semibold truncate max-w-full px-1">{item.label}</span>
+          </Link>
+        );
+      })}
+      <MoreButton />
+    </nav>
+  );
+}
+
+function MoreButton() {
+  // Re-fire a click on the header hamburger so we don't duplicate the menu
+  // logic. Falls back to navigating to /support if the hamburger isn't
+  // present (e.g. partially rendered SSR shell).
+  function openMenu() {
+    const btn = document.querySelector<HTMLButtonElement>('[aria-label="Open navigation menu"]');
+    if (btn) { btn.click(); return; }
+  }
+  return (
+    <button
+      onClick={openMenu}
+      type="button"
+      className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5"
+      style={{ color: 'var(--oe-on-surface-variant)' }}
+      aria-label="More navigation"
+    >
+      <MIcon name="menu" size={20} />
+      <span className="text-[10px] font-semibold">More</span>
+    </button>
   );
 }
 
