@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/useAuth';
 import { LogoMark } from './Logo';
 import { MatIcon } from './OEIcon';
+import { LtmLogo } from './LtmLogo';
 
 /* ════════════════════════════════════════════════════════════════════════
  * Open Energy Platform — App Shell
@@ -545,6 +546,9 @@ export function FioriShell({ children }: { children: ReactNode }) {
 
       {/* ════════════ Mobile bottom nav (sub-md only) ════════════ */}
       <MobileBottomNav nav={nav} isActive={isActive} />
+
+      {/* ════════════ Partner brand — LTM Energy Group, bottom-right ════════════ */}
+      <LtmLogo />
     </div>
   );
 }

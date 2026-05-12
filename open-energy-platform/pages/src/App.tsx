@@ -7,6 +7,7 @@ import { api } from './lib/api';
 import { FioriShell } from './components/FioriShell';
 import { LogoMark, LogoBanner } from './components/Logo';
 import { OEIcon, type IconName } from './components/OEIcon';
+import { LtmLogo } from './components/LtmLogo';
 
 // Import page components
 import { Cockpit } from './components/pages/Cockpit';
@@ -382,7 +383,8 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-[1.1fr_0.9fr]" style={{ background: '#f5f8fb' }}>
+    <div className="min-h-screen grid lg:grid-cols-[1.1fr_0.9fr] relative" style={{ background: '#f5f8fb' }}>
+      <LtmLogo />
       {/* Brand panel — Navy with Teal/Sky accents */}
       <div
         className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden text-white"
