@@ -1105,4 +1105,961 @@ roles.patch('/trader/confirmations/:id', async (c) => {
   return c.json({ success: true });
 });
 
+// ════════════════════════════════════════════════════════════════════════
+// Migration 047 — full lifecycle micro-tools for the six other roles
+// Mirrors the IPP depth (migration 046): each role gets 7-8 endpoints
+// covering daily / weekly / quarterly workflows previously off-platform.
+// ════════════════════════════════════════════════════════════════════════
+
+// Generic tenant-wide list (no participant filter) for shared registers.
+async function listAll(c: any, table: string, orderBy = 'created_at DESC'): Promise<any[]> {
+  const r = await c.env.DB.prepare(`SELECT * FROM ${table} ORDER BY ${orderBy} LIMIT 500`).all();
+  return r.results || [];
+}
+
+// ─── Offtaker full lifecycle (047) ─────────────────────────────────────
+
+roles.get('/offtaker/ppa-portfolio', async (c) => c.json({ success: true, data: await listFor(c, 'off_ppa_portfolio') }));
+roles.post('/offtaker/ppa-portfolio', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.counterparty_name) return c.json({ success: false, error: 'counterparty_name required' }, 400);
+  const id = rid('ppap');
+  await c.env.DB.prepare(`
+    INSERT INTO off_ppa_portfolio (id, participant_id, contract_ref, counterparty_name, technology,
+      capacity_mw, ppa_term_years, ppa_start_date, ppa_end_date, price_zar_per_mwh, indexation,
+      expected_p50_gwh_yr, green_attributes, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.contract_ref ?? null, b.counterparty_name, b.technology ?? null,
+    b.capacity_mw ?? null, b.ppa_term_years ?? null, b.ppa_start_date ?? null, b.ppa_end_date ?? null,
+    b.price_zar_per_mwh ?? null, b.indexation ?? null, b.expected_p50_gwh_yr ?? null,
+    b.green_attributes ?? null, b.status ?? 'signed', b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/offtaker/redlines', async (c) => c.json({ success: true, data: await listFor(c, 'off_contract_redlines') }));
+roles.post('/offtaker/redlines', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.version_no) return c.json({ success: false, error: 'version_no required' }, 400);
+  const id = rid('rdl');
+  await c.env.DB.prepare(`
+    INSERT INTO off_contract_redlines (id, participant_id, contract_id, version_no, prepared_by,
+      changes_summary, document_r2_key, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.contract_id ?? null, b.version_no, b.prepared_by ?? null,
+    b.changes_summary ?? null, b.document_r2_key ?? null, b.status ?? 'draft').run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/offtaker/tou-optimisations', async (c) => c.json({ success: true, data: await listFor(c, 'off_tou_optimisations') }));
+roles.post('/offtaker/tou-optimisations', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.analysis_month) return c.json({ success: false, error: 'analysis_month required' }, 400);
+  // Auto-estimate annual savings if both tariffs and a baseline are known.
+  // Assumes a typical commercial site at ~720 MWh/yr (≈2 MWh/day).
+  let savings = b.annual_savings_zar;
+  if (!savings && b.current_zar_per_kwh && b.suggested_zar_per_kwh) {
+    const annualKwh = 720 * 1000;
+    savings = (b.current_zar_per_kwh - b.suggested_zar_per_kwh) * annualKwh;
+  }
+  const id = rid('tou');
+  await c.env.DB.prepare(`
+    INSERT INTO off_tou_optimisations (id, participant_id, analysis_month, current_tariff_bucket,
+      current_zar_per_kwh, suggested_bucket, suggested_zar_per_kwh, annual_savings_zar,
+      load_shift_required_pct, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.analysis_month, b.current_tariff_bucket ?? null,
+    b.current_zar_per_kwh ?? null, b.suggested_bucket ?? null, b.suggested_zar_per_kwh ?? null,
+    savings ?? null, b.load_shift_required_pct ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, annual_savings_zar: savings } }, 201);
+});
+
+roles.get('/offtaker/btm-designs', async (c) => c.json({ success: true, data: await listFor(c, 'off_btm_designs') }));
+roles.post('/offtaker/btm-designs', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.site_name || !b.proposed_kwp) return c.json({ success: false, error: 'site_name and proposed_kwp required' }, 400);
+  // Auto-derive yield, payback, scope-2 reduction if inputs available.
+  // ZA typical PV: ~1,700 kWh / kWp / yr (Joburg/Cape) and grid factor 0.95 kg/kWh.
+  const yieldYr = b.expected_yield_kwh_yr ?? (b.proposed_kwp * 1700);
+  let payback = b.estimated_payback_years;
+  if (!payback && b.capex_zar && b.self_consumption_pct) {
+    const savedKwh = yieldYr * (b.self_consumption_pct / 100);
+    const annualSaving = savedKwh * 2.5;             // assume tariff ZAR 2.50/kWh
+    payback = annualSaving > 0 ? b.capex_zar / annualSaving : null;
+  }
+  const scope2 = b.scope2_reduction_tco2e_yr ?? (yieldYr * 0.00095);
+  const id = rid('btm');
+  await c.env.DB.prepare(`
+    INSERT INTO off_btm_designs (id, participant_id, site_name, rooftop_area_m2, proposed_kwp,
+      inverter_kw, bess_kwh, expected_yield_kwh_yr, capex_zar, estimated_payback_years,
+      self_consumption_pct, scope2_reduction_tco2e_yr, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.site_name, b.rooftop_area_m2 ?? null, b.proposed_kwp,
+    b.inverter_kw ?? null, b.bess_kwh ?? 0, yieldYr, b.capex_zar ?? null,
+    payback ?? null, b.self_consumption_pct ?? null, scope2,
+    b.status ?? 'design', b.notes ?? null).run();
+  return c.json({ success: true, data: { id, expected_yield_kwh_yr: yieldYr, estimated_payback_years: payback, scope2_reduction_tco2e_yr: scope2 } }, 201);
+});
+
+roles.get('/offtaker/scope2', async (c) => c.json({ success: true, data: await listFor(c, 'off_scope2_reports') }));
+roles.post('/offtaker/scope2', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.reporting_year || !b.total_consumption_mwh) {
+    return c.json({ success: false, error: 'reporting_year and total_consumption_mwh required' }, 400);
+  }
+  // Auto-compute Scope-2 tCO2e if grid factors provided
+  const locTco2e = b.location_factor_kg_kwh
+    ? b.total_consumption_mwh * 1000 * b.location_factor_kg_kwh / 1000     // kg → t
+    : b.location_tco2e ?? null;
+  const mktTco2e = b.market_factor_kg_kwh
+    ? b.total_consumption_mwh * 1000 * b.market_factor_kg_kwh / 1000
+    : b.market_tco2e ?? null;
+  const renewablePct = b.renewable_pct ?? (
+    b.total_consumption_mwh > 0
+      ? ((b.recs_retired_mwh || 0) + (b.ppa_attributed_mwh || 0)) / b.total_consumption_mwh * 100
+      : null
+  );
+  const id = rid('s2');
+  await c.env.DB.prepare(`
+    INSERT INTO off_scope2_reports (id, participant_id, reporting_year, total_consumption_mwh,
+      location_factor_kg_kwh, market_factor_kg_kwh, location_tco2e, market_tco2e,
+      recs_retired_mwh, ppa_attributed_mwh, renewable_pct, cfe_match_pct, status, assured_by, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.reporting_year, b.total_consumption_mwh,
+    b.location_factor_kg_kwh ?? null, b.market_factor_kg_kwh ?? null,
+    locTco2e, mktTco2e, b.recs_retired_mwh ?? 0, b.ppa_attributed_mwh ?? 0,
+    renewablePct, b.cfe_match_pct ?? null, b.status ?? 'draft',
+    b.assured_by ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, location_tco2e: locTco2e, market_tco2e: mktTco2e, renewable_pct: renewablePct } }, 201);
+});
+
+roles.get('/offtaker/cfe-commitments', async (c) => c.json({ success: true, data: await listFor(c, 'off_cfe_commitments') }));
+roles.post('/offtaker/cfe-commitments', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.framework || !b.target_year || b.target_pct === undefined) {
+    return c.json({ success: false, error: 'framework, target_year, target_pct required' }, 400);
+  }
+  const id = rid('cfe');
+  await c.env.DB.prepare(`
+    INSERT INTO off_cfe_commitments (id, participant_id, framework, target_year, target_pct,
+      pledge_date, status, current_pct, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.framework, b.target_year, b.target_pct,
+    b.pledge_date ?? null, b.status ?? 'active', b.current_pct ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/offtaker/energy-budgets', async (c) => c.json({ success: true, data: await listFor(c, 'off_energy_budgets') }));
+roles.post('/offtaker/energy-budgets', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.budget_year || !b.category || b.budget_zar === undefined) {
+    return c.json({ success: false, error: 'budget_year, category, budget_zar required' }, 400);
+  }
+  const spent = b.spent_zar ?? 0;
+  const varZ = b.budget_zar - spent;
+  const varPct = b.budget_zar > 0 ? (varZ / b.budget_zar) * 100 : null;
+  let status = b.status ?? 'open';
+  if (spent > b.budget_zar) status = 'overspent';
+  else if (spent > 0) status = 'tracking';
+  const id = rid('bud');
+  await c.env.DB.prepare(`
+    INSERT INTO off_energy_budgets (id, participant_id, budget_year, category, budget_zar,
+      spent_zar, variance_zar, variance_pct, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.budget_year, b.category, b.budget_zar, spent, varZ, varPct,
+    status, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, variance_zar: varZ, variance_pct: varPct, status } }, 201);
+});
+
+// ─── Lender full lifecycle (047) ───────────────────────────────────────
+
+roles.get('/lender/pipeline', async (c) => c.json({ success: true, data: await listFor(c, 'lender_deal_pipeline') }));
+roles.post('/lender/pipeline', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.deal_name) return c.json({ success: false, error: 'deal_name required' }, 400);
+  const id = rid('pipe');
+  await c.env.DB.prepare(`
+    INSERT INTO lender_deal_pipeline (id, participant_id, deal_name, sponsor_name, sector, jurisdiction,
+      ticket_size_zar, expected_close, probability_pct, source, owner_user_id, stage,
+      next_action, next_action_due, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.deal_name, b.sponsor_name ?? null, b.sector ?? null, b.jurisdiction ?? null,
+    b.ticket_size_zar ?? null, b.expected_close ?? null, b.probability_pct ?? null,
+    b.source ?? null, b.owner_user_id ?? null, b.stage ?? 'sourcing',
+    b.next_action ?? null, b.next_action_due ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/lender/sponsor-dd', async (c) => c.json({ success: true, data: await listFor(c, 'lender_sponsor_dd') }));
+roles.post('/lender/sponsor-dd', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.sponsor_name) return c.json({ success: false, error: 'sponsor_name required' }, 400);
+  const id = rid('dd');
+  await c.env.DB.prepare(`
+    INSERT INTO lender_sponsor_dd (id, participant_id, pipeline_id, sponsor_name, registration_no,
+      jurisdiction, ultimate_beneficial_owner, group_structure_r2_key, kyc_outcome,
+      sanctions_check_outcome, pep_check_outcome, litigation_check_outcome, track_record_score,
+      bbbee_level, financial_strength_score, overall_outcome, reviewed_by, reviewed_at, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.pipeline_id ?? null, b.sponsor_name, b.registration_no ?? null,
+    b.jurisdiction ?? null, b.ultimate_beneficial_owner ?? null, b.group_structure_r2_key ?? null,
+    b.kyc_outcome ?? null, b.sanctions_check_outcome ?? null, b.pep_check_outcome ?? null,
+    b.litigation_check_outcome ?? null, b.track_record_score ?? null, b.bbbee_level ?? null,
+    b.financial_strength_score ?? null, b.overall_outcome ?? null, b.reviewed_by ?? null,
+    b.reviewed_at ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/lender/credit-risk', async (c) => c.json({ success: true, data: await listFor(c, 'lender_credit_risk') }));
+roles.post('/lender/credit-risk', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.as_of_date) return c.json({ success: false, error: 'as_of_date required' }, 400);
+  // EL = PD × LGD × EAD;  RWA = EAD × risk_weight
+  const el = (b.pd_1yr_pct && b.lgd_pct && b.ead_zar)
+    ? (b.pd_1yr_pct / 100) * (b.lgd_pct / 100) * b.ead_zar
+    : b.expected_loss_zar ?? null;
+  const rwa = (b.ead_zar && b.risk_weight_pct)
+    ? b.ead_zar * (b.risk_weight_pct / 100)
+    : b.rwa_zar ?? null;
+  const id = rid('cr');
+  await c.env.DB.prepare(`
+    INSERT INTO lender_credit_risk (id, participant_id, loan_id, as_of_date, pd_1yr_pct, pd_lifetime_pct,
+      lgd_pct, ead_zar, ccf_pct, risk_weight_pct, rwa_zar, expected_loss_zar, rating_internal,
+      rating_external, watchlist, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.loan_id ?? null, b.as_of_date, b.pd_1yr_pct ?? null, b.pd_lifetime_pct ?? null,
+    b.lgd_pct ?? null, b.ead_zar ?? null, b.ccf_pct ?? null, b.risk_weight_pct ?? null,
+    rwa, el, b.rating_internal ?? null, b.rating_external ?? null,
+    b.watchlist ? 1 : 0, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, expected_loss_zar: el, rwa_zar: rwa } }, 201);
+});
+
+roles.get('/lender/ecl', async (c) => c.json({ success: true, data: await listFor(c, 'lender_ecl_provisions') }));
+roles.post('/lender/ecl', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.reporting_period) return c.json({ success: false, error: 'reporting_period required' }, 400);
+  const total = (b.stage1_ecl_zar || 0) + (b.stage2_ecl_zar || 0) + (b.stage3_ecl_zar || 0);
+  const net = total - (b.recovery_zar || 0);
+  const id = rid('ecl');
+  await c.env.DB.prepare(`
+    INSERT INTO lender_ecl_provisions (id, participant_id, loan_id, reporting_period, ifrs9_stage,
+      stage1_ecl_zar, stage2_ecl_zar, stage3_ecl_zar, total_provision_zar, recovery_zar,
+      net_provision_zar, stage_change_reason, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.loan_id ?? null, b.reporting_period, b.ifrs9_stage ?? 1,
+    b.stage1_ecl_zar ?? 0, b.stage2_ecl_zar ?? 0, b.stage3_ecl_zar ?? 0,
+    total, b.recovery_zar ?? 0, net, b.stage_change_reason ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, total_provision_zar: total, net_provision_zar: net } }, 201);
+});
+
+roles.get('/lender/limits', async (c) => {
+  const user = getCurrentUser(c);
+  const r = await c.env.DB.prepare(
+    `SELECT * FROM lender_limit_framework WHERE participant_id = ? ORDER BY (utilisation_pct IS NULL), utilisation_pct DESC LIMIT 500`
+  ).bind(user.id).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+roles.post('/lender/limits', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.limit_type) return c.json({ success: false, error: 'limit_type required' }, 400);
+  const util = b.limit_zar && b.current_zar !== undefined
+    ? (b.current_zar / b.limit_zar) * 100
+    : b.utilisation_pct ?? null;
+  let status = b.status ?? 'within';
+  if (util !== null && util !== undefined) {
+    if (util > 100) status = 'breach';
+    else if (util > 90) status = 'warning';
+    else status = 'within';
+  }
+  const id = rid('lim');
+  await c.env.DB.prepare(`
+    INSERT INTO lender_limit_framework (id, participant_id, limit_type, limit_dimension, limit_zar,
+      limit_pct, current_zar, current_pct, utilisation_pct, status, as_of_date, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.limit_type, b.limit_dimension ?? null, b.limit_zar ?? null,
+    b.limit_pct ?? null, b.current_zar ?? 0, b.current_pct ?? null, util, status,
+    b.as_of_date ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, utilisation_pct: util, status } }, 201);
+});
+
+roles.get('/lender/pricing', async (c) => c.json({ success: true, data: await listFor(c, 'lender_pricing_models') }));
+roles.post('/lender/pricing', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.pricing_method) return c.json({ success: false, error: 'pricing_method required' }, 400);
+  // Expected RAROC ≈ (margin - cost_of_credit - cost_of_ops) / cost_of_capital  (rough)
+  let raroc = b.expected_raroc_pct;
+  if (!raroc && b.proposed_margin_bps && b.cost_of_capital_pct) {
+    const marginPct = b.proposed_margin_bps / 100;
+    const net = marginPct - (b.cost_of_credit_pct || 0) - (b.cost_of_ops_pct || 0);
+    raroc = b.cost_of_capital_pct > 0 ? (net / b.cost_of_capital_pct) * 100 : null;
+  }
+  const id = rid('px');
+  await c.env.DB.prepare(`
+    INSERT INTO lender_pricing_models (id, participant_id, loan_id, pricing_method, cost_of_funds_pct,
+      cost_of_credit_pct, cost_of_capital_pct, cost_of_ops_pct, pricing_floor_bps, proposed_margin_bps,
+      expected_raroc_pct, hurdle_raroc_pct, approved, approved_by, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.loan_id ?? null, b.pricing_method, b.cost_of_funds_pct ?? null,
+    b.cost_of_credit_pct ?? null, b.cost_of_capital_pct ?? null, b.cost_of_ops_pct ?? null,
+    b.pricing_floor_bps ?? null, b.proposed_margin_bps ?? null, raroc, b.hurdle_raroc_pct ?? null,
+    b.approved ? 1 : 0, b.approved_by ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, expected_raroc_pct: raroc } }, 201);
+});
+
+roles.get('/lender/repayments', async (c) => {
+  const user = getCurrentUser(c);
+  const r = await c.env.DB.prepare(
+    `SELECT * FROM lender_repayment_schedules WHERE participant_id = ? ORDER BY due_date ASC LIMIT 500`
+  ).bind(user.id).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+roles.post('/lender/repayments', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.loan_id || !b.installment_no || !b.due_date) {
+    return c.json({ success: false, error: 'loan_id, installment_no, due_date required' }, 400);
+  }
+  const total = (b.principal_zar || 0) + (b.interest_zar || 0) + (b.fees_zar || 0);
+  const id = rid('rep');
+  await c.env.DB.prepare(`
+    INSERT INTO lender_repayment_schedules (id, loan_id, participant_id, installment_no, due_date,
+      principal_zar, interest_zar, fees_zar, total_zar, balance_after_zar, status, paid_at,
+      paid_amount_zar, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, b.loan_id, user.id, b.installment_no, b.due_date,
+    b.principal_zar ?? null, b.interest_zar ?? null, b.fees_zar ?? null, total,
+    b.balance_after_zar ?? null, b.status ?? 'scheduled', b.paid_at ?? null,
+    b.paid_amount_zar ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, total_zar: total } }, 201);
+});
+
+// ─── Carbon Fund full lifecycle (047) ──────────────────────────────────
+
+roles.get('/carbon/lps', async (c) => c.json({ success: true, data: await listFor(c, 'carbon_fund_lps') }));
+roles.post('/carbon/lps', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.lp_name || !b.commitment_zar) return c.json({ success: false, error: 'lp_name and commitment_zar required' }, 400);
+  const remaining = b.commitment_zar - (b.drawn_zar || 0);
+  const id = rid('lp');
+  await c.env.DB.prepare(`
+    INSERT INTO carbon_fund_lps (id, participant_id, lp_name, lp_jurisdiction, commitment_zar,
+      drawn_zar, distributed_zar, remaining_commitment_zar, share_class, side_letter, status,
+      joined_at, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.lp_name, b.lp_jurisdiction ?? null, b.commitment_zar,
+    b.drawn_zar ?? 0, b.distributed_zar ?? 0, remaining,
+    b.share_class ?? null, b.side_letter ? 1 : 0, b.status ?? 'active',
+    b.joined_at ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, remaining_commitment_zar: remaining } }, 201);
+});
+
+roles.get('/carbon/capital-calls', async (c) => c.json({ success: true, data: await listFor(c, 'carbon_fund_capital_calls') }));
+roles.post('/carbon/capital-calls', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.call_date || !b.total_called_zar) return c.json({ success: false, error: 'call_date and total_called_zar required' }, 400);
+  // Auto-number capital call per fund
+  let callNo = b.call_no;
+  if (!callNo) {
+    const last = await c.env.DB.prepare(
+      `SELECT COALESCE(MAX(call_no), 0) AS n FROM carbon_fund_capital_calls WHERE participant_id = ?`
+    ).bind(user.id).first<any>();
+    callNo = (last?.n || 0) + 1;
+  }
+  const id = rid('cc');
+  await c.env.DB.prepare(`
+    INSERT INTO carbon_fund_capital_calls (id, participant_id, call_no, call_date, due_date,
+      total_called_zar, purpose, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, callNo, b.call_date, b.due_date ?? null, b.total_called_zar,
+    b.purpose ?? null, b.status ?? 'issued', b.notes ?? null).run();
+  return c.json({ success: true, data: { id, call_no: callNo } }, 201);
+});
+
+roles.get('/carbon/nav', async (c) => c.json({ success: true, data: await listFor(c, 'carbon_fund_nav_history') }));
+roles.post('/carbon/nav', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.as_of_date || b.gross_asset_value_zar === undefined) {
+    return c.json({ success: false, error: 'as_of_date and gross_asset_value_zar required' }, 400);
+  }
+  const cash = b.cash_zar ?? 0;
+  const liab = b.liabilities_zar ?? 0;
+  const nav = b.net_asset_value_zar ?? (b.gross_asset_value_zar + cash - liab);
+  const navPerUnit = b.nav_per_unit_zar ?? (b.units_outstanding ? nav / b.units_outstanding : null);
+  const id = rid('nav');
+  await c.env.DB.prepare(`
+    INSERT INTO carbon_fund_nav_history (id, participant_id, as_of_date, gross_asset_value_zar,
+      cash_zar, liabilities_zar, net_asset_value_zar, nav_per_unit_zar, units_outstanding,
+      ytd_return_pct, itd_irr_pct, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.as_of_date, b.gross_asset_value_zar, cash, liab, nav, navPerUnit,
+    b.units_outstanding ?? null, b.ytd_return_pct ?? null, b.itd_irr_pct ?? null,
+    b.notes ?? null).run();
+  return c.json({ success: true, data: { id, net_asset_value_zar: nav, nav_per_unit_zar: navPerUnit } }, 201);
+});
+
+roles.get('/carbon/pipeline', async (c) => c.json({ success: true, data: await listFor(c, 'carbon_fund_pipeline') }));
+roles.post('/carbon/pipeline', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.project_lead) return c.json({ success: false, error: 'project_lead required' }, 400);
+  const id = rid('pipe');
+  await c.env.DB.prepare(`
+    INSERT INTO carbon_fund_pipeline (id, participant_id, project_lead, technology, expected_tco2e_yr,
+      ticket_size_zar, developer_name, stage, source, owner_user_id, next_action, next_action_due, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.project_lead, b.technology ?? null, b.expected_tco2e_yr ?? null,
+    b.ticket_size_zar ?? null, b.developer_name ?? null, b.stage ?? 'sourced',
+    b.source ?? null, b.owner_user_id ?? null, b.next_action ?? null,
+    b.next_action_due ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/carbon/term-sheets', async (c) => c.json({ success: true, data: await listFor(c, 'carbon_fund_term_sheets') }));
+roles.post('/carbon/term-sheets', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.version) return c.json({ success: false, error: 'version required' }, 400);
+  const id = rid('ts');
+  await c.env.DB.prepare(`
+    INSERT INTO carbon_fund_term_sheets (id, participant_id, pipeline_id, developer_name, version,
+      total_tco2e, price_zar_per_tco2e, prepayment_zar, conditions_precedent, document_r2_key,
+      status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.pipeline_id ?? null, b.developer_name ?? null, b.version,
+    b.total_tco2e ?? null, b.price_zar_per_tco2e ?? null, b.prepayment_zar ?? null,
+    b.conditions_precedent ?? null, b.document_r2_key ?? null,
+    b.status ?? 'drafting', b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/carbon/cobenefits', async (c) => c.json({ success: true, data: await listFor(c, 'carbon_fund_cobenefits') }));
+roles.post('/carbon/cobenefits', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.sdg_target) return c.json({ success: false, error: 'sdg_target required' }, 400);
+  const id = rid('sdg');
+  await c.env.DB.prepare(`
+    INSERT INTO carbon_fund_cobenefits (id, participant_id, project_id, sdg_target, metric_name,
+      baseline_value, current_value, target_value, unit, reporting_period, verified_by, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.project_id ?? null, b.sdg_target, b.metric_name ?? null,
+    b.baseline_value ?? null, b.current_value ?? null, b.target_value ?? null,
+    b.unit ?? null, b.reporting_period ?? null, b.verified_by ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/carbon/fees', async (c) => c.json({ success: true, data: await listFor(c, 'carbon_fund_fees') }));
+roles.post('/carbon/fees', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.fee_type || !b.reporting_period) {
+    return c.json({ success: false, error: 'fee_type and reporting_period required' }, 400);
+  }
+  // Auto-compute fee = base × rate when both provided.
+  const fee = b.fee_zar ?? (b.base_zar && b.rate_pct ? b.base_zar * b.rate_pct / 100 : null);
+  if (fee === null || fee === undefined) return c.json({ success: false, error: 'fee_zar (or base_zar + rate_pct) required' }, 400);
+  const id = rid('fee');
+  await c.env.DB.prepare(`
+    INSERT INTO carbon_fund_fees (id, participant_id, fee_type, reporting_period, basis, base_zar,
+      rate_pct, fee_zar, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.fee_type, b.reporting_period, b.basis ?? null,
+    b.base_zar ?? null, b.rate_pct ?? null, fee, b.status ?? 'accrued', b.notes ?? null).run();
+  return c.json({ success: true, data: { id, fee_zar: fee } }, 201);
+});
+
+// ─── Grid Operator full lifecycle (047) ────────────────────────────────
+
+roles.get('/grid/scada', async (c) => c.json({ success: true, data: await listAll(c, 'grid_scada_snapshots', 'observed_at DESC') }));
+roles.post('/grid/scada', async (c) => {
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.substation_code || !b.observed_at) {
+    return c.json({ success: false, error: 'substation_code and observed_at required' }, 400);
+  }
+  const id = rid('scd');
+  await c.env.DB.prepare(`
+    INSERT INTO grid_scada_snapshots (id, substation_code, observed_at, voltage_kv, voltage_pu,
+      active_mw, reactive_mvar, frequency_hz, loading_pct, health_status, scada_source, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, b.substation_code, b.observed_at, b.voltage_kv ?? null, b.voltage_pu ?? null,
+    b.active_mw ?? null, b.reactive_mvar ?? null, b.frequency_hz ?? null,
+    b.loading_pct ?? null, b.health_status ?? null, b.scada_source ?? null,
+    b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/grid/dispatch', async (c) => {
+  const user = getCurrentUser(c);
+  const r = await c.env.DB.prepare(
+    `SELECT * FROM grid_dispatch_schedules WHERE participant_id = ? ORDER BY schedule_date DESC LIMIT 500`
+  ).bind(user.id).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+roles.post('/grid/dispatch', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.schedule_date || !b.schedule_type || !b.hourly_mwh) {
+    return c.json({ success: false, error: 'schedule_date, schedule_type, hourly_mwh required' }, 400);
+  }
+  const arr = Array.isArray(b.hourly_mwh) ? b.hourly_mwh : Array.from({ length: 24 }, (_, i) => b.hourly_mwh[i] ?? 0);
+  if (arr.length !== 24) return c.json({ success: false, error: 'hourly_mwh must be 24 values' }, 400);
+  const total = arr.reduce((s: number, v: number) => s + (v || 0), 0);
+  const id = rid('disp');
+  await c.env.DB.prepare(`
+    INSERT INTO grid_dispatch_schedules (id, participant_id, schedule_date, schedule_type, published_at,
+      generator_id, generator_name, hourly_mwh_json, total_mwh, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.schedule_date, b.schedule_type, b.published_at ?? null,
+    b.generator_id ?? null, b.generator_name ?? null,
+    JSON.stringify(arr), total, b.status ?? 'draft', b.notes ?? null).run();
+  return c.json({ success: true, data: { id, total_mwh: total } }, 201);
+});
+
+roles.get('/grid/intraday-balancing', async (c) => c.json({ success: true, data: await listFor(c, 'grid_intraday_balancing') }));
+roles.post('/grid/intraday-balancing', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.trading_hour) return c.json({ success: false, error: 'trading_hour required' }, 400);
+  const imb = b.imbalance_mw ?? ((b.generation_forecast_mw || 0) - (b.load_forecast_mw || 0));
+  let dir = b.action_direction;
+  if (!dir && b.balancing_action_mw !== undefined) {
+    dir = b.balancing_action_mw > 0 ? 'up' : b.balancing_action_mw < 0 ? 'down' : 'none';
+  }
+  const id = rid('idb');
+  await c.env.DB.prepare(`
+    INSERT INTO grid_intraday_balancing (id, participant_id, trading_hour, generation_forecast_mw,
+      load_forecast_mw, imbalance_mw, balancing_action_mw, action_direction, balancing_cost_zar, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.trading_hour, b.generation_forecast_mw ?? null, b.load_forecast_mw ?? null,
+    imb, b.balancing_action_mw ?? null, dir ?? null, b.balancing_cost_zar ?? null,
+    b.notes ?? null).run();
+  return c.json({ success: true, data: { id, imbalance_mw: imb, action_direction: dir } }, 201);
+});
+
+roles.get('/grid/reactive', async (c) => c.json({ success: true, data: await listFor(c, 'grid_reactive_dispatch') }));
+roles.post('/grid/reactive', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.observed_at) return c.json({ success: false, error: 'observed_at required' }, 400);
+  const id = rid('rxd');
+  await c.env.DB.prepare(`
+    INSERT INTO grid_reactive_dispatch (id, participant_id, observed_at, zone_id,
+      reactive_dispatched_mvar, resource_type, voltage_set_point_pu, achieved_voltage_pu,
+      cost_zar, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.observed_at, b.zone_id ?? null,
+    b.reactive_dispatched_mvar ?? null, b.resource_type ?? null,
+    b.voltage_set_point_pu ?? null, b.achieved_voltage_pu ?? null,
+    b.cost_zar ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/grid/contingency', async (c) => {
+  const user = getCurrentUser(c);
+  const r = await c.env.DB.prepare(
+    `SELECT * FROM grid_contingency_runs WHERE participant_id = ? ORDER BY computed_at DESC LIMIT 500`
+  ).bind(user.id).all();
+  return c.json({ success: true, data: r.results || [] });
+});
+roles.post('/grid/contingency', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.run_date || !b.run_type) return c.json({ success: false, error: 'run_date and run_type required' }, 400);
+  const id = rid('cont');
+  await c.env.DB.prepare(`
+    INSERT INTO grid_contingency_runs (id, participant_id, run_date, run_type, contingency_set,
+      pre_contingency_loading_pct, post_contingency_loading_pct, pre_contingency_voltage_pu,
+      post_contingency_voltage_pu, outcome, remedy_actions, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.run_date, b.run_type,
+    b.contingency_set ? JSON.stringify(b.contingency_set) : null,
+    b.pre_contingency_loading_pct ?? null, b.post_contingency_loading_pct ?? null,
+    b.pre_contingency_voltage_pu ?? null, b.post_contingency_voltage_pu ?? null,
+    b.outcome ?? null,
+    b.remedy_actions ? JSON.stringify(b.remedy_actions) : null,
+    b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/grid/outages', async (c) => c.json({ success: true, data: await listFor(c, 'grid_outage_coordination') }));
+roles.post('/grid/outages', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.asset_descr || !b.outage_type) {
+    return c.json({ success: false, error: 'asset_descr and outage_type required' }, 400);
+  }
+  const id = rid('out');
+  await c.env.DB.prepare(`
+    INSERT INTO grid_outage_coordination (id, participant_id, outage_ref, asset_descr, outage_type,
+      scheduled_start, scheduled_end, actual_start, actual_end, capacity_out_mw, reason,
+      coordinated_with, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.outage_ref ?? null, b.asset_descr, b.outage_type,
+    b.scheduled_start ?? null, b.scheduled_end ?? null, b.actual_start ?? null,
+    b.actual_end ?? null, b.capacity_out_mw ?? null, b.reason ?? null,
+    b.coordinated_with ?? null, b.status ?? 'requested', b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/grid/aggregated-forecasts', async (c) => c.json({ success: true, data: await listAll(c, 'grid_aggregated_forecasts', 'forecast_for_date DESC') }));
+roles.post('/grid/aggregated-forecasts', async (c) => {
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.forecast_for_date || !b.technology || !b.hourly_mw) {
+    return c.json({ success: false, error: 'forecast_for_date, technology, hourly_mw required' }, 400);
+  }
+  const arr = Array.isArray(b.hourly_mw) ? b.hourly_mw : Array.from({ length: 24 }, (_, i) => b.hourly_mw[i] ?? 0);
+  if (arr.length !== 24) return c.json({ success: false, error: 'hourly_mw must be 24 values' }, 400);
+  const total = arr.reduce((s: number, v: number) => s + (v || 0), 0);
+  const id = rid('aggf');
+  await c.env.DB.prepare(`
+    INSERT INTO grid_aggregated_forecasts (id, forecast_for_date, technology, grid_zone, hourly_mw_json,
+      total_mwh, source, confidence_pct, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, b.forecast_for_date, b.technology, b.grid_zone ?? null,
+    JSON.stringify(arr), total, b.source ?? null, b.confidence_pct ?? null,
+    b.notes ?? null).run();
+  return c.json({ success: true, data: { id, total_mwh: total } }, 201);
+});
+
+// ─── Regulator full lifecycle (047) ────────────────────────────────────
+// Regulator tables are tenant-scoped registers, not per-user.
+
+roles.get('/regulator/licence-applications', async (c) => c.json({ success: true, data: await listAll(c, 'reg_licence_applications', 'filed_at DESC') }));
+roles.post('/regulator/licence-applications', async (c) => {
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.application_ref || !b.applicant_name || !b.licence_category || !b.filed_at) {
+    return c.json({ success: false, error: 'application_ref, applicant_name, licence_category, filed_at required' }, 400);
+  }
+  const id = rid('lapp');
+  await c.env.DB.prepare(`
+    INSERT INTO reg_licence_applications (id, application_ref, applicant_id, applicant_name,
+      licence_category, capacity_mw, technology, jurisdiction, filed_at, completeness_check_outcome,
+      technical_evaluator, financial_evaluator, public_consultation_id, panel_decision_at,
+      outcome, conditions, determination_id, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, b.application_ref, b.applicant_id ?? null, b.applicant_name,
+    b.licence_category, b.capacity_mw ?? null, b.technology ?? null, b.jurisdiction ?? null,
+    b.filed_at, b.completeness_check_outcome ?? null,
+    b.technical_evaluator ?? null, b.financial_evaluator ?? null,
+    b.public_consultation_id ?? null, b.panel_decision_at ?? null,
+    b.outcome ?? 'pending', b.conditions ?? null, b.determination_id ?? null,
+    b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/regulator/tariff-applications', async (c) => c.json({ success: true, data: await listAll(c, 'reg_tariff_applications') }));
+roles.post('/regulator/tariff-applications', async (c) => {
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.application_ref || !b.applicant_name || !b.tariff_year || b.requested_increase_pct === undefined) {
+    return c.json({ success: false, error: 'application_ref, applicant_name, tariff_year, requested_increase_pct required' }, 400);
+  }
+  const id = rid('tapp');
+  await c.env.DB.prepare(`
+    INSERT INTO reg_tariff_applications (id, application_ref, applicant_id, applicant_name,
+      tariff_year, requested_increase_pct, approved_increase_pct, multi_year_path, hearing_id,
+      determination_id, status, decision_date, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, b.application_ref, b.applicant_id ?? null, b.applicant_name,
+    b.tariff_year, b.requested_increase_pct, b.approved_increase_pct ?? null,
+    b.multi_year_path ?? null, b.hearing_id ?? null, b.determination_id ?? null,
+    b.status ?? 'filed', b.decision_date ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/regulator/inspections', async (c) => c.json({ success: true, data: await listAll(c, 'reg_inspections') }));
+roles.post('/regulator/inspections', async (c) => {
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.licensee_name || !b.inspection_type) {
+    return c.json({ success: false, error: 'licensee_name and inspection_type required' }, 400);
+  }
+  const id = rid('insp');
+  await c.env.DB.prepare(`
+    INSERT INTO reg_inspections (id, licensee_id, licensee_name, inspection_type, inspector_name,
+      scheduled_at, conducted_at, scope, findings, outcome, follow_up_due, status,
+      report_r2_key, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, b.licensee_id ?? null, b.licensee_name, b.inspection_type,
+    b.inspector_name ?? null, b.scheduled_at ?? null, b.conducted_at ?? null,
+    b.scope ?? null,
+    b.findings ? JSON.stringify(b.findings) : null,
+    b.outcome ?? null, b.follow_up_due ?? null, b.status ?? 'scheduled',
+    b.report_r2_key ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/regulator/compliance', async (c) => c.json({ success: true, data: await listAll(c, 'reg_compliance_monitoring') }));
+roles.post('/regulator/compliance', async (c) => {
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.licensee_name || !b.monitoring_period) {
+    return c.json({ success: false, error: 'licensee_name and monitoring_period required' }, 400);
+  }
+  // Auto-rate risk from score + findings.
+  let risk = b.risk_rating;
+  if (!risk && b.compliance_score !== undefined) {
+    if (b.compliance_score < 50) risk = 'very_high';
+    else if (b.compliance_score < 70) risk = 'high';
+    else if (b.compliance_score < 85) risk = 'medium';
+    else risk = 'low';
+  }
+  const id = rid('cmp');
+  await c.env.DB.prepare(`
+    INSERT INTO reg_compliance_monitoring (id, licensee_id, licensee_name, monitoring_period,
+      obligation_summary, compliance_score, open_findings_count, enforcement_actions_count,
+      risk_rating, last_reviewed_at, next_review_due, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, b.licensee_id ?? null, b.licensee_name, b.monitoring_period,
+    b.obligation_summary ?? null, b.compliance_score ?? null,
+    b.open_findings_count ?? 0, b.enforcement_actions_count ?? 0,
+    risk ?? null, b.last_reviewed_at ?? null, b.next_review_due ?? null,
+    b.notes ?? null).run();
+  return c.json({ success: true, data: { id, risk_rating: risk } }, 201);
+});
+
+roles.get('/regulator/public-register', async (c) => c.json({ success: true, data: await listAll(c, 'reg_public_register', 'legal_name ASC') }));
+roles.post('/regulator/public-register', async (c) => {
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.entry_type || !b.legal_name) return c.json({ success: false, error: 'entry_type and legal_name required' }, 400);
+  const id = rid('pr');
+  await c.env.DB.prepare(`
+    INSERT INTO reg_public_register (id, entry_type, legal_name, trading_name, registration_no,
+      jurisdiction, licence_no, capacity_mw, technology, status, effective_from, effective_to,
+      public_address, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, b.entry_type, b.legal_name, b.trading_name ?? null, b.registration_no ?? null,
+    b.jurisdiction ?? null, b.licence_no ?? null, b.capacity_mw ?? null,
+    b.technology ?? null, b.status ?? 'active', b.effective_from ?? null,
+    b.effective_to ?? null, b.public_address ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/regulator/complaints', async (c) => c.json({ success: true, data: await listAll(c, 'reg_complaints', 'received_at DESC') }));
+roles.post('/regulator/complaints', async (c) => {
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.complaint_ref || !b.complainant_name || !b.against_licensee || !b.received_at) {
+    return c.json({ success: false, error: 'complaint_ref, complainant_name, against_licensee, received_at required' }, 400);
+  }
+  const id = rid('cmp');
+  await c.env.DB.prepare(`
+    INSERT INTO reg_complaints (id, complaint_ref, complainant_name, complainant_contact,
+      against_licensee, category, description, received_at, acknowledged_at, assigned_to,
+      resolution_due, resolved_at, outcome, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, b.complaint_ref, b.complainant_name, b.complainant_contact ?? null,
+    b.against_licensee, b.category ?? null, b.description ?? null, b.received_at,
+    b.acknowledged_at ?? null, b.assigned_to ?? null, b.resolution_due ?? null,
+    b.resolved_at ?? null, b.outcome ?? null, b.status ?? 'open', b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/regulator/annual-reports', async (c) => c.json({ success: true, data: await listAll(c, 'reg_annual_reports', 'reporting_year DESC') }));
+roles.post('/regulator/annual-reports', async (c) => {
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.reporting_year) return c.json({ success: false, error: 'reporting_year required' }, 400);
+  // Auto-tally counts from registers if not provided.
+  const year = b.reporting_year;
+  const yearLike = `${year}%`;
+  const tally = async (sql: string, ...binds: any[]) =>
+    Number(((await c.env.DB.prepare(sql).bind(...binds).first<any>()) || {}).n || 0);
+  const licGranted = b.licences_granted ?? await tally(
+    `SELECT COUNT(*) AS n FROM reg_licence_applications WHERE outcome IN ('granted','granted_with_conditions') AND filed_at LIKE ?`, yearLike);
+  const licRefused = b.licences_refused ?? await tally(
+    `SELECT COUNT(*) AS n FROM reg_licence_applications WHERE outcome = 'refused' AND filed_at LIKE ?`, yearLike);
+  const dets = b.determinations_issued ?? await tally(
+    `SELECT COUNT(*) AS n FROM determinations_register WHERE decision_date LIKE ?`, yearLike);
+  const compReceived = b.complaints_received ?? await tally(
+    `SELECT COUNT(*) AS n FROM reg_complaints WHERE received_at LIKE ?`, yearLike);
+  const compResolved = b.complaints_resolved ?? await tally(
+    `SELECT COUNT(*) AS n FROM reg_complaints WHERE status = 'resolved' AND received_at LIKE ?`, yearLike);
+  const insp = b.inspections_conducted ?? await tally(
+    `SELECT COUNT(*) AS n FROM reg_inspections WHERE conducted_at LIKE ?`, yearLike);
+  const id = rid('arep');
+  await c.env.DB.prepare(`
+    INSERT INTO reg_annual_reports (id, reporting_year, total_licensees, licences_granted,
+      licences_refused, determinations_issued, consultations_completed, complaints_received,
+      complaints_resolved, inspections_conducted, enforcement_actions, document_r2_key,
+      status, published_at, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, year, b.total_licensees ?? null, licGranted, licRefused,
+    dets, b.consultations_completed ?? 0, compReceived, compResolved,
+    insp, b.enforcement_actions ?? 0, b.document_r2_key ?? null,
+    b.status ?? 'draft', b.published_at ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, licences_granted: licGranted, licences_refused: licRefused, determinations_issued: dets, complaints_received: compReceived, complaints_resolved: compResolved, inspections_conducted: insp } }, 201);
+});
+
+// ─── Trader full lifecycle (047) ───────────────────────────────────────
+
+roles.get('/trader/risk-limits', async (c) => c.json({ success: true, data: await listFor(c, 'trader_risk_limits') }));
+roles.post('/trader/risk-limits', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.limit_type) return c.json({ success: false, error: 'limit_type required' }, 400);
+  const util = b.limit_zar && b.current_zar !== undefined
+    ? (b.current_zar / b.limit_zar) * 100
+    : (b.limit_units && b.current_units !== undefined
+        ? (b.current_units / b.limit_units) * 100
+        : b.utilisation_pct ?? null);
+  const breachedAt = (util !== null && util !== undefined && util > 100)
+    ? (b.breached_at ?? new Date().toISOString())
+    : b.breached_at ?? null;
+  const id = rid('rl');
+  await c.env.DB.prepare(`
+    INSERT INTO trader_risk_limits (id, participant_id, limit_type, dimension, limit_zar, limit_units,
+      current_zar, current_units, utilisation_pct, breached_at, approved_by, expires_at, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.limit_type, b.dimension ?? null,
+    b.limit_zar ?? null, b.limit_units ?? null,
+    b.current_zar ?? 0, b.current_units ?? 0, util,
+    breachedAt, b.approved_by ?? null, b.expires_at ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, utilisation_pct: util, breached_at: breachedAt } }, 201);
+});
+
+roles.get('/trader/var', async (c) => c.json({ success: true, data: await listFor(c, 'trader_var_calculations') }));
+roles.post('/trader/var', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.as_of_date || !b.method || !b.horizon_days || !b.confidence_pct || b.var_zar === undefined) {
+    return c.json({ success: false, error: 'as_of_date, method, horizon_days, confidence_pct, var_zar required' }, 400);
+  }
+  // Expected Shortfall ≈ VaR × 1.3 (rule of thumb for 95% confidence under
+  // moderately heavy-tailed distributions). Caller can override.
+  const es = b.expected_shortfall_zar ?? b.var_zar * 1.3;
+  const id = rid('var');
+  await c.env.DB.prepare(`
+    INSERT INTO trader_var_calculations (id, participant_id, as_of_date, method, horizon_days,
+      confidence_pct, var_zar, expected_shortfall_zar, portfolio_value_zar, stress_var_zar,
+      stress_scenario, observation_window_days, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.as_of_date, b.method, b.horizon_days, b.confidence_pct,
+    b.var_zar, es, b.portfolio_value_zar ?? null, b.stress_var_zar ?? null,
+    b.stress_scenario ?? null, b.observation_window_days ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, expected_shortfall_zar: es } }, 201);
+});
+
+roles.get('/trader/hedging', async (c) => c.json({ success: true, data: await listFor(c, 'trader_hedging_strategies') }));
+roles.post('/trader/hedging', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.strategy_name || !b.strategy_type) {
+    return c.json({ success: false, error: 'strategy_name and strategy_type required' }, 400);
+  }
+  const id = rid('hed');
+  await c.env.DB.prepare(`
+    INSERT INTO trader_hedging_strategies (id, participant_id, strategy_name, strategy_type,
+      underlying_exposure_mwh, hedge_ratio_pct, cost_zar, expected_savings_zar, effectiveness_pct,
+      start_date, end_date, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.strategy_name, b.strategy_type,
+    b.underlying_exposure_mwh ?? null, b.hedge_ratio_pct ?? null,
+    b.cost_zar ?? null, b.expected_savings_zar ?? null, b.effectiveness_pct ?? null,
+    b.start_date ?? null, b.end_date ?? null, b.status ?? 'proposed', b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/trader/options', async (c) => c.json({ success: true, data: await listFor(c, 'trader_options_positions') }));
+roles.post('/trader/options', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.contract_type || !b.underlying || !b.side) {
+    return c.json({ success: false, error: 'contract_type, underlying, side required' }, 400);
+  }
+  // Intrinsic-value MTM if strike/underlying/volume given. For calls:
+  // long = max(0, S - K) × V × sign;  short = -max(0, S - K) × V.
+  let mtm = b.mtm_zar;
+  if (mtm === undefined && b.strike_zar_per_mwh && b.underlying_price_zar && b.volume_mwh) {
+    const isCall = b.contract_type.includes('call');
+    const intrinsic = isCall
+      ? Math.max(0, b.underlying_price_zar - b.strike_zar_per_mwh)
+      : Math.max(0, b.strike_zar_per_mwh - b.underlying_price_zar);
+    mtm = intrinsic * b.volume_mwh * (b.side === 'long' ? 1 : -1);
+  }
+  const id = rid('opt');
+  await c.env.DB.prepare(`
+    INSERT INTO trader_options_positions (id, participant_id, contract_type, underlying, side,
+      strike_zar_per_mwh, expiry_date, volume_mwh, premium_zar, underlying_price_zar,
+      implied_vol_pct, delta, gamma, vega, theta, mtm_zar, status, counterparty, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.contract_type, b.underlying, b.side,
+    b.strike_zar_per_mwh ?? null, b.expiry_date ?? null, b.volume_mwh ?? null,
+    b.premium_zar ?? null, b.underlying_price_zar ?? null,
+    b.implied_vol_pct ?? null, b.delta ?? null, b.gamma ?? null,
+    b.vega ?? null, b.theta ?? null, mtm ?? null,
+    b.status ?? 'open', b.counterparty ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, mtm_zar: mtm } }, 201);
+});
+
+roles.get('/trader/t2-settlements', async (c) => c.json({ success: true, data: await listFor(c, 'trader_t2_settlements') }));
+roles.post('/trader/t2-settlements', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.settlement_date) return c.json({ success: false, error: 'settlement_date required' }, 400);
+  const id = rid('t2');
+  await c.env.DB.prepare(`
+    INSERT INTO trader_t2_settlements (id, participant_id, trade_id, settlement_date, counterparty,
+      notional_zar, delivery_volume_mwh, cash_leg_zar, physical_leg_mwh, dvp_status, fail_reason,
+      settled_at, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.trade_id ?? null, b.settlement_date, b.counterparty ?? null,
+    b.notional_zar ?? null, b.delivery_volume_mwh ?? null,
+    b.cash_leg_zar ?? null, b.physical_leg_mwh ?? null,
+    b.dvp_status ?? 'pending', b.fail_reason ?? null,
+    b.settled_at ?? null, b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/trader/csa', async (c) => c.json({ success: true, data: await listFor(c, 'trader_csa_terms') }));
+roles.post('/trader/csa', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.counterparty_name) return c.json({ success: false, error: 'counterparty_name required' }, 400);
+  const id = rid('csa');
+  await c.env.DB.prepare(`
+    INSERT INTO trader_csa_terms (id, participant_id, counterparty_id, counterparty_name, csa_version,
+      threshold_zar, independent_amount_zar, minimum_transfer_zar, eligible_collateral, haircut_pct,
+      rounding_zar, base_currency, governing_law, status, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.counterparty_id ?? null, b.counterparty_name, b.csa_version ?? null,
+    b.threshold_zar ?? null, b.independent_amount_zar ?? null, b.minimum_transfer_zar ?? null,
+    b.eligible_collateral ? JSON.stringify(b.eligible_collateral) : null,
+    b.haircut_pct ?? null, b.rounding_zar ?? null, b.base_currency ?? 'ZAR',
+    b.governing_law ?? null, b.status ?? 'active', b.notes ?? null).run();
+  return c.json({ success: true, data: { id } }, 201);
+});
+
+roles.get('/trader/pnl', async (c) => c.json({ success: true, data: await listFor(c, 'trader_pnl_attribution') }));
+roles.post('/trader/pnl', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+  if (!b.as_of_date) return c.json({ success: false, error: 'as_of_date required' }, 400);
+  const total = b.total_pnl_zar ?? (
+    (b.realised_pnl_zar || 0) + (b.unrealised_pnl_zar || 0) +
+    (b.carry_zar || 0) + (b.fees_zar || 0) + (b.fx_pnl_zar || 0)
+  );
+  const id = rid('pnl');
+  await c.env.DB.prepare(`
+    INSERT INTO trader_pnl_attribution (id, participant_id, as_of_date, book, realised_pnl_zar,
+      unrealised_pnl_zar, delta_pnl_zar, gamma_pnl_zar, vega_pnl_zar, theta_pnl_zar,
+      carry_zar, fees_zar, fx_pnl_zar, total_pnl_zar, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, user.id, b.as_of_date, b.book ?? null,
+    b.realised_pnl_zar ?? 0, b.unrealised_pnl_zar ?? 0,
+    b.delta_pnl_zar ?? 0, b.gamma_pnl_zar ?? 0, b.vega_pnl_zar ?? 0, b.theta_pnl_zar ?? 0,
+    b.carry_zar ?? 0, b.fees_zar ?? 0, b.fx_pnl_zar ?? 0, total, b.notes ?? null).run();
+  return c.json({ success: true, data: { id, total_pnl_zar: total } }, 201);
+});
+
 export default roles;
