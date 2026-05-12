@@ -77,6 +77,9 @@ CREATE TABLE IF NOT EXISTS collateral_movements (
 );
 CREATE INDEX IF NOT EXISTS idx_collateral_movements_acc ON collateral_movements(account_id, created_at DESC);
 
+-- market_prints already exists from 020 with a slightly different schema;
+-- the IF NOT EXISTS create below is a no-op, and the index targets
+-- minute_bucket which both schemas have, so it's safe.
 CREATE TABLE IF NOT EXISTS market_prints (
   shard_key       TEXT NOT NULL,
   minute_bucket   TEXT NOT NULL,
@@ -93,39 +96,10 @@ CREATE TABLE IF NOT EXISTS market_prints (
 );
 CREATE INDEX IF NOT EXISTS idx_market_prints_minute ON market_prints(minute_bucket DESC);
 
--- Margin call ledger (used by /api/trader-risk/margin-calls/run + /margin-calls).
-CREATE TABLE IF NOT EXISTS margin_calls (
-  id              TEXT PRIMARY KEY,
-  participant_id  TEXT NOT NULL,
-  required_zar    REAL NOT NULL,
-  posted_zar      REAL NOT NULL,
-  shortfall_zar   REAL NOT NULL,
-  status          TEXT DEFAULT 'open' CHECK (status IN ('open','met','escalated','breached')),
-  due_at          TEXT,
-  created_at      TEXT DEFAULT (datetime('now')),
-  resolved_at     TEXT
-);
-CREATE INDEX IF NOT EXISTS idx_margin_calls_part_status ON margin_calls(participant_id, status);
-
--- Clearing run summary (used by /api/trader-risk/clearing/run + /clearing/runs).
-CREATE TABLE IF NOT EXISTS clearing_runs (
-  id              TEXT PRIMARY KEY,
-  shard_key       TEXT,
-  trades_in       INTEGER DEFAULT 0,
-  obligations_out INTEGER DEFAULT 0,
-  net_zar         REAL DEFAULT 0,
-  started_at      TEXT DEFAULT (datetime('now')),
-  finished_at     TEXT,
-  status          TEXT DEFAULT 'running' CHECK (status IN ('running','complete','failed'))
-);
-
-CREATE TABLE IF NOT EXISTS clearing_obligations (
-  id              TEXT PRIMARY KEY,
-  run_id          TEXT NOT NULL REFERENCES clearing_runs(id),
-  participant_id  TEXT NOT NULL,
-  counterparty_id TEXT,
-  net_zar         REAL NOT NULL,
-  direction       TEXT CHECK (direction IN ('pay','receive')),
-  status          TEXT DEFAULT 'pending'
-);
-CREATE INDEX IF NOT EXISTS idx_clearing_obligations_run ON clearing_obligations(run_id);
+-- margin_calls, clearing_runs, clearing_obligations were originally created
+-- here. Migration 022 already creates the first one with a different shape,
+-- and migration 037 then DROPs and recreates all three with the final shape
+-- used by the route layer. Re-creating them here with CREATE IF NOT EXISTS
+-- was a silent no-op (existing tables won), and the index on
+-- clearing_obligations(run_id) failed because 022's column is named
+-- `clearing_run_id`. Removed — 037 delivers the correct schema + indexes.

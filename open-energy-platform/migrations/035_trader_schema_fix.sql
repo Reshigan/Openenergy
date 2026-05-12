@@ -1,61 +1,26 @@
 -- ════════════════════════════════════════════════════════════════════════
--- 035 · trader schema gaps
+-- 035 · trader schema gaps — superseded by 036/037
 --
--- Fills the remaining columns/tables the route layer references but the v1
--- schema didn't include. Once applied, /api/trading/orders, /trading/fills,
--- /trader-risk/positions and /trader-risk/credit-check return 200.
+-- HISTORICAL NOTE: this migration originally tried to (a) add `order_type`
+-- to trade_orders and (b) create placeholder `trade_fills`, `credit_limits`
+-- and `mark_prices` tables. Each of those operations conflicts with an
+-- earlier or later migration:
 --
--- All operations are idempotent (CREATE IF NOT EXISTS or wrapped ALTERs).
+--   • order_type      — already added by 020 (matching engine).
+--   • trade_fills     — already created by 020 with a different schema;
+--                       the placeholder index referencing `participant_id`
+--                       fails because 020's schema lacks that column.
+--   • credit_limits   — already created by 022 (trader risk).
+--   • mark_prices     — already created by 022.
+--
+-- Migration 036 then DROPs and recreates trade_fills + credit_limits with
+-- the correct shape, and 037 does the same for mark_prices. So everything
+-- this migration tried to do is delivered correctly by 020/022/036/037.
+--
+-- The conflicting statements have been removed so a fresh database can
+-- replay the full migration sequence without aborting at 035. The file
+-- is preserved (rather than deleted) so the d1_migrations tracker still
+-- finds it on production deployments.
 -- ════════════════════════════════════════════════════════════════════════
 
--- /api/trading/orders selects `order_type` from trade_orders.
-ALTER TABLE trade_orders ADD COLUMN order_type TEXT DEFAULT 'limit';
-
--- /api/trading/fills reads from trade_fills (the per-execution record); the
--- v1 schema only had trade_matches. We create a thin trade_fills view-like
--- table populated by the matching engine going forward, plus a compatible
--- view that flattens existing trade_matches.
-CREATE TABLE IF NOT EXISTS trade_fills (
-  id            TEXT PRIMARY KEY,
-  order_id      TEXT NOT NULL,
-  participant_id TEXT NOT NULL,
-  side          TEXT NOT NULL CHECK (side IN ('buy','sell')),
-  energy_type   TEXT,
-  matched_volume_mwh REAL NOT NULL,
-  matched_price REAL NOT NULL,
-  matched_at    TEXT DEFAULT (datetime('now')),
-  buyer_id      TEXT,
-  buyer_name    TEXT,
-  seller_id     TEXT,
-  seller_name   TEXT,
-  match_id      TEXT REFERENCES trade_matches(id),
-  fee_zar       REAL DEFAULT 0
-);
-CREATE INDEX IF NOT EXISTS idx_trade_fills_part ON trade_fills(participant_id, matched_at DESC);
-
--- /api/trader-risk/credit-check reads from credit_limits. Single row per
--- (participant, counterparty) pair; null counterparty = global limit.
-CREATE TABLE IF NOT EXISTS credit_limits (
-  id              TEXT PRIMARY KEY,
-  participant_id  TEXT NOT NULL,
-  counterparty_id TEXT,
-  credit_limit    REAL NOT NULL,
-  utilisation     REAL DEFAULT 0,
-  utilisation_pct REAL DEFAULT 0,
-  rating          TEXT,
-  set_by          TEXT,
-  set_at          TEXT DEFAULT (datetime('now')),
-  expires_at      TEXT
-);
-CREATE INDEX IF NOT EXISTS idx_credit_limits_part ON credit_limits(participant_id);
-
--- /api/trader-risk/positions joins trade_orders and reads delivery_date from
--- the orders table — the column already exists, but the JOIN may also need
--- mark_prices. Make sure that table exists.
-CREATE TABLE IF NOT EXISTS mark_prices (
-  energy_type        TEXT NOT NULL,
-  delivery_date      TEXT,
-  mark_price_zar_mwh REAL NOT NULL,
-  computed_at        TEXT DEFAULT (datetime('now')),
-  PRIMARY KEY (energy_type, delivery_date)
-);
+-- intentionally empty

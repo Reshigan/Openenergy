@@ -1,18 +1,16 @@
 -- ════════════════════════════════════════════════════════════════════════
--- 034 · trade_orders.remaining_volume_mwh + trader_positions
+-- 034 · trade_orders backfill + trader_positions
 --
--- The matching engine, trader risk routes and the AI briefing all reference
--- `remaining_volume_mwh` to track partial fills, but the column was missing
--- from the v1 schema. This adds it (defaulting to volume_mwh so existing
--- open orders remain consistent) plus the missing trader_positions table
--- expected by /api/trader-risk/positions.
+-- Migration 020 (matching engine) already adds `remaining_volume_mwh` and
+-- `price` to trade_orders. This migration was originally written as a
+-- hot-fix to add those columns when they were missing, but with 020 in
+-- place the ALTERs would fail on fresh databases with
+-- "duplicate column name". They have been removed; only the idempotent
+-- backfills + trader_positions table creation remain.
 -- ════════════════════════════════════════════════════════════════════════
 
-ALTER TABLE trade_orders ADD COLUMN remaining_volume_mwh REAL;
-ALTER TABLE trade_orders ADD COLUMN price REAL;
-
--- Backfill remaining_volume_mwh for existing rows so legacy queries stop
--- 500-ing. New rows get a non-null value at insert.
+-- Backfill remaining_volume_mwh for any rows added between 020 and 034 that
+-- somehow ended up with the column NULL. Safe to re-run.
 UPDATE trade_orders SET remaining_volume_mwh = volume_mwh WHERE remaining_volume_mwh IS NULL;
 
 -- Backfill price from price_min/price_max midpoint where one or both exist.
