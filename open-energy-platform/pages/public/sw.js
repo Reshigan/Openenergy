@@ -11,17 +11,24 @@
  *  - Push notifications scaffold included but registration is opt-in.
  * ═══════════════════════════════════════════════════════════════════════ */
 
-const SW_VERSION = 'oe-sw-v1.0.0';
+// Bump this version on every release that ships new HTML / asset hashes.
+// `activate` deletes caches whose key doesn't start with SW_VERSION, so any
+// stale `/` HTML pointing at old /assets/* hashes gets evicted on next load.
+const SW_VERSION = 'oe-sw-v1.0.2';
 const STATIC_CACHE = `${SW_VERSION}-static`;
 const RUNTIME_CACHE = `${SW_VERSION}-runtime`;
 
+// `/` is intentionally NOT precached. The fetch handler always tries the
+// network for HTML so a fresh deploy is visible without waiting for a SW
+// update cycle. Offline users still get a cached HTML via the runtime cache
+// (populated on each successful fetch), see fetch() handler below.
 const PRECACHE_URLS = [
-  '/',
   '/manifest.webmanifest',
   '/logos/oe-mark.svg',
   '/logos/oe-banner.svg',
   '/logos/oe-icon-192.png',
   '/logos/oe-icon-512.png',
+  '/ltm-energy-logo.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -61,9 +68,21 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // SPA shell — network-first, fall through to the cached / on offline.
+  // SPA shell — network-first. On success, store a copy in the runtime
+  // cache so an offline reload still has something to show. On failure,
+  // fall back to whatever the runtime cache has for `/`.
   event.respondWith(
-    fetch(req).catch(() => caches.match('/') || new Response('Offline', { status: 503 })),
+    fetch(req)
+      .then(async (resp) => {
+        if (resp.ok && resp.headers.get('content-type')?.includes('text/html')) {
+          try {
+            const cache = await caches.open(RUNTIME_CACHE);
+            cache.put('/', resp.clone());
+          } catch { /* cache full / quota */ }
+        }
+        return resp;
+      })
+      .catch(async () => (await caches.match('/')) || new Response('Offline', { status: 503 })),
   );
 });
 
