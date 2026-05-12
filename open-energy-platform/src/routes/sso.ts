@@ -34,23 +34,23 @@ const sso = new Hono<HonoEnv>();
 const STATE_TTL_SECONDS = 600; // 10 minutes
 const SCOPES = 'openid profile email offline_access User.Read';
 
-function ssoEnabled(env: HonoEnv): boolean {
+function ssoEnabled(env: HonoEnv['Bindings']): boolean {
   return Boolean(env.AZURE_AD_CLIENT_ID && env.AZURE_AD_TENANT_ID && env.AZURE_AD_CLIENT_SECRET);
 }
 
-function authorizeUrl(env: HonoEnv): string {
+function authorizeUrl(env: HonoEnv['Bindings']): string {
   return `https://login.microsoftonline.com/${env.AZURE_AD_TENANT_ID}/oauth2/v2.0/authorize`;
 }
 
-function tokenUrl(env: HonoEnv): string {
+function tokenUrl(env: HonoEnv['Bindings']): string {
   return `https://login.microsoftonline.com/${env.AZURE_AD_TENANT_ID}/oauth2/v2.0/token`;
 }
 
-function jwksUrl(env: HonoEnv): string {
+function jwksUrl(env: HonoEnv['Bindings']): string {
   return `https://login.microsoftonline.com/${env.AZURE_AD_TENANT_ID}/discovery/v2.0/keys`;
 }
 
-function appBaseUrl(env: HonoEnv, fallback: string): string {
+function appBaseUrl(env: HonoEnv['Bindings'], fallback: string): string {
   return env.APP_BASE_URL || fallback;
 }
 

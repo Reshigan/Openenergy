@@ -46,7 +46,7 @@ interface RateLimitResult {
 }
 
 async function doRateLimit(
-  env: HonoEnv,
+  env: HonoEnv['Bindings'],
   key: string,
   windowSeconds: number,
   maxRequests: number,
@@ -80,12 +80,12 @@ async function doRateLimit(
   };
 }
 
-export async function checkRateLimit(env: HonoEnv, identifier: string): Promise<RateLimitResult> {
+export async function checkRateLimit(env: HonoEnv['Bindings'], identifier: string): Promise<RateLimitResult> {
   return doRateLimit(env, `ratelimit:${identifier}`, RATE_LIMIT_WINDOW, MAX_REQUESTS_PER_WINDOW);
 }
 
 export async function checkSensitiveRateLimit(
-  env: HonoEnv,
+  env: HonoEnv['Bindings'],
   identifier: string,
   routeFamily: string,
 ): Promise<RateLimitResult> {
@@ -146,10 +146,11 @@ export async function corsMiddleware(c: Context<HonoEnv>, next: Next) {
   c.res.headers.set('Access-Control-Allow-Credentials', 'true');
   
   if (c.req.method === 'OPTIONS') {
-    return c.text('', 204);
+    return new Response(null, { status: 204 });
   }
-  
+
   await next();
+  return;
 }
 
 // Strict CORS for production API
@@ -168,10 +169,11 @@ export async function strictCors(c: Context<HonoEnv>, next: Next) {
   c.res.headers.set('Access-Control-Max-Age', '3600');
   
   if (c.req.method === 'OPTIONS') {
-    return c.text('', 204);
+    return new Response(null, { status: 204 });
   }
-  
+
   await next();
+  return;
 }
 
 // Rate limit middleware — applies global limiter to every request and
@@ -220,15 +222,16 @@ export async function rateLimitMiddleware(c: Context<HonoEnv>, next: Next) {
   }
 
   await next();
+  return;
 }
 
 // Validate request content type
 export async function validateContentType(c: Context<HonoEnv>, next: Next) {
   const method = c.req.method;
-  
+
   if (['POST', 'PUT', 'PATCH'].includes(method)) {
     const contentType = c.req.header('Content-Type');
-    
+
     if (!contentType || !contentType.includes('application/json')) {
       return c.json({
         success: false,
@@ -236,8 +239,9 @@ export async function validateContentType(c: Context<HonoEnv>, next: Next) {
       }, 415);
     }
   }
-  
+
   await next();
+  return;
 }
 
 // Request logging — emits a single structured JSON line per request.

@@ -47,7 +47,7 @@ invoices.post('/', async (c) => {
   const user = getCurrentUser(c);
   const body = await c.req.json();
 
-  const { invoice_number, invoice_type, period_start, period_end, line_items, subtotal, vat_rate, total_amount, currency, due_date, to_participant_id, project_id, notes } = body;
+  const { invoice_number, invoice_type, period_start, period_end, line_items, subtotal, vat_rate, total_amount, currency, due_date, to_participant_id, project_id } = body;
 
   // Validation
   if (!invoice_number) {

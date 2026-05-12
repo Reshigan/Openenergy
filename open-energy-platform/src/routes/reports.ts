@@ -57,7 +57,7 @@ function toCsv(rows: Row[]): string {
   return lines.join('\n');
 }
 
-async function ensureRegulatorFilings(env: HonoEnv) {
+async function ensureRegulatorFilings(env: HonoEnv['Bindings']) {
   await env.DB.prepare(`
     CREATE TABLE IF NOT EXISTS regulator_filings (
       id TEXT PRIMARY KEY,
@@ -76,7 +76,7 @@ async function ensureRegulatorFilings(env: HonoEnv) {
 // Per-role builders. Each returns a Report ready to serve as JSON or CSV.
 // ──────────────────────────────────────────────────────────────────────────
 
-async function buildAdmin(env: HonoEnv): Promise<Report> {
+async function buildAdmin(env: HonoEnv['Bindings']): Promise<Report> {
   const [
     totalParticipants, activeParticipants, pendingKyc,
     byRole, byTenant, modules, auditVolume, sessionsActive, lockoutsRecent,
@@ -113,7 +113,7 @@ async function buildAdmin(env: HonoEnv): Promise<Report> {
   };
 }
 
-async function buildTrader(env: HonoEnv, participantId: string, scopeAll: boolean): Promise<Report> {
+async function buildTrader(env: HonoEnv['Bindings'], participantId: string, scopeAll: boolean): Promise<Report> {
   const where = scopeAll ? '1=1' : 'o.participant_id = ?';
   const bind = (s: D1PreparedStatement) => scopeAll ? s : s.bind(participantId);
 
@@ -163,7 +163,7 @@ async function buildTrader(env: HonoEnv, participantId: string, scopeAll: boolea
   };
 }
 
-async function buildIpp(env: HonoEnv, participantId: string, scopeAll: boolean): Promise<Report> {
+async function buildIpp(env: HonoEnv['Bindings'], participantId: string, scopeAll: boolean): Promise<Report> {
   const projWhere = scopeAll ? '1=1' : 'developer_id = ?';
   const projBind = (s: D1PreparedStatement) => scopeAll ? s : s.bind(participantId);
 
@@ -230,7 +230,7 @@ async function buildIpp(env: HonoEnv, participantId: string, scopeAll: boolean):
   };
 }
 
-async function buildOfftaker(env: HonoEnv, participantId: string, scopeAll: boolean): Promise<Report> {
+async function buildOfftaker(env: HonoEnv['Bindings'], participantId: string, scopeAll: boolean): Promise<Report> {
   const contracts = await (scopeAll
     ? env.DB.prepare(`
         SELECT id, title, document_type, phase, creator_id, counterparty_id, created_at
@@ -291,7 +291,7 @@ async function buildOfftaker(env: HonoEnv, participantId: string, scopeAll: bool
   };
 }
 
-async function buildLender(env: HonoEnv, participantId: string, scopeAll: boolean): Promise<Report> {
+async function buildLender(env: HonoEnv['Bindings'], participantId: string, scopeAll: boolean): Promise<Report> {
   const facilities = await (scopeAll
     ? env.DB.prepare(`
         SELECT id, facility_name, project_id, lender_participant_id, borrower_participant_id,
@@ -339,7 +339,7 @@ async function buildLender(env: HonoEnv, participantId: string, scopeAll: boolea
   };
 }
 
-async function buildCarbon(env: HonoEnv, participantId: string, scopeAll: boolean): Promise<Report> {
+async function buildCarbon(env: HonoEnv['Bindings'], participantId: string, scopeAll: boolean): Promise<Report> {
   const holdings = await (scopeAll
     ? env.DB.prepare(`
         SELECT id, participant_id, project_id, credit_type, quantity, vintage_year,
@@ -384,7 +384,7 @@ async function buildCarbon(env: HonoEnv, participantId: string, scopeAll: boolea
   };
 }
 
-async function buildGrid(env: HonoEnv): Promise<Report> {
+async function buildGrid(env: HonoEnv['Bindings']): Promise<Report> {
   const [constraints, imbalance] = await Promise.all([
     env.DB.prepare(`
       SELECT id, constraint_type, location, severity, available_capacity_mw,
@@ -421,7 +421,7 @@ async function buildGrid(env: HonoEnv): Promise<Report> {
   };
 }
 
-async function buildRegulator(env: HonoEnv): Promise<Report> {
+async function buildRegulator(env: HonoEnv['Bindings']): Promise<Report> {
   await ensureRegulatorFilings(env);
   const [byType, byStatus, recent] = await Promise.all([
     env.DB.prepare(`
@@ -457,7 +457,7 @@ async function buildRegulator(env: HonoEnv): Promise<Report> {
 // Router
 // ──────────────────────────────────────────────────────────────────────────
 
-async function buildFor(env: HonoEnv, role: ParticipantRole, participantId: string, scopeAll: boolean): Promise<Report> {
+async function buildFor(env: HonoEnv['Bindings'], role: ParticipantRole, participantId: string, scopeAll: boolean): Promise<Report> {
   switch (role) {
     case 'admin': return buildAdmin(env);
     case 'trader': return buildTrader(env, participantId, scopeAll);

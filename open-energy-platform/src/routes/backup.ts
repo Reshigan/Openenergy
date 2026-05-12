@@ -60,7 +60,11 @@ backup.use('*', async (c, next) => {
   return authMiddleware(c, async () => {
     const user = getCurrentUser(c);
     if (user.role !== 'admin') {
-      return c.json({ success: false, error: 'Admin access required' }, 403);
+      // Returning a Response from the inner Next is permissible at runtime —
+      // Hono will send it — but the type system insists Next resolves void,
+      // so we set the response on the context and return void here.
+      c.res = c.json({ success: false, error: 'Admin access required' }, 403);
+      return;
     }
     await next();
   });

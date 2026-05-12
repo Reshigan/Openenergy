@@ -234,7 +234,7 @@ contracts.post('/', async (c) => {
   const body = await c.req.json();
 
   const {
-    title, description, phase, contract_type,
+    title, phase, contract_type,
     counterparty_id, project_id, commercial_terms
   } = body;
 

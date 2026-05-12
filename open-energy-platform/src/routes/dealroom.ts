@@ -4,16 +4,17 @@
 
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 
 const dealroom = new Hono<HonoEnv>();
+dealroom.use('*', authMiddleware);
 
 // GET /dealroom/:contractId — Get deal room for contract
-dealroom.get('/:contractId', authMiddleware(), async (c) => {
-  const participant = c.get('participant');
-  const { contractId } = c.req.param();
-  
+dealroom.get('/:contractId', async (c) => {
+  const participant = getCurrentUser(c);
+  const contractId = c.req.param('contractId');
+
   const contract = await c.env.DB.prepare(`
     SELECT c.*, p1.name as creator_name, p2.name as counterparty_name
     FROM contract_documents c
@@ -21,11 +22,11 @@ dealroom.get('/:contractId', authMiddleware(), async (c) => {
     JOIN participants p2 ON c.counterparty_id = p2.id
     WHERE c.id = ?
   `).bind(contractId).first();
-  
+
   if (!contract) {
     return c.json({ success: false, error: 'Contract not found' }, 404);
   }
-  
+
   // Check access
   if (participant.role !== 'admin' && contract.creator_id !== participant.id && contract.counterparty_id !== participant.id) {
     return c.json({ success: false, error: 'Access denied' }, 403);
@@ -58,9 +59,9 @@ dealroom.get('/:contractId', authMiddleware(), async (c) => {
 });
 
 // POST /dealroom/:contractId/propose — Propose terms
-dealroom.post('/:contractId/propose', authMiddleware(), async (c) => {
-  const participant = c.get('participant');
-  const { contractId } = c.req.param();
+dealroom.post('/:contractId/propose', async (c) => {
+  const participant = getCurrentUser(c);
+  const contractId = c.req.param('contractId');
   const body = await c.req.json();
   const { terms, commentary } = body;
   
@@ -93,26 +94,26 @@ dealroom.post('/:contractId/propose', authMiddleware(), async (c) => {
 });
 
 // POST /dealroom/:contractId/accept — Accept latest proposal
-dealroom.post('/:contractId/accept', authMiddleware(), async (c) => {
-  const participant = c.get('participant');
-  const { contractId } = c.req.param();
-  
+dealroom.post('/:contractId/accept', async (c) => {
+  const participant = getCurrentUser(c);
+  const contractId = c.req.param('contractId');
+
   const latestProposal = await c.env.DB.prepare(`
     SELECT * FROM deal_proposals WHERE contract_id = ? ORDER BY created_at DESC LIMIT 1
   `).bind(contractId).first();
-  
+
   if (!latestProposal) {
     return c.json({ success: false, error: 'No proposals to accept' }, 400);
   }
-  
+
   // Update contract with accepted terms
   await c.env.DB.prepare(`
     UPDATE contract_documents SET commercial_terms = ?, updated_at = ? WHERE id = ?
-  `).bind(latestProposal.terms, new Date().toISOString(), contractId).run();
-  
+  `).bind(latestProposal.terms as string, new Date().toISOString(), contractId).run();
+
   // Advance contract phase
   const currentPhase = await c.env.DB.prepare('SELECT phase FROM contract_documents WHERE id = ?').bind(contractId).first();
-  const nextPhase = advancePhase(currentPhase?.phase);
+  const nextPhase = advancePhase(String(currentPhase?.phase ?? 'draft'));
   
   await c.env.DB.prepare('UPDATE contract_documents SET phase = ? WHERE id = ?').bind(nextPhase, contractId).run();
   
@@ -129,9 +130,9 @@ dealroom.post('/:contractId/accept', authMiddleware(), async (c) => {
 });
 
 // POST /dealroom/:contractId/message — Send message
-dealroom.post('/:contractId/message', authMiddleware(), async (c) => {
-  const participant = c.get('participant');
-  const { contractId } = c.req.param();
+dealroom.post('/:contractId/message', async (c) => {
+  const participant = getCurrentUser(c);
+  const contractId = c.req.param('contractId');
   const body = await c.req.json();
   const { content, message_type } = body;
   
@@ -150,20 +151,20 @@ dealroom.post('/:contractId/message', authMiddleware(), async (c) => {
 });
 
 // GET /dealroom/:contractId/diff — Get diff between versions
-dealroom.get('/:contractId/diff', authMiddleware(), async (c) => {
-  const { contractId } = c.req.param();
-  const { v1, v2 } = c.req.query();
-  
+dealroom.get('/:contractId/diff', async (c) => {
+  const v1 = c.req.query('v1') ?? '';
+  const v2 = c.req.query('v2') ?? '';
+
   const proposal1 = await c.env.DB.prepare('SELECT * FROM deal_proposals WHERE id = ?').bind(v1).first();
   const proposal2 = await c.env.DB.prepare('SELECT * FROM deal_proposals WHERE id = ?').bind(v2).first();
-  
+
   if (!proposal1 || !proposal2) {
     return c.json({ success: false, error: 'Proposals not found' }, 404);
   }
-  
+
   // Simple diff - in production would use proper diff algorithm
-  const terms1 = JSON.parse(proposal1.terms);
-  const terms2 = JSON.parse(proposal2.terms);
+  const terms1 = JSON.parse(String(proposal1.terms));
+  const terms2 = JSON.parse(String(proposal2.terms));
   
   return c.json({ 
     success: true, 

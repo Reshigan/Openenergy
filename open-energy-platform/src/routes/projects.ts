@@ -102,7 +102,7 @@ projects.post('/', async (c) => {
 
 // GET /projects/:id/milestones — list milestones for a project
 projects.get('/:id/milestones', async (c) => {
-  const user = getCurrentUser(c);
+  getCurrentUser(c);                          // require auth
   const id = c.req.param('id');
   const project = await c.env.DB.prepare('SELECT developer_id FROM ipp_projects WHERE id = ?').bind(id).first();
   if (!project) return c.json({ success: false, error: 'Project not found' }, 404);

@@ -6,7 +6,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser, hashPassword, invalidateTenantCache } from '../middleware/auth';
 import { invalidateRoleRosterCache } from '../utils/cascade';
 import { createPasswordResetToken, randomOpaqueToken, revokeAllSessionsForParticipant } from '../utils/auth-tokens';
-import { logPiiAccess, logPiiAccessBatch, inferAccessType } from '../utils/popia-access';
+import { logPiiAccessBatch, inferAccessType } from '../utils/popia-access';
 
 function genId(prefix: string) {
   return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).substring(2, 8)}`;
@@ -22,7 +22,7 @@ function slugify(input: string): string {
 // Write an admin audit_log entry. Takes the request context, the actor, the
 // action namespace, entity type/id, and free-form changes payload.
 async function auditLog(
-  env: HonoEnv,
+  env: HonoEnv['Bindings'],
   actorId: string,
   action: string,
   entityType: string,
@@ -49,6 +49,7 @@ admin.use('*', async (c, next) => {
   const user = getCurrentUser(c);
   if (user.role !== 'admin') return c.json({ success: false, error: 'Admin access required' }, 403);
   await next();
+  return;
 });
 
 // ---------- USER MANAGEMENT ----------

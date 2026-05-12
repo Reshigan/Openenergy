@@ -25,6 +25,7 @@ siem.use('*', async (c, next) => {
   const user = getCurrentUser(c);
   if (user.role !== 'admin') return c.json({ success: false, error: 'Admin only' }, 403);
   await next();
+  return;
 });
 
 type Stream = 'audit' | 'pii' | 'cascade_dlq' | 'cron_failure';

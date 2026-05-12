@@ -376,13 +376,13 @@ const INTENT_FOR_ROLE: Record<string, AiIntent> = {
 // so the Reports UI never blank-fails.
 // ──────────────────────────────────────────────────────────────────────────
 async function collectRoleReport(
-  env: HonoEnv,
+  env: HonoEnv['Bindings'],
   role: string,
   userId: string,
   period: string,
 ): Promise<Record<string, unknown>> {
   const since = periodToIso(period);
-  const safe = async <T>(p: Promise<T>, fallback: T): Promise<T> => {
+  const safe = async <T, F = T>(p: Promise<T>, fallback: F): Promise<T | F> => {
     try { return await p; } catch { return fallback; }
   };
 

@@ -25,6 +25,8 @@ export type EventType =
   | 'ipp.performance_reported'
   // ESG
   | 'esg.score_calculated' | 'esg.report_published' | 'esg.decarbonisation_completed'
+  | 'esg.transaction_recorded' | 'esg.transaction_restated'
+  | 'esg.disclosure_created' | 'esg.disclosure_submitted'
   // Grid
   | 'grid.connection_created' | 'grid.constraint_active' | 'grid.wheeling_started'
   | 'grid.imbalance_calculated'
@@ -64,10 +66,13 @@ export type EventType =
   // Trader risk
   | 'trader.credit_limit_set' | 'trader.margin_call_issued' | 'trader.margin_call_met'
   | 'trader.collateral_movement' | 'trader.clearing_run_complete'
+  | 'trader.algo_rule_created'
   // Lender
   | 'lender.covenant_breach' | 'lender.covenant_warn' | 'lender.covenant_waived'
+  | 'lender.covenant_updated'
   | 'lender.ie_submitted' | 'lender.ie_certified' | 'lender.ie_rejected'
   | 'lender.waterfall_executed' | 'lender.reserve_drawn'
+  | 'disbursement.requested' | 'disbursement.approved'
   // IPP lifecycle
   | 'ipp.epc_variation_raised' | 'ipp.ld_assessed'
   | 'ipp.ea_granted' | 'ipp.ea_condition_breach' | 'ipp.insurance_expiring'
@@ -273,7 +278,7 @@ export async function retryDlqItem(
        FROM cascade_dlq WHERE id = ?`,
   )
     .bind(dlqId)
-    .first<{
+    .first() as {
       id: string;
       event: string;
       entity_type: string;
@@ -283,7 +288,7 @@ export async function retryDlqItem(
       stage: 'audit' | 'notifications' | 'webhooks' | 'special';
       attempt_count: number;
       status: string;
-    }>();
+    } | null;
 
   if (!row) return { ok: false, error: 'DLQ row not found' };
   if (row.status !== 'pending') return { ok: false, error: `Row is ${row.status}` };
@@ -1223,7 +1228,7 @@ async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
       // Calculate and store revenue impact
       const severityMultiplier = { low: 0.5, medium: 1, high: 2, critical: 5 };
       const multiplier = severityMultiplier[ctx.data?.severity as keyof typeof severityMultiplier] || 1;
-      const ppaValue = ctx.data?.ppa_value_per_day || 50000;
+      const ppaValue = Number(ctx.data?.ppa_value_per_day ?? 50000);
       const dailyImpact = ppaValue * multiplier;
       
       // Update fault with estimated impact
@@ -1313,19 +1318,20 @@ async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
           WHERE participant_id = ? AND metric_id IN ('esg_met_001','esg_met_002','esg_met_003')
         `).bind(participantId).first();
         
-        const newScore = Math.max(0, 100 - ((emissions?.total || 0) / 100));
-        
+        const totalEmissions = Number(emissions?.total ?? 0);
+        const prevEmissions = Number(ctx.data?.previous_emissions ?? 0);
+
         // Update or create score record
         const existing = await ctx.env.DB.prepare('SELECT id FROM esg_reports WHERE participant_id = ? ORDER BY created_at DESC LIMIT 1').bind(participantId).first();
         if (existing) {
           await ctx.env.DB.prepare(`
             UPDATE esg_reports SET total_ghg_emissions_tco2e = ?, updated_at = ? WHERE id = ?
-          `).bind(emissions?.total || 0, new Date().toISOString(), existing.id).run();
+          `).bind(totalEmissions, new Date().toISOString(), existing.id).run();
         }
-        
+
         // Intelligence item if significant change
-        if (ctx.data?.previous_emissions && Math.abs((emissions?.total || 0) - ctx.data.previous_emissions) > 500) {
-          const reduction = ctx.data.previous_emissions - (emissions?.total || 0);
+        if (prevEmissions && Math.abs(totalEmissions - prevEmissions) > 500) {
+          const reduction = prevEmissions - totalEmissions;
           await ctx.env.DB.prepare(`
             INSERT INTO intelligence_items (id, participant_id, type, severity, title, description, created_at)
             VALUES (?, ?, 'esg', 'info', ?, ?, ?)

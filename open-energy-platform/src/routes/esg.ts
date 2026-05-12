@@ -251,7 +251,7 @@ esg.put('/transactions/:id', async (c) => {
   if (!old) return c.json({ success: false, error: 'not_found' }, 404);
 
   const patch = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
-  const merged = { ...old, ...patch, id: undefined, restated_from_id: oldId };
+  const merged: Record<string, unknown> = { ...old, ...patch, id: undefined, restated_from_id: oldId };
   // Re-compute emissions if quantity or factor changed
   const q = Number(merged.quantity);
   const f = Number(merged.factor_value);

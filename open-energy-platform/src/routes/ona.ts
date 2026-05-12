@@ -15,7 +15,7 @@ ona.use('*', authMiddleware);
 
 // ---------------- helpers ----------------
 
-async function scopedSiteClause(env: HonoEnv['Bindings'], user: { id: string; role: string }) {
+async function scopedSiteClause(_env: HonoEnv['Bindings'], user: { id: string; role: string }) {
   // Admin + regulator see everything; IPP developer only sees sites belonging
   // to projects they own; everyone else gets scoped read.
   if (user.role === 'admin' || user.role === 'regulator') {
@@ -570,7 +570,7 @@ ona.get('/asoba/sites/:siteId/data-period', async (c) => {
     return c.json({ success: true, data: { telemetry, ooda } });
   } catch (err) {
     const e = err as asoba.AsobaError;
-    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, e.status || 502);
+    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, (e.status || 502) as any);
   }
 });
 
@@ -602,7 +602,7 @@ ona.get('/asoba/sites/:siteId/telemetry', async (c) => {
     });
   } catch (err) {
     const e = err as asoba.AsobaError;
-    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, e.status || 502);
+    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, (e.status || 502) as any);
   }
 });
 
@@ -628,7 +628,7 @@ ona.get('/asoba/sites/:siteId/inverter/:assetId/telemetry', async (c) => {
     return c.json({ success: true, data });
   } catch (err) {
     const e = err as asoba.AsobaError;
-    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, e.status || 502);
+    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, (e.status || 502) as any);
   }
 });
 
@@ -655,7 +655,7 @@ ona.get('/asoba/sites/:siteId/alerts', async (c) => {
     return c.json({ success: true, data: { ...data, flat } });
   } catch (err) {
     const e = err as asoba.AsobaError;
-    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, e.status || 502);
+    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, (e.status || 502) as any);
   }
 });
 
@@ -681,7 +681,7 @@ ona.get('/asoba/sites/:siteId/alerts/:terminalId', async (c) => {
     return c.json({ success: true, data });
   } catch (err) {
     const e = err as asoba.AsobaError;
-    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, e.status || 502);
+    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, (e.status || 502) as any);
   }
 });
 
@@ -791,7 +791,7 @@ ona.post('/asoba/sites/:siteId/sync', async (c) => {
           `).bind(id, site.id, `ASOBA_${a.alert_type || 'ALERT'}`, a.description || 'ASOBA OODA alert', a.severity, a.timestamp).run().catch(() => {});
         }
         await fireCascade({
-          event: 'ona.fault_created',
+          event: 'ona.fault_detected',
           actor_id: user.id,
           entity_type: 'ona_faults',
           entity_id: id,
@@ -806,7 +806,7 @@ ona.post('/asoba/sites/:siteId/sync', async (c) => {
     return c.json({ success: true, data: { telemetry_records: telemetryCount, alerts: alertCount, window: { start: startIso, end: endIso } } });
   } catch (err) {
     const e = err as asoba.AsobaError;
-    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, e.status || 502);
+    return c.json({ success: false, error: e.message || 'asoba_error', detail: e.body }, (e.status || 502) as any);
   }
 });
 

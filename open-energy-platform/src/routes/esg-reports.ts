@@ -4,7 +4,7 @@
 
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 
 const esgReports = new Hono<HonoEnv>();
@@ -30,7 +30,7 @@ esgReports.get('/templates', async (c) => {
 
 // GET /esg-reports/my-reports — List participant's generated reports
 esgReports.get('/my-reports', async (c) => {
-  const participant = c.get('participant');
+  const participant = getCurrentUser(c);
   
   const reports = await c.env.DB.prepare(`
     SELECT id, template_id, title, status, generated_at, r2_key, created_at
@@ -44,9 +44,9 @@ esgReports.get('/my-reports', async (c) => {
 
 // POST /esg-reports/generate — Generate a new ESG report
 esgReports.post('/generate', async (c) => {
-  const participant = c.get('participant');
+  const participant = getCurrentUser(c);
   const body = await c.req.json();
-  const { template_id, period_start, period_end, include_narrative } = body;
+  const { template_id, period_start, period_end } = body;
 
   if (!template_id) {
     return c.json({ success: false, error: 'Template ID required' }, 400);
@@ -75,11 +75,11 @@ esgReports.post('/generate', async (c) => {
   `).bind(participant.id).first();
 
   // Calculate ESG score
-  const scope1Emissions = emissions.results?.find(e => e.scope === 1)?.total || 0;
-  const scope2Emissions = emissions.results?.find(e => e.scope === 2)?.total || 0;
-  const scope3Emissions = emissions.results?.find(e => e.scope === 3)?.total || 0;
+  const scope1Emissions = Number(emissions.results?.find(e => e.scope === 1)?.total ?? 0);
+  const scope2Emissions = Number(emissions.results?.find(e => e.scope === 2)?.total ?? 0);
+  const scope3Emissions = Number(emissions.results?.find(e => e.scope === 3)?.total ?? 0);
   const totalEmissions = scope1Emissions + scope2Emissions + scope3Emissions;
-  const totalOffsets = offsets?.total_retired || 0;
+  const totalOffsets = Number(offsets?.total_retired ?? 0);
   const netEmissions = Math.max(0, totalEmissions - totalOffsets);
   
   // Simple ESG score calculation
@@ -100,7 +100,6 @@ esgReports.post('/generate', async (c) => {
   ).run();
 
   // Generate report content based on template
-  let reportContent = '';
   let narrative = '';
 
   if (template_id === 'tcfd') {
@@ -145,7 +144,7 @@ esgReports.post('/generate', async (c) => {
 
 // GET /esg-reports/:id — Get specific report details
 esgReports.get('/:id', async (c) => {
-  const participant = c.get('participant');
+  const participant = getCurrentUser(c);
   const { id } = c.req.param();
 
   const report = await c.env.DB.prepare(`

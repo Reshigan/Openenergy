@@ -249,7 +249,7 @@ export function requireRole(...allowedRoles: string[]) {
 }
 
 // Check if user owns resource or is admin
-export function requireOwnerOrAdmin(getOwnerId: (env: HonoEnv, entityId: string) => Promise<string | null>) {
+export function requireOwnerOrAdmin(getOwnerId: (env: HonoEnv['Bindings'], entityId: string) => Promise<string | null>) {
   return async (c: Context<HonoEnv>, next: Next) => {
     const auth = c.get('auth');
     

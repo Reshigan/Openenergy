@@ -300,7 +300,7 @@ async function sha256Hex(s: string): Promise<string> {
 export async function executeSettlementRun(
   env: HonoEnv['Bindings'],
   runId: string,
-  runType: string,
+  _runType: string,
   periodStart: string,
   periodEnd: string,
 ): Promise<{ run_id: string; status: string; invoices_generated: number; total_value_zar: number }> {

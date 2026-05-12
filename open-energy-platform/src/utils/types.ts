@@ -9,8 +9,9 @@ export interface WorkersAI {
   run: (model: string, input: Record<string, unknown>) => Promise<unknown>;
 }
 
-// Cloudflare Bindings Interface
-export interface HonoEnv {
+// Cloudflare Bindings Interface — the shape of `env` injected into Workers.
+// This is what `c.env` resolves to inside a Hono handler.
+export interface HonoBindings {
   DB: D1Database;
   KV: KVNamespace;
   R2: R2Bucket;
@@ -46,6 +47,37 @@ export interface HonoEnv {
   ASOBA_TELEMETRY_BASE?: string;
   ASOBA_OODA_BASE?: string;
 }
+
+// Authenticated user attached to the request context by authMiddleware.
+export interface AuthContext {
+  user: {
+    id: string;
+    email: string;
+    role: ParticipantRole;
+    name: string;
+    tenant_id: string;
+  };
+}
+
+// Hono context variables (set via c.set / read via c.get). Optional because
+// not every middleware runs on every request — handlers must defend against
+// undefined when no auth middleware fired.
+export interface HonoVariables {
+  auth?: AuthContext;
+  requestId?: string;
+  // Legacy keys read by older route code (esg-reports, dealroom, etc.).
+  // Kept for backward compatibility; new code should use 'auth'.
+  participant?: { id: string; role: ParticipantRole; tenant_id?: string };
+  user?: { id: string; email?: string; role?: ParticipantRole };
+}
+
+// Hono generic env — used as `new Hono<HonoEnv>()` and `Context<HonoEnv>`.
+// Hono requires `{ Bindings, Variables }` for its generic; older callers that
+// expected the flat bindings shape should switch to `HonoEnv['Bindings']`.
+export type HonoEnv = {
+  Bindings: HonoBindings;
+  Variables: HonoVariables;
+};
 
 // JWT Token Payload
 export interface JWTPayload {
@@ -120,16 +152,8 @@ export class AppError extends Error {
   }
 }
 
-// Request Context with Auth
-export interface AuthContext {
-  user: {
-    id: string;
-    email: string;
-    role: ParticipantRole;
-    name: string;
-    tenant_id?: string;
-  };
-}
+// AuthContext is declared above (alongside HonoEnv / HonoVariables) — this
+// older duplicate has been removed so the typing resolves to a single shape.
 
 // Context extending Hono context
 export interface Ctx {
@@ -288,7 +312,7 @@ export function addBusinessDays(date: string, days: number): string {
 
 // Helper: Check if module is accessible
 export async function isModuleAccessible(
-  env: HonoEnv,
+  env: HonoEnv['Bindings'],
   userRole: ParticipantRole,
   moduleKey: string
 ): Promise<boolean> {
@@ -307,7 +331,7 @@ export async function isModuleAccessible(
 
 // Helper: Get enabled modules for user
 export async function getUserModules(
-  env: HonoEnv,
+  env: HonoEnv['Bindings'],
   userRole: ParticipantRole
 ): Promise<string[]> {
   const allModules = await env.DB.prepare('SELECT module_key, required_role, enabled FROM modules').all() as any;

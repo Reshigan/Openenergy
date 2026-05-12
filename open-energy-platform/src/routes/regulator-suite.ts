@@ -143,7 +143,7 @@ async function transitionLicence(
   if (!canRegulate(user.role)) {
     return c.json({ success: false, error: 'Not authorised' }, 403);
   }
-  const id = c.req.param('id');
+  const id = c.req.param('id') ?? '';
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   const existing = await c.env.DB
     .prepare('SELECT id, status, licence_number, licensee_participant_id FROM regulator_licences WHERE id = ?')
@@ -740,7 +740,7 @@ type SurveillanceFinding = {
 async function detectForRule(
   env: HonoEnv['Bindings'],
   ruleType: string,
-  ruleCode: string,
+  _ruleCode: string,
   params: Record<string, unknown>,
 ): Promise<SurveillanceFinding[]> {
   switch (ruleType) {

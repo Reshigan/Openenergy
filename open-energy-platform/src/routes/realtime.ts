@@ -23,7 +23,7 @@
 //   src.addEventListener('delta', e => applyDelta(JSON.parse(e.data)));
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { Hono } from 'hono';
+import { Hono, Context } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser, verifyToken } from '../middleware/auth';
 
@@ -32,7 +32,7 @@ const realtime = new Hono<HonoEnv>();
 // Most browsers refuse to set Authorization on EventSource. We accept a
 // `?token=` fallback and resolve it via verifyToken(). If the header exists
 // it still wins. Either way authMiddleware runs for non-SSE requests.
-async function resolveSseUser(c: Parameters<typeof realtime.get>[1] extends (ctx: infer C, ...a: unknown[]) => unknown ? C : never) {
+async function resolveSseUser(c: Context<HonoEnv>) {
   const headerToken = c.req.header('Authorization')?.replace(/^Bearer /, '');
   const queryToken = c.req.query('token');
   const token = headerToken || queryToken;

@@ -315,7 +315,7 @@ export interface RunSummary {
 }
 
 export async function executeSettlementRun(
-  env: HonoEnv,
+  env: HonoEnv['Bindings'],
   runId: string,
   periodFrom: string,
   periodTo: string,

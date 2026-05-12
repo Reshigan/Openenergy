@@ -24,7 +24,7 @@ export class LockBusyError extends Error {
 }
 
 export async function acquireLock(
-  env: HonoEnv,
+  env: HonoEnv['Bindings'],
   key: string,
   holderId: string,
   ttlSeconds: number = 15,
@@ -64,7 +64,7 @@ export async function acquireLock(
   }
 }
 
-export async function releaseLock(env: HonoEnv, key: string, holderId: string): Promise<void> {
+export async function releaseLock(env: HonoEnv['Bindings'], key: string, holderId: string): Promise<void> {
   try {
     await env.DB.prepare(`DELETE FROM advisory_locks WHERE lock_key = ? AND holder_id = ?`)
       .bind(key, holderId)
@@ -75,7 +75,7 @@ export async function releaseLock(env: HonoEnv, key: string, holderId: string): 
 }
 
 export async function withLock<T>(
-  env: HonoEnv,
+  env: HonoEnv['Bindings'],
   key: string,
   holderId: string,
   fn: () => Promise<T>,

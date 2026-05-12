@@ -19,6 +19,7 @@ monitoring.use('*', async (c, next) => {
     return c.json({ success: false, error: 'Admin or support access required' }, 403);
   }
   await next();
+  return;
 });
 
 // Recent error log entries — default last 100, newest first.

@@ -25,6 +25,7 @@ support.use('*', async (c, next) => {
     return c.json({ success: false, error: 'Support access required' }, 403);
   }
   await next();
+  return;
 });
 
 // Impersonation JWTs are short-lived and carry an explicit marker so
@@ -310,7 +311,8 @@ support.post('/cascade-dlq/:id/retry', async (c) => {
 support.post('/cascade-dlq/:id/resolve', async (c) => {
   const actor = getCurrentUser(c);
   const id = c.req.param('id');
-  const body = await c.req.json<{ status?: 'resolved' | 'abandoned'; note?: string }>().catch(() => ({}));
+  const body = await c.req.json<{ status?: 'resolved' | 'abandoned'; note?: string }>()
+    .catch(() => ({} as { status?: 'resolved' | 'abandoned'; note?: string }));
   const status = body.status === 'abandoned' ? 'abandoned' : 'resolved';
   const { resolveDlqItem } = await import('../utils/cascade');
   await resolveDlqItem(c.env as any, id, actor.id, status, body.note);

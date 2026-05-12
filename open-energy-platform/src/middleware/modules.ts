@@ -31,8 +31,8 @@ const MODULES: Record<string, ModuleConfig> = {
 
 // Check module access — KV cache first, then D1 fallback
 export async function checkModuleAccess(
-  env: HonoEnv,
-  userId: string,
+  env: HonoEnv['Bindings'],
+  _userId: string,
   userRole: string,
   moduleKey: string
 ): Promise<boolean> {
@@ -128,7 +128,7 @@ export function requireEnabledModule(getModuleKey: (c: Context<HonoEnv>) => stri
 }
 
 // Get all enabled modules for user (for sidebar)
-export async function getEnabledModules(env: HonoEnv, userRole: string): Promise<string[]> {
+export async function getEnabledModules(env: HonoEnv['Bindings'], userRole: string): Promise<string[]> {
   // Try KV first
   const cacheKey = `user_modules:${userRole}`;
   const cached = await env.KV.get(cacheKey, 'json') as string[] | null;
@@ -151,7 +151,7 @@ export async function getEnabledModules(env: HonoEnv, userRole: string): Promise
 }
 
 // Invalidate module cache (called when module updated)
-export async function invalidateModuleCache(env: HonoEnv, moduleKey: string): Promise<void> {
+export async function invalidateModuleCache(env: HonoEnv['Bindings'], moduleKey: string): Promise<void> {
   await env.KV.delete(`module:${moduleKey}`);
   
   // Also invalidate all user role caches

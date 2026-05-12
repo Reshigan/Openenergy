@@ -14,7 +14,7 @@ participants.use('*', authMiddleware);
 
 // GET /api/participants — List with pagination and filtering
 participants.get('/', async (c) => {
-  const user = getCurrentUser(c);
+  getCurrentUser(c);                          // require auth
   const page = parseInt(c.req.query('page') || '1');
   const pageSize = Math.min(parseInt(c.req.query('pageSize') || '20'), 100);
   const offset = (page - 1) * pageSize;
@@ -40,7 +40,7 @@ participants.get('/', async (c) => {
   }
 
   const totalResult = await c.env.DB.prepare(`SELECT COUNT(*) as count FROM participants WHERE ${where}`).bind(...bindings).first();
-  const total = totalResult?.count || 0;
+  const total = Number(totalResult?.count ?? 0);
 
   const rows = await c.env.DB.prepare(`
     SELECT id, email, name, company_name, role, status, kyc_status, bbbee_level,

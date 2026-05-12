@@ -296,6 +296,6 @@ export type LoginInput = z.infer<typeof LoginSchema>;
 export type CreateContractInput = z.infer<typeof CreateContractSchema>;
 export type CreateOrderInput = z.infer<typeof CreateOrderSchema>;
 export type CreateInvoiceInput = z.infer<typeof CreateInvoiceSchema>;
-export type CreateIPPProjectInput = z.infer<typeof CreateIPPProjectInput>;
+export type CreateIPPProjectInput = z.infer<typeof CreateIPPProjectSchema>;
 export type RecordESGDataInput = z.infer<typeof RecordESGDataSchema>;
 export type BatchOperationInput = z.infer<typeof BatchOperationSchema>;
