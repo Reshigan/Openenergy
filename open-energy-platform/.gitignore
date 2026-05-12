@@ -1,22 +1,6 @@
-# Dependencies
-node_modules/
-
-# Build artifacts
-dist/
-.wrangler/
-
-# Test coverage reports
-coverage/
-
-# Env / secrets
-.dev.vars
-.env
-.env.local
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Editor
-.vscode/
-.idea/
+node_modules
+dist
+.wrangler
+test-results
+playwright-report
+Marketing-High-Resolution-LTM-Logo-Group-01-2048x1312-2.png

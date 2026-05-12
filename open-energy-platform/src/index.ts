@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import type { DurableObjectNamespace, ScheduledEvent, ExecutionContext } from '@cloudflare/workers-types';
 import { corsMiddleware, securityHeaders, rateLimitMiddleware, requestLogger } from './middleware/security';
 import { idempotency } from './middleware/idempotency';
-import { optionalAuth } from './middleware/auth';
+import { optionalAuth, authMiddleware, getCurrentUser } from './middleware/auth';
 import { tenantQuotaMiddleware } from './middleware/tenant-quota';
 import { AppError } from './utils/types';
 import { HonoEnv } from './utils/types';
@@ -237,6 +237,38 @@ app.route('/api/admin/monitoring', monitoringRoutes);
 // would fire before the backup-specific X-Backup-Token guard ever runs,
 // which would break the unattended GitHub Actions cron job.
 app.route('/api/backup', backupRoutes);
+
+// Admin-only "run cron once" endpoint — invokes the same runCron() that the
+// Workers scheduler fires, but on demand so operators (and the smoke-cron
+// script) can verify each schedule completes without 500s.
+//
+//   POST /api/admin/cron/run-once?pattern=*/15+*+*+*+*
+//
+// Returns { success: true, ran: <pattern> } if runCron completes; surfaces
+// the first error otherwise. Auth: admin-only.
+{
+  const cron = new Hono<HonoEnv>();
+  cron.use('*', authMiddleware);
+  cron.post('/run-once', async (c) => {
+    const user = getCurrentUser(c);
+    if (user.role !== 'admin') {
+      return c.json({ success: false, error: 'admin only' }, 403);
+    }
+    const pattern = c.req.query('pattern');
+    if (!pattern) return c.json({ success: false, error: 'pattern query param required' }, 400);
+    try {
+      await runCron(c.env, pattern);
+      return c.json({ success: true, ran: pattern });
+    } catch (err) {
+      return c.json({
+        success: false,
+        error: 'cron failed',
+        detail: (err as Error).message,
+      }, 500);
+    }
+  });
+  app.route('/api/admin/cron', cron);
+}
 
 // Static assets (SPA shell, JS, CSS, images) are served by Cloudflare Pages directly.
 // This Worker / Pages Function only handles API routes under /api/*.

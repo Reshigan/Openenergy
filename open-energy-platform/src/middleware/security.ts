@@ -97,11 +97,15 @@ export async function checkSensitiveRateLimit(
   );
 }
 
-// Security headers middleware — applied to every API response.
-// CSP is the strictest possible for an API surface (no inline scripts,
-// no external assets), as the API never returns HTML. HSTS is set to
-// one year with preload eligibility. Cross-domain flash/PDF policies are
-// disabled to prevent rogue policy files being honoured.
+// Security headers middleware — applied to every response.
+//
+// CSP NOTE: The previous policy was `default-src 'none'`, intended for the
+// JSON API surface only. Cloudflare's ASSETS binding inherits these headers
+// when serving the SPA shell, which made every browser block the React
+// bundle, stylesheet, images, fonts, and Cloudflare's beacon script — the
+// page rendered blank for all real users. The policy below keeps a tight
+// allowlist (no third-party origins, no eval, no foreign frames) while
+// permitting the SPA's own assets to actually execute.
 export async function securityHeaders(c: Context<HonoEnv>, next: Next) {
   const requestId = c.req.header('X-Request-ID') || generateRequestId();
   c.set('requestId', requestId);
@@ -118,10 +122,27 @@ export async function securityHeaders(c: Context<HonoEnv>, next: Next) {
   c.res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   c.res.headers.set(
     'Content-Security-Policy',
-    "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none';",
+    [
+      "default-src 'self'",
+      // Vite ships hashed JS/CSS; we also need the Cloudflare Insights beacon.
+      "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.cdnfonts.com",
+      "img-src 'self' data: blob:",
+      "font-src 'self' data: https://fonts.gstatic.com https://fonts.cdnfonts.com",
+      // XHR/fetch + the realtime SSE stream are same-origin.
+      "connect-src 'self' https://cloudflareinsights.com",
+      "worker-src 'self'",
+      "manifest-src 'self'",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join('; '),
   );
   c.res.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
-  c.res.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
+  // Resource-policy `same-origin` blocks the SPA from being embedded
+  // anywhere else, but breaks the SW prefetch of partner logos served by
+  // Cloudflare's CDN edge. `same-site` is the right balance.
+  c.res.headers.set('Cross-Origin-Resource-Policy', 'same-site');
 }
 
 // CORS middleware

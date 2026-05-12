@@ -26,14 +26,12 @@ PASS=0
 FAIL=0
 FAILURES=()
 
+source "$(dirname "$0")/_login.sh"
+
 login() {
-  local resp
-  resp=$(curl -s -X POST -H "Content-Type: application/json" \
-    -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}" \
-    "$BASE/api/auth/login")
-  TOKEN=$(echo "$resp" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['token'])" 2>/dev/null || echo "")
+  TOKEN=$(login_or_cached "$EMAIL")
   if [ -z "$TOKEN" ]; then
-    echo "❌ Login failed: $resp"
+    echo "❌ Login failed (rate-limited or bad credentials). Try again in 5 min or clear $OE_TOKEN_CACHE."
     exit 1
   fi
   echo "✓ Logged in as $EMAIL (token ${#TOKEN} chars)"

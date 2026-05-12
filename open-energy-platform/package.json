@@ -17,7 +17,14 @@
     "tail": "wrangler logs tail",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "check": "tsc --noEmit",
+    "check:pages": "cd pages && npm run check",
+    "test:browser": "playwright test --config=playwright.config.ts",
+    "smoke:crud": "scripts/smoke-crud.sh",
+    "smoke:roles": "scripts/smoke-roles.sh",
+    "smoke:cron": "scripts/smoke-cron.sh",
+    "smoke": "npm run check && npm test && npm run smoke:crud && npm run smoke:roles && npm run smoke:cron && npm run test:browser"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20240620.0",
@@ -27,6 +34,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/better-sqlite3": "^7.6.13",
     "@types/jsonwebtoken": "^9.0.6",
