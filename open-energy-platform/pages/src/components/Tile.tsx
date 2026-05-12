@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendUpIcon, TrendDownIcon, PlusIcon } from '../../icons/ionex';
+import { TrendUpIcon, TrendDownIcon, PlusIcon } from '../icons/ionex';
 
 // Tile sizes
 export type TileSize = 'standard' | 'wide' | 'compact' | 'feature';

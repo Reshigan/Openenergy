@@ -501,8 +501,8 @@ function LoginPage() {
                 <label className="label" htmlFor="login-password">Password</label>
                 <Link
                   to="/forgot-password"
-                  className="text-[12px] font-semibold"
-                  style={{ color: '#1a3a5c' }}
+                  className="text-[12px] font-semibold inline-flex items-center px-2 py-1 -mr-2 rounded-sm hover:bg-slate-100"
+                  style={{ color: '#1a3a5c', minHeight: 24 }}
                 >
                   Forgot?
                 </Link>
@@ -559,7 +559,7 @@ function LoginPage() {
             <>
               <div className="mt-5 flex items-center gap-3">
                 <div className="flex-1 h-px" style={{ background: '#c5cdd6' }} />
-                <span className="text-[11px] uppercase tracking-widest font-mono" style={{ color: '#6b7685' }}>
+                <span className="text-[11px] uppercase tracking-widest font-mono" style={{ color: '#525a66' }}>
                   or
                 </span>
                 <div className="flex-1 h-px" style={{ background: '#c5cdd6' }} />
@@ -590,7 +590,7 @@ function LoginPage() {
 
           <div className="mt-6 flex items-center gap-3">
             <div className="flex-1 h-px" style={{ background: '#c5cdd6' }} />
-            <span className="text-[11px] uppercase tracking-widest font-mono" style={{ color: '#6b7685' }}>
+            <span className="text-[11px] uppercase tracking-widest font-mono" style={{ color: '#525a66' }}>
               or sign in as a demo persona
             </span>
             <div className="flex-1 h-px" style={{ background: '#c5cdd6' }} />
@@ -598,7 +598,7 @@ function LoginPage() {
 
           <DemoPersonaGrid onPick={fillDemo} />
 
-          <p className="mt-4 text-center text-[11px]" style={{ color: '#6b7685' }}>
+          <p className="mt-4 text-center text-[11px]" style={{ color: '#525a66' }}>
             All demo accounts use the same password · <code className="font-mono text-[#1a3a5c]">Demo@2024!</code>
           </p>
 
@@ -690,7 +690,7 @@ function DemoPersonaGrid({ onPick }: { onPick: (email: string) => void }) {
     <div className="mt-4 space-y-4">
       {groups.map((g) => (
         <div key={g.name}>
-          <div className="text-[10px] uppercase tracking-[0.1em] font-bold mb-1.5" style={{ color: '#6b7685' }}>
+          <div className="text-[10px] uppercase tracking-[0.1em] font-bold mb-1.5" style={{ color: '#525a66' }}>
             {g.name}
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -715,7 +715,7 @@ function DemoPersonaGrid({ onPick }: { onPick: (email: string) => void }) {
                 </span>
                 <span className="min-w-0 flex-1 leading-tight">
                   <span className="block text-[12px] font-semibold truncate" style={{ color: '#0f1c2e' }}>{p.label}</span>
-                  <span className="block text-[10px] font-mono truncate" style={{ color: '#6b7685' }}>{p.email.split('@')[0]}</span>
+                  <span className="block text-[10px] font-mono truncate" style={{ color: '#525a66' }}>{p.email.split('@')[0]}</span>
                 </span>
               </button>
             ))}
@@ -749,6 +749,7 @@ function SsoLanding() {
     // Clear the fragment so tokens don't linger in browser history.
     window.history.replaceState(null, '', returnTo);
     navigate(returnTo, { replace: true });
+    return undefined;
   }, [acceptSsoTokens, navigate]);
 
   return (

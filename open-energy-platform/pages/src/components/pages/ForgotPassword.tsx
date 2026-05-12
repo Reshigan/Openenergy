@@ -30,7 +30,7 @@ export default function ForgotPassword() {
     <div className="min-h-screen flex items-center justify-center p-6" style={{ background: '#f5f8fb' }}>
       <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border p-8" style={{ borderColor: '#dde4ec' }}>
         <h2 className="text-[24px] font-bold" style={{ color: '#0f1c2e' }}>Forgot password</h2>
-        <p className="mt-1 text-[13px]" style={{ color: '#6b7685' }}>
+        <p className="mt-1 text-[13px]" style={{ color: '#525a66' }}>
           Enter your account email. We'll send a reset link.
         </p>
 
@@ -53,14 +53,24 @@ export default function ForgotPassword() {
               </div>
             )}
             <div>
-              <label className="label">Email</label>
-              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="input" autoFocus />
+              <label className="label" htmlFor="forgot-email">Email</label>
+              <input
+                id="forgot-email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input"
+                autoFocus
+              />
             </div>
             <button type="submit" className="btn btn-primary w-full" disabled={loading}>
               {loading ? 'Sending…' : 'Send reset link'}
             </button>
             <div className="text-center">
-              <Link to="/login" className="text-[13px] font-semibold" style={{ color: '#3b82c4' }}>Back to sign in</Link>
+              <Link to="/login" className="text-[13px] font-semibold inline-block px-2 py-1" style={{ color: '#1a3a5c' }}>Back to sign in</Link>
             </div>
           </form>
         )}

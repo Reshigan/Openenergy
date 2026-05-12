@@ -22,7 +22,9 @@ import React from 'react';
 export interface StitchTab<TId extends string = string> {
   id: TId;
   label: string;
-  icon?: React.ComponentType<{ size?: number }>;
+  // Older callers pass an IconName string (resolved by OEIcon downstream).
+  // Newer callers pass a React component directly. Accept both.
+  icon?: React.ComponentType<{ size?: number }> | string;
   badge?: string;
 }
 

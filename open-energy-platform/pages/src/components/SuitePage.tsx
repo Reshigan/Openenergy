@@ -13,8 +13,10 @@ import { api } from '../lib/api';
 import { AiBriefPanel, BriefRole } from './AiBriefPanel';
 
 // ─── Field & form specs ────────────────────────────────────────────────────
+// `datetime-local` mirrors the native HTML input type; FormField renders
+// both `datetime` and `datetime-local` as a `type="datetime-local"` field.
 export type FieldType =
-  | 'text' | 'textarea' | 'number' | 'date' | 'datetime'
+  | 'text' | 'textarea' | 'number' | 'date' | 'datetime' | 'datetime-local'
   | 'select' | 'multi-select' | 'checkbox' | 'json';
 
 export interface FieldSpec {
@@ -33,7 +35,7 @@ export interface FieldSpec {
 export interface FormSpec {
   title: string;
   endpoint: string;             // POST target
-  method?: 'POST' | 'PUT';
+  method?: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   fields: FieldSpec[];
   /** Extra values added to the body on submit. */
   extraBody?: Record<string, unknown>;
@@ -46,7 +48,7 @@ export interface RowAction {
   label: string;
   /** `{id}` in the URL is replaced with the row id. Same for any `{foo}` vs row.foo. */
   endpoint: string;
-  method?: 'POST' | 'PUT' | 'DELETE';
+  method?: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   tone?: 'default' | 'primary' | 'danger';
   /** Predicate — action only appears when returns true. */
   show?: (row: Record<string, unknown>) => boolean;
@@ -668,6 +670,7 @@ function FormField({ field, value, error, onChange }: {
         </div>
       );
     case 'datetime':
+    case 'datetime-local':
       return (
         <div>
           {labelRow}
@@ -828,16 +831,22 @@ function DetailDrawer({
 }
 
 // ─── Status pill helper ────────────────────────────────────────────────────
-export function StatusPill({ status, tone }: { status: string; tone?: 'good' | 'warn' | 'bad' | 'info' | 'neutral' }) {
+// Accepts either `status` (inferred tone from the value) or `label` (an
+// already-formatted display string) — historically called both ways from
+// different tab specs. `tone` accepts `critical` as a synonym for `bad`.
+export type StatusPillTone = 'good' | 'warn' | 'bad' | 'critical' | 'info' | 'neutral';
+export function StatusPill({ status, label, tone }: { status?: string; label?: string; tone?: StatusPillTone }) {
+  const text = label ?? status ?? '';
   const palette: Record<string, { bg: string; text: string }> = {
-    good:    { bg: '#e7f4ea', text: '#1a8a5b' },
-    warn:    { bg: '#fef3e6', text: '#b04e0f' },
-    bad:     { bg: '#fde7e9', text: '#c0392b' },
-    info:    { bg: '#d4e7f6', text: '#3b82c4' },
-    neutral: { bg: '#eef1f4', text: '#6b7685' },
+    good:     { bg: '#e7f4ea', text: '#1a8a5b' },
+    warn:     { bg: '#fef3e6', text: '#b04e0f' },
+    bad:      { bg: '#fde7e9', text: '#c0392b' },
+    critical: { bg: '#fde7e9', text: '#c0392b' },
+    info:     { bg: '#d4e7f6', text: '#3b82c4' },
+    neutral:  { bg: '#eef1f4', text: '#6b7685' },
   };
   const inferTone = (): keyof typeof palette => {
-    const s = status.toLowerCase();
+    const s = text.toLowerCase();
     if (['active', 'compliant', 'pass', 'paid', 'completed', 'granted', 'verified', 'issued', 'approved', 'healthy', 'cleared', 'settled'].includes(s)) return 'good';
     if (['warn', 'warning', 'in_review', 'pending', 'submitted', 'draft', 'drafted', 'trialing'].includes(s)) return 'info';
     if (['breach', 'breached', 'non_compliant', 'rejected', 'failed', 'revoked', 'overdue', 'terminated'].includes(s)) return 'bad';
@@ -850,7 +859,7 @@ export function StatusPill({ status, tone }: { status: string; tone?: 'good' | '
       className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
       style={{ background: p.bg, color: p.text }}
     >
-      {status.replace(/_/g, ' ')}
+      {text.replace(/_/g, ' ')}
     </span>
   );
 }

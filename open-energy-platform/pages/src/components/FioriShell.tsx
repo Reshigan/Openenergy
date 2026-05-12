@@ -122,7 +122,7 @@ function useIsMobile(breakpoint = 768) {
     typeof window === 'undefined' ? false : window.innerWidth < breakpoint,
   );
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return undefined;
     const mql = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mql.addEventListener('change', handler);
@@ -146,7 +146,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
   // Close hamburger on route change / outside click / Escape.
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuOpen) return undefined;
     function onDown(ev: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(ev.target as Node)) {
         setMenuOpen(false);
@@ -165,7 +165,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
 
   // Close user menu on outside click.
   useEffect(() => {
-    if (!userMenu) return;
+    if (!userMenu) return undefined;
     function onDown() { setUserMenu(false); }
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);

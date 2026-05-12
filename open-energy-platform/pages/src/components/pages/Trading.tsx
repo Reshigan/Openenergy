@@ -524,7 +524,7 @@ function BlotterTab() {
 
   useEffect(() => { refresh(); }, [refresh]);
   useEffect(() => {
-    if (!auto) return;
+    if (!auto) return undefined;
     const t = setInterval(refresh, 5000);
     return () => clearInterval(t);
   }, [auto, refresh]);

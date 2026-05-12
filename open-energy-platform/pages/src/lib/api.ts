@@ -59,7 +59,11 @@ api.interceptors.response.use(
       original._retry = true;
       const newToken = await refreshAccessToken();
       if (newToken) {
-        original.headers = original.headers || {};
+        if (!original.headers) {
+          // Axios InternalAxiosRequestConfig requires AxiosRequestHeaders;
+          // construct a fresh AxiosHeaders to satisfy the type guard.
+          original.headers = new (axios.AxiosHeaders as any)();
+        }
         (original.headers as Record<string, string>).Authorization = `Bearer ${newToken}`;
         return api.request(original);
       }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AuthContext, api } from '../context/AuthContext';
-import { AuthContext as AuthContextType } from '../lib/api';
+import type { AuthContextType } from '../lib/api';
 import {
   IonExLogo,
   LaunchpadIcon,

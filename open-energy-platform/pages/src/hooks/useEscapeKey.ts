@@ -11,7 +11,7 @@ import { useEffect } from 'react';
  */
 export function useEscapeKey(onEscape: () => void, enabled = true) {
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) return undefined;
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onEscape();
     };

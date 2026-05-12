@@ -42,7 +42,7 @@ export function useRealtime<Row = Record<string, unknown>>(
   const reconnectAttemptsRef = useRef(0);
 
   useEffect(() => {
-    if (!channel) return;
+    if (!channel) return undefined;
 
     let cancelled = false;
 

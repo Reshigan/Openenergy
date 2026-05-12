@@ -96,10 +96,14 @@ export function FioriTile({
             </span>
           )}
           {Icon && (
+            // lucide-react v1 omits `style` from its declared props but
+            // forwards it at runtime — silence the typecheck with a cast.
             <Icon
-              size={18}
-              className={variant === 'feature' ? 'text-white/85' : ''}
-              style={variant === 'feature' ? undefined : { color: 'var(--oe-outline)' }}
+              {...({
+                size: 18,
+                className: variant === 'feature' ? 'text-white/85' : '',
+                style: variant === 'feature' ? undefined : { color: 'var(--oe-outline)' },
+              } as any)}
             />
           )}
         </div>

@@ -84,7 +84,7 @@ function Tile({ label, value, tone }: { label: string; value: React.ReactNode; t
   );
 }
 
-export function Monitoring(): JSX.Element {
+export function Monitoring(): React.JSX.Element {
   const [hours, setHours] = useState(24);
   const [source, setSource] = useState<'all' | 'server' | 'client'>('all');
   const [errors, setErrors] = useState<ErrorRow[]>([]);

@@ -1,0 +1,138 @@
+name: Smoke — full test suite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Nightly run against production to catch silent regressions.
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # ─── Layer 1: Server tsc + Vitest (fast, deterministic, every push) ─────
+  unit:
+    name: Server TS + Vitest (server + migration replay + tenant + chains)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: open-energy-platform/package-lock.json
+
+      - name: Install server deps
+        working-directory: open-energy-platform
+        run: npm install --no-audit --no-fund --legacy-peer-deps
+
+      - name: tsc --noEmit (server)
+        working-directory: open-energy-platform
+        run: npm run check
+
+      - name: Vitest (474 tests including new chain + tenant + replay)
+        working-directory: open-energy-platform
+        run: npm test
+
+  # ─── Layer 2: SPA build (catches Vite / TS-config regressions) ─────────
+  spa-build:
+    name: SPA build (Vite)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: open-energy-platform/pages/package-lock.json
+
+      - name: Install SPA deps
+        working-directory: open-energy-platform/pages
+        run: npm install --no-audit --no-fund
+
+      - name: SPA tsc --noEmit (informational — does not block)
+        working-directory: open-energy-platform/pages
+        run: npm run check || echo "SPA tsc baseline: see commit body for current error count"
+
+      - name: Vite build
+        working-directory: open-energy-platform/pages
+        run: npm run build
+
+      - name: Verify dist/ contents
+        working-directory: open-energy-platform/pages
+        run: |
+          test -f dist/index.html
+          test -f dist/ltm-energy-logo.png
+          ls -la dist/assets | head -10
+
+  # ─── Layer 3: Live-prod smoke (scheduled / on-demand only) ─────────────
+  # Hits production endpoints with curl + Playwright. Disabled on PRs to
+  # avoid hammering prod from every contributor and because PRs can't reach
+  # the demo accounts safely. Run nightly + manually via Actions UI.
+  smoke-prod:
+    name: Smoke against production (curl + Playwright)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: open-energy-platform/package-lock.json
+
+      - name: Install server deps
+        working-directory: open-energy-platform
+        run: npm install --no-audit --no-fund --legacy-peer-deps
+
+      - name: Install Playwright Chromium
+        working-directory: open-energy-platform
+        run: npx playwright install --with-deps chromium
+
+      - name: CRUD smoke against production
+        working-directory: open-energy-platform
+        env:
+          BASE: https://oe.vantax.co.za
+        run: scripts/smoke-crud.sh
+
+      # Pause between bash scripts to stay within the sensitive auth rate
+      # limit (10 / 5 min / IP) — even with the token cache, fresh CI
+      # runners start with no cache.
+      - name: Pause for rate-limit window
+        run: sleep 30
+
+      - name: Per-role smoke (9 personas + cross-role 403)
+        working-directory: open-energy-platform
+        env:
+          BASE: https://oe.vantax.co.za
+        run: scripts/smoke-roles.sh
+
+      - name: Pause for rate-limit window
+        run: sleep 30
+
+      - name: Cron dry-run (every wrangler.toml schedule)
+        working-directory: open-energy-platform
+        env:
+          BASE: https://oe.vantax.co.za
+        run: scripts/smoke-cron.sh
+
+      - name: Pause for rate-limit window
+        run: sleep 30
+
+      - name: Browser smoke (Playwright)
+        working-directory: open-energy-platform
+        env:
+          BASE: https://oe.vantax.co.za
+        run: npm run test:browser
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: open-energy-platform/playwright-report
+          retention-days: 7

@@ -4,9 +4,14 @@ interface SkeletonProps {
   rows?: number;
   height?: string;
   variant?: 'text' | 'card' | 'chart';
+  /** Optional wrapper className — used by callers that need a custom size. */
+  className?: string;
 }
 
-export function Skeleton({ rows = 3, height = 'h-4', variant = 'text' }: SkeletonProps) {
+export function Skeleton({ rows = 3, height = 'h-4', variant = 'text', className }: SkeletonProps) {
+  if (className) {
+    return <div className={`bg-gray-200 rounded animate-pulse ${className}`} />;
+  }
   if (variant === 'card') {
     return (
       <div className="bg-white rounded-xl border border-gray-100 p-6 animate-pulse">

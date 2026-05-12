@@ -1,0 +1,29 @@
+# Cloudflare-honored headers for static assets served by the Workers
+# Static Assets binding. The Hono middleware in src/middleware/security.ts
+# already sets these on /api/* responses; this file applies the matching
+# policy to the SPA shell + bundles + images so a browser sees them too.
+#
+# The CSP that previously caused the "blank login page" incident was
+# default-src 'none' applied via Hono middleware. ASSETS bypasses that
+# middleware, so the bad header still reached the browser via Cloudflare's
+# inherited-header behaviour. Pinning the policy here is the durable fix.
+
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+  X-Permitted-Cross-Domain-Policies: none
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-site
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.cdnfonts.com; img-src 'self' data: blob:; font-src 'self' data: https://fonts.gstatic.com https://fonts.cdnfonts.com; connect-src 'self' https://cloudflareinsights.com; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+
+# Hashed Vite bundles are immutable — long cache, short revalidate window.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# SW must not be long-cached — clients need to pick up new versions promptly.
+/sw.js
+  Cache-Control: public, max-age=0, must-revalidate
