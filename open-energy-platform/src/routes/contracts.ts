@@ -453,20 +453,32 @@ contracts.put('/:id', async (c) => {
     return c.json({ success: false, error: 'Not authorized to update this contract' }, 403);
   }
 
-  const { title, description, phase, contract_type, status, commercial_terms } = body;
+  const { title, phase, contract_type, commercial_terms } = body;
   const termsJson = commercial_terms ? JSON.stringify(commercial_terms) : null;
 
+  // D1 rejects `undefined` bindings — partial PATCH-style updates leave
+  // most of these unset, so coerce each to null. The COALESCE(?, col) on
+  // each column preserves the existing value when null is passed.
+  //
+  // `contract_documents` does not have `description` or `status` columns
+  // (it's a phase-driven model, not a free-text description / status one),
+  // so they're not part of the writable set.
   await c.env.DB.prepare(`
     UPDATE contract_documents SET
       title = COALESCE(?, title),
-      description = COALESCE(?, description),
       phase = COALESCE(?, phase),
       document_type = COALESCE(?, document_type),
-      status = COALESCE(?, status),
       commercial_terms = COALESCE(?, commercial_terms),
       updated_at = ?
     WHERE id = ?
-  `).bind(title, description, phase, contract_type, status, termsJson, new Date().toISOString(), id).run();
+  `).bind(
+    title ?? null,
+    phase ?? null,
+    contract_type ?? null,
+    termsJson,
+    new Date().toISOString(),
+    id,
+  ).run();
 
   const contract = await c.env.DB.prepare('SELECT * FROM contract_documents WHERE id = ?').bind(id).first();
 

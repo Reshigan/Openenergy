@@ -73,25 +73,26 @@ cockpit.get('/kpis', authMiddleware, async (c) => {
   try {
     const kpis: Record<string, unknown> = {};
     
-    // Market stats
+    // Market stats — trade_matches uses matched_volume_mwh and matched_at
+    // (matched_at is the row timestamp; trade_matches has no created_at).
     const marketStats = await c.env.DB.prepare(`
-      SELECT 
+      SELECT
         COUNT(*) as total_trades,
-        COALESCE(SUM(volume), 0) as total_volume
-      FROM trade_matches 
-      WHERE created_at >= datetime('now', '-7 days')
+        COALESCE(SUM(matched_volume_mwh), 0) as total_volume
+      FROM trade_matches
+      WHERE matched_at >= datetime('now', '-7 days')
     `).first();
     
     kpis.market = marketStats;
 
-    // Admin stats
+    // Admin stats — invoices uses total_amount (REAL, ZAR), not total_cents.
     if (user.role === 'admin') {
       kpis.admin = await c.env.DB.prepare(`
-        SELECT 
+        SELECT
           (SELECT COUNT(*) FROM participants) as total_users,
           (SELECT COUNT(*) FROM trade_matches) as total_trades,
           (SELECT COUNT(*) FROM contract_documents WHERE phase = 'active') as active_contracts,
-          (SELECT COALESCE(SUM(total_cents), 0) FROM invoices WHERE status = 'paid') as total_revenue_cents
+          (SELECT COALESCE(SUM(total_amount), 0) FROM invoices WHERE status = 'paid') as total_revenue_zar
       `).first();
     }
 
