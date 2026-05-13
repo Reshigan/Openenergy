@@ -74,6 +74,12 @@ test('CSP allows the Metropolis font CDN (style + font)', async ({ request, base
   expect(csp).toMatch(/font-src[^;]*fonts\.cdnfonts\.com/);
 });
 
+test('CSP allows the Google usercontent CDN for Stitch screenshots', async ({ request, baseURL }) => {
+  const r = await request.get(`${baseURL}/`);
+  const csp = r.headers()['content-security-policy'] || '';
+  expect(csp).toMatch(/img-src[^;]*lh3\.googleusercontent\.com/);
+});
+
 test('LTM logo is served as image/png with same-site CORP', async ({ request, baseURL }) => {
   const r = await request.get(`${baseURL}/ltm-energy-logo.png`);
   expect(r.status()).toBe(200);

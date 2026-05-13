@@ -127,7 +127,7 @@ export async function securityHeaders(c: Context<HonoEnv>, next: Next) {
       // Vite ships hashed JS/CSS; we also need the Cloudflare Insights beacon.
       "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.cdnfonts.com",
-      "img-src 'self' data: blob:",
+      "img-src 'self' data: blob: https://lh3.googleusercontent.com",
       "font-src 'self' data: https://fonts.gstatic.com https://fonts.cdnfonts.com",
       // XHR/fetch + the realtime SSE stream are same-origin.
       "connect-src 'self' https://cloudflareinsights.com",

@@ -8,6 +8,7 @@ import { FioriShell } from './components/FioriShell';
 import { LogoMark, LogoBanner } from './components/Logo';
 import { OEIcon, type IconName } from './components/OEIcon';
 import { LtmLogo } from './components/LtmLogo';
+import { DesignGallery } from './components/pages/DesignGallery';
 
 // Import page components
 import { Cockpit } from './components/pages/Cockpit';
@@ -1242,6 +1243,8 @@ function AppRoutes() {
       <Route path="/intelligence" element={<ProtectedRoute><Layout><Intelligence /></Layout></ProtectedRoute>} />
       <Route path="/popia" element={<ProtectedRoute><Layout><Popia /></Layout></ProtectedRoute>} />
       <Route path="/briefing" element={<ProtectedRoute><Layout><Briefing /></Layout></ProtectedRoute>} />
+      {/* Design Gallery — Stitch references for the 047 role workbench tabs. */}
+      <Route path="/design-gallery" element={<ProtectedRoute><Layout><DesignGallery /></Layout></ProtectedRoute>} />
       {/* National-scale suite pages — code-split + role-guarded at the API layer. */}
       <Route path="/regulator-suite" element={<ProtectedRoute><Layout><LazyWorkbench><RegulatorSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/grid-operator" element={<ProtectedRoute><Layout><LazyWorkbench><GridOperatorSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />

@@ -43,6 +43,7 @@ const BASE_NAV: NavItem[] = [
   { path: '/intelligence', label: 'Intelligence',  icon: 'insights',           section: 'Insights' },
   { path: '/briefing',     label: 'Briefing',      icon: 'wb_sunny',           section: 'Insights' },
   { path: '/reports',      label: 'Reports',       icon: 'bar_chart',          section: 'Insights' },
+  { path: '/design-gallery', label: 'Design gallery', icon: 'palette',          section: 'Insights' },
   { path: '/popia',        label: 'POPIA',         icon: 'privacy_tip',        section: 'Compliance' },
   { path: '/admin',        label: 'Admin',         icon: 'settings',           section: 'System' },
   { path: '/support',      label: 'Support',       icon: 'support_agent',      section: 'System' },
