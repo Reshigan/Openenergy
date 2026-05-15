@@ -87,22 +87,36 @@ jobs:
         run: npm install --no-audit --no-fund --legacy-peer-deps
 
       - name: Apply D1 migrations (remote)
-        # Every migration uses IF NOT EXISTS / additive ALTER patterns, so
-        # re-running the full series on every deploy is safe and keeps the
-        # remote D1 in lock-step with the migrations folder.
+        # Most migrations use IF NOT EXISTS / additive ALTER patterns. A
+        # handful of older ones (e.g. 020) use unguarded ALTER TABLE ADD
+        # COLUMN that fails with "duplicate column name" on a DB where the
+        # column was already force-applied out of band — see
+        # GO_LIVE_READINESS.md §1.1. Treat those specific errors as benign
+        # so the loop can finish; everything else is fatal.
         working-directory: open-energy-platform
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
+          set +e
+          status=0
           for f in $(ls migrations/*.sql | sort -V); do
             echo "::group::Applying $f"
-            npx wrangler@4 d1 execute open-energy-db --remote --file="$f" -y || {
-              echo "::error::migration failed: $f"
-              exit 1
-            }
+            out=$(npx wrangler@4 d1 execute open-energy-db --remote --file="$f" -y 2>&1)
+            rc=$?
+            echo "$out"
+            if [ $rc -ne 0 ]; then
+              if echo "$out" | grep -qE "duplicate column name|already exists|SQLITE_CONSTRAINT_UNIQUE"; then
+                echo "::warning::idempotent re-run on $f — already applied, continuing"
+              else
+                echo "::error::migration failed: $f"
+                status=1
+                break
+              fi
+            fi
             echo "::endgroup::"
           done
+          exit $status
 
       - name: Deploy Pages (frontend + Functions)
         working-directory: open-energy-platform
