@@ -12,6 +12,7 @@ import { HonoEnv } from './utils/types';
 import authRoutes from './routes/auth';
 import ssoRoutes from './routes/sso';
 import cockpitRoutes from './routes/cockpit';
+import launchRoutes from './routes/launch';
 import participantsRoutes from './routes/participants';
 import contractsRoutes from './routes/contracts';
 import invoicesRoutes from './routes/invoices';
@@ -167,6 +168,7 @@ app.get('/api/health/deep', async (c) => {
 app.route('/api/auth', authRoutes);
 app.route('/api/auth/sso', ssoRoutes);
 app.route('/api/cockpit', cockpitRoutes);
+app.route('/api/launch', launchRoutes);
 
 // Protected routes
 app.route('/api/participants', participantsRoutes);
