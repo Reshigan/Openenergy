@@ -841,23 +841,41 @@ async function buildOfftakerBoard(c: any, user: any): Promise<LaunchPayload> {
 }
 
 async function buildLenderBoard(c: any, user: any): Promise<LaunchPayload> {
+  // Covenants schema (migration 023) carries `lender_participant_id`,
+  // not a separate `loans.lender_id`. Drive every count off covenants
+  // + covenant_tests so the lender board reflects actual book state.
   const r = await c.env.DB.prepare(`
     SELECT
-      (SELECT COUNT(*) FROM loans WHERE lender_id = ?)                                 AS loans_total,
-      (SELECT COUNT(*) FROM loans WHERE lender_id = ? AND status = 'active')           AS loans_active,
-      (SELECT COUNT(*) FROM loan_covenants lc INNER JOIN loans l ON l.id = lc.loan_id
-        WHERE l.lender_id = ? AND lc.status = 'breached')                              AS covenants_breached,
-      (SELECT COUNT(*) FROM disbursement_requests dr INNER JOIN loans l ON l.id = dr.loan_id
-        WHERE l.lender_id = ? AND dr.status = 'pending')                               AS disbursements_pending
+      (SELECT COUNT(DISTINCT project_id) FROM covenants
+        WHERE lender_participant_id = ?)                                              AS facilities_count,
+      (SELECT COUNT(*) FROM covenants
+        WHERE lender_participant_id = ?)                                              AS covenants_count,
+      (SELECT COUNT(*) FROM covenant_tests t
+        INNER JOIN covenants c ON c.id = t.covenant_id
+        WHERE c.lender_participant_id = ? AND t.result = 'breach')                    AS covenants_breached,
+      (SELECT COUNT(*) FROM disbursement_requests
+        WHERE status = 'pending')                                                     AS disbursements_pending
   `)
-    .bind(user.id, user.id, user.id, user.id)
+    .bind(user.id, user.id, user.id)
     .first()
     .catch(() => ({}));
 
-  const total = Number(r?.loans_total || 0);
-  const active = Number(r?.loans_active || 0);
-  const breached = Number(r?.covenants_breached || 0);
-  const pending = Number(r?.disbursements_pending || 0);
+  // L4 open-action queue + recent acceptances of AI advice.
+  const openActions = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM lender_covenant_actions
+      WHERE lender_participant_id = ? AND status IN ('open','investigating')`,
+  )
+    .bind(user.id)
+    .first()
+    .catch(() => null as any);
+
+  const facilities = Number((r as any)?.facilities_count || 0);
+  const covenants = Number((r as any)?.covenants_count || 0);
+  const breached = Number((r as any)?.covenants_breached || 0);
+  const pending = Number((r as any)?.disbursements_pending || 0);
+  const actionsN = Number((openActions as any)?.c || 0);
+  const total = facilities;
+  const active = facilities;
 
   return {
     role: 'lender',
@@ -869,28 +887,44 @@ async function buildLenderBoard(c: any, user: any): Promise<LaunchPayload> {
       primary_cta: { label: 'Open lender suite', href: '/lender-suite' },
     },
     kpis: [
-      { key: 'loans_active', label: 'Active loans', value: active, tone: 'good', href: '/funds' },
+      { key: 'facilities', label: 'Facilities', value: facilities, tone: 'good', href: '/lender-suite' },
+      { key: 'covenants', label: 'Covenants monitored', value: covenants, tone: 'neutral', href: '/lender-suite' },
       { key: 'covenants_breached', label: 'Breached covenants', value: breached, tone: breached > 0 ? 'bad' : 'good', href: '/lender-suite' },
+      { key: 'actions_open', label: 'Open workout actions', value: actionsN, tone: actionsN > 0 ? 'warn' : 'good', href: '/lender-suite?tab=actions' },
       { key: 'disbursements_pending', label: 'Pending disbursements', value: pending, tone: pending > 0 ? 'warn' : 'good', href: '/funds' },
-      { key: 'loans_total', label: 'Total loans', value: total, tone: 'neutral', href: '/funds' },
     ],
     workflows: [
       { key: 'origination', title: 'Loan origination', description: 'Term sheets, credit memo, syndication.', href: '/lender-suite', cta_label: 'Open suite', icon: 'savings' },
-      { key: 'covenants', title: 'Covenant monitoring', description: 'DSCR, leverage, debt service tests.', href: '/lender-suite', cta_label: 'Open covenants', icon: 'monitoring', metric: { label: 'breached', value: breached, tone: breached > 0 ? 'bad' : 'good' } },
+      { key: 'covenants', title: 'Covenant monitoring', description: 'DSCR, leverage, debt-service tests + AI cure-pathway advisor.', href: '/lender-suite', cta_label: 'Open covenants', icon: 'monitoring', metric: { label: 'breached', value: breached, tone: breached > 0 ? 'bad' : 'good' } },
+      { key: 'actions', title: 'Workout queue', description: 'Cure plans, waivers, accelerations — one screen for every breach.', href: '/lender-suite?tab=actions', cta_label: 'Open queue', icon: 'gavel', metric: { label: 'open', value: actionsN, tone: actionsN > 0 ? 'warn' : 'good' } },
       { key: 'draws', title: 'Disbursement requests', description: 'Approve / reject / partial drawdowns.', href: '/funds', cta_label: 'Open draws', icon: 'request_quote', metric: { label: 'pending', value: pending, tone: pending > 0 ? 'warn' : 'good' } },
     ],
-    ai_suggestions: breached > 0
-      ? [
-          {
-            key: 'covenant_breach',
-            title: `${breached} covenant${breached === 1 ? '' : 's'} in breach`,
-            why: 'Workout window opens once a breach is recorded. Review and decide cure / waiver / acceleration within 30 days.',
-            confidence: 0.95,
-            accept: { label: 'Open covenant workout', href: '/lender-suite' },
-            dismiss: { label: 'Dismiss' },
-          },
-        ]
-      : [],
+    ai_suggestions: [
+      ...(breached > 0 && actionsN < breached
+        ? [
+            {
+              key: 'covenant_breach_unaddressed',
+              title: `${breached - actionsN} breach${breached - actionsN === 1 ? '' : 'es'} have no workout action yet`,
+              why: 'Open the breach to get an AI-suggested cure / waiver / acceleration pathway with a confidence score.',
+              confidence: 0.9,
+              accept: { label: 'Open covenant queue', href: '/lender-suite' },
+              dismiss: { label: 'Dismiss' },
+            } as AiSuggestion,
+          ]
+        : []),
+      ...(pending > 0
+        ? [
+            {
+              key: 'draws_pending',
+              title: `${pending} disbursement request${pending === 1 ? '' : 's'} pending decision`,
+              why: 'Pending draws block construction milestones and accrue idle commitment fees.',
+              confidence: 0.8,
+              accept: { label: 'Open disbursements', href: '/funds' },
+              dismiss: { label: 'Dismiss' },
+            } as AiSuggestion,
+          ]
+        : []),
+    ],
   };
 }
 

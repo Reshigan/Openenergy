@@ -523,4 +523,181 @@ lender.get('/stress/results/:project_id', async (c) => {
 // Expose the pure calculators for downstream modules.
 export { dscr, llcr };
 
+// ────────────────────────────────────────────────────────────────────────
+// L4 endpoints — covenant-breach workflow + AI cure-pathway advisor
+// (mirrors Settlement L4 breaks + Trading L4 exceptions).
+// ────────────────────────────────────────────────────────────────────────
+
+import { adviseCovenant, type CovenantTest as CovTest } from '../utils/covenant-advisor';
+
+type CovenantTestRow = {
+  id: string;
+  covenant_id: string;
+  measured_value: number | null;
+  threshold: number | null;
+  result: string;
+  test_period: string;
+  test_date: string;
+  covenant_code: string;
+  covenant_type: string;
+  lender_participant_id: string | null;
+};
+
+// GET /lender/covenant-actions — open queue across every breach for the
+// caller.
+lender.get('/covenant-actions', async (c) => {
+  const user = getCurrentUser(c);
+  const status = c.req.query('status');
+  const where: string[] = ['(a.lender_participant_id = ? OR ? = \'admin\')'];
+  const binds: unknown[] = [user.id, user.role];
+  if (status) { where.push('a.status = ?'); binds.push(status); }
+  const rows = await c.env.DB.prepare(
+    `SELECT a.id, a.covenant_test_id, a.covenant_id, a.status, a.action_type,
+            a.severity, a.filed_by, a.filed_at, a.notes, a.cure_deadline,
+            a.resolution_outcome, a.resolution_notes, a.resolved_at, a.resolved_by,
+            c.covenant_code, c.covenant_name, c.covenant_type,
+            t.measured_value, t.threshold, t.result, t.test_period
+       FROM lender_covenant_actions a
+       INNER JOIN covenants c ON c.id = a.covenant_id
+       LEFT JOIN covenant_tests t ON t.id = a.covenant_test_id
+      WHERE ${where.join(' AND ')}
+      ORDER BY CASE a.severity
+        WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 END,
+        a.filed_at DESC
+      LIMIT 200`,
+  )
+    .bind(...binds)
+    .all()
+    .catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+// POST /lender/covenant-tests/:id/actions — file a workflow action.
+lender.post('/covenant-tests/:id/actions', async (c) => {
+  const user = getCurrentUser(c);
+  const testId = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as {
+    action_type?: string;
+    severity?: string;
+    cure_deadline?: string;
+    notes?: string;
+  };
+  const action = String(body.action_type || '').trim();
+  if (!action) {
+    return c.json({ success: false, error: 'action_type required' }, 400);
+  }
+  if (!body.notes || body.notes.length < 3) {
+    return c.json({ success: false, error: 'notes ≥3 chars required' }, 400);
+  }
+  const test = await c.env.DB.prepare(
+    `SELECT t.id, t.covenant_id, c.lender_participant_id
+       FROM covenant_tests t INNER JOIN covenants c ON c.id = t.covenant_id
+      WHERE t.id = ?`,
+  )
+    .bind(testId)
+    .first<{ id: string; covenant_id: string; lender_participant_id: string | null }>();
+  if (!test) return c.json({ success: false, error: 'covenant test not found' }, 404);
+  if (test.lender_participant_id && test.lender_participant_id !== user.id && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO lender_covenant_actions
+      (id, covenant_test_id, covenant_id, lender_participant_id, action_type,
+       severity, filed_by, notes, cure_deadline)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  )
+    .bind(
+      id, testId, test.covenant_id, test.lender_participant_id, action,
+      body.severity || 'medium', user.id, body.notes, body.cure_deadline || null,
+    )
+    .run();
+  return c.json({ success: true, data: { id, status: 'open' } });
+});
+
+// POST /lender/covenant-actions/:id/transition
+lender.post('/covenant-actions/:id/transition', async (c) => {
+  const user = getCurrentUser(c);
+  const actionId = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as { to?: string; outcome?: string; notes?: string };
+  const to = String(body.to || '').trim();
+  if (!['investigating', 'resolved', 'rejected'].includes(to)) {
+    return c.json({ success: false, error: 'Invalid transition target' }, 400);
+  }
+  const action = await c.env.DB.prepare(
+    `SELECT id, status, lender_participant_id FROM lender_covenant_actions WHERE id = ?`,
+  ).bind(actionId).first<{ id: string; status: string; lender_participant_id: string | null }>();
+  if (!action) return c.json({ success: false, error: 'Action not found' }, 404);
+  if (action.lender_participant_id && action.lender_participant_id !== user.id && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+  if (action.status === 'resolved' || action.status === 'rejected') {
+    return c.json({ success: false, error: `Action is ${action.status}; no further transitions` }, 422);
+  }
+  if (to === 'resolved' && action.status !== 'investigating') {
+    return c.json({ success: false, error: 'Move to investigating before resolving' }, 422);
+  }
+  if ((to === 'resolved' || to === 'rejected') && (!body.notes || body.notes.length < 3)) {
+    return c.json({ success: false, error: 'Notes ≥3 chars required on terminal transitions' }, 400);
+  }
+  const now = new Date().toISOString();
+  const isTerminal = to === 'resolved' || to === 'rejected';
+  await c.env.DB.prepare(
+    `UPDATE lender_covenant_actions
+       SET status = ?, resolution_outcome = ?, resolution_notes = ?,
+           resolved_at = ?, resolved_by = ?, updated_at = ?
+     WHERE id = ?`,
+  ).bind(
+    to,
+    isTerminal ? (body.outcome || (to === 'resolved' ? 'cured' : 'no_action')) : null,
+    body.notes || null,
+    isTerminal ? now : null,
+    isTerminal ? user.id : null,
+    now,
+    actionId,
+  ).run();
+  return c.json({ success: true, data: { id: actionId, status: to } });
+});
+
+// POST /lender/covenant-tests/:id/advise — AI cure-pathway advisor.
+lender.post('/covenant-tests/:id/advise', async (c) => {
+  const user = getCurrentUser(c);
+  const testId = c.req.param('id');
+  const test = await c.env.DB.prepare(
+    `SELECT t.id, t.covenant_id, t.measured_value, t.threshold, t.result,
+            t.test_period, t.test_date,
+            c.covenant_code, c.covenant_type, c.lender_participant_id
+       FROM covenant_tests t INNER JOIN covenants c ON c.id = t.covenant_id
+      WHERE t.id = ?`,
+  ).bind(testId).first<CovenantTestRow>();
+  if (!test) return c.json({ success: false, error: 'Covenant test not found' }, 404);
+  if (test.lender_participant_id && test.lender_participant_id !== user.id && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+  const advice = adviseCovenant(test as CovTest);
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO ai_lender_advice
+      (id, covenant_test_id, covenant_id, lender_participant_id,
+       recommendation, rationale, confidence, source)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(
+    id, testId, test.covenant_id, test.lender_participant_id,
+    advice.recommendation, advice.rationale, advice.confidence, advice.source,
+  ).run().catch(() => {});
+  return c.json({ success: true, data: { advice_id: id, ...advice } });
+});
+
+// POST /lender/advice/:id/accept — audit accept.
+lender.post('/advice/:id/accept', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  await c.env.DB.prepare(
+    `UPDATE ai_lender_advice
+       SET accepted_at = datetime('now'), accepted_by = ?
+     WHERE id = ?`,
+  ).bind(user.id, id).run().catch(() => {});
+  return c.json({ success: true });
+});
+
 export default lender;
