@@ -929,19 +929,35 @@ async function buildLenderBoard(c: any, user: any): Promise<LaunchPayload> {
 }
 
 async function buildGridOperatorBoard(c: any, user: any): Promise<LaunchPayload> {
-  const r = await c.env.DB.prepare(`
-    SELECT
-      (SELECT COUNT(*) FROM connection_queue WHERE status = 'pending')                 AS connection_pending,
-      (SELECT COUNT(*) FROM imbalance_events
-        WHERE created_at >= datetime('now','-1 day'))                                   AS imbalance_24h,
-      (SELECT COUNT(*) FROM ipp_projects WHERE status = 'operational')                  AS operational_plants
-  `)
-    .first()
-    .catch(() => ({}));
+  // L4: drive every count off the actual operator schema (migration 021
+  // grid_connection_applications / curtailment_notices / grid_outages,
+  // plus dispatch instructions). All counts wrapped in catch() so the
+  // board still renders if any table is absent on an older deploy.
+  const queueRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM grid_connection_applications
+       WHERE status NOT IN ('approved','rejected','withdrawn')`,
+  ).first().catch(() => null as any);
+  const curtailRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM curtailment_notices
+       WHERE COALESCE(lifted_at, '') = ''`,
+  ).first().catch(() => null as any);
+  const outagesRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM grid_outages
+       WHERE COALESCE(restoration_at, '') = ''`,
+  ).first().catch(() => null as any);
+  const dispatchAckRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM grid_dispatch_schedules WHERE status = 'published'`,
+  ).first().catch(() => null as any);
+  const plantsRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM ipp_projects
+       WHERE status IN ('operational','commercial_operations')`,
+  ).first().catch(() => null as any);
 
-  const connections = Number(r?.connection_pending || 0);
-  const imb = Number(r?.imbalance_24h || 0);
-  const plants = Number(r?.operational_plants || 0);
+  const connections = Number((queueRow as any)?.c || 0);
+  const curtailments = Number((curtailRow as any)?.c || 0);
+  const outages = Number((outagesRow as any)?.c || 0);
+  const dispatch = Number((dispatchAckRow as any)?.c || 0);
+  const plants = Number((plantsRow as any)?.c || 0);
 
   return {
     role: 'grid_operator',
@@ -949,36 +965,84 @@ async function buildGridOperatorBoard(c: any, user: any): Promise<LaunchPayload>
     hero: {
       eyebrow: `Grid operations · ${todayStr()}`,
       title: `${greeting()}, ${firstName(user.name)}`,
-      subtitle: `${plants} operating plant${plants === 1 ? '' : 's'} · ${connections} connection request${connections === 1 ? '' : 's'} pending · ${imb} imbalance event${imb === 1 ? '' : 's'} in 24h.`,
-      primary_cta: { label: 'Open grid operations', href: '/grid' },
+      subtitle: `${plants} operating plant${plants === 1 ? '' : 's'} · ${connections} application${connections === 1 ? '' : 's'} in queue · ${curtailments} active curtailment${curtailments === 1 ? '' : 's'} · ${outages} ongoing outage${outages === 1 ? '' : 's'}.`,
+      primary_cta: { label: 'Open grid operations', href: '/grid-operator' },
     },
     kpis: [
-      { key: 'connection_pending', label: 'Connection queue', value: connections, tone: connections > 0 ? 'warn' : 'good', href: '/grid-operator' },
-      { key: 'imbalance_24h', label: 'Imbalance events 24h', value: imb, tone: imb > 0 ? 'warn' : 'good', href: '/grid' },
+      { key: 'connection_queue', label: 'Connection queue', value: connections, tone: connections > 5 ? 'warn' : connections > 0 ? 'neutral' : 'good', href: '/grid-operator' },
+      { key: 'curtailments', label: 'Active curtailments', value: curtailments, tone: curtailments > 0 ? 'warn' : 'good', href: '/grid-operator' },
+      { key: 'outages', label: 'Ongoing outages', value: outages, tone: outages > 0 ? 'bad' : 'good', href: '/grid-operator' },
+      { key: 'dispatch_active', label: 'Live dispatch schedules', value: dispatch, tone: 'neutral', href: '/grid-operator' },
       { key: 'operational_plants', label: 'Operating plants', value: plants, tone: 'good', href: '/grid' },
     ],
     workflows: [
-      { key: 'grid', title: 'Live grid', description: 'Frequency, wheeling, demand response.', href: '/grid', cta_label: 'Open grid', icon: 'bolt' },
-      { key: 'connections', title: 'Connection queue', description: 'Grid connection applications, EIA gates.', href: '/grid-operator', cta_label: 'Open queue', icon: 'cable', metric: { label: 'pending', value: connections, tone: connections > 0 ? 'warn' : 'good' } },
+      { key: 'queue', title: 'Connection queue', description: 'Grid connection applications + EIA gates + advance / reject.', href: '/grid-operator', cta_label: 'Open queue', icon: 'cable', metric: { label: 'pending', value: connections, tone: connections > 0 ? 'warn' : 'good' } },
+      { key: 'curtailments', title: 'Active curtailments', description: 'Issue, monitor, lift curtailment notices.', href: '/grid-operator', cta_label: 'Open curtailments', icon: 'bolt', metric: { label: 'active', value: curtailments, tone: curtailments > 0 ? 'warn' : 'good' } },
+      { key: 'outages', title: 'Outage management', description: 'Report, update, restore grid outages with incident timeline.', href: '/grid-operator', cta_label: 'Open outages', icon: 'alert', metric: { label: 'ongoing', value: outages, tone: outages > 0 ? 'bad' : 'good' } },
+      { key: 'dispatch', title: 'Dispatch + ancillary services', description: 'Publish schedules, issue dispatch instructions, clear ancillary tenders.', href: '/grid-operator', cta_label: 'Open dispatch', icon: 'gauge' },
       { key: 'imbalance', title: 'Imbalance settlement', description: 'Imbalance events, settlement runs.', href: '/settlement', cta_label: 'Open settlement', icon: 'balance' },
     ],
-    ai_suggestions: [],
+    ai_suggestions: [
+      ...(outages > 0
+        ? [
+            {
+              key: 'outage_active',
+              title: `${outages} grid outage${outages === 1 ? ' is' : 's are'} ongoing`,
+              why: 'Active outages disrupt dispatch and trigger imbalance charges. Confirm ETA + customer comms within the SLA window.',
+              confidence: 0.9,
+              accept: { label: 'Open outage console', href: '/grid-operator' },
+              dismiss: { label: 'Dismiss' },
+            } as AiSuggestion,
+          ]
+        : []),
+      ...(connections > 5
+        ? [
+            {
+              key: 'queue_backlog',
+              title: `Connection queue at ${connections} applications`,
+              why: 'Queue ≥6 typically indicates a substation bottleneck. Triage the oldest applications and surface capacity constraints to the regulator.',
+              confidence: 0.78,
+              accept: { label: 'Open queue', href: '/grid-operator' },
+              dismiss: { label: 'Dismiss' },
+            } as AiSuggestion,
+          ]
+        : []),
+    ],
   };
 }
 
 async function buildRegulatorBoard(c: any, user: any): Promise<LaunchPayload> {
-  const r = await c.env.DB.prepare(`
-    SELECT
-      (SELECT COUNT(*) FROM participants WHERE kyc_status = 'pending')                  AS licences_pending,
-      (SELECT COUNT(*) FROM settlement_disputes WHERE status IN ('open','under_review')) AS market_disputes,
-      (SELECT COUNT(*) FROM ipp_projects)                                                AS projects_total
-  `)
-    .first()
-    .catch(() => ({}));
+  // Drive every count off real regulator tables (migration 030+):
+  // reg_licence_applications / reg_tariff_applications / regulator_
+  // surveillance_alerts / regulator_enforcement_cases / regulator_
+  // determinations. Each query wrapped in .catch so absent tables on
+  // older deploys quietly fall back to zero.
+  const licApps = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM reg_licence_applications
+       WHERE status IN ('submitted','under_review','clarification')`,
+  ).first().catch(() => null as any);
+  const tariffApps = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM reg_tariff_applications
+       WHERE status IN ('submitted','under_review','hearing_scheduled')`,
+  ).first().catch(() => null as any);
+  const alertsOpen = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM regulator_surveillance_alerts
+       WHERE status IN ('open','triaged','investigating')`,
+  ).first().catch(() => null as any);
+  const enforcementOpen = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM regulator_enforcement_cases
+       WHERE status IN ('open','investigating','hearing','appealed')`,
+  ).first().catch(() => null as any);
+  const determinationsRecent = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM regulator_determinations
+       WHERE published_at >= datetime('now','-30 days')`,
+  ).first().catch(() => null as any);
 
-  const lic = Number(r?.licences_pending || 0);
-  const disp = Number(r?.market_disputes || 0);
-  const projects = Number(r?.projects_total || 0);
+  const lic = Number((licApps as any)?.c || 0);
+  const tar = Number((tariffApps as any)?.c || 0);
+  const alerts = Number((alertsOpen as any)?.c || 0);
+  const enf = Number((enforcementOpen as any)?.c || 0);
+  const det30 = Number((determinationsRecent as any)?.c || 0);
 
   return {
     role: 'regulator',
@@ -986,37 +1050,86 @@ async function buildRegulatorBoard(c: any, user: any): Promise<LaunchPayload> {
     hero: {
       eyebrow: `Market oversight · ${todayStr()}`,
       title: `${greeting()}, ${firstName(user.name)}`,
-      subtitle: `${lic} licence application${lic === 1 ? '' : 's'} pending · ${disp} active market dispute${disp === 1 ? '' : 's'} · ${projects} project${projects === 1 ? '' : 's'} on register.`,
+      subtitle: `${lic} licence + ${tar} tariff application${tar === 1 ? '' : 's'} in flight · ${alerts} surveillance alert${alerts === 1 ? '' : 's'} open · ${enf} enforcement case${enf === 1 ? '' : 's'} live.`,
       primary_cta: { label: 'Open oversight console', href: '/regulator-suite' },
     },
     kpis: [
-      { key: 'licences_pending', label: 'Licences pending', value: lic, tone: lic > 0 ? 'warn' : 'good', href: '/regulator-suite' },
-      { key: 'market_disputes', label: 'Market disputes', value: disp, tone: disp > 0 ? 'warn' : 'good', href: '/regulator-suite' },
-      { key: 'projects_total', label: 'Projects on register', value: projects, tone: 'neutral', href: '/regulator-suite' },
+      { key: 'licence_apps', label: 'Licence applications', value: lic, tone: lic > 0 ? 'warn' : 'good', href: '/regulator-suite' },
+      { key: 'tariff_apps', label: 'Tariff applications', value: tar, tone: tar > 0 ? 'warn' : 'good', href: '/regulator-suite' },
+      { key: 'surveillance_alerts', label: 'Surveillance alerts', value: alerts, tone: alerts > 0 ? 'bad' : 'good', href: '/regulator-suite' },
+      { key: 'enforcement_open', label: 'Enforcement cases', value: enf, tone: enf > 0 ? 'warn' : 'good', href: '/regulator-suite' },
+      { key: 'determinations_30d', label: 'Determinations 30d', value: det30, tone: 'neutral', href: '/regulator-suite' },
     ],
     workflows: [
-      { key: 'oversight', title: 'Oversight console', description: 'Licences, submissions, investigations, determinations.', href: '/regulator-suite', cta_label: 'Open console', icon: 'gavel' },
-      { key: 'consultations', title: 'Public consultations', description: 'Open consultations, written submissions, responses.', href: '/regulator-suite', cta_label: 'Open consultations', icon: 'forum' },
-      { key: 'intelligence', title: 'Market intelligence', description: 'Pricing, volume, concentration, abuse signals.', href: '/intelligence', cta_label: 'Open intelligence', icon: 'insights' },
+      { key: 'licences', title: 'Licence applications', description: 'Triage, grant, vary, suspend, revoke; CP audit trail.', href: '/regulator-suite', cta_label: 'Open licences', icon: 'badge', metric: { label: 'in flight', value: lic, tone: lic > 0 ? 'warn' : 'good' } },
+      { key: 'tariffs', title: 'Tariff determinations', description: 'Tariff submissions, hearings, determinations register.', href: '/regulator-suite', cta_label: 'Open tariffs', icon: 'scale', metric: { label: 'open', value: tar, tone: tar > 0 ? 'warn' : 'good' } },
+      { key: 'surveillance', title: 'Market surveillance', description: 'Trading abuse signals + concentration + abnormal-volume alerts.', href: '/regulator-suite', cta_label: 'Open surveillance', icon: 'shield', metric: { label: 'open', value: alerts, tone: alerts > 0 ? 'bad' : 'good' } },
+      { key: 'enforcement', title: 'Enforcement', description: 'Investigations, findings, appeals.', href: '/regulator-suite', cta_label: 'Open enforcement', icon: 'gavel', metric: { label: 'live', value: enf, tone: enf > 0 ? 'warn' : 'good' } },
+      { key: 'intelligence', title: 'Market intelligence', description: 'Pricing, volume, concentration views over the whole market.', href: '/intelligence', cta_label: 'Open intelligence', icon: 'insights' },
     ],
-    ai_suggestions: [],
+    ai_suggestions: [
+      ...(alerts >= 3
+        ? [
+            {
+              key: 'surveillance_spike',
+              title: `${alerts} surveillance alerts open`,
+              why: 'Alert backlog ≥3 may indicate a misbehaving venue or counterparty cluster. Triage the highest-severity bucket first.',
+              confidence: 0.82,
+              accept: { label: 'Open surveillance', href: '/regulator-suite' },
+              dismiss: { label: 'Dismiss' },
+            } as AiSuggestion,
+          ]
+        : []),
+      ...(enf > 0
+        ? [
+            {
+              key: 'enforcement_live',
+              title: `${enf} enforcement case${enf === 1 ? '' : 's'} live`,
+              why: 'Each case has a statutory clock. Open the queue and confirm the next hearing date is set within the SLA.',
+              confidence: 0.85,
+              accept: { label: 'Open enforcement', href: '/regulator-suite' },
+              dismiss: { label: 'Dismiss' },
+            } as AiSuggestion,
+          ]
+        : []),
+    ],
   };
 }
 
 async function buildCarbonFundBoard(c: any, user: any): Promise<LaunchPayload> {
-  const r = await c.env.DB.prepare(`
-    SELECT
-      (SELECT COUNT(*) FROM carbon_holdings WHERE participant_id = ?)                    AS holdings,
-      (SELECT COUNT(*) FROM carbon_retirements WHERE participant_id = ?)                 AS retirements,
-      (SELECT COUNT(*) FROM cdr_projects WHERE developer_id = ?)                         AS cdr_projects
-  `)
-    .bind(user.id, user.id, user.id)
-    .first()
-    .catch(() => ({}));
+  // L4: drive counts off carbon_holdings + carbon_retirements +
+  // carbon_trades + cdr_projects + cdr_offtakes + carbon_fund_nav. Each
+  // query wrapped in .catch so older deploys fall back to zero.
+  const holdingsRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c, COALESCE(SUM(quantity), 0) AS q
+       FROM carbon_holdings WHERE participant_id = ?`,
+  ).bind(user.id).first().catch(() => null as any);
+  const retirementsRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM carbon_retirements WHERE participant_id = ?`,
+  ).bind(user.id).first().catch(() => null as any);
+  const cdrProjectsRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM cdr_projects WHERE developer_id = ?`,
+  ).bind(user.id).first().catch(() => null as any);
+  const cdrOfftakesRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM cdr_offtakes WHERE buyer_participant_id = ?`,
+  ).bind(user.id).first().catch(() => null as any);
+  const trades30dRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM carbon_trades
+       WHERE (buyer_id = ? OR seller_id = ?)
+         AND traded_at >= datetime('now','-30 days')`,
+  ).bind(user.id, user.id).first().catch(() => null as any);
+  const navRow = await c.env.DB.prepare(
+    `SELECT nav_zar FROM carbon_fund_nav WHERE participant_id = ?
+      ORDER BY snapshot_date DESC LIMIT 1`,
+  ).bind(user.id).first().catch(() => null as any);
 
-  const holdings = Number(r?.holdings || 0);
-  const retirements = Number(r?.retirements || 0);
-  const cdr = Number(r?.cdr_projects || 0);
+  const holdings = Number((holdingsRow as any)?.c || 0);
+  const holdingsQty = Number((holdingsRow as any)?.q || 0);
+  const retirements = Number((retirementsRow as any)?.c || 0);
+  const cdr = Number((cdrProjectsRow as any)?.c || 0);
+  const offtakes = Number((cdrOfftakesRow as any)?.c || 0);
+  const trades30 = Number((trades30dRow as any)?.c || 0);
+  const navZar = Math.round(Number((navRow as any)?.nav_zar || 0));
 
   return {
     role: 'carbon_fund',
@@ -1024,24 +1137,60 @@ async function buildCarbonFundBoard(c: any, user: any): Promise<LaunchPayload> {
     hero: {
       eyebrow: `Carbon fund · ${todayStr()}`,
       title: `${greeting()}, ${firstName(user.name)}`,
-      subtitle: `${holdings} active holding${holdings === 1 ? '' : 's'} · ${retirements} certificate${retirements === 1 ? '' : 's'} issued · ${cdr} CDR project${cdr === 1 ? '' : 's'}.`,
+      subtitle: `${holdings} holding${holdings === 1 ? '' : 's'} (~${Math.round(holdingsQty).toLocaleString()} tCO₂e) · ${retirements} retirement${retirements === 1 ? '' : 's'} · ${cdr} CDR project${cdr === 1 ? '' : 's'} on book.`,
       primary_cta: { label: 'Open carbon registry', href: '/carbon-registry' },
     },
     kpis: [
       { key: 'holdings', label: 'Active holdings', value: holdings, tone: 'good', href: '/carbon' },
+      { key: 'holdings_qty', label: 'Holdings tCO₂e', value: Math.round(holdingsQty), tone: 'neutral', href: '/carbon' },
       { key: 'retirements', label: 'Retirements issued', value: retirements, tone: 'good', href: '/carbon-registry' },
       { key: 'cdr_projects', label: 'CDR projects', value: cdr, tone: 'neutral', href: '/carbon-registry' },
+      { key: 'cdr_offtakes', label: 'CDR offtakes', value: offtakes, tone: 'neutral', href: '/carbon-registry' },
+      { key: 'trades_30d', label: '30d trades', value: trades30, tone: 'neutral', href: '/marketplace' },
+      ...(navZar > 0
+        ? ([{ key: 'nav', label: 'Latest NAV', value: navZar, unit: 'ZAR', tone: 'good' as Tone, href: '/carbon-registry' }] as Kpi[])
+        : []),
     ],
     workflows: [
-      { key: 'carbon', title: 'Carbon book', description: 'Holdings, vintages, transfers.', href: '/carbon', cta_label: 'Open carbon', icon: 'eco' },
-      { key: 'registry', title: 'Registry & retirements', description: 'CDR projects, retirements, certificate issuance.', href: '/carbon-registry', cta_label: 'Open registry', icon: 'verified' },
-      { key: 'marketplace', title: 'Marketplace', description: 'Buy / sell credits, spot + options.', href: '/marketplace', cta_label: 'Open marketplace', icon: 'storefront' },
+      { key: 'carbon', title: 'Carbon book', description: 'Holdings, vintages, transfers — single view of the active book.', href: '/carbon', cta_label: 'Open carbon', icon: 'eco', metric: { label: 'holdings', value: holdings, tone: 'good' } },
+      { key: 'registry', title: 'Registry & retirements', description: 'CDR projects, retirements, certificate issuance, registry sync.', href: '/carbon-registry', cta_label: 'Open registry', icon: 'leaf', metric: { label: 'retirements', value: retirements, tone: 'good' } },
+      { key: 'marketplace', title: 'Marketplace', description: 'Buy / sell credits, spot + options.', href: '/marketplace', cta_label: 'Open marketplace', icon: 'store', metric: { label: '30d', value: trades30, tone: 'neutral' } },
+      { key: 'mrv', title: 'MRV submissions', description: 'Measurement-reporting-verification cadence + assurance.', href: '/carbon-registry', cta_label: 'Open MRV', icon: 'check-circle' },
     ],
-    ai_suggestions: [],
+    ai_suggestions: [
+      ...(cdr > 0 && offtakes < cdr
+        ? [
+            {
+              key: 'cdr_offtake_gap',
+              title: `${cdr - offtakes} CDR project${cdr - offtakes === 1 ? '' : 's'} have no offtake`,
+              why: 'Unsold CDR pipeline accrues storage + verification cost. Open the offtake desk to match with buyer demand.',
+              confidence: 0.78,
+              accept: { label: 'Open offtakes', href: '/carbon-registry' },
+              dismiss: { label: 'Dismiss' },
+            } as AiSuggestion,
+          ]
+        : []),
+      ...(holdings > 0 && retirements === 0
+        ? [
+            {
+              key: 'no_retirements',
+              title: 'Holdings on book but no retirements yet',
+              why: 'Buyers demand retirement certificates as proof of decarbonisation. Retire eligible vintages to monetise the demand premium.',
+              confidence: 0.72,
+              accept: { label: 'Open registry', href: '/carbon-registry' },
+              dismiss: { label: 'Dismiss' },
+            } as AiSuggestion,
+          ]
+        : []),
+    ],
   };
 }
 
 async function buildAdminBoard(c: any, user: any): Promise<LaunchPayload> {
+  // L4: drive counts off real schemas (participants / contract_documents
+  // / invoices / cascade_dlq / cron_health). Cascade DLQ + cron health
+  // surface operational issues so the admin sees system-pain as well as
+  // commercial-health.
   const r = await c.env.DB.prepare(`
     SELECT
       (SELECT COUNT(*) FROM participants)                                                AS users_total,
@@ -1052,10 +1201,23 @@ async function buildAdminBoard(c: any, user: any): Promise<LaunchPayload> {
     .first()
     .catch(() => ({}));
 
-  const users = Number(r?.users_total || 0);
-  const kyc = Number(r?.kyc_pending || 0);
-  const contracts = Number(r?.contracts_active || 0);
-  const revenue = Math.round(Number(r?.revenue_paid || 0));
+  const cascadeDlqRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM cascade_dlq WHERE COALESCE(resolved_at, '') = ''`,
+  ).first().catch(() => null as any);
+  const settlementDlqRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM settlement_dlq WHERE status IN ('open','retrying')`,
+  ).first().catch(() => null as any);
+  const activeTenantsRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM participants WHERE COALESCE(suspended_at, '') = ''`,
+  ).first().catch(() => null as any);
+
+  const users = Number((r as any)?.users_total || 0);
+  const kyc = Number((r as any)?.kyc_pending || 0);
+  const contracts = Number((r as any)?.contracts_active || 0);
+  const revenue = Math.round(Number((r as any)?.revenue_paid || 0));
+  const cascadeDlq = Number((cascadeDlqRow as any)?.c || 0);
+  const settlementDlq = Number((settlementDlqRow as any)?.c || 0);
+  const activeTenants = Number((activeTenantsRow as any)?.c || users);
 
   return {
     role: 'admin',
@@ -1063,36 +1225,85 @@ async function buildAdminBoard(c: any, user: any): Promise<LaunchPayload> {
     hero: {
       eyebrow: `Platform admin · ${todayStr()}`,
       title: `${greeting()}, ${firstName(user.name)}`,
-      subtitle: `${users} user${users === 1 ? '' : 's'} · ${kyc} KYC pending · ${contracts} active contract${contracts === 1 ? '' : 's'} · revenue R${revenue.toLocaleString()} settled.`,
-      primary_cta: { label: 'Open admin console', href: '/admin' },
+      subtitle: `${activeTenants} active user${activeTenants === 1 ? '' : 's'} · ${kyc} KYC pending · ${contracts} active contract${contracts === 1 ? '' : 's'} · revenue R${revenue.toLocaleString()} settled · ${cascadeDlq + settlementDlq} item${(cascadeDlq + settlementDlq) === 1 ? '' : 's'} in DLQ.`,
+      primary_cta: { label: 'Open admin console', href: '/admin-platform' },
     },
     kpis: [
       { key: 'users_total', label: 'Users', value: users, tone: 'neutral', href: '/admin-platform' },
+      { key: 'tenants_active', label: 'Active tenants', value: activeTenants, tone: 'good', href: '/admin-platform' },
       { key: 'kyc_pending', label: 'KYC pending', value: kyc, tone: kyc > 0 ? 'warn' : 'good', href: '/admin-platform' },
       { key: 'contracts_active', label: 'Active contracts', value: contracts, tone: 'good', href: '/contracts' },
-      { key: 'revenue_paid', label: 'Settled revenue (ZAR)', value: revenue, tone: 'good', href: '/reports' },
+      { key: 'revenue_paid', label: 'Settled revenue', value: revenue, unit: 'ZAR', tone: 'good', href: '/reports' },
+      { key: 'cascade_dlq', label: 'Cascade DLQ', value: cascadeDlq, tone: cascadeDlq > 0 ? 'bad' : 'good', href: '/admin/monitoring' },
+      { key: 'settlement_dlq', label: 'Settlement DLQ', value: settlementDlq, tone: settlementDlq > 0 ? 'bad' : 'good', href: '/admin/monitoring' },
     ],
     workflows: [
-      { key: 'platform', title: 'Tenants & users', description: 'Tenants, billing, user accounts, roles.', href: '/admin-platform', cta_label: 'Open platform', icon: 'manage_accounts' },
-      { key: 'monitoring', title: 'System health', description: 'Cron jobs, DLQ, cascade health, audit.', href: '/admin/monitoring', cta_label: 'Open monitoring', icon: 'monitor_heart' },
-      { key: 'support', title: 'Support escalations', description: 'Tickets, breaches, cross-tenant search.', href: '/support', cta_label: 'Open support', icon: 'support_agent' },
+      { key: 'platform', title: 'Tenants & users', description: 'Tenants, billing, user accounts, roles, role overrides.', href: '/admin-platform', cta_label: 'Open platform', icon: 'team', metric: { label: 'active', value: activeTenants, tone: 'good' } },
+      { key: 'monitoring', title: 'System health', description: 'Cron jobs, DLQ, cascade health, audit trail.', href: '/admin/monitoring', cta_label: 'Open monitoring', icon: 'gauge', metric: { label: 'DLQ', value: cascadeDlq + settlementDlq, tone: (cascadeDlq + settlementDlq) > 0 ? 'bad' : 'good' } },
+      { key: 'reports', title: 'Revenue & reports', description: 'Settled revenue, churn, MRR, regulatory reports.', href: '/reports', cta_label: 'Open reports', icon: 'report' },
+      { key: 'support', title: 'Support escalations', description: 'Tickets, breaches, cross-tenant search.', href: '/support', cta_label: 'Open support', icon: 'help' },
     ],
-    ai_suggestions: [],
+    ai_suggestions: [
+      ...(cascadeDlq + settlementDlq > 0
+        ? [
+            {
+              key: 'dlq_drainage',
+              title: `${cascadeDlq + settlementDlq} item${(cascadeDlq + settlementDlq) === 1 ? '' : 's'} stuck in DLQ`,
+              why: 'Cascade + settlement DLQ items represent failed automation. Drain or escalate before they block downstream consumers.',
+              confidence: 0.92,
+              accept: { label: 'Open monitoring', href: '/admin/monitoring' },
+              dismiss: { label: 'Dismiss' },
+            } as AiSuggestion,
+          ]
+        : []),
+      ...(kyc >= 5
+        ? [
+            {
+              key: 'kyc_backlog',
+              title: `${kyc} KYC application${kyc === 1 ? '' : 's'} pending`,
+              why: 'KYC backlog ≥5 indicates throughput issue. Reassign reviewers or escalate to compliance.',
+              confidence: 0.82,
+              accept: { label: 'Open KYC queue', href: '/admin-platform' },
+              dismiss: { label: 'Dismiss' },
+            } as AiSuggestion,
+          ]
+        : []),
+    ],
   };
 }
 
 async function buildSupportBoard(c: any, user: any): Promise<LaunchPayload> {
+  // Support board surfaces operational state from the customer's
+  // perspective: action queue assigned to support, urgent items, cascade
+  // DLQ (so the team sees failed automations across all tenants), and
+  // KYC pending (since support helps with onboarding).
   const r = await c.env.DB.prepare(`
     SELECT
-      (SELECT COUNT(*) FROM action_queue WHERE assignee_id = ? AND status = 'pending')   AS my_queue,
-      (SELECT COUNT(*) FROM participants WHERE kyc_status = 'pending')                   AS kyc_pending
+      (SELECT COUNT(*) FROM action_queue WHERE assignee_id = ? AND status = 'pending')         AS my_queue,
+      (SELECT COUNT(*) FROM action_queue WHERE assignee_id = ? AND status = 'pending' AND priority IN ('urgent','high'))  AS my_urgent,
+      (SELECT COUNT(*) FROM participants WHERE kyc_status = 'pending')                          AS kyc_pending
   `)
-    .bind(user.id)
+    .bind(user.id, user.id)
     .first()
     .catch(() => ({}));
 
-  const queue = Number(r?.my_queue || 0);
-  const kyc = Number(r?.kyc_pending || 0);
+  const cascadeDlqRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM cascade_dlq WHERE COALESCE(resolved_at, '') = ''`,
+  ).first().catch(() => null as any);
+  const settlementDlqRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM settlement_dlq WHERE status IN ('open','retrying')`,
+  ).first().catch(() => null as any);
+  const recentlyResolvedRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM action_queue
+       WHERE completed_by = ? AND completed_at >= datetime('now','-7 days')`,
+  ).bind(user.id).first().catch(() => null as any);
+
+  const queue = Number((r as any)?.my_queue || 0);
+  const urgent = Number((r as any)?.my_urgent || 0);
+  const kyc = Number((r as any)?.kyc_pending || 0);
+  const cascadeDlq = Number((cascadeDlqRow as any)?.c || 0);
+  const settlementDlq = Number((settlementDlqRow as any)?.c || 0);
+  const resolved7d = Number((recentlyResolvedRow as any)?.c || 0);
 
   return {
     role: 'support',
@@ -1100,18 +1311,48 @@ async function buildSupportBoard(c: any, user: any): Promise<LaunchPayload> {
     hero: {
       eyebrow: `Support · ${todayStr()}`,
       title: `${greeting()}, ${firstName(user.name)}`,
-      subtitle: `${queue} item${queue === 1 ? '' : 's'} in your queue.`,
+      subtitle: `${queue} item${queue === 1 ? '' : 's'} in your queue${urgent > 0 ? ` (${urgent} urgent / high)` : ''} · ${resolved7d} resolved in last 7d.`,
       primary_cta: { label: 'Open support console', href: '/support' },
     },
     kpis: [
       { key: 'my_queue', label: 'My queue', value: queue, tone: queue > 0 ? 'warn' : 'good', href: '/support' },
+      { key: 'my_urgent', label: 'Urgent / high', value: urgent, tone: urgent > 0 ? 'bad' : 'good', href: '/support?priority=urgent' },
       { key: 'kyc_pending', label: 'Onboarding queue', value: kyc, tone: kyc > 0 ? 'neutral' : 'good', href: '/admin-platform' },
+      { key: 'cascade_dlq', label: 'Cascade DLQ', value: cascadeDlq, tone: cascadeDlq > 0 ? 'bad' : 'good', href: '/admin/monitoring' },
+      { key: 'settlement_dlq', label: 'Settlement DLQ', value: settlementDlq, tone: settlementDlq > 0 ? 'bad' : 'good', href: '/admin/monitoring' },
+      { key: 'resolved_7d', label: 'Resolved 7d', value: resolved7d, tone: 'good', href: '/support' },
     ],
     workflows: [
-      { key: 'support', title: 'Support console', description: 'Tickets, escalations, cross-tenant search.', href: '/support', cta_label: 'Open support', icon: 'support_agent' },
-      { key: 'monitoring', title: 'System health', description: 'Watch cron, DLQ, cascade health alongside the team.', href: '/admin/monitoring', cta_label: 'Open monitoring', icon: 'monitor_heart' },
+      { key: 'support', title: 'Support console', description: 'Tickets, escalations, cross-tenant search, walkthroughs.', href: '/support', cta_label: 'Open support', icon: 'help', metric: { label: 'queue', value: queue, tone: queue > 0 ? 'warn' : 'good' } },
+      { key: 'monitoring', title: 'System health', description: 'Watch cron, DLQ, cascade health alongside the team.', href: '/admin/monitoring', cta_label: 'Open monitoring', icon: 'gauge', metric: { label: 'DLQ', value: cascadeDlq + settlementDlq, tone: (cascadeDlq + settlementDlq) > 0 ? 'bad' : 'good' } },
+      { key: 'kyc', title: 'KYC onboarding', description: 'Help applicants finish KYC; escalate to compliance when stuck.', href: '/admin-platform', cta_label: 'Open onboarding', icon: 'people', metric: { label: 'pending', value: kyc, tone: kyc > 0 ? 'neutral' : 'good' } },
     ],
-    ai_suggestions: [],
+    ai_suggestions: [
+      ...(urgent > 0
+        ? [
+            {
+              key: 'urgent_in_queue',
+              title: `${urgent} urgent item${urgent === 1 ? '' : 's'} in your queue`,
+              why: 'Urgent / high-priority tickets have tighter SLAs. Triage these before working low-priority items.',
+              confidence: 0.95,
+              accept: { label: 'Open urgent queue', href: '/support?priority=urgent' },
+              dismiss: { label: 'Dismiss' },
+            } as AiSuggestion,
+          ]
+        : []),
+      ...(cascadeDlq + settlementDlq > 0
+        ? [
+            {
+              key: 'dlq_visible',
+              title: `${cascadeDlq + settlementDlq} item${(cascadeDlq + settlementDlq) === 1 ? '' : 's'} in DLQ across cascade + settlement`,
+              why: 'DLQ items often translate into customer-visible failures. Get ahead of inbound tickets by checking the monitor.',
+              confidence: 0.8,
+              accept: { label: 'Open monitoring', href: '/admin/monitoring' },
+              dismiss: { label: 'Dismiss' },
+            } as AiSuggestion,
+          ]
+        : []),
+    ],
   };
 }
 
