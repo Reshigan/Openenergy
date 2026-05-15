@@ -418,6 +418,39 @@ settlement.get('/reconciliation', async (c) => {
 // rejection-explainer route (src/routes/trading.ts).
 // ────────────────────────────────────────────────────────────────────────
 
+// GET /settlement/breaks — list breaks across every invoice the caller is
+// party to. Supports ?status= and ?severity= filters. Used by the
+// Settlement.tsx Breaks tab so the user has one screen for every open
+// exception they're involved in (not a per-invoice deep-dive).
+settlement.get('/breaks', async (c) => {
+  const user = getCurrentUser(c);
+  const status = c.req.query('status');
+  const severity = c.req.query('severity');
+  const where: string[] = ['(i.from_participant_id = ? OR i.to_participant_id = ?)'];
+  const binds: unknown[] = [user.id, user.id];
+  if (status) { where.push('b.status = ?'); binds.push(status); }
+  if (severity) { where.push('b.severity = ?'); binds.push(severity); }
+  const rows = await c.env.DB.prepare(
+    `SELECT b.id, b.invoice_id, b.break_type, b.severity, b.status,
+            b.reported_by, b.reported_at, b.reason,
+            b.expected_value, b.actual_value,
+            b.resolution_outcome, b.resolution_notes, b.resolved_at, b.resolved_by,
+            i.invoice_number, i.from_participant_id, i.to_participant_id,
+            i.total_amount, i.status AS invoice_status
+       FROM settlement_breaks b
+       INNER JOIN invoices i ON i.id = b.invoice_id
+      WHERE ${where.join(' AND ')}
+      ORDER BY CASE b.severity
+        WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 END,
+        b.reported_at DESC
+      LIMIT 200`,
+  )
+    .bind(...binds)
+    .all()
+    .catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
 // POST /settlement/invoices/:id/breaks — file an exception against an invoice.
 settlement.post('/invoices/:id/breaks', async (c) => {
   const user = getCurrentUser(c);
