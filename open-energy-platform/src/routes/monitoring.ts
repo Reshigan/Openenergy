@@ -146,6 +146,9 @@ monitoring.get('/timeseries', async (c) => {
 // ─── National-scale operational snapshots ─────────────────────────────────
 
 // Cascade DLQ — how many items, grouped by stage + event, newest on top.
+// Each query catches "no such column / no such table" so a partial-state
+// prod schema (the band documented in GO_LIVE_READINESS.md §1.1) degrades
+// to empty results rather than 500.
 monitoring.get('/cascade-dlq', async (c) => {
   const status = c.req.query('status') || 'pending';
   const limit = Math.min(parseInt(c.req.query('limit') || '100', 10) || 100, 500);
@@ -155,13 +158,13 @@ monitoring.get('/cascade-dlq', async (c) => {
             first_seen_at AS created_at,
             last_attempt_at
        FROM cascade_dlq WHERE status = ? ORDER BY first_seen_at DESC LIMIT ?`,
-  ).bind(status, limit).all();
+  ).bind(status, limit).all().catch(() => ({ results: [] } as any));
   const byStageQ = await c.env.DB.prepare(
     `SELECT stage, COUNT(*) AS n FROM cascade_dlq WHERE status = 'pending' GROUP BY stage`,
-  ).all();
+  ).all().catch(() => ({ results: [] } as any));
   const byEventQ = await c.env.DB.prepare(
     `SELECT event, COUNT(*) AS n FROM cascade_dlq WHERE status = 'pending' GROUP BY event ORDER BY n DESC LIMIT 10`,
-  ).all();
+  ).all().catch(() => ({ results: [] } as any));
   return c.json({
     success: true,
     data: rs.results || [],
@@ -198,29 +201,29 @@ monitoring.get('/settlement-runs', async (c) => {
 monitoring.get('/cron-health', async (c) => {
   const mr = await c.env.DB.prepare(
     `SELECT MAX(last_updated_at) AS last_run FROM metering_readings_daily`,
-  ).first<{ last_run: string | null }>();
+  ).first<{ last_run: string | null }>().catch(() => null);
   const ofs = await c.env.DB.prepare(
     `SELECT MAX(last_updated_at) AS last_run FROM ona_forecast_summary`,
-  ).first<{ last_run: string | null }>();
+  ).first<{ last_run: string | null }>().catch(() => null);
   const sr = await c.env.DB.prepare(
     `SELECT MAX(started_at) AS last_run FROM settlement_runs WHERE run_type = 'ppa_energy'`,
-  ).first<{ last_run: string | null }>();
+  ).first<{ last_run: string | null }>().catch(() => null);
   const mc = await c.env.DB.prepare(
     `SELECT MAX(as_of) AS last_run FROM margin_calls`,
-  ).first<{ last_run: string | null }>();
+  ).first<{ last_run: string | null }>().catch(() => null);
   const mp = await c.env.DB.prepare(
     // mark_prices uses `computed_at` (created in migration 037), not `created_at`.
     `SELECT MAX(computed_at) AS last_run FROM mark_prices WHERE source = 'vwap'`,
-  ).first<{ last_run: string | null }>();
+  ).first<{ last_run: string | null }>().catch(() => null);
   const ti = await c.env.DB.prepare(
     `SELECT MAX(issued_at) AS last_run FROM tenant_invoices`,
-  ).first<{ last_run: string | null }>();
+  ).first<{ last_run: string | null }>().catch(() => null);
   const us = await c.env.DB.prepare(
     `SELECT MAX(snapshot_date) AS last_run FROM tenant_usage_snapshots`,
-  ).first<{ last_run: string | null }>();
+  ).first<{ last_run: string | null }>().catch(() => null);
   const rsa = await c.env.DB.prepare(
     `SELECT MAX(raised_at) AS last_run FROM regulator_surveillance_alerts`,
-  ).first<{ last_run: string | null }>();
+  ).first<{ last_run: string | null }>().catch(() => null);
 
   return c.json({
     success: true,

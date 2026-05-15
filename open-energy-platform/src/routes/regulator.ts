@@ -604,26 +604,31 @@ Filing type **${type}** has no pre-built scaffold available. Please supply the n
 // GET /market-summary — concentration, GMV, activity (regulator overview)
 // ──────────────────────────────────────────────────────────────────────────
 regulator.get('/market-summary', async (c) => {
-  const row = await c.env.DB.prepare(`
-    SELECT (SELECT COUNT(*) FROM participants WHERE status='active') AS active_participants,
-           (SELECT COUNT(*) FROM ipp_projects) AS projects,
-           (SELECT COALESCE(SUM(capacity_mw),0) FROM ipp_projects) AS total_mw,
-           (SELECT COUNT(*) FROM trade_orders WHERE status='open') AS open_orders,
-           /* invoices table uses issued_at (not the legacy issue_date) */
-           /* and total_amount (not amount). Both renamed in v2 schema.   */
-           (SELECT COUNT(*) FROM invoices WHERE status='paid'
-              AND issued_at IS NOT NULL
-              AND strftime('%Y', issued_at) = strftime('%Y','now')) AS paid_ytd,
-           (SELECT COALESCE(SUM(total_amount),0) FROM invoices WHERE status='paid') AS gmv_paid_zar,
-           (SELECT COUNT(*) FROM grid_constraints WHERE status='active') AS active_grid_constraints
-  `).first();
+  // Each sub-aggregate is its own query so schema drift on any one
+  // table (issued_at vs issue_date, status check constraints differing
+  // between deploys) degrades that single metric instead of 500ing the
+  // whole endpoint. See GLR §3.1.
+  const safe = async (sql: string): Promise<number> =>
+    c.env.DB.prepare(sql).first<{ v: number | null }>().then(r => Number((r as any)?.v || 0)).catch(() => 0);
+
+  const summary = {
+    active_participants: await safe("SELECT COUNT(*) AS v FROM participants WHERE status='active'"),
+    projects: await safe('SELECT COUNT(*) AS v FROM ipp_projects'),
+    total_mw: await safe('SELECT COALESCE(SUM(capacity_mw),0) AS v FROM ipp_projects'),
+    open_orders: await safe("SELECT COUNT(*) AS v FROM trade_orders WHERE status='open'"),
+    paid_ytd: await safe(
+      "SELECT COUNT(*) AS v FROM invoices WHERE status='paid' AND issued_at IS NOT NULL AND strftime('%Y', issued_at) = strftime('%Y','now')",
+    ),
+    gmv_paid_zar: await safe("SELECT COALESCE(SUM(total_amount),0) AS v FROM invoices WHERE status='paid'"),
+    active_grid_constraints: await safe("SELECT COUNT(*) AS v FROM grid_constraints WHERE status='active'"),
+  };
 
   const byTech = await c.env.DB.prepare(`
     SELECT technology, COUNT(*) AS n, COALESCE(SUM(capacity_mw),0) AS mw
     FROM ipp_projects GROUP BY technology
-  `).all();
+  `).all().catch(() => ({ results: [] } as any));
 
-  return c.json({ success: true, data: { summary: row, by_technology: byTech.results || [] } });
+  return c.json({ success: true, data: { summary, by_technology: byTech.results || [] } });
 });
 
 export default regulator;

@@ -28,16 +28,27 @@ esgReports.get('/templates', async (c) => {
   return c.json({ success: true, data: templates });
 });
 
-// GET /esg-reports/my-reports — List participant's generated reports
+// GET /esg-reports/my-reports — List participant's generated reports.
+// Catches schema-drift errors (some prod variants are missing one of the
+// optional columns added by migration 048) so the endpoint degrades to
+// an empty list rather than 500. See GLR §3.1.
 esgReports.get('/my-reports', async (c) => {
   const participant = getCurrentUser(c);
-  
+
   const reports = await c.env.DB.prepare(`
     SELECT id, template_id, title, status, generated_at, r2_key, created_at
-    FROM esg_reports 
+    FROM esg_reports
     WHERE participant_id = ?
     ORDER BY created_at DESC
-  `).bind(participant.id).all();
+  `).bind(participant.id).all().catch(async () => {
+    // Fallback to a minimal column set if any of the v2 columns
+    // (template_id, generated_at, r2_key) are missing on this DB.
+    return await c.env.DB.prepare(`
+      SELECT id, status, created_at FROM esg_reports
+       WHERE participant_id = ?
+       ORDER BY created_at DESC
+    `).bind(participant.id).all().catch(() => ({ results: [] } as any));
+  });
 
   return c.json({ success: true, data: reports.results || [] });
 });

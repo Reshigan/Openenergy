@@ -47,6 +47,10 @@ interface Invoice {
   due_date: string;
   match_id: string | null;
   created_at: string;
+  // L4 settlement handshake state (migration 052). Pending until the
+  // issuer confirms; once issuer-confirmed, the payer can acknowledge.
+  // High/critical breaks auto-flip to 'disputed' server-side.
+  confirmation_status?: 'pending' | 'issuer_confirmed' | 'payer_acknowledged' | 'disputed' | null;
 }
 
 interface Payment {
@@ -269,7 +273,7 @@ export function Settlement() {
       {!loading && !error && tab === 'invoices' && (
         invoices.length === 0
           ? <EmptyState icon={<DollarSign className="w-8 h-8" />} title="No invoices" description="Invoices issued to you or that you've issued will appear here." />
-          : <InvoiceTable rows={invoices} userId={user?.id} onPay={setPayInvoice} onDispute={setDisputeInvoice} onBreak={setBreakInvoice} />
+          : <InvoiceTable rows={invoices} userId={user?.id} onPay={setPayInvoice} onDispute={setDisputeInvoice} onBreak={setBreakInvoice} onAfterConfirm={() => void refreshAll()} />
       )}
       {!loading && !error && tab === 'payments' && (
         payments.length === 0
@@ -312,13 +316,24 @@ function Tile({ label, value, accent }: { label: string; value: string; accent?:
   );
 }
 
-function InvoiceTable({ rows, userId, onPay, onDispute, onBreak }: { rows: Invoice[]; userId?: string; onPay: (i: Invoice) => void; onDispute: (i: Invoice) => void; onBreak?: (i: Invoice) => void }) {
+const CONFIRMATION_PILL: Record<string, string> = {
+  pending: 'bg-gray-100 text-gray-700',
+  issuer_confirmed: 'bg-blue-100 text-blue-700',
+  payer_acknowledged: 'bg-green-100 text-green-700',
+  disputed: 'bg-red-100 text-red-700',
+};
+
+async function postConfirm(invoiceId: string, party: 'issuer' | 'payer', status: 'confirmed' | 'rejected', notes?: string) {
+  return api.post(`/settlement/invoices/${invoiceId}/confirm`, { party, status, notes });
+}
+
+function InvoiceTable({ rows, userId, onPay, onDispute, onBreak, onAfterConfirm }: { rows: Invoice[]; userId?: string; onPay: (i: Invoice) => void; onDispute: (i: Invoice) => void; onBreak?: (i: Invoice) => void; onAfterConfirm?: () => void }) {
   return (
     <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
       <table className="w-full text-sm">
         <thead className="bg-gray-50 text-left text-xs uppercase text-ionex-text-mute">
           <tr>
-            <Th>Invoice</Th><Th>From</Th><Th>To</Th><Th>Amount</Th><Th>Paid</Th><Th>Due</Th><Th>Status</Th><Th>Actions</Th>
+            <Th>Invoice</Th><Th>From</Th><Th>To</Th><Th>Amount</Th><Th>Paid</Th><Th>Due</Th><Th>Status</Th><Th>Confirmation</Th><Th>Actions</Th>
           </tr>
         </thead>
         <tbody>
@@ -327,6 +342,11 @@ function InvoiceTable({ rows, userId, onPay, onDispute, onBreak }: { rows: Invoi
             const isIssuer = r.from_participant_id === userId;
             const canPay = isPayer && ['issued', 'partial', 'overdue'].includes(r.status);
             const canDispute = isPayer && ['issued', 'partial', 'overdue'].includes(r.status);
+            const conf = r.confirmation_status || 'pending';
+            // Issuer confirms first (pending → issuer_confirmed). Then payer can
+            // acknowledge. Either side can reject at any non-terminal stage.
+            const canIssuerConfirm = isIssuer && conf === 'pending';
+            const canPayerAck = isPayer && conf === 'issuer_confirmed';
             return (
               <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
                 <Td><span className="font-medium">{r.invoice_number}</span></Td>
@@ -337,13 +357,32 @@ function InvoiceTable({ rows, userId, onPay, onDispute, onBreak }: { rows: Invoi
                 <Td>{r.due_date ? new Date(r.due_date).toLocaleDateString() : '—'}</Td>
                 <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-gray-100'}`}>{r.status}</span></Td>
                 <Td>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${CONFIRMATION_PILL[conf] || 'bg-gray-100'}`}>
+                    {conf.replace(/_/g, ' ')}
+                  </span>
+                </Td>
+                <Td>
                   <div className="flex gap-1">
+                    {canIssuerConfirm && (
+                      <button
+                        onClick={async () => { try { await postConfirm(r.id, 'issuer', 'confirmed'); onAfterConfirm?.(); } catch { /* surface via reload */ } }}
+                        className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded"
+                        title="Issuer confirms this invoice is correct as issued"
+                      >Confirm</button>
+                    )}
+                    {canPayerAck && (
+                      <button
+                        onClick={async () => { try { await postConfirm(r.id, 'payer', 'confirmed'); onAfterConfirm?.(); } catch { /* surface via reload */ } }}
+                        className="px-2 py-1 text-xs bg-green-50 text-green-700 rounded"
+                        title="Payer acknowledges this invoice"
+                      >Acknowledge</button>
+                    )}
                     {canPay && <button onClick={() => onPay(r)} className="px-2 py-1 text-xs bg-ionex-brand text-white rounded">Pay</button>}
                     {canDispute && <button onClick={() => onDispute(r)} className="px-2 py-1 text-xs bg-red-50 text-red-700 rounded">Dispute</button>}
                     {onBreak && (isPayer || isIssuer) && r.status !== 'cancelled' && (
                       <button onClick={() => onBreak(r)} className="px-2 py-1 text-xs bg-amber-50 text-amber-800 rounded" title="File a settlement break">Break</button>
                     )}
-                    {isIssuer && !canPay && !onBreak && <span className="text-xs text-ionex-text-mute">—</span>}
+                    {isIssuer && !canPay && !onBreak && !canIssuerConfirm && !canPayerAck && <span className="text-xs text-ionex-text-mute">—</span>}
                   </div>
                 </Td>
               </tr>
