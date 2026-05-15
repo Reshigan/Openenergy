@@ -583,6 +583,36 @@ async function buildOfftakerBoard(c: any, user: any): Promise<LaunchPayload> {
     .first()
     .catch(() => ({}));
 
+  // L4 surfaces — open settlement breaks on invoices the offtaker pays,
+  // confirmations awaiting their acknowledgement, accrued fees they owe.
+  // All three queries hedge with .catch(()=>{}) so older deploys without
+  // migrations 052/053 quietly fall back to zero counts.
+  const breaks = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM settlement_breaks b
+       INNER JOIN invoices i ON i.id = b.invoice_id
+      WHERE i.to_participant_id = ? AND b.status IN ('open','investigating')`,
+  )
+    .bind(user.id)
+    .first()
+    .catch(() => null as any);
+
+  const pendingAck = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM invoices
+       WHERE to_participant_id = ? AND confirmation_status = 'issuer_confirmed'`,
+  )
+    .bind(user.id)
+    .first()
+    .catch(() => null as any);
+
+  const feeBurden = await c.env.DB.prepare(
+    `SELECT COALESCE(SUM(f.amount_zar), 0) AS s FROM settlement_fees f
+       INNER JOIN invoices i ON i.id = f.invoice_id
+      WHERE i.to_participant_id = ?`,
+  )
+    .bind(user.id)
+    .first()
+    .catch(() => null as any);
+
   const overdue = await c.env.DB.prepare(
     `SELECT COUNT(*) AS c FROM invoices
        WHERE to_participant_id = ? AND status = 'overdue'`,
@@ -591,11 +621,14 @@ async function buildOfftakerBoard(c: any, user: any): Promise<LaunchPayload> {
     .first()
     .catch(() => null as any);
 
-  const ppas = Number(r?.active_ppas || 0);
-  const toPay = Number(r?.invoices_to_pay || 0);
-  const toPayZar = Math.round(Number(r?.invoices_to_pay_zar || 0));
-  const disputes = Number(r?.open_disputes || 0);
-  const overdueN = Number(overdue?.c || 0);
+  const ppas = Number((r as any)?.active_ppas || 0);
+  const toPay = Number((r as any)?.invoices_to_pay || 0);
+  const toPayZar = Math.round(Number((r as any)?.invoices_to_pay_zar || 0));
+  const disputes = Number((r as any)?.open_disputes || 0);
+  const overdueN = Number((overdue as any)?.c || 0);
+  const breaksN = Number((breaks as any)?.c || 0);
+  const pendingAckN = Number((pendingAck as any)?.c || 0);
+  const feesZar = Math.round(Number((feeBurden as any)?.s || 0));
 
   return {
     role: 'offtaker',
@@ -630,6 +663,31 @@ async function buildOfftakerBoard(c: any, user: any): Promise<LaunchPayload> {
         tone: disputes > 0 ? 'warn' : 'good',
         href: '/settlement?tab=disputes',
       },
+      {
+        key: 'settlement_breaks',
+        label: 'Open breaks',
+        value: breaksN,
+        tone: breaksN > 0 ? 'warn' : 'good',
+        href: '/settlement?tab=breaks',
+      },
+      {
+        key: 'pending_ack',
+        label: 'Awaiting your acknowledgement',
+        value: pendingAckN,
+        tone: pendingAckN > 0 ? 'warn' : 'good',
+        href: '/settlement?direction=incoming&filter=needs_ack',
+      },
+      ...(feesZar > 0
+        ? ([{
+            key: 'fees_owed',
+            label: 'Fees accrued',
+            value: feesZar,
+            unit: 'ZAR',
+            tone: 'warn' as Tone,
+            href: '/settlement?direction=incoming',
+            footer: 'late + dunning',
+          }] as Kpi[])
+        : []),
     ],
     workflows: [
       {
@@ -659,18 +717,32 @@ async function buildOfftakerBoard(c: any, user: any): Promise<LaunchPayload> {
         metric: { label: 'to pay', value: toPay, tone: toPay > 0 ? 'warn' : 'good' },
       },
     ],
-    ai_suggestions: overdueN > 0
-      ? [
-          {
-            key: 'overdue_dunning',
-            title: `${overdueN} overdue invoice${overdueN === 1 ? '' : 's'} risk dunning fees`,
-            why: 'Late payment fees typically accrue from day +7. Pay or dispute before dunning kicks in.',
-            confidence: 0.92,
-            accept: { label: 'Review overdue', href: '/settlement?direction=incoming&status=overdue' },
-            dismiss: { label: 'Dismiss' },
-          },
-        ]
-      : [],
+    ai_suggestions: [
+      ...(overdueN > 0
+        ? [
+            {
+              key: 'overdue_dunning',
+              title: `${overdueN} overdue invoice${overdueN === 1 ? '' : 's'} risk dunning fees`,
+              why: 'Late payment fees typically accrue from day +7 at 2% of outstanding. Pay or dispute before dunning kicks in.',
+              confidence: 0.92,
+              accept: { label: 'Review overdue', href: '/settlement?direction=incoming&status=overdue' },
+              dismiss: { label: 'Dismiss' },
+            } as AiSuggestion,
+          ]
+        : []),
+      ...(pendingAckN > 0
+        ? [
+            {
+              key: 'pending_ack',
+              title: `${pendingAckN} invoice${pendingAckN === 1 ? '' : 's'} awaiting your acknowledgement`,
+              why: 'Issuer has confirmed; payer acknowledgement is needed to close the confirmation loop and trigger fee accrual cleanly.',
+              confidence: 0.88,
+              accept: { label: 'Open invoices', href: '/settlement?direction=incoming&filter=needs_ack' },
+              dismiss: { label: 'Later' },
+            } as AiSuggestion,
+          ]
+        : []),
+    ],
   };
 }
 
