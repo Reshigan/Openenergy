@@ -1591,6 +1591,81 @@ trading.get('/matches/:id/allocations', async (c) => {
   return c.json({ success: true, data: rows.results || [] });
 });
 
+// GET /trading/allocations — cross-fill listing for the caller. Returns
+// each allocation tied to a fill on one of the caller's orders, plus
+// per-row context (matched volume, price, counterparty) so the SPA can
+// render a useful table. Also flags fills with NO allocation yet via
+// the `unallocated` synthetic group at the top of the response.
+trading.get('/allocations', async (c) => {
+  const user = getCurrentUser(c);
+  // Existing allocations.
+  const alloc = await c.env.DB.prepare(
+    `SELECT a.id, a.match_id, a.order_id, a.participant_id, a.allocated_volume_mwh,
+            a.allocated_price_zar, a.sub_account, a.lot_id, a.reason, a.status, a.created_at,
+            m.matched_volume_mwh, COALESCE(m.matched_price, m.matched_price_zar) AS matched_price_zar,
+            m.matched_at, o.side AS order_side, o.energy_type
+       FROM trade_allocations a
+       INNER JOIN trade_matches m ON m.id = a.match_id
+       INNER JOIN trade_orders o ON o.id = a.order_id
+      WHERE o.participant_id = ?
+      ORDER BY m.matched_at DESC, a.created_at DESC
+      LIMIT 200`,
+  )
+    .bind(user.id)
+    .all()
+    .catch(() => ({ results: [] } as any));
+
+  // Fills that have no allocation yet for the caller's side.
+  const pending = await c.env.DB.prepare(
+    `SELECT m.id AS match_id, o.id AS order_id, o.side AS order_side, o.energy_type,
+            m.matched_volume_mwh, COALESCE(m.matched_price, m.matched_price_zar) AS matched_price_zar,
+            m.matched_at
+       FROM trade_matches m
+       INNER JOIN trade_orders o ON (o.id = m.buy_order_id OR o.id = m.sell_order_id)
+      WHERE o.participant_id = ?
+        AND NOT EXISTS (SELECT 1 FROM trade_allocations a WHERE a.match_id = m.id AND a.order_id = o.id)
+        AND m.matched_at >= datetime('now','-90 days')
+      ORDER BY m.matched_at DESC
+      LIMIT 100`,
+  )
+    .bind(user.id)
+    .all()
+    .catch(() => ({ results: [] } as any));
+
+  return c.json({
+    success: true,
+    data: {
+      allocations: alloc.results || [],
+      unallocated: pending.results || [],
+    },
+  });
+});
+
+// GET /trading/fees — cross-fill fee ledger for the caller.
+trading.get('/fees', async (c) => {
+  const user = getCurrentUser(c);
+  const feeType = c.req.query('fee_type');
+  const where: string[] = ['f.participant_id = ?'];
+  const binds: unknown[] = [user.id];
+  if (feeType) { where.push('f.fee_type = ?'); binds.push(feeType); }
+  const rows = await c.env.DB.prepare(
+    `SELECT f.id, f.match_id, f.order_id, f.fee_type, f.basis, f.amount_zar,
+            f.reason, f.calc_rule_version, f.calculated_at,
+            m.matched_volume_mwh, COALESCE(m.matched_price, m.matched_price_zar) AS matched_price_zar,
+            o.side AS order_side, o.energy_type
+       FROM trade_fees f
+       INNER JOIN trade_matches m ON m.id = f.match_id
+       INNER JOIN trade_orders o ON o.id = f.order_id
+      WHERE ${where.join(' AND ')}
+      ORDER BY f.calculated_at DESC
+      LIMIT 300`,
+  )
+    .bind(...binds)
+    .all()
+    .catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
 // POST /trading/exceptions — file a trade exception against a fill.
 trading.post('/exceptions', async (c) => {
   const user = getCurrentUser(c);

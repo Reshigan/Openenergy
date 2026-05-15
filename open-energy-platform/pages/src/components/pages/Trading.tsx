@@ -28,16 +28,18 @@ import { ExportBar } from '../ExportBar';
  * UI stays usable in demo mode.
  * ═══════════════════════════════════════════════════════════════════════ */
 
-type Tab = 'terminal' | 'algo' | 'backtest' | 'blotter' | 'risk' | 'rejections' | 'exceptions';
+type Tab = 'terminal' | 'algo' | 'backtest' | 'blotter' | 'risk' | 'rejections' | 'exceptions' | 'allocations' | 'fees';
 
 const TABS: { id: Tab; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
-  { id: 'terminal',   label: 'Terminal',   icon: BookOpen },
-  { id: 'algo',       label: 'Algo Rules', icon: Cpu },
-  { id: 'backtest',   label: 'Backtester', icon: Brain },
-  { id: 'blotter',    label: 'Blotter',    icon: Activity },
-  { id: 'risk',       label: 'Risk',       icon: Gauge },
-  { id: 'rejections', label: 'Rejections', icon: XCircle },
-  { id: 'exceptions', label: 'Exceptions', icon: AlertCircle },
+  { id: 'terminal',    label: 'Terminal',    icon: BookOpen },
+  { id: 'algo',        label: 'Algo Rules',  icon: Cpu },
+  { id: 'backtest',    label: 'Backtester',  icon: Brain },
+  { id: 'blotter',     label: 'Blotter',     icon: Activity },
+  { id: 'risk',        label: 'Risk',        icon: Gauge },
+  { id: 'allocations', label: 'Allocations', icon: Target },
+  { id: 'fees',        label: 'Fees',        icon: Edit3 },
+  { id: 'rejections',  label: 'Rejections',  icon: XCircle },
+  { id: 'exceptions',  label: 'Exceptions',  icon: AlertCircle },
 ];
 
 const formatZAR = (val: number) =>
@@ -111,6 +113,8 @@ export function Trading() {
       {tab === 'risk' && <RiskTab />}
       {tab === 'rejections' && <RejectionsTab />}
       {tab === 'exceptions' && <ExceptionsTab />}
+      {tab === 'allocations' && <AllocationsTab />}
+      {tab === 'fees' && <FeesTab />}
     </div>
   );
 }
@@ -1676,6 +1680,426 @@ function FileExceptionModal({ onClose, onDone }: { onClose: () => void; onDone: 
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// Tab 8 — Allocations (L4 fill-attribution)
+//
+// Once a fill lands, it represents a trade between two counterparties at
+// the headline level. Real desks need to break it down further — which
+// internal fund, sub-account, or lot bought / sold how much. The
+// allocations tab lists existing splits plus any fills that are NOT yet
+// allocated, and lets the trader split a fill into N rows that sum to
+// the matched volume.
+// ════════════════════════════════════════════════════════════════════════
+
+type AllocationRow = {
+  id: string;
+  match_id: string;
+  order_id: string;
+  participant_id: string;
+  allocated_volume_mwh: number;
+  allocated_price_zar: number;
+  sub_account: string | null;
+  lot_id: string | null;
+  reason: string | null;
+  status: string;
+  created_at: string;
+  matched_volume_mwh: number;
+  matched_price_zar: number;
+  matched_at: string;
+  order_side: 'buy' | 'sell';
+  energy_type: string;
+};
+
+type PendingFillRow = {
+  match_id: string;
+  order_id: string;
+  order_side: 'buy' | 'sell';
+  energy_type: string;
+  matched_volume_mwh: number;
+  matched_price_zar: number;
+  matched_at: string;
+};
+
+function AllocationsTab() {
+  const [allocs, setAllocs] = useState<AllocationRow[]>([]);
+  const [pending, setPending] = useState<PendingFillRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [allocating, setAllocating] = useState<PendingFillRow | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true); setErr(null);
+    try {
+      const res = await api.get('/trading/allocations');
+      setAllocs((res.data?.data?.allocations as AllocationRow[]) || []);
+      setPending((res.data?.data?.unallocated as PendingFillRow[]) || []);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Failed to load allocations');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  return (
+    <div className="space-y-6">
+      {loading && <div className="text-[13px] text-[#6b7685]">Loading…</div>}
+      {err && <div className="text-[13px] text-red-700">{err}</div>}
+
+      {/* Unallocated fills — highest leverage, surface first */}
+      <section>
+        <h2 className="text-[13px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#6b7685' }}>
+          Unallocated fills · last 90 days ({pending.length})
+        </h2>
+        {pending.length === 0 ? (
+          <div className="rounded-xl border border-[#dde4ec] bg-white p-6 text-center text-[12px] text-[#6b7685]">
+            Every fill is allocated. New fills will land here for attribution.
+          </div>
+        ) : (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 overflow-hidden">
+            <table className="w-full text-[13px]">
+              <thead className="bg-amber-100/60 text-left text-[10px] uppercase tracking-wide text-amber-800">
+                <tr>
+                  <th className="px-4 py-2">When</th>
+                  <th className="px-4 py-2">Side</th>
+                  <th className="px-4 py-2">Volume</th>
+                  <th className="px-4 py-2">Price</th>
+                  <th className="px-4 py-2">Notional</th>
+                  <th className="px-4 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pending.map((p) => (
+                  <tr key={`${p.match_id}_${p.order_id}`} className="border-t border-amber-200">
+                    <td className="px-4 py-2 text-[#6b7685]">{new Date(p.matched_at).toLocaleString()}</td>
+                    <td className="px-4 py-2 capitalize">{p.order_side}</td>
+                    <td className="px-4 py-2">{num(p.matched_volume_mwh, 2)} MWh</td>
+                    <td className="px-4 py-2">{formatZAR(p.matched_price_zar)}</td>
+                    <td className="px-4 py-2 font-medium">{formatZAR(p.matched_volume_mwh * p.matched_price_zar)}</td>
+                    <td className="px-4 py-2">
+                      <button onClick={() => setAllocating(p)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">
+                        Allocate
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Existing allocations */}
+      <section>
+        <h2 className="text-[13px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#6b7685' }}>
+          Allocations ledger ({allocs.length})
+        </h2>
+        {allocs.length === 0 ? (
+          <div className="rounded-xl border border-[#dde4ec] bg-white p-6 text-center text-[12px] text-[#6b7685]">
+            No allocations recorded yet.
+          </div>
+        ) : (
+          <div className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+            <table className="w-full text-[13px]">
+              <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+                <tr>
+                  <th className="px-4 py-2">When</th>
+                  <th className="px-4 py-2">Side</th>
+                  <th className="px-4 py-2">Participant</th>
+                  <th className="px-4 py-2">Sub-account</th>
+                  <th className="px-4 py-2">Lot</th>
+                  <th className="px-4 py-2">Volume</th>
+                  <th className="px-4 py-2">Price</th>
+                  <th className="px-4 py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allocs.map((a) => (
+                  <tr key={a.id} className="border-t border-[#e5ebf2] hover:bg-[#f8fafc]">
+                    <td className="px-4 py-2 text-[#6b7685]">{new Date(a.created_at).toLocaleString()}</td>
+                    <td className="px-4 py-2 capitalize">{a.order_side}</td>
+                    <td className="px-4 py-2 font-mono text-[11px]">{a.participant_id.slice(0, 12)}…</td>
+                    <td className="px-4 py-2">{a.sub_account || '—'}</td>
+                    <td className="px-4 py-2 text-[11px]">{a.lot_id || '—'}</td>
+                    <td className="px-4 py-2">{num(a.allocated_volume_mwh, 2)} MWh</td>
+                    <td className="px-4 py-2">{formatZAR(a.allocated_price_zar)}</td>
+                    <td className="px-4 py-2">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${
+                        a.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                      }`}>{a.status.replace(/_/g, ' ')}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {allocating && (
+        <AllocateModal
+          fill={allocating}
+          onClose={() => setAllocating(null)}
+          onDone={() => { setAllocating(null); void load(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+type SplitRow = { participant_id: string; volume_mwh: string; sub_account: string; lot_id: string; reason: string };
+
+function AllocateModal({
+  fill, onClose, onDone,
+}: {
+  fill: PendingFillRow;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [splits, setSplits] = useState<SplitRow[]>([
+    { participant_id: '', volume_mwh: String(fill.matched_volume_mwh), sub_account: '', lot_id: '', reason: '' },
+  ]);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const totalAllocated = splits.reduce((s, sp) => s + Number(sp.volume_mwh || 0), 0);
+  const remaining = fill.matched_volume_mwh - totalAllocated;
+  const balanced = Math.abs(remaining) < 0.001;
+
+  const addSplit = () =>
+    setSplits((prev) => [...prev, { participant_id: '', volume_mwh: '0', sub_account: '', lot_id: '', reason: '' }]);
+  const removeSplit = (idx: number) =>
+    setSplits((prev) => prev.filter((_, i) => i !== idx));
+  const updateSplit = (idx: number, key: keyof SplitRow, value: string) =>
+    setSplits((prev) => prev.map((sp, i) => (i === idx ? { ...sp, [key]: value } : sp)));
+
+  const submit = async () => {
+    if (!balanced) { setErr('Splits must total the matched volume.'); return; }
+    if (splits.some((sp) => !sp.participant_id || Number(sp.volume_mwh) <= 0)) {
+      setErr('Every split needs a participant ID and a positive volume.');
+      return;
+    }
+    setSaving(true); setErr(null);
+    try {
+      await api.post(`/trading/matches/${fill.match_id}/allocations`, {
+        side: fill.order_side,
+        splits: splits.map((sp) => ({
+          participant_id: sp.participant_id,
+          volume_mwh: Number(sp.volume_mwh),
+          sub_account: sp.sub_account || undefined,
+          lot_id: sp.lot_id || undefined,
+          reason: sp.reason || undefined,
+        })),
+      });
+      onDone();
+    } catch (e: unknown) {
+      const anyErr = e as { response?: { data?: { error?: string; detail?: unknown } }; message?: string };
+      setErr(anyErr?.response?.data?.error || anyErr?.message || 'Failed to allocate');
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
+          <div>
+            <h3 className="text-[16px] font-semibold text-[#0f1c2e]">Allocate fill</h3>
+            <p className="text-[12px] text-[#6b7685] mt-0.5">
+              {num(fill.matched_volume_mwh, 2)} MWh {fill.order_side} @ {formatZAR(fill.matched_price_zar)}
+              {' · '}<span className="font-mono">{fill.match_id.slice(0, 14)}…</span>
+            </p>
+          </div>
+          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-5 space-y-3">
+          {err && <div className="text-[12px] text-red-700">{err}</div>}
+
+          <div className="rounded-md border border-[#dde4ec] overflow-hidden">
+            <table className="w-full text-[12px]">
+              <thead className="bg-[#f8fafc] text-left text-[10px] uppercase text-[#6b7685]">
+                <tr>
+                  <th className="px-3 py-2 w-[28%]">Participant ID</th>
+                  <th className="px-3 py-2 w-[12%]">Volume MWh</th>
+                  <th className="px-3 py-2 w-[16%]">Sub-account</th>
+                  <th className="px-3 py-2 w-[14%]">Lot</th>
+                  <th className="px-3 py-2">Reason</th>
+                  <th className="px-3 py-2 w-[8%]"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {splits.map((sp, idx) => (
+                  <tr key={idx} className="border-t border-[#e5ebf2]">
+                    <td className="px-3 py-2"><input value={sp.participant_id} onChange={(e) => updateSplit(idx, 'participant_id', e.target.value)} className="w-full px-2 py-1 border border-[#dde4ec] rounded font-mono text-[11px]" placeholder="participant_…" /></td>
+                    <td className="px-3 py-2"><input type="number" value={sp.volume_mwh} onChange={(e) => updateSplit(idx, 'volume_mwh', e.target.value)} className="w-full px-2 py-1 border border-[#dde4ec] rounded" /></td>
+                    <td className="px-3 py-2"><input value={sp.sub_account} onChange={(e) => updateSplit(idx, 'sub_account', e.target.value)} className="w-full px-2 py-1 border border-[#dde4ec] rounded" placeholder="fund A" /></td>
+                    <td className="px-3 py-2"><input value={sp.lot_id} onChange={(e) => updateSplit(idx, 'lot_id', e.target.value)} className="w-full px-2 py-1 border border-[#dde4ec] rounded" placeholder="lot-…" /></td>
+                    <td className="px-3 py-2"><input value={sp.reason} onChange={(e) => updateSplit(idx, 'reason', e.target.value)} className="w-full px-2 py-1 border border-[#dde4ec] rounded" placeholder="optional" /></td>
+                    <td className="px-3 py-2 text-right">
+                      {splits.length > 1 && (
+                        <button onClick={() => removeSplit(idx)} className="text-red-600 text-[11px] hover:underline">remove</button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex items-center justify-between text-[12px]">
+            <button onClick={addSplit} className="text-[12px] font-semibold text-[#1a5d97] inline-flex items-center gap-1">
+              <Plus size={12} /> Add split
+            </button>
+            <div className={`font-mono ${balanced ? 'text-green-700' : 'text-red-700'}`}>
+              {balanced ? '✓ balanced' : `${num(remaining, 3)} MWh remaining`}
+              {' · total '}{num(totalAllocated, 3)} / {num(fill.matched_volume_mwh, 3)} MWh
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button onClick={submit} disabled={saving || !balanced} className="px-4 py-2 bg-[#1a3a5c] text-white rounded-lg disabled:opacity-50">
+              {saving ? 'Allocating…' : 'Allocate'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// Tab 9 — Fees (L4 fee ledger)
+//
+// Read-only view of every trade_fees row attributable to this trader,
+// optionally filtered by fee_type. Per-fill totals + breakdown so the
+// trader can see exactly what brokerage / exchange / clearing /
+// regulatory accrued against each fill.
+// ════════════════════════════════════════════════════════════════════════
+
+type FeeRow = {
+  id: string;
+  match_id: string;
+  order_id: string;
+  fee_type: string;
+  basis: string;
+  amount_zar: number;
+  reason: string;
+  calc_rule_version: string;
+  calculated_at: string;
+  matched_volume_mwh: number;
+  matched_price_zar: number;
+  order_side: 'buy' | 'sell';
+  energy_type: string;
+};
+
+const FEE_TYPE_PILL: Record<string, string> = {
+  brokerage:     'bg-blue-100 text-blue-700',
+  exchange:      'bg-indigo-100 text-indigo-700',
+  clearing:      'bg-purple-100 text-purple-700',
+  market_data:   'bg-amber-100 text-amber-800',
+  regulatory:    'bg-rose-100 text-rose-700',
+  tax:           'bg-gray-200 text-gray-700',
+  adjustment:    'bg-gray-100 text-gray-700',
+};
+
+function FeesTab() {
+  const [rows, setRows] = useState<FeeRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [feeType, setFeeType] = useState<string>('all');
+
+  const load = useCallback(async () => {
+    setLoading(true); setErr(null);
+    try {
+      const params = new URLSearchParams();
+      if (feeType !== 'all') params.set('fee_type', feeType);
+      const res = await api.get(`/trading/fees?${params.toString()}`);
+      setRows((res.data?.data as FeeRow[]) || []);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Failed to load fees');
+    } finally {
+      setLoading(false);
+    }
+  }, [feeType]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const total = rows.reduce((s, r) => s + r.amount_zar, 0);
+  const byType: Record<string, number> = {};
+  for (const r of rows) byType[r.fee_type] = (byType[r.fee_type] || 0) + r.amount_zar;
+
+  return (
+    <div className="space-y-4">
+      {/* Summary tiles */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+        <div className="rounded-xl border border-[#dde4ec] bg-white p-3">
+          <div className="text-[10px] uppercase tracking-wide text-[#6b7685]">Total</div>
+          <div className="mt-1 text-[18px] font-bold">{formatZAR(total)}</div>
+        </div>
+        {Object.keys(byType).sort().map((k) => (
+          <div key={k} className="rounded-xl border border-[#dde4ec] bg-white p-3">
+            <div className="text-[10px] uppercase tracking-wide text-[#6b7685]">{k.replace(/_/g, ' ')}</div>
+            <div className="mt-1 text-[18px] font-bold">{formatZAR(byType[k])}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2 items-center">
+        <span className="text-[12px] text-[#6b7685]">Type:</span>
+        {(['all', 'brokerage', 'exchange', 'clearing', 'regulatory', 'tax', 'adjustment'] as const).map((s) => (
+          <button key={s} onClick={() => setFeeType(s)}
+            className={`px-3 py-1 rounded-full text-[11px] capitalize ${feeType === s ? 'bg-[#1a3a5c] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
+            {s.replace(/_/g, ' ')}
+          </button>
+        ))}
+      </div>
+
+      {loading && <div className="text-[13px] text-[#6b7685]">Loading…</div>}
+      {err && <div className="text-[13px] text-red-700">{err}</div>}
+      {!loading && !err && rows.length === 0 && (
+        <div className="rounded-xl border border-[#dde4ec] bg-white p-8 text-center">
+          <div className="text-[14px] font-semibold text-[#0f1c2e]">No fees recorded</div>
+          <div className="text-[12px] text-[#6b7685] mt-1">Fee rows accrue on every fill once the fees engine runs against the match.</div>
+        </div>
+      )}
+      {!loading && !err && rows.length > 0 && (
+        <div className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+          <table className="w-full text-[13px]">
+            <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+              <tr>
+                <th className="px-4 py-2">When</th>
+                <th className="px-4 py-2">Type</th>
+                <th className="px-4 py-2">Side</th>
+                <th className="px-4 py-2">Fill</th>
+                <th className="px-4 py-2">Basis</th>
+                <th className="px-4 py-2 text-right">Amount</th>
+                <th className="px-4 py-2">Rule</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} className="border-t border-[#e5ebf2] hover:bg-[#f8fafc]">
+                  <td className="px-4 py-2 text-[#6b7685]">{new Date(r.calculated_at).toLocaleString()}</td>
+                  <td className="px-4 py-2">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${FEE_TYPE_PILL[r.fee_type] || 'bg-gray-100'}`}>{r.fee_type.replace(/_/g, ' ')}</span>
+                  </td>
+                  <td className="px-4 py-2 capitalize">{r.order_side}</td>
+                  <td className="px-4 py-2 text-[#6b7685] text-[11px]">{num(r.matched_volume_mwh, 2)} MWh @ {formatZAR(r.matched_price_zar)}</td>
+                  <td className="px-4 py-2 text-[11px]">{r.basis}</td>
+                  <td className="px-4 py-2 text-right font-medium">{formatZAR(r.amount_zar)}</td>
+                  <td className="px-4 py-2 text-[10px] font-mono text-[#6b7685]">{r.calc_rule_version}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
