@@ -6,6 +6,9 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { computeFees, type InvoiceShape } from '../utils/settlement-fees';
+import { explainSettlementRunFailure } from '../utils/run-failure-explainer';
+import { adjustModifiedFollowing, buildD1Deps } from '../utils/business-day';
 
 const settlement = new Hono<HonoEnv>();
 settlement.use('*', authMiddleware);
@@ -402,6 +405,416 @@ settlement.get('/reconciliation', async (c) => {
       },
     },
   });
+});
+
+// ────────────────────────────────────────────────────────────────────────
+// L4 endpoints — settlement breaks, business-day calendar, fees engine,
+// invoice confirmations handshake, AI run-failure explainer.
+//
+// These extend the basic CRUD above with the operational depth needed to
+// run a real settlement function: exception handling, fee accrual,
+// confirmation handshake, AI-assisted DLQ explanation. Each endpoint
+// follows the same idempotency + audit patterns used in the trading
+// rejection-explainer route (src/routes/trading.ts).
+// ────────────────────────────────────────────────────────────────────────
+
+// GET /settlement/breaks — list breaks across every invoice the caller is
+// party to. Supports ?status= and ?severity= filters. Used by the
+// Settlement.tsx Breaks tab so the user has one screen for every open
+// exception they're involved in (not a per-invoice deep-dive).
+settlement.get('/breaks', async (c) => {
+  const user = getCurrentUser(c);
+  const status = c.req.query('status');
+  const severity = c.req.query('severity');
+  const where: string[] = ['(i.from_participant_id = ? OR i.to_participant_id = ?)'];
+  const binds: unknown[] = [user.id, user.id];
+  if (status) { where.push('b.status = ?'); binds.push(status); }
+  if (severity) { where.push('b.severity = ?'); binds.push(severity); }
+  const rows = await c.env.DB.prepare(
+    `SELECT b.id, b.invoice_id, b.break_type, b.severity, b.status,
+            b.reported_by, b.reported_at, b.reason,
+            b.expected_value, b.actual_value,
+            b.resolution_outcome, b.resolution_notes, b.resolved_at, b.resolved_by,
+            i.invoice_number, i.from_participant_id, i.to_participant_id,
+            i.total_amount, i.status AS invoice_status
+       FROM settlement_breaks b
+       INNER JOIN invoices i ON i.id = b.invoice_id
+      WHERE ${where.join(' AND ')}
+      ORDER BY CASE b.severity
+        WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 END,
+        b.reported_at DESC
+      LIMIT 200`,
+  )
+    .bind(...binds)
+    .all()
+    .catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+// POST /settlement/invoices/:id/breaks — file an exception against an invoice.
+settlement.post('/invoices/:id/breaks', async (c) => {
+  const user = getCurrentUser(c);
+  const invoiceId = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as {
+    break_type?: string;
+    severity?: string;
+    reason?: string;
+    expected_value?: number;
+    actual_value?: number;
+  };
+  const breakType = String(body.break_type || '').trim();
+  const reason = String(body.reason || '').trim();
+  if (!breakType || !reason || reason.length < 3) {
+    return c.json({ success: false, error: 'break_type and reason (≥3 chars) are required' }, 400);
+  }
+
+  // Authz — caller must be either party to the invoice OR an admin.
+  const inv = await c.env.DB.prepare(
+    `SELECT id, from_participant_id, to_participant_id FROM invoices WHERE id = ?`,
+  )
+    .bind(invoiceId)
+    .first<{ id: string; from_participant_id: string; to_participant_id: string }>();
+  if (!inv) return c.json({ success: false, error: 'Invoice not found' }, 404);
+  const involved =
+    user.id === inv.from_participant_id ||
+    user.id === inv.to_participant_id ||
+    user.role === 'admin';
+  if (!involved) return c.json({ success: false, error: 'Forbidden' }, 403);
+
+  // Severity defaulted by rule of thumb where the body doesn't specify.
+  const sev = (body.severity || 'medium').trim();
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO settlement_breaks
+      (id, invoice_id, break_type, severity, reported_by, reason, expected_value, actual_value)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  )
+    .bind(
+      id,
+      invoiceId,
+      breakType,
+      sev,
+      user.id,
+      reason,
+      body.expected_value ?? null,
+      body.actual_value ?? null,
+    )
+    .run();
+
+  // High+critical breaks auto-flip the invoice to disputed so the UI
+  // surfaces the contention immediately.
+  if (sev === 'high' || sev === 'critical') {
+    await c.env.DB.prepare(
+      `UPDATE invoices SET confirmation_status = 'disputed' WHERE id = ? AND confirmation_status != 'disputed'`,
+    )
+      .bind(invoiceId)
+      .run()
+      .catch(() => {});
+  }
+
+  return c.json({ success: true, data: { id, status: 'open' } });
+});
+
+// GET /settlement/invoices/:id/breaks — list breaks for an invoice.
+settlement.get('/invoices/:id/breaks', async (c) => {
+  const invoiceId = c.req.param('id');
+  const rows = await c.env.DB.prepare(
+    `SELECT id, break_type, severity, status, reported_by, reported_at, reason,
+            expected_value, actual_value, resolution_outcome, resolution_notes,
+            resolved_at, resolved_by
+       FROM settlement_breaks
+      WHERE invoice_id = ?
+      ORDER BY reported_at DESC`,
+  )
+    .bind(invoiceId)
+    .all();
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+// POST /settlement/breaks/:id/transition — state machine transition.
+//   open → investigating | rejected
+//   investigating → resolved | rejected
+// Notes required on resolved/rejected terminal transitions.
+settlement.post('/breaks/:id/transition', async (c) => {
+  const user = getCurrentUser(c);
+  const breakId = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as {
+    to?: string;
+    outcome?: string;
+    notes?: string;
+  };
+  const to = String(body.to || '').trim();
+  if (!['investigating', 'resolved', 'rejected'].includes(to)) {
+    return c.json({ success: false, error: 'Invalid transition target' }, 400);
+  }
+
+  const brk = await c.env.DB.prepare(
+    `SELECT b.id, b.status, b.invoice_id, i.from_participant_id, i.to_participant_id
+       FROM settlement_breaks b INNER JOIN invoices i ON i.id = b.invoice_id
+      WHERE b.id = ?`,
+  )
+    .bind(breakId)
+    .first<any>();
+  if (!brk) return c.json({ success: false, error: 'Break not found' }, 404);
+  const involved =
+    user.id === brk.from_participant_id ||
+    user.id === brk.to_participant_id ||
+    user.role === 'admin';
+  if (!involved) return c.json({ success: false, error: 'Forbidden' }, 403);
+
+  // Guard: cannot exit a terminal state.
+  if (brk.status === 'resolved' || brk.status === 'rejected') {
+    return c.json({ success: false, error: `Break is ${brk.status}; no further transitions allowed` }, 422);
+  }
+  // Guard: only investigating can move to resolved.
+  if (to === 'resolved' && brk.status !== 'investigating') {
+    return c.json({ success: false, error: 'Move to investigating before resolving' }, 422);
+  }
+  if ((to === 'resolved' || to === 'rejected') && (!body.notes || body.notes.length < 3)) {
+    return c.json({ success: false, error: 'Notes ≥3 chars required on terminal transitions' }, 400);
+  }
+
+  const now = new Date().toISOString();
+  const isTerminal = to === 'resolved' || to === 'rejected';
+  await c.env.DB.prepare(
+    `UPDATE settlement_breaks
+       SET status = ?,
+           resolution_outcome = ?,
+           resolution_notes   = ?,
+           resolved_at        = ?,
+           resolved_by        = ?,
+           updated_at         = ?
+     WHERE id = ?`,
+  )
+    .bind(
+      to,
+      isTerminal ? (body.outcome || (to === 'resolved' ? 'corrected' : 'no_action')) : null,
+      body.notes || null,
+      isTerminal ? now : null,
+      isTerminal ? user.id : null,
+      now,
+      breakId,
+    )
+    .run();
+
+  return c.json({ success: true, data: { id: breakId, status: to } });
+});
+
+// POST /settlement/invoices/:id/confirm — issuer/payer handshake.
+// issuer confirms first → payer can then acknowledge. Either side
+// can reject; rejection flips the invoice to disputed.
+settlement.post('/invoices/:id/confirm', async (c) => {
+  const user = getCurrentUser(c);
+  const invoiceId = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as {
+    party?: string;
+    status?: string;
+    notes?: string;
+  };
+  const party = String(body.party || '').trim();
+  const status = String(body.status || '').trim();
+  if (!['issuer', 'payer'].includes(party)) {
+    return c.json({ success: false, error: 'party must be issuer or payer' }, 400);
+  }
+  if (!['confirmed', 'rejected'].includes(status)) {
+    return c.json({ success: false, error: 'status must be confirmed or rejected' }, 400);
+  }
+
+  const inv = await c.env.DB.prepare(
+    `SELECT id, from_participant_id, to_participant_id, confirmation_status FROM invoices WHERE id = ?`,
+  )
+    .bind(invoiceId)
+    .first<any>();
+  if (!inv) return c.json({ success: false, error: 'Invoice not found' }, 404);
+
+  // The user's role on this invoice — issuer is the one who issued
+  // (from_participant_id), payer is the recipient (to_participant_id).
+  const userIsIssuer = user.id === inv.from_participant_id;
+  const userIsPayer = user.id === inv.to_participant_id;
+  if (!userIsIssuer && !userIsPayer && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+  if (party === 'issuer' && !userIsIssuer && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Only the issuer can confirm as issuer' }, 403);
+  }
+  if (party === 'payer' && !userIsPayer && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Only the payer can acknowledge as payer' }, 403);
+  }
+  // The payer cannot acknowledge before the issuer has confirmed —
+  // enforce the order so the audit trail is sensible.
+  if (party === 'payer' && status === 'confirmed' && inv.confirmation_status !== 'issuer_confirmed') {
+    return c.json({ success: false, error: 'Issuer must confirm before payer can acknowledge' }, 422);
+  }
+
+  await c.env.DB.prepare(
+    `INSERT INTO invoice_confirmations (id, invoice_id, party, confirmed_by, status, notes)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT (invoice_id, party) DO UPDATE SET
+       confirmed_by = excluded.confirmed_by,
+       confirmed_at = datetime('now'),
+       status       = excluded.status,
+       notes        = excluded.notes`,
+  )
+    .bind(crypto.randomUUID(), invoiceId, party, user.id, status, body.notes || null)
+    .run();
+
+  // Roll-up the invoice's confirmation_status field.
+  let newConfirmation = inv.confirmation_status;
+  if (status === 'rejected') newConfirmation = 'disputed';
+  else if (party === 'issuer' && status === 'confirmed') newConfirmation = 'issuer_confirmed';
+  else if (party === 'payer' && status === 'confirmed') newConfirmation = 'payer_acknowledged';
+  if (newConfirmation !== inv.confirmation_status) {
+    await c.env.DB.prepare(`UPDATE invoices SET confirmation_status = ? WHERE id = ?`)
+      .bind(newConfirmation, invoiceId)
+      .run();
+  }
+
+  return c.json({ success: true, data: { invoice_id: invoiceId, confirmation_status: newConfirmation } });
+});
+
+// GET /settlement/invoices/:id/confirmations
+settlement.get('/invoices/:id/confirmations', async (c) => {
+  const invoiceId = c.req.param('id');
+  const rows = await c.env.DB.prepare(
+    `SELECT party, confirmed_by, confirmed_at, status, notes
+       FROM invoice_confirmations WHERE invoice_id = ?
+      ORDER BY confirmed_at`,
+  )
+    .bind(invoiceId)
+    .all();
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+// POST /settlement/invoices/:id/fees/recompute — idempotent fee accrual.
+settlement.post('/invoices/:id/fees/recompute', async (c) => {
+  const invoiceId = c.req.param('id');
+  const inv = await c.env.DB.prepare(
+    `SELECT id, status, total_amount, paid_amount, due_date AS payment_due_at, created_at AS issued_at
+       FROM invoices WHERE id = ?`,
+  )
+    .bind(invoiceId)
+    .first<InvoiceShape>();
+  if (!inv) return c.json({ success: false, error: 'Invoice not found' }, 404);
+
+  const fees = computeFees({ now: new Date(), invoice: inv });
+  let inserted = 0;
+  for (const f of fees) {
+    const r = await c.env.DB.prepare(
+      `INSERT OR IGNORE INTO settlement_fees
+        (id, invoice_id, fee_type, basis, amount_zar, reason, calc_rule_version, applied_after, applied_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+      .bind(
+        f.id,
+        f.invoice_id,
+        f.fee_type,
+        f.basis,
+        f.amount_zar,
+        f.reason,
+        f.calc_rule_version,
+        f.applied_after ?? null,
+        f.applied_by ?? 'system',
+      )
+      .run()
+      .catch(() => ({ changes: 0 } as any));
+    inserted += Number((r as any)?.changes || 0);
+  }
+
+  const rows = await c.env.DB.prepare(
+    `SELECT id, fee_type, basis, amount_zar, reason, calc_rule_version, applied_after, calculated_at
+       FROM settlement_fees WHERE invoice_id = ? ORDER BY calculated_at DESC`,
+  )
+    .bind(invoiceId)
+    .all();
+  return c.json({ success: true, data: { fees: rows.results || [], new_rows: inserted } });
+});
+
+// GET /settlement/invoices/:id/fees
+settlement.get('/invoices/:id/fees', async (c) => {
+  const invoiceId = c.req.param('id');
+  const rows = await c.env.DB.prepare(
+    `SELECT id, fee_type, basis, amount_zar, reason, calc_rule_version, applied_after, calculated_at
+       FROM settlement_fees WHERE invoice_id = ? ORDER BY calculated_at DESC`,
+  )
+    .bind(invoiceId)
+    .all();
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+// POST /settlement/runs/:id/explain — AI run-failure explainer.
+// Looks up the DLQ row, runs the deterministic resolver first, then
+// falls through to the gateway path for novel codes. Persists into
+// ai_settlement_run_failures regardless of source.
+settlement.post('/runs/:id/explain', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'support' && user.role !== 'regulator') {
+    // operators only; the trader / offtaker SPA doesn't surface this
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+  const runId = c.req.param('id');
+  const dlq = await c.env.DB.prepare(
+    `SELECT id, run_id, failure_code, failure_message
+       FROM settlement_dlq WHERE run_id = ?
+      ORDER BY created_at DESC LIMIT 1`,
+  )
+    .bind(runId)
+    .first<any>()
+    .catch(() => null);
+
+  const code = dlq?.failure_code || null;
+  const msg = dlq?.failure_message || null;
+  const explanation = await explainSettlementRunFailure(code, msg);
+
+  // Persist idempotently — same (run_id, failure_code) only ever lands once.
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO ai_settlement_run_failures
+      (id, run_id, dlq_id, failure_code, failure_message, explanation, suggested_action, confidence, source)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  )
+    .bind(
+      id,
+      runId,
+      dlq?.id || null,
+      code,
+      msg,
+      explanation.explanation,
+      explanation.suggested_action,
+      explanation.confidence,
+      explanation.source,
+    )
+    .run()
+    .catch(() => {});
+
+  return c.json({ success: true, data: { id, ...explanation } });
+});
+
+// GET /settlement/calendar/holidays?from=&to=
+settlement.get('/calendar/holidays', async (c) => {
+  const from = c.req.query('from') || new Date().toISOString().slice(0, 10);
+  const to =
+    c.req.query('to') ||
+    new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const zone = c.req.query('market_zone') || 'ZA';
+  const rows = await c.env.DB.prepare(
+    `SELECT date, market_zone, is_business_day, holiday_name, observed, notes
+       FROM business_day_calendar
+      WHERE market_zone = ? AND date BETWEEN ? AND ?
+      ORDER BY date`,
+  )
+    .bind(zone, from, to)
+    .all();
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+// GET /settlement/calendar/next-business-day?date=YYYY-MM-DD
+// Lightweight helper the SPA calls to preview an adjusted due-date.
+settlement.get('/calendar/next-business-day', async (c) => {
+  const date = c.req.query('date') || new Date().toISOString().slice(0, 10);
+  const zone = c.req.query('market_zone') || 'ZA';
+  const deps = buildD1Deps(c.env.DB);
+  const adjusted = await adjustModifiedFollowing(date, zone, deps);
+  return c.json({ success: true, data: { input: date, adjusted, market_zone: zone } });
 });
 
 export default settlement;

@@ -9,6 +9,7 @@ import { LogoMark, LogoBanner } from './components/Logo';
 import { OEIcon, type IconName } from './components/OEIcon';
 import { LtmLogo } from './components/LtmLogo';
 import { DesignGallery } from './components/pages/DesignGallery';
+import { RoleLaunchBoard } from './components/launch/RoleLaunchBoard';
 
 // Import page components
 import { Cockpit } from './components/pages/Cockpit';
@@ -19,6 +20,7 @@ import { Carbon } from './components/pages/Carbon';
 import { ProcurementHub } from './components/pages/ProcurementHub';
 import { Projects } from './components/pages/Projects';
 import { ProjectDetail } from './components/pages/ProjectDetail';
+import { ProjectLifecycle } from './components/pages/ProjectLifecycle';
 import { Grid } from './components/pages/Grid';
 import { ESG } from './components/pages/ESG';
 import { Funds } from './components/pages/Funds';
@@ -365,7 +367,10 @@ function LoginPage() {
     setLoading(true);
     try {
       await login(email, password, mfaRequired ? mfaCode : undefined);
-      navigate('/cockpit');
+      // The role-aware /launch redirect resolves to /launch/:role once the
+      // auth context has resolved the user. This is what gives every role a
+      // distinct landing page instead of the shared /cockpit.
+      navigate('/launch');
     } catch (err: any) {
       if (err?.name === 'MfaRequiredError') {
         setMfaRequired(true);
@@ -740,7 +745,7 @@ function SsoLanding() {
     const params = new URLSearchParams(frag);
     const token = params.get('token');
     const refresh_token = params.get('refresh_token') || undefined;
-    const returnTo = params.get('return_to') || '/cockpit';
+    const returnTo = params.get('return_to') || '/launch';
     if (!token) {
       setError('Missing SSO token — please try signing in again.');
       const t = setTimeout(() => navigate('/login?sso_error=missing_token', { replace: true }), 2000);
@@ -1208,6 +1213,16 @@ function PlaceholderPage({ title }: { title: string }) {
   );
 }
 
+// LaunchRedirect — when a signed-in user hits /launch (no role) or the legacy
+// /cockpit URL, resolve their role from AuthContext and bounce them to the
+// canonical /launch/:role. Anonymous users were already kicked to /login by
+// the wrapping ProtectedRoute.
+function LaunchRedirect() {
+  const { user } = useAuth();
+  const target = user?.role ? `/launch/${user.role}` : '/launch/admin';
+  return <Navigate to={target} replace />;
+}
+
 // App Router
 function AppRoutes() {
   return (
@@ -1219,7 +1234,13 @@ function AppRoutes() {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
       <Route path="/settings/security" element={<ProtectedRoute><Layout><Security /></Layout></ProtectedRoute>} />
-      <Route path="/cockpit" element={<ProtectedRoute><Layout><Cockpit /></Layout></ProtectedRoute>} />
+      {/* /cockpit and /launch (no role) both resolve to the signed-in user's
+          role-specific board. Cockpit kept as a soft redirect so existing
+          bookmarks keep working — but the Launchpad nav now points to
+          /launch. */}
+      <Route path="/cockpit" element={<ProtectedRoute><LaunchRedirect /></ProtectedRoute>} />
+      <Route path="/launch" element={<ProtectedRoute><LaunchRedirect /></ProtectedRoute>} />
+      <Route path="/launch/:role" element={<ProtectedRoute><Layout><RoleLaunchBoard /></Layout></ProtectedRoute>} />
       <Route path="/contracts" element={<ProtectedRoute><Layout><Contracts /></Layout></ProtectedRoute>} />
       <Route path="/contracts/:id" element={<ProtectedRoute><Layout><ContractDetail /></Layout></ProtectedRoute>} />
       <Route path="/trading" element={<ProtectedRoute><Layout><Trading /></Layout></ProtectedRoute>} />
@@ -1227,6 +1248,7 @@ function AppRoutes() {
       <Route path="/carbon" element={<ProtectedRoute><Layout><Carbon /></Layout></ProtectedRoute>} />
       <Route path="/projects" element={<ProtectedRoute><Layout><Projects /></Layout></ProtectedRoute>} />
       <Route path="/projects/:id" element={<ProtectedRoute><Layout><ProjectDetail /></Layout></ProtectedRoute>} />
+      <Route path="/projects/:id/lifecycle" element={<ProtectedRoute><Layout><ProjectLifecycle /></Layout></ProtectedRoute>} />
       <Route path="/esg" element={<ProtectedRoute><Layout><ESG /></Layout></ProtectedRoute>} />
       <Route path="/grid" element={<ProtectedRoute><Layout><Grid /></Layout></ProtectedRoute>} />
       <Route path="/funds" element={<ProtectedRoute><Layout><Funds /></Layout></ProtectedRoute>} />
@@ -1254,8 +1276,8 @@ function AppRoutes() {
       <Route path="/offtaker-suite" element={<ProtectedRoute><Layout><LazyWorkbench><OfftakerSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/carbon-registry" element={<ProtectedRoute><Layout><LazyWorkbench><CarbonRegistryPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/admin-platform" element={<ProtectedRoute><Layout><LazyWorkbench><AdminPlatformPage /></LazyWorkbench></Layout></ProtectedRoute>} />
-      <Route path="/" element={<Navigate to="/cockpit" replace />} />
-      <Route path="*" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/" element={<Navigate to="/launch" replace />} />
+      <Route path="*" element={<Navigate to="/launch" replace />} />
     </Routes>
   );
 }

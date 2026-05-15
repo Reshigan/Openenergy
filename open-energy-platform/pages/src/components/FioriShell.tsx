@@ -26,7 +26,7 @@ type NavItem = {
  * Home → Commerce → Operations → Sustainability → Finance → Insights → Compliance → System
  */
 const BASE_NAV: NavItem[] = [
-  { path: '/cockpit',      label: 'Launchpad',     icon: 'dashboard',          section: 'Home' },
+  { path: '/launch',       label: 'Launchpad',     icon: 'dashboard',          section: 'Home' },
   { path: '/contracts',    label: 'Contracts',     icon: 'description',        section: 'Commerce' },
   { path: '/lois',         label: 'Letters of Intent', icon: 'assignment',     section: 'Commerce' },
   { path: '/trading',      label: 'Trading',       icon: 'trending_up',        section: 'Commerce' },
@@ -62,33 +62,33 @@ function navForRole(role: string | undefined): NavItem[] {
       return BASE_NAV;
     case 'support':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/support', '/admin/monitoring', '/intelligence', '/briefing', '/popia'].includes(n.path),
+        ['/launch', '/support', '/admin/monitoring', '/intelligence', '/briefing', '/popia'].includes(n.path),
       );
     case 'trader':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/trading', '/settlement', '/contracts', '/marketplace', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
+        ['/launch', '/trading', '/settlement', '/contracts', '/marketplace', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
       );
     case 'ipp_developer':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/projects', '/contracts', '/settlement', '/grid', '/om', '/marketplace', '/esg', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
+        ['/launch', '/projects', '/contracts', '/settlement', '/grid', '/om', '/marketplace', '/esg', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
       );
     case 'carbon_fund':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/carbon', '/marketplace', '/funds', '/pipeline', '/esg', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
+        ['/launch', '/carbon', '/marketplace', '/funds', '/pipeline', '/esg', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
       );
     case 'offtaker':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/contracts', '/lois', '/procurement', '/marketplace', '/settlement', '/esg', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
+        ['/launch', '/contracts', '/lois', '/procurement', '/marketplace', '/settlement', '/esg', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
       );
     case 'lender':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/projects', '/pipeline', '/funds', '/settlement', '/om', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
+        ['/launch', '/projects', '/pipeline', '/funds', '/settlement', '/om', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
       );
     case 'grid_operator':
-      return BASE_NAV.filter((n) => ['/cockpit', '/grid', '/settlement', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path));
+      return BASE_NAV.filter((n) => ['/launch', '/grid', '/settlement', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path));
     case 'regulator':
       return BASE_NAV.filter((n) =>
-        ['/cockpit', '/marketplace', '/esg', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
+        ['/launch', '/marketplace', '/esg', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
       );
     default:
       return nonSystem;
@@ -319,7 +319,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
         </div>
 
         {/* Brand mark — actual three-ring OE logomark + wordmark */}
-        <Link to="/cockpit" className="flex items-center gap-2.5 ml-1 mr-4 select-none group" aria-label="Open Energy — Launchpad">
+        <Link to="/launch" className="flex items-center gap-2.5 ml-1 mr-4 select-none group" aria-label="Open Energy — Launchpad">
           <div
             className="flex items-center justify-center rounded p-0.5"
             style={{
@@ -364,7 +364,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
           <button
             type="button"
             aria-label="Notifications"
-            onClick={() => navigate('/cockpit')}
+            onClick={() => navigate('/launch')}
             className="relative w-10 h-10 rounded-md text-white/90 hover:bg-white/10 flex items-center justify-center transition-colors"
           >
             <MIcon name="notifications" size={18} />
@@ -571,8 +571,8 @@ function MobileBottomNav({
 }) {
   // First 4 of the role-scoped nav, but always include /cockpit if present.
   const top4 = (() => {
-    const cockpit = nav.find((n) => n.path === '/cockpit');
-    const others = nav.filter((n) => n.path !== '/cockpit').slice(0, cockpit ? 3 : 4);
+    const cockpit = nav.find((n) => n.path === '/launch');
+    const others = nav.filter((n) => n.path !== '/launch').slice(0, cockpit ? 3 : 4);
     return cockpit ? [cockpit, ...others] : others;
   })();
   if (top4.length === 0) return null;

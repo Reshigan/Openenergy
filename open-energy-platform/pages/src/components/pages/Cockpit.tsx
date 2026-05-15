@@ -15,11 +15,7 @@ import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { FioriTile, FioriTileGroup } from '../FioriTile';
 import { ActionQueueCard } from '../ActionQueueCard';
-import { OfftakerAiHub } from '../OfftakerAiHub';
-import { FunderAiHub } from '../FunderAiHub';
-import { CarbonFundAiHub } from '../CarbonFundAiHub';
-import { TraderAiHub } from '../TraderAiHub';
-import { RegulatorAiHub } from '../RegulatorAiHub';
+import { AiBriefPanel, BriefRole } from '../AiBriefPanel';
 
 const formatZAR = (val: number) =>
   new Intl.NumberFormat('en-ZA', {
@@ -60,6 +56,14 @@ const volumeData = [
   { hour: '12', mw: 1040 }, { hour: '14', mw: 1150 }, { hour: '16', mw: 1120 },
   { hour: '18', mw: 980 }, { hour: '20', mw: 780 }, { hour: '22', mw: 560 },
 ];
+
+// Roles for which AiBriefPanel has a server-side context builder. Keep in
+// sync with src/routes/ai-briefs.ts contextFor(); rendering for any other
+// role would 403.
+const BRIEF_ROLES = new Set<string>([
+  'admin', 'offtaker', 'lender', 'carbon_fund', 'regulator',
+  'grid_operator', 'ipp_developer',
+]);
 
 // Greeting by time
 const greeting = () => {
@@ -177,12 +181,13 @@ export function Cockpit() {
       {/* Action queue — cross-role handovers land here */}
       <ActionQueueCard />
 
-      {/* Role-specific AI module — each role gets its own copilot */}
-      {role === 'offtaker' && <OfftakerAiHub />}
-      {role === 'lender' && <FunderAiHub />}
-      {role === 'carbon_fund' && <CarbonFundAiHub />}
-      {role === 'trader' && <TraderAiHub />}
-      {role === 'regulator' && <RegulatorAiHub />}
+      {/* AI briefing — collapsed by default, role-aware. The trader role is
+          deliberately omitted: trader AI is woven inline into the Trading
+          page (size suggestion, rejection explanations, risk narrative)
+          rather than living as a dedicated cockpit panel. */}
+      {role !== 'trader' && BRIEF_ROLES.has(role) && (
+        <AiBriefPanel role={role as BriefRole} />
+      )}
 
 
       {/* Market Pulse */}

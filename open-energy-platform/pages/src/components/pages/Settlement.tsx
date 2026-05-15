@@ -7,7 +7,31 @@ import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { useAuth } from '../../lib/useAuth';
 
-type Tab = 'invoices' | 'payments' | 'disputes';
+type Tab = 'invoices' | 'payments' | 'disputes' | 'breaks';
+
+type Break = {
+  id: string;
+  invoice_id: string;
+  invoice_number: string;
+  break_type: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  status: 'open' | 'investigating' | 'resolved' | 'rejected';
+  reported_by: string;
+  reported_at: string;
+  reason: string;
+  expected_value: number | null;
+  actual_value: number | null;
+  resolution_outcome: string | null;
+  resolution_notes: string | null;
+  resolved_at: string | null;
+};
+
+const BREAK_SEVERITY_PILL: Record<string, string> = {
+  low: 'bg-gray-100 text-gray-700',
+  medium: 'bg-blue-100 text-blue-700',
+  high: 'bg-amber-100 text-amber-800',
+  critical: 'bg-red-100 text-red-700',
+};
 type InvoiceStatus = 'draft' | 'issued' | 'partial' | 'paid' | 'overdue' | 'disputed' | 'cancelled';
 
 interface Invoice {
@@ -93,6 +117,8 @@ export function Settlement() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [payInvoice, setPayInvoice] = useState<Invoice | null>(null);
   const [disputeInvoice, setDisputeInvoice] = useState<Invoice | null>(null);
+  const [breakInvoice, setBreakInvoice] = useState<Invoice | null>(null);
+  const [breaks, setBreaks] = useState<Break[]>([]);
 
   const fetchSummary = useCallback(async () => {
     try {
@@ -124,11 +150,16 @@ export function Settlement() {
       } else if (tab === 'payments') {
         const res = await api.get('/settlement/payments');
         setPayments(res.data?.data || []);
-      } else {
+      } else if (tab === 'disputes') {
         const params = new URLSearchParams();
         if (statusFilter !== 'all') params.set('status', statusFilter);
         const res = await api.get(`/settlement/disputes?${params.toString()}`);
         setDisputes(res.data?.data || []);
+      } else if (tab === 'breaks') {
+        const params = new URLSearchParams();
+        if (statusFilter !== 'all') params.set('status', statusFilter);
+        const res = await api.get(`/settlement/breaks?${params.toString()}`);
+        setBreaks(res.data?.data || []);
       }
     } catch (err: any) {
       setError(err?.response?.data?.error || err?.message || 'Failed to load settlement data');
@@ -189,6 +220,7 @@ export function Settlement() {
           { k: 'invoices', label: 'Invoices' },
           { k: 'payments', label: 'Payments' },
           { k: 'disputes', label: 'Disputes' },
+          { k: 'breaks', label: 'Breaks' },
         ] as Array<{ k: Tab; label: string }>).map(t => (
           <button
             key={t.k}
@@ -222,13 +254,22 @@ export function Settlement() {
         </div>
       )}
 
+      {tab === 'breaks' && (
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-sm text-ionex-text-mute">Status:</span>
+          {(['all', 'open', 'investigating', 'resolved', 'rejected'] as const).map(s => (
+            <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${statusFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s.replace(/_/g, ' ')}</button>
+          ))}
+        </div>
+      )}
+
       {loading && <Skeleton variant="card" rows={4} />}
       {error && <ErrorBanner message={error} onRetry={() => void refreshAll()} />}
 
       {!loading && !error && tab === 'invoices' && (
         invoices.length === 0
           ? <EmptyState icon={<DollarSign className="w-8 h-8" />} title="No invoices" description="Invoices issued to you or that you've issued will appear here." />
-          : <InvoiceTable rows={invoices} userId={user?.id} onPay={setPayInvoice} onDispute={setDisputeInvoice} />
+          : <InvoiceTable rows={invoices} userId={user?.id} onPay={setPayInvoice} onDispute={setDisputeInvoice} onBreak={setBreakInvoice} />
       )}
       {!loading && !error && tab === 'payments' && (
         payments.length === 0
@@ -240,12 +281,23 @@ export function Settlement() {
           ? <EmptyState icon={<AlertTriangle className="w-8 h-8" />} title="No disputes" description="Invoice disputes filed by either party will appear here." />
           : <DisputeTable rows={disputes} />
       )}
+      {!loading && !error && tab === 'breaks' && (
+        breaks.length === 0
+          ? <EmptyState icon={<AlertTriangle className="w-8 h-8" />} title="No settlement breaks" description="Exceptions filed against your invoices (quantity / price / timing / metering / tariff) will appear here." />
+          : <BreaksTable rows={breaks} onTransition={async (id, to, notes, outcome) => {
+              await api.post(`/settlement/breaks/${id}/transition`, { to, notes, outcome });
+              void refreshAll();
+            }} />
+      )}
 
       {payInvoice && (
         <RecordPaymentModal invoice={payInvoice} onClose={() => setPayInvoice(null)} onDone={() => { setPayInvoice(null); void refreshAll(); }} />
       )}
       {disputeInvoice && (
         <FileDisputeModal invoice={disputeInvoice} onClose={() => setDisputeInvoice(null)} onDone={() => { setDisputeInvoice(null); setTab('disputes'); setStatusFilter('all'); void fetchSummary(); }} />
+      )}
+      {breakInvoice && (
+        <FileBreakModal invoice={breakInvoice} onClose={() => setBreakInvoice(null)} onDone={() => { setBreakInvoice(null); setTab('breaks'); setStatusFilter('all'); void refreshAll(); }} />
       )}
     </div>
   );
@@ -260,7 +312,7 @@ function Tile({ label, value, accent }: { label: string; value: string; accent?:
   );
 }
 
-function InvoiceTable({ rows, userId, onPay, onDispute }: { rows: Invoice[]; userId?: string; onPay: (i: Invoice) => void; onDispute: (i: Invoice) => void }) {
+function InvoiceTable({ rows, userId, onPay, onDispute, onBreak }: { rows: Invoice[]; userId?: string; onPay: (i: Invoice) => void; onDispute: (i: Invoice) => void; onBreak?: (i: Invoice) => void }) {
   return (
     <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
       <table className="w-full text-sm">
@@ -288,7 +340,10 @@ function InvoiceTable({ rows, userId, onPay, onDispute }: { rows: Invoice[]; use
                   <div className="flex gap-1">
                     {canPay && <button onClick={() => onPay(r)} className="px-2 py-1 text-xs bg-ionex-brand text-white rounded">Pay</button>}
                     {canDispute && <button onClick={() => onDispute(r)} className="px-2 py-1 text-xs bg-red-50 text-red-700 rounded">Dispute</button>}
-                    {isIssuer && !canPay && <span className="text-xs text-ionex-text-mute">—</span>}
+                    {onBreak && (isPayer || isIssuer) && r.status !== 'cancelled' && (
+                      <button onClick={() => onBreak(r)} className="px-2 py-1 text-xs bg-amber-50 text-amber-800 rounded" title="File a settlement break">Break</button>
+                    )}
+                    {isIssuer && !canPay && !onBreak && <span className="text-xs text-ionex-text-mute">—</span>}
                   </div>
                 </Td>
               </tr>
@@ -480,5 +535,199 @@ function LabelInput({ label, value, onChange, type = 'text' }: { label: string; 
       <span className="text-ionex-text-mute">{label}</span>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg" />
     </label>
+  );
+}
+
+
+// ─── Settlement breaks ────────────────────────────────────────────────
+//
+// A break is filed against an invoice when issuer + payer disagree on a
+// dimension that does NOT warrant a full dispute (quantity / price /
+// timing / metering / tariff / fx). The state machine is
+// open → investigating → resolved | rejected; terminal transitions
+// require notes. High/critical breaks auto-flip the invoice to
+// confirmation_status='disputed' on the backend.
+
+function BreaksTable({
+  rows,
+  onTransition,
+}: {
+  rows: Break[];
+  onTransition: (id: string, to: 'investigating' | 'resolved' | 'rejected', notes: string, outcome?: string) => Promise<void>;
+}) {
+  const [transitioning, setTransitioning] = useState<Break | null>(null);
+  return (
+    <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
+      <table className="w-full text-sm">
+        <thead className="bg-gray-50 text-left text-xs uppercase text-ionex-text-mute">
+          <tr>
+            <Th>Invoice</Th><Th>Type</Th><Th>Severity</Th><Th>Status</Th><Th>Reported</Th><Th>Reason</Th><Th>Actions</Th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(b => (
+            <tr key={b.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+              <Td><span className="font-medium">{b.invoice_number}</span></Td>
+              <Td className="capitalize">{b.break_type.replace(/_/g, ' ')}</Td>
+              <Td>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase ${BREAK_SEVERITY_PILL[b.severity] || 'bg-gray-100'}`}>{b.severity}</span>
+              </Td>
+              <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[b.status] || 'bg-gray-100'}`}>{b.status.replace(/_/g, ' ')}</span></Td>
+              <Td>{new Date(b.reported_at).toLocaleDateString()}</Td>
+              <Td className="max-w-md"><span className="block truncate" title={b.reason}>{b.reason}</span></Td>
+              <Td>
+                <div className="flex gap-1">
+                  {b.status === 'open' && (
+                    <button onClick={() => onTransition(b.id, 'investigating', '')} className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded">Investigate</button>
+                  )}
+                  {(b.status === 'open' || b.status === 'investigating') && (
+                    <>
+                      <button onClick={() => setTransitioning({ ...b, status: 'resolved' as any })} className="px-2 py-1 text-xs bg-green-50 text-green-700 rounded">Resolve</button>
+                      <button onClick={() => setTransitioning({ ...b, status: 'rejected' as any })} className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">Reject</button>
+                    </>
+                  )}
+                  {(b.status === 'resolved' || b.status === 'rejected') && (
+                    <span className="text-xs text-ionex-text-mute">{b.resolution_outcome ? `outcome: ${b.resolution_outcome.replace(/_/g, ' ')}` : '—'}</span>
+                  )}
+                </div>
+              </Td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {transitioning && (
+        <ResolveBreakModal
+          breakRow={transitioning}
+          onClose={() => setTransitioning(null)}
+          onDone={async (notes, outcome) => {
+            const to = transitioning.status as 'resolved' | 'rejected';
+            setTransitioning(null);
+            await onTransition(transitioning.id, to, notes, outcome);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ResolveBreakModal({
+  breakRow,
+  onClose,
+  onDone,
+}: {
+  breakRow: Break;
+  onClose: () => void;
+  onDone: (notes: string, outcome: string) => Promise<void>;
+}) {
+  const [notes, setNotes] = useState('');
+  const [outcome, setOutcome] = useState<string>(breakRow.status === 'resolved' ? 'corrected' : 'no_action');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const submit = async () => {
+    if (notes.trim().length < 3) { setErr('Notes ≥3 chars required.'); return; }
+    setSaving(true); setErr(null);
+    try { await onDone(notes, outcome); } catch (e: any) { setErr(e?.message || 'Failed'); setSaving(false); }
+  };
+  const isResolved = breakRow.status === 'resolved';
+  return (
+    <Modal title={`${isResolved ? 'Resolve' : 'Reject'} break · ${breakRow.invoice_number}`} onClose={onClose}>
+      {err && <ErrorBanner message={err} />}
+      <div className="text-sm text-ionex-text-mute mb-3">{breakRow.reason}</div>
+      <label className="block text-sm mt-3">
+        <span className="text-ionex-text-mute">Outcome</span>
+        <select value={outcome} onChange={e => setOutcome(e.target.value)} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg">
+          {isResolved ? (
+            <>
+              <option value="corrected">Corrected</option>
+              <option value="rebooked">Rebooked</option>
+              <option value="waived">Waived</option>
+              <option value="escalated">Escalated</option>
+            </>
+          ) : (
+            <>
+              <option value="no_action">No action — break not substantiated</option>
+              <option value="escalated">Escalate to dispute</option>
+            </>
+          )}
+        </select>
+      </label>
+      <label className="block text-sm mt-3">
+        <span className="text-ionex-text-mute">Notes</span>
+        <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4} placeholder="What changed? Required ≥3 chars." className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg resize-none" />
+      </label>
+      <div className="flex justify-end gap-2 pt-4">
+        <button onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+        <button onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${isResolved ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}>
+          {saving ? 'Saving…' : (isResolved ? 'Resolve' : 'Reject')}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function FileBreakModal({ invoice, onClose, onDone }: { invoice: Invoice; onClose: () => void; onDone: () => void }) {
+  const [breakType, setBreakType] = useState<string>('quantity');
+  const [severity, setSeverity] = useState<string>('medium');
+  const [reason, setReason] = useState<string>('');
+  const [expected, setExpected] = useState<string>('');
+  const [actual, setActual] = useState<string>('');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const submit = async () => {
+    if (reason.trim().length < 3) { setErr('Reason ≥3 chars required.'); return; }
+    setSaving(true); setErr(null);
+    try {
+      await api.post(`/settlement/invoices/${invoice.id}/breaks`, {
+        break_type: breakType,
+        severity,
+        reason,
+        expected_value: expected ? Number(expected) : undefined,
+        actual_value: actual ? Number(actual) : undefined,
+      });
+      onDone();
+    } catch (e: any) {
+      setErr(e?.response?.data?.error || e.message || 'Failed to file break');
+      setSaving(false);
+    }
+  };
+  return (
+    <Modal title={`File a settlement break · ${invoice.invoice_number}`} onClose={onClose}>
+      {err && <ErrorBanner message={err} />}
+      <label className="block text-sm mt-2">
+        <span className="text-ionex-text-mute">Break type</span>
+        <select value={breakType} onChange={e => setBreakType(e.target.value)} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg">
+          <option value="quantity">Quantity (volume mismatch)</option>
+          <option value="price">Price (tariff or rate disagreement)</option>
+          <option value="timing">Timing (period or due date)</option>
+          <option value="metering">Metering (reading or source)</option>
+          <option value="tariff">Tariff (regulated band breach)</option>
+          <option value="fx">FX (rate or date mismatch)</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+      <label className="block text-sm mt-3">
+        <span className="text-ionex-text-mute">Severity</span>
+        <select value={severity} onChange={e => setSeverity(e.target.value)} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High — auto-disputes invoice</option>
+          <option value="critical">Critical — auto-disputes invoice</option>
+        </select>
+      </label>
+      <div className="grid grid-cols-2 gap-3">
+        <LabelInput label="Expected value" type="number" value={expected} onChange={setExpected} />
+        <LabelInput label="Actual value" type="number" value={actual} onChange={setActual} />
+      </div>
+      <label className="block text-sm mt-3">
+        <span className="text-ionex-text-mute">Reason</span>
+        <textarea value={reason} onChange={e => setReason(e.target.value)} rows={4} placeholder="What disagreement? At least 3 characters." className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg resize-none" />
+      </label>
+      <div className="flex justify-end gap-2 pt-4">
+        <button onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+        <button onClick={submit} disabled={saving} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50">
+          {saving ? 'Filing…' : 'File break'}
+        </button>
+      </div>
+    </Modal>
   );
 }

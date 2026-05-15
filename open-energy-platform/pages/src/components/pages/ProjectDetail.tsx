@@ -115,6 +115,9 @@ export function ProjectDetail() {
           <button onClick={() => navigate('/projects')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
             <OEIcon name="chevron-left" size={14} /> Projects
           </button>
+          <button onClick={() => navigate(`/projects/${project.id}/lifecycle`)} className="h-9 px-3 rounded-md text-white text-[12px] font-semibold inline-flex items-center gap-1" style={{ background: 'linear-gradient(135deg,#3b82c4 0%,#1a5d97 100%)' }}>
+            <OEIcon name="flow" size={14} /> Lifecycle timeline
+          </button>
           <button onClick={refresh} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
             <OEIcon name="refresh" size={14} /> Refresh
           </button>

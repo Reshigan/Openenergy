@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Activity, ArrowDownRight, ArrowUpRight, BookOpen, Brain, Cpu, Gauge,
-  Play, Plus, RefreshCw, Search, Target, TrendingUp, Zap,
+  Activity, AlertCircle, AlertTriangle, ArrowDownRight, ArrowUpRight, BookOpen, Brain,
+  ChevronDown, ChevronRight, Cpu, Edit3, Gauge,
+  Play, Plus, RefreshCw, Search, Sparkles, Target, TrendingUp, X, XCircle, Zap,
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, CartesianGrid, Line, LineChart,
@@ -27,14 +28,18 @@ import { ExportBar } from '../ExportBar';
  * UI stays usable in demo mode.
  * ═══════════════════════════════════════════════════════════════════════ */
 
-type Tab = 'terminal' | 'algo' | 'backtest' | 'blotter' | 'risk';
+type Tab = 'terminal' | 'algo' | 'backtest' | 'blotter' | 'risk' | 'rejections' | 'exceptions' | 'allocations' | 'fees';
 
 const TABS: { id: Tab; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
-  { id: 'terminal', label: 'Terminal',   icon: BookOpen },
-  { id: 'algo',     label: 'Algo Rules', icon: Cpu },
-  { id: 'backtest', label: 'Backtester', icon: Brain },
-  { id: 'blotter',  label: 'Blotter',    icon: Activity },
-  { id: 'risk',     label: 'Risk',       icon: Gauge },
+  { id: 'terminal',    label: 'Terminal',    icon: BookOpen },
+  { id: 'algo',        label: 'Algo Rules',  icon: Cpu },
+  { id: 'backtest',    label: 'Backtester',  icon: Brain },
+  { id: 'blotter',     label: 'Blotter',     icon: Activity },
+  { id: 'risk',        label: 'Risk',        icon: Gauge },
+  { id: 'allocations', label: 'Allocations', icon: Target },
+  { id: 'fees',        label: 'Fees',        icon: Edit3 },
+  { id: 'rejections',  label: 'Rejections',  icon: XCircle },
+  { id: 'exceptions',  label: 'Exceptions',  icon: AlertCircle },
 ];
 
 const formatZAR = (val: number) =>
@@ -101,32 +106,93 @@ export function Trading() {
         </nav>
       </header>
 
-      {tab === 'terminal' && <TerminalTab />}
+      {tab === 'terminal' && <TerminalTab onSeeRejections={() => setTab('rejections')} />}
       {tab === 'algo' && <AlgoRulesTab />}
       {tab === 'backtest' && <BacktesterTab />}
       {tab === 'blotter' && <BlotterTab />}
       {tab === 'risk' && <RiskTab />}
+      {tab === 'rejections' && <RejectionsTab />}
+      {tab === 'exceptions' && <ExceptionsTab />}
+      {tab === 'allocations' && <AllocationsTab />}
+      {tab === 'fees' && <FeesTab />}
     </div>
   );
 }
 
 // ════════════════════════════════════════════════════════════════════════
 // Tab 1 — Terminal (order book + ticket + recent prints)
+//
+// AI inline assists (subtle, contextual — no separate AI panel):
+//   - Ghost-text size suggestion under Volume input, pulled from
+//     /trading/order-suggest, with a "why" tooltip showing headroom + mark.
+//   - On 422 rejection: structured RejectionCard inline under the ticket
+//     with reason code, AI explanation, and 1-2 one-click remediations.
 // ════════════════════════════════════════════════════════════════════════
-function TerminalTab() {
+
+interface RejectionPayload {
+  rejection_id: string;
+  reason_code: string;
+  detail: string;
+  notional_zar: number;
+  snapshot: Record<string, unknown>;
+}
+
+interface SuggestPayload {
+  suggested_volume_mwh: number | null;
+  free_collateral_zar: number;
+  headroom_zar: number;
+  mark_price_zar_mwh: number | null;
+  mark_age_minutes: number | null;
+  market_state: 'open' | 'closed' | 'halted_instrument' | 'halted_market';
+}
+
+type OrderTypeT = 'limit' | 'market' | 'ioc' | 'fok' | 'stop' | 'stop_limit';
+type TifT = 'gtc' | 'gtd' | 'day';
+
+interface MyOrderRow {
+  id: string;
+  side: 'buy' | 'sell';
+  energy_type: string;
+  volume_mwh: number;
+  remaining_volume_mwh: number | null;
+  price: number | null;
+  status: string;
+  order_type?: string;
+  time_in_force?: string;
+  created_at: string;
+}
+
+function TerminalTab({ onSeeRejections }: { onSeeRejections: () => void }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [orderBook, setOrderBook] = useState<{ bids: OrderRow[]; asks: OrderRow[] }>({ bids: [], asks: [] });
   const [prints, setPrints] = useState<Array<{ matched_at: string; matched_price: number; matched_volume_mwh: number }>>([]);
+  const [myOrders, setMyOrders] = useState<MyOrderRow[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [order, setOrder] = useState({ side: 'buy' as 'buy' | 'sell', type: 'limit', price: '', volume: '', energy_type: 'solar' });
+  const [order, setOrder] = useState({
+    side: 'buy' as 'buy' | 'sell',
+    price: '',
+    volume: '',
+    energy_type: 'solar',
+    order_type: 'limit' as OrderTypeT,
+    time_in_force: 'gtc' as TifT,
+    expires_at: '',
+    stop_trigger_price: '',
+    post_only: false,
+    reduce_only: false,
+  });
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [rejection, setRejection] = useState<RejectionPayload | null>(null);
+  const [suggest, setSuggest] = useState<SuggestPayload | null>(null);
+  const [amending, setAmending] = useState<MyOrderRow | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const [bookRes, printsRes] = await Promise.all([
+      const [bookRes, printsRes, ordersRes] = await Promise.all([
         api.get('/trading/orderbook').catch(() => ({ data: { success: true, data: [] } })),
         api.get('/trading/matches').catch(() => ({ data: { success: true, data: [] } })),
+        api.get('/trading/orders').catch(() => ({ data: { success: true, data: [] } })),
       ]);
       const raw = bookRes.data?.data;
       const bids: OrderRow[] = []; const asks: OrderRow[] = [];
@@ -148,18 +214,68 @@ function TerminalTab() {
         matched_volume_mwh: Number(m.matched_volume_mwh ?? m.volume_mwh ?? m.volume ?? 0),
       }));
       setPrints(printsArr.slice(0, 50));
+
+      setMyOrders((ordersRes.data?.data || []) as MyOrderRow[]);
     } catch (e: unknown) { setError((e as Error).message || 'Failed to load market'); }
     finally { setLoading(false); }
   }, []);
+
+  const cancelOrder = useCallback(async (id: string) => {
+    try {
+      await api.post(`/trading/orders/${id}/cancel`);
+      refresh();
+    } catch { /* leave the row visible — server will explain on next attempt */ }
+  }, [refresh]);
   useEffect(() => { refresh(); }, [refresh]);
 
+  // Ghost-text suggestion — refreshes whenever side/energy_type changes.
+  // Falls silent if the endpoint isn't available so the form stays usable.
+  useEffect(() => {
+    let alive = true;
+    api.get('/trading/order-suggest', { params: { side: order.side, energy_type: order.energy_type } })
+      .then((r) => { if (alive) setSuggest(r.data?.data || null); })
+      .catch(() => { if (alive) setSuggest(null); });
+    return () => { alive = false; };
+  }, [order.side, order.energy_type]);
+
+  const applyRemediation = useCallback(async (action: string, payload?: Record<string, unknown>) => {
+    if (action === 'retry_with_size' && payload?.volume_mwh != null) {
+      setOrder((o) => ({ ...o, volume: String(payload.volume_mwh) }));
+    } else if (action === 'retry_with_price' && payload?.price_zar_mwh != null) {
+      setOrder((o) => ({ ...o, price: String(payload.price_zar_mwh) }));
+    } else if (action === 'review_open_orders') {
+      onSeeRejections();
+      return;
+    }
+    setRejection(null);
+  }, [onSeeRejections]);
+
   const submit = async (e: React.FormEvent) => {
-    e.preventDefault(); setSubmitting(true);
+    e.preventDefault(); setSubmitting(true); setRejection(null); setError(null);
     try {
-      await api.post('/trading/orders', { ...order, price: Number(order.price), volume_mwh: Number(order.volume) });
+      await api.post('/trading/orders', {
+        side: order.side,
+        energy_type: order.energy_type,
+        price: order.order_type === 'market' ? null : Number(order.price),
+        volume_mwh: Number(order.volume),
+        order_type: order.order_type,
+        time_in_force: order.time_in_force,
+        expires_at: order.time_in_force === 'gtd' && order.expires_at ? order.expires_at : null,
+        stop_trigger_price: (order.order_type === 'stop' || order.order_type === 'stop_limit') && order.stop_trigger_price
+          ? Number(order.stop_trigger_price) : null,
+        post_only: order.post_only,
+        reduce_only: order.reduce_only,
+      });
       setOrder({ ...order, price: '', volume: '' });
       refresh();
-    } catch (e: unknown) { setError((e as Error).message || 'Order failed'); }
+    } catch (e: unknown) {
+      const err = e as { response?: { status?: number; data?: { error?: string; data?: RejectionPayload } } };
+      if (err.response?.status === 422 && err.response?.data?.data) {
+        setRejection(err.response.data.data);
+      } else {
+        setError(err.response?.data?.error || (e as Error).message || 'Order failed');
+      }
+    }
     finally { setSubmitting(false); }
   };
 
@@ -215,7 +331,21 @@ function TerminalTab() {
             </Field>
             <Field label="Volume (MWh)">
               <input type="number" required value={order.volume} onChange={(e) => setOrder({ ...order, volume: e.target.value })}
-                className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" placeholder="50" />
+                className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" placeholder={suggest?.suggested_volume_mwh != null ? String(suggest.suggested_volume_mwh) : '50'} />
+              {suggest?.suggested_volume_mwh != null && suggest.suggested_volume_mwh > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setOrder({ ...order, volume: String(suggest.suggested_volume_mwh) })}
+                  title={`Free collateral ${formatZAR(suggest.free_collateral_zar)} · headroom ${formatZAR(suggest.headroom_zar)}${suggest.mark_price_zar_mwh ? ` · mark R${num(suggest.mark_price_zar_mwh)}` : ''}`}
+                  className="mt-1 inline-flex items-center gap-1 text-[10px] text-[#3b82c4] hover:text-[#1a3a5c] hover:underline">
+                  <Sparkles size={10} /> max safe: {num(suggest.suggested_volume_mwh, 1)} MWh
+                </button>
+              )}
+              {suggest && suggest.market_state !== 'open' && (
+                <div className="mt-1 inline-flex items-center gap-1 text-[10px] text-[#c0392b]">
+                  <AlertTriangle size={10} /> market {suggest.market_state.replace('_', ' ')}
+                </div>
+              )}
             </Field>
             <Field label="Product">
               <select value={order.energy_type} onChange={(e) => setOrder({ ...order, energy_type: e.target.value })}
@@ -227,13 +357,84 @@ function TerminalTab() {
                 <option value="thermal">Thermal</option>
               </select>
             </Field>
+
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((v) => !v)}
+              className="w-full text-[11px] text-[#3d4756] hover:text-[#0f1c2e] inline-flex items-center gap-1 py-1">
+              {showAdvanced ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+              Advanced (type, time-in-force, modifiers)
+            </button>
+
+            {showAdvanced && (
+              <div className="space-y-3 border-t border-[#eef2f7] pt-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Order type">
+                    <select value={order.order_type} onChange={(e) => setOrder({ ...order, order_type: e.target.value as OrderTypeT })}
+                      className="w-full h-9 px-2 rounded-md border border-[#dde4ec] text-[12px]">
+                      <option value="limit">Limit</option>
+                      <option value="market">Market</option>
+                      <option value="ioc">IOC</option>
+                      <option value="fok">FOK</option>
+                      <option value="stop">Stop</option>
+                      <option value="stop_limit">Stop-Limit</option>
+                    </select>
+                  </Field>
+                  <Field label="Time in force">
+                    <select value={order.time_in_force} onChange={(e) => setOrder({ ...order, time_in_force: e.target.value as TifT })}
+                      className="w-full h-9 px-2 rounded-md border border-[#dde4ec] text-[12px]">
+                      <option value="gtc">GTC</option>
+                      <option value="gtd">GTD</option>
+                      <option value="day">Day</option>
+                    </select>
+                  </Field>
+                </div>
+                {order.time_in_force === 'gtd' && (
+                  <Field label="Expires at">
+                    <input type="datetime-local" value={order.expires_at} onChange={(e) => setOrder({ ...order, expires_at: e.target.value ? new Date(e.target.value).toISOString() : '' })}
+                      className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" />
+                  </Field>
+                )}
+                {(order.order_type === 'stop' || order.order_type === 'stop_limit') && (
+                  <Field label="Stop trigger price (R/MWh)">
+                    <input type="number" value={order.stop_trigger_price} onChange={(e) => setOrder({ ...order, stop_trigger_price: e.target.value })}
+                      className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" placeholder="1900" />
+                  </Field>
+                )}
+                <div className="flex items-center gap-4 text-[12px] text-[#3d4756]">
+                  <label className="inline-flex items-center gap-1.5">
+                    <input type="checkbox" checked={order.post_only} onChange={(e) => setOrder({ ...order, post_only: e.target.checked })} />
+                    post-only
+                  </label>
+                  <label className="inline-flex items-center gap-1.5">
+                    <input type="checkbox" checked={order.reduce_only} onChange={(e) => setOrder({ ...order, reduce_only: e.target.checked })} />
+                    reduce-only
+                  </label>
+                </div>
+              </div>
+            )}
+
             <button type="submit" disabled={submitting}
               className={`w-full h-10 rounded-md text-white font-semibold text-[13px] ${order.side === 'buy' ? 'bg-[#1a8a5b]' : 'bg-[#c0392b]'} disabled:opacity-50`}>
               {submitting ? 'Submitting…' : `Submit ${order.side.toUpperCase()}`}
             </button>
           </form>
+          {rejection && <RejectionCard rejection={rejection} onApplyRemediation={applyRemediation} onDismiss={() => setRejection(null)} onSeeAll={onSeeRejections} />}
         </section>
       </div>
+
+      <MyOrdersPanel
+        orders={myOrders}
+        onCancel={cancelOrder}
+        onAmend={(o) => setAmending(o)}
+      />
+      {amending && (
+        <AmendModal
+          order={amending}
+          onClose={() => setAmending(null)}
+          onSaved={() => { setAmending(null); refresh(); }}
+        />
+      )}
 
       <section className="rounded-xl border border-[#dde4ec] bg-white">
         <header className="px-5 py-3 border-b border-[#eef2f7]">
@@ -587,21 +788,27 @@ function BlotterTab() {
 
 // ════════════════════════════════════════════════════════════════════════
 // Tab 5 — Risk
+//
+// AI inline assist: a one-line "what changed" narrative under the KPI grid,
+// generated from /trading/risk-narrative (5-min cached). No separate AI panel.
 // ════════════════════════════════════════════════════════════════════════
 function RiskTab() {
   const [positions, setPositions] = useState<Array<Record<string, unknown>>>([]);
   const [credit, setCredit] = useState<Record<string, unknown> | null>(null);
   const [collateral, setCollateral] = useState<Array<Record<string, unknown>>>([]);
+  const [narrative, setNarrative] = useState<{ headline: string; fallback?: boolean } | null>(null);
 
   useEffect(() => {
     Promise.all([
       api.get('/trader-risk/positions').catch(() => ({ data: { success: true, data: [] } })),
       api.get('/trader-risk/credit-check').catch(() => ({ data: { success: true, data: null } })),
       api.get('/trader-risk/collateral/accounts').catch(() => ({ data: { success: true, data: [] } })),
-    ]).then(([p, cr, co]) => {
+      api.get('/trading/risk-narrative').catch(() => ({ data: { success: true, data: null } })),
+    ]).then(([p, cr, co, nr]) => {
       setPositions((p.data?.data || []) as Array<Record<string, unknown>>);
       setCredit((cr.data?.data || null) as Record<string, unknown> | null);
       setCollateral((co.data?.data || []) as Array<Record<string, unknown>>);
+      setNarrative((nr.data?.data || null) as { headline: string; fallback?: boolean } | null);
     });
   }, []);
 
@@ -617,6 +824,13 @@ function RiskTab() {
         <KPI label="Unrealised P&L" value={formatZAR(totalUnrealised)} icon={TrendingUp} tone={totalUnrealised >= 0 ? 'up' : 'down'} />
         <KPI label="Credit util." value={`${num(utilisation, 1)}%`} icon={Gauge} tone={utilisation > 80 ? 'down' : 'up'} sub={credit?.credit_limit ? `Limit ${formatZAR(Number(credit.credit_limit))}` : undefined} />
       </div>
+
+      {narrative?.headline && (
+        <div className="rounded-lg border border-[#dde4ec] bg-[#fafbfd] px-4 py-2 text-[12px] text-[#3d4756] flex items-start gap-2">
+          <Sparkles size={12} className="mt-0.5 text-[#3b82c4] flex-shrink-0" />
+          <div className="flex-1">{narrative.headline}</div>
+        </div>
+      )}
 
       <section className="rounded-xl border border-[#dde4ec] bg-white">
         <header className="px-5 py-3 border-b border-[#eef2f7] flex items-center gap-2 font-display font-semibold text-[14px] text-[#0f1c2e]">
@@ -721,4 +935,1171 @@ function BookSide({ rows, side }: { rows: OrderRow[]; side: 'bid' | 'ask' }) {
   );
 }
 
+// ════════════════════════════════════════════════════════════════════════
+// RejectionCard — inline, contextual AI explanation of a 422 from the
+// order ticket. Renders straight under the form so the trader sees WHY
+// the order was rejected and the 1-2 specific actions that would let it
+// through, without leaving the screen.
+// ════════════════════════════════════════════════════════════════════════
+interface ExplanationPayload {
+  human_explanation: string;
+  suggested_remediations: Array<{ label: string; action: string; payload?: Record<string, unknown> }>;
+  fallback?: boolean;
+  cached?: boolean;
+}
+
+function RejectionCard({
+  rejection,
+  onApplyRemediation,
+  onDismiss,
+  onSeeAll,
+}: {
+  rejection: RejectionPayload;
+  onApplyRemediation: (action: string, payload?: Record<string, unknown>) => void;
+  onDismiss: () => void;
+  onSeeAll: () => void;
+}) {
+  const [expl, setExpl] = useState<ExplanationPayload | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    api.get(`/trading/rejections/${rejection.rejection_id}/explain`)
+      .then((r) => { if (alive) setExpl(r.data?.data || null); })
+      .catch(() => { if (alive) setExpl(null); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [rejection.rejection_id]);
+
+  return (
+    <div className="mt-4 rounded-lg border border-[#f5c6c2] bg-[#fdf2f1] p-3 text-[12px]">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start gap-2">
+          <XCircle size={14} className="mt-0.5 text-[#c0392b] flex-shrink-0" />
+          <div>
+            <div className="font-semibold text-[#0f1c2e]">{humaniseReasonCode(rejection.reason_code)}</div>
+            <div className="text-[#3d4756] mt-0.5">{rejection.detail}</div>
+          </div>
+        </div>
+        <button onClick={onDismiss} className="text-[10px] text-[#6b7685] hover:text-[#3d4756]">Dismiss</button>
+      </div>
+      {(loading || expl?.human_explanation) && (
+        <div className="mt-2 flex items-start gap-2 text-[#3d4756]">
+          <Sparkles size={11} className="mt-0.5 text-[#3b82c4] flex-shrink-0" />
+          <div className="flex-1">
+            {loading ? <span className="text-[#6b7685]">Generating explanation…</span> : expl?.human_explanation}
+          </div>
+        </div>
+      )}
+      {expl && expl.suggested_remediations.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {expl.suggested_remediations.map((r, i) => (
+            <button
+              key={i}
+              onClick={() => onApplyRemediation(r.action, r.payload)}
+              className="h-7 px-3 rounded text-[11px] font-semibold bg-white border border-[#dde4ec] text-[#1a3a5c] hover:bg-[#eef2f7]">
+              {r.label}
+            </button>
+          ))}
+          <button
+            onClick={onSeeAll}
+            className="h-7 px-3 rounded text-[11px] font-semibold text-[#3b82c4] hover:underline">
+            All my rejections →
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function humaniseReasonCode(code: string): string {
+  return code.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (s) => s.toUpperCase());
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// Tab 6 — Rejections
+//
+// The audit log of every order placement that was blocked by pre-trade
+// gating. Each row expands to show the AI explanation; the structured
+// reason_code + snapshot are right there for support / risk officers.
+// ════════════════════════════════════════════════════════════════════════
+interface RejectionRow {
+  id: string;
+  attempted_at: string;
+  reason_code: string;
+  detail: string;
+  side: string;
+  energy_type: string;
+  volume_mwh: number;
+  price_zar_mwh: number | null;
+  notional_zar: number;
+}
+
+function RejectionsTab() {
+  const [rows, setRows] = useState<RejectionRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<Record<string, ExplanationPayload | 'loading' | 'error' | null>>({});
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await api.get('/trading/rejections');
+      setRows((r.data?.data || []) as RejectionRow[]);
+    } catch {
+      setRows([]);
+    } finally { setLoading(false); }
+  }, []);
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const toggle = useCallback(async (id: string) => {
+    if (expanded[id] && expanded[id] !== 'error') {
+      setExpanded((e) => ({ ...e, [id]: null }));
+      return;
+    }
+    setExpanded((e) => ({ ...e, [id]: 'loading' }));
+    try {
+      const r = await api.get(`/trading/rejections/${id}/explain`);
+      setExpanded((e) => ({ ...e, [id]: (r.data?.data || null) as ExplanationPayload | null }));
+    } catch {
+      setExpanded((e) => ({ ...e, [id]: 'error' }));
+    }
+  }, [expanded]);
+
+  return (
+    <div className="space-y-4">
+      <section className="rounded-xl border border-[#dde4ec] bg-white">
+        <header className="px-5 py-3 border-b border-[#eef2f7] flex items-center justify-between">
+          <div className="flex items-center gap-2 font-display font-semibold text-[14px] text-[#0f1c2e]">
+            <XCircle size={14} /> Rejected order attempts
+          </div>
+          <button onClick={refresh} className="h-8 px-2 text-[12px] inline-flex items-center gap-1 rounded border border-[#dde4ec] hover:bg-[#eef2f7]">
+            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} /> Refresh
+          </button>
+        </header>
+        {loading ? <div className="p-8 text-center text-[13px] text-[#6b7685]">Loading…</div> : (
+          rows.length === 0 ? (
+            <div className="p-8 text-center text-[13px] text-[#6b7685]">
+              No rejections in the last 100 placements. Pre-trade gating is letting your orders through.
+            </div>
+          ) : (
+            <div className="overflow-auto">
+              <table className="w-full text-[12px]">
+                <thead className="bg-[#fafbfd]">
+                  <tr className="text-[11px] uppercase text-[#6b7685]">
+                    <th className="px-4 py-2 text-left">Time</th>
+                    <th className="px-4 py-2 text-left">Reason</th>
+                    <th className="px-4 py-2 text-left">Order</th>
+                    <th className="px-4 py-2 text-right">Notional</th>
+                    <th className="px-4 py-2" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => {
+                    const ex = expanded[r.id];
+                    return (
+                      <React.Fragment key={r.id}>
+                        <tr className="border-t border-[#eef2f7] hover:bg-[#fafbfd]">
+                          <td className="px-4 py-2 font-mono">{new Date(r.attempted_at).toLocaleString()}</td>
+                          <td className="px-4 py-2">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#c0392b]">{humaniseReasonCode(r.reason_code)}</span>
+                            <div className="text-[#6b7685] text-[11px] mt-0.5">{r.detail}</div>
+                          </td>
+                          <td className="px-4 py-2">
+                            <span className={`text-[11px] font-semibold uppercase ${r.side === 'buy' ? 'text-[#1a8a5b]' : 'text-[#c0392b]'}`}>{r.side}</span>{' '}
+                            {num(r.volume_mwh, 1)} MWh {r.energy_type}
+                            {r.price_zar_mwh != null && <span className="text-[#6b7685]"> @ {formatZAR(r.price_zar_mwh)}</span>}
+                          </td>
+                          <td className="px-4 py-2 text-right font-mono">{formatZAR(r.notional_zar)}</td>
+                          <td className="px-4 py-2 text-right">
+                            <button onClick={() => toggle(r.id)} className="text-[11px] text-[#3b82c4] hover:underline inline-flex items-center gap-1">
+                              <Sparkles size={10} /> Why this happened {ex && ex !== 'error' && ex !== 'loading' ? '↑' : '→'}
+                            </button>
+                          </td>
+                        </tr>
+                        {ex === 'loading' && (
+                          <tr className="border-t border-[#eef2f7] bg-[#fafbfd]">
+                            <td colSpan={5} className="px-6 py-3 text-[#6b7685] text-[12px]">Generating explanation…</td>
+                          </tr>
+                        )}
+                        {ex === 'error' && (
+                          <tr className="border-t border-[#eef2f7] bg-[#fdf2f1]">
+                            <td colSpan={5} className="px-6 py-3 text-[#c0392b] text-[12px]">Could not generate an explanation. The structured reason and detail above stand on their own.</td>
+                          </tr>
+                        )}
+                        {ex && ex !== 'loading' && ex !== 'error' && (
+                          <tr className="border-t border-[#eef2f7] bg-[#fafbfd]">
+                            <td colSpan={5} className="px-6 py-3">
+                              <div className="flex items-start gap-2 text-[12px] text-[#3d4756]">
+                                <Sparkles size={12} className="mt-0.5 text-[#3b82c4] flex-shrink-0" />
+                                <div className="flex-1">{ex.human_explanation}</div>
+                              </div>
+                              {ex.suggested_remediations.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {ex.suggested_remediations.map((s, i) => (
+                                    <span key={i} className="h-6 px-2 rounded bg-white border border-[#dde4ec] text-[11px] text-[#1a3a5c] inline-flex items-center">
+                                      {s.label}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              {ex.cached && <div className="mt-1 text-[10px] text-[#6b7685]">cached</div>}
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )
+        )}
+      </section>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// MyOrdersPanel — the trader's open + partial orders with inline Cancel
+// and Amend actions. Inline (not a separate tab) so the loop "place →
+// see → adjust → cancel" stays in one screen.
+// ════════════════════════════════════════════════════════════════════════
+function MyOrdersPanel({
+  orders,
+  onCancel,
+  onAmend,
+}: {
+  orders: MyOrderRow[];
+  onCancel: (id: string) => void;
+  onAmend: (o: MyOrderRow) => void;
+}) {
+  const live = orders.filter((o) => o.status === 'open' || o.status === 'partial');
+  const recent = orders.filter((o) => o.status !== 'open' && o.status !== 'partial').slice(0, 5);
+  if (live.length === 0 && recent.length === 0) return null;
+  return (
+    <section className="rounded-xl border border-[#dde4ec] bg-white">
+      <header className="px-5 py-3 border-b border-[#eef2f7]">
+        <div className="font-display font-semibold text-[14px] text-[#0f1c2e]">My orders</div>
+        <div className="text-[11px] text-[#6b7685]">{live.length} live · {recent.length} recent</div>
+      </header>
+      <div className="overflow-auto">
+        <table className="w-full text-[12px]">
+          <thead className="bg-[#fafbfd]">
+            <tr className="text-[11px] uppercase text-[#6b7685]">
+              <th className="px-4 py-2 text-left">Status</th>
+              <th className="px-4 py-2 text-left">Side</th>
+              <th className="px-4 py-2 text-left">Product</th>
+              <th className="px-4 py-2 text-right">Filled / Total</th>
+              <th className="px-4 py-2 text-right">Price</th>
+              <th className="px-4 py-2 text-left">Type</th>
+              <th className="px-4 py-2 text-left">TIF</th>
+              <th className="px-4 py-2 text-right">Placed</th>
+              <th className="px-4 py-2" />
+            </tr>
+          </thead>
+          <tbody>
+            {[...live, ...recent].map((o) => {
+              const remaining = Number(o.remaining_volume_mwh ?? o.volume_mwh);
+              const filled = Number(o.volume_mwh) - remaining;
+              const isLive = o.status === 'open' || o.status === 'partial';
+              return (
+                <tr key={o.id} className="border-t border-[#eef2f7] hover:bg-[#fafbfd]">
+                  <td className="px-4 py-2">
+                    <StatusPill status={o.status} />
+                  </td>
+                  <td className="px-4 py-2">
+                    <span className={`text-[11px] font-semibold uppercase ${o.side === 'buy' ? 'text-[#1a8a5b]' : 'text-[#c0392b]'}`}>
+                      {o.side}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2">{o.energy_type}</td>
+                  <td className="px-4 py-2 text-right font-mono">
+                    {num(filled, 1)} / {num(Number(o.volume_mwh), 1)}
+                  </td>
+                  <td className="px-4 py-2 text-right font-mono">{o.price != null ? formatZAR(o.price) : <span className="text-[#6b7685]">market</span>}</td>
+                  <td className="px-4 py-2 text-[11px] text-[#3d4756]">{o.order_type || 'limit'}</td>
+                  <td className="px-4 py-2 text-[11px] text-[#3d4756]">{(o.time_in_force || 'gtc').toUpperCase()}</td>
+                  <td className="px-4 py-2 text-right text-[11px] font-mono text-[#6b7685]">{new Date(o.created_at).toLocaleTimeString()}</td>
+                  <td className="px-4 py-2 text-right">
+                    {isLive && (
+                      <div className="inline-flex items-center gap-1">
+                        <button onClick={() => onAmend(o)} className="h-6 px-2 rounded text-[11px] text-[#3b82c4] hover:bg-[#eef2f7] inline-flex items-center gap-1">
+                          <Edit3 size={10} /> Amend
+                        </button>
+                        <button onClick={() => onCancel(o.id)} className="h-6 px-2 rounded text-[11px] text-[#c0392b] hover:bg-[#fdf2f1]">
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function StatusPill({ status }: { status: string }) {
+  const tone =
+    status === 'open' ? { bg: '#dbecfb', fg: '#1a5d97' } :
+    status === 'partial' ? { bg: '#ffe9c2', fg: '#9b6610' } :
+    status === 'matched' ? { bg: '#cdf0dd', fg: '#1a8a5b' } :
+    status === 'cancelled' ? { bg: '#eef2f7', fg: '#6b7685' } :
+    status === 'expired' ? { bg: '#fdf2f1', fg: '#c0392b' } :
+    { bg: '#eef2f7', fg: '#3d4756' };
+  return (
+    <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider" style={{ background: tone.bg, color: tone.fg }}>
+      {status}
+    </span>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// AmendModal — change price/volume on a live order. Surfaces the
+// price-time priority impact inline before the trader confirms ("changing
+// price loses your place in the queue") so the cost of the amendment is
+// obvious. On 422 from the server, shows the structured rejection reason.
+// ════════════════════════════════════════════════════════════════════════
+function AmendModal({
+  order,
+  onClose,
+  onSaved,
+}: {
+  order: MyOrderRow;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [price, setPrice] = useState(order.price != null ? String(order.price) : '');
+  const [volume, setVolume] = useState(String(order.volume_mwh));
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const newPrice = price === '' ? null : Number(price);
+  const newVolume = Number(volume);
+  const priceChanged = newPrice !== order.price;
+  const volumeChanged = newVolume !== Number(order.volume_mwh);
+  const lostPriority = priceChanged || newVolume > Number(order.volume_mwh);
+  const noop = !priceChanged && !volumeChanged;
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault(); setSubmitting(true); setError(null);
+    try {
+      await api.post(`/trading/orders/${order.id}/amend`, {
+        price: priceChanged ? newPrice : undefined,
+        volume_mwh: volumeChanged ? newVolume : undefined,
+        reason: reason || undefined,
+      });
+      onSaved();
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string; data?: { reason_code?: string; detail?: string } } } };
+      setError(err.response?.data?.data?.detail || err.response?.data?.error || (e as Error).message || 'Amendment failed');
+    } finally { setSubmitting(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl border border-[#dde4ec] w-full max-w-md p-5 space-y-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="text-[11px] uppercase tracking-wider text-[#6b7685]">Amend order</div>
+            <div className="font-display font-semibold text-[14px] text-[#0f1c2e]">
+              {order.side.toUpperCase()} {num(Number(order.volume_mwh), 1)} MWh {order.energy_type}
+            </div>
+          </div>
+          <button onClick={onClose} className="text-[#6b7685] hover:text-[#3d4756]"><X size={16} /></button>
+        </div>
+        <form onSubmit={submit} className="space-y-3">
+          <Field label="New price (R/MWh)">
+            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)}
+              className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" />
+          </Field>
+          <Field label="New volume (MWh)">
+            <input type="number" value={volume} onChange={(e) => setVolume(e.target.value)}
+              className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" />
+          </Field>
+          <Field label="Reason (optional)">
+            <input type="text" value={reason} onChange={(e) => setReason(e.target.value)}
+              className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" placeholder="e.g. risk limit revised" />
+          </Field>
+          <div className={`rounded-lg border px-3 py-2 text-[12px] flex items-start gap-2 ${lostPriority ? 'border-[#f5c6c2] bg-[#fdf2f1] text-[#c0392b]' : 'border-[#dde4ec] bg-[#fafbfd] text-[#3d4756]'}`}>
+            <Sparkles size={12} className="mt-0.5 flex-shrink-0" />
+            <div>
+              {noop
+                ? 'No changes yet — pick a new price or volume.'
+                : lostPriority
+                  ? `${priceChanged ? 'Price change' : 'Volume increase'} loses your place in the price-time queue — the order will be re-posted at the back.`
+                  : 'Volume decrease keeps your existing price-time priority.'}
+            </div>
+          </div>
+          {error && (
+            <div className="rounded-lg border border-[#f5c6c2] bg-[#fdf2f1] text-[#c0392b] text-[12px] px-3 py-2 inline-flex items-start gap-2">
+              <AlertTriangle size={12} className="mt-0.5 flex-shrink-0" /> {error}
+            </div>
+          )}
+          <div className="flex gap-2 pt-2">
+            <button type="button" onClick={onClose} className="h-9 px-4 rounded-md border border-[#dde4ec] text-[13px]">Cancel</button>
+            <button type="submit" disabled={noop || submitting}
+              className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold disabled:opacity-50">
+              {submitting ? 'Amending…' : 'Confirm amendment'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default Trading;
+
+
+
+// ════════════════════════════════════════════════════════════════════════
+// Tab 7 — Exceptions (L4 trade-side counterpart of settlement breaks)
+//
+// Lists every trade_exceptions row across fills the trader is party to.
+// State machine: open → investigating → resolved | rejected; terminal
+// transitions require notes (mirrors Settlement Breaks tab pattern).
+// Trader files exceptions against bad-price / off-market / wrong-volume
+// fills here rather than going through the full dispute / break-glass
+// flow — the back office triages and resolves with an outcome.
+// ════════════════════════════════════════════════════════════════════════
+
+type TradeExceptionRow = {
+  id: string;
+  match_id: string;
+  order_id: string;
+  exception_type: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  status: 'open' | 'investigating' | 'resolved' | 'rejected';
+  reported_by: string;
+  reported_at: string;
+  reason: string;
+  expected_value: number | null;
+  actual_value: number | null;
+  resolution_outcome: string | null;
+  resolution_notes: string | null;
+  resolved_at: string | null;
+  matched_volume_mwh: number;
+  matched_price_zar: number;
+};
+
+const EX_SEVERITY_PILL: Record<string, string> = {
+  low: 'bg-gray-100 text-gray-700',
+  medium: 'bg-blue-100 text-blue-700',
+  high: 'bg-amber-100 text-amber-800',
+  critical: 'bg-red-100 text-red-700',
+};
+const EX_STATUS_PILL: Record<string, string> = {
+  open: 'bg-red-100 text-red-700',
+  investigating: 'bg-amber-100 text-amber-800',
+  resolved: 'bg-green-100 text-green-700',
+  rejected: 'bg-gray-200 text-gray-700',
+};
+
+function ExceptionsTab() {
+  const [rows, setRows] = useState<TradeExceptionRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [status, setStatus] = useState<string>('all');
+  const [resolving, setResolving] = useState<TradeExceptionRow | null>(null);
+  const [filing, setFiling] = useState<boolean>(false);
+
+  const load = useCallback(async () => {
+    setLoading(true); setErr(null);
+    try {
+      const params = new URLSearchParams();
+      if (status !== 'all') params.set('status', status);
+      const res = await api.get(`/trading/exceptions?${params.toString()}`);
+      setRows((res.data?.data as TradeExceptionRow[]) || []);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Failed to load exceptions');
+    } finally {
+      setLoading(false);
+    }
+  }, [status]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const transition = async (id: string, to: 'investigating' | 'resolved' | 'rejected', notes?: string, outcome?: string) => {
+    await api.post(`/trading/exceptions/${id}/transition`, { to, notes, outcome });
+    void load();
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2 justify-between">
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-[12px] text-[#6b7685]">Status:</span>
+          {(['all', 'open', 'investigating', 'resolved', 'rejected'] as const).map((s) => (
+            <button key={s} onClick={() => setStatus(s)}
+              className={`px-3 py-1 rounded-full text-[11px] capitalize ${status === s ? 'bg-[#1a3a5c] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
+              {s.replace(/_/g, ' ')}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => setFiling(true)}
+          className="h-9 px-3 rounded-md bg-amber-600 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-amber-700"
+        >
+          <Plus size={14} /> File exception
+        </button>
+      </div>
+
+      {loading && <div className="text-[13px] text-[#6b7685]">Loading…</div>}
+      {err && <div className="text-[13px] text-red-700">{err}</div>}
+      {!loading && !err && rows.length === 0 && (
+        <div className="rounded-xl border border-[#dde4ec] bg-white p-8 text-center">
+          <div className="text-[14px] font-semibold text-[#0f1c2e]">No exceptions filed</div>
+          <div className="text-[12px] text-[#6b7685] mt-1">Bad-price / off-market / wrong-volume fills filed against you will appear here.</div>
+        </div>
+      )}
+      {!loading && !err && rows.length > 0 && (
+        <div className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+          <table className="w-full text-[13px]">
+            <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+              <tr>
+                <th className="px-4 py-2">Type</th>
+                <th className="px-4 py-2">Severity</th>
+                <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-2">Fill</th>
+                <th className="px-4 py-2">Reported</th>
+                <th className="px-4 py-2">Reason</th>
+                <th className="px-4 py-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} className="border-t border-[#e5ebf2] hover:bg-[#f8fafc]">
+                  <td className="px-4 py-2 capitalize">{r.exception_type.replace(/_/g, ' ')}</td>
+                  <td className="px-4 py-2">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase ${EX_SEVERITY_PILL[r.severity] || 'bg-gray-100'}`}>{r.severity}</span>
+                  </td>
+                  <td className="px-4 py-2">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${EX_STATUS_PILL[r.status] || 'bg-gray-100'}`}>{r.status.replace(/_/g, ' ')}</span>
+                  </td>
+                  <td className="px-4 py-2 text-[#6b7685] text-[11px]">
+                    {num(r.matched_volume_mwh, 2)} MWh @ {formatZAR(r.matched_price_zar)}
+                  </td>
+                  <td className="px-4 py-2 text-[#6b7685]">{new Date(r.reported_at).toLocaleDateString()}</td>
+                  <td className="px-4 py-2 max-w-md">
+                    <span className="block truncate" title={r.reason}>{r.reason}</span>
+                  </td>
+                  <td className="px-4 py-2">
+                    <div className="flex gap-1">
+                      {r.status === 'open' && (
+                        <button onClick={() => transition(r.id, 'investigating')} className="px-2 py-1 text-[11px] bg-blue-50 text-blue-700 rounded">Investigate</button>
+                      )}
+                      {(r.status === 'open' || r.status === 'investigating') && (
+                        <>
+                          <button onClick={() => setResolving({ ...r, status: 'resolved' as any })} className="px-2 py-1 text-[11px] bg-green-50 text-green-700 rounded">Resolve</button>
+                          <button onClick={() => setResolving({ ...r, status: 'rejected' as any })} className="px-2 py-1 text-[11px] bg-gray-100 text-gray-700 rounded">Reject</button>
+                        </>
+                      )}
+                      {(r.status === 'resolved' || r.status === 'rejected') && (
+                        <span className="text-[11px] text-[#6b7685]">{r.resolution_outcome ? `outcome: ${r.resolution_outcome.replace(/_/g, ' ')}` : '—'}</span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {resolving && (
+        <ResolveExceptionModal
+          row={resolving}
+          onClose={() => setResolving(null)}
+          onDone={async (notes, outcome) => {
+            const to = resolving.status as 'resolved' | 'rejected';
+            setResolving(null);
+            await transition(resolving.id, to, notes, outcome);
+          }}
+        />
+      )}
+      {filing && (
+        <FileExceptionModal
+          onClose={() => setFiling(false)}
+          onDone={() => { setFiling(false); void load(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ResolveExceptionModal({
+  row, onClose, onDone,
+}: {
+  row: TradeExceptionRow;
+  onClose: () => void;
+  onDone: (notes: string, outcome: string) => Promise<void>;
+}) {
+  const [notes, setNotes] = useState('');
+  const isResolved = row.status === 'resolved';
+  const [outcome, setOutcome] = useState<string>(isResolved ? 'adjusted' : 'no_action');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const submit = async () => {
+    if (notes.trim().length < 3) { setErr('Notes ≥3 chars required.'); return; }
+    setSaving(true); setErr(null);
+    try { await onDone(notes, outcome); } catch (e: unknown) { setErr(e instanceof Error ? e.message : 'Failed'); setSaving(false); }
+  };
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
+          <h3 className="text-[16px] font-semibold text-[#0f1c2e]">{isResolved ? 'Resolve' : 'Reject'} exception</h3>
+          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-5 space-y-3">
+          {err && <div className="text-[12px] text-red-700">{err}</div>}
+          <div className="text-[12px] text-[#6b7685]">{row.reason}</div>
+          <label className="block text-[13px]">
+            <span className="text-[#6b7685]">Outcome</span>
+            <select value={outcome} onChange={(e) => setOutcome(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg">
+              {isResolved ? (
+                <>
+                  <option value="adjusted">Adjusted</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="rebooked">Rebooked</option>
+                  <option value="waived">Waived</option>
+                  <option value="escalated">Escalated</option>
+                </>
+              ) : (
+                <>
+                  <option value="no_action">No action — exception not substantiated</option>
+                  <option value="escalated">Escalate</option>
+                </>
+              )}
+            </select>
+          </label>
+          <label className="block text-[13px]">
+            <span className="text-[#6b7685]">Notes</span>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} placeholder="What changed? Required ≥3 chars." className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none" />
+          </label>
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${isResolved ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}>
+              {saving ? 'Saving…' : (isResolved ? 'Resolve' : 'Reject')}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FileExceptionModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+  const [matchId, setMatchId] = useState('');
+  const [exceptionType, setExceptionType] = useState('bad_price');
+  const [severity, setSeverity] = useState('medium');
+  const [reason, setReason] = useState('');
+  const [expected, setExpected] = useState('');
+  const [actual, setActual] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const submit = async () => {
+    if (!matchId) { setErr('Match (fill) ID required.'); return; }
+    if (reason.trim().length < 3) { setErr('Reason ≥3 chars required.'); return; }
+    setSaving(true); setErr(null);
+    try {
+      await api.post('/trading/exceptions', {
+        match_id: matchId,
+        exception_type: exceptionType,
+        severity,
+        reason,
+        expected_value: expected ? Number(expected) : undefined,
+        actual_value: actual ? Number(actual) : undefined,
+      });
+      onDone();
+    } catch (e: unknown) {
+      const anyErr = e as { response?: { data?: { error?: string } }; message?: string };
+      setErr(anyErr?.response?.data?.error || anyErr?.message || 'Failed to file');
+      setSaving(false);
+    }
+  };
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
+          <h3 className="text-[16px] font-semibold text-[#0f1c2e]">File a trade exception</h3>
+          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-5 space-y-3">
+          {err && <div className="text-[12px] text-red-700">{err}</div>}
+          <label className="block text-[13px]">
+            <span className="text-[#6b7685]">Fill (match) ID</span>
+            <input value={matchId} onChange={(e) => setMatchId(e.target.value)} placeholder="match_xxx" className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg font-mono text-[12px]" />
+          </label>
+          <label className="block text-[13px]">
+            <span className="text-[#6b7685]">Exception type</span>
+            <select value={exceptionType} onChange={(e) => setExceptionType(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg">
+              <option value="bad_price">Bad price</option>
+              <option value="off_market">Off-market execution</option>
+              <option value="wrong_counterparty">Wrong counterparty</option>
+              <option value="wrong_volume">Wrong volume</option>
+              <option value="duplicate_fill">Duplicate fill</option>
+              <option value="market_halt_override">Market-halt override</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+          <label className="block text-[13px]">
+            <span className="text-[#6b7685]">Severity</span>
+            <select value={severity} onChange={(e) => setSeverity(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg">
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block text-[13px]">
+              <span className="text-[#6b7685]">Expected value</span>
+              <input type="number" value={expected} onChange={(e) => setExpected(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg" />
+            </label>
+            <label className="block text-[13px]">
+              <span className="text-[#6b7685]">Actual value</span>
+              <input type="number" value={actual} onChange={(e) => setActual(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg" />
+            </label>
+          </div>
+          <label className="block text-[13px]">
+            <span className="text-[#6b7685]">Reason</span>
+            <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={4} placeholder="What is wrong with this fill? At least 3 characters." className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none" />
+          </label>
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button onClick={submit} disabled={saving} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50">
+              {saving ? 'Filing…' : 'File exception'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// Tab 8 — Allocations (L4 fill-attribution)
+//
+// Once a fill lands, it represents a trade between two counterparties at
+// the headline level. Real desks need to break it down further — which
+// internal fund, sub-account, or lot bought / sold how much. The
+// allocations tab lists existing splits plus any fills that are NOT yet
+// allocated, and lets the trader split a fill into N rows that sum to
+// the matched volume.
+// ════════════════════════════════════════════════════════════════════════
+
+type AllocationRow = {
+  id: string;
+  match_id: string;
+  order_id: string;
+  participant_id: string;
+  allocated_volume_mwh: number;
+  allocated_price_zar: number;
+  sub_account: string | null;
+  lot_id: string | null;
+  reason: string | null;
+  status: string;
+  created_at: string;
+  matched_volume_mwh: number;
+  matched_price_zar: number;
+  matched_at: string;
+  order_side: 'buy' | 'sell';
+  energy_type: string;
+};
+
+type PendingFillRow = {
+  match_id: string;
+  order_id: string;
+  order_side: 'buy' | 'sell';
+  energy_type: string;
+  matched_volume_mwh: number;
+  matched_price_zar: number;
+  matched_at: string;
+};
+
+function AllocationsTab() {
+  const [allocs, setAllocs] = useState<AllocationRow[]>([]);
+  const [pending, setPending] = useState<PendingFillRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [allocating, setAllocating] = useState<PendingFillRow | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true); setErr(null);
+    try {
+      const res = await api.get('/trading/allocations');
+      setAllocs((res.data?.data?.allocations as AllocationRow[]) || []);
+      setPending((res.data?.data?.unallocated as PendingFillRow[]) || []);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Failed to load allocations');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  return (
+    <div className="space-y-6">
+      {loading && <div className="text-[13px] text-[#6b7685]">Loading…</div>}
+      {err && <div className="text-[13px] text-red-700">{err}</div>}
+
+      {/* Unallocated fills — highest leverage, surface first */}
+      <section>
+        <h2 className="text-[13px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#6b7685' }}>
+          Unallocated fills · last 90 days ({pending.length})
+        </h2>
+        {pending.length === 0 ? (
+          <div className="rounded-xl border border-[#dde4ec] bg-white p-6 text-center text-[12px] text-[#6b7685]">
+            Every fill is allocated. New fills will land here for attribution.
+          </div>
+        ) : (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 overflow-hidden">
+            <table className="w-full text-[13px]">
+              <thead className="bg-amber-100/60 text-left text-[10px] uppercase tracking-wide text-amber-800">
+                <tr>
+                  <th className="px-4 py-2">When</th>
+                  <th className="px-4 py-2">Side</th>
+                  <th className="px-4 py-2">Volume</th>
+                  <th className="px-4 py-2">Price</th>
+                  <th className="px-4 py-2">Notional</th>
+                  <th className="px-4 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pending.map((p) => (
+                  <tr key={`${p.match_id}_${p.order_id}`} className="border-t border-amber-200">
+                    <td className="px-4 py-2 text-[#6b7685]">{new Date(p.matched_at).toLocaleString()}</td>
+                    <td className="px-4 py-2 capitalize">{p.order_side}</td>
+                    <td className="px-4 py-2">{num(p.matched_volume_mwh, 2)} MWh</td>
+                    <td className="px-4 py-2">{formatZAR(p.matched_price_zar)}</td>
+                    <td className="px-4 py-2 font-medium">{formatZAR(p.matched_volume_mwh * p.matched_price_zar)}</td>
+                    <td className="px-4 py-2">
+                      <button onClick={() => setAllocating(p)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">
+                        Allocate
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Existing allocations */}
+      <section>
+        <h2 className="text-[13px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#6b7685' }}>
+          Allocations ledger ({allocs.length})
+        </h2>
+        {allocs.length === 0 ? (
+          <div className="rounded-xl border border-[#dde4ec] bg-white p-6 text-center text-[12px] text-[#6b7685]">
+            No allocations recorded yet.
+          </div>
+        ) : (
+          <div className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+            <table className="w-full text-[13px]">
+              <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+                <tr>
+                  <th className="px-4 py-2">When</th>
+                  <th className="px-4 py-2">Side</th>
+                  <th className="px-4 py-2">Participant</th>
+                  <th className="px-4 py-2">Sub-account</th>
+                  <th className="px-4 py-2">Lot</th>
+                  <th className="px-4 py-2">Volume</th>
+                  <th className="px-4 py-2">Price</th>
+                  <th className="px-4 py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allocs.map((a) => (
+                  <tr key={a.id} className="border-t border-[#e5ebf2] hover:bg-[#f8fafc]">
+                    <td className="px-4 py-2 text-[#6b7685]">{new Date(a.created_at).toLocaleString()}</td>
+                    <td className="px-4 py-2 capitalize">{a.order_side}</td>
+                    <td className="px-4 py-2 font-mono text-[11px]">{a.participant_id.slice(0, 12)}…</td>
+                    <td className="px-4 py-2">{a.sub_account || '—'}</td>
+                    <td className="px-4 py-2 text-[11px]">{a.lot_id || '—'}</td>
+                    <td className="px-4 py-2">{num(a.allocated_volume_mwh, 2)} MWh</td>
+                    <td className="px-4 py-2">{formatZAR(a.allocated_price_zar)}</td>
+                    <td className="px-4 py-2">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${
+                        a.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                      }`}>{a.status.replace(/_/g, ' ')}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {allocating && (
+        <AllocateModal
+          fill={allocating}
+          onClose={() => setAllocating(null)}
+          onDone={() => { setAllocating(null); void load(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+type SplitRow = { participant_id: string; volume_mwh: string; sub_account: string; lot_id: string; reason: string };
+
+function AllocateModal({
+  fill, onClose, onDone,
+}: {
+  fill: PendingFillRow;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [splits, setSplits] = useState<SplitRow[]>([
+    { participant_id: '', volume_mwh: String(fill.matched_volume_mwh), sub_account: '', lot_id: '', reason: '' },
+  ]);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const totalAllocated = splits.reduce((s, sp) => s + Number(sp.volume_mwh || 0), 0);
+  const remaining = fill.matched_volume_mwh - totalAllocated;
+  const balanced = Math.abs(remaining) < 0.001;
+
+  const addSplit = () =>
+    setSplits((prev) => [...prev, { participant_id: '', volume_mwh: '0', sub_account: '', lot_id: '', reason: '' }]);
+  const removeSplit = (idx: number) =>
+    setSplits((prev) => prev.filter((_, i) => i !== idx));
+  const updateSplit = (idx: number, key: keyof SplitRow, value: string) =>
+    setSplits((prev) => prev.map((sp, i) => (i === idx ? { ...sp, [key]: value } : sp)));
+
+  const submit = async () => {
+    if (!balanced) { setErr('Splits must total the matched volume.'); return; }
+    if (splits.some((sp) => !sp.participant_id || Number(sp.volume_mwh) <= 0)) {
+      setErr('Every split needs a participant ID and a positive volume.');
+      return;
+    }
+    setSaving(true); setErr(null);
+    try {
+      await api.post(`/trading/matches/${fill.match_id}/allocations`, {
+        side: fill.order_side,
+        splits: splits.map((sp) => ({
+          participant_id: sp.participant_id,
+          volume_mwh: Number(sp.volume_mwh),
+          sub_account: sp.sub_account || undefined,
+          lot_id: sp.lot_id || undefined,
+          reason: sp.reason || undefined,
+        })),
+      });
+      onDone();
+    } catch (e: unknown) {
+      const anyErr = e as { response?: { data?: { error?: string; detail?: unknown } }; message?: string };
+      setErr(anyErr?.response?.data?.error || anyErr?.message || 'Failed to allocate');
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
+          <div>
+            <h3 className="text-[16px] font-semibold text-[#0f1c2e]">Allocate fill</h3>
+            <p className="text-[12px] text-[#6b7685] mt-0.5">
+              {num(fill.matched_volume_mwh, 2)} MWh {fill.order_side} @ {formatZAR(fill.matched_price_zar)}
+              {' · '}<span className="font-mono">{fill.match_id.slice(0, 14)}…</span>
+            </p>
+          </div>
+          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-5 space-y-3">
+          {err && <div className="text-[12px] text-red-700">{err}</div>}
+
+          <div className="rounded-md border border-[#dde4ec] overflow-hidden">
+            <table className="w-full text-[12px]">
+              <thead className="bg-[#f8fafc] text-left text-[10px] uppercase text-[#6b7685]">
+                <tr>
+                  <th className="px-3 py-2 w-[28%]">Participant ID</th>
+                  <th className="px-3 py-2 w-[12%]">Volume MWh</th>
+                  <th className="px-3 py-2 w-[16%]">Sub-account</th>
+                  <th className="px-3 py-2 w-[14%]">Lot</th>
+                  <th className="px-3 py-2">Reason</th>
+                  <th className="px-3 py-2 w-[8%]"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {splits.map((sp, idx) => (
+                  <tr key={idx} className="border-t border-[#e5ebf2]">
+                    <td className="px-3 py-2"><input value={sp.participant_id} onChange={(e) => updateSplit(idx, 'participant_id', e.target.value)} className="w-full px-2 py-1 border border-[#dde4ec] rounded font-mono text-[11px]" placeholder="participant_…" /></td>
+                    <td className="px-3 py-2"><input type="number" value={sp.volume_mwh} onChange={(e) => updateSplit(idx, 'volume_mwh', e.target.value)} className="w-full px-2 py-1 border border-[#dde4ec] rounded" /></td>
+                    <td className="px-3 py-2"><input value={sp.sub_account} onChange={(e) => updateSplit(idx, 'sub_account', e.target.value)} className="w-full px-2 py-1 border border-[#dde4ec] rounded" placeholder="fund A" /></td>
+                    <td className="px-3 py-2"><input value={sp.lot_id} onChange={(e) => updateSplit(idx, 'lot_id', e.target.value)} className="w-full px-2 py-1 border border-[#dde4ec] rounded" placeholder="lot-…" /></td>
+                    <td className="px-3 py-2"><input value={sp.reason} onChange={(e) => updateSplit(idx, 'reason', e.target.value)} className="w-full px-2 py-1 border border-[#dde4ec] rounded" placeholder="optional" /></td>
+                    <td className="px-3 py-2 text-right">
+                      {splits.length > 1 && (
+                        <button onClick={() => removeSplit(idx)} className="text-red-600 text-[11px] hover:underline">remove</button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex items-center justify-between text-[12px]">
+            <button onClick={addSplit} className="text-[12px] font-semibold text-[#1a5d97] inline-flex items-center gap-1">
+              <Plus size={12} /> Add split
+            </button>
+            <div className={`font-mono ${balanced ? 'text-green-700' : 'text-red-700'}`}>
+              {balanced ? '✓ balanced' : `${num(remaining, 3)} MWh remaining`}
+              {' · total '}{num(totalAllocated, 3)} / {num(fill.matched_volume_mwh, 3)} MWh
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button onClick={submit} disabled={saving || !balanced} className="px-4 py-2 bg-[#1a3a5c] text-white rounded-lg disabled:opacity-50">
+              {saving ? 'Allocating…' : 'Allocate'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// Tab 9 — Fees (L4 fee ledger)
+//
+// Read-only view of every trade_fees row attributable to this trader,
+// optionally filtered by fee_type. Per-fill totals + breakdown so the
+// trader can see exactly what brokerage / exchange / clearing /
+// regulatory accrued against each fill.
+// ════════════════════════════════════════════════════════════════════════
+
+type FeeRow = {
+  id: string;
+  match_id: string;
+  order_id: string;
+  fee_type: string;
+  basis: string;
+  amount_zar: number;
+  reason: string;
+  calc_rule_version: string;
+  calculated_at: string;
+  matched_volume_mwh: number;
+  matched_price_zar: number;
+  order_side: 'buy' | 'sell';
+  energy_type: string;
+};
+
+const FEE_TYPE_PILL: Record<string, string> = {
+  brokerage:     'bg-blue-100 text-blue-700',
+  exchange:      'bg-indigo-100 text-indigo-700',
+  clearing:      'bg-purple-100 text-purple-700',
+  market_data:   'bg-amber-100 text-amber-800',
+  regulatory:    'bg-rose-100 text-rose-700',
+  tax:           'bg-gray-200 text-gray-700',
+  adjustment:    'bg-gray-100 text-gray-700',
+};
+
+function FeesTab() {
+  const [rows, setRows] = useState<FeeRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [feeType, setFeeType] = useState<string>('all');
+
+  const load = useCallback(async () => {
+    setLoading(true); setErr(null);
+    try {
+      const params = new URLSearchParams();
+      if (feeType !== 'all') params.set('fee_type', feeType);
+      const res = await api.get(`/trading/fees?${params.toString()}`);
+      setRows((res.data?.data as FeeRow[]) || []);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Failed to load fees');
+    } finally {
+      setLoading(false);
+    }
+  }, [feeType]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const total = rows.reduce((s, r) => s + r.amount_zar, 0);
+  const byType: Record<string, number> = {};
+  for (const r of rows) byType[r.fee_type] = (byType[r.fee_type] || 0) + r.amount_zar;
+
+  return (
+    <div className="space-y-4">
+      {/* Summary tiles */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+        <div className="rounded-xl border border-[#dde4ec] bg-white p-3">
+          <div className="text-[10px] uppercase tracking-wide text-[#6b7685]">Total</div>
+          <div className="mt-1 text-[18px] font-bold">{formatZAR(total)}</div>
+        </div>
+        {Object.keys(byType).sort().map((k) => (
+          <div key={k} className="rounded-xl border border-[#dde4ec] bg-white p-3">
+            <div className="text-[10px] uppercase tracking-wide text-[#6b7685]">{k.replace(/_/g, ' ')}</div>
+            <div className="mt-1 text-[18px] font-bold">{formatZAR(byType[k])}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2 items-center">
+        <span className="text-[12px] text-[#6b7685]">Type:</span>
+        {(['all', 'brokerage', 'exchange', 'clearing', 'regulatory', 'tax', 'adjustment'] as const).map((s) => (
+          <button key={s} onClick={() => setFeeType(s)}
+            className={`px-3 py-1 rounded-full text-[11px] capitalize ${feeType === s ? 'bg-[#1a3a5c] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
+            {s.replace(/_/g, ' ')}
+          </button>
+        ))}
+      </div>
+
+      {loading && <div className="text-[13px] text-[#6b7685]">Loading…</div>}
+      {err && <div className="text-[13px] text-red-700">{err}</div>}
+      {!loading && !err && rows.length === 0 && (
+        <div className="rounded-xl border border-[#dde4ec] bg-white p-8 text-center">
+          <div className="text-[14px] font-semibold text-[#0f1c2e]">No fees recorded</div>
+          <div className="text-[12px] text-[#6b7685] mt-1">Fee rows accrue on every fill once the fees engine runs against the match.</div>
+        </div>
+      )}
+      {!loading && !err && rows.length > 0 && (
+        <div className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+          <table className="w-full text-[13px]">
+            <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+              <tr>
+                <th className="px-4 py-2">When</th>
+                <th className="px-4 py-2">Type</th>
+                <th className="px-4 py-2">Side</th>
+                <th className="px-4 py-2">Fill</th>
+                <th className="px-4 py-2">Basis</th>
+                <th className="px-4 py-2 text-right">Amount</th>
+                <th className="px-4 py-2">Rule</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} className="border-t border-[#e5ebf2] hover:bg-[#f8fafc]">
+                  <td className="px-4 py-2 text-[#6b7685]">{new Date(r.calculated_at).toLocaleString()}</td>
+                  <td className="px-4 py-2">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${FEE_TYPE_PILL[r.fee_type] || 'bg-gray-100'}`}>{r.fee_type.replace(/_/g, ' ')}</span>
+                  </td>
+                  <td className="px-4 py-2 capitalize">{r.order_side}</td>
+                  <td className="px-4 py-2 text-[#6b7685] text-[11px]">{num(r.matched_volume_mwh, 2)} MWh @ {formatZAR(r.matched_price_zar)}</td>
+                  <td className="px-4 py-2 text-[11px]">{r.basis}</td>
+                  <td className="px-4 py-2 text-right font-medium">{formatZAR(r.amount_zar)}</td>
+                  <td className="px-4 py-2 text-[10px] font-mono text-[#6b7685]">{r.calc_rule_version}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
