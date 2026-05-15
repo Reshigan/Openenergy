@@ -107,15 +107,16 @@ jobs:
         run: |
           set +e
           status=0
-          # Build the file list: 001-018 + 051+ (skip the
-          # out-of-band band 019-050). 049+050 add trade-order columns
-          # that depend on `good_till` from 020 — which is missing on
-          # prod, so those two error too. A separate maintenance PR
-          # will reconcile that band; today we only need 051-055 (the
-          # new L4 tables for Settlement / Trading / Lender) to land.
+          # Build the file list: 001-018 + 049 + 051+ (skip the
+          # 019-048 out-of-band band per GLR §1.1; skip 050 because
+          # its CREATE INDEX on (status, good_till) references a column
+          # 020 was supposed to add but didn't land on prod).
+          # 049 is pure CREATE TABLE IF NOT EXISTS — safe to land. 050's
+          # ALTER + CREATE INDEX are reconciled per-statement in the
+          # next step.
           files=$(ls migrations/*.sql | sort -V | awk -F/ '{
             n = substr($NF, 1, 3) + 0
-            if (n <= 18 || n >= 51) print
+            if (n <= 18 || n == 49 || n >= 51) print
           }')
           for f in $files; do
             echo "::group::Applying $f"
@@ -134,6 +135,57 @@ jobs:
             echo "::endgroup::"
           done
           exit $status
+
+      - name: Reconcile 050 trade-order columns (per-statement, idempotent)
+        # SQLite ALTER TABLE ADD COLUMN has no IF NOT EXISTS form, so each
+        # column gets its own --command call and we treat
+        # "duplicate column name" as a benign re-run. Adds the columns
+        # migration 050 needs; subsequent CREATE INDEX then attaches the
+        # status+good_till index if the column landed cleanly.
+        working-directory: open-energy-platform
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set +e
+          ok=true
+          attempt() {
+            local desc="$1"; local sql="$2"
+            echo "::group::$desc"
+            out=$(npx wrangler@4 d1 execute open-energy-db --remote --command "$sql" -y 2>&1)
+            rc=$?
+            echo "$out"
+            if [ $rc -ne 0 ]; then
+              if echo "$out" | grep -qE "duplicate column name|already exists|SQLITE_CONSTRAINT_UNIQUE"; then
+                echo "::warning::$desc already applied"
+              elif echo "$out" | grep -qE "no such column|no such table"; then
+                echo "::warning::$desc skipped (depends on schema that does not exist on prod yet)"
+              else
+                echo "::error::$desc failed"
+                ok=false
+              fi
+            fi
+            echo "::endgroup::"
+          }
+          # trade_orders L4 columns from migration 050
+          attempt "ALTER trade_orders ADD post_only"          "ALTER TABLE trade_orders ADD COLUMN post_only INTEGER NOT NULL DEFAULT 0;"
+          attempt "ALTER trade_orders ADD reduce_only"        "ALTER TABLE trade_orders ADD COLUMN reduce_only INTEGER NOT NULL DEFAULT 0;"
+          attempt "ALTER trade_orders ADD stop_trigger_price" "ALTER TABLE trade_orders ADD COLUMN stop_trigger_price REAL;"
+          attempt "ALTER trade_orders ADD display_size_mwh"   "ALTER TABLE trade_orders ADD COLUMN display_size_mwh REAL;"
+          attempt "ALTER trade_orders ADD amend_count"        "ALTER TABLE trade_orders ADD COLUMN amend_count INTEGER NOT NULL DEFAULT 0;"
+          # good_till was supposed to come from migration 020; add it
+          # defensively so the expiry sweeper has a column to look at.
+          attempt "ALTER trade_orders ADD good_till"          "ALTER TABLE trade_orders ADD COLUMN good_till TEXT;"
+          # trade_order_amendments table from 050 (pure CREATE — safe).
+          attempt "CREATE trade_order_amendments" "CREATE TABLE IF NOT EXISTS trade_order_amendments (id TEXT PRIMARY KEY, order_id TEXT NOT NULL, amended_by TEXT NOT NULL, amended_at TEXT NOT NULL DEFAULT (datetime('now')), prev_price REAL, new_price REAL, prev_volume_mwh REAL NOT NULL, new_volume_mwh REAL NOT NULL, prev_remaining_mwh REAL NOT NULL, new_remaining_mwh REAL NOT NULL, lost_priority INTEGER NOT NULL DEFAULT 0, reason TEXT);"
+          attempt "INDEX trade_order_amendments_order" "CREATE INDEX IF NOT EXISTS idx_trade_order_amendments_order ON trade_order_amendments (order_id, amended_at DESC);"
+          # Indexes that depend on the columns we just added.
+          attempt "INDEX trade_orders status+good_till" "CREATE INDEX IF NOT EXISTS idx_trade_orders_status_goodtill ON trade_orders (status, good_till);"
+          # remaining_volume_mwh is referenced by several routes (and is
+          # what migration 020 tried to add but failed). Defensively add
+          # it so the matching engine + order-detail endpoints work.
+          attempt "ALTER trade_orders ADD remaining_volume_mwh" "ALTER TABLE trade_orders ADD COLUMN remaining_volume_mwh REAL;"
+          $ok || exit 1
 
       - name: Deploy Worker (oe.vantax.co.za)
         # The Worker carries the custom domain and the /api/* routes,
