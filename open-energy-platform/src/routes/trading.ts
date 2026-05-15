@@ -30,7 +30,7 @@ async function loadRiskSnapshot(
   energyType: string,
   deliveryDate: string | null,
 ): Promise<RiskSnapshot> {
-  const [participant, limit, exposure, collateral, position, mark, halt] = await Promise.all([
+  const [participant, limit, exposure, collateral, position, mark, halt, bookSides] = await Promise.all([
     env.DB.prepare(`SELECT status, kyc_status FROM participants WHERE id = ?`)
       .bind(participantId).first<{ status: string; kyc_status: string }>(),
     env.DB.prepare(
@@ -73,6 +73,37 @@ async function loadRiskSnapshot(
     // Optional halt — stored in KV so operators can pause a market without
     // a deploy. Key shape: 'market:halt:<energy_type>' or 'market:halt:_all'.
     env.KV?.get(`market:halt:${energyType}`).then((v) => v || (env.KV ? env.KV.get('market:halt:_all') : null)).catch(() => null),
+    // Best-bid / best-ask + opposite-side aggregate liquidity for the
+    // shard. Computed in one round-trip with two SQL aggregates so the
+    // post_only / FOK guards have everything they need from the snapshot.
+    // We restrict to delivery-date-matching rows so a 2026-06 buy doesn't
+    // spuriously cross a 2026-12 ask.
+    env.DB.prepare(
+      `SELECT
+         (SELECT MAX(price) FROM trade_orders
+            WHERE side = 'buy' AND status IN ('open','partial')
+              AND energy_type = ?
+              AND (delivery_date = ? OR (delivery_date IS NULL AND ? IS NULL))
+              AND price IS NOT NULL) AS best_bid,
+         (SELECT MIN(price) FROM trade_orders
+            WHERE side = 'sell' AND status IN ('open','partial')
+              AND energy_type = ?
+              AND (delivery_date = ? OR (delivery_date IS NULL AND ? IS NULL))
+              AND price IS NOT NULL) AS best_ask,
+         (SELECT COALESCE(SUM(remaining_volume_mwh), 0) FROM trade_orders
+            WHERE side = 'buy' AND status IN ('open','partial')
+              AND energy_type = ?
+              AND (delivery_date = ? OR (delivery_date IS NULL AND ? IS NULL))) AS bid_liq,
+         (SELECT COALESCE(SUM(remaining_volume_mwh), 0) FROM trade_orders
+            WHERE side = 'sell' AND status IN ('open','partial')
+              AND energy_type = ?
+              AND (delivery_date = ? OR (delivery_date IS NULL AND ? IS NULL))) AS ask_liq`,
+    ).bind(
+      energyType, deliveryDate, deliveryDate,
+      energyType, deliveryDate, deliveryDate,
+      energyType, deliveryDate, deliveryDate,
+      energyType, deliveryDate, deliveryDate,
+    ).first<{ best_bid: number | null; best_ask: number | null; bid_liq: number; ask_liq: number }>(),
   ]);
 
   const status = participant?.status as string | undefined;
@@ -105,6 +136,10 @@ async function loadRiskSnapshot(
     // Default 25% band — wide enough to allow live limit orders, tight
     // enough to catch fat-finger price entries.
     price_band_pct: 25,
+    best_bid_zar_mwh: bookSides?.best_bid != null ? Number(bookSides.best_bid) : null,
+    best_ask_zar_mwh: bookSides?.best_ask != null ? Number(bookSides.best_ask) : null,
+    bid_liquidity_mwh: Number(bookSides?.bid_liq || 0),
+    ask_liquidity_mwh: Number(bookSides?.ask_liq || 0),
   };
 }
 
@@ -189,6 +224,9 @@ trading.post('/orders', async (c) => {
     delivery_date, delivery_point, market_type,
     order_type, time_in_force,
     auto_match, external_ref,
+    // ─── Phase 2 (migration 050) modifiers + extras ────────────────────
+    expires_at, stop_trigger_price, display_size_mwh,
+    post_only, reduce_only,
   } = body as Record<string, unknown>;
 
   if (!side || !energy_type || !volume_mwh) {
@@ -226,6 +264,13 @@ trading.post('/orders', async (c) => {
     volume_mwh: vol,
     price_zar_mwh: effectivePrice,
     delivery_date: deliveryDate,
+    order_type: (order_type as ProposedOrder['order_type']) ?? undefined,
+    time_in_force: (time_in_force as ProposedOrder['time_in_force']) ?? undefined,
+    expires_at: typeof expires_at === 'string' ? expires_at : null,
+    stop_trigger_price: stop_trigger_price != null ? Number(stop_trigger_price) : null,
+    display_size_mwh: display_size_mwh != null ? Number(display_size_mwh) : null,
+    post_only: post_only === true,
+    reduce_only: reduce_only === true,
   };
   const decision = evaluateOrder(proposed, snapshot);
 
@@ -268,17 +313,23 @@ trading.post('/orders', async (c) => {
       INSERT INTO trade_orders
         (id, participant_id, side, energy_type, volume_mwh, remaining_volume_mwh,
          price, price_min, price_max, delivery_date, delivery_point, market_type,
-         order_type, time_in_force, shard_key, external_ref,
+         order_type, time_in_force, good_till, shard_key, external_ref,
+         post_only, reduce_only, stop_trigger_price, display_size_mwh,
          status, created_at, updated_at, posted_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?)
     `).bind(
       orderId, user.id, side, energyType, vol, vol,
       effectivePrice,
       price_min == null ? null : Number(price_min),
       price_max == null ? null : Number(price_max),
       deliveryDate, delivery_point || null, (market_type as string) || 'bilateral',
-      orderType, (time_in_force as string) || 'gtc', shardKey,
+      orderType, (time_in_force as string) || 'gtc',
+      proposed.expires_at || null, shardKey,
       typeof external_ref === 'string' ? external_ref : null,
+      proposed.post_only ? 1 : 0,
+      proposed.reduce_only ? 1 : 0,
+      proposed.stop_trigger_price ?? null,
+      proposed.display_size_mwh ?? null,
       now, now, now,
     ),
     c.env.DB.prepare(
@@ -435,13 +486,247 @@ trading.post('/orders/:id/cancel', async (c) => {
   return c.json({ success: true, data: { id, status: 'cancelled' } });
 });
 
-// POST /trading/match — match a buy order against a sell order (fires trade.matched cascade)
-// Body: { buy_order_id, sell_order_id, volume_mwh, price_per_mwh? }
+// POST /trading/orders/:id/amend — change price and/or volume on an open or
+// partial order. Re-runs pre-trade gating against the *new* order shape so
+// an amendment can't smuggle a position past the limits, and writes a
+// trade_order_amendments row for the audit trail.
 //
-// Serialized on the (sorted) order-id pair via an advisory lock so two callers
-// can't both observe open/open and both flip the orders to 'matched' — which
-// would otherwise produce duplicate trade_matches rows + two escrow + two
-// invoice rows from the cascade.
+// Priority semantics (per the documented convention used in 050):
+//   - any price change → loses time priority
+//   - volume increase → loses time priority
+//   - pure volume decrease → keeps time priority
+// Margin reservation is recomputed from scratch at the new notional.
+trading.post('/orders/:id/amend', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as {
+    price?: number;
+    volume_mwh?: number;
+    reason?: string;
+  };
+
+  const order = await c.env.DB.prepare(
+    `SELECT id, participant_id, status, side, energy_type, volume_mwh, remaining_volume_mwh,
+            price, delivery_date, post_only, reduce_only, time_in_force, order_type,
+            stop_trigger_price, display_size_mwh, good_till
+       FROM trade_orders WHERE id = ?`,
+  ).bind(id).first<{
+    id: string; participant_id: string; status: string; side: 'buy' | 'sell';
+    energy_type: string; volume_mwh: number; remaining_volume_mwh: number | null;
+    price: number | null; delivery_date: string | null;
+    post_only: number; reduce_only: number; time_in_force: string; order_type: string;
+    stop_trigger_price: number | null; display_size_mwh: number | null; good_till: string | null;
+  }>();
+
+  if (!order) return c.json({ success: false, error: 'Order not found' }, 404);
+  if (order.participant_id !== user.id && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Not authorized' }, 403);
+  }
+  if (order.status !== 'open' && order.status !== 'partial') {
+    return c.json({ success: false, error: `Cannot amend order in status '${order.status}'` }, 400);
+  }
+
+  const prevPrice = order.price;
+  const prevVolume = Number(order.volume_mwh);
+  const prevRemaining = Number(order.remaining_volume_mwh ?? order.volume_mwh);
+  const filledSoFar = prevVolume - prevRemaining;
+
+  // Resolve the new shape. If a field isn't supplied, it stays the same.
+  const newPrice = body.price != null ? Number(body.price) : prevPrice;
+  const newVolume = body.volume_mwh != null ? Number(body.volume_mwh) : prevVolume;
+
+  if (!Number.isFinite(newVolume) || newVolume <= 0) {
+    return c.json({ success: false, error: 'New volume must be positive' }, 400);
+  }
+  // Can't shrink below what's already been filled.
+  if (newVolume < filledSoFar) {
+    return c.json({
+      success: false,
+      error: `New volume ${newVolume} MWh is less than already-filled ${filledSoFar} MWh`,
+    }, 400);
+  }
+  // No-op amendment.
+  if (newPrice === prevPrice && newVolume === prevVolume) {
+    return c.json({ success: false, error: 'Amendment is a no-op' }, 400);
+  }
+
+  // Re-evaluate the new shape against current risk + book state. We
+  // subtract the existing reservation contribution from open exposure
+  // first so we don't double-count this order's own headroom.
+  const snapshot = await loadRiskSnapshot(c.env, order.participant_id, order.energy_type, order.delivery_date);
+  const ownContribution = prevRemaining * Number(prevPrice ?? 0);
+  const adjustedSnapshot: RiskSnapshot = {
+    ...snapshot,
+    open_exposure_zar: Math.max(0, snapshot.open_exposure_zar - ownContribution),
+    free_collateral_zar: snapshot.free_collateral_zar
+      + (await currentReservationFor(c.env, id) ?? 0),
+  };
+  const newRemaining = newVolume - filledSoFar;
+  const proposed: ProposedOrder = {
+    side: order.side,
+    energy_type: order.energy_type,
+    volume_mwh: newRemaining,            // gating treats remaining as the live exposure
+    price_zar_mwh: newPrice,
+    delivery_date: order.delivery_date,
+    order_type: (order.order_type as ProposedOrder['order_type']) || 'limit',
+    time_in_force: (order.time_in_force as ProposedOrder['time_in_force']) || 'gtc',
+    expires_at: order.good_till,
+    stop_trigger_price: order.stop_trigger_price,
+    display_size_mwh: order.display_size_mwh,
+    post_only: !!order.post_only,
+    reduce_only: !!order.reduce_only,
+  };
+  const decision = evaluateOrder(proposed, adjustedSnapshot);
+  if (!decision.ok) {
+    return c.json({
+      success: false,
+      error: decision.reason_code,
+      data: { reason_code: decision.reason_code, detail: decision.detail },
+    }, 422);
+  }
+
+  // Priority semantics: lose priority on any price change OR volume
+  // increase; keep priority on a pure volume decrease.
+  const lostPriority = newPrice !== prevPrice || newVolume > prevVolume;
+  const now = new Date().toISOString();
+  const newPostedAt = lostPriority ? now : null;
+  const amendmentId = 'amd_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const newReservationId = 'res_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+  await c.env.DB.batch([
+    c.env.DB.prepare(
+      `UPDATE trade_orders
+          SET volume_mwh = ?, price = ?, remaining_volume_mwh = ?,
+              amend_count = COALESCE(amend_count, 0) + 1,
+              updated_at = ?` +
+      (newPostedAt ? `, posted_at = ?` : '') +
+      ` WHERE id = ?`,
+    ).bind(...(newPostedAt
+      ? [newVolume, newPrice, newRemaining, now, newPostedAt, id]
+      : [newVolume, newPrice, newRemaining, now, id])),
+    c.env.DB.prepare(
+      `UPDATE margin_reservations
+          SET status = 'released', resolved_at = ?, resolution_note = 'amended'
+        WHERE order_id = ? AND status = 'reserved'`,
+    ).bind(now, id),
+    c.env.DB.prepare(
+      `INSERT INTO margin_reservations
+         (id, order_id, participant_id, amount_zar, status, reserved_at)
+       VALUES (?, ?, ?, ?, 'reserved', ?)`,
+    ).bind(newReservationId, id, order.participant_id, decision.reserved_margin_zar, now),
+    c.env.DB.prepare(
+      `INSERT INTO trade_order_amendments
+         (id, order_id, amended_by, amended_at, prev_price, new_price,
+          prev_volume_mwh, new_volume_mwh, prev_remaining_mwh, new_remaining_mwh,
+          lost_priority, reason)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).bind(
+      amendmentId, id, user.id, now, prevPrice, newPrice,
+      prevVolume, newVolume, prevRemaining, newRemaining,
+      lostPriority ? 1 : 0, body.reason ?? null,
+    ),
+  ]);
+
+  return c.json({
+    success: true,
+    data: {
+      amendment_id: amendmentId,
+      order_id: id,
+      lost_priority: lostPriority,
+      new_price: newPrice,
+      new_volume_mwh: newVolume,
+      new_remaining_mwh: newRemaining,
+      reserved_margin_zar: decision.reserved_margin_zar,
+    },
+  });
+});
+
+// Helper used by /amend to re-add this order's own reservation back into
+// free collateral before re-gating, so the trader doesn't artificially
+// fail on collateral that's still earmarked for the unchanged order.
+async function currentReservationFor(env: HonoEnv['Bindings'], orderId: string): Promise<number | null> {
+  const row = await env.DB.prepare(
+    `SELECT COALESCE(SUM(amount_zar), 0) AS amt FROM margin_reservations
+      WHERE order_id = ? AND status = 'reserved'`,
+  ).bind(orderId).first<{ amt: number }>();
+  return row?.amt != null ? Number(row.amt) : null;
+}
+
+// GET /trading/orders/:id/amendments — full amendment history for one order.
+trading.get('/orders/:id/amendments', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const order = await c.env.DB.prepare(
+    `SELECT participant_id FROM trade_orders WHERE id = ?`,
+  ).bind(id).first<{ participant_id: string }>();
+  if (!order) return c.json({ success: false, error: 'Order not found' }, 404);
+  if (order.participant_id !== user.id && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const rs = await c.env.DB.prepare(
+    `SELECT id, amended_by, amended_at, prev_price, new_price,
+            prev_volume_mwh, new_volume_mwh, prev_remaining_mwh, new_remaining_mwh,
+            lost_priority, reason
+       FROM trade_order_amendments
+      WHERE order_id = ?
+      ORDER BY amended_at DESC LIMIT 100`,
+  ).bind(id).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+// POST /trading/orders/expire — sweep open/partial orders past good_till
+// to 'expired' and release their reserved margin. Admin/cron only; idem-
+// potent (only acts on rows that haven't already been swept).
+trading.post('/orders/expire', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'support') {
+    return c.json({ success: false, error: 'admin only' }, 403);
+  }
+  const now = new Date().toISOString();
+  const candidates = await c.env.DB.prepare(
+    `SELECT id, participant_id FROM trade_orders
+      WHERE status IN ('open','partial')
+        AND good_till IS NOT NULL
+        AND good_till <= ?
+      LIMIT 500`,
+  ).bind(now).all<{ id: string; participant_id: string }>();
+  const ids = (candidates.results || []).map((r) => r.id);
+  if (ids.length === 0) {
+    return c.json({ success: true, data: { expired: 0 } });
+  }
+  // Static IN-list (we capped at 500 above) — keep it readable.
+  const placeholders = ids.map(() => '?').join(',');
+  await c.env.DB.batch([
+    c.env.DB.prepare(
+      `UPDATE trade_orders SET status = 'expired', updated_at = ? WHERE id IN (${placeholders})`,
+    ).bind(now, ...ids),
+    c.env.DB.prepare(
+      `UPDATE margin_reservations
+          SET status = 'released', resolved_at = ?, resolution_note = 'order_expired'
+        WHERE order_id IN (${placeholders}) AND status = 'reserved'`,
+    ).bind(now, ...ids),
+  ]);
+  // Cascade per order so each owner gets their notification.
+  await Promise.all((candidates.results || []).map((r) => fireCascade({
+    event: 'trade.cancelled',          // closest existing event; no separate trade.expired today
+    actor_id: user.id,
+    entity_type: 'trade_orders',
+    entity_id: r.id,
+    data: { reason: 'expired' },
+    env: c.env,
+  })));
+  return c.json({ success: true, data: { expired: ids.length, ids } });
+});
+
+// POST /trading/match — match a buy order against a sell order with proper
+// partial-fill semantics (Phase 2). The requested volume is clamped to
+// min(buy.remaining, sell.remaining, requested); each leg either fully
+// fills (status='matched', reservation consumed) or partially fills
+// (status='partial', remaining_volume_mwh decremented, reservation
+// proportionally consumed with the residual still reserved).
+//
+// Serialized on the (sorted) order-id pair via an advisory lock so two
+// callers can't both observe the same open state and double-fill.
 trading.post('/match', async (c) => {
   const user = getCurrentUser(c);
   const { buy_order_id, sell_order_id, volume_mwh, price_per_mwh } = await c.req.json();
@@ -463,31 +748,125 @@ trading.post('/match', async (c) => {
         const sell = await c.env.DB.prepare('SELECT * FROM trade_orders WHERE id = ?').bind(sell_order_id).first();
         if (!buy || !sell) throw new LockBusyError('__not_found__');
         if (buy.side !== 'buy' || sell.side !== 'sell') throw new LockBusyError('__mismatched_sides__');
-        if (buy.status !== 'open' || sell.status !== 'open') throw new LockBusyError('__not_open__');
+        // Both 'open' (untouched) and 'partial' (already fractionally filled)
+        // are eligible — 'partial' is now a real lifecycle state.
+        const buyOk = buy.status === 'open' || buy.status === 'partial';
+        const sellOk = sell.status === 'open' || sell.status === 'partial';
+        if (!buyOk || !sellOk) throw new LockBusyError('__not_open__');
         if (user.id !== buy.participant_id && user.id !== sell.participant_id && user.role !== 'admin') {
           throw new LockBusyError('__not_counterparty__');
         }
 
+        // Remaining-volume defaulting: legacy rows may have null in
+        // remaining_volume_mwh (only the post-020 path sets it). Treat
+        // null as the full volume so existing flows keep working.
+        const buyRemaining = Number(buy.remaining_volume_mwh ?? buy.volume_mwh);
+        const sellRemaining = Number(sell.remaining_volume_mwh ?? sell.volume_mwh);
+        const requested = Number(volume_mwh);
+        const fillVol = Math.min(buyRemaining, sellRemaining, requested);
+        if (!Number.isFinite(fillVol) || fillVol <= 0) {
+          throw new LockBusyError('__nothing_to_fill__');
+        }
+
         const matchId = 'mt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
         const price = Number(price_per_mwh ?? sell.price_min ?? buy.price_max ?? 0);
-        const total_value = price * Number(volume_mwh);
+        const total_value = price * fillVol;
         const now = new Date().toISOString();
 
-        await c.env.DB.prepare(`
-          INSERT INTO trade_matches (id, buy_order_id, sell_order_id, matched_volume_mwh, matched_price, matched_at, status)
-          VALUES (?, ?, ?, ?, ?, ?, 'pending')
-        `).bind(matchId, buy_order_id, sell_order_id, volume_mwh, price, now).run();
+        const buyResidual = buyRemaining - fillVol;
+        const sellResidual = sellRemaining - fillVol;
+        const buyFullyFilled = buyResidual <= 0.0005;       // tiny float epsilon
+        const sellFullyFilled = sellResidual <= 0.0005;
 
-        await c.env.DB.prepare(`UPDATE trade_orders SET status = 'matched', updated_at = ? WHERE id IN (?, ?)`)
-          .bind(now, buy_order_id, sell_order_id).run();
+        const ops = [
+          c.env.DB.prepare(`
+            INSERT INTO trade_matches (id, buy_order_id, sell_order_id, matched_volume_mwh, matched_price, matched_at, status)
+            VALUES (?, ?, ?, ?, ?, ?, 'pending')
+          `).bind(matchId, buy_order_id, sell_order_id, fillVol, price, now),
+          // Buy leg
+          c.env.DB.prepare(
+            `UPDATE trade_orders
+                SET status = ?, remaining_volume_mwh = ?, updated_at = ?
+              WHERE id = ?`,
+          ).bind(buyFullyFilled ? 'matched' : 'partial', Math.max(0, buyResidual), now, buy_order_id),
+          // Sell leg
+          c.env.DB.prepare(
+            `UPDATE trade_orders
+                SET status = ?, remaining_volume_mwh = ?, updated_at = ?
+              WHERE id = ?`,
+          ).bind(sellFullyFilled ? 'matched' : 'partial', Math.max(0, sellResidual), now, sell_order_id),
+        ];
 
-        // Consume reserved margin on both legs — orders are no longer
-        // 'open', so the free-collateral calc must stop counting these.
-        await c.env.DB.prepare(
-          `UPDATE margin_reservations
-              SET status = 'consumed', resolved_at = ?, resolution_note = 'order_matched'
-            WHERE order_id IN (?, ?) AND status = 'reserved'`,
-        ).bind(now, buy_order_id, sell_order_id).run();
+        // Margin reservation handling — proportional to the consumed
+        // fraction of each order. A fully-filled leg consumes its whole
+        // reservation; a partially-filled leg keeps a proportionally
+        // smaller residual reservation alive.
+        const buyReservation = await c.env.DB.prepare(
+          `SELECT id, amount_zar FROM margin_reservations
+            WHERE order_id = ? AND status = 'reserved' LIMIT 1`,
+        ).bind(buy_order_id).first<{ id: string; amount_zar: number }>();
+        const sellReservation = await c.env.DB.prepare(
+          `SELECT id, amount_zar FROM margin_reservations
+            WHERE order_id = ? AND status = 'reserved' LIMIT 1`,
+        ).bind(sell_order_id).first<{ id: string; amount_zar: number }>();
+
+        if (buyReservation) {
+          if (buyFullyFilled) {
+            ops.push(c.env.DB.prepare(
+              `UPDATE margin_reservations
+                  SET status = 'consumed', resolved_at = ?, resolution_note = 'order_matched'
+                WHERE id = ?`,
+            ).bind(now, buyReservation.id));
+          } else {
+            const consumeRatio = fillVol / buyRemaining;
+            const consumedAmt = buyReservation.amount_zar * consumeRatio;
+            const residualAmt = buyReservation.amount_zar - consumedAmt;
+            const consumedReservationId = 'res_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + 'b';
+            // Split: original reservation becomes the consumed slice; a new
+            // 'reserved' row is created for the residual so free-collateral
+            // arithmetic stays simple (sum of WHERE status='reserved').
+            ops.push(
+              c.env.DB.prepare(
+                `UPDATE margin_reservations
+                    SET amount_zar = ?, status = 'consumed', resolved_at = ?, resolution_note = 'partial_fill_consumed'
+                  WHERE id = ?`,
+              ).bind(consumedAmt, now, buyReservation.id),
+              c.env.DB.prepare(
+                `INSERT INTO margin_reservations
+                   (id, order_id, participant_id, amount_zar, status, reserved_at)
+                 VALUES (?, ?, ?, ?, 'reserved', ?)`,
+              ).bind(consumedReservationId, buy_order_id, buy.participant_id, residualAmt, now),
+            );
+          }
+        }
+        if (sellReservation) {
+          if (sellFullyFilled) {
+            ops.push(c.env.DB.prepare(
+              `UPDATE margin_reservations
+                  SET status = 'consumed', resolved_at = ?, resolution_note = 'order_matched'
+                WHERE id = ?`,
+            ).bind(now, sellReservation.id));
+          } else {
+            const consumeRatio = fillVol / sellRemaining;
+            const consumedAmt = sellReservation.amount_zar * consumeRatio;
+            const residualAmt = sellReservation.amount_zar - consumedAmt;
+            const consumedReservationId = 'res_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + 's';
+            ops.push(
+              c.env.DB.prepare(
+                `UPDATE margin_reservations
+                    SET amount_zar = ?, status = 'consumed', resolved_at = ?, resolution_note = 'partial_fill_consumed'
+                  WHERE id = ?`,
+              ).bind(consumedAmt, now, sellReservation.id),
+              c.env.DB.prepare(
+                `INSERT INTO margin_reservations
+                   (id, order_id, participant_id, amount_zar, status, reserved_at)
+                 VALUES (?, ?, ?, ?, 'reserved', ?)`,
+              ).bind(consumedReservationId, sell_order_id, sell.participant_id, residualAmt, now),
+            );
+          }
+        }
+
+        await c.env.DB.batch(ops);
 
         await fireCascade({
           event: 'trade.matched',
@@ -498,15 +877,28 @@ trading.post('/match', async (c) => {
             match_id: matchId,
             buyer_id: buy.participant_id,
             seller_id: sell.participant_id,
-            volume_mwh,
+            volume_mwh: fillVol,
+            requested_volume_mwh: requested,
             price_per_mwh: price,
             total_value,
             delivery_date: buy.delivery_date || sell.delivery_date,
+            buy_status: buyFullyFilled ? 'matched' : 'partial',
+            sell_status: sellFullyFilled ? 'matched' : 'partial',
+            buy_remaining_mwh: Math.max(0, buyResidual),
+            sell_remaining_mwh: Math.max(0, sellResidual),
           },
           env: c.env,
         });
 
-        return { id: matchId, total_value };
+        return {
+          id: matchId,
+          total_value,
+          matched_volume_mwh: fillVol,
+          buy_status: buyFullyFilled ? 'matched' : 'partial',
+          sell_status: sellFullyFilled ? 'matched' : 'partial',
+          buy_remaining_mwh: Math.max(0, buyResidual),
+          sell_remaining_mwh: Math.max(0, sellResidual),
+        };
       },
       { ttlSeconds: 15, context: { buy_order_id, sell_order_id } },
     );
@@ -522,9 +914,11 @@ trading.post('/match', async (c) => {
         case '__mismatched_sides__':
           return c.json({ success: false, error: 'Mismatched sides' }, 400);
         case '__not_open__':
-          return c.json({ success: false, error: 'Only open orders can be matched' }, 400);
+          return c.json({ success: false, error: 'Only open or partial orders can be matched' }, 400);
         case '__not_counterparty__':
           return c.json({ success: false, error: 'Not a counterparty to either order' }, 403);
+        case '__nothing_to_fill__':
+          return c.json({ success: false, error: 'No remaining volume on either side to fill' }, 400);
         default:
           return c.json({ success: false, error: 'Another match is in progress on these orders — retry in a moment' }, 409);
       }

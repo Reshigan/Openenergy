@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, BookOpen, Brain, Cpu, Gauge,
-  Play, Plus, RefreshCw, Search, Sparkles, Target, TrendingUp, XCircle, Zap,
+  Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, BookOpen, Brain,
+  ChevronDown, ChevronRight, Cpu, Edit3, Gauge,
+  Play, Plus, RefreshCw, Search, Sparkles, Target, TrendingUp, X, XCircle, Zap,
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, CartesianGrid, Line, LineChart,
@@ -139,22 +140,53 @@ interface SuggestPayload {
   market_state: 'open' | 'closed' | 'halted_instrument' | 'halted_market';
 }
 
+type OrderTypeT = 'limit' | 'market' | 'ioc' | 'fok' | 'stop' | 'stop_limit';
+type TifT = 'gtc' | 'gtd' | 'day';
+
+interface MyOrderRow {
+  id: string;
+  side: 'buy' | 'sell';
+  energy_type: string;
+  volume_mwh: number;
+  remaining_volume_mwh: number | null;
+  price: number | null;
+  status: string;
+  order_type?: string;
+  time_in_force?: string;
+  created_at: string;
+}
+
 function TerminalTab({ onSeeRejections }: { onSeeRejections: () => void }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [orderBook, setOrderBook] = useState<{ bids: OrderRow[]; asks: OrderRow[] }>({ bids: [], asks: [] });
   const [prints, setPrints] = useState<Array<{ matched_at: string; matched_price: number; matched_volume_mwh: number }>>([]);
+  const [myOrders, setMyOrders] = useState<MyOrderRow[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [order, setOrder] = useState({ side: 'buy' as 'buy' | 'sell', type: 'limit', price: '', volume: '', energy_type: 'solar' });
+  const [order, setOrder] = useState({
+    side: 'buy' as 'buy' | 'sell',
+    price: '',
+    volume: '',
+    energy_type: 'solar',
+    order_type: 'limit' as OrderTypeT,
+    time_in_force: 'gtc' as TifT,
+    expires_at: '',
+    stop_trigger_price: '',
+    post_only: false,
+    reduce_only: false,
+  });
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [rejection, setRejection] = useState<RejectionPayload | null>(null);
   const [suggest, setSuggest] = useState<SuggestPayload | null>(null);
+  const [amending, setAmending] = useState<MyOrderRow | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const [bookRes, printsRes] = await Promise.all([
+      const [bookRes, printsRes, ordersRes] = await Promise.all([
         api.get('/trading/orderbook').catch(() => ({ data: { success: true, data: [] } })),
         api.get('/trading/matches').catch(() => ({ data: { success: true, data: [] } })),
+        api.get('/trading/orders').catch(() => ({ data: { success: true, data: [] } })),
       ]);
       const raw = bookRes.data?.data;
       const bids: OrderRow[] = []; const asks: OrderRow[] = [];
@@ -176,9 +208,18 @@ function TerminalTab({ onSeeRejections }: { onSeeRejections: () => void }) {
         matched_volume_mwh: Number(m.matched_volume_mwh ?? m.volume_mwh ?? m.volume ?? 0),
       }));
       setPrints(printsArr.slice(0, 50));
+
+      setMyOrders((ordersRes.data?.data || []) as MyOrderRow[]);
     } catch (e: unknown) { setError((e as Error).message || 'Failed to load market'); }
     finally { setLoading(false); }
   }, []);
+
+  const cancelOrder = useCallback(async (id: string) => {
+    try {
+      await api.post(`/trading/orders/${id}/cancel`);
+      refresh();
+    } catch { /* leave the row visible — server will explain on next attempt */ }
+  }, [refresh]);
   useEffect(() => { refresh(); }, [refresh]);
 
   // Ghost-text suggestion — refreshes whenever side/energy_type changes.
@@ -209,8 +250,15 @@ function TerminalTab({ onSeeRejections }: { onSeeRejections: () => void }) {
       await api.post('/trading/orders', {
         side: order.side,
         energy_type: order.energy_type,
-        price: Number(order.price),
+        price: order.order_type === 'market' ? null : Number(order.price),
         volume_mwh: Number(order.volume),
+        order_type: order.order_type,
+        time_in_force: order.time_in_force,
+        expires_at: order.time_in_force === 'gtd' && order.expires_at ? order.expires_at : null,
+        stop_trigger_price: (order.order_type === 'stop' || order.order_type === 'stop_limit') && order.stop_trigger_price
+          ? Number(order.stop_trigger_price) : null,
+        post_only: order.post_only,
+        reduce_only: order.reduce_only,
       });
       setOrder({ ...order, price: '', volume: '' });
       refresh();
@@ -303,6 +351,63 @@ function TerminalTab({ onSeeRejections }: { onSeeRejections: () => void }) {
                 <option value="thermal">Thermal</option>
               </select>
             </Field>
+
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((v) => !v)}
+              className="w-full text-[11px] text-[#3d4756] hover:text-[#0f1c2e] inline-flex items-center gap-1 py-1">
+              {showAdvanced ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+              Advanced (type, time-in-force, modifiers)
+            </button>
+
+            {showAdvanced && (
+              <div className="space-y-3 border-t border-[#eef2f7] pt-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Order type">
+                    <select value={order.order_type} onChange={(e) => setOrder({ ...order, order_type: e.target.value as OrderTypeT })}
+                      className="w-full h-9 px-2 rounded-md border border-[#dde4ec] text-[12px]">
+                      <option value="limit">Limit</option>
+                      <option value="market">Market</option>
+                      <option value="ioc">IOC</option>
+                      <option value="fok">FOK</option>
+                      <option value="stop">Stop</option>
+                      <option value="stop_limit">Stop-Limit</option>
+                    </select>
+                  </Field>
+                  <Field label="Time in force">
+                    <select value={order.time_in_force} onChange={(e) => setOrder({ ...order, time_in_force: e.target.value as TifT })}
+                      className="w-full h-9 px-2 rounded-md border border-[#dde4ec] text-[12px]">
+                      <option value="gtc">GTC</option>
+                      <option value="gtd">GTD</option>
+                      <option value="day">Day</option>
+                    </select>
+                  </Field>
+                </div>
+                {order.time_in_force === 'gtd' && (
+                  <Field label="Expires at">
+                    <input type="datetime-local" value={order.expires_at} onChange={(e) => setOrder({ ...order, expires_at: e.target.value ? new Date(e.target.value).toISOString() : '' })}
+                      className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" />
+                  </Field>
+                )}
+                {(order.order_type === 'stop' || order.order_type === 'stop_limit') && (
+                  <Field label="Stop trigger price (R/MWh)">
+                    <input type="number" value={order.stop_trigger_price} onChange={(e) => setOrder({ ...order, stop_trigger_price: e.target.value })}
+                      className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" placeholder="1900" />
+                  </Field>
+                )}
+                <div className="flex items-center gap-4 text-[12px] text-[#3d4756]">
+                  <label className="inline-flex items-center gap-1.5">
+                    <input type="checkbox" checked={order.post_only} onChange={(e) => setOrder({ ...order, post_only: e.target.checked })} />
+                    post-only
+                  </label>
+                  <label className="inline-flex items-center gap-1.5">
+                    <input type="checkbox" checked={order.reduce_only} onChange={(e) => setOrder({ ...order, reduce_only: e.target.checked })} />
+                    reduce-only
+                  </label>
+                </div>
+              </div>
+            )}
+
             <button type="submit" disabled={submitting}
               className={`w-full h-10 rounded-md text-white font-semibold text-[13px] ${order.side === 'buy' ? 'bg-[#1a8a5b]' : 'bg-[#c0392b]'} disabled:opacity-50`}>
               {submitting ? 'Submitting…' : `Submit ${order.side.toUpperCase()}`}
@@ -311,6 +416,19 @@ function TerminalTab({ onSeeRejections }: { onSeeRejections: () => void }) {
           {rejection && <RejectionCard rejection={rejection} onApplyRemediation={applyRemediation} onDismiss={() => setRejection(null)} onSeeAll={onSeeRejections} />}
         </section>
       </div>
+
+      <MyOrdersPanel
+        orders={myOrders}
+        onCancel={cancelOrder}
+        onAmend={(o) => setAmending(o)}
+      />
+      {amending && (
+        <AmendModal
+          order={amending}
+          onClose={() => setAmending(null)}
+          onSaved={() => { setAmending(null); refresh(); }}
+        />
+      )}
 
       <section className="rounded-xl border border-[#dde4ec] bg-white">
         <header className="px-5 py-3 border-b border-[#eef2f7]">
@@ -1032,6 +1150,200 @@ function RejectionsTab() {
           )
         )}
       </section>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// MyOrdersPanel — the trader's open + partial orders with inline Cancel
+// and Amend actions. Inline (not a separate tab) so the loop "place →
+// see → adjust → cancel" stays in one screen.
+// ════════════════════════════════════════════════════════════════════════
+function MyOrdersPanel({
+  orders,
+  onCancel,
+  onAmend,
+}: {
+  orders: MyOrderRow[];
+  onCancel: (id: string) => void;
+  onAmend: (o: MyOrderRow) => void;
+}) {
+  const live = orders.filter((o) => o.status === 'open' || o.status === 'partial');
+  const recent = orders.filter((o) => o.status !== 'open' && o.status !== 'partial').slice(0, 5);
+  if (live.length === 0 && recent.length === 0) return null;
+  return (
+    <section className="rounded-xl border border-[#dde4ec] bg-white">
+      <header className="px-5 py-3 border-b border-[#eef2f7]">
+        <div className="font-display font-semibold text-[14px] text-[#0f1c2e]">My orders</div>
+        <div className="text-[11px] text-[#6b7685]">{live.length} live · {recent.length} recent</div>
+      </header>
+      <div className="overflow-auto">
+        <table className="w-full text-[12px]">
+          <thead className="bg-[#fafbfd]">
+            <tr className="text-[11px] uppercase text-[#6b7685]">
+              <th className="px-4 py-2 text-left">Status</th>
+              <th className="px-4 py-2 text-left">Side</th>
+              <th className="px-4 py-2 text-left">Product</th>
+              <th className="px-4 py-2 text-right">Filled / Total</th>
+              <th className="px-4 py-2 text-right">Price</th>
+              <th className="px-4 py-2 text-left">Type</th>
+              <th className="px-4 py-2 text-left">TIF</th>
+              <th className="px-4 py-2 text-right">Placed</th>
+              <th className="px-4 py-2" />
+            </tr>
+          </thead>
+          <tbody>
+            {[...live, ...recent].map((o) => {
+              const remaining = Number(o.remaining_volume_mwh ?? o.volume_mwh);
+              const filled = Number(o.volume_mwh) - remaining;
+              const isLive = o.status === 'open' || o.status === 'partial';
+              return (
+                <tr key={o.id} className="border-t border-[#eef2f7] hover:bg-[#fafbfd]">
+                  <td className="px-4 py-2">
+                    <StatusPill status={o.status} />
+                  </td>
+                  <td className="px-4 py-2">
+                    <span className={`text-[11px] font-semibold uppercase ${o.side === 'buy' ? 'text-[#1a8a5b]' : 'text-[#c0392b]'}`}>
+                      {o.side}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2">{o.energy_type}</td>
+                  <td className="px-4 py-2 text-right font-mono">
+                    {num(filled, 1)} / {num(Number(o.volume_mwh), 1)}
+                  </td>
+                  <td className="px-4 py-2 text-right font-mono">{o.price != null ? formatZAR(o.price) : <span className="text-[#6b7685]">market</span>}</td>
+                  <td className="px-4 py-2 text-[11px] text-[#3d4756]">{o.order_type || 'limit'}</td>
+                  <td className="px-4 py-2 text-[11px] text-[#3d4756]">{(o.time_in_force || 'gtc').toUpperCase()}</td>
+                  <td className="px-4 py-2 text-right text-[11px] font-mono text-[#6b7685]">{new Date(o.created_at).toLocaleTimeString()}</td>
+                  <td className="px-4 py-2 text-right">
+                    {isLive && (
+                      <div className="inline-flex items-center gap-1">
+                        <button onClick={() => onAmend(o)} className="h-6 px-2 rounded text-[11px] text-[#3b82c4] hover:bg-[#eef2f7] inline-flex items-center gap-1">
+                          <Edit3 size={10} /> Amend
+                        </button>
+                        <button onClick={() => onCancel(o.id)} className="h-6 px-2 rounded text-[11px] text-[#c0392b] hover:bg-[#fdf2f1]">
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function StatusPill({ status }: { status: string }) {
+  const tone =
+    status === 'open' ? { bg: '#dbecfb', fg: '#1a5d97' } :
+    status === 'partial' ? { bg: '#ffe9c2', fg: '#9b6610' } :
+    status === 'matched' ? { bg: '#cdf0dd', fg: '#1a8a5b' } :
+    status === 'cancelled' ? { bg: '#eef2f7', fg: '#6b7685' } :
+    status === 'expired' ? { bg: '#fdf2f1', fg: '#c0392b' } :
+    { bg: '#eef2f7', fg: '#3d4756' };
+  return (
+    <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider" style={{ background: tone.bg, color: tone.fg }}>
+      {status}
+    </span>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// AmendModal — change price/volume on a live order. Surfaces the
+// price-time priority impact inline before the trader confirms ("changing
+// price loses your place in the queue") so the cost of the amendment is
+// obvious. On 422 from the server, shows the structured rejection reason.
+// ════════════════════════════════════════════════════════════════════════
+function AmendModal({
+  order,
+  onClose,
+  onSaved,
+}: {
+  order: MyOrderRow;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [price, setPrice] = useState(order.price != null ? String(order.price) : '');
+  const [volume, setVolume] = useState(String(order.volume_mwh));
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const newPrice = price === '' ? null : Number(price);
+  const newVolume = Number(volume);
+  const priceChanged = newPrice !== order.price;
+  const volumeChanged = newVolume !== Number(order.volume_mwh);
+  const lostPriority = priceChanged || newVolume > Number(order.volume_mwh);
+  const noop = !priceChanged && !volumeChanged;
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault(); setSubmitting(true); setError(null);
+    try {
+      await api.post(`/trading/orders/${order.id}/amend`, {
+        price: priceChanged ? newPrice : undefined,
+        volume_mwh: volumeChanged ? newVolume : undefined,
+        reason: reason || undefined,
+      });
+      onSaved();
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string; data?: { reason_code?: string; detail?: string } } } };
+      setError(err.response?.data?.data?.detail || err.response?.data?.error || (e as Error).message || 'Amendment failed');
+    } finally { setSubmitting(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl border border-[#dde4ec] w-full max-w-md p-5 space-y-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="text-[11px] uppercase tracking-wider text-[#6b7685]">Amend order</div>
+            <div className="font-display font-semibold text-[14px] text-[#0f1c2e]">
+              {order.side.toUpperCase()} {num(Number(order.volume_mwh), 1)} MWh {order.energy_type}
+            </div>
+          </div>
+          <button onClick={onClose} className="text-[#6b7685] hover:text-[#3d4756]"><X size={16} /></button>
+        </div>
+        <form onSubmit={submit} className="space-y-3">
+          <Field label="New price (R/MWh)">
+            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)}
+              className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" />
+          </Field>
+          <Field label="New volume (MWh)">
+            <input type="number" value={volume} onChange={(e) => setVolume(e.target.value)}
+              className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" />
+          </Field>
+          <Field label="Reason (optional)">
+            <input type="text" value={reason} onChange={(e) => setReason(e.target.value)}
+              className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" placeholder="e.g. risk limit revised" />
+          </Field>
+          <div className={`rounded-lg border px-3 py-2 text-[12px] flex items-start gap-2 ${lostPriority ? 'border-[#f5c6c2] bg-[#fdf2f1] text-[#c0392b]' : 'border-[#dde4ec] bg-[#fafbfd] text-[#3d4756]'}`}>
+            <Sparkles size={12} className="mt-0.5 flex-shrink-0" />
+            <div>
+              {noop
+                ? 'No changes yet — pick a new price or volume.'
+                : lostPriority
+                  ? `${priceChanged ? 'Price change' : 'Volume increase'} loses your place in the price-time queue — the order will be re-posted at the back.`
+                  : 'Volume decrease keeps your existing price-time priority.'}
+            </div>
+          </div>
+          {error && (
+            <div className="rounded-lg border border-[#f5c6c2] bg-[#fdf2f1] text-[#c0392b] text-[12px] px-3 py-2 inline-flex items-start gap-2">
+              <AlertTriangle size={12} className="mt-0.5 flex-shrink-0" /> {error}
+            </div>
+          )}
+          <div className="flex gap-2 pt-2">
+            <button type="button" onClick={onClose} className="h-9 px-4 rounded-md border border-[#dde4ec] text-[13px]">Cancel</button>
+            <button type="submit" disabled={noop || submitting}
+              className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold disabled:opacity-50">
+              {submitting ? 'Amending…' : 'Confirm amendment'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

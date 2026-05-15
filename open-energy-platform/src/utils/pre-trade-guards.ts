@@ -27,9 +27,20 @@ export const REJECTION_CODES = [
   'INVALID_PRICE_BAND',
   'STALE_MARK',
   'INVALID_VOLUME',
+  // ─── Order-lifecycle codes (migration 050) ────────────────────────────
+  'POST_ONLY_WOULD_CROSS',
+  'REDUCE_ONLY_INCREASES_POSITION',
+  'EXPIRY_REQUIRED',
+  'EXPIRY_IN_PAST',
+  'STOP_TRIGGER_REQUIRED',
+  'FOK_INSUFFICIENT_LIQUIDITY',
+  'INVALID_DISPLAY_SIZE',
 ] as const;
 
 export type RejectionCode = typeof REJECTION_CODES[number];
+
+export type OrderType = 'limit' | 'market' | 'ioc' | 'fok' | 'stop' | 'stop_limit';
+export type TimeInForce = 'gtc' | 'gtd' | 'day';
 
 export interface ProposedOrder {
   side: 'buy' | 'sell';
@@ -37,6 +48,14 @@ export interface ProposedOrder {
   volume_mwh: number;
   price_zar_mwh: number | null;       // null = market order
   delivery_date: string | null;
+  // ─── Phase 2 (migration 050) — all optional, sensible defaults ─────────
+  order_type?: OrderType;             // default 'limit'
+  time_in_force?: TimeInForce;        // default 'gtc'
+  expires_at?: string | null;         // ISO; required when time_in_force='gtd'
+  stop_trigger_price?: number | null; // required for 'stop'/'stop_limit'
+  display_size_mwh?: number | null;   // iceberg display tranche
+  post_only?: boolean;                // reject if order would take liquidity
+  reduce_only?: boolean;              // reject if order would grow position
 }
 
 export interface RiskSnapshot {
@@ -51,6 +70,18 @@ export interface RiskSnapshot {
   mark_age_minutes: number | null;
   // Optional band — if present, order price must lie within ±band_pct of mark.
   price_band_pct: number | null;
+  // ─── Phase 2 (migration 050) — needed for post_only / FOK checks ──────
+  // Best opposite-side prices on the book for this (energy_type, delivery
+  // date). Null means there is no resting opposite side.
+  best_bid_zar_mwh?: number | null;
+  best_ask_zar_mwh?: number | null;
+  // Total resting opposite-side volume — used to short-circuit FOK.
+  // Computed against the SAME shard the proposed order would land on.
+  bid_liquidity_mwh?: number;
+  ask_liquidity_mwh?: number;
+  // Reference clock; tests pass an explicit instant so good_till logic is
+  // deterministic. Production calls leave this undefined → Date.now().
+  now_iso?: string;
 }
 
 export type GuardResult =
@@ -85,6 +116,15 @@ export function evaluateOrder(order: ProposedOrder, snapshot: RiskSnapshot): Gua
       ok: false,
       reason_code: 'INVALID_VOLUME',
       detail: `Volume must be a positive number (got ${order.volume_mwh}).`,
+    };
+  }
+
+  // 1a. Display size sanity — iceberg tranche must be positive and ≤ size.
+  if (order.display_size_mwh != null && (order.display_size_mwh <= 0 || order.display_size_mwh > order.volume_mwh)) {
+    return {
+      ok: false,
+      reason_code: 'INVALID_DISPLAY_SIZE',
+      detail: `display_size_mwh ${order.display_size_mwh} must be > 0 and ≤ volume_mwh ${order.volume_mwh}.`,
     };
   }
 
@@ -155,6 +195,108 @@ export function evaluateOrder(order: ProposedOrder, snapshot: RiskSnapshot): Gua
         ok: false,
         reason_code: 'POSITION_LIMIT_BREACH',
         detail: `Projected position ${projected.toFixed(1)} MWh exceeds limit ±${snapshot.position_limit_mwh} MWh.`,
+      };
+    }
+  }
+
+  // ─── Phase 2 — order-type, TIF, and modifier checks ────────────────────
+  const orderType: OrderType = order.order_type ?? 'limit';
+  const tif: TimeInForce = order.time_in_force ?? 'gtc';
+
+  // 6a. Stop / stop-limit must carry a trigger price.
+  if ((orderType === 'stop' || orderType === 'stop_limit') && (order.stop_trigger_price == null || order.stop_trigger_price <= 0)) {
+    return {
+      ok: false,
+      reason_code: 'STOP_TRIGGER_REQUIRED',
+      detail: `${orderType} orders require a positive stop_trigger_price.`,
+    };
+  }
+
+  // 6b. GTD must carry an expiry; expiry can't be in the past.
+  // IOC/FOK are immediate so they ignore time_in_force entirely.
+  if (orderType !== 'ioc' && orderType !== 'fok') {
+    if (tif === 'gtd' && !order.expires_at) {
+      return {
+        ok: false,
+        reason_code: 'EXPIRY_REQUIRED',
+        detail: 'time_in_force=gtd requires an expires_at timestamp.',
+      };
+    }
+    if (order.expires_at) {
+      const exp = Date.parse(order.expires_at);
+      const now = snapshot.now_iso ? Date.parse(snapshot.now_iso) : Date.now();
+      if (Number.isFinite(exp) && exp <= now) {
+        return {
+          ok: false,
+          reason_code: 'EXPIRY_IN_PAST',
+          detail: `expires_at ${order.expires_at} is at or before now.`,
+        };
+      }
+    }
+  }
+
+  // 6c. post_only — reject if the order would take liquidity on submit.
+  // (For a limit buy: order would cross if price >= best ask; symmetrical
+  // for sell.) Without snapshot best-side info we conservatively allow.
+  if (order.post_only) {
+    if (orderType === 'market' || orderType === 'ioc' || orderType === 'fok') {
+      return {
+        ok: false,
+        reason_code: 'POST_ONLY_WOULD_CROSS',
+        detail: 'post_only is incompatible with market/IOC/FOK orders that always take liquidity.',
+      };
+    }
+    if (order.price_zar_mwh != null) {
+      const opp = order.side === 'buy' ? snapshot.best_ask_zar_mwh : snapshot.best_bid_zar_mwh;
+      if (opp != null) {
+        const wouldCross = order.side === 'buy' ? order.price_zar_mwh >= opp : order.price_zar_mwh <= opp;
+        if (wouldCross) {
+          return {
+            ok: false,
+            reason_code: 'POST_ONLY_WOULD_CROSS',
+            detail: `post_only ${order.side} at R${order.price_zar_mwh} would cross the opposite side at R${opp}.`,
+          };
+        }
+      }
+    }
+  }
+
+  // 6d. reduce_only — only allowed if the order would reduce |position|.
+  // Buy reduces a short (-ve), sell reduces a long (+ve). Flat → reject.
+  if (order.reduce_only) {
+    const pos = snapshot.current_position_mwh;
+    const reduces = (order.side === 'buy' && pos < 0) || (order.side === 'sell' && pos > 0);
+    const grows = (order.side === 'buy' && pos > 0) || (order.side === 'sell' && pos < 0);
+    if (!reduces || pos === 0) {
+      return {
+        ok: false,
+        reason_code: 'REDUCE_ONLY_INCREASES_POSITION',
+        detail: pos === 0
+          ? 'reduce_only requires an existing position; current position is flat.'
+          : `reduce_only ${order.side} would ${grows ? 'grow' : 'flip'} a position of ${pos.toFixed(1)} MWh.`,
+      };
+    }
+    // If volume exceeds |position|, the residual would flip the sign and
+    // grow the opposite side — also disallow under the conservative reading.
+    if (order.volume_mwh > Math.abs(pos)) {
+      return {
+        ok: false,
+        reason_code: 'REDUCE_ONLY_INCREASES_POSITION',
+        detail: `reduce_only volume ${order.volume_mwh} MWh exceeds current position ${Math.abs(pos)} MWh; residual would flip the side.`,
+      };
+    }
+  }
+
+  // 6e. FOK — must be fully fillable from current opposite-side liquidity.
+  // We don't pre-block IOC because partial fills (incl. zero) are its
+  // documented behaviour and the matcher cancels the residual.
+  if (orderType === 'fok') {
+    const liquidity = order.side === 'buy' ? (snapshot.ask_liquidity_mwh ?? 0) : (snapshot.bid_liquidity_mwh ?? 0);
+    if (liquidity < order.volume_mwh) {
+      return {
+        ok: false,
+        reason_code: 'FOK_INSUFFICIENT_LIQUIDITY',
+        detail: `Fill-or-kill needs ${order.volume_mwh} MWh; only ${liquidity.toFixed(1)} MWh of opposite-side liquidity is resting.`,
       };
     }
   }

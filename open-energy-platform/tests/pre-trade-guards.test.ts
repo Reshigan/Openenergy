@@ -189,6 +189,187 @@ describe('evaluateOrder · collateral', () => {
   });
 });
 
+// ─── Phase 2 (migration 050) — order-type, TIF, and modifier checks ──
+
+describe('evaluateOrder · stop / stop-limit', () => {
+  it('rejects a stop order without a trigger price', () => {
+    const r = evaluateOrder(order({ order_type: 'stop' }), snap());
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason_code).toBe('STOP_TRIGGER_REQUIRED');
+  });
+
+  it('rejects a stop_limit order with stop_trigger_price = 0', () => {
+    const r = evaluateOrder(order({ order_type: 'stop_limit', stop_trigger_price: 0 }), snap());
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason_code).toBe('STOP_TRIGGER_REQUIRED');
+  });
+
+  it('accepts a stop with a positive trigger price', () => {
+    const r = evaluateOrder(order({ order_type: 'stop', stop_trigger_price: 1_400 }), snap());
+    expect(r.ok).toBe(true);
+  });
+});
+
+describe('evaluateOrder · GTD expiry', () => {
+  it('rejects GTD without expires_at', () => {
+    const r = evaluateOrder(order({ time_in_force: 'gtd' }), snap());
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason_code).toBe('EXPIRY_REQUIRED');
+  });
+
+  it('rejects expires_at in the past', () => {
+    const r = evaluateOrder(
+      order({ time_in_force: 'gtd', expires_at: '2020-01-01T00:00:00Z' }),
+      snap({ now_iso: '2026-05-15T00:00:00Z' }),
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason_code).toBe('EXPIRY_IN_PAST');
+  });
+
+  it('accepts a future expires_at', () => {
+    const r = evaluateOrder(
+      order({ time_in_force: 'gtd', expires_at: '2099-01-01T00:00:00Z' }),
+      snap({ now_iso: '2026-05-15T00:00:00Z' }),
+    );
+    expect(r.ok).toBe(true);
+  });
+
+  it('ignores expires_at on IOC orders', () => {
+    const r = evaluateOrder(
+      order({ order_type: 'ioc', expires_at: '2020-01-01T00:00:00Z' }),
+      snap({ now_iso: '2026-05-15T00:00:00Z', ask_liquidity_mwh: 100 }),
+    );
+    expect(r.ok).toBe(true);
+  });
+});
+
+describe('evaluateOrder · post_only', () => {
+  it('rejects post_only on a market order outright', () => {
+    const r = evaluateOrder(order({ post_only: true, order_type: 'market', price_zar_mwh: null }), snap());
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason_code).toBe('POST_ONLY_WOULD_CROSS');
+  });
+
+  it('rejects post_only buy that crosses the best ask', () => {
+    const r = evaluateOrder(
+      order({ post_only: true, side: 'buy', price_zar_mwh: 1_500 }),
+      snap({ best_ask_zar_mwh: 1_490, best_bid_zar_mwh: 1_480 }),
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason_code).toBe('POST_ONLY_WOULD_CROSS');
+  });
+
+  it('rejects post_only sell that crosses the best bid', () => {
+    const r = evaluateOrder(
+      order({ post_only: true, side: 'sell', price_zar_mwh: 1_480 }),
+      snap({ best_ask_zar_mwh: 1_500, best_bid_zar_mwh: 1_490 }),
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason_code).toBe('POST_ONLY_WOULD_CROSS');
+  });
+
+  it('accepts post_only that rests passively below the ask', () => {
+    const r = evaluateOrder(
+      order({ post_only: true, side: 'buy', price_zar_mwh: 1_480 }),
+      snap({ best_ask_zar_mwh: 1_500, best_bid_zar_mwh: 1_470 }),
+    );
+    expect(r.ok).toBe(true);
+  });
+
+  it('accepts post_only when the opposite side is empty', () => {
+    const r = evaluateOrder(
+      order({ post_only: true, side: 'buy', price_zar_mwh: 1_500 }),
+      snap({ best_ask_zar_mwh: null }),
+    );
+    expect(r.ok).toBe(true);
+  });
+});
+
+describe('evaluateOrder · reduce_only', () => {
+  it('rejects reduce_only when the trader is flat', () => {
+    const r = evaluateOrder(order({ reduce_only: true }), snap({ current_position_mwh: 0 }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason_code).toBe('REDUCE_ONLY_INCREASES_POSITION');
+  });
+
+  it('rejects reduce_only buy on a long position (would grow it)', () => {
+    const r = evaluateOrder(order({ reduce_only: true, side: 'buy' }), snap({ current_position_mwh: 50 }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason_code).toBe('REDUCE_ONLY_INCREASES_POSITION');
+  });
+
+  it('rejects reduce_only sell larger than the long position (would flip)', () => {
+    const r = evaluateOrder(
+      order({ reduce_only: true, side: 'sell', volume_mwh: 60 }),
+      snap({ current_position_mwh: 50 }),
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason_code).toBe('REDUCE_ONLY_INCREASES_POSITION');
+  });
+
+  it('accepts reduce_only sell that exactly covers a long position', () => {
+    const r = evaluateOrder(
+      order({ reduce_only: true, side: 'sell', volume_mwh: 50 }),
+      snap({ current_position_mwh: 50 }),
+    );
+    expect(r.ok).toBe(true);
+  });
+
+  it('accepts reduce_only buy on a short position', () => {
+    const r = evaluateOrder(
+      order({ reduce_only: true, side: 'buy', volume_mwh: 30 }),
+      snap({ current_position_mwh: -50 }),
+    );
+    expect(r.ok).toBe(true);
+  });
+});
+
+describe('evaluateOrder · FOK', () => {
+  it('rejects FOK when opposite-side liquidity is insufficient', () => {
+    const r = evaluateOrder(
+      order({ order_type: 'fok', side: 'buy', volume_mwh: 100 }),
+      snap({ ask_liquidity_mwh: 40 }),
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason_code).toBe('FOK_INSUFFICIENT_LIQUIDITY');
+  });
+
+  it('accepts FOK when opposite-side liquidity covers volume', () => {
+    const r = evaluateOrder(
+      order({ order_type: 'fok', side: 'buy', volume_mwh: 100 }),
+      snap({ ask_liquidity_mwh: 250 }),
+    );
+    expect(r.ok).toBe(true);
+  });
+
+  it('does NOT pre-reject IOC for thin liquidity (matcher handles partial)', () => {
+    const r = evaluateOrder(
+      order({ order_type: 'ioc', side: 'buy', volume_mwh: 100 }),
+      snap({ ask_liquidity_mwh: 1 }),
+    );
+    expect(r.ok).toBe(true);
+  });
+});
+
+describe('evaluateOrder · display size', () => {
+  it('rejects display_size_mwh = 0', () => {
+    const r = evaluateOrder(order({ display_size_mwh: 0, volume_mwh: 50 }), snap());
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason_code).toBe('INVALID_DISPLAY_SIZE');
+  });
+
+  it('rejects display_size_mwh > volume_mwh', () => {
+    const r = evaluateOrder(order({ display_size_mwh: 80, volume_mwh: 50 }), snap());
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason_code).toBe('INVALID_DISPLAY_SIZE');
+  });
+
+  it('accepts a sensible iceberg slice', () => {
+    const r = evaluateOrder(order({ display_size_mwh: 5, volume_mwh: 50 }), snap());
+    expect(r.ok).toBe(true);
+  });
+});
+
 describe('suggestedSizeMwh', () => {
   it('returns null when there is no mark price', () => {
     expect(suggestedSizeMwh(snap({ mark_price_zar_mwh: null }), 'buy')).toBeNull();

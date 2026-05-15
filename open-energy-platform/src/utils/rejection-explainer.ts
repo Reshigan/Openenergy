@@ -167,6 +167,26 @@ function bucketize(input: ExplainerInput): string {
       const mark = Number(s.mark_price_zar_mwh || 0);
       return `et=${input.energy_type}|mark=${roundTo(mark, 50)}|px=${roundTo(input.price_zar_mwh || 0, 50)}`;
     }
+    case 'POST_ONLY_WOULD_CROSS': {
+      const opp = input.side === 'buy' ? Number(s.best_ask_zar_mwh || 0) : Number(s.best_bid_zar_mwh || 0);
+      return `et=${input.energy_type}|side=${input.side}|opp=${roundTo(opp, 25)}|px=${roundTo(input.price_zar_mwh || 0, 25)}`;
+    }
+    case 'REDUCE_ONLY_INCREASES_POSITION': {
+      const pos = Number(s.current_position_mwh || 0);
+      return `et=${input.energy_type}|side=${input.side}|pos=${roundTo(pos, 5)}|vol=${roundTo(input.volume_mwh, 5)}`;
+    }
+    case 'FOK_INSUFFICIENT_LIQUIDITY': {
+      const liq = Number(s[input.side === 'buy' ? 'ask_liquidity_mwh' : 'bid_liquidity_mwh'] || 0);
+      return `et=${input.energy_type}|side=${input.side}|liq=${roundTo(liq, 10)}|vol=${roundTo(input.volume_mwh, 10)}`;
+    }
+    case 'EXPIRY_REQUIRED':
+    case 'EXPIRY_IN_PAST':
+    case 'STOP_TRIGGER_REQUIRED':
+    case 'INVALID_DISPLAY_SIZE':
+    case 'INVALID_VOLUME':
+      // These are shape-only failures — the snapshot doesn't move the
+      // explanation. One bucket per (code, energy_type) is fine.
+      return `et=${input.energy_type}`;
     default:
       return `et=${input.energy_type}`;
   }
@@ -289,6 +309,75 @@ function deterministicFallback(input: ExplainerInput): { human_explanation: stri
         suggested_remediations: [
           { label: 'Contact support', action: 'contact_support' },
         ],
+      };
+    case 'POST_ONLY_WOULD_CROSS': {
+      const opp = input.side === 'buy'
+        ? Number((input.snapshot as { best_ask_zar_mwh?: number | null }).best_ask_zar_mwh ?? 0)
+        : Number((input.snapshot as { best_bid_zar_mwh?: number | null }).best_bid_zar_mwh ?? 0);
+      const passive = opp ? (input.side === 'buy' ? opp - 1 : opp + 1) : null;
+      return {
+        human_explanation: `A post-only ${input.side} can only rest passively. At R${input.price_zar_mwh ?? '?'} it would cross the opposite side at R${opp || '?'} and immediately take liquidity, which post-only forbids.`,
+        suggested_remediations: passive
+          ? [{
+              label: `Re-price to R${passive} to rest passively`,
+              action: 'retry_with_price',
+              payload: { price_zar_mwh: passive },
+            }]
+          : [{ label: 'Drop the post-only flag', action: 'review_open_orders' }],
+      };
+    }
+    case 'REDUCE_ONLY_INCREASES_POSITION': {
+      const pos = Number((input.snapshot as { current_position_mwh?: number }).current_position_mwh ?? 0);
+      return {
+        human_explanation: pos === 0
+          ? 'Reduce-only orders only make sense when you already hold a position; you are currently flat.'
+          : `Reduce-only ${input.side}s on a ${pos > 0 ? 'long' : 'short'} position can only shrink it, but this order would grow or flip it.`,
+        suggested_remediations: pos !== 0 && Math.abs(pos) > 0
+          ? [{
+              label: `Reduce size to ${Math.abs(pos)} MWh to fully flatten`,
+              action: 'retry_with_size',
+              payload: { volume_mwh: Math.abs(pos) },
+            }]
+          : [{ label: 'Drop the reduce-only flag', action: 'review_open_orders' }],
+      };
+    }
+    case 'EXPIRY_REQUIRED':
+      return {
+        human_explanation: 'Good-till-date (GTD) orders must include an explicit expires_at timestamp. Either pick a future time or switch the time-in-force to GTC.',
+        suggested_remediations: [
+          { label: 'Switch to GTC (good-till-cancelled)', action: 'review_open_orders' },
+        ],
+      };
+    case 'EXPIRY_IN_PAST':
+      return {
+        human_explanation: `The expiry you chose is at or before the current time, so the order would expire the instant it was placed.`,
+        suggested_remediations: [
+          { label: 'Pick a future expiry', action: 'review_open_orders' },
+        ],
+      };
+    case 'STOP_TRIGGER_REQUIRED':
+      return {
+        human_explanation: 'Stop and stop-limit orders need a positive stop_trigger_price — that\'s the level at which the order will activate against the market.',
+        suggested_remediations: [
+          { label: 'Switch to a plain limit order', action: 'review_open_orders' },
+        ],
+      };
+    case 'FOK_INSUFFICIENT_LIQUIDITY': {
+      const liq = Number((input.snapshot as { ask_liquidity_mwh?: number; bid_liquidity_mwh?: number })[input.side === 'buy' ? 'ask_liquidity_mwh' : 'bid_liquidity_mwh'] ?? 0);
+      return {
+        human_explanation: `Fill-or-kill needs the entire ${input.volume_mwh} MWh to clear in one shot, but only ${liq.toFixed(1)} MWh of opposite-side liquidity is resting on the book.`,
+        suggested_remediations: liq > 0
+          ? [
+              { label: `Reduce size to ${liq.toFixed(1)} MWh`, action: 'retry_with_size', payload: { volume_mwh: liq } },
+              { label: 'Switch to IOC (accepts partial fills)', action: 'review_open_orders' },
+            ]
+          : [{ label: 'Switch to a resting limit order', action: 'review_open_orders' }],
+      };
+    }
+    case 'INVALID_DISPLAY_SIZE':
+      return {
+        human_explanation: 'The iceberg display size must be greater than zero and at most equal to the total order volume.',
+        suggested_remediations: [],
       };
     case 'INVALID_VOLUME':
     default:
