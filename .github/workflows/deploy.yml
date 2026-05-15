@@ -107,11 +107,15 @@ jobs:
         run: |
           set +e
           status=0
-          # Build the file list: 001-018 + 049+ (skip the
-          # GLR-out-of-band band 019-048).
+          # Build the file list: 001-018 + 051+ (skip the
+          # out-of-band band 019-050). 049+050 add trade-order columns
+          # that depend on `good_till` from 020 — which is missing on
+          # prod, so those two error too. A separate maintenance PR
+          # will reconcile that band; today we only need 051-055 (the
+          # new L4 tables for Settlement / Trading / Lender) to land.
           files=$(ls migrations/*.sql | sort -V | awk -F/ '{
             n = substr($NF, 1, 3) + 0
-            if (n <= 18 || n >= 49) print
+            if (n <= 18 || n >= 51) print
           }')
           for f in $files; do
             echo "::group::Applying $f"
