@@ -1416,4 +1416,413 @@ trading.delete('/algo-rules/:id', async (c) => {
   return c.json({ success: true });
 });
 
+// ────────────────────────────────────────────────────────────────────────
+// L4 endpoints — trade allocations, fees, exceptions, gate state,
+// AI amendment suggestion.
+//
+// Pattern mirrors the settlement L4 surfaces (src/routes/settlement.ts):
+// each new table from migration 054 has list + write endpoints, state
+// machines reuse the open→investigating→resolved|rejected shape, and
+// every AI surface logs to its own audit table on creation + accept.
+// ────────────────────────────────────────────────────────────────────────
+
+import { computeTradeFees, type FillShape } from '../utils/trade-fees';
+import { gateStateFor, buildD1GateDeps } from '../utils/trade-gate';
+import {
+  suggestAmendment,
+  type OrderSnapshot,
+  type MarketSnapshot,
+} from '../utils/amendment-suggester';
+
+// GET /trading/gate?trading_day=YYYY-MM-DD&market_zone=ZA
+// Pre-trade UI calls this to decide whether to even show the order ticket.
+trading.get('/gate', async (c) => {
+  const day = c.req.query('trading_day') || new Date().toISOString().slice(0, 10);
+  const zone = c.req.query('market_zone') || 'ZA';
+  const state = await gateStateFor(day, zone, buildD1GateDeps(c.env.DB));
+  return c.json({ success: true, data: { trading_day: day, market_zone: zone, ...state } });
+});
+
+// POST /trading/matches/:id/fees/recompute — idempotent fee accrual.
+trading.post('/matches/:id/fees/recompute', async (c) => {
+  const matchId = c.req.param('id');
+  const fill = await c.env.DB.prepare(
+    `SELECT m.id AS match_id, m.buy_order_id, m.sell_order_id,
+            m.matched_volume_mwh, COALESCE(m.matched_price, m.matched_price_zar) AS matched_price_zar,
+            bo.participant_id AS buy_participant_id, bo.market_type AS market_type,
+            so.participant_id AS sell_participant_id
+       FROM trade_matches m
+       INNER JOIN trade_orders bo ON bo.id = m.buy_order_id
+       INNER JOIN trade_orders so ON so.id = m.sell_order_id
+      WHERE m.id = ?`,
+  )
+    .bind(matchId)
+    .first<FillShape>();
+  if (!fill) return c.json({ success: false, error: 'Match not found' }, 404);
+
+  const fees = computeTradeFees(fill);
+  let inserted = 0;
+  for (const f of fees) {
+    const r = await c.env.DB.prepare(
+      `INSERT OR IGNORE INTO trade_fees
+        (id, match_id, order_id, participant_id, fee_type, basis, amount_zar, reason, calc_rule_version, applied_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+      .bind(
+        f.id,
+        f.match_id,
+        f.order_id,
+        f.participant_id,
+        f.fee_type,
+        f.basis,
+        f.amount_zar,
+        f.reason,
+        f.calc_rule_version,
+        f.applied_by ?? 'system',
+      )
+      .run()
+      .catch(() => ({ changes: 0 } as any));
+    inserted += Number((r as any)?.changes || 0);
+  }
+
+  const rows = await c.env.DB.prepare(
+    `SELECT id, participant_id, fee_type, basis, amount_zar, reason, calc_rule_version, calculated_at
+       FROM trade_fees WHERE match_id = ? ORDER BY calculated_at DESC`,
+  )
+    .bind(matchId)
+    .all();
+  return c.json({ success: true, data: { fees: rows.results || [], new_rows: inserted } });
+});
+
+// GET /trading/matches/:id/fees
+trading.get('/matches/:id/fees', async (c) => {
+  const matchId = c.req.param('id');
+  const rows = await c.env.DB.prepare(
+    `SELECT id, participant_id, fee_type, basis, amount_zar, reason, calc_rule_version, calculated_at
+       FROM trade_fees WHERE match_id = ? ORDER BY calculated_at DESC`,
+  )
+    .bind(matchId)
+    .all();
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+// POST /trading/matches/:id/allocations — attribute a fill to one or more
+// internal lots / sub-accounts.
+trading.post('/matches/:id/allocations', async (c) => {
+  const user = getCurrentUser(c);
+  const matchId = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as {
+    side?: 'buy' | 'sell';
+    splits?: Array<{ participant_id: string; volume_mwh: number; sub_account?: string; lot_id?: string; reason?: string }>;
+  };
+  if (!body.side || !Array.isArray(body.splits) || body.splits.length === 0) {
+    return c.json({ success: false, error: 'side and ≥1 splits required' }, 400);
+  }
+
+  const fill = await c.env.DB.prepare(
+    `SELECT m.id, m.buy_order_id, m.sell_order_id, m.matched_volume_mwh,
+            COALESCE(m.matched_price, m.matched_price_zar) AS matched_price_zar,
+            bo.participant_id AS buy_pid, so.participant_id AS sell_pid
+       FROM trade_matches m
+       INNER JOIN trade_orders bo ON bo.id = m.buy_order_id
+       INNER JOIN trade_orders so ON so.id = m.sell_order_id
+      WHERE m.id = ?`,
+  )
+    .bind(matchId)
+    .first<any>();
+  if (!fill) return c.json({ success: false, error: 'Match not found' }, 404);
+
+  const orderId = body.side === 'buy' ? fill.buy_order_id : fill.sell_order_id;
+  const ownerId = body.side === 'buy' ? fill.buy_pid : fill.sell_pid;
+  if (ownerId !== user.id && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Forbidden — you do not own this side of the trade' }, 403);
+  }
+
+  const totalRequested = body.splits.reduce((s, sp) => s + Number(sp.volume_mwh || 0), 0);
+  if (Math.abs(totalRequested - fill.matched_volume_mwh) > 0.001) {
+    return c.json(
+      {
+        success: false,
+        error: 'allocation total must equal matched volume',
+        detail: { requested_total: totalRequested, matched_volume: fill.matched_volume_mwh },
+      },
+      422,
+    );
+  }
+
+  const ids: string[] = [];
+  for (const sp of body.splits) {
+    const id = crypto.randomUUID();
+    await c.env.DB.prepare(
+      `INSERT OR IGNORE INTO trade_allocations
+        (id, match_id, order_id, participant_id, allocated_volume_mwh,
+         allocated_price_zar, sub_account, lot_id, reason, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+      .bind(
+        id,
+        matchId,
+        orderId,
+        sp.participant_id,
+        Number(sp.volume_mwh),
+        Number(fill.matched_price_zar),
+        sp.sub_account || null,
+        sp.lot_id || null,
+        sp.reason || null,
+        user.id,
+      )
+      .run();
+    ids.push(id);
+  }
+  return c.json({ success: true, data: { allocation_ids: ids } });
+});
+
+// GET /trading/matches/:id/allocations
+trading.get('/matches/:id/allocations', async (c) => {
+  const matchId = c.req.param('id');
+  const rows = await c.env.DB.prepare(
+    `SELECT id, order_id, participant_id, allocated_volume_mwh,
+            allocated_price_zar, sub_account, lot_id, reason, status, created_at
+       FROM trade_allocations WHERE match_id = ?
+       ORDER BY created_at DESC`,
+  )
+    .bind(matchId)
+    .all();
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+// POST /trading/exceptions — file a trade exception against a fill.
+trading.post('/exceptions', async (c) => {
+  const user = getCurrentUser(c);
+  const body = (await c.req.json().catch(() => ({}))) as {
+    match_id?: string;
+    exception_type?: string;
+    severity?: string;
+    reason?: string;
+    expected_value?: number;
+    actual_value?: number;
+  };
+  if (!body.match_id || !body.exception_type || !body.reason || body.reason.length < 3) {
+    return c.json({ success: false, error: 'match_id, exception_type, reason (≥3 chars) required' }, 400);
+  }
+
+  // Caller must be a party to the fill.
+  const fill = await c.env.DB.prepare(
+    `SELECT m.id, m.buy_order_id, m.sell_order_id,
+            bo.participant_id AS buy_pid, so.participant_id AS sell_pid
+       FROM trade_matches m
+       INNER JOIN trade_orders bo ON bo.id = m.buy_order_id
+       INNER JOIN trade_orders so ON so.id = m.sell_order_id
+      WHERE m.id = ?`,
+  )
+    .bind(body.match_id)
+    .first<any>();
+  if (!fill) return c.json({ success: false, error: 'Match not found' }, 404);
+  const involved = user.id === fill.buy_pid || user.id === fill.sell_pid || user.role === 'admin';
+  if (!involved) return c.json({ success: false, error: 'Forbidden' }, 403);
+
+  // Best-effort: tie the exception to the caller's order side.
+  const orderId = user.id === fill.buy_pid ? fill.buy_order_id : fill.sell_order_id;
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO trade_exceptions
+      (id, match_id, order_id, exception_type, severity, reported_by, reason,
+       expected_value, actual_value)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  )
+    .bind(
+      id,
+      body.match_id,
+      orderId,
+      body.exception_type,
+      body.severity || 'medium',
+      user.id,
+      body.reason,
+      body.expected_value ?? null,
+      body.actual_value ?? null,
+    )
+    .run();
+  return c.json({ success: true, data: { id, status: 'open' } });
+});
+
+// GET /trading/exceptions — cross-fill listing for the caller, filterable.
+trading.get('/exceptions', async (c) => {
+  const user = getCurrentUser(c);
+  const status = c.req.query('status');
+  const where: string[] = [
+    '(bo.participant_id = ? OR so.participant_id = ? OR e.reported_by = ?)',
+  ];
+  const binds: unknown[] = [user.id, user.id, user.id];
+  if (status) { where.push('e.status = ?'); binds.push(status); }
+  const rows = await c.env.DB.prepare(
+    `SELECT e.id, e.match_id, e.order_id, e.exception_type, e.severity, e.status,
+            e.reported_by, e.reported_at, e.reason, e.expected_value, e.actual_value,
+            e.resolution_outcome, e.resolution_notes, e.resolved_at,
+            m.matched_volume_mwh, COALESCE(m.matched_price, m.matched_price_zar) AS matched_price_zar
+       FROM trade_exceptions e
+       INNER JOIN trade_matches m ON m.id = e.match_id
+       INNER JOIN trade_orders bo ON bo.id = m.buy_order_id
+       INNER JOIN trade_orders so ON so.id = m.sell_order_id
+      WHERE ${where.join(' AND ')}
+      ORDER BY CASE e.severity
+        WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 END,
+        e.reported_at DESC
+      LIMIT 200`,
+  )
+    .bind(...binds)
+    .all()
+    .catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+// POST /trading/exceptions/:id/transition — state machine transition,
+// mirroring settlement-breaks transition.
+trading.post('/exceptions/:id/transition', async (c) => {
+  const user = getCurrentUser(c);
+  const exId = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as {
+    to?: string;
+    outcome?: string;
+    notes?: string;
+  };
+  const to = String(body.to || '').trim();
+  if (!['investigating', 'resolved', 'rejected'].includes(to)) {
+    return c.json({ success: false, error: 'Invalid transition target' }, 400);
+  }
+
+  const ex = await c.env.DB.prepare(
+    `SELECT e.id, e.status, e.match_id,
+            bo.participant_id AS buy_pid, so.participant_id AS sell_pid
+       FROM trade_exceptions e
+       INNER JOIN trade_matches m ON m.id = e.match_id
+       INNER JOIN trade_orders bo ON bo.id = m.buy_order_id
+       INNER JOIN trade_orders so ON so.id = m.sell_order_id
+      WHERE e.id = ?`,
+  )
+    .bind(exId)
+    .first<any>();
+  if (!ex) return c.json({ success: false, error: 'Exception not found' }, 404);
+  const involved = user.id === ex.buy_pid || user.id === ex.sell_pid || user.role === 'admin';
+  if (!involved) return c.json({ success: false, error: 'Forbidden' }, 403);
+  if (ex.status === 'resolved' || ex.status === 'rejected') {
+    return c.json({ success: false, error: `Exception is ${ex.status}; no further transitions` }, 422);
+  }
+  if (to === 'resolved' && ex.status !== 'investigating') {
+    return c.json({ success: false, error: 'Move to investigating before resolving' }, 422);
+  }
+  if ((to === 'resolved' || to === 'rejected') && (!body.notes || body.notes.length < 3)) {
+    return c.json({ success: false, error: 'Notes ≥3 chars required on terminal transitions' }, 400);
+  }
+
+  const now = new Date().toISOString();
+  const isTerminal = to === 'resolved' || to === 'rejected';
+  await c.env.DB.prepare(
+    `UPDATE trade_exceptions
+       SET status = ?, resolution_outcome = ?, resolution_notes = ?,
+           resolved_at = ?, resolved_by = ?, updated_at = ?
+     WHERE id = ?`,
+  )
+    .bind(
+      to,
+      isTerminal ? (body.outcome || (to === 'resolved' ? 'adjusted' : 'no_action')) : null,
+      body.notes || null,
+      isTerminal ? now : null,
+      isTerminal ? user.id : null,
+      now,
+      exId,
+    )
+    .run();
+  return c.json({ success: true, data: { id: exId, status: to } });
+});
+
+// POST /trading/orders/:id/amend-suggest — AI inline amendment hint.
+// Computes the best deterministic suggestion for an open order and
+// records it to ai_trade_amendments. The SPA renders the rationale +
+// 1-click accept; the accept endpoint marks accepted_at.
+trading.post('/orders/:id/amend-suggest', async (c) => {
+  const user = getCurrentUser(c);
+  const orderId = c.req.param('id');
+  const order = await c.env.DB.prepare(
+    `SELECT id, participant_id, side, energy_type, volume_mwh,
+            COALESCE(price_min, price_max) AS price_zar_mwh,
+            status, time_in_force, posted_at,
+            COALESCE(matched_volume_mwh, 0) AS filled_volume_mwh
+       FROM trade_orders WHERE id = ?`,
+  )
+    .bind(orderId)
+    .first<OrderSnapshot>()
+    .catch(() => null);
+  if (!order) return c.json({ success: false, error: 'Order not found' }, 404);
+  if (order.participant_id !== user.id && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+  if (order.status !== 'open' && order.status !== 'partial') {
+    return c.json({ success: false, error: `Order is ${order.status}; no amendment applicable` }, 422);
+  }
+
+  // Build a market snapshot from the orderbook aggregate.
+  const market = await c.env.DB.prepare(
+    `SELECT
+       (SELECT MAX(COALESCE(price_max, price_min)) FROM trade_orders
+         WHERE energy_type = ? AND side = 'buy' AND status IN ('open','partial')) AS best_bid,
+       (SELECT MIN(COALESCE(price_min, price_max)) FROM trade_orders
+         WHERE energy_type = ? AND side = 'sell' AND status IN ('open','partial')) AS best_ask,
+       (SELECT COALESCE(SUM(volume_mwh - COALESCE(matched_volume_mwh,0)), 0) FROM trade_orders
+         WHERE energy_type = ? AND side = 'buy' AND status IN ('open','partial')) AS bid_liquidity_mwh,
+       (SELECT COALESCE(SUM(volume_mwh - COALESCE(matched_volume_mwh,0)), 0) FROM trade_orders
+         WHERE energy_type = ? AND side = 'sell' AND status IN ('open','partial')) AS ask_liquidity_mwh`,
+  )
+    .bind(order.energy_type, order.energy_type, order.energy_type, order.energy_type)
+    .first<MarketSnapshot>()
+    .catch(() => null);
+  if (!market) return c.json({ success: false, error: 'Market snapshot unavailable' }, 500);
+
+  const suggestion = suggestAmendment(order, market);
+  if (!suggestion) return c.json({ success: true, data: { suggestion: null } });
+
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO ai_trade_amendments
+      (id, participant_id, order_id, suggestion_kind, current_state, suggested_state,
+       rationale, confidence, source)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  )
+    .bind(
+      id,
+      order.participant_id,
+      order.id,
+      suggestion.kind,
+      JSON.stringify(suggestion.current_state),
+      JSON.stringify(suggestion.suggested_state),
+      suggestion.rationale,
+      suggestion.confidence,
+      suggestion.source,
+    )
+    .run()
+    .catch(() => {});
+
+  return c.json({
+    success: true,
+    data: {
+      suggestion_id: id,
+      ...suggestion,
+    },
+  });
+});
+
+// POST /trading/amend-suggestions/:id/accept — audit the accept.
+trading.post('/amend-suggestions/:id/accept', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  await c.env.DB.prepare(
+    `UPDATE ai_trade_amendments
+       SET accepted_at = datetime('now'), accepted_by = ?
+     WHERE id = ? AND participant_id = ?`,
+  )
+    .bind(user.id, id, user.id)
+    .run()
+    .catch(() => {});
+  return c.json({ success: true });
+});
+
 export default trading;

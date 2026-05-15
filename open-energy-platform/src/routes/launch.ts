@@ -237,11 +237,49 @@ async function buildTraderBoard(c: any, user: any): Promise<LaunchPayload> {
     .first()
     .catch(() => ({ m: 0 } as any));
 
-  const rejections = Number(r?.rejections_24h || 0);
-  const openOrders = Number(r?.open_orders || 0);
-  const fills24h = Number(r?.fills_24h || 0);
-  const notional = Math.round(Number(r?.notional_24h || 0));
-  const margin = Math.round(Number(marginRow?.m || 0));
+  // L4 trader surfaces — open trade exceptions filed against this trader's
+  // fills, plus 24h fees ledger sum. Both wrapped in .catch so older
+  // deploys without migration 054 keep working.
+  const exceptionsOpen = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM trade_exceptions e
+       INNER JOIN trade_matches m ON m.id = e.match_id
+       INNER JOIN trade_orders bo ON bo.id = m.buy_order_id
+       INNER JOIN trade_orders so ON so.id = m.sell_order_id
+      WHERE e.status IN ('open','investigating')
+        AND (bo.participant_id = ? OR so.participant_id = ?)`,
+  )
+    .bind(user.id, user.id)
+    .first()
+    .catch(() => null as any);
+
+  const fees24hRow = await c.env.DB.prepare(
+    `SELECT COALESCE(SUM(amount_zar), 0) AS s FROM trade_fees
+      WHERE participant_id = ?
+        AND calculated_at >= datetime('now','-1 day')`,
+  )
+    .bind(user.id)
+    .first()
+    .catch(() => null as any);
+
+  const allocPendingRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS c FROM trade_matches m
+       INNER JOIN trade_orders o ON (o.id = m.buy_order_id OR o.id = m.sell_order_id)
+      WHERE o.participant_id = ?
+        AND NOT EXISTS (SELECT 1 FROM trade_allocations a WHERE a.match_id = m.id AND a.order_id = o.id)
+        AND m.matched_at >= datetime('now','-30 days')`,
+  )
+    .bind(user.id)
+    .first()
+    .catch(() => null as any);
+
+  const rejections = Number((r as any)?.rejections_24h || 0);
+  const openOrders = Number((r as any)?.open_orders || 0);
+  const fills24h = Number((r as any)?.fills_24h || 0);
+  const notional = Math.round(Number((r as any)?.notional_24h || 0));
+  const margin = Math.round(Number((marginRow as any)?.m || 0));
+  const exceptionsN = Number((exceptionsOpen as any)?.c || 0);
+  const fees24h = Math.round(Number((fees24hRow as any)?.s || 0));
+  const allocPending = Number((allocPendingRow as any)?.c || 0);
 
   return {
     role: 'trader',
@@ -268,6 +306,33 @@ async function buildTraderBoard(c: any, user: any): Promise<LaunchPayload> {
         footer: rejections > 3 ? 'investigate' : undefined,
       },
       { key: 'margin_reserved', label: 'Margin reserved', value: margin, unit: 'ZAR', tone: 'neutral', href: '/trader-risk' },
+      {
+        key: 'exceptions_open',
+        label: 'Open exceptions',
+        value: exceptionsN,
+        tone: exceptionsN > 0 ? 'warn' : 'good',
+        href: '/trading?tab=exceptions',
+      },
+      ...(fees24h > 0
+        ? ([{
+            key: 'fees_24h',
+            label: '24h fees',
+            value: fees24h,
+            unit: 'ZAR',
+            tone: 'neutral' as Tone,
+            href: '/trading?tab=fees',
+          }] as Kpi[])
+        : []),
+      ...(allocPending > 0
+        ? ([{
+            key: 'allocations_pending',
+            label: 'Unallocated fills',
+            value: allocPending,
+            tone: 'warn' as Tone,
+            href: '/trading?tab=allocations',
+            footer: '30 days',
+          }] as Kpi[])
+        : []),
     ],
     workflows: [
       {
@@ -306,14 +371,14 @@ async function buildTraderBoard(c: any, user: any): Promise<LaunchPayload> {
         metric: { label: '24h', value: rejections, tone: rejections > 0 ? 'warn' : 'good' },
       },
     ],
-    ai_suggestions: await buildTraderAiSuggestions(c, user, { openOrders, rejections }),
+    ai_suggestions: await buildTraderAiSuggestions(c, user, { openOrders, rejections, exceptionsN, allocPending }),
   };
 }
 
 async function buildTraderAiSuggestions(
   c: any,
   user: any,
-  ctx: { openOrders: number; rejections: number },
+  ctx: { openOrders: number; rejections: number; exceptionsN: number; allocPending: number },
 ): Promise<AiSuggestion[]> {
   const out: AiSuggestion[] = [];
 
@@ -341,9 +406,11 @@ async function buildTraderAiSuggestions(
   }
 
   // Suggestion 2: stale open orders. If any open order is older than
-  // 4 hours, suggest the trader review or expire it.
+  // 4 hours, suggest the trader review or expire it. With migration 054
+  // landed, the order's detail view can call POST /trading/orders/:id/
+  // amend-suggest for a deterministic re-price / split suggestion.
   const stale = await c.env.DB.prepare(
-    `SELECT id, side, volume_mwh, price_zar, posted_at FROM trade_orders
+    `SELECT id, side, volume_mwh, price_min, price_max, posted_at FROM trade_orders
       WHERE participant_id = ? AND status IN ('open','partial')
         AND posted_at <= datetime('now','-4 hours')
       ORDER BY posted_at ASC LIMIT 1`,
@@ -353,12 +420,39 @@ async function buildTraderAiSuggestions(
     .catch(() => null as any);
   if (stale) {
     out.push({
-      key: `stale_order_${stale.id}`,
-      title: `Stale ${stale.side} order on the book`,
-      why: `Posted ${stale.posted_at} and still unfilled. Spread may have moved — re-price or cancel before margin churns.`,
+      key: `stale_order_${(stale as any).id}`,
+      title: `Stale ${(stale as any).side} order on the book`,
+      why: `Posted ${(stale as any).posted_at} and still unfilled. Open the order to see an AI-suggested re-price or split before margin churns.`,
       confidence: 0.66,
-      accept: { label: 'Open order', href: `/trading?tab=orders&focus=${stale.id}` },
+      accept: { label: 'Open order with amend-suggest', href: `/trading?tab=orders&focus=${(stale as any).id}&amend=1` },
       dismiss: { label: 'Leave it' },
+    });
+  }
+
+  // Suggestion 3 (L4): unallocated fills. Once trades fill, attribute
+  // them to internal lots so risk + reporting reflect reality.
+  if (ctx.allocPending > 0) {
+    out.push({
+      key: 'allocations_pending',
+      title: `${ctx.allocPending} fill${ctx.allocPending === 1 ? '' : 's'} need allocation`,
+      why: 'Fills sitting unallocated for 30+ days break the risk + reporting view. Attribute them to the desk / fund / lot they belong to.',
+      confidence: 0.85,
+      accept: { label: 'Open allocations', href: '/trading?tab=allocations' },
+      dismiss: { label: 'Dismiss' },
+    });
+  }
+
+  // Suggestion 4 (L4): open trade exceptions. Recurring exception types
+  // suggest a systemic issue (data feed, off-market venue) worth
+  // investigating rather than handling each one.
+  if (ctx.exceptionsN > 0) {
+    out.push({
+      key: 'exceptions_open',
+      title: `${ctx.exceptionsN} trade exception${ctx.exceptionsN === 1 ? '' : 's'} need triage`,
+      why: 'Open trade exceptions tie up risk capital and delay clean reporting. Resolve or escalate within 24h to keep the book accurate.',
+      confidence: 0.78,
+      accept: { label: 'Open exceptions', href: '/trading?tab=exceptions' },
+      dismiss: { label: 'Dismiss' },
     });
   }
 
