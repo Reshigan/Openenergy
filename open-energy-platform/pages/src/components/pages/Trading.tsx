@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, BookOpen, Brain,
+  Activity, AlertCircle, AlertTriangle, ArrowDownRight, ArrowUpRight, BookOpen, Brain,
   ChevronDown, ChevronRight, Cpu, Edit3, Gauge,
   Play, Plus, RefreshCw, Search, Sparkles, Target, TrendingUp, X, XCircle, Zap,
 } from 'lucide-react';
@@ -28,7 +28,7 @@ import { ExportBar } from '../ExportBar';
  * UI stays usable in demo mode.
  * ═══════════════════════════════════════════════════════════════════════ */
 
-type Tab = 'terminal' | 'algo' | 'backtest' | 'blotter' | 'risk' | 'rejections';
+type Tab = 'terminal' | 'algo' | 'backtest' | 'blotter' | 'risk' | 'rejections' | 'exceptions';
 
 const TABS: { id: Tab; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
   { id: 'terminal',   label: 'Terminal',   icon: BookOpen },
@@ -37,6 +37,7 @@ const TABS: { id: Tab; label: string; icon: React.ComponentType<{ size?: number 
   { id: 'blotter',    label: 'Blotter',    icon: Activity },
   { id: 'risk',       label: 'Risk',       icon: Gauge },
   { id: 'rejections', label: 'Rejections', icon: XCircle },
+  { id: 'exceptions', label: 'Exceptions', icon: AlertCircle },
 ];
 
 const formatZAR = (val: number) =>
@@ -109,6 +110,7 @@ export function Trading() {
       {tab === 'blotter' && <BlotterTab />}
       {tab === 'risk' && <RiskTab />}
       {tab === 'rejections' && <RejectionsTab />}
+      {tab === 'exceptions' && <ExceptionsTab />}
     </div>
   );
 }
@@ -1349,3 +1351,331 @@ function AmendModal({
 }
 
 export default Trading;
+
+
+
+// ════════════════════════════════════════════════════════════════════════
+// Tab 7 — Exceptions (L4 trade-side counterpart of settlement breaks)
+//
+// Lists every trade_exceptions row across fills the trader is party to.
+// State machine: open → investigating → resolved | rejected; terminal
+// transitions require notes (mirrors Settlement Breaks tab pattern).
+// Trader files exceptions against bad-price / off-market / wrong-volume
+// fills here rather than going through the full dispute / break-glass
+// flow — the back office triages and resolves with an outcome.
+// ════════════════════════════════════════════════════════════════════════
+
+type TradeExceptionRow = {
+  id: string;
+  match_id: string;
+  order_id: string;
+  exception_type: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  status: 'open' | 'investigating' | 'resolved' | 'rejected';
+  reported_by: string;
+  reported_at: string;
+  reason: string;
+  expected_value: number | null;
+  actual_value: number | null;
+  resolution_outcome: string | null;
+  resolution_notes: string | null;
+  resolved_at: string | null;
+  matched_volume_mwh: number;
+  matched_price_zar: number;
+};
+
+const EX_SEVERITY_PILL: Record<string, string> = {
+  low: 'bg-gray-100 text-gray-700',
+  medium: 'bg-blue-100 text-blue-700',
+  high: 'bg-amber-100 text-amber-800',
+  critical: 'bg-red-100 text-red-700',
+};
+const EX_STATUS_PILL: Record<string, string> = {
+  open: 'bg-red-100 text-red-700',
+  investigating: 'bg-amber-100 text-amber-800',
+  resolved: 'bg-green-100 text-green-700',
+  rejected: 'bg-gray-200 text-gray-700',
+};
+
+function ExceptionsTab() {
+  const [rows, setRows] = useState<TradeExceptionRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [status, setStatus] = useState<string>('all');
+  const [resolving, setResolving] = useState<TradeExceptionRow | null>(null);
+  const [filing, setFiling] = useState<boolean>(false);
+
+  const load = useCallback(async () => {
+    setLoading(true); setErr(null);
+    try {
+      const params = new URLSearchParams();
+      if (status !== 'all') params.set('status', status);
+      const res = await api.get(`/trading/exceptions?${params.toString()}`);
+      setRows((res.data?.data as TradeExceptionRow[]) || []);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Failed to load exceptions');
+    } finally {
+      setLoading(false);
+    }
+  }, [status]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const transition = async (id: string, to: 'investigating' | 'resolved' | 'rejected', notes?: string, outcome?: string) => {
+    await api.post(`/trading/exceptions/${id}/transition`, { to, notes, outcome });
+    void load();
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2 justify-between">
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-[12px] text-[#6b7685]">Status:</span>
+          {(['all', 'open', 'investigating', 'resolved', 'rejected'] as const).map((s) => (
+            <button key={s} onClick={() => setStatus(s)}
+              className={`px-3 py-1 rounded-full text-[11px] capitalize ${status === s ? 'bg-[#1a3a5c] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
+              {s.replace(/_/g, ' ')}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => setFiling(true)}
+          className="h-9 px-3 rounded-md bg-amber-600 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-amber-700"
+        >
+          <Plus size={14} /> File exception
+        </button>
+      </div>
+
+      {loading && <div className="text-[13px] text-[#6b7685]">Loading…</div>}
+      {err && <div className="text-[13px] text-red-700">{err}</div>}
+      {!loading && !err && rows.length === 0 && (
+        <div className="rounded-xl border border-[#dde4ec] bg-white p-8 text-center">
+          <div className="text-[14px] font-semibold text-[#0f1c2e]">No exceptions filed</div>
+          <div className="text-[12px] text-[#6b7685] mt-1">Bad-price / off-market / wrong-volume fills filed against you will appear here.</div>
+        </div>
+      )}
+      {!loading && !err && rows.length > 0 && (
+        <div className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+          <table className="w-full text-[13px]">
+            <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+              <tr>
+                <th className="px-4 py-2">Type</th>
+                <th className="px-4 py-2">Severity</th>
+                <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-2">Fill</th>
+                <th className="px-4 py-2">Reported</th>
+                <th className="px-4 py-2">Reason</th>
+                <th className="px-4 py-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} className="border-t border-[#e5ebf2] hover:bg-[#f8fafc]">
+                  <td className="px-4 py-2 capitalize">{r.exception_type.replace(/_/g, ' ')}</td>
+                  <td className="px-4 py-2">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase ${EX_SEVERITY_PILL[r.severity] || 'bg-gray-100'}`}>{r.severity}</span>
+                  </td>
+                  <td className="px-4 py-2">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${EX_STATUS_PILL[r.status] || 'bg-gray-100'}`}>{r.status.replace(/_/g, ' ')}</span>
+                  </td>
+                  <td className="px-4 py-2 text-[#6b7685] text-[11px]">
+                    {num(r.matched_volume_mwh, 2)} MWh @ {formatZAR(r.matched_price_zar)}
+                  </td>
+                  <td className="px-4 py-2 text-[#6b7685]">{new Date(r.reported_at).toLocaleDateString()}</td>
+                  <td className="px-4 py-2 max-w-md">
+                    <span className="block truncate" title={r.reason}>{r.reason}</span>
+                  </td>
+                  <td className="px-4 py-2">
+                    <div className="flex gap-1">
+                      {r.status === 'open' && (
+                        <button onClick={() => transition(r.id, 'investigating')} className="px-2 py-1 text-[11px] bg-blue-50 text-blue-700 rounded">Investigate</button>
+                      )}
+                      {(r.status === 'open' || r.status === 'investigating') && (
+                        <>
+                          <button onClick={() => setResolving({ ...r, status: 'resolved' as any })} className="px-2 py-1 text-[11px] bg-green-50 text-green-700 rounded">Resolve</button>
+                          <button onClick={() => setResolving({ ...r, status: 'rejected' as any })} className="px-2 py-1 text-[11px] bg-gray-100 text-gray-700 rounded">Reject</button>
+                        </>
+                      )}
+                      {(r.status === 'resolved' || r.status === 'rejected') && (
+                        <span className="text-[11px] text-[#6b7685]">{r.resolution_outcome ? `outcome: ${r.resolution_outcome.replace(/_/g, ' ')}` : '—'}</span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {resolving && (
+        <ResolveExceptionModal
+          row={resolving}
+          onClose={() => setResolving(null)}
+          onDone={async (notes, outcome) => {
+            const to = resolving.status as 'resolved' | 'rejected';
+            setResolving(null);
+            await transition(resolving.id, to, notes, outcome);
+          }}
+        />
+      )}
+      {filing && (
+        <FileExceptionModal
+          onClose={() => setFiling(false)}
+          onDone={() => { setFiling(false); void load(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ResolveExceptionModal({
+  row, onClose, onDone,
+}: {
+  row: TradeExceptionRow;
+  onClose: () => void;
+  onDone: (notes: string, outcome: string) => Promise<void>;
+}) {
+  const [notes, setNotes] = useState('');
+  const isResolved = row.status === 'resolved';
+  const [outcome, setOutcome] = useState<string>(isResolved ? 'adjusted' : 'no_action');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const submit = async () => {
+    if (notes.trim().length < 3) { setErr('Notes ≥3 chars required.'); return; }
+    setSaving(true); setErr(null);
+    try { await onDone(notes, outcome); } catch (e: unknown) { setErr(e instanceof Error ? e.message : 'Failed'); setSaving(false); }
+  };
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
+          <h3 className="text-[16px] font-semibold text-[#0f1c2e]">{isResolved ? 'Resolve' : 'Reject'} exception</h3>
+          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-5 space-y-3">
+          {err && <div className="text-[12px] text-red-700">{err}</div>}
+          <div className="text-[12px] text-[#6b7685]">{row.reason}</div>
+          <label className="block text-[13px]">
+            <span className="text-[#6b7685]">Outcome</span>
+            <select value={outcome} onChange={(e) => setOutcome(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg">
+              {isResolved ? (
+                <>
+                  <option value="adjusted">Adjusted</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="rebooked">Rebooked</option>
+                  <option value="waived">Waived</option>
+                  <option value="escalated">Escalated</option>
+                </>
+              ) : (
+                <>
+                  <option value="no_action">No action — exception not substantiated</option>
+                  <option value="escalated">Escalate</option>
+                </>
+              )}
+            </select>
+          </label>
+          <label className="block text-[13px]">
+            <span className="text-[#6b7685]">Notes</span>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} placeholder="What changed? Required ≥3 chars." className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none" />
+          </label>
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${isResolved ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}>
+              {saving ? 'Saving…' : (isResolved ? 'Resolve' : 'Reject')}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FileExceptionModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+  const [matchId, setMatchId] = useState('');
+  const [exceptionType, setExceptionType] = useState('bad_price');
+  const [severity, setSeverity] = useState('medium');
+  const [reason, setReason] = useState('');
+  const [expected, setExpected] = useState('');
+  const [actual, setActual] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const submit = async () => {
+    if (!matchId) { setErr('Match (fill) ID required.'); return; }
+    if (reason.trim().length < 3) { setErr('Reason ≥3 chars required.'); return; }
+    setSaving(true); setErr(null);
+    try {
+      await api.post('/trading/exceptions', {
+        match_id: matchId,
+        exception_type: exceptionType,
+        severity,
+        reason,
+        expected_value: expected ? Number(expected) : undefined,
+        actual_value: actual ? Number(actual) : undefined,
+      });
+      onDone();
+    } catch (e: unknown) {
+      const anyErr = e as { response?: { data?: { error?: string } }; message?: string };
+      setErr(anyErr?.response?.data?.error || anyErr?.message || 'Failed to file');
+      setSaving(false);
+    }
+  };
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
+          <h3 className="text-[16px] font-semibold text-[#0f1c2e]">File a trade exception</h3>
+          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-5 space-y-3">
+          {err && <div className="text-[12px] text-red-700">{err}</div>}
+          <label className="block text-[13px]">
+            <span className="text-[#6b7685]">Fill (match) ID</span>
+            <input value={matchId} onChange={(e) => setMatchId(e.target.value)} placeholder="match_xxx" className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg font-mono text-[12px]" />
+          </label>
+          <label className="block text-[13px]">
+            <span className="text-[#6b7685]">Exception type</span>
+            <select value={exceptionType} onChange={(e) => setExceptionType(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg">
+              <option value="bad_price">Bad price</option>
+              <option value="off_market">Off-market execution</option>
+              <option value="wrong_counterparty">Wrong counterparty</option>
+              <option value="wrong_volume">Wrong volume</option>
+              <option value="duplicate_fill">Duplicate fill</option>
+              <option value="market_halt_override">Market-halt override</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+          <label className="block text-[13px]">
+            <span className="text-[#6b7685]">Severity</span>
+            <select value={severity} onChange={(e) => setSeverity(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg">
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block text-[13px]">
+              <span className="text-[#6b7685]">Expected value</span>
+              <input type="number" value={expected} onChange={(e) => setExpected(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg" />
+            </label>
+            <label className="block text-[13px]">
+              <span className="text-[#6b7685]">Actual value</span>
+              <input type="number" value={actual} onChange={(e) => setActual(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg" />
+            </label>
+          </div>
+          <label className="block text-[13px]">
+            <span className="text-[#6b7685]">Reason</span>
+            <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={4} placeholder="What is wrong with this fill? At least 3 characters." className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none" />
+          </label>
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button onClick={submit} disabled={saving} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50">
+              {saving ? 'Filing…' : 'File exception'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
