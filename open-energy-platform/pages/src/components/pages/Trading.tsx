@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Activity, ArrowDownRight, ArrowUpRight, BookOpen, Brain, Cpu, Gauge,
-  Play, Plus, RefreshCw, Search, Target, TrendingUp, Zap,
+  Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, BookOpen, Brain, Cpu, Gauge,
+  Play, Plus, RefreshCw, Search, Sparkles, Target, TrendingUp, XCircle, Zap,
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, CartesianGrid, Line, LineChart,
@@ -27,14 +27,15 @@ import { ExportBar } from '../ExportBar';
  * UI stays usable in demo mode.
  * ═══════════════════════════════════════════════════════════════════════ */
 
-type Tab = 'terminal' | 'algo' | 'backtest' | 'blotter' | 'risk';
+type Tab = 'terminal' | 'algo' | 'backtest' | 'blotter' | 'risk' | 'rejections';
 
 const TABS: { id: Tab; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
-  { id: 'terminal', label: 'Terminal',   icon: BookOpen },
-  { id: 'algo',     label: 'Algo Rules', icon: Cpu },
-  { id: 'backtest', label: 'Backtester', icon: Brain },
-  { id: 'blotter',  label: 'Blotter',    icon: Activity },
-  { id: 'risk',     label: 'Risk',       icon: Gauge },
+  { id: 'terminal',   label: 'Terminal',   icon: BookOpen },
+  { id: 'algo',       label: 'Algo Rules', icon: Cpu },
+  { id: 'backtest',   label: 'Backtester', icon: Brain },
+  { id: 'blotter',    label: 'Blotter',    icon: Activity },
+  { id: 'risk',       label: 'Risk',       icon: Gauge },
+  { id: 'rejections', label: 'Rejections', icon: XCircle },
 ];
 
 const formatZAR = (val: number) =>
@@ -101,25 +102,52 @@ export function Trading() {
         </nav>
       </header>
 
-      {tab === 'terminal' && <TerminalTab />}
+      {tab === 'terminal' && <TerminalTab onSeeRejections={() => setTab('rejections')} />}
       {tab === 'algo' && <AlgoRulesTab />}
       {tab === 'backtest' && <BacktesterTab />}
       {tab === 'blotter' && <BlotterTab />}
       {tab === 'risk' && <RiskTab />}
+      {tab === 'rejections' && <RejectionsTab />}
     </div>
   );
 }
 
 // ════════════════════════════════════════════════════════════════════════
 // Tab 1 — Terminal (order book + ticket + recent prints)
+//
+// AI inline assists (subtle, contextual — no separate AI panel):
+//   - Ghost-text size suggestion under Volume input, pulled from
+//     /trading/order-suggest, with a "why" tooltip showing headroom + mark.
+//   - On 422 rejection: structured RejectionCard inline under the ticket
+//     with reason code, AI explanation, and 1-2 one-click remediations.
 // ════════════════════════════════════════════════════════════════════════
-function TerminalTab() {
+
+interface RejectionPayload {
+  rejection_id: string;
+  reason_code: string;
+  detail: string;
+  notional_zar: number;
+  snapshot: Record<string, unknown>;
+}
+
+interface SuggestPayload {
+  suggested_volume_mwh: number | null;
+  free_collateral_zar: number;
+  headroom_zar: number;
+  mark_price_zar_mwh: number | null;
+  mark_age_minutes: number | null;
+  market_state: 'open' | 'closed' | 'halted_instrument' | 'halted_market';
+}
+
+function TerminalTab({ onSeeRejections }: { onSeeRejections: () => void }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [orderBook, setOrderBook] = useState<{ bids: OrderRow[]; asks: OrderRow[] }>({ bids: [], asks: [] });
   const [prints, setPrints] = useState<Array<{ matched_at: string; matched_price: number; matched_volume_mwh: number }>>([]);
   const [submitting, setSubmitting] = useState(false);
   const [order, setOrder] = useState({ side: 'buy' as 'buy' | 'sell', type: 'limit', price: '', volume: '', energy_type: 'solar' });
+  const [rejection, setRejection] = useState<RejectionPayload | null>(null);
+  const [suggest, setSuggest] = useState<SuggestPayload | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true); setError(null);
@@ -153,13 +181,47 @@ function TerminalTab() {
   }, []);
   useEffect(() => { refresh(); }, [refresh]);
 
+  // Ghost-text suggestion — refreshes whenever side/energy_type changes.
+  // Falls silent if the endpoint isn't available so the form stays usable.
+  useEffect(() => {
+    let alive = true;
+    api.get('/trading/order-suggest', { params: { side: order.side, energy_type: order.energy_type } })
+      .then((r) => { if (alive) setSuggest(r.data?.data || null); })
+      .catch(() => { if (alive) setSuggest(null); });
+    return () => { alive = false; };
+  }, [order.side, order.energy_type]);
+
+  const applyRemediation = useCallback(async (action: string, payload?: Record<string, unknown>) => {
+    if (action === 'retry_with_size' && payload?.volume_mwh != null) {
+      setOrder((o) => ({ ...o, volume: String(payload.volume_mwh) }));
+    } else if (action === 'retry_with_price' && payload?.price_zar_mwh != null) {
+      setOrder((o) => ({ ...o, price: String(payload.price_zar_mwh) }));
+    } else if (action === 'review_open_orders') {
+      onSeeRejections();
+      return;
+    }
+    setRejection(null);
+  }, [onSeeRejections]);
+
   const submit = async (e: React.FormEvent) => {
-    e.preventDefault(); setSubmitting(true);
+    e.preventDefault(); setSubmitting(true); setRejection(null); setError(null);
     try {
-      await api.post('/trading/orders', { ...order, price: Number(order.price), volume_mwh: Number(order.volume) });
+      await api.post('/trading/orders', {
+        side: order.side,
+        energy_type: order.energy_type,
+        price: Number(order.price),
+        volume_mwh: Number(order.volume),
+      });
       setOrder({ ...order, price: '', volume: '' });
       refresh();
-    } catch (e: unknown) { setError((e as Error).message || 'Order failed'); }
+    } catch (e: unknown) {
+      const err = e as { response?: { status?: number; data?: { error?: string; data?: RejectionPayload } } };
+      if (err.response?.status === 422 && err.response?.data?.data) {
+        setRejection(err.response.data.data);
+      } else {
+        setError(err.response?.data?.error || (e as Error).message || 'Order failed');
+      }
+    }
     finally { setSubmitting(false); }
   };
 
@@ -215,7 +277,21 @@ function TerminalTab() {
             </Field>
             <Field label="Volume (MWh)">
               <input type="number" required value={order.volume} onChange={(e) => setOrder({ ...order, volume: e.target.value })}
-                className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" placeholder="50" />
+                className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" placeholder={suggest?.suggested_volume_mwh != null ? String(suggest.suggested_volume_mwh) : '50'} />
+              {suggest?.suggested_volume_mwh != null && suggest.suggested_volume_mwh > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setOrder({ ...order, volume: String(suggest.suggested_volume_mwh) })}
+                  title={`Free collateral ${formatZAR(suggest.free_collateral_zar)} · headroom ${formatZAR(suggest.headroom_zar)}${suggest.mark_price_zar_mwh ? ` · mark R${num(suggest.mark_price_zar_mwh)}` : ''}`}
+                  className="mt-1 inline-flex items-center gap-1 text-[10px] text-[#3b82c4] hover:text-[#1a3a5c] hover:underline">
+                  <Sparkles size={10} /> max safe: {num(suggest.suggested_volume_mwh, 1)} MWh
+                </button>
+              )}
+              {suggest && suggest.market_state !== 'open' && (
+                <div className="mt-1 inline-flex items-center gap-1 text-[10px] text-[#c0392b]">
+                  <AlertTriangle size={10} /> market {suggest.market_state.replace('_', ' ')}
+                </div>
+              )}
             </Field>
             <Field label="Product">
               <select value={order.energy_type} onChange={(e) => setOrder({ ...order, energy_type: e.target.value })}
@@ -232,6 +308,7 @@ function TerminalTab() {
               {submitting ? 'Submitting…' : `Submit ${order.side.toUpperCase()}`}
             </button>
           </form>
+          {rejection && <RejectionCard rejection={rejection} onApplyRemediation={applyRemediation} onDismiss={() => setRejection(null)} onSeeAll={onSeeRejections} />}
         </section>
       </div>
 
@@ -587,21 +664,27 @@ function BlotterTab() {
 
 // ════════════════════════════════════════════════════════════════════════
 // Tab 5 — Risk
+//
+// AI inline assist: a one-line "what changed" narrative under the KPI grid,
+// generated from /trading/risk-narrative (5-min cached). No separate AI panel.
 // ════════════════════════════════════════════════════════════════════════
 function RiskTab() {
   const [positions, setPositions] = useState<Array<Record<string, unknown>>>([]);
   const [credit, setCredit] = useState<Record<string, unknown> | null>(null);
   const [collateral, setCollateral] = useState<Array<Record<string, unknown>>>([]);
+  const [narrative, setNarrative] = useState<{ headline: string; fallback?: boolean } | null>(null);
 
   useEffect(() => {
     Promise.all([
       api.get('/trader-risk/positions').catch(() => ({ data: { success: true, data: [] } })),
       api.get('/trader-risk/credit-check').catch(() => ({ data: { success: true, data: null } })),
       api.get('/trader-risk/collateral/accounts').catch(() => ({ data: { success: true, data: [] } })),
-    ]).then(([p, cr, co]) => {
+      api.get('/trading/risk-narrative').catch(() => ({ data: { success: true, data: null } })),
+    ]).then(([p, cr, co, nr]) => {
       setPositions((p.data?.data || []) as Array<Record<string, unknown>>);
       setCredit((cr.data?.data || null) as Record<string, unknown> | null);
       setCollateral((co.data?.data || []) as Array<Record<string, unknown>>);
+      setNarrative((nr.data?.data || null) as { headline: string; fallback?: boolean } | null);
     });
   }, []);
 
@@ -617,6 +700,13 @@ function RiskTab() {
         <KPI label="Unrealised P&L" value={formatZAR(totalUnrealised)} icon={TrendingUp} tone={totalUnrealised >= 0 ? 'up' : 'down'} />
         <KPI label="Credit util." value={`${num(utilisation, 1)}%`} icon={Gauge} tone={utilisation > 80 ? 'down' : 'up'} sub={credit?.credit_limit ? `Limit ${formatZAR(Number(credit.credit_limit))}` : undefined} />
       </div>
+
+      {narrative?.headline && (
+        <div className="rounded-lg border border-[#dde4ec] bg-[#fafbfd] px-4 py-2 text-[12px] text-[#3d4756] flex items-start gap-2">
+          <Sparkles size={12} className="mt-0.5 text-[#3b82c4] flex-shrink-0" />
+          <div className="flex-1">{narrative.headline}</div>
+        </div>
+      )}
 
       <section className="rounded-xl border border-[#dde4ec] bg-white">
         <header className="px-5 py-3 border-b border-[#eef2f7] flex items-center gap-2 font-display font-semibold text-[14px] text-[#0f1c2e]">
@@ -717,6 +807,231 @@ function BookSide({ rows, side }: { rows: OrderRow[]; side: 'bid' | 'ask' }) {
         ))}
         {rows.length === 0 && <div className="text-[11px] text-[#6b7685] py-2 text-center">No {side === 'bid' ? 'bids' : 'asks'}.</div>}
       </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// RejectionCard — inline, contextual AI explanation of a 422 from the
+// order ticket. Renders straight under the form so the trader sees WHY
+// the order was rejected and the 1-2 specific actions that would let it
+// through, without leaving the screen.
+// ════════════════════════════════════════════════════════════════════════
+interface ExplanationPayload {
+  human_explanation: string;
+  suggested_remediations: Array<{ label: string; action: string; payload?: Record<string, unknown> }>;
+  fallback?: boolean;
+  cached?: boolean;
+}
+
+function RejectionCard({
+  rejection,
+  onApplyRemediation,
+  onDismiss,
+  onSeeAll,
+}: {
+  rejection: RejectionPayload;
+  onApplyRemediation: (action: string, payload?: Record<string, unknown>) => void;
+  onDismiss: () => void;
+  onSeeAll: () => void;
+}) {
+  const [expl, setExpl] = useState<ExplanationPayload | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    api.get(`/trading/rejections/${rejection.rejection_id}/explain`)
+      .then((r) => { if (alive) setExpl(r.data?.data || null); })
+      .catch(() => { if (alive) setExpl(null); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [rejection.rejection_id]);
+
+  return (
+    <div className="mt-4 rounded-lg border border-[#f5c6c2] bg-[#fdf2f1] p-3 text-[12px]">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start gap-2">
+          <XCircle size={14} className="mt-0.5 text-[#c0392b] flex-shrink-0" />
+          <div>
+            <div className="font-semibold text-[#0f1c2e]">{humaniseReasonCode(rejection.reason_code)}</div>
+            <div className="text-[#3d4756] mt-0.5">{rejection.detail}</div>
+          </div>
+        </div>
+        <button onClick={onDismiss} className="text-[10px] text-[#6b7685] hover:text-[#3d4756]">Dismiss</button>
+      </div>
+      {(loading || expl?.human_explanation) && (
+        <div className="mt-2 flex items-start gap-2 text-[#3d4756]">
+          <Sparkles size={11} className="mt-0.5 text-[#3b82c4] flex-shrink-0" />
+          <div className="flex-1">
+            {loading ? <span className="text-[#6b7685]">Generating explanation…</span> : expl?.human_explanation}
+          </div>
+        </div>
+      )}
+      {expl && expl.suggested_remediations.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {expl.suggested_remediations.map((r, i) => (
+            <button
+              key={i}
+              onClick={() => onApplyRemediation(r.action, r.payload)}
+              className="h-7 px-3 rounded text-[11px] font-semibold bg-white border border-[#dde4ec] text-[#1a3a5c] hover:bg-[#eef2f7]">
+              {r.label}
+            </button>
+          ))}
+          <button
+            onClick={onSeeAll}
+            className="h-7 px-3 rounded text-[11px] font-semibold text-[#3b82c4] hover:underline">
+            All my rejections →
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function humaniseReasonCode(code: string): string {
+  return code.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (s) => s.toUpperCase());
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// Tab 6 — Rejections
+//
+// The audit log of every order placement that was blocked by pre-trade
+// gating. Each row expands to show the AI explanation; the structured
+// reason_code + snapshot are right there for support / risk officers.
+// ════════════════════════════════════════════════════════════════════════
+interface RejectionRow {
+  id: string;
+  attempted_at: string;
+  reason_code: string;
+  detail: string;
+  side: string;
+  energy_type: string;
+  volume_mwh: number;
+  price_zar_mwh: number | null;
+  notional_zar: number;
+}
+
+function RejectionsTab() {
+  const [rows, setRows] = useState<RejectionRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<Record<string, ExplanationPayload | 'loading' | 'error' | null>>({});
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await api.get('/trading/rejections');
+      setRows((r.data?.data || []) as RejectionRow[]);
+    } catch {
+      setRows([]);
+    } finally { setLoading(false); }
+  }, []);
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const toggle = useCallback(async (id: string) => {
+    if (expanded[id] && expanded[id] !== 'error') {
+      setExpanded((e) => ({ ...e, [id]: null }));
+      return;
+    }
+    setExpanded((e) => ({ ...e, [id]: 'loading' }));
+    try {
+      const r = await api.get(`/trading/rejections/${id}/explain`);
+      setExpanded((e) => ({ ...e, [id]: (r.data?.data || null) as ExplanationPayload | null }));
+    } catch {
+      setExpanded((e) => ({ ...e, [id]: 'error' }));
+    }
+  }, [expanded]);
+
+  return (
+    <div className="space-y-4">
+      <section className="rounded-xl border border-[#dde4ec] bg-white">
+        <header className="px-5 py-3 border-b border-[#eef2f7] flex items-center justify-between">
+          <div className="flex items-center gap-2 font-display font-semibold text-[14px] text-[#0f1c2e]">
+            <XCircle size={14} /> Rejected order attempts
+          </div>
+          <button onClick={refresh} className="h-8 px-2 text-[12px] inline-flex items-center gap-1 rounded border border-[#dde4ec] hover:bg-[#eef2f7]">
+            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} /> Refresh
+          </button>
+        </header>
+        {loading ? <div className="p-8 text-center text-[13px] text-[#6b7685]">Loading…</div> : (
+          rows.length === 0 ? (
+            <div className="p-8 text-center text-[13px] text-[#6b7685]">
+              No rejections in the last 100 placements. Pre-trade gating is letting your orders through.
+            </div>
+          ) : (
+            <div className="overflow-auto">
+              <table className="w-full text-[12px]">
+                <thead className="bg-[#fafbfd]">
+                  <tr className="text-[11px] uppercase text-[#6b7685]">
+                    <th className="px-4 py-2 text-left">Time</th>
+                    <th className="px-4 py-2 text-left">Reason</th>
+                    <th className="px-4 py-2 text-left">Order</th>
+                    <th className="px-4 py-2 text-right">Notional</th>
+                    <th className="px-4 py-2" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => {
+                    const ex = expanded[r.id];
+                    return (
+                      <React.Fragment key={r.id}>
+                        <tr className="border-t border-[#eef2f7] hover:bg-[#fafbfd]">
+                          <td className="px-4 py-2 font-mono">{new Date(r.attempted_at).toLocaleString()}</td>
+                          <td className="px-4 py-2">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#c0392b]">{humaniseReasonCode(r.reason_code)}</span>
+                            <div className="text-[#6b7685] text-[11px] mt-0.5">{r.detail}</div>
+                          </td>
+                          <td className="px-4 py-2">
+                            <span className={`text-[11px] font-semibold uppercase ${r.side === 'buy' ? 'text-[#1a8a5b]' : 'text-[#c0392b]'}`}>{r.side}</span>{' '}
+                            {num(r.volume_mwh, 1)} MWh {r.energy_type}
+                            {r.price_zar_mwh != null && <span className="text-[#6b7685]"> @ {formatZAR(r.price_zar_mwh)}</span>}
+                          </td>
+                          <td className="px-4 py-2 text-right font-mono">{formatZAR(r.notional_zar)}</td>
+                          <td className="px-4 py-2 text-right">
+                            <button onClick={() => toggle(r.id)} className="text-[11px] text-[#3b82c4] hover:underline inline-flex items-center gap-1">
+                              <Sparkles size={10} /> Why this happened {ex && ex !== 'error' && ex !== 'loading' ? '↑' : '→'}
+                            </button>
+                          </td>
+                        </tr>
+                        {ex === 'loading' && (
+                          <tr className="border-t border-[#eef2f7] bg-[#fafbfd]">
+                            <td colSpan={5} className="px-6 py-3 text-[#6b7685] text-[12px]">Generating explanation…</td>
+                          </tr>
+                        )}
+                        {ex === 'error' && (
+                          <tr className="border-t border-[#eef2f7] bg-[#fdf2f1]">
+                            <td colSpan={5} className="px-6 py-3 text-[#c0392b] text-[12px]">Could not generate an explanation. The structured reason and detail above stand on their own.</td>
+                          </tr>
+                        )}
+                        {ex && ex !== 'loading' && ex !== 'error' && (
+                          <tr className="border-t border-[#eef2f7] bg-[#fafbfd]">
+                            <td colSpan={5} className="px-6 py-3">
+                              <div className="flex items-start gap-2 text-[12px] text-[#3d4756]">
+                                <Sparkles size={12} className="mt-0.5 text-[#3b82c4] flex-shrink-0" />
+                                <div className="flex-1">{ex.human_explanation}</div>
+                              </div>
+                              {ex.suggested_remediations.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {ex.suggested_remediations.map((s, i) => (
+                                    <span key={i} className="h-6 px-2 rounded bg-white border border-[#dde4ec] text-[11px] text-[#1a3a5c] inline-flex items-center">
+                                      {s.label}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              {ex.cached && <div className="mt-1 text-[10px] text-[#6b7685]">cached</div>}
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )
+        )}
+      </section>
     </div>
   );
 }

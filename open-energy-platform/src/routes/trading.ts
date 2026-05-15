@@ -6,10 +6,107 @@ import { fireCascade } from '../utils/cascade';
 import { ask } from '../utils/ai';
 import { withLock, LockBusyError } from '../utils/locks';
 import { deriveShardKey, MatchingOrder } from '../utils/matching';
+import {
+  evaluateOrder,
+  suggestedSizeMwh,
+  notionalFor,
+  type ProposedOrder,
+  type RiskSnapshot,
+} from '../utils/pre-trade-guards';
+import { explainRejection } from '../utils/rejection-explainer';
+import { logAiDecision } from '../utils/ai-audit';
 import type { DurableObjectNamespace } from '@cloudflare/workers-types';
 
 const trading = new Hono<HonoEnv>();
 trading.use('*', authMiddleware);
+
+// ─── Risk snapshot loader ──────────────────────────────────────────────────
+// Pulls everything the pre-trade guards need in a single round-trip set.
+// Falls open on missing fields (e.g. no credit limit row → treat as 0) so
+// the guards reject explicitly rather than 500ing on null deref.
+async function loadRiskSnapshot(
+  env: HonoEnv['Bindings'],
+  participantId: string,
+  energyType: string,
+  deliveryDate: string | null,
+): Promise<RiskSnapshot> {
+  const [participant, limit, exposure, collateral, position, mark, halt] = await Promise.all([
+    env.DB.prepare(`SELECT status, kyc_status FROM participants WHERE id = ?`)
+      .bind(participantId).first<{ status: string; kyc_status: string }>(),
+    env.DB.prepare(
+      `SELECT limit_zar FROM credit_limits
+        WHERE participant_id = ?
+          AND (effective_to IS NULL OR effective_to >= datetime('now'))
+          AND effective_from <= datetime('now')
+        ORDER BY effective_from DESC LIMIT 1`,
+    ).bind(participantId).first<{ limit_zar: number }>(),
+    env.DB.prepare(
+      `SELECT COALESCE(SUM(remaining_volume_mwh * COALESCE(price, 0)), 0) AS exp
+         FROM trade_orders
+        WHERE participant_id = ? AND status IN ('open','partially_filled')`,
+    ).bind(participantId).first<{ exp: number }>(),
+    // Free collateral = sum of active account balances minus reserved margin
+    // for orders still open. Both halves are computed in SQLite to keep this
+    // a single set of round-trips.
+    env.DB.prepare(
+      `SELECT
+         (SELECT COALESCE(SUM(balance_zar), 0)
+            FROM collateral_accounts
+           WHERE participant_id = ? AND status = 'active') AS posted,
+         (SELECT COALESCE(SUM(amount_zar), 0)
+            FROM margin_reservations
+           WHERE participant_id = ? AND status = 'reserved') AS reserved`,
+    ).bind(participantId, participantId).first<{ posted: number; reserved: number }>(),
+    env.DB.prepare(
+      `SELECT COALESCE(SUM(net_volume_mwh), 0) AS pos
+         FROM trader_positions
+        WHERE participant_id = ? AND energy_type = ?`,
+    ).bind(participantId, energyType).first<{ pos: number }>(),
+    env.DB.prepare(
+      `SELECT mark_price_zar_mwh,
+              CAST((julianday('now') - julianday(COALESCE(computed_at, created_at))) * 24 * 60 AS INTEGER) AS age_minutes
+         FROM mark_prices
+        WHERE energy_type = ?
+          AND (delivery_date = ? OR (delivery_date IS NULL AND ? IS NULL))
+        ORDER BY mark_date DESC LIMIT 1`,
+    ).bind(energyType, deliveryDate, deliveryDate).first<{ mark_price_zar_mwh: number; age_minutes: number }>(),
+    // Optional halt — stored in KV so operators can pause a market without
+    // a deploy. Key shape: 'market:halt:<energy_type>' or 'market:halt:_all'.
+    env.KV?.get(`market:halt:${energyType}`).then((v) => v || (env.KV ? env.KV.get('market:halt:_all') : null)).catch(() => null),
+  ]);
+
+  const status = participant?.status as string | undefined;
+  const kyc = participant?.kyc_status as string | undefined;
+  const participant_status: RiskSnapshot['participant_status'] =
+    !participant ? 'unknown'
+      : status === 'suspended' ? 'suspended'
+      : kyc !== 'approved' ? 'pending_kyc'
+      : status === 'active' ? 'active'
+      : 'unknown';
+
+  const market_state: RiskSnapshot['market_state'] =
+    halt === 'closed' ? 'closed'
+      : halt === 'halted_market' ? 'halted_market'
+      : halt === 'halted_instrument' ? 'halted_instrument'
+      : 'open';
+
+  return {
+    participant_status,
+    credit_limit_zar: Number(limit?.limit_zar || 0),
+    open_exposure_zar: Number(exposure?.exp || 0),
+    free_collateral_zar: Math.max(0, Number(collateral?.posted || 0) - Number(collateral?.reserved || 0)),
+    current_position_mwh: Number(position?.pos || 0),
+    // 0 = no platform-wide position limit configured. Per-participant limits
+    // can be plumbed in later via a participant_position_limits table.
+    position_limit_mwh: 0,
+    market_state,
+    mark_price_zar_mwh: mark?.mark_price_zar_mwh != null ? Number(mark.mark_price_zar_mwh) : null,
+    mark_age_minutes: mark?.age_minutes != null ? Number(mark.age_minutes) : null,
+    // Default 25% band — wide enough to allow live limit orders, tight
+    // enough to catch fat-finger price entries.
+    price_band_pct: 25,
+  };
+}
 
 // GET /trading/orders — my orders.
 //
@@ -66,20 +163,23 @@ trading.get('/matches', async (c) => {
   return c.json({ success: true, data: matches.results || [] });
 });
 
-// POST /trading/orders — place a new order.
+// POST /trading/orders — place a new order with pre-trade risk gating.
 //
-// Two behaviours:
-//   - `auto_match: true` (new): persist the order with remaining_volume_mwh
-//     set, then route it into the OrderBook Durable Object for immediate
-//     price-time-priority matching. DO returns fills; DB rows mutate via the
-//     DO writing back through D1.
-//   - default: legacy bilateral-order behaviour — persisted open, matched
-//     manually via POST /trading/match. Preserved so existing UI flows still
-//     work.
+// Sequence (added in 049):
+//   1. Validate basic shape.
+//   2. Idempotency check on external_ref.
+//   3. Load risk snapshot (credit limit, open exposure, free collateral,
+//      current position, mark price age, market state).
+//   4. Run pre-trade guards. On rejection → write a trade_order_rejections
+//      row + return HTTP 422 with { reason_code, detail, snapshot, rejection_id }.
+//   5. On pass → insert trade_orders + margin_reservations atomically.
 //
-// Body: { side, energy_type, volume_mwh, price?, price_min?, price_max?,
-//         delivery_date?, delivery_point?, market_type?, order_type?,
-//         time_in_force?, auto_match?, external_ref? }
+// Two acceptance behaviours after step 5:
+//   - `auto_match: true`: route into the OrderBook DO for immediate matching.
+//   - default: stay open until matched manually via POST /trading/match.
+//
+// The legacy 400 "side/energy_type/volume_mwh are required" path is preserved
+// so callers that send malformed bodies still get a 400 (not a 422).
 trading.post('/orders', async (c) => {
   const user = getCurrentUser(c);
   const body = await c.req.json();
@@ -93,6 +193,9 @@ trading.post('/orders', async (c) => {
 
   if (!side || !energy_type || !volume_mwh) {
     return c.json({ success: false, error: 'side, energy_type, volume_mwh are required' }, 400);
+  }
+  if (side !== 'buy' && side !== 'sell') {
+    return c.json({ success: false, error: 'side must be buy or sell' }, 400);
   }
 
   // Idempotency: if an external_ref was supplied and we've seen it, return
@@ -111,36 +214,86 @@ trading.post('/orders', async (c) => {
     : price_min != null ? Number(price_min)
     : price_max != null ? Number(price_max)
     : null;
-
-  const orderId = 'ord_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
-  const now = new Date().toISOString();
-  const shardKey = deriveShardKey(String(energy_type), delivery_date as string | null | undefined);
   const vol = Number(volume_mwh);
+  const energyType = String(energy_type);
+  const deliveryDate = (delivery_date as string | undefined) || null;
+
+  // ── Pre-trade gating ────────────────────────────────────────────────────
+  const snapshot = await loadRiskSnapshot(c.env, user.id, energyType, deliveryDate);
+  const proposed: ProposedOrder = {
+    side: side as 'buy' | 'sell',
+    energy_type: energyType,
+    volume_mwh: vol,
+    price_zar_mwh: effectivePrice,
+    delivery_date: deliveryDate,
+  };
+  const decision = evaluateOrder(proposed, snapshot);
+
+  if (!decision.ok) {
+    const rejectionId = 'rej_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    const notional = notionalFor(proposed, snapshot);
+    await c.env.DB.prepare(
+      `INSERT INTO trade_order_rejections
+         (id, participant_id, reason_code, detail, side, energy_type,
+          volume_mwh, price_zar_mwh, notional_zar, snapshot_json, external_ref)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).bind(
+      rejectionId, user.id, decision.reason_code, decision.detail,
+      proposed.side, proposed.energy_type, proposed.volume_mwh,
+      proposed.price_zar_mwh, notional, JSON.stringify(snapshot),
+      typeof external_ref === 'string' ? external_ref : null,
+    ).run();
+    return c.json({
+      success: false,
+      error: decision.reason_code,
+      data: {
+        rejection_id: rejectionId,
+        reason_code: decision.reason_code,
+        detail: decision.detail,
+        snapshot,
+        notional_zar: notional,
+      },
+    }, 422);
+  }
+
+  // ── Acceptance: insert order + reserve initial margin ──────────────────
+  const orderId = 'ord_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+  const reservationId = 'res_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+  const now = new Date().toISOString();
+  const shardKey = deriveShardKey(energyType, deliveryDate);
   const orderType = (order_type as string) || 'limit';
 
-  await c.env.DB.prepare(`
-    INSERT INTO trade_orders
-      (id, participant_id, side, energy_type, volume_mwh, remaining_volume_mwh,
-       price, price_min, price_max, delivery_date, delivery_point, market_type,
-       order_type, time_in_force, shard_key, external_ref,
-       status, created_at, updated_at, posted_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?)
-  `).bind(
-    orderId, user.id, side, energy_type, vol, vol,
-    effectivePrice,
-    price_min == null ? null : Number(price_min),
-    price_max == null ? null : Number(price_max),
-    delivery_date || null, delivery_point || null, (market_type as string) || 'bilateral',
-    orderType, (time_in_force as string) || 'gtc', shardKey, external_ref || null,
-    now, now, now,
-  ).run();
+  await c.env.DB.batch([
+    c.env.DB.prepare(`
+      INSERT INTO trade_orders
+        (id, participant_id, side, energy_type, volume_mwh, remaining_volume_mwh,
+         price, price_min, price_max, delivery_date, delivery_point, market_type,
+         order_type, time_in_force, shard_key, external_ref,
+         status, created_at, updated_at, posted_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?)
+    `).bind(
+      orderId, user.id, side, energyType, vol, vol,
+      effectivePrice,
+      price_min == null ? null : Number(price_min),
+      price_max == null ? null : Number(price_max),
+      deliveryDate, delivery_point || null, (market_type as string) || 'bilateral',
+      orderType, (time_in_force as string) || 'gtc', shardKey,
+      typeof external_ref === 'string' ? external_ref : null,
+      now, now, now,
+    ),
+    c.env.DB.prepare(
+      `INSERT INTO margin_reservations
+         (id, order_id, participant_id, amount_zar, status, reserved_at)
+       VALUES (?, ?, ?, ?, 'reserved', ?)`,
+    ).bind(reservationId, orderId, user.id, decision.reserved_margin_zar, now),
+  ]);
 
   await fireCascade({
     event: 'trade.order_placed',
     actor_id: user.id,
     entity_type: 'trade_orders',
     entity_id: orderId,
-    data: { side, energy_type, volume_mwh: vol },
+    data: { side, energy_type: energyType, volume_mwh: vol, reserved_margin_zar: decision.reserved_margin_zar },
     env: c.env,
   });
 
@@ -159,11 +312,19 @@ trading.post('/orders', async (c) => {
     });
     return c.json({
       success: true,
-      data: { id: orderId, status: doMatch?.taker_status || 'open', fills: doMatch?.fills || [] },
+      data: {
+        id: orderId,
+        status: doMatch?.taker_status || 'open',
+        fills: doMatch?.fills || [],
+        reserved_margin_zar: decision.reserved_margin_zar,
+      },
     }, 201);
   }
 
-  return c.json({ success: true, data: { id: orderId, status: 'open' } }, 201);
+  return c.json({
+    success: true,
+    data: { id: orderId, status: 'open', reserved_margin_zar: decision.reserved_margin_zar },
+  }, 201);
 });
 
 // Helper — dispatch a new order to the shard's Durable Object for matching.
@@ -240,7 +401,8 @@ trading.get('/fills', async (c) => {
   return c.json({ success: true, data: rs.results || [] });
 });
 
-// POST /trading/orders/:id/cancel — cancel own order
+// POST /trading/orders/:id/cancel — cancel own order + release any reserved
+// initial margin so the freed credit/collateral is immediately re-usable.
 trading.post('/orders/:id/cancel', async (c) => {
   const user = getCurrentUser(c);
   const id = c.req.param('id');
@@ -250,8 +412,16 @@ trading.post('/orders/:id/cancel', async (c) => {
   if (order.participant_id !== user.id) return c.json({ success: false, error: 'Not authorized' }, 403);
   if (order.status !== 'open') return c.json({ success: false, error: `Cannot cancel order in status '${order.status}'` }, 400);
 
-  await c.env.DB.prepare(`UPDATE trade_orders SET status = 'cancelled', updated_at = ? WHERE id = ?`)
-    .bind(new Date().toISOString(), id).run();
+  const now = new Date().toISOString();
+  await c.env.DB.batch([
+    c.env.DB.prepare(`UPDATE trade_orders SET status = 'cancelled', updated_at = ? WHERE id = ?`)
+      .bind(now, id),
+    c.env.DB.prepare(
+      `UPDATE margin_reservations
+          SET status = 'released', resolved_at = ?, resolution_note = 'order_cancelled'
+        WHERE order_id = ? AND status = 'reserved'`,
+    ).bind(now, id),
+  ]);
 
   await fireCascade({
     event: 'trade.cancelled',
@@ -310,6 +480,14 @@ trading.post('/match', async (c) => {
 
         await c.env.DB.prepare(`UPDATE trade_orders SET status = 'matched', updated_at = ? WHERE id IN (?, ?)`)
           .bind(now, buy_order_id, sell_order_id).run();
+
+        // Consume reserved margin on both legs — orders are no longer
+        // 'open', so the free-collateral calc must stop counting these.
+        await c.env.DB.prepare(
+          `UPDATE margin_reservations
+              SET status = 'consumed', resolved_at = ?, resolution_note = 'order_matched'
+            WHERE order_id IN (?, ?) AND status = 'reserved'`,
+        ).bind(now, buy_order_id, sell_order_id).run();
 
         await fireCascade({
           event: 'trade.matched',
@@ -560,6 +738,173 @@ function buildDeterministicRecommendations(args: {
 
   return out;
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// Pre-trade gating surfaces — rejections log, AI explainer, ghost-text
+// size suggestion, risk narrative. All small endpoints that the Trading
+// UI calls inline (no dedicated AI tab).
+// ════════════════════════════════════════════════════════════════════════
+
+// GET /trading/rejections — my recent rejected order placements.
+// Admins/risk officers can pass ?participant_id= to look at someone else's.
+trading.get('/rejections', async (c) => {
+  const user = getCurrentUser(c);
+  const isOfficer = user.role === 'admin' || user.role === 'support' || user.role === 'regulator';
+  const target = c.req.query('participant_id');
+  const pid = target && isOfficer ? target : user.id;
+  const rs = await c.env.DB.prepare(
+    `SELECT id, attempted_at, reason_code, detail, side, energy_type,
+            volume_mwh, price_zar_mwh, notional_zar
+       FROM trade_order_rejections
+      WHERE participant_id = ?
+      ORDER BY attempted_at DESC LIMIT 100`,
+  ).bind(pid).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+// GET /trading/rejections/:id/explain — AI-generated plain-language
+// explanation + 1-2 remediation buttons. Cached by snapshot bucket so
+// rapid repeat calls are cheap; logs every call to ai_decisions for audit.
+trading.get('/rejections/:id/explain', async (c) => {
+  const user = getCurrentUser(c);
+  const isOfficer = user.role === 'admin' || user.role === 'support' || user.role === 'regulator';
+  const id = c.req.param('id');
+  const row = await c.env.DB.prepare(
+    `SELECT id, participant_id, reason_code, detail, side, energy_type,
+            volume_mwh, price_zar_mwh, notional_zar, snapshot_json
+       FROM trade_order_rejections WHERE id = ?`,
+  ).bind(id).first<{
+    id: string; participant_id: string; reason_code: string; detail: string;
+    side: 'buy' | 'sell'; energy_type: string;
+    volume_mwh: number; price_zar_mwh: number | null; notional_zar: number;
+    snapshot_json: string;
+  }>();
+  if (!row) return c.json({ success: false, error: 'Rejection not found' }, 404);
+  if (row.participant_id !== user.id && !isOfficer) {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  let snapshot: Record<string, unknown> = {};
+  try { snapshot = JSON.parse(row.snapshot_json || '{}') as Record<string, unknown>; } catch { /* */ }
+  const explanation = await explainRejection(c.env, {
+    reason_code: row.reason_code as Parameters<typeof explainRejection>[1]['reason_code'],
+    detail: row.detail || '',
+    participant_id: row.participant_id,
+    side: row.side,
+    energy_type: row.energy_type,
+    volume_mwh: row.volume_mwh,
+    price_zar_mwh: row.price_zar_mwh,
+    notional_zar: row.notional_zar,
+    snapshot,
+  }, row.id);
+  return c.json({ success: true, data: explanation });
+});
+
+// GET /trading/order-suggest — ghost-text size suggestion for the order
+// form. Returns the largest size that would still pass the guards at the
+// given side+energy_type, plus the snapshot the suggestion is based on so
+// the UI can render the "why" tooltip without a second round-trip.
+trading.get('/order-suggest', async (c) => {
+  const user = getCurrentUser(c);
+  const side = (c.req.query('side') || 'buy') as 'buy' | 'sell';
+  const energyType = c.req.query('energy_type') || 'solar';
+  const deliveryDate = c.req.query('delivery_date') || null;
+  const snapshot = await loadRiskSnapshot(c.env, user.id, energyType, deliveryDate);
+  const suggested = suggestedSizeMwh(snapshot, side);
+  return c.json({
+    success: true,
+    data: {
+      suggested_volume_mwh: suggested,
+      side, energy_type: energyType,
+      free_collateral_zar: snapshot.free_collateral_zar,
+      headroom_zar: Math.max(0, snapshot.credit_limit_zar - snapshot.open_exposure_zar),
+      mark_price_zar_mwh: snapshot.mark_price_zar_mwh,
+      mark_age_minutes: snapshot.mark_age_minutes,
+      market_state: snapshot.market_state,
+    },
+  });
+});
+
+// GET /trading/risk-narrative — one-liner for the Risk tab gauge.
+// Combines today's exposure/utilisation with yesterday's snapshot when
+// available; calls the LLM for the natural-language line and caches by
+// participant for 5 minutes to keep latency tight + costs predictable.
+trading.get('/risk-narrative', async (c) => {
+  const user = getCurrentUser(c);
+  const cacheKey = `ai:risk-narrative:${user.id}`;
+  if (c.env.KV) {
+    try {
+      const hit = await c.env.KV.get(cacheKey);
+      if (hit) return c.json({ success: true, data: JSON.parse(hit), cached: true });
+    } catch { /* */ }
+  }
+  // Fresh data each call — cheap (single round-trip set).
+  const [exposureRow, marginRow, recentFills] = await Promise.all([
+    c.env.DB.prepare(
+      `SELECT
+         (SELECT COALESCE(SUM(remaining_volume_mwh * COALESCE(price, 0)), 0)
+            FROM trade_orders WHERE participant_id = ? AND status IN ('open','partially_filled')) AS open_exp,
+         (SELECT limit_zar FROM credit_limits
+           WHERE participant_id = ?
+             AND (effective_to IS NULL OR effective_to >= datetime('now'))
+             AND effective_from <= datetime('now')
+           ORDER BY effective_from DESC LIMIT 1) AS limit_zar`,
+    ).bind(user.id, user.id).first<{ open_exp: number; limit_zar: number | null }>(),
+    c.env.DB.prepare(
+      `SELECT COUNT(*) AS n, COALESCE(SUM(shortfall_zar), 0) AS short
+         FROM margin_calls WHERE participant_id = ? AND status IN ('issued','acknowledged')`,
+    ).bind(user.id).first<{ n: number; short: number }>(),
+    c.env.DB.prepare(
+      `SELECT COUNT(*) AS n, COALESCE(SUM(f.volume_mwh * f.price), 0) AS gross
+         FROM trade_fills f JOIN trade_orders o ON o.id = f.order_id
+        WHERE o.participant_id = ? AND f.executed_at >= datetime('now', '-24 hours')`,
+    ).bind(user.id).first<{ n: number; gross: number }>(),
+  ]);
+
+  const open = Number(exposureRow?.open_exp || 0);
+  const limit = Number(exposureRow?.limit_zar || 0);
+  const utilPct = limit > 0 ? (open / limit) * 100 : 0;
+  const factsForLLM = {
+    open_exposure_zar: Math.round(open),
+    limit_zar: Math.round(limit),
+    utilisation_pct: Number(utilPct.toFixed(1)),
+    open_margin_calls: Number(marginRow?.n || 0),
+    margin_shortfall_zar: Math.round(Number(marginRow?.short || 0)),
+    fills_24h: Number(recentFills?.n || 0),
+    fills_24h_gross_zar: Math.round(Number(recentFills?.gross || 0)),
+  };
+
+  const result = await ask(c.env, {
+    intent: 'brief.trader',
+    role: user.role,
+    prompt:
+      `Write ONE sentence (max 22 words) summarising this trader's risk posture today. ` +
+      `Reference the binding number first (utilisation, margin shortfall, or fills). ` +
+      `No greeting, no JSON, just the sentence.`,
+    context: factsForLLM,
+    max_tokens: 80,
+  });
+
+  const headline = (result.text || '').replace(/^["']|["']$/g, '').trim().split('\n')[0].slice(0, 220)
+    || `Utilisation ${factsForLLM.utilisation_pct.toFixed(1)}% with ${factsForLLM.fills_24h} fills in 24h.`;
+
+  const data = { headline, facts: factsForLLM, fallback: !!result.fallback };
+
+  await logAiDecision(c.env.DB, {
+    surface: 'risk_narrative',
+    participant_id: user.id,
+    intent: 'brief.trader',
+    prompt_summary: 'risk-narrative one-liner',
+    response_text: headline,
+    response_json: factsForLLM,
+    model: result.model,
+    fallback: !!result.fallback,
+  });
+
+  if (c.env.KV) {
+    try { await c.env.KV.put(cacheKey, JSON.stringify(data), { expirationTtl: 300 }); } catch { /* */ }
+  }
+  return c.json({ success: true, data });
+});
 
 // ════════════════════════════════════════════════════════════════════════
 // Algo rules — per-trader algorithmic strategy definitions
