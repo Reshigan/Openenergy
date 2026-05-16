@@ -370,6 +370,27 @@ support.get('/tickets', async (c) => {
   return c.json({ success: true, data: rows.results || [] });
 });
 
+support.get('/tickets/:id', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const ticket = await c.env.DB.prepare(`SELECT * FROM support_tickets WHERE id = ?`).bind(id).first<any>();
+  if (!ticket) return c.json({ success: false, error: 'Ticket not found' }, 404);
+  if (ticket.reporter_id !== user.id && user.role !== 'support' && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+  const visClause = (user.role === 'support' || user.role === 'admin') ? '' : "AND visibility = 'public'";
+  const comments = await c.env.DB.prepare(
+    `SELECT * FROM support_ticket_comments WHERE ticket_id = ? ${visClause} ORDER BY created_at`,
+  ).bind(id).all().catch(() => ({ results: [] } as any));
+  const escalations = await c.env.DB.prepare(
+    `SELECT * FROM support_escalations WHERE ticket_id = ? ORDER BY escalated_at DESC`,
+  ).bind(id).all().catch(() => ({ results: [] } as any));
+  return c.json({
+    success: true,
+    data: { ticket, comments: comments.results || [], escalations: escalations.results || [] },
+  });
+});
+
 support.post('/tickets/:id/transition', async (c) => {
   const user = getCurrentUser(c);
   const id = c.req.param('id');
