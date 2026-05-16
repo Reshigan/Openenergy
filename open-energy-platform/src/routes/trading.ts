@@ -149,6 +149,49 @@ async function loadRiskSnapshot(
 // 24 columns on trade_orders; fetching the rest (metadata blobs, large
 // text fields) would ~double the per-row bytes. LIMIT 50 is already
 // generous for a dashboard widget.
+// GET /trading/orders/:id — one order + L4 sub-resources rolled up so
+// the SPA Order detail page renders in one round-trip.
+trading.get('/orders/:id', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const order = await c.env.DB.prepare(
+    `SELECT * FROM trade_orders WHERE id = ?`,
+  ).bind(id).first<any>();
+  if (!order) return c.json({ success: false, error: 'Order not found' }, 404);
+  if (order.participant_id !== user.id && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+  const safe = async (sql: string, binds: unknown[]): Promise<any[]> =>
+    c.env.DB.prepare(sql).bind(...binds).all().then(r => (r as any).results || []).catch(() => []);
+  const amendments = await safe(
+    `SELECT * FROM trade_order_amendments WHERE order_id = ? ORDER BY amended_at DESC`, [id],
+  );
+  const matches = await safe(
+    `SELECT id, matched_volume_mwh, COALESCE(matched_price, matched_price_zar) AS matched_price_zar,
+            matched_at, status, buy_order_id, sell_order_id
+       FROM trade_matches
+      WHERE buy_order_id = ? OR sell_order_id = ?
+      ORDER BY matched_at DESC LIMIT 100`,
+    [id, id],
+  );
+  const fees = await safe(
+    `SELECT * FROM trade_fees WHERE order_id = ? ORDER BY calculated_at DESC`, [id],
+  );
+  const allocations = await safe(
+    `SELECT * FROM trade_allocations WHERE order_id = ? ORDER BY created_at DESC`, [id],
+  );
+  const reservations = await safe(
+    `SELECT * FROM margin_reservations WHERE order_id = ? ORDER BY reserved_at DESC`, [id],
+  );
+  const exceptions = await safe(
+    `SELECT e.* FROM trade_exceptions e WHERE e.order_id = ? ORDER BY e.reported_at DESC`, [id],
+  );
+  return c.json({
+    success: true,
+    data: { order, amendments, matches, fees, allocations, reservations, exceptions },
+  });
+});
+
 trading.get('/orders', async (c) => {
   const user = getCurrentUser(c);
   const orders = await c.env.DB.prepare(

@@ -16,6 +16,8 @@ import { GridOpsWorkstationPage } from './components/pages/GridOpsWorkstationPag
 import { RegulatorWorkstationPage } from './components/pages/RegulatorWorkstationPage';
 import { AdminWorkstationPage } from './components/pages/AdminWorkstationPage';
 import { SupportWorkstationPage } from './components/pages/SupportWorkstationPage';
+import { OrderDetailPage } from './components/pages/OrderDetailPage';
+import { InvoiceDetailPage } from './components/pages/InvoiceDetailPage';
 
 // Import page components
 import { Cockpit } from './components/pages/Cockpit';
@@ -1284,6 +1286,8 @@ function AppRoutes() {
       <Route path="/regulator-suite/workstation" element={<ProtectedRoute><Layout><RegulatorWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/admin-platform/workstation" element={<ProtectedRoute><Layout><AdminWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/support/workstation" element={<ProtectedRoute><Layout><SupportWorkstationPage /></Layout></ProtectedRoute>} />
+      <Route path="/trading/orders/:id" element={<ProtectedRoute><Layout><OrderDetailPage /></Layout></ProtectedRoute>} />
+      <Route path="/settlement/invoices/:id" element={<ProtectedRoute><Layout><InvoiceDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/ipp-lifecycle" element={<ProtectedRoute><Layout><LazyWorkbench><IppLifecyclePage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/offtaker-suite" element={<ProtectedRoute><Layout><LazyWorkbench><OfftakerSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/carbon-registry" element={<ProtectedRoute><Layout><LazyWorkbench><CarbonRegistryPage /></LazyWorkbench></Layout></ProtectedRoute>} />

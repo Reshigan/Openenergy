@@ -817,4 +817,36 @@ settlement.get('/calendar/next-business-day', async (c) => {
   return c.json({ success: true, data: { input: date, adjusted, market_zone: zone } });
 });
 
+// GET /settlement/invoices/:id/detail — invoice + every L4 sub-resource
+// (breaks, fees, confirmations, line items, payments) in one round-trip
+// so the SPA Invoice detail page paints fast.
+settlement.get('/invoices/:id/detail', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const inv = await c.env.DB.prepare(
+    `SELECT i.*, fp.name AS from_name, tp.name AS to_name
+       FROM invoices i
+       JOIN participants fp ON i.from_participant_id = fp.id
+       JOIN participants tp ON i.to_participant_id = tp.id
+      WHERE i.id = ?`,
+  ).bind(id).first<any>();
+  if (!inv) return c.json({ success: false, error: 'Invoice not found' }, 404);
+  if (inv.from_participant_id !== user.id && inv.to_participant_id !== user.id && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+  const safe = async (sql: string, binds: unknown[]): Promise<any[]> =>
+    c.env.DB.prepare(sql).bind(...binds).all().then(r => (r as any).results || []).catch(() => []);
+  const breaks = await safe('SELECT * FROM settlement_breaks WHERE invoice_id = ? ORDER BY reported_at DESC', [id]);
+  const fees = await safe('SELECT * FROM settlement_fees WHERE invoice_id = ? ORDER BY calculated_at DESC', [id]);
+  const confirmations = await safe('SELECT * FROM invoice_confirmations WHERE invoice_id = ? ORDER BY confirmed_at', [id]);
+  const lineItems = await safe('SELECT * FROM invoice_line_items WHERE invoice_id = ? ORDER BY sequence_no', [id]);
+  const payments = await safe(
+    `SELECT p.* FROM payments p WHERE p.invoice_id = ? ORDER BY p.payment_date DESC`, [id],
+  );
+  return c.json({
+    success: true,
+    data: { invoice: inv, breaks, fees, confirmations, line_items: lineItems, payments },
+  });
+});
+
 export default settlement;
