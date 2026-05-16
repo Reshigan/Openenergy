@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { WorkstationShell, ListingTable, Pill } from '../launch/WorkstationShell';
+import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
 import { api } from '../../lib/api';
 import { X } from 'lucide-react';
 
 export function SupportWorkstationPage() {
   const [filing, setFiling] = useState(false);
+  const [transitioning, setTransitioning] = useState<any | null>(null);
+  const [escalating, setEscalating] = useState<any | null>(null);
+  const [loggingAccess, setLoggingAccess] = useState(false);
   return (
     <>
       <WorkstationShell
@@ -35,9 +38,53 @@ export function SupportWorkstationPage() {
                     { key: 'priority', label: 'Priority', render: (r) => <Pill tone={r.priority === 'urgent' ? 'bad' : r.priority === 'high' ? 'warn' : 'neutral'}>{r.priority}</Pill> },
                     { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'resolved' || r.status === 'closed' ? 'good' : r.status === 'open' ? 'bad' : 'warn'}>{r.status.replace(/_/g, ' ')}</Pill> },
                     { key: 'created_at', label: 'Filed', render: (r) => new Date(r.created_at).toLocaleString() },
+                    { key: '_actions', label: '', render: (r) => (
+                      (r.status !== 'resolved' && r.status !== 'closed') ? (
+                        <div className="flex gap-1">
+                          <button onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Transition</button>
+                          <button onClick={() => setEscalating(r)} className="px-2 py-1 text-[11px] bg-amber-600 text-white rounded">Escalate</button>
+                        </div>
+                      ) : null
+                    ) },
                   ]}
                 />
                 {filing && <FileTicketModal onClose={() => setFiling(false)} onDone={() => { setFiling(false); onRefresh(); }} />}
+                {transitioning && (
+                  <ActionModal
+                    title={`Ticket ${transitioning.ticket_number} · current: ${transitioning.status}`}
+                    submitLabel="Transition"
+                    fields={[
+                      { key: 'to', label: 'To', type: 'select', required: true, options: [
+                        { value: 'in_progress', label: 'In progress' },
+                        { value: 'waiting_on_customer', label: 'Waiting on customer' },
+                        { value: 'resolved', label: 'Resolved' },
+                        { value: 'closed', label: 'Closed' },
+                      ] },
+                      { key: 'resolution', label: 'Resolution (resolved/closed only)', type: 'textarea' },
+                      { key: 'assignee_id', label: 'Assignee ID (optional)' },
+                    ] as FieldSpec[]}
+                    onClose={() => setTransitioning(null)}
+                    onSubmit={async (v) => {
+                      await api.post(`/support/tickets/${transitioning.id}/transition`, v);
+                      setTransitioning(null); onRefresh();
+                    }}
+                  />
+                )}
+                {escalating && (
+                  <ActionModal
+                    title={`Escalate ticket ${escalating.ticket_number}`}
+                    submitLabel="Escalate"
+                    fields={[
+                      { key: 'escalated_to', label: 'Escalate to (participant ID or team)', required: true },
+                      { key: 'reason', label: 'Reason', type: 'textarea', required: true },
+                    ] as FieldSpec[]}
+                    onClose={() => setEscalating(null)}
+                    onSubmit={async (v) => {
+                      await api.post(`/support/tickets/${escalating.id}/escalate`, v);
+                      setEscalating(null); onRefresh();
+                    }}
+                  />
+                )}
               </div>
             ),
           },
@@ -62,19 +109,44 @@ export function SupportWorkstationPage() {
           {
             key: 'cross_tenant',
             label: 'Cross-tenant access',
-            body: () => (
-              <ListingTable
-                endpoint="/support/cross-tenant-access"
-                rowKey={(r) => r.id}
-                empty={{ title: 'No cross-tenant access logs', description: 'Every cross-tenant data access is POPIA-logged here.' }}
-                columns={[
-                  { key: 'agent_id', label: 'Agent', render: (r) => <span className="font-mono text-[11px]">{(r.agent_id || '').slice(0, 12)}…</span> },
-                  { key: 'tenant_accessed', label: 'Tenant', render: (r) => <span className="font-mono text-[11px]">{(r.tenant_accessed || '').slice(0, 12)}…</span> },
-                  { key: 'resource_type', label: 'Resource' },
-                  { key: 'justification', label: 'Justification', render: (r) => <span className="block truncate max-w-md" title={r.justification}>{r.justification}</span> },
-                  { key: 'accessed_at', label: 'When', render: (r) => new Date(r.accessed_at).toLocaleString() },
-                ]}
-              />
+            body: ({ onRefresh }) => (
+              <div className="space-y-3">
+                <div className="flex justify-end">
+                  <button onClick={() => setLoggingAccess(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+                    + Log access
+                  </button>
+                </div>
+                <ListingTable
+                  endpoint="/support/cross-tenant-access"
+                  rowKey={(r) => r.id}
+                  empty={{ title: 'No cross-tenant access logs', description: 'Every cross-tenant data access is POPIA-logged here.' }}
+                  columns={[
+                    { key: 'agent_id', label: 'Agent', render: (r) => <span className="font-mono text-[11px]">{(r.agent_id || '').slice(0, 12)}…</span> },
+                    { key: 'tenant_accessed', label: 'Tenant', render: (r) => <span className="font-mono text-[11px]">{(r.tenant_accessed || '').slice(0, 12)}…</span> },
+                    { key: 'resource_type', label: 'Resource' },
+                    { key: 'justification', label: 'Justification', render: (r) => <span className="block truncate max-w-md" title={r.justification}>{r.justification}</span> },
+                    { key: 'accessed_at', label: 'When', render: (r) => new Date(r.accessed_at).toLocaleString() },
+                  ]}
+                />
+                {loggingAccess && (
+                  <ActionModal
+                    title="Log cross-tenant access (POPIA audit)"
+                    submitLabel="Log"
+                    fields={[
+                      { key: 'tenant_accessed', label: 'Tenant ID accessed', required: true },
+                      { key: 'resource_type', label: 'Resource type', required: true, placeholder: 'e.g. invoice, contract, project' },
+                      { key: 'resource_id', label: 'Resource ID (optional)' },
+                      { key: 'justification', label: 'Justification', type: 'textarea', required: true, helperText: 'POPIA requires a documented reason for cross-tenant access.' },
+                      { key: 'ticket_id', label: 'Linked ticket ID (optional)' },
+                    ] as FieldSpec[]}
+                    onClose={() => setLoggingAccess(false)}
+                    onSubmit={async (v) => {
+                      await api.post('/support/cross-tenant-access', v);
+                      setLoggingAccess(false); onRefresh();
+                    }}
+                  />
+                )}
+              </div>
             ),
           },
         ]}

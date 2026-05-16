@@ -165,3 +165,91 @@ export const Pill = ({ tone, children }: { tone: 'good' | 'warn' | 'bad' | 'neut
   };
   return <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase ${bg[tone]}`}>{children}</span>;
 };
+
+// ─── Generic form modal for workflow transitions ────────────────────
+//
+// Every workstation needs to POST to a transition / create endpoint
+// with a small handful of fields. Rather than building a bespoke modal
+// per action, this generic component accepts a field schema and a
+// submit handler.
+
+export type FieldSpec = {
+  key: string;
+  label: string;
+  type?: 'text' | 'textarea' | 'select' | 'number' | 'date';
+  required?: boolean;
+  options?: { value: string; label: string }[];
+  placeholder?: string;
+  defaultValue?: string;
+  helperText?: string;
+};
+
+export function ActionModal({
+  title,
+  fields,
+  submitLabel = 'Submit',
+  onClose,
+  onSubmit,
+  cta = 'primary',
+}: {
+  title: string;
+  fields: FieldSpec[];
+  submitLabel?: string;
+  onClose: () => void;
+  onSubmit: (values: Record<string, string>) => Promise<void>;
+  cta?: 'primary' | 'danger';
+}) {
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    for (const f of fields) init[f.key] = f.defaultValue || '';
+    return init;
+  });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const update = (k: string, v: string) => setValues(prev => ({ ...prev, [k]: v }));
+  const submit = async () => {
+    for (const f of fields) {
+      if (f.required && !values[f.key]) {
+        setErr(`${f.label} is required.`); return;
+      }
+    }
+    setSaving(true); setErr(null);
+    try { await onSubmit(values); } catch (e: unknown) { setErr(e instanceof Error ? e.message : 'Failed'); setSaving(false); }
+  };
+  const btnCls = cta === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-[#1a3a5c] hover:bg-[#0f1c2e]';
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
+          <h3 className="text-[16px] font-semibold text-[#0f1c2e]">{title}</h3>
+          <button onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e]">×</button>
+        </div>
+        <div className="p-5 space-y-3">
+          {err && <div className="text-[12px] text-red-700">{err}</div>}
+          {fields.map(f => (
+            <label key={f.key} className="block text-[13px]">
+              <span className="text-[#6b7685]">{f.label}{f.required && ' *'}</span>
+              {f.type === 'textarea' ? (
+                <textarea value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} rows={4} placeholder={f.placeholder} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none" />
+              ) : f.type === 'select' ? (
+                <select value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg">
+                  <option value="">— select —</option>
+                  {(f.options || []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              ) : (
+                <input type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'} value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} placeholder={f.placeholder} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg" />
+              )}
+              {f.helperText && <span className="block mt-1 text-[10px] text-[#6b7685]">{f.helperText}</span>}
+            </label>
+          ))}
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${btnCls}`}>
+              {saving ? 'Saving…' : submitLabel}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
