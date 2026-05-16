@@ -40,6 +40,7 @@ function TenantTab({ onRefresh }: { onRefresh: () => void }) {
       <ListingTable
         endpoint="/admin-platform/tenant-events"
         rowKey={(r) => r.id}
+        rowHref={(r) => `/admin-platform/tenants/${r.tenant_id}`}
         empty={{ title: 'No tenant events yet', description: 'Provisioned / activated / KYC / suspended / offboarded / data-erased events for every tenant will appear here.' }}
         columns={[
           { key: 'tenant_id', label: 'Tenant', render: (r) => <span className="font-mono text-[11px]">{(r.tenant_id || '').slice(0, 12)}…</span> },

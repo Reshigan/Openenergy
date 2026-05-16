@@ -65,6 +65,7 @@ function VintagesTab({ onRefresh }: { onRefresh: () => void }) {
       <ListingTable
         endpoint="/carbon-registry/vintage-workflow"
         rowKey={(r) => r.id}
+        rowHref={(r) => `/carbon-registry/vintages/${r.id}`}
         empty={{ title: 'No vintages in workflow', description: 'Vintage cohorts will appear here as they progress through issued → validated → listed → traded → retired.' }}
         columns={[
           { key: 'vintage_id', label: 'Vintage', render: (r) => <span className="font-mono text-[11px]">{(r.vintage_id || '').slice(0, 12)}…</span> },

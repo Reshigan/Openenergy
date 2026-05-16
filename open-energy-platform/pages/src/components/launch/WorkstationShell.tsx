@@ -104,21 +104,31 @@ export function ListingTable({
   columns,
   empty,
   rowKey,
+  rowHref,
 }: {
   endpoint: string;
   columns: Column[];
   empty?: { title: string; description: string };
   rowKey: (row: any) => string;
+  rowHref?: (row: any) => string;
 }) {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const nav = useNavigate();
 
   const load = useCallback(async () => {
     setLoading(true); setErr(null);
     try {
       const res = await api.get(endpoint);
-      setRows((res.data?.data as any[]) || []);
+      // Some endpoints return { allocations, unallocated } shape — flatten
+      // to a single array for rendering when that pattern is detected.
+      const raw = res.data?.data;
+      if (raw && typeof raw === 'object' && !Array.isArray(raw) && Array.isArray(raw.allocations)) {
+        setRows(raw.allocations as any[]);
+      } else {
+        setRows((raw as any[]) || []);
+      }
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : 'load failed');
     } finally {
@@ -140,15 +150,29 @@ export function ListingTable({
           <tr>{columns.map(col => <th key={col.key} className="px-4 py-2">{col.label}</th>)}</tr>
         </thead>
         <tbody>
-          {rows.map(r => (
-            <tr key={rowKey(r)} className="border-t border-[#e5ebf2] hover:bg-[#f8fafc]">
-              {columns.map(col => (
-                <td key={col.key} className={`px-4 py-2 ${col.align === 'right' ? 'text-right' : ''}`}>
-                  {col.render ? col.render(r) : (r[col.key] ?? '—')}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {rows.map(r => {
+            const href = rowHref ? rowHref(r) : null;
+            const clickHandler = (e: React.MouseEvent) => {
+              // Only navigate when the click was on the row chrome — let
+              // buttons / links inside the row keep their own handlers.
+              if (href && !(e.target as HTMLElement).closest('button, a, input, select, textarea')) {
+                nav(href);
+              }
+            };
+            return (
+              <tr
+                key={rowKey(r)}
+                onClick={clickHandler}
+                className={`border-t border-[#e5ebf2] hover:bg-[#f8fafc] ${href ? 'cursor-pointer' : ''}`}
+              >
+                {columns.map(col => (
+                  <td key={col.key} className={`px-4 py-2 ${col.align === 'right' ? 'text-right' : ''}`}>
+                    {col.render ? col.render(r) : (r[col.key] ?? '—')}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

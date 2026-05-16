@@ -91,6 +91,7 @@ function LicencesTab({ onRefresh }: { onRefresh: () => void }) {
       <ListingTable
         endpoint="/regulator/licence-actions"
         rowKey={(r) => r.id}
+        rowHref={(r) => `/regulator/licence-actions/${r.id}`}
         empty={{ title: 'No licence actions yet', description: 'Grant, vary, suspend, revoke, reinstate and renew workflows will appear here.' }}
         columns={[
           { key: 'action_type', label: 'Action', render: (r) => <Pill tone={r.action_type === 'grant' || r.action_type === 'renew' || r.action_type === 'reinstate' ? 'good' : r.action_type === 'revoke' || r.action_type === 'suspend' ? 'bad' : 'warn'}>{r.action_type}</Pill> },

@@ -30,6 +30,7 @@ export function SupportWorkstationPage() {
                 <ListingTable
                   endpoint="/support/tickets"
                   rowKey={(r) => r.id}
+                  rowHref={(r) => `/support/tickets/${r.id}`}
                   empty={{ title: 'No tickets', description: 'Tickets reported by users (or filed on their behalf) will appear here.' }}
                   columns={[
                     { key: 'ticket_number', label: 'Ticket', render: (r) => <span className="font-mono text-[11px]">{r.ticket_number}</span> },
