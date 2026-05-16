@@ -24,6 +24,8 @@ import { SupportTicketDetailPage } from './components/pages/SupportTicketDetailP
 import { TenantDetailPage } from './components/pages/TenantDetailPage';
 import { VintageDetailPage } from './components/pages/VintageDetailPage';
 import { LicenceActionDetailPage } from './components/pages/LicenceActionDetailPage';
+import { GridOutageDetailPage } from './components/pages/GridOutageDetailPage';
+import { BillingRunDetailPage } from './components/pages/BillingRunDetailPage';
 
 // Import page components
 import { Cockpit } from './components/pages/Cockpit';
@@ -1300,6 +1302,8 @@ function AppRoutes() {
       <Route path="/admin-platform/tenants/:id" element={<ProtectedRoute><Layout><TenantDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/carbon-registry/vintages/:id" element={<ProtectedRoute><Layout><VintageDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/regulator/licence-actions/:id" element={<ProtectedRoute><Layout><LicenceActionDetailPage /></Layout></ProtectedRoute>} />
+      <Route path="/grid-operator/outages/:id" element={<ProtectedRoute><Layout><GridOutageDetailPage /></Layout></ProtectedRoute>} />
+      <Route path="/admin-platform/billing-runs/:id" element={<ProtectedRoute><Layout><BillingRunDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/ipp-lifecycle" element={<ProtectedRoute><Layout><LazyWorkbench><IppLifecyclePage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/offtaker-suite" element={<ProtectedRoute><Layout><LazyWorkbench><OfftakerSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/carbon-registry" element={<ProtectedRoute><Layout><LazyWorkbench><CarbonRegistryPage /></LazyWorkbench></Layout></ProtectedRoute>} />

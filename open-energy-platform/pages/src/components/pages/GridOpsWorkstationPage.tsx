@@ -81,6 +81,7 @@ function OutageTab({ onRefresh }: { onRefresh: () => void }) {
       <ListingTable
         endpoint="/grid-operator/outage-responses"
         rowKey={(r) => r.id}
+        rowHref={(r) => `/grid-operator/outages/${encodeURIComponent(r.outage_id)}`}
         empty={{ title: 'No outage responses', description: 'Acknowledgements, crew dispatch, rerouting and restoration events will appear here.' }}
         columns={[
           { key: 'outage_id', label: 'Outage', render: (r) => <span className="font-mono text-[11px]">{(r.outage_id || '').slice(0, 12)}…</span> },

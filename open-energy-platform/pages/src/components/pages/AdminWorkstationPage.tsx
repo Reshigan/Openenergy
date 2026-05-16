@@ -89,6 +89,7 @@ function BillingTab({ onRefresh }: { onRefresh: () => void }) {
       <ListingTable
         endpoint="/admin-platform/billing-runs"
         rowKey={(r) => r.id}
+        rowHref={(r) => `/admin-platform/billing-runs/${r.id}`}
         empty={{ title: 'No billing runs', description: 'Monthly / adhoc / correction billing runs will appear here with outcome and total invoiced.' }}
         columns={[
           { key: 'run_type', label: 'Type', render: (r) => <Pill tone="info">{r.run_type}</Pill> },
