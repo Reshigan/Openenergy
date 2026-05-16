@@ -7,7 +7,29 @@ import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { useAuth } from '../../lib/useAuth';
 
-type Tab = 'invoices' | 'payments' | 'disputes' | 'breaks';
+type Tab = 'invoices' | 'payments' | 'disputes' | 'breaks' | 'confirmations' | 'fees';
+
+type SettlementFeeRow = {
+  id: string;
+  invoice_id: string;
+  invoice_number?: string;
+  fee_type: 'dunning' | 'late_payment' | 'rebooking' | 'admin' | 'wheeling_uplift' | 'imbalance_uplift';
+  basis: string;
+  amount_zar: number;
+  reason: string | null;
+  calc_rule_version: string;
+  applied_after: string | null;
+  calculated_at: string;
+};
+
+const FEE_TYPE_PILL: Record<string, string> = {
+  dunning:         'bg-red-100 text-red-700',
+  late_payment:    'bg-amber-100 text-amber-800',
+  rebooking:       'bg-blue-100 text-blue-700',
+  admin:           'bg-gray-100 text-gray-700',
+  wheeling_uplift: 'bg-purple-100 text-purple-700',
+  imbalance_uplift:'bg-rose-100 text-rose-700',
+};
 
 type Break = {
   id: string;
@@ -123,6 +145,7 @@ export function Settlement() {
   const [disputeInvoice, setDisputeInvoice] = useState<Invoice | null>(null);
   const [breakInvoice, setBreakInvoice] = useState<Invoice | null>(null);
   const [breaks, setBreaks] = useState<Break[]>([]);
+  const [fees, setFees] = useState<SettlementFeeRow[]>([]);
 
   const fetchSummary = useCallback(async () => {
     try {
@@ -164,6 +187,27 @@ export function Settlement() {
         if (statusFilter !== 'all') params.set('status', statusFilter);
         const res = await api.get(`/settlement/breaks?${params.toString()}`);
         setBreaks(res.data?.data || []);
+      } else if (tab === 'confirmations') {
+        // The Confirmations tab reuses the invoices endpoint — we filter
+        // client-side by confirmation_status since the schema is the
+        // same. Pull a generous batch.
+        const res = await api.get('/settlement/invoices');
+        setInvoices(res.data?.data || []);
+      } else if (tab === 'fees') {
+        // Aggregate fee ledger across the caller's invoices. Fetched
+        // per-invoice and flattened so the SPA renders one table.
+        const invRes = await api.get('/settlement/invoices');
+        const list = (invRes.data?.data as Invoice[]) || [];
+        const all: SettlementFeeRow[] = [];
+        for (const inv of list.slice(0, 50)) {
+          try {
+            const fr = await api.get(`/settlement/invoices/${inv.id}/fees`);
+            for (const f of (fr.data?.data as SettlementFeeRow[]) || []) {
+              all.push({ ...f, invoice_number: inv.invoice_number });
+            }
+          } catch { /* skip invoices with no fees */ }
+        }
+        setFees(all);
       }
     } catch (err: any) {
       setError(err?.response?.data?.error || err?.message || 'Failed to load settlement data');
@@ -225,6 +269,8 @@ export function Settlement() {
           { k: 'payments', label: 'Payments' },
           { k: 'disputes', label: 'Disputes' },
           { k: 'breaks', label: 'Breaks' },
+          { k: 'confirmations', label: 'Confirmations' },
+          { k: 'fees', label: 'Fees' },
         ] as Array<{ k: Tab; label: string }>).map(t => (
           <button
             key={t.k}
@@ -292,6 +338,14 @@ export function Settlement() {
               await api.post(`/settlement/breaks/${id}/transition`, { to, notes, outcome });
               void refreshAll();
             }} />
+      )}
+      {!loading && !error && tab === 'confirmations' && (
+        <ConfirmationsQueue rows={invoices} userId={user?.id} onAfterAction={() => void refreshAll()} />
+      )}
+      {!loading && !error && tab === 'fees' && (
+        fees.length === 0
+          ? <EmptyState icon={<DollarSign className="w-8 h-8" />} title="No fees accrued" description="Late-payment / dunning / rebooking fees automatically accrue against unpaid invoices once the engine runs." />
+          : <SettlementFeesTable rows={fees} />
       )}
 
       {payInvoice && (
@@ -768,5 +822,128 @@ function FileBreakModal({ invoice, onClose, onDone }: { invoice: Invoice; onClos
         </button>
       </div>
     </Modal>
+  );
+}
+
+// ─── Settlement confirmations queue ──────────────────────────────────
+
+function ConfirmationsQueue({
+  rows,
+  userId,
+  onAfterAction,
+}: {
+  rows: Invoice[];
+  userId?: string;
+  onAfterAction: () => void;
+}) {
+  const buckets: Record<string, Invoice[]> = {
+    pending: [], issuer_confirmed: [], payer_acknowledged: [], disputed: [],
+  };
+  for (const r of rows) {
+    const k = (r.confirmation_status as string | undefined) || 'pending';
+    if (!buckets[k]) buckets[k] = [];
+    buckets[k].push(r);
+  }
+  return (
+    <div className="space-y-4">
+      {(['pending', 'issuer_confirmed', 'payer_acknowledged', 'disputed'] as const).map(state => (
+        <section key={state}>
+          <h3 className="text-[13px] font-semibold uppercase tracking-wide mb-2 flex items-center gap-2" style={{ color: '#6b7685' }}>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${CONFIRMATION_PILL[state]}`}>{state.replace(/_/g, ' ')}</span>
+            <span>{buckets[state].length} invoice{buckets[state].length === 1 ? '' : 's'}</span>
+          </h3>
+          {buckets[state].length === 0 ? (
+            <div className="rounded-xl border border-ionex-border-100 bg-white p-4 text-[12px] text-ionex-text-mute">None.</div>
+          ) : (
+            <div className="rounded-xl border border-ionex-border-100 bg-white overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-left text-xs uppercase text-ionex-text-mute">
+                  <tr>
+                    <Th>Invoice</Th><Th>From</Th><Th>To</Th><Th>Amount</Th><Th>Due</Th><Th>Actions</Th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {buckets[state].map(r => {
+                    const isPayer = r.to_participant_id === userId;
+                    const isIssuer = r.from_participant_id === userId;
+                    const canIssuerConfirm = isIssuer && state === 'pending';
+                    const canPayerAck = isPayer && state === 'issuer_confirmed';
+                    return (
+                      <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+                        <Td><span className="font-medium">{r.invoice_number}</span></Td>
+                        <Td>{r.from_name}</Td>
+                        <Td>{r.to_name}</Td>
+                        <Td>{formatZAR(r.total_amount)}</Td>
+                        <Td>{r.due_date ? new Date(r.due_date).toLocaleDateString() : '—'}</Td>
+                        <Td>
+                          <div className="flex gap-1">
+                            {canIssuerConfirm && (
+                              <button onClick={async () => { try { await postConfirm(r.id, 'issuer', 'confirmed'); onAfterAction(); } catch { /* */ } }} className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded">Confirm</button>
+                            )}
+                            {canPayerAck && (
+                              <button onClick={async () => { try { await postConfirm(r.id, 'payer', 'confirmed'); onAfterAction(); } catch { /* */ } }} className="px-2 py-1 text-xs bg-green-50 text-green-700 rounded">Acknowledge</button>
+                            )}
+                            {!canIssuerConfirm && !canPayerAck && (
+                              <span className="text-xs text-ionex-text-mute">—</span>
+                            )}
+                          </div>
+                        </Td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      ))}
+    </div>
+  );
+}
+
+// ─── Settlement fees ledger ──────────────────────────────────────────
+
+function SettlementFeesTable({ rows }: { rows: SettlementFeeRow[] }) {
+  const total = rows.reduce((s, r) => s + (r.amount_zar || 0), 0);
+  const byType: Record<string, number> = {};
+  for (const r of rows) byType[r.fee_type] = (byType[r.fee_type] || 0) + (r.amount_zar || 0);
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="rounded-xl border border-ionex-border-100 bg-white p-3">
+          <div className="text-[10px] uppercase tracking-wide text-ionex-text-mute">Total</div>
+          <div className="mt-1 text-[18px] font-bold">{formatZAR(total)}</div>
+        </div>
+        {Object.keys(byType).sort().map(k => (
+          <div key={k} className="rounded-xl border border-ionex-border-100 bg-white p-3">
+            <div className="text-[10px] uppercase tracking-wide text-ionex-text-mute">{k.replace(/_/g, ' ')}</div>
+            <div className="mt-1 text-[18px] font-bold">{formatZAR(byType[k])}</div>
+          </div>
+        ))}
+      </div>
+      <div className="rounded-xl border border-ionex-border-100 bg-white overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-left text-xs uppercase text-ionex-text-mute">
+            <tr>
+              <Th>When</Th><Th>Type</Th><Th>Invoice</Th><Th>Basis</Th>
+              <Th>Reason</Th><Th>Rule</Th><Th>Amount</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(r => (
+              <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+                <Td>{new Date(r.calculated_at).toLocaleString()}</Td>
+                <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${FEE_TYPE_PILL[r.fee_type] || 'bg-gray-100'}`}>{r.fee_type.replace(/_/g, ' ')}</span></Td>
+                <Td><span className="font-medium">{r.invoice_number || r.invoice_id.slice(0, 10) + '…'}</span></Td>
+                <Td>{r.basis}</Td>
+                <Td className="max-w-md"><span className="block truncate" title={r.reason || ''}>{r.reason || '—'}</span></Td>
+                <Td><span className="text-[10px] font-mono text-ionex-text-mute">{r.calc_rule_version}</span></Td>
+                <Td className="font-medium">{formatZAR(r.amount_zar)}</Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
