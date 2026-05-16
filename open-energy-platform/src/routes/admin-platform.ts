@@ -514,4 +514,89 @@ pa.post('/usage/snapshot', async (c) => {
   return c.json({ success: true, data: { snapshots } });
 });
 
+// ────────────────────────────────────────────────────────────────────────
+// L4 endpoints — tenant lifecycle events, billing runs, flag overrides
+// (migration 056). Layer audit + state on top of existing tenants /
+// subscriptions / feature_flag tables.
+// ────────────────────────────────────────────────────────────────────────
+
+pa.post('/tenant-events', async (c) => {
+  const user = getCurrentUser(c);
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  if (!body.tenant_id || !body.event_type) {
+    return c.json({ success: false, error: 'tenant_id, event_type required' }, 400);
+  }
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO admin_tenant_lifecycle_events
+       (id, tenant_id, event_type, actor_id, reason, payload_json)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).bind(id, body.tenant_id, body.event_type, user.id, body.reason || null, body.payload_json || null).run();
+  return c.json({ success: true, data: { id } });
+});
+
+pa.get('/tenant-events', async (c) => {
+  const tenantId = c.req.query('tenant_id');
+  const where: string[] = [];
+  const binds: unknown[] = [];
+  if (tenantId) { where.push('tenant_id = ?'); binds.push(tenantId); }
+  const rows = await c.env.DB.prepare(
+    `SELECT * FROM admin_tenant_lifecycle_events ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+      ORDER BY occurred_at DESC LIMIT 200`,
+  ).bind(...binds).all().catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+pa.post('/billing-runs', async (c) => {
+  const user = getCurrentUser(c);
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  if (!body.run_type || !body.period_start || !body.period_end) {
+    return c.json({ success: false, error: 'run_type, period_start, period_end required' }, 400);
+  }
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO admin_billing_runs
+       (id, run_type, period_start, period_end, status, initiated_by)
+     VALUES (?, ?, ?, ?, 'pending', ?)`,
+  ).bind(id, body.run_type, body.period_start, body.period_end, user.id).run();
+  return c.json({ success: true, data: { id } });
+});
+
+pa.get('/billing-runs', async (c) => {
+  const rows = await c.env.DB.prepare(
+    `SELECT * FROM admin_billing_runs ORDER BY created_at DESC LIMIT 100`,
+  ).all().catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+pa.post('/flag-overrides', async (c) => {
+  const user = getCurrentUser(c);
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  if (!body.flag_key || !body.scope_type || body.new_value === undefined) {
+    return c.json({ success: false, error: 'flag_key, scope_type, new_value required' }, 400);
+  }
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO admin_feature_flag_overrides
+       (id, flag_key, scope_type, scope_id, previous_value, new_value, actor_id, reason)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(
+    id, body.flag_key, body.scope_type, body.scope_id || null,
+    body.previous_value || null, String(body.new_value), user.id, body.reason || null,
+  ).run();
+  return c.json({ success: true, data: { id } });
+});
+
+pa.get('/flag-overrides', async (c) => {
+  const flag = c.req.query('flag_key');
+  const where: string[] = [];
+  const binds: unknown[] = [];
+  if (flag) { where.push('flag_key = ?'); binds.push(flag); }
+  const rows = await c.env.DB.prepare(
+    `SELECT * FROM admin_feature_flag_overrides ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+      ORDER BY occurred_at DESC LIMIT 200`,
+  ).bind(...binds).all().catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
 export default pa;

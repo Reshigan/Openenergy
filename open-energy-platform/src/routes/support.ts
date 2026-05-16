@@ -323,4 +323,148 @@ support.post('/cascade-dlq/:id/resolve', async (c) => {
   return c.json({ success: true });
 });
 
+// ────────────────────────────────────────────────────────────────────────
+// L4 endpoints — tickets, comments, escalations, cross-tenant access
+// audit (migration 056). Full support workstation backend.
+// ────────────────────────────────────────────────────────────────────────
+
+support.post('/tickets', async (c) => {
+  const user = getCurrentUser(c);
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  if (!body.subject || !body.category) {
+    return c.json({ success: false, error: 'subject, category required' }, 400);
+  }
+  const id = crypto.randomUUID();
+  const ticketNumber = `OE-${new Date().getUTCFullYear()}-${id.slice(0, 8).toUpperCase()}`;
+  await c.env.DB.prepare(
+    `INSERT INTO support_tickets
+       (id, ticket_number, reporter_id, tenant_id, subject, description, category, priority, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open')`,
+  ).bind(
+    id, ticketNumber, user.id, body.tenant_id || null,
+    body.subject, body.description || null,
+    body.category, body.priority || 'normal',
+  ).run();
+  return c.json({ success: true, data: { id, ticket_number: ticketNumber } });
+});
+
+support.get('/tickets', async (c) => {
+  const user = getCurrentUser(c);
+  const status = c.req.query('status');
+  const priority = c.req.query('priority');
+  const where: string[] = [];
+  const binds: unknown[] = [];
+  // Support agents see all tickets; users see their own.
+  if (user.role !== 'support' && user.role !== 'admin') {
+    where.push('reporter_id = ?');
+    binds.push(user.id);
+  }
+  if (status) { where.push('status = ?'); binds.push(status); }
+  if (priority) { where.push('priority = ?'); binds.push(priority); }
+  const rows = await c.env.DB.prepare(
+    `SELECT * FROM support_tickets ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+      ORDER BY CASE priority
+        WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'normal' THEN 3 WHEN 'low' THEN 4 END,
+        created_at DESC LIMIT 200`,
+  ).bind(...binds).all().catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+support.post('/tickets/:id/transition', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  const to = String(body.to || '').trim();
+  if (!['in_progress', 'waiting_on_customer', 'resolved', 'closed'].includes(to)) {
+    return c.json({ success: false, error: 'invalid transition' }, 400);
+  }
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(
+    `UPDATE support_tickets
+       SET status = ?, resolution = COALESCE(?, resolution),
+           resolved_at = CASE WHEN ? IN ('resolved','closed') THEN ? ELSE resolved_at END,
+           resolved_by = CASE WHEN ? IN ('resolved','closed') THEN ? ELSE resolved_by END,
+           assignee_id = COALESCE(?, assignee_id),
+           updated_at = ?
+     WHERE id = ?`,
+  ).bind(to, body.resolution || null, to, now, to, user.id, body.assignee_id || null, now, id).run();
+  return c.json({ success: true });
+});
+
+support.post('/tickets/:id/comments', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  if (!body.body) return c.json({ success: false, error: 'body required' }, 400);
+  const cid = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO support_ticket_comments (id, ticket_id, author_id, body, visibility)
+     VALUES (?, ?, ?, ?, ?)`,
+  ).bind(cid, id, user.id, body.body, body.visibility || 'public').run();
+  return c.json({ success: true, data: { id: cid } });
+});
+
+support.get('/tickets/:id/comments', async (c) => {
+  const id = c.req.param('id');
+  const user = getCurrentUser(c);
+  const visClause = (user.role === 'support' || user.role === 'admin') ? '' : "AND visibility = 'public'";
+  const rows = await c.env.DB.prepare(
+    `SELECT * FROM support_ticket_comments WHERE ticket_id = ? ${visClause}
+      ORDER BY created_at`,
+  ).bind(id).all().catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+support.post('/tickets/:id/escalate', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  if (!body.escalated_to || !body.reason) {
+    return c.json({ success: false, error: 'escalated_to, reason required' }, 400);
+  }
+  const eid = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO support_escalations (id, ticket_id, escalated_by, escalated_to, reason)
+     VALUES (?, ?, ?, ?, ?)`,
+  ).bind(eid, id, user.id, body.escalated_to, body.reason).run();
+  return c.json({ success: true, data: { id: eid } });
+});
+
+support.get('/escalations', async (c) => {
+  const status = c.req.query('status');
+  const where: string[] = [];
+  const binds: unknown[] = [];
+  if (status) { where.push('status = ?'); binds.push(status); }
+  const rows = await c.env.DB.prepare(
+    `SELECT * FROM support_escalations ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+      ORDER BY escalated_at DESC LIMIT 200`,
+  ).bind(...binds).all().catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+support.post('/cross-tenant-access', async (c) => {
+  const user = getCurrentUser(c);
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  if (!body.tenant_accessed || !body.resource_type || !body.justification) {
+    return c.json({ success: false, error: 'tenant_accessed, resource_type, justification required' }, 400);
+  }
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO support_cross_tenant_access
+       (id, agent_id, tenant_accessed, resource_type, resource_id, justification, ticket_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(
+    id, user.id, body.tenant_accessed, body.resource_type,
+    body.resource_id || null, body.justification, body.ticket_id || null,
+  ).run();
+  return c.json({ success: true, data: { id } });
+});
+
+support.get('/cross-tenant-access', async (c) => {
+  const rows = await c.env.DB.prepare(
+    `SELECT * FROM support_cross_tenant_access ORDER BY accessed_at DESC LIMIT 200`,
+  ).all().catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
 export default support;

@@ -940,4 +940,116 @@ function safeParseJson(s: string | null): Record<string, unknown> {
   }
 }
 
+// ────────────────────────────────────────────────────────────────────────
+// L4 endpoints — surveillance triage, licence action workflow, enforcement
+// case event log (migration 056). Layer workflow audit on top of the
+// existing regulator_surveillance_alerts / regulator_licences /
+// regulator_enforcement_cases tables.
+// ────────────────────────────────────────────────────────────────────────
+
+suite.post('/surveillance/triage', async (c) => {
+  const user = getCurrentUser(c);
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  if (!body.alert_id || !body.decision) {
+    return c.json({ success: false, error: 'alert_id, decision required' }, 400);
+  }
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO regulator_surveillance_triage
+       (id, alert_id, triaged_by, decision, rationale, enforcement_case_id, next_review_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(id, body.alert_id, user.id, body.decision, body.rationale || null,
+         body.enforcement_case_id || null, body.next_review_at || null).run();
+  return c.json({ success: true, data: { id } });
+});
+
+suite.get('/surveillance/triage', async (c) => {
+  const alertId = c.req.query('alert_id');
+  const where: string[] = [];
+  const binds: unknown[] = [];
+  if (alertId) { where.push('alert_id = ?'); binds.push(alertId); }
+  const rows = await c.env.DB.prepare(
+    `SELECT * FROM regulator_surveillance_triage ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+      ORDER BY triaged_at DESC LIMIT 200`,
+  ).bind(...binds).all().catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+suite.post('/licence-actions', async (c) => {
+  const user = getCurrentUser(c);
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  if (!body.action_type) {
+    return c.json({ success: false, error: 'action_type required' }, 400);
+  }
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO regulator_licence_action_workflow
+       (id, licence_id, application_id, action_type, initiated_by, notes)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).bind(id, body.licence_id || null, body.application_id || null,
+         body.action_type, user.id, body.notes || null).run();
+  return c.json({ success: true, data: { id } });
+});
+
+suite.post('/licence-actions/:id/transition', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  const to = String(body.to || '').trim();
+  if (!['pending_hearing', 'decided', 'executed', 'appealed', 'reversed'].includes(to)) {
+    return c.json({ success: false, error: 'invalid transition' }, 400);
+  }
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(
+    `UPDATE regulator_licence_action_workflow
+       SET status = ?,
+           decided_at = CASE WHEN ? = 'decided' AND decided_at IS NULL THEN ? ELSE decided_at END,
+           decided_by = CASE WHEN ? = 'decided' AND decided_by IS NULL THEN ? ELSE decided_by END,
+           decision_rationale = COALESCE(?, decision_rationale),
+           updated_at = ?
+     WHERE id = ?`,
+  ).bind(to, to, now, to, user.id, body.rationale || null, now, id).run().catch(() => {});
+  return c.json({ success: true });
+});
+
+suite.get('/licence-actions', async (c) => {
+  const status = c.req.query('status');
+  const where: string[] = [];
+  const binds: unknown[] = [];
+  if (status) { where.push('status = ?'); binds.push(status); }
+  const rows = await c.env.DB.prepare(
+    `SELECT * FROM regulator_licence_action_workflow ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+      ORDER BY initiated_at DESC LIMIT 200`,
+  ).bind(...binds).all().catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+suite.post('/enforcement-events', async (c) => {
+  const user = getCurrentUser(c);
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  if (!body.case_id || !body.event_type) {
+    return c.json({ success: false, error: 'case_id, event_type required' }, 400);
+  }
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO regulator_enforcement_case_events
+       (id, case_id, event_type, actor_id, payload_json, notes)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).bind(id, body.case_id, body.event_type, user.id,
+         body.payload_json || null, body.notes || null).run();
+  return c.json({ success: true, data: { id } });
+});
+
+suite.get('/enforcement-events', async (c) => {
+  const caseId = c.req.query('case_id');
+  const where: string[] = [];
+  const binds: unknown[] = [];
+  if (caseId) { where.push('case_id = ?'); binds.push(caseId); }
+  const rows = await c.env.DB.prepare(
+    `SELECT * FROM regulator_enforcement_case_events ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+      ORDER BY occurred_at DESC LIMIT 200`,
+  ).bind(...binds).all().catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
 export default suite;

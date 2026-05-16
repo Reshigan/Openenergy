@@ -472,4 +472,120 @@ cr.get('/tax-claims', async (c) => {
   return c.json({ success: true, data: rs.results || [] });
 });
 
+// ────────────────────────────────────────────────────────────────────────
+// L4 endpoints — vintage workflow, MRV submissions, retirement certificates
+// (migration 056). All catch missing-table errors gracefully.
+// ────────────────────────────────────────────────────────────────────────
+
+cr.get('/vintage-workflow', async (c) => {
+  const user = getCurrentUser(c);
+  const rows = await c.env.DB.prepare(
+    `SELECT * FROM carbon_vintage_workflow
+      WHERE participant_id = ? OR ? IN ('admin','regulator')
+      ORDER BY updated_at DESC LIMIT 200`,
+  ).bind(user.id, user.role).all().catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+cr.post('/vintage-workflow/:id/advance', async (c) => {
+  const id = c.req.param('id');
+  const body = await c.req.json().catch(() => ({} as any));
+  const nextStage = String(body.to_stage || '').trim();
+  if (!nextStage) return c.json({ success: false, error: 'to_stage required' }, 400);
+  await c.env.DB.prepare(
+    `UPDATE carbon_vintage_workflow SET current_stage = ?, updated_at = datetime('now') WHERE id = ?`,
+  ).bind(nextStage, id).run().catch(() => {});
+  return c.json({ success: true });
+});
+
+cr.get('/mrv-submissions', async (c) => {
+  const user = getCurrentUser(c);
+  const status = c.req.query('status');
+  const where: string[] = ["(participant_id = ? OR ? IN ('admin','regulator'))"];
+  const binds: unknown[] = [user.id, user.role];
+  if (status) { where.push('status = ?'); binds.push(status); }
+  const rows = await c.env.DB.prepare(
+    `SELECT * FROM carbon_mrv_workflow WHERE ${where.join(' AND ')}
+      ORDER BY COALESCE(submitted_at, created_at) DESC LIMIT 200`,
+  ).bind(...binds).all().catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+cr.post('/mrv-submissions', async (c) => {
+  const user = getCurrentUser(c);
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  if (!body.project_id || !body.period_start || !body.period_end) {
+    return c.json({ success: false, error: 'project_id, period_start, period_end required' }, 400);
+  }
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO carbon_mrv_workflow (id, project_id, participant_id, period_start, period_end, status, notes)
+     VALUES (?, ?, ?, ?, ?, 'draft', ?)`,
+  ).bind(id, body.project_id, user.id, body.period_start, body.period_end, body.notes || null).run();
+  return c.json({ success: true, data: { id } });
+});
+
+cr.post('/mrv-submissions/:id/transition', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  const to = String(body.to || '').trim();
+  if (!['submitted', 'under_verification', 'verified', 'rejected', 'published'].includes(to)) {
+    return c.json({ success: false, error: 'invalid transition' }, 400);
+  }
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(
+    `UPDATE carbon_mrv_workflow
+       SET status = ?,
+           submitted_at = CASE WHEN ? = 'submitted' AND submitted_at IS NULL THEN ? ELSE submitted_at END,
+           submitted_by = CASE WHEN ? = 'submitted' AND submitted_by IS NULL THEN ? ELSE submitted_by END,
+           verified_at  = CASE WHEN ? = 'verified'  AND verified_at  IS NULL THEN ? ELSE verified_at  END,
+           verified_by  = CASE WHEN ? = 'verified'  AND verified_by  IS NULL THEN ? ELSE verified_by  END,
+           rejection_reason = COALESCE(?, rejection_reason),
+           reduction_tco2e = COALESCE(?, reduction_tco2e),
+           updated_at = ?
+     WHERE id = ?`,
+  ).bind(
+    to,
+    to, now, to, user.id,
+    to, now, to, user.id,
+    body.rejection_reason || null,
+    body.reduction_tco2e ?? null,
+    now,
+    id,
+  ).run().catch(() => {});
+  return c.json({ success: true });
+});
+
+cr.get('/retirement-certificates', async (c) => {
+  const user = getCurrentUser(c);
+  const rows = await c.env.DB.prepare(
+    `SELECT * FROM carbon_retirement_certificates
+      WHERE participant_id = ? OR ? IN ('admin','regulator')
+      ORDER BY created_at DESC LIMIT 200`,
+  ).bind(user.id, user.role).all().catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+cr.post('/retirement-certificates/issue', async (c) => {
+  const user = getCurrentUser(c);
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  if (!body.retirement_id || !body.retired_volume_tco2e) {
+    return c.json({ success: false, error: 'retirement_id + retired_volume_tco2e required' }, 400);
+  }
+  const id = crypto.randomUUID();
+  const certNumber = `OE-CERT-${new Date().getUTCFullYear()}-${id.slice(0, 8).toUpperCase()}`;
+  await c.env.DB.prepare(
+    `INSERT INTO carbon_retirement_certificates
+       (id, retirement_id, participant_id, beneficiary_name, beneficiary_email,
+        retired_volume_tco2e, certificate_number, status, issued_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'issued', datetime('now'))`,
+  ).bind(
+    id, body.retirement_id, user.id,
+    body.beneficiary_name || null, body.beneficiary_email || null,
+    body.retired_volume_tco2e, certNumber,
+  ).run();
+  return c.json({ success: true, data: { id, certificate_number: certNumber } });
+});
+
 export default cr;

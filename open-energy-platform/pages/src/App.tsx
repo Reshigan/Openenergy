@@ -11,6 +11,11 @@ import { LtmLogo } from './components/LtmLogo';
 import { DesignGallery } from './components/pages/DesignGallery';
 import { RoleLaunchBoard } from './components/launch/RoleLaunchBoard';
 import { LenderWorkoutPage } from './components/pages/LenderWorkoutPage';
+import { CarbonWorkstationPage } from './components/pages/CarbonWorkstationPage';
+import { GridOpsWorkstationPage } from './components/pages/GridOpsWorkstationPage';
+import { RegulatorWorkstationPage } from './components/pages/RegulatorWorkstationPage';
+import { AdminWorkstationPage } from './components/pages/AdminWorkstationPage';
+import { SupportWorkstationPage } from './components/pages/SupportWorkstationPage';
 
 // Import page components
 import { Cockpit } from './components/pages/Cockpit';
@@ -1274,6 +1279,11 @@ function AppRoutes() {
       <Route path="/trader-risk" element={<ProtectedRoute><Layout><LazyWorkbench><TraderRiskPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/lender-suite" element={<ProtectedRoute><Layout><LazyWorkbench><LenderSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/lender-suite/workout" element={<ProtectedRoute><Layout><LenderWorkoutPage /></Layout></ProtectedRoute>} />
+      <Route path="/carbon-registry/workstation" element={<ProtectedRoute><Layout><CarbonWorkstationPage /></Layout></ProtectedRoute>} />
+      <Route path="/grid-operator/workstation" element={<ProtectedRoute><Layout><GridOpsWorkstationPage /></Layout></ProtectedRoute>} />
+      <Route path="/regulator-suite/workstation" element={<ProtectedRoute><Layout><RegulatorWorkstationPage /></Layout></ProtectedRoute>} />
+      <Route path="/admin-platform/workstation" element={<ProtectedRoute><Layout><AdminWorkstationPage /></Layout></ProtectedRoute>} />
+      <Route path="/support/workstation" element={<ProtectedRoute><Layout><SupportWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/ipp-lifecycle" element={<ProtectedRoute><Layout><LazyWorkbench><IppLifecyclePage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/offtaker-suite" element={<ProtectedRoute><Layout><LazyWorkbench><OfftakerSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/carbon-registry" element={<ProtectedRoute><Layout><LazyWorkbench><CarbonRegistryPage /></LazyWorkbench></Layout></ProtectedRoute>} />

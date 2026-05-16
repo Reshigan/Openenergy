@@ -682,4 +682,90 @@ gridOps.get('/zones/:code/loss-factors', async (c) => {
   return c.json({ success: true, data: rs.results || [] });
 });
 
+// ────────────────────────────────────────────────────────────────────────
+// L4 endpoints — curtailment events / outage responses / ancillary award
+// events (migration 056). Adds workflow audit on top of the existing
+// curtailment_notices + grid_outages + ancillary_service_awards tables.
+// ────────────────────────────────────────────────────────────────────────
+
+gridOps.post('/curtailment-events', async (c) => {
+  const user = getCurrentUser(c);
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  if (!body.curtailment_id || !body.event_type) {
+    return c.json({ success: false, error: 'curtailment_id, event_type required' }, 400);
+  }
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO grid_curtailment_events
+       (id, curtailment_id, event_type, actor_id, notes, payload_json)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).bind(id, body.curtailment_id, body.event_type, user.id, body.notes || null, body.payload_json || null).run();
+  return c.json({ success: true, data: { id } });
+});
+
+gridOps.get('/curtailment-events', async (c) => {
+  const curtailmentId = c.req.query('curtailment_id');
+  const where: string[] = [];
+  const binds: unknown[] = [];
+  if (curtailmentId) { where.push('curtailment_id = ?'); binds.push(curtailmentId); }
+  const rows = await c.env.DB.prepare(
+    `SELECT * FROM grid_curtailment_events ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+      ORDER BY occurred_at DESC LIMIT 200`,
+  ).bind(...binds).all().catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+gridOps.post('/outage-responses', async (c) => {
+  const user = getCurrentUser(c);
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  if (!body.outage_id || !body.response_type) {
+    return c.json({ success: false, error: 'outage_id, response_type required' }, 400);
+  }
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO grid_outage_responses
+       (id, outage_id, responder_id, response_type, notes, eta_minutes)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).bind(id, body.outage_id, user.id, body.response_type, body.notes || null, body.eta_minutes ?? null).run();
+  return c.json({ success: true, data: { id } });
+});
+
+gridOps.get('/outage-responses', async (c) => {
+  const outageId = c.req.query('outage_id');
+  const where: string[] = [];
+  const binds: unknown[] = [];
+  if (outageId) { where.push('outage_id = ?'); binds.push(outageId); }
+  const rows = await c.env.DB.prepare(
+    `SELECT * FROM grid_outage_responses ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+      ORDER BY responded_at DESC LIMIT 200`,
+  ).bind(...binds).all().catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+gridOps.post('/ancillary-events', async (c) => {
+  const user = getCurrentUser(c);
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  if (!body.award_id || !body.event_type) {
+    return c.json({ success: false, error: 'award_id, event_type required' }, 400);
+  }
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare(
+    `INSERT INTO grid_ancillary_award_events (id, award_id, event_type, actor_id, notes)
+     VALUES (?, ?, ?, ?, ?)`,
+  ).bind(id, body.award_id, body.event_type, user.id, body.notes || null).run();
+  return c.json({ success: true, data: { id } });
+});
+
+gridOps.get('/ancillary-events', async (c) => {
+  const awardId = c.req.query('award_id');
+  const where: string[] = [];
+  const binds: unknown[] = [];
+  if (awardId) { where.push('award_id = ?'); binds.push(awardId); }
+  const rows = await c.env.DB.prepare(
+    `SELECT * FROM grid_ancillary_award_events ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+      ORDER BY occurred_at DESC LIMIT 200`,
+  ).bind(...binds).all().catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
+});
+
 export default gridOps;
