@@ -15,7 +15,7 @@ export function RegulatorWorkstationPage() {
           label: 'Surveillance triage',
           body: () => (
             <ListingTable
-              endpoint="/regulator-suite/surveillance/triage"
+              endpoint="/regulator/surveillance/triage"
               rowKey={(r) => r.id}
               empty={{ title: 'No triage decisions yet', description: 'Surveillance alert triage decisions (false positive / monitor / escalate / contact party / close) will appear here.' }}
               columns={[
@@ -33,7 +33,7 @@ export function RegulatorWorkstationPage() {
           label: 'Licence actions',
           body: () => (
             <ListingTable
-              endpoint="/regulator-suite/licence-actions"
+              endpoint="/regulator/licence-actions"
               rowKey={(r) => r.id}
               empty={{ title: 'No licence actions yet', description: 'Grant, vary, suspend, revoke, reinstate and renew workflows will appear here.' }}
               columns={[
@@ -52,7 +52,7 @@ export function RegulatorWorkstationPage() {
           label: 'Enforcement events',
           body: () => (
             <ListingTable
-              endpoint="/regulator-suite/enforcement-events"
+              endpoint="/regulator/enforcement-events"
               rowKey={(r) => r.id}
               empty={{ title: 'No enforcement events', description: 'Case opened / evidence filed / hearings / findings / appeals events will appear here.' }}
               columns={[

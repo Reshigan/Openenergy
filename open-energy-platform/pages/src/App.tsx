@@ -18,6 +18,7 @@ import { AdminWorkstationPage } from './components/pages/AdminWorkstationPage';
 import { SupportWorkstationPage } from './components/pages/SupportWorkstationPage';
 import { OrderDetailPage } from './components/pages/OrderDetailPage';
 import { InvoiceDetailPage } from './components/pages/InvoiceDetailPage';
+import { ProjectOperationsPage } from './components/pages/ProjectOperationsPage';
 
 // Import page components
 import { Cockpit } from './components/pages/Cockpit';
@@ -1288,6 +1289,7 @@ function AppRoutes() {
       <Route path="/support/workstation" element={<ProtectedRoute><Layout><SupportWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/trading/orders/:id" element={<ProtectedRoute><Layout><OrderDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/settlement/invoices/:id" element={<ProtectedRoute><Layout><InvoiceDetailPage /></Layout></ProtectedRoute>} />
+      <Route path="/projects/:id/operations" element={<ProtectedRoute><Layout><ProjectOperationsPage /></Layout></ProtectedRoute>} />
       <Route path="/ipp-lifecycle" element={<ProtectedRoute><Layout><LazyWorkbench><IppLifecyclePage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/offtaker-suite" element={<ProtectedRoute><Layout><LazyWorkbench><OfftakerSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/carbon-registry" element={<ProtectedRoute><Layout><LazyWorkbench><CarbonRegistryPage /></LazyWorkbench></Layout></ProtectedRoute>} />
