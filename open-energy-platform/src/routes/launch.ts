@@ -370,6 +370,14 @@ async function buildTraderBoard(c: any, user: any): Promise<LaunchPayload> {
         icon: 'block',
         metric: { label: '24h', value: rejections, tone: rejections > 0 ? 'warn' : 'good' },
       },
+      {
+        key: 'workstation',
+        title: 'Trader workstation',
+        description: 'One-page view of open orders, rejections, post-trade exceptions, and margin calls — with state-machine actions.',
+        href: '/trader-risk/workstation',
+        cta_label: 'Open workstation',
+        icon: 'desktop_windows',
+      },
     ],
     ai_suggestions: await buildTraderAiSuggestions(c, user, { openOrders, rejections, exceptionsN, allocPending }),
   };
@@ -617,6 +625,14 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         icon: 'receipt_long',
         metric: { label: 'open', value: invoicesOut, tone: invoicesOut > 0 ? 'warn' : 'good' },
       },
+      {
+        key: 'workstation',
+        title: 'IPP workstation',
+        description: 'Projects, milestones, insurance expirations, community engagement — one workbench with satisfy / file-claim / log-engagement.',
+        href: '/ipp-lifecycle/workstation',
+        cta_label: 'Open workstation',
+        icon: 'desktop_windows',
+      },
     ],
     ai_suggestions: await buildIppDeveloperAiSuggestions(c, user, { milestones, envSoon, invoicesOut }),
   };
@@ -809,6 +825,14 @@ async function buildOfftakerBoard(c: any, user: any): Promise<LaunchPayload> {
         cta_label: 'Open settlement',
         icon: 'payments',
         metric: { label: 'to pay', value: toPay, tone: toPay > 0 ? 'warn' : 'good' },
+      },
+      {
+        key: 'workstation',
+        title: 'Offtaker workstation',
+        description: 'Sites, tariffs, budget-vs-actual, RECs retirement, Scope 2 disclosures — one workbench.',
+        href: '/offtaker-suite/workstation',
+        cta_label: 'Open workstation',
+        icon: 'desktop_windows',
       },
     ],
     ai_suggestions: [

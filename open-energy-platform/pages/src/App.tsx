@@ -16,6 +16,9 @@ import { GridOpsWorkstationPage } from './components/pages/GridOpsWorkstationPag
 import { RegulatorWorkstationPage } from './components/pages/RegulatorWorkstationPage';
 import { AdminWorkstationPage } from './components/pages/AdminWorkstationPage';
 import { SupportWorkstationPage } from './components/pages/SupportWorkstationPage';
+import { TraderWorkstationPage } from './components/pages/TraderWorkstationPage';
+import { IppWorkstationPage } from './components/pages/IppWorkstationPage';
+import { OfftakerWorkstationPage } from './components/pages/OfftakerWorkstationPage';
 import { OrderDetailPage } from './components/pages/OrderDetailPage';
 import { InvoiceDetailPage } from './components/pages/InvoiceDetailPage';
 import { ProjectOperationsPage } from './components/pages/ProjectOperationsPage';
@@ -1294,6 +1297,9 @@ function AppRoutes() {
       <Route path="/regulator-suite/workstation" element={<ProtectedRoute><Layout><RegulatorWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/admin-platform/workstation" element={<ProtectedRoute><Layout><AdminWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/support/workstation" element={<ProtectedRoute><Layout><SupportWorkstationPage /></Layout></ProtectedRoute>} />
+      <Route path="/trader-risk/workstation" element={<ProtectedRoute><Layout><TraderWorkstationPage /></Layout></ProtectedRoute>} />
+      <Route path="/ipp-lifecycle/workstation" element={<ProtectedRoute><Layout><IppWorkstationPage /></Layout></ProtectedRoute>} />
+      <Route path="/offtaker-suite/workstation" element={<ProtectedRoute><Layout><OfftakerWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/trading/orders/:id" element={<ProtectedRoute><Layout><OrderDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/settlement/invoices/:id" element={<ProtectedRoute><Layout><InvoiceDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/projects/:id/operations" element={<ProtectedRoute><Layout><ProjectOperationsPage /></Layout></ProtectedRoute>} />
