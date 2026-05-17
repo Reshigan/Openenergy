@@ -51,19 +51,21 @@ login_or_cached() {
   local email="$1"
   local cache_file="$CACHE_DIR/$(echo "$email" | tr '@/' '__').token"
 
-  # Reuse if cached + non-empty + less than 45 minutes old (tokens last 60).
-  if [ -f "$cache_file" ] && [ -s "$cache_file" ]; then
-    local age=$(( $(date +%s) - $(stat -f %m "$cache_file" 2>/dev/null || stat -c %Y "$cache_file") ))
-    if [ "$age" -lt 2700 ]; then
-      local cached
-      cached=$(cat "$cache_file")
-      # JWT shape sanity: must start with "ey" + contain two dots.
-      if [[ "$cached" == ey* ]] && [[ "$cached" == *.*.* ]]; then
-        echo "$cached"
-        return 0
-      fi
-      echo "[_login] cache file for $email looked corrupt — refreshing" >&2
+  # Reuse if cached + non-empty + modified within the last 45 minutes
+  # (tokens last 60). `find -mmin -45` is portable across macOS/BSD/GNU
+  # whereas `stat`'s flags diverge — the previous arithmetic-substitution
+  # form tripped `set -u` on Linux because GNU `stat -f %m` returns the
+  # filesystem mount point as a path (e.g. "/tmp"), which the shell then
+  # tried to treat as a variable inside `$(( ... ))`.
+  if [ -f "$cache_file" ] && [ -s "$cache_file" ] && find "$cache_file" -mmin -45 -type f 2>/dev/null | grep -q .; then
+    local cached
+    cached=$(cat "$cache_file")
+    # JWT shape sanity: must start with "ey" + contain two dots.
+    if [[ "$cached" == ey* ]] && [[ "$cached" == *.*.* ]]; then
+      echo "$cached"
+      return 0
     fi
+    echo "[_login] cache file for $email looked corrupt — refreshing" >&2
   fi
 
   # Cache miss or stale: do a fresh login. Retry once after a 20s pause if
