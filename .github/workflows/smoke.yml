@@ -56,7 +56,8 @@ jobs:
 
       - name: SPA tsc --noEmit (informational — does not block)
         working-directory: open-energy-platform/pages
-        run: npm run check || echo "SPA tsc baseline: see commit body for current error count"
+        run: |
+          npm run check || echo "SPA tsc baseline; see commit body for current error count"
 
       - name: Vite build
         working-directory: open-energy-platform/pages
