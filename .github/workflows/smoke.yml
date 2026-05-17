@@ -101,10 +101,12 @@ jobs:
         run: scripts/smoke-crud.sh
 
       # Pause between bash scripts to stay within the sensitive auth rate
-      # limit (10 / 5 min / IP) — even with the token cache, fresh CI
-      # runners start with no cache.
+      # limit (10 / 5 min / IP). 30s was too tight when smoke-crud has
+      # already used one slot — the next step can trip the limiter on
+      # the very first persona login. 120s clears one full rate-limit
+      # half-life cycle.
       - name: Pause for rate-limit window
-        run: sleep 30
+        run: sleep 120
 
       - name: Per-role smoke (9 personas + cross-role 403)
         working-directory: open-energy-platform

@@ -63,10 +63,12 @@ for spec in "${PERSONAS[@]}"; do
   email="${spec%%:*}"
   paths="${spec#*:}"
   echo "── Persona: $email ──────────────────────────────────────────────"
-  # The sensitive-route rate limiter tracks /api/auth/login per-IP. Running
-  # the smoke from one shell will trip the limit at persona ~5. A small
-  # pause between logins keeps us comfortably under the budget.
-  sleep 2
+  # The sensitive-route rate limiter is 10 logins / 5 min / IP. With 9
+  # personas plus the admin login burned earlier in the CI pipeline, a
+  # 2-second pause is not enough — by persona 5 we trip the limit. 35s
+  # between fresh logins keeps the cumulative rate well under budget
+  # (and is a no-op when the per-persona cache already has a valid token).
+  sleep 35
   TOKEN=$(login_as "$email")
   if [ -z "$TOKEN" ]; then
     echo "      ❌  LOGIN failed for $email"
