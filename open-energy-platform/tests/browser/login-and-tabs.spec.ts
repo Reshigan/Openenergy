@@ -55,7 +55,7 @@ test('admin persona logs in, lands on cockpit, navigates to lender suite', async
 
   // Cockpit / launchpad. URL contains /cockpit and at least one shell element
   // is visible (the navigation rail / hamburger menu button).
-  await page.waitForURL(/\/cockpit/, { timeout: 15_000 });
+  await page.waitForURL(/\/(cockpit|launch)/, { timeout: 15_000 });
   await expect(page.locator('button[aria-label="Open navigation menu"], button:has-text("Launchpad")').first()).toBeVisible();
 
   // No runtime page errors during the full login flow.

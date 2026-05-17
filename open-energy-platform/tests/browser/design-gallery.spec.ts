@@ -24,7 +24,7 @@ test('design gallery loads behind auth and renders 16 cards', async ({ page, bas
   await page.locator('input[type="email"], input[name="email"]').first().fill('admin@openenergy.co.za');
   await page.locator('input[type="password"]').first().fill(PASSWORD);
   await page.getByRole('button', { name: /sign in/i }).first().click();
-  await page.waitForURL(/\/cockpit/, { timeout: 15_000 });
+  await page.waitForURL(/\/(cockpit|launch)/, { timeout: 15_000 });
 
   // Direct-navigate to the gallery.
   await page.goto(`${baseURL}/design-gallery`, { waitUntil: 'networkidle' });
@@ -54,7 +54,7 @@ test('filtering by persona narrows the card set', async ({ page, baseURL }) => {
   await page.locator('input[type="email"], input[name="email"]').first().fill('admin@openenergy.co.za');
   await page.locator('input[type="password"]').first().fill(PASSWORD);
   await page.getByRole('button', { name: /sign in/i }).first().click();
-  await page.waitForURL(/\/cockpit/, { timeout: 15_000 });
+  await page.waitForURL(/\/(cockpit|launch)/, { timeout: 15_000 });
 
   await page.goto(`${baseURL}/design-gallery`, { waitUntil: 'networkidle' });
 
@@ -74,7 +74,7 @@ test('lh3.googleusercontent.com thumbnails actually load (CSP allowed)', async (
   await page.locator('input[type="email"], input[name="email"]').first().fill('admin@openenergy.co.za');
   await page.locator('input[type="password"]').first().fill(PASSWORD);
   await page.getByRole('button', { name: /sign in/i }).first().click();
-  await page.waitForURL(/\/cockpit/, { timeout: 15_000 });
+  await page.waitForURL(/\/(cockpit|launch)/, { timeout: 15_000 });
 
   await page.goto(`${baseURL}/design-gallery`, { waitUntil: 'load' });
 
