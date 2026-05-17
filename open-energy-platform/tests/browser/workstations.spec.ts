@@ -9,17 +9,28 @@
 // prod-write coverage lives in scripts/smoke-crud.sh.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page, APIRequestContext } from '@playwright/test';
 
 const PASSWORD = process.env.DEMO_PASSWORD || 'Demo@2024!';
 
-async function loginAs(page: Page, email: string, baseURL: string) {
-  await page.goto(`${baseURL}/`, { waitUntil: 'networkidle' });
-  await page.locator('input[type="email"], input[name="email"]').first().fill(email);
-  await page.locator('input[type="password"]').first().fill(PASSWORD);
-  await page.getByRole('button', { name: /sign in/i }).first().click();
-  // Land on cockpit / launch board.
-  await page.waitForURL(/\/(cockpit|launch)/, { timeout: 15_000 });
+// Get a JWT via direct API call, then seed it into localStorage so the SPA
+// boots already-authenticated. This sidesteps the login-form race and is
+// more deterministic on a busy CI runner. One API login per test = same
+// rate-limit cost as the form-click flow, but with no UI flake surface.
+async function loginAs(page: Page, request: APIRequestContext, email: string, baseURL: string) {
+  const r = await request.post(`${baseURL}/api/auth/login`, {
+    data: { email, password: PASSWORD },
+    failOnStatusCode: false,
+  });
+  if (!r.ok()) {
+    const body = await r.text();
+    throw new Error(`login ${email} failed: HTTP ${r.status()} body=${body.slice(0, 200)}`);
+  }
+  const token = (await r.json())?.data?.token;
+  if (!token) throw new Error(`login ${email} returned no token`);
+  await page.addInitScript((tok) => {
+    localStorage.setItem('token', tok as string);
+  }, token);
 }
 
 function isBenign(msg: string): boolean {
@@ -62,14 +73,15 @@ const CASES: WorkstationCase[] = [
 ];
 
 for (const c of CASES) {
-  test(`workstation [${c.role}] loads, tabs render, first listing fetches without error`, async ({ page, baseURL }) => {
+  test(`workstation [${c.role}] loads, tabs render, first listing fetches without error`, async ({ page, request, baseURL }) => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
     page.on('console', (msg) => { if (msg.type() === 'error') errors.push(`console.error: ${msg.text()}`); });
 
-    await loginAs(page, c.email, baseURL!);
+    await loginAs(page, request, c.email, baseURL!);
 
-    // Direct-navigate to the workstation route.
+    // Direct-navigate to the workstation route. The seeded token makes the
+    // ProtectedRoute resolve without round-tripping through /login.
     await page.goto(`${baseURL}${c.route}`, { waitUntil: 'networkidle' });
 
     // The shell renders the page title once the bundle is ready.
@@ -95,11 +107,11 @@ for (const c of CASES) {
 // Sanity check on a pre-existing workstation using the same shell — proves
 // the shared WorkstationShell primitive still renders for the other 5 roles
 // (Carbon, Grid-ops, Regulator, Admin, Support).
-test('workstation [carbon_fund] loads — covers shared WorkstationShell', async ({ page, baseURL }) => {
+test('workstation [carbon_fund] loads — covers shared WorkstationShell', async ({ page, request, baseURL }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
 
-  await loginAs(page, 'carbon@openenergy.co.za', baseURL!);
+  await loginAs(page, request, 'carbon@openenergy.co.za', baseURL!);
   await page.goto(`${baseURL}/carbon-registry/workstation`, { waitUntil: 'networkidle' });
   await expect(page.getByRole('heading', { name: /carbon workstation/i })).toBeVisible({ timeout: 10_000 });
 
