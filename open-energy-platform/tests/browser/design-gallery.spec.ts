@@ -69,25 +69,37 @@ test('filtering by persona narrows the card set', async ({ page, baseURL }) => {
   await expect(cards).toHaveCount(16);
 });
 
-test('lh3.googleusercontent.com thumbnails actually load (CSP allowed)', async ({ page, baseURL }) => {
+test('lh3.googleusercontent.com thumbnails are not blocked by CSP', async ({ page, baseURL }) => {
   await page.goto(`${baseURL}/`, { waitUntil: 'networkidle' });
   await page.locator('input[type="email"], input[name="email"]').first().fill('admin@openenergy.co.za');
   await page.locator('input[type="password"]').first().fill(PASSWORD);
   await page.getByRole('button', { name: /sign in/i }).first().click();
   await page.waitForURL(/\/(cockpit|launch)/, { timeout: 15_000 });
 
-  await page.goto(`${baseURL}/design-gallery`, { waitUntil: 'load' });
+  // Watch for CSP violations on the gallery navigation. A real CSP block
+  // surfaces as a `securitypolicyviolation` event in the page; we collect
+  // any that fire and assert none target lh3.googleusercontent.com.
+  // This is a stronger test of intent than fetching the image directly:
+  // Google's CDN sometimes returns 403 to non-browser referers, which
+  // would false-positive a "the image loaded" assertion.
+  const cspViolations: string[] = [];
+  await page.exposeFunction('__recordCspViolation', (uri: string) => { cspViolations.push(uri); });
+  await page.addInitScript(() => {
+    document.addEventListener('securitypolicyviolation', (e: any) => {
+      // @ts-expect-error — bridge to test scope
+      window.__recordCspViolation(e.blockedURI);
+    });
+  });
 
-  // The intent here is to verify the CSP allows lh3.googleusercontent.com,
-  // not to assert Google's CDN is up. Test the headers/CSP via the response
-  // status: an image request that returns 2xx and a non-empty body means
-  // the CDN host was reachable AND not blocked by CSP.
+  await page.goto(`${baseURL}/design-gallery`, { waitUntil: 'networkidle' });
+
+  // At least one image element with an lh3 src must be in the DOM.
   const firstThumb = page.locator('article img[src*="lh3.googleusercontent.com"]').first();
   await expect(firstThumb).toBeVisible();
   const src = await firstThumb.getAttribute('src');
-  expect(src).toBeTruthy();
-  const res = await page.request.get(src!);
-  expect(res.status(), `image fetch returned ${res.status()}`).toBeLessThan(400);
-  const body = await res.body();
-  expect(body.byteLength).toBeGreaterThan(0);
+  expect(src).toMatch(/^https:\/\/lh3\.googleusercontent\.com\//);
+
+  // No CSP violation against the Google CDN host fired during page load.
+  const blockedGoogleThumb = cspViolations.find((u) => u.includes('lh3.googleusercontent.com'));
+  expect(blockedGoogleThumb, `CSP blocked: ${blockedGoogleThumb}`).toBeUndefined();
 });
