@@ -10,6 +10,7 @@ import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { evaluateFlag, coerceFlagValue, FlagDef, FlagOverride } from '../utils/feature-flags';
 import { fireCascade } from '../utils/cascade';
 import { cachedAll } from '../utils/reference-cache';
+import { appendAudit, getChainHead, verifyChain } from '../utils/audit-chain';
 // popia-access imports retained for future use in per-subject reads.
 // import { logPiiAccess, inferAccessType } from '../utils/popia-access';
 
@@ -532,6 +533,16 @@ pa.post('/tenant-events', async (c) => {
        (id, tenant_id, event_type, actor_id, reason, payload_json)
      VALUES (?, ?, ?, ?, ?, ?)`,
   ).bind(id, body.tenant_id, body.event_type, user.id, body.reason || null, body.payload_json || null).run();
+
+  await appendAudit({
+    env: c.env, entity_type: 'admin', entity_id: body.tenant_id,
+    event_type: `tenant.${body.event_type}`, actor_id: user.id,
+    payload: {
+      tenant_event_id: id, tenant_id: body.tenant_id,
+      event_type: body.event_type, reason: body.reason || null,
+    },
+  }).catch((e) => console.warn('audit_tenant_event_failed', (e as Error).message));
+
   return c.json({ success: true, data: { id } });
 });
 
@@ -584,6 +595,19 @@ pa.post('/flag-overrides', async (c) => {
     id, body.flag_key, body.scope_type, body.scope_id || null,
     body.previous_value || null, String(body.new_value), user.id, body.reason || null,
   ).run();
+
+  await appendAudit({
+    env: c.env, entity_type: 'admin', entity_id: id,
+    event_type: 'flag.overridden', actor_id: user.id,
+    payload: {
+      flag_override_id: id, flag_key: body.flag_key,
+      scope_type: body.scope_type, scope_id: body.scope_id || null,
+      previous_value: body.previous_value || null,
+      new_value: String(body.new_value),
+      reason: body.reason || null,
+    },
+  }).catch((e) => console.warn('audit_flag_override_failed', (e as Error).message));
+
   return c.json({ success: true, data: { id } });
 });
 
@@ -598,5 +622,264 @@ pa.get('/flag-overrides', async (c) => {
   ).bind(...binds).all().catch(() => ({ results: [] } as any));
   return c.json({ success: true, data: rows.results || [] });
 });
+
+// ════════════════════════════════════════════════════════════════════════
+// L5 — Admin: POPIA breach + tenant lifecycle audit, POPIA s.22 export,
+// payment-processor / billing recon.
+// ════════════════════════════════════════════════════════════════════════
+
+pa.get('/audit/head', async (c) => {
+  const head = await getChainHead(c.env, 'admin');
+  return c.json({ success: true, data: head });
+});
+
+pa.get('/audit/events', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'support' && user.role !== 'regulator') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const limit = Math.min(200, Number(c.req.query('limit') || 50));
+  const rs = await c.env.DB.prepare(
+    `SELECT id, entity_id, event_type, actor_id, sequence_no, content_hash, prev_hash, created_at, payload_json
+       FROM audit_events WHERE entity_type = 'admin'
+      ORDER BY sequence_no DESC LIMIT ?`,
+  ).bind(limit).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+pa.post('/audit/verify', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const fromSeq = Number(c.req.query('from_seq') || 1) || 1;
+  const result = await verifyChain(c.env, 'admin', fromSeq);
+  return c.json({ success: result.ok, data: result });
+});
+
+// POST /admin-platform/audit/export — POPIA s.22 breach register +
+// s.11(3)/s.24 tenant lifecycle event register. Information Regulator
+// SA quarterly submission format.
+pa.post('/audit/export', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin') return c.json({ success: false, error: 'Admin only' }, 403);
+  const body = (await c.req.json().catch(() => ({}))) as { from?: string; to?: string };
+  const from = body.from || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const to = body.to || new Date().toISOString().slice(0, 10);
+
+  const events = await c.env.DB.prepare(
+    `SELECT id, tenant_id, event_type, actor_id, reason, occurred_at
+       FROM admin_tenant_lifecycle_events
+      WHERE substr(occurred_at, 1, 10) BETWEEN ? AND ?
+      ORDER BY occurred_at ASC`,
+  ).bind(from, to).all<any>().catch(() => ({ results: [] } as any));
+
+  // POPIA s.22 breach register from popia_breaches if it exists.
+  const breaches = await c.env.DB.prepare(
+    `SELECT id, breach_date, detected_at, notified_information_regulator_at,
+            description, severity, status
+       FROM popia_breaches
+      WHERE substr(detected_at, 1, 10) BETWEEN ? AND ?
+      ORDER BY detected_at ASC`,
+  ).bind(from, to).all<any>().catch(() => ({ results: [] } as any));
+
+  const evRows = (events.results || []) as Array<Record<string, any>>;
+  const brRows = (breaches.results || []) as Array<Record<string, any>>;
+
+  const header = ['record_type','record_id','tenant_or_subject','occurred_at','event_or_severity','reason_or_description','status_or_actor'].join(',');
+  const csvLines = [header];
+  for (const r of evRows) {
+    csvLines.push([
+      'tenant_lifecycle', r.id, r.tenant_id, r.occurred_at,
+      r.event_type, csvEscape(r.reason || ''), r.actor_id,
+    ].join(','));
+  }
+  for (const r of brRows) {
+    csvLines.push([
+      'popia_breach', r.id, '', r.detected_at,
+      r.severity, csvEscape(r.description || ''), r.status,
+    ].join(','));
+  }
+  const csv = csvLines.join('\n') + '\n';
+  const csvBytes = new TextEncoder().encode(csv);
+  const csvSha = await sha256OfBytes(csvBytes);
+
+  const head = await getChainHead(c.env, 'admin');
+  const exportId = 'exp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const csvKey = `audit-exports/admin/${exportId}/popia-and-tenant-events.csv`;
+  const manifestKey = `audit-exports/admin/${exportId}/manifest.json`;
+  const manifest = {
+    export_id: exportId, entity_type: 'admin', from, to,
+    generated_at: new Date().toISOString(), generated_by: user.id,
+    row_count: csvLines.length - 1,
+    tenant_event_count: evRows.length, breach_count: brRows.length,
+    csv: { r2_key: csvKey, sha256: csvSha, bytes: csvBytes.byteLength },
+    chain: {
+      head_hash: head?.head_hash || null,
+      head_sequence: head?.head_sequence || 0,
+      last_verified_at: head?.last_verified_at || null,
+    },
+    format: { profile: 'Information Regulator SA POPIA s.22 breach + s.11 lifecycle register v1', encoding: 'utf-8' },
+  };
+  const manifestBytes = new TextEncoder().encode(JSON.stringify(manifest, null, 2));
+
+  try {
+    await c.env.R2.put(csvKey, csvBytes, { httpMetadata: { contentType: 'text/csv' } });
+    await c.env.R2.put(manifestKey, manifestBytes, { httpMetadata: { contentType: 'application/json' } });
+  } catch (e) {
+    return c.json({ success: false, error: 'R2 write failed', data: { detail: (e as Error).message } }, 502);
+  }
+
+  await c.env.DB.prepare(
+    `INSERT INTO audit_exports
+       (id, entity_type, from_ts, to_ts, row_count,
+        csv_r2_key, manifest_r2_key, chain_head_hash, generated_by, generated_at)
+     VALUES (?, 'admin', ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+  ).bind(exportId, from, to, csvLines.length - 1, csvKey, manifestKey,
+         head?.head_hash || '', user.id).run();
+
+  await appendAudit({
+    env: c.env, entity_type: 'admin', entity_id: exportId,
+    event_type: 'audit.export_generated', actor_id: user.id,
+    payload: { export_id: exportId, from, to, row_count: csvLines.length - 1, csv_sha256: csvSha },
+  }).catch(() => {});
+
+  return c.json({
+    success: true,
+    data: { export_id: exportId, row_count: csvLines.length - 1, csv_r2_key: csvKey, manifest_r2_key: manifestKey, manifest },
+  }, 201);
+});
+
+pa.get('/audit/exports', async (c) => {
+  const rs = await c.env.DB.prepare(
+    `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
+            chain_head_hash, generated_by, generated_at
+       FROM audit_exports WHERE entity_type = 'admin'
+      ORDER BY generated_at DESC LIMIT 50`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+// POST /admin-platform/audit/recon — payment-processor / billing reconciliation.
+// CSV columns: billing_run_id, tenant_id, amount_zar, period_end
+// Match against admin_billing_runs joined with billed amounts.
+pa.post('/audit/recon', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin') return c.json({ success: false, error: 'Admin only' }, 403);
+  const body = (await c.req.json().catch(() => ({}))) as { source?: string; csv?: string };
+  const source = (body.source || 'billing_processor').toLowerCase();
+  if (typeof body.csv !== 'string' || body.csv.length < 10) {
+    return c.json({ success: false, error: 'csv body required' }, 400);
+  }
+  const lines = body.csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return c.json({ success: false, error: 'csv must have header + ≥1 row' }, 400);
+  const headers = lines[0].split(',').map((h) => h.trim());
+  const need = ['billing_run_id','tenant_id','amount_zar','period_end'];
+  for (const k of need) {
+    if (!headers.includes(k)) return c.json({ success: false, error: `csv missing column: ${k}` }, 400);
+  }
+  const idxOf = (k: string) => headers.indexOf(k);
+  type TheirRow = { billing_run_id: string; tenant_id: string; amount_zar: number; period_end: string };
+  const theirs: TheirRow[] = [];
+  for (const ln of lines.slice(1)) {
+    const cols = ln.split(',');
+    theirs.push({
+      billing_run_id: (cols[idxOf('billing_run_id')] || '').trim(),
+      tenant_id: (cols[idxOf('tenant_id')] || '').trim(),
+      amount_zar: Number(cols[idxOf('amount_zar')] || 0),
+      period_end: (cols[idxOf('period_end')] || '').trim(),
+    });
+  }
+
+  const runId = 'recon_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const csvKey = `audit-recon/admin/${runId}/processor.csv`;
+  await c.env.R2.put(csvKey, new TextEncoder().encode(body.csv), {
+    httpMetadata: { contentType: 'text/csv' },
+  }).catch(() => null);
+
+  const ours = await c.env.DB.prepare(
+    `SELECT id, run_type, period_start, period_end, total_zar, status
+       FROM admin_billing_runs`,
+  ).all<{ id: string; run_type: string; period_start: string; period_end: string; total_zar: number; status: string }>().catch(() => ({ results: [] } as any));
+  const ourById = new Map<string, any>();
+  for (const r of (ours.results || []) as any[]) ourById.set(r.id, r);
+
+  const matched = new Set<string>();
+  type Break = { type: string; billing_run_id: string | null; our: unknown; their: unknown; field: string | null };
+  const breaks: Break[] = [];
+  for (const t of theirs) {
+    const o = ourById.get(t.billing_run_id);
+    if (!o) {
+      breaks.push({ type: 'missing_in_ours', billing_run_id: t.billing_run_id || null, our: null, their: t, field: null });
+      continue;
+    }
+    matched.add(t.billing_run_id);
+    if (Math.abs(Number(o.total_zar || 0) - Number(t.amount_zar)) > 0.01) {
+      breaks.push({ type: 'field_mismatch', billing_run_id: t.billing_run_id, our: o, their: t, field: 'amount_zar' });
+    }
+  }
+  for (const [bid, o] of ourById.entries()) {
+    if (!matched.has(bid) && !theirs.some((t) => t.billing_run_id === bid)) {
+      breaks.push({ type: 'missing_in_theirs', billing_run_id: bid, our: o, their: null, field: null });
+    }
+  }
+
+  const matchedCount = theirs.length - breaks.filter((b) => b.type !== 'field_mismatch').length;
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(
+    `INSERT INTO audit_recon_runs
+       (id, entity_type, source, uploaded_csv_r2_key, row_count,
+        matched_count, break_count, status, started_at, finished_at, started_by)
+     VALUES (?, 'admin', ?, ?, ?, ?, ?, 'complete', ?, ?, ?)`,
+  ).bind(runId, source, csvKey, theirs.length, matchedCount,
+         breaks.length, now, now, user.id).run();
+
+  if (breaks.length > 0) {
+    const inserts = breaks.map((b) => c.env.DB.prepare(
+      `INSERT INTO audit_recon_breaks
+         (id, run_id, break_type, external_ref, our_value, their_value, field, resolution)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'open')`,
+    ).bind(
+      'brk_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+      runId, b.type, b.billing_run_id,
+      b.our != null ? JSON.stringify(b.our) : null,
+      b.their != null ? JSON.stringify(b.their) : null,
+      b.field,
+    ));
+    await c.env.DB.batch(inserts);
+  }
+
+  await appendAudit({
+    env: c.env, entity_type: 'admin', entity_id: runId,
+    event_type: 'audit.recon_run', actor_id: user.id,
+    payload: { run_id: runId, source, row_count: theirs.length, break_count: breaks.length },
+  }).catch(() => {});
+
+  return c.json({
+    success: true,
+    data: { run_id: runId, source, row_count: theirs.length, matched_count: matchedCount, break_count: breaks.length },
+  }, 201);
+});
+
+pa.get('/audit/recon', async (c) => {
+  const rs = await c.env.DB.prepare(
+    `SELECT id, source, row_count, matched_count, break_count, status,
+            started_at, finished_at
+       FROM audit_recon_runs WHERE entity_type = 'admin'
+      ORDER BY started_at DESC LIMIT 50`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+function csvEscape(s: string): string {
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+async function sha256OfBytes(b: Uint8Array): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', b);
+  return Array.from(new Uint8Array(buf)).map((x) => x.toString(16).padStart(2, '0')).join('');
+}
 
 export default pa;

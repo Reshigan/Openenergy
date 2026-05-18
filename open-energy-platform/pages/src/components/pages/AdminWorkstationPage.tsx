@@ -38,6 +38,16 @@ export function AdminWorkstationPage() {
             />
           ),
         },
+        { key: 'platform_audit', label: 'Platform audit',
+          body: ({ onRefresh }) => (
+            <AuditPanel
+              prefix="/admin-platform"
+              reconHint="billing_run_id,tenant_id,amount_zar,period_end"
+              reconSourceOptions={['billing_processor', 'stripe', 'paystack', 'manual']}
+              onChange={onRefresh}
+            />
+          ),
+        },
       ]}
     />
   );
