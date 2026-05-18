@@ -373,6 +373,7 @@ app.notFound(async (c) => {
 import { runSurveillanceScan } from './routes/regulator-suite';
 import { executeSettlementRun } from './routes/settlement-automation';
 import { executeSettlementRun as executeImbalanceRun } from './routes/imbalance';
+import { verifyChain } from './utils/audit-chain';
 
 async function safe<T>(label: string, fn: () => Promise<T>): Promise<T | null> {
   try {
@@ -702,6 +703,34 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
             INSERT OR REPLACE INTO cfe_match_summary (participant_id, reporting_period_start, reporting_period_end, total_load_kwh, total_carbon_free_kwh, cfe_match_pct, hours_with_full_match, hours_with_zero_match, avg_grid_intensity_kg_kwh, emissions_avoided_tco2e)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(p.participant_id, monthStart, monthEnd, totalL, totalCF, matchPct, full, zero, gridK, avoided).run();
+        }
+      });
+
+      // L5 — nightly tamper-evident audit-chain verify across every feature
+      // chain. Hashes are recomputed from sequence_no=1 each night; any
+      // divergence is logged at error level so the on-call dashboard /
+      // SIEM forwarders surface it. The verify itself persists
+      // last_verified_at into audit_chain_state on success, which the
+      // workstation UIs surface as "verified · <timestamp>".
+      await safe('audit_chain_verify_all', async () => {
+        const features = ['trading','settlement','carbon','ipp','offtaker',
+                          'lender','grid','regulator','admin','support',
+                          'auth','contracts','marketplace','esg','platform'];
+        for (const feature of features) {
+          const result = await verifyChain(env, feature).catch((e) => ({
+            entity_type: feature, ok: false, scanned: 0,
+            head_hash: null, head_sequence: 0,
+            first_divergence_seq: null, expected_hash: null, stored_hash: null,
+            duration_ms: 0, error: (e as Error).message,
+          } as unknown as Awaited<ReturnType<typeof verifyChain>>));
+          if (!result.ok) {
+            logger.error('audit_chain_divergence', {
+              entity_type: feature,
+              first_divergence_seq: result.first_divergence_seq,
+              expected_hash: result.expected_hash,
+              stored_hash: result.stored_hash,
+            });
+          }
         }
       });
       break;

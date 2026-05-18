@@ -7,6 +7,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { fireCascade } from '../utils/cascade';
 
 const popia = new Hono<HonoEnv>();
 popia.use('*', authMiddleware);
@@ -73,6 +74,13 @@ popia.post('/consent', async (c) => {
     now,
   ).run();
 
+  await fireCascade({
+    event: 'popia.consent_changed',
+    actor_id: user.id, entity_type: 'popia_consents', entity_id: user.id,
+    data: { prior, next: { marketing: !!marketing, data_sharing: !!data_sharing, third_party: !!third_party, analytics: analytics !== false } },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: { message: 'Consent updated', updated_at: now } });
 });
 
@@ -91,6 +99,14 @@ popia.post('/dsar', async (c) => {
     INSERT INTO popia_dsar_requests (id, participant_id, scope, status, requested_at)
     VALUES (?, ?, ?, 'pending', ?)
   `).bind(id, subject, scope || 'all', now).run();
+
+  await fireCascade({
+    event: 'popia.data_exported',
+    actor_id: user.id, entity_type: 'popia_dsar_requests', entity_id: id,
+    data: { dsar_id: id, subject, scope: scope || 'all' },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: { id, status: 'pending', subject } }, 201);
 });
 
@@ -189,6 +205,14 @@ popia.post('/erasure', async (c) => {
     INSERT INTO popia_erasure_requests (id, participant_id, reason, status, requested_at)
     VALUES (?, ?, ?, 'pending', ?)
   `).bind(id, user.id, reason || 'User requested', now).run();
+
+  await fireCascade({
+    event: 'popia.erasure',
+    actor_id: user.id, entity_type: 'popia_erasure_requests', entity_id: id,
+    data: { erasure_id: id, reason: reason || 'User requested' },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: { erasure_id: id, status: 'pending', message: 'Erasure request submitted for DPO review under POPIA 4 of 2013 Section 24.' } }, 201);
 });
 

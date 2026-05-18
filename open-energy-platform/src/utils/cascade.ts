@@ -115,6 +115,60 @@ interface CascadeContext {
   entity_id: string;
   data?: Record<string, unknown>;
   env: any;
+  /**
+   * Opt-out of the auto-audit-chain append. Set to true when the caller has
+   * already invoked appendAudit() with a hand-shaped payload (e.g. for
+   * tamper-evident state machines where the payload needs to capture more
+   * than ctx.data — see trading.ts /orders, settlement /payments, etc.).
+   * Default false → every cascade fires through the audit chain.
+   */
+  skipAudit?: boolean;
+}
+
+// Map cascade event prefix → audit-chain entity_type. Anything not in this
+// map gets audited under the catch-all 'platform' chain. The point of the
+// L5 auto-audit hook is that every domain mutation lands somewhere on a
+// chain by default; explicit appendAudit() calls in routes layer on richer
+// payloads where needed.
+const AUDIT_PREFIX_MAP: Record<string, string> = {
+  trade: 'trading',
+  invoice: 'settlement',
+  dispute: 'settlement',
+  settlement: 'settlement',
+  escrow: 'settlement',
+  carbon: 'carbon',
+  rec: 'offtaker',
+  rec_market: 'offtaker',
+  scope2: 'offtaker',
+  ipp: 'ipp',
+  esg: 'esg',
+  grid: 'grid',
+  metering: 'grid',
+  ona: 'ipp',
+  pipeline: 'ipp',
+  dealroom: 'ipp',
+  thread: 'ipp',
+  contract: 'contracts',
+  marketplace: 'marketplace',
+  regulator: 'regulator',
+  popia: 'admin',
+  auth: 'auth',
+  intelligence: 'admin',
+  action_queue: 'admin',
+  pcaf: 'carbon',
+  maturity: 'carbon',
+  anomaly: 'carbon',
+  disclosure: 'esg',
+  audit_chain: 'platform',
+  demand: 'trading',
+  meter: 'grid',
+  scenario: 'carbon',
+  ai: 'platform',
+};
+
+function auditEntityTypeFor(event: string): string {
+  const prefix = event.split('.')[0] ?? '';
+  return AUDIT_PREFIX_MAP[prefix] || 'platform';
 }
 
 /**
@@ -144,6 +198,20 @@ export async function fireCascade(ctx: CascadeContext): Promise<void> {
     await runStage(ctx, 'notifications', () => createNotifications(ctx, ctx.env));
   }
 
+  // L5 — tamper-evident audit chain hook. Awaited but error-isolated:
+  // append failures must never break the cascade or the user request, but
+  // we DO await the append so callers (and tests) observe the chain
+  // advance before fireCascade resolves. Opts out for
+  // `audit.event_appended` events which are emitted by appendAudit itself
+  // and would otherwise recurse.
+  if (!ctx.skipAudit && ctx.event !== 'audit.event_appended') {
+    try {
+      await autoAppendAudit(ctx);
+    } catch (e) {
+      console.warn('auto_audit_failed', ctx.event, (e as Error).message);
+    }
+  }
+
   // Webhooks run async so user-facing responses aren't blocked on slow
   // external endpoints. Terminal failure still lands in DLQ.
   void runStage(ctx, 'webhooks', () => deliverWebhooks(ctx)).catch(() => {
@@ -151,6 +219,20 @@ export async function fireCascade(ctx: CascadeContext): Promise<void> {
   });
 
   await runStage(ctx, 'special', () => handleSpecialCascades(ctx));
+}
+
+// Lazy-imported to avoid circular cascade.ts ↔ audit-chain.ts dependency.
+async function autoAppendAudit(ctx: CascadeContext): Promise<void> {
+  // Dynamic import keeps the module graph acyclic at type-check time.
+  const { appendAudit } = await import('./audit-chain');
+  await appendAudit({
+    env: ctx.env,
+    entity_type: auditEntityTypeFor(ctx.event),
+    entity_id: ctx.entity_id,
+    event_type: ctx.event,
+    actor_id: ctx.actor_id || 'system',
+    payload: ctx.data || {},
+  });
 }
 
 async function tryBatchAuditAndNotifications(ctx: CascadeContext): Promise<boolean> {
