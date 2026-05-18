@@ -23,6 +23,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import { cachedAll, invalidateReference } from '../utils/reference-cache';
+import { appendAudit, getChainHead, verifyChain } from '../utils/audit-chain';
 
 const suite = new Hono<HonoEnv>();
 suite.use('*', authMiddleware);
@@ -126,6 +127,20 @@ suite.post('/licences', async (c) => {
     data: { licence_number: b.licence_number, licensee_participant_id: b.licensee_participant_id || null },
     env: c.env,
   });
+
+  await appendAudit({
+    env: c.env, entity_type: 'regulator', entity_id: id,
+    event_type: 'licence.granted', actor_id: user.id,
+    payload: {
+      licence_id: id, licence_number: b.licence_number,
+      licensee_participant_id: b.licensee_participant_id || null,
+      licensee_name: b.licensee_name, licence_type: b.licence_type,
+      technology: b.technology || null,
+      capacity_mw: Number(b.capacity_mw ?? 0),
+      issue_date: b.issue_date,
+    },
+  }).catch((e) => console.warn('audit_licence_granted_failed', (e as Error).message));
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -180,6 +195,17 @@ async function transitionLicence(
       env: c.env,
     });
   }
+
+  await appendAudit({
+    env: c.env, entity_type: 'regulator', entity_id: id,
+    event_type: `licence.${eventType}`, actor_id: user.id,
+    payload: {
+      licence_id: id, licence_number: existing.licence_number,
+      prior_status: existing.status, new_status: newStatus,
+      details: b.details || null,
+    },
+  }).catch((e) => console.warn('audit_licence_transition_failed', (e as Error).message));
+
   return c.json({ success: true, data: row });
 }
 
@@ -303,6 +329,20 @@ suite.post('/tariff-submissions/:id/determine', async (c) => {
     },
     env: c.env,
   });
+
+  await appendAudit({
+    env: c.env, entity_type: 'regulator', entity_id: id,
+    event_type: 'tariff.determined', actor_id: user.id,
+    payload: {
+      decision_id: id, submission_id: submissionId,
+      decision_number: b.decision_number, decision_date: b.decision_date,
+      approved_revenue_zar: approvedRev,
+      approved_tariff_c_per_kwh: approvedTariff,
+      variance_pct: variance,
+      effective_from: b.effective_from,
+    },
+  }).catch((e) => console.warn('audit_tariff_determined_failed', (e as Error).message));
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -1051,5 +1091,278 @@ suite.get('/enforcement-events', async (c) => {
   ).bind(...binds).all().catch(() => ({ results: [] } as any));
   return c.json({ success: true, data: rows.results || [] });
 });
+
+// ════════════════════════════════════════════════════════════════════════
+// L5 — Tamper-evident audit, PAIA gazette export, cross-regulator recon.
+// ════════════════════════════════════════════════════════════════════════
+
+suite.get('/audit/head', async (c) => {
+  const head = await getChainHead(c.env, 'regulator');
+  return c.json({ success: true, data: head });
+});
+
+suite.get('/audit/events', async (c) => {
+  const user = getCurrentUser(c);
+  const limit = Math.min(200, Number(c.req.query('limit') || 50));
+  const where: string[] = [`entity_type = 'regulator'`];
+  const binds: unknown[] = [];
+  // Regulator chain is intentionally readable by anyone (PAIA transparency).
+  // Non-officers only see their own events though.
+  const isOfficer = user.role === 'admin' || user.role === 'regulator' || user.role === 'support';
+  if (!isOfficer) { where.push('actor_id = ?'); binds.push(user.id); }
+  const rs = await c.env.DB.prepare(
+    `SELECT id, entity_id, event_type, actor_id, sequence_no, content_hash, prev_hash, created_at, payload_json
+       FROM audit_events WHERE ${where.join(' AND ')}
+      ORDER BY sequence_no DESC LIMIT ?`,
+  ).bind(...binds, limit).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+suite.post('/audit/verify', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const fromSeq = Number(c.req.query('from_seq') || 1) || 1;
+  const result = await verifyChain(c.env, 'regulator', fromSeq);
+  return c.json({ success: result.ok, data: result });
+});
+
+// POST /regulator/audit/export — PAIA gazette: every licence + tariff
+// determination in the period. Both registers concatenated into one CSV
+// since they share the public-gazette purpose under PAIA s.14.
+suite.post('/audit/export', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as { from?: string; to?: string };
+  const from = body.from || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const to = body.to || new Date().toISOString().slice(0, 10);
+
+  const licences = await c.env.DB.prepare(
+    `SELECT id, licence_number, licensee_name, licence_type, technology,
+            capacity_mw, location, issue_date, effective_date, expiry_date, status
+       FROM regulator_licences
+      WHERE substr(issue_date, 1, 10) BETWEEN ? AND ?
+      ORDER BY issue_date ASC`,
+  ).bind(from, to).all<any>().catch(() => ({ results: [] } as any));
+
+  const decisions = await c.env.DB.prepare(
+    `SELECT id, decision_number, submission_id, decision_date,
+            approved_revenue_zar, approved_tariff_c_per_kwh, variance_percentage,
+            effective_from, effective_to, gazette_reference
+       FROM regulator_tariff_decisions
+      WHERE substr(decision_date, 1, 10) BETWEEN ? AND ?
+      ORDER BY decision_date ASC`,
+  ).bind(from, to).all<any>().catch(() => ({ results: [] } as any));
+
+  const licRows = (licences.results || []) as Array<Record<string, any>>;
+  const decRows = (decisions.results || []) as Array<Record<string, any>>;
+
+  const header = ['record_type','record_id','primary_ref','party','category',
+                  'value_a','value_b','effective_from','effective_to','status'].join(',');
+  const csvLines = [header];
+  for (const r of licRows) {
+    csvLines.push([
+      'licence', r.id, r.licence_number, csvEscape(r.licensee_name || ''),
+      r.licence_type, r.capacity_mw ?? '', r.technology || '',
+      r.effective_date || r.issue_date, r.expiry_date || '', r.status,
+    ].join(','));
+  }
+  for (const r of decRows) {
+    csvLines.push([
+      'tariff_decision', r.id, r.decision_number, '',
+      'tariff_determination',
+      r.approved_revenue_zar ?? '', r.approved_tariff_c_per_kwh ?? '',
+      r.effective_from, r.effective_to || '', 'gazetted',
+    ].join(','));
+  }
+  const csv = csvLines.join('\n') + '\n';
+  const csvBytes = new TextEncoder().encode(csv);
+  const csvSha = await sha256OfBytes(csvBytes);
+
+  const head = await getChainHead(c.env, 'regulator');
+  const exportId = 'exp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const csvKey = `audit-exports/regulator/${exportId}/gazette.csv`;
+  const manifestKey = `audit-exports/regulator/${exportId}/manifest.json`;
+  const manifest = {
+    export_id: exportId, entity_type: 'regulator', from, to,
+    generated_at: new Date().toISOString(), generated_by: user.id,
+    row_count: csvLines.length - 1,
+    licence_count: licRows.length, decision_count: decRows.length,
+    csv: { r2_key: csvKey, sha256: csvSha, bytes: csvBytes.byteLength },
+    chain: {
+      head_hash: head?.head_hash || null,
+      head_sequence: head?.head_sequence || 0,
+      last_verified_at: head?.last_verified_at || null,
+    },
+    format: { profile: 'NERSA PAIA s.14 gazette register v1', encoding: 'utf-8' },
+  };
+  const manifestBytes = new TextEncoder().encode(JSON.stringify(manifest, null, 2));
+
+  try {
+    await c.env.R2.put(csvKey, csvBytes, { httpMetadata: { contentType: 'text/csv' } });
+    await c.env.R2.put(manifestKey, manifestBytes, { httpMetadata: { contentType: 'application/json' } });
+  } catch (e) {
+    return c.json({ success: false, error: 'R2 write failed', data: { detail: (e as Error).message } }, 502);
+  }
+
+  await c.env.DB.prepare(
+    `INSERT INTO audit_exports
+       (id, entity_type, from_ts, to_ts, row_count,
+        csv_r2_key, manifest_r2_key, chain_head_hash, generated_by, generated_at)
+     VALUES (?, 'regulator', ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+  ).bind(exportId, from, to, csvLines.length - 1, csvKey, manifestKey,
+         head?.head_hash || '', user.id).run();
+
+  await appendAudit({
+    env: c.env, entity_type: 'regulator', entity_id: exportId,
+    event_type: 'audit.export_generated', actor_id: user.id,
+    payload: { export_id: exportId, from, to, row_count: csvLines.length - 1, csv_sha256: csvSha },
+  }).catch(() => {});
+
+  return c.json({
+    success: true,
+    data: { export_id: exportId, row_count: csvLines.length - 1, csv_r2_key: csvKey, manifest_r2_key: manifestKey, manifest },
+  }, 201);
+});
+
+suite.get('/audit/exports', async (c) => {
+  const rs = await c.env.DB.prepare(
+    `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
+            chain_head_hash, generated_by, generated_at
+       FROM audit_exports WHERE entity_type = 'regulator'
+      ORDER BY generated_at DESC LIMIT 50`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+// POST /regulator/audit/recon — cross-regulator reconciliation. CSV columns:
+//   licence_number, licensee_name, status, capacity_mw
+// Match against regulator_licences by licence_number.
+suite.post('/audit/recon', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as { source?: string; csv?: string };
+  const source = (body.source || 'dmre').toLowerCase();
+  if (typeof body.csv !== 'string' || body.csv.length < 10) {
+    return c.json({ success: false, error: 'csv body required' }, 400);
+  }
+  const lines = body.csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return c.json({ success: false, error: 'csv must have header + ≥1 row' }, 400);
+  const headers = lines[0].split(',').map((h) => h.trim());
+  const need = ['licence_number','licensee_name','status','capacity_mw'];
+  for (const k of need) {
+    if (!headers.includes(k)) return c.json({ success: false, error: `csv missing column: ${k}` }, 400);
+  }
+  const idxOf = (k: string) => headers.indexOf(k);
+  type TheirRow = { licence_number: string; licensee_name: string; status: string; capacity_mw: number };
+  const theirs: TheirRow[] = [];
+  for (const ln of lines.slice(1)) {
+    const cols = ln.split(',');
+    theirs.push({
+      licence_number: (cols[idxOf('licence_number')] || '').trim(),
+      licensee_name: (cols[idxOf('licensee_name')] || '').trim(),
+      status: (cols[idxOf('status')] || '').trim(),
+      capacity_mw: Number(cols[idxOf('capacity_mw')] || 0),
+    });
+  }
+
+  const runId = 'recon_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const csvKey = `audit-recon/regulator/${runId}/cross.csv`;
+  await c.env.R2.put(csvKey, new TextEncoder().encode(body.csv), {
+    httpMetadata: { contentType: 'text/csv' },
+  }).catch(() => null);
+
+  const ours = await c.env.DB.prepare(
+    `SELECT id, licence_number, licensee_name, status, capacity_mw
+       FROM regulator_licences`,
+  ).all<{ id: string; licence_number: string; licensee_name: string; status: string; capacity_mw: number }>();
+  const ourByNumber = new Map<string, any>();
+  for (const r of (ours.results || []) as any[]) ourByNumber.set(r.licence_number, r);
+
+  const matched = new Set<string>();
+  type Break = { type: string; licence_number: string | null; our: unknown; their: unknown; field: string | null };
+  const breaks: Break[] = [];
+  for (const t of theirs) {
+    const o = ourByNumber.get(t.licence_number);
+    if (!o) {
+      breaks.push({ type: 'missing_in_ours', licence_number: t.licence_number || null, our: null, their: t, field: null });
+      continue;
+    }
+    matched.add(t.licence_number);
+    if ((o.status || '').toLowerCase() !== (t.status || '').toLowerCase()) {
+      breaks.push({ type: 'field_mismatch', licence_number: t.licence_number, our: o, their: t, field: 'status' });
+    }
+    if (Math.abs(Number(o.capacity_mw || 0) - Number(t.capacity_mw)) > 0.1) {
+      breaks.push({ type: 'field_mismatch', licence_number: t.licence_number, our: o, their: t, field: 'capacity_mw' });
+    }
+  }
+  for (const [n, o] of ourByNumber.entries()) {
+    if (!matched.has(n) && !theirs.some((t) => t.licence_number === n)) {
+      breaks.push({ type: 'missing_in_theirs', licence_number: n, our: o, their: null, field: null });
+    }
+  }
+
+  const matchedCount = theirs.length - breaks.filter((b) => b.type !== 'field_mismatch').length;
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(
+    `INSERT INTO audit_recon_runs
+       (id, entity_type, source, uploaded_csv_r2_key, row_count,
+        matched_count, break_count, status, started_at, finished_at, started_by)
+     VALUES (?, 'regulator', ?, ?, ?, ?, ?, 'complete', ?, ?, ?)`,
+  ).bind(runId, source, csvKey, theirs.length, matchedCount,
+         breaks.length, now, now, user.id).run();
+
+  if (breaks.length > 0) {
+    const inserts = breaks.map((b) => c.env.DB.prepare(
+      `INSERT INTO audit_recon_breaks
+         (id, run_id, break_type, external_ref, our_value, their_value, field, resolution)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'open')`,
+    ).bind(
+      'brk_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+      runId, b.type, b.licence_number,
+      b.our != null ? JSON.stringify(b.our) : null,
+      b.their != null ? JSON.stringify(b.their) : null,
+      b.field,
+    ));
+    await c.env.DB.batch(inserts);
+  }
+
+  await appendAudit({
+    env: c.env, entity_type: 'regulator', entity_id: runId,
+    event_type: 'audit.recon_run', actor_id: user.id,
+    payload: { run_id: runId, source, row_count: theirs.length, break_count: breaks.length },
+  }).catch(() => {});
+
+  return c.json({
+    success: true,
+    data: { run_id: runId, source, row_count: theirs.length, matched_count: matchedCount, break_count: breaks.length },
+  }, 201);
+});
+
+suite.get('/audit/recon', async (c) => {
+  const rs = await c.env.DB.prepare(
+    `SELECT id, source, row_count, matched_count, break_count, status,
+            started_at, finished_at
+       FROM audit_recon_runs WHERE entity_type = 'regulator'
+      ORDER BY started_at DESC LIMIT 50`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+function csvEscape(s: string): string {
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+async function sha256OfBytes(b: Uint8Array): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', b);
+  return Array.from(new Uint8Array(buf)).map((x) => x.toString(16).padStart(2, '0')).join('');
+}
 
 export default suite;

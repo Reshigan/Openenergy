@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
+import { AuditPanel } from '../launch/AuditPanel';
 import { api } from '../../lib/api';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
@@ -32,6 +33,16 @@ export function RegulatorWorkstationPage() {
         { key: 'surveillance', label: 'Surveillance triage', body: ({ onRefresh }) => <SurveillanceTab onRefresh={onRefresh} /> },
         { key: 'licences', label: 'Licence actions', body: ({ onRefresh }) => <LicencesTab onRefresh={onRefresh} /> },
         { key: 'enforcement', label: 'Enforcement events', body: ({ onRefresh }) => <EnforcementTab onRefresh={onRefresh} /> },
+        { key: 'audit', label: 'Audit & compliance',
+          body: ({ onRefresh }) => (
+            <AuditPanel
+              prefix="/regulator"
+              reconHint="licence_number,licensee_name,status,capacity_mw"
+              reconSourceOptions={['dmre', 'nersa_internal', 'eskom']}
+              onChange={onRefresh}
+            />
+          ),
+        },
       ]}
     />
   );
