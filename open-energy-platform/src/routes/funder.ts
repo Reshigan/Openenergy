@@ -333,6 +333,7 @@ funder.post('/covenants/:id/check', async (c) => {
       entity_id: id,
       data: { status: newStatus, facility_id: covenant.facility_id },
       env: c.env,
+      skipAudit: true,
     });
   }
   await appendAudit({
@@ -393,6 +394,7 @@ funder.post('/disbursements/:id/approve', async (c) => {
     entity_id: id,
     data: { amount: dr.amount, facility_id: dr.facility_id, project_id: dr.project_id },
     env: c.env,
+    skipAudit: true,
   });
 
   await appendAudit({

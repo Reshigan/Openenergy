@@ -126,6 +126,7 @@ suite.post('/licences', async (c) => {
     entity_id: id,
     data: { licence_number: b.licence_number, licensee_participant_id: b.licensee_participant_id || null },
     env: c.env,
+    skipAudit: true,
   });
 
   await appendAudit({
@@ -193,6 +194,7 @@ async function transitionLicence(
         details: b.details || null,
       },
       env: c.env,
+      skipAudit: true,
     });
   }
 
@@ -328,6 +330,7 @@ suite.post('/tariff-submissions/:id/determine', async (c) => {
       approved_tariff_c_per_kwh: approvedTariff,
     },
     env: c.env,
+    skipAudit: true,
   });
 
   await appendAudit({

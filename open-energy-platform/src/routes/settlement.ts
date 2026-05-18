@@ -163,6 +163,7 @@ settlement.post('/payments', async (c) => {
       entity_id: invoice_id,
       data: { invoice_number: invoice.invoice_number, paid_amount: newPaid, payment_reference: reference, match_id: invoice.match_id },
       env: c.env,
+      skipAudit: true,
     });
   }
 
@@ -298,6 +299,7 @@ settlement.post('/disputes', async (c) => {
     entity_id: disputeId,
     data: { invoice_id, invoice_number: invoice.invoice_number, reason, match_id: invoice.match_id },
     env: c.env,
+    skipAudit: true,
   });
 
   await appendAudit({
@@ -351,6 +353,7 @@ settlement.post('/disputes/:id/resolve', async (c) => {
     entity_id: id,
     data: { invoice_id: dispute.invoice_id, invoice_number: dispute.invoice_number, outcome: finalOutcome, resolution },
     env: c.env,
+    skipAudit: true,
   });
 
   await appendAudit({

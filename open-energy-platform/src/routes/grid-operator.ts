@@ -248,6 +248,7 @@ gridOps.post('/dispatch/instructions', async (c) => {
       effective_from: b.effective_from,
     },
     env: c.env,
+    skipAudit: true,
   });
 
   await appendAudit({
@@ -312,6 +313,7 @@ gridOps.post('/dispatch/instructions/:id/compliance', async (c) => {
         penalty_amount_zar: b.penalty_amount_zar == null ? 0 : Number(b.penalty_amount_zar),
       },
       env: c.env,
+      skipAudit: true,
     });
   }
 

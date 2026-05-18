@@ -44,13 +44,19 @@ function genPiiId(): string {
  * log write failure never breaks the caller's primary action — POPIA
  * accountability is important but not worth surfacing as a 500 to the user.
  * Errors still surface via the cascade DLQ when called from fireCascade paths.
+ *
+ * L5 — also fires a `popia.data_exported` cascade so the access lands on the
+ * admin chain (via the cascade.ts auto-audit hook). This means a regulator
+ * can verify "every PII access in Q1" against a tamper-evident chain rather
+ * than against a SELECT that can be silently tampered with.
  */
 export async function logPiiAccess(
-  env: { DB: { prepare: (sql: string) => { bind: (...args: unknown[]) => { run: () => Promise<unknown> } } } },
+  env: any,
   entry: PiiAccessEntry,
 ): Promise<void> {
   if (!entry.actor_id || !entry.subject_id) return;
   if (entry.actor_id === entry.subject_id) return; // no log for self-access
+  const id = genPiiId();
   try {
     await env.DB
       .prepare(
@@ -59,7 +65,7 @@ export async function logPiiAccess(
          VALUES (?, ?, ?, ?, ?, datetime('now'))`,
       )
       .bind(
-        genPiiId(),
+        id,
         entry.actor_id,
         entry.subject_id,
         entry.access_type,
@@ -69,6 +75,27 @@ export async function logPiiAccess(
   } catch (err) {
     // Last-resort logging. Don't throw — the caller's main path must complete.
     console.warn('pii_access_log_failed', (err as Error).message);
+  }
+
+  // Fire the cascade so the access lands on the audit chain. Lazy-imported to
+  // avoid the cascade.ts → popia-access.ts → cascade.ts cycle at module init.
+  try {
+    const { fireCascade } = await import('./cascade');
+    await fireCascade({
+      event: 'popia.data_exported',
+      actor_id: entry.actor_id,
+      entity_type: 'popia_pii_access_log',
+      entity_id: id,
+      data: {
+        access_id: id,
+        subject_id: entry.subject_id,
+        access_type: entry.access_type,
+        justification: entry.justification || null,
+      },
+      env,
+    });
+  } catch (err) {
+    console.warn('pii_access_cascade_failed', (err as Error).message);
   }
 }
 

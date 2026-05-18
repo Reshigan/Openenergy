@@ -390,6 +390,7 @@ trading.post('/orders', async (c) => {
     entity_id: orderId,
     data: { side, energy_type: energyType, volume_mwh: vol, reserved_margin_zar: decision.reserved_margin_zar },
     env: c.env,
+    skipAudit: true,
   });
 
   // L5 audit chain — record the placed order. Payload is canonicalised
@@ -539,6 +540,7 @@ trading.post('/orders/:id/cancel', async (c) => {
     entity_id: id,
     data: {},
     env: c.env,
+    skipAudit: true,
   });
 
   await appendAudit({
