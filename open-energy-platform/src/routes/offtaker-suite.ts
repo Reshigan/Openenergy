@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { dayCost, rankTariffs, scope2, SimpleTariff } from '../utils/tariff-compare';
+import { appendAudit, getChainHead, verifyChain } from '../utils/audit-chain';
 
 const off = new Hono<HonoEnv>();
 off.use('*', authMiddleware);
@@ -291,6 +292,17 @@ off.post('/recs/certificates/:id/transfer', async (c) => {
     `UPDATE rec_certificates SET owner_participant_id = ?, status = 'transferred' WHERE id = ?`,
   ).bind(b.to_participant_id, certId).run();
   const row = await c.env.DB.prepare('SELECT * FROM rec_certificates WHERE id = ?').bind(certId).first();
+
+  await appendAudit({
+    env: c.env, entity_type: 'offtaker', entity_id: certId,
+    event_type: 'rec.transferred', actor_id: user.id,
+    payload: {
+      certificate_id: certId,
+      from_participant_id: cert.owner_participant_id,
+      to_participant_id: String(b.to_participant_id),
+    },
+  }).catch((e) => console.warn('audit_rec_transferred_failed', (e as Error).message));
+
   return c.json({ success: true, data: row });
 });
 
@@ -329,6 +341,19 @@ off.post('/recs/certificates/:id/retire', async (c) => {
     `UPDATE rec_certificates SET status = 'retired' WHERE id = ?`,
   ).bind(certId).run();
   const row = await c.env.DB.prepare('SELECT * FROM rec_retirements WHERE id = ?').bind(id).first();
+
+  await appendAudit({
+    env: c.env, entity_type: 'offtaker', entity_id: id,
+    event_type: 'rec.retired', actor_id: user.id,
+    payload: {
+      retirement_id: id, certificate_id: certId,
+      retirement_purpose: b.retirement_purpose,
+      retirement_certificate_number: b.retirement_certificate_number,
+      consumption_mwh: b.consumption_mwh == null ? null : Number(b.consumption_mwh),
+      beneficiary_name: b.beneficiary_name || null,
+    },
+  }).catch((e) => console.warn('audit_rec_retired_failed', (e as Error).message));
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -390,6 +415,21 @@ off.post('/scope2', async (c) => {
     b.audit_reference || null, user.id,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM scope2_disclosures WHERE id = ?').bind(id).first();
+
+  await appendAudit({
+    env: c.env, entity_type: 'offtaker', entity_id: id,
+    event_type: 'scope2.disclosure_created', actor_id: user.id,
+    payload: {
+      disclosure_id: id,
+      reporting_year: Number(b.reporting_year),
+      total_consumption_mwh: Number(b.total_consumption_mwh),
+      location_based_emissions_tco2e: computed.location_based_tco2e,
+      market_based_emissions_tco2e: computed.market_based_tco2e,
+      renewable_mwh_claimed: recsMwh,
+      renewable_percentage: computed.renewable_percentage,
+    },
+  }).catch((e) => console.warn('audit_scope2_failed', (e as Error).message));
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -400,6 +440,270 @@ off.get('/scope2', async (c) => {
   ).bind(user.id).all();
   return c.json({ success: true, data: rs.results || [] });
 });
+
+// ════════════════════════════════════════════════════════════════════════
+// L5 — Tamper-evident audit, GHG Protocol export, REC issuing-registry recon.
+// ════════════════════════════════════════════════════════════════════════
+
+off.get('/audit/head', async (c) => {
+  const head = await getChainHead(c.env, 'offtaker');
+  return c.json({ success: true, data: head });
+});
+
+off.get('/audit/events', async (c) => {
+  const user = getCurrentUser(c);
+  const limit = Math.min(200, Number(c.req.query('limit') || 50));
+  const where: string[] = [`entity_type = 'offtaker'`];
+  const binds: unknown[] = [];
+  const isOfficer = user.role === 'admin' || user.role === 'regulator' || user.role === 'support';
+  if (!isOfficer) { where.push('actor_id = ?'); binds.push(user.id); }
+  const rs = await c.env.DB.prepare(
+    `SELECT id, entity_id, event_type, actor_id, sequence_no, content_hash, prev_hash, created_at, payload_json
+       FROM audit_events WHERE ${where.join(' AND ')}
+      ORDER BY sequence_no DESC LIMIT ?`,
+  ).bind(...binds, limit).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+off.post('/audit/verify', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const fromSeq = Number(c.req.query('from_seq') || 1) || 1;
+  const result = await verifyChain(c.env, 'offtaker', fromSeq);
+  return c.json({ success: result.ok, data: result });
+});
+
+// POST /offtaker-suite/audit/export — GHG Protocol Scope 2 disclosure
+// register CSV. Columns: reporting_year, total_consumption_mwh,
+// location_based_emissions_tco2e, market_based_emissions_tco2e,
+// renewable_mwh_claimed, renewable_percentage, grid_factor, status,
+// audit_reference. Per CDP submission spec.
+off.post('/audit/export', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator' && user.role !== 'offtaker') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as { from?: string; to?: string };
+  const from = body.from || new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const to = body.to || new Date().toISOString().slice(0, 10);
+
+  const rows = await c.env.DB.prepare(
+    `SELECT id, reporting_year, total_consumption_mwh,
+            location_based_emissions_tco2e, market_based_emissions_tco2e,
+            renewable_mwh_claimed, renewable_percentage, grid_factor_tco2e_per_mwh,
+            audit_reference, status, created_at
+       FROM scope2_disclosures
+      WHERE substr(created_at, 1, 10) BETWEEN ? AND ?
+      ORDER BY reporting_year DESC, created_at DESC`,
+  ).bind(from, to).all<any>().catch(() => ({ results: [] } as any));
+  const data = (rows.results || []) as Array<Record<string, any>>;
+
+  const header = ['disclosure_id','reporting_year','total_consumption_mwh',
+                  'location_based_tco2e','market_based_tco2e',
+                  'renewable_mwh_claimed','renewable_percentage','grid_factor_tco2e_per_mwh',
+                  'audit_reference','status'].join(',');
+  const csvLines = [header];
+  for (const r of data) {
+    csvLines.push([
+      r.id, r.reporting_year, Number(r.total_consumption_mwh || 0).toFixed(2),
+      Number(r.location_based_emissions_tco2e || 0).toFixed(3),
+      Number(r.market_based_emissions_tco2e || 0).toFixed(3),
+      Number(r.renewable_mwh_claimed || 0).toFixed(2),
+      Number(r.renewable_percentage || 0).toFixed(2),
+      Number(r.grid_factor_tco2e_per_mwh || 0).toFixed(4),
+      csvEscape(r.audit_reference || ''), r.status,
+    ].join(','));
+  }
+  const csv = csvLines.join('\n') + '\n';
+  const csvBytes = new TextEncoder().encode(csv);
+  const csvSha = await sha256OfBytes(csvBytes);
+
+  const head = await getChainHead(c.env, 'offtaker');
+  const exportId = 'exp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const csvKey = `audit-exports/offtaker/${exportId}/scope2-disclosure-register.csv`;
+  const manifestKey = `audit-exports/offtaker/${exportId}/manifest.json`;
+  const manifest = {
+    export_id: exportId, entity_type: 'offtaker', from, to,
+    generated_at: new Date().toISOString(), generated_by: user.id, row_count: data.length,
+    csv: { r2_key: csvKey, sha256: csvSha, bytes: csvBytes.byteLength },
+    chain: {
+      head_hash: head?.head_hash || null,
+      head_sequence: head?.head_sequence || 0,
+      last_verified_at: head?.last_verified_at || null,
+    },
+    format: { profile: 'GHG Protocol Scope 2 (2015) disclosure register v1', encoding: 'utf-8' },
+  };
+  const manifestBytes = new TextEncoder().encode(JSON.stringify(manifest, null, 2));
+
+  try {
+    await c.env.R2.put(csvKey, csvBytes, { httpMetadata: { contentType: 'text/csv' } });
+    await c.env.R2.put(manifestKey, manifestBytes, { httpMetadata: { contentType: 'application/json' } });
+  } catch (e) {
+    return c.json({ success: false, error: 'R2 write failed', data: { detail: (e as Error).message } }, 502);
+  }
+
+  await c.env.DB.prepare(
+    `INSERT INTO audit_exports
+       (id, entity_type, from_ts, to_ts, row_count,
+        csv_r2_key, manifest_r2_key, chain_head_hash, generated_by, generated_at)
+     VALUES (?, 'offtaker', ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+  ).bind(exportId, from, to, data.length, csvKey, manifestKey,
+         head?.head_hash || '', user.id).run();
+
+  await appendAudit({
+    env: c.env, entity_type: 'offtaker', entity_id: exportId,
+    event_type: 'audit.export_generated', actor_id: user.id,
+    payload: { export_id: exportId, from, to, row_count: data.length, csv_sha256: csvSha },
+  }).catch(() => {});
+
+  return c.json({
+    success: true,
+    data: { export_id: exportId, row_count: data.length, csv_r2_key: csvKey, manifest_r2_key: manifestKey, manifest },
+  }, 201);
+});
+
+off.get('/audit/exports', async (c) => {
+  const rs = await c.env.DB.prepare(
+    `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
+            chain_head_hash, generated_by, generated_at
+       FROM audit_exports WHERE entity_type = 'offtaker'
+      ORDER BY generated_at DESC LIMIT 50`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+// POST /offtaker-suite/audit/recon — REC issuing-registry reconciliation.
+// CSV columns: certificate_serial, mwh_represented, status, registry
+// Match against rec_certificates by certificate_serial.
+off.post('/audit/recon', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator' && user.role !== 'offtaker') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as { source?: string; csv?: string };
+  const source = (body.source || 'i_rec').toLowerCase();
+  if (typeof body.csv !== 'string' || body.csv.length < 10) {
+    return c.json({ success: false, error: 'csv body required' }, 400);
+  }
+  const lines = body.csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return c.json({ success: false, error: 'csv must have header + ≥1 row' }, 400);
+  const headers = lines[0].split(',').map((h) => h.trim());
+  const need = ['certificate_serial','mwh_represented','status','registry'];
+  for (const k of need) {
+    if (!headers.includes(k)) return c.json({ success: false, error: `csv missing column: ${k}` }, 400);
+  }
+  const idxOf = (k: string) => headers.indexOf(k);
+  type TheirRow = { certificate_serial: string; mwh_represented: number; status: string; registry: string };
+  const theirs: TheirRow[] = [];
+  for (const ln of lines.slice(1)) {
+    const cols = ln.split(',');
+    theirs.push({
+      certificate_serial: (cols[idxOf('certificate_serial')] || '').trim(),
+      mwh_represented: Number(cols[idxOf('mwh_represented')] || 0),
+      status: (cols[idxOf('status')] || '').trim(),
+      registry: (cols[idxOf('registry')] || '').trim(),
+    });
+  }
+
+  const runId = 'recon_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const csvKey = `audit-recon/offtaker/${runId}/rec-registry.csv`;
+  await c.env.R2.put(csvKey, new TextEncoder().encode(body.csv), {
+    httpMetadata: { contentType: 'text/csv' },
+  }).catch(() => null);
+
+  const ours = await c.env.DB.prepare(
+    `SELECT id, certificate_serial, mwh_represented, status, registry
+       FROM rec_certificates`,
+  ).all<{ id: string; certificate_serial: string; mwh_represented: number; status: string; registry: string }>();
+  const ourBySerial = new Map<string, any>();
+  for (const r of (ours.results || []) as any[]) ourBySerial.set(r.certificate_serial, r);
+
+  const matched = new Set<string>();
+  type Break = { type: string; serial: string | null; our: unknown; their: unknown; field: string | null };
+  const breaks: Break[] = [];
+  for (const t of theirs) {
+    if (!t.certificate_serial) {
+      breaks.push({ type: 'missing_in_ours', serial: null, our: null, their: t, field: null });
+      continue;
+    }
+    const o = ourBySerial.get(t.certificate_serial);
+    if (!o) {
+      breaks.push({ type: 'missing_in_ours', serial: t.certificate_serial, our: null, their: t, field: null });
+      continue;
+    }
+    matched.add(t.certificate_serial);
+    if (Math.abs(Number(o.mwh_represented) - Number(t.mwh_represented)) > 1e-4) {
+      breaks.push({ type: 'field_mismatch', serial: t.certificate_serial, our: o, their: t, field: 'mwh_represented' });
+    }
+    if ((o.status || '').toLowerCase() !== (t.status || '').toLowerCase()) {
+      breaks.push({ type: 'field_mismatch', serial: t.certificate_serial, our: o, their: t, field: 'status' });
+    }
+  }
+  for (const [s, o] of ourBySerial.entries()) {
+    if (!matched.has(s) && !theirs.some((t) => t.certificate_serial === s)) {
+      breaks.push({ type: 'missing_in_theirs', serial: s, our: o, their: null, field: null });
+    }
+  }
+
+  const matchedCount = theirs.length - breaks.filter((b) => b.type !== 'field_mismatch').length;
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(
+    `INSERT INTO audit_recon_runs
+       (id, entity_type, source, uploaded_csv_r2_key, row_count,
+        matched_count, break_count, status, started_at, finished_at, started_by)
+     VALUES (?, 'offtaker', ?, ?, ?, ?, ?, 'complete', ?, ?, ?)`,
+  ).bind(runId, source, csvKey, theirs.length, matchedCount,
+         breaks.length, now, now, user.id).run();
+
+  if (breaks.length > 0) {
+    const inserts = breaks.map((b) => c.env.DB.prepare(
+      `INSERT INTO audit_recon_breaks
+         (id, run_id, break_type, external_ref, our_value, their_value, field, resolution)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'open')`,
+    ).bind(
+      'brk_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+      runId, b.type, b.serial,
+      b.our != null ? JSON.stringify(b.our) : null,
+      b.their != null ? JSON.stringify(b.their) : null,
+      b.field,
+    ));
+    await c.env.DB.batch(inserts);
+  }
+
+  await appendAudit({
+    env: c.env, entity_type: 'offtaker', entity_id: runId,
+    event_type: 'audit.recon_run', actor_id: user.id,
+    payload: { run_id: runId, source, row_count: theirs.length, break_count: breaks.length },
+  }).catch(() => {});
+
+  return c.json({
+    success: true,
+    data: { run_id: runId, source, row_count: theirs.length, matched_count: matchedCount, break_count: breaks.length },
+  }, 201);
+});
+
+off.get('/audit/recon', async (c) => {
+  const rs = await c.env.DB.prepare(
+    `SELECT id, source, row_count, matched_count, break_count, status,
+            started_at, finished_at
+       FROM audit_recon_runs WHERE entity_type = 'offtaker'
+      ORDER BY started_at DESC LIMIT 50`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+function csvEscape(s: string): string {
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+async function sha256OfBytes(b: Uint8Array): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', b);
+  return Array.from(new Uint8Array(buf)).map((x) => x.toString(16).padStart(2, '0')).join('');
+}
 
 // Expose dayCost so other modules can reuse without duplicating the math.
 export { dayCost };

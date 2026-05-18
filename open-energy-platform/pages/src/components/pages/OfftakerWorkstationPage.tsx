@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
+import { AuditPanel } from '../launch/AuditPanel';
 import { api } from '../../lib/api';
 
 export function OfftakerWorkstationPage() {
@@ -16,6 +17,16 @@ export function OfftakerWorkstationPage() {
         { key: 'budgets', label: 'Budget vs actual', body: ({ onRefresh }) => <BudgetsTab onRefresh={onRefresh} /> },
         { key: 'recs', label: 'RECs portfolio', body: ({ onRefresh }) => <RecsTab onRefresh={onRefresh} /> },
         { key: 'scope2', label: 'Scope 2', body: ({ onRefresh }) => <Scope2Tab onRefresh={onRefresh} /> },
+        { key: 'audit', label: 'Audit & compliance',
+          body: ({ onRefresh }) => (
+            <AuditPanel
+              prefix="/offtaker-suite"
+              reconHint="certificate_serial,mwh_represented,status,registry"
+              reconSourceOptions={['i_rec', 'gold_standard', 'verra']}
+              onChange={onRefresh}
+            />
+          ),
+        },
       ]}
     />
   );
