@@ -2,9 +2,18 @@ import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
 import { platformTabs } from '../platformTabs';
 import { offtakerCompletionTabs } from '../roleCompletionTabs';
+import { OfftakerInsights } from '../widgets/OfftakerInsights';
 
 export function OfftakerSuitePage() {
   const tabs: TabSpec[] = [
+    {
+      key: 'insights',
+      label: 'Insights',
+      endpoint: '',
+      description: 'Tariff optimiser, load shape, carbon-offset ROI, NERSA revenue requirement.',
+      columns: [],
+      customContent: <OfftakerInsights />,
+    },
     {
       key: 'groups',
       label: 'Site groups',
