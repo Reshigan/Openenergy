@@ -109,6 +109,52 @@ vault.post('/upload', async (c) => {
   return c.json({ success: true, data: { id, r2_key } }, 201);
 });
 
+// POST /vault/upload-direct — accepts multipart/form-data with the file
+// inline. Stores the bytes in R2, then writes a vault_files row. Used by
+// the SPA's FileUploadModal — no presigned-URL choreography needed. 20 MB
+// cap (configurable via VAULT_MAX_BYTES env var) so the Worker doesn't
+// hold a huge buffer in memory.
+vault.post('/upload-direct', async (c) => {
+  const user = getCurrentUser(c);
+  const formData = await c.req.formData().catch(() => null);
+  if (!formData) return c.json({ success: false, error: 'multipart body expected' }, 400);
+  const file = formData.get('file') as unknown as
+    | (Blob & { name: string; type: string; size: number; arrayBuffer(): Promise<ArrayBuffer> })
+    | null;
+  const entity_type = formData.get('entity_type');
+  const entity_id = formData.get('entity_id');
+  if (!file || typeof file === 'string' || typeof (file as any).arrayBuffer !== 'function') {
+    return c.json({ success: false, error: 'file field is required' }, 400);
+  }
+  if (typeof entity_type !== 'string' || typeof entity_id !== 'string') {
+    return c.json({ success: false, error: 'entity_type + entity_id required' }, 400);
+  }
+  const maxBytes = Number((c.env as any).VAULT_MAX_BYTES || 20 * 1024 * 1024);
+  if (file.size > maxBytes) {
+    return c.json({ success: false, error: `File too large (max ${Math.round(maxBytes / 1024 / 1024)} MB)` }, 413);
+  }
+  if (!canAccessEntity(user.role)) {
+    const ok = await isPartyToEntity(c.env.DB, user.id, entity_type, entity_id);
+    if (!ok) return c.json({ success: false, error: 'Not authorized for this entity' }, 403);
+  }
+  const id = 'vf_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+  const safeName = file.name.replace(/[^\w.\- ()]/g, '_').slice(0, 200);
+  const r2_key = `vault/${entity_type}/${entity_id}/${id}/${safeName}`;
+  try {
+    await c.env.R2.put(r2_key, await file.arrayBuffer(), {
+      httpMetadata: { contentType: file.type || 'application/octet-stream' },
+    });
+  } catch (e) {
+    return c.json({ success: false, error: 'R2 write failed', data: { detail: (e as Error).message } }, 502);
+  }
+  await c.env.DB.prepare(`
+    INSERT INTO vault_files (id, entity_type, entity_id, file_name, r2_key, mime_type, size_bytes, uploaded_by, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, entity_type, entity_id, safeName, r2_key,
+          file.type || null, file.size, user.id, new Date().toISOString()).run();
+  return c.json({ success: true, data: { id, r2_key, file_name: safeName, size_bytes: file.size } }, 201);
+});
+
 // GET /vault/files/:id/download — proxies R2 bytes when the binding is
 // present. Returns a redirect/stub URL in local dev.
 vault.get('/files/:id/download', async (c) => {

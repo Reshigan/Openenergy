@@ -5,6 +5,8 @@ import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { OEIcon } from '../OEIcon';
 import { StitchPage, StitchCard, StitchKpi, StitchPill } from '../StitchPage';
+import { VaultPanel } from '../VaultPanel';
+import { ThreadPanel } from '../ThreadPanel';
 
 /* ════════════════════════════════════════════════════════════════════════
  * Project Detail page — /projects/:id
@@ -216,6 +218,11 @@ export function ProjectDetail() {
             </div>
           </StitchCard>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
+        <VaultPanel entityType="projects" entityId={project.id} title="Documents" />
+        <ThreadPanel entityType="projects" entityId={project.id} title="Discussion" />
       </div>
     </StitchPage>
   );

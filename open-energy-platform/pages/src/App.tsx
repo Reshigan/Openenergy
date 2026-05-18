@@ -9,6 +9,9 @@ import { LogoMark, LogoBanner } from './components/Logo';
 import { OEIcon, type IconName } from './components/OEIcon';
 import { LtmLogo } from './components/LtmLogo';
 import { DesignGallery } from './components/pages/DesignGallery';
+import { SearchPage } from './components/pages/SearchPage';
+import { NotificationsPage } from './components/pages/NotificationsPage';
+import { SchedulePage } from './components/pages/SchedulePage';
 import { RoleLaunchBoard } from './components/launch/RoleLaunchBoard';
 import { LenderWorkoutPage } from './components/pages/LenderWorkoutPage';
 import { LenderAuditPage } from './components/pages/LenderAuditPage';
@@ -1287,6 +1290,9 @@ function AppRoutes() {
       <Route path="/briefing" element={<ProtectedRoute><Layout><Briefing /></Layout></ProtectedRoute>} />
       {/* Design Gallery — Stitch references for the 047 role workbench tabs. */}
       <Route path="/design-gallery" element={<ProtectedRoute><Layout><DesignGallery /></Layout></ProtectedRoute>} />
+      <Route path="/search" element={<ProtectedRoute><Layout><SearchPage /></Layout></ProtectedRoute>} />
+      <Route path="/notifications" element={<ProtectedRoute><Layout><NotificationsPage /></Layout></ProtectedRoute>} />
+      <Route path="/schedule" element={<ProtectedRoute><Layout><SchedulePage /></Layout></ProtectedRoute>} />
       {/* National-scale suite pages — code-split + role-guarded at the API layer. */}
       <Route path="/regulator-suite" element={<ProtectedRoute><Layout><LazyWorkbench><RegulatorSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/grid-operator" element={<ProtectedRoute><Layout><LazyWorkbench><GridOperatorSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />

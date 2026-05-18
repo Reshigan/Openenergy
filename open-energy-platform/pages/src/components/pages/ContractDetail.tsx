@@ -7,6 +7,8 @@ import {
 import { api } from '../../lib/api';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 import jsPDF from 'jspdf';
+import { VaultPanel } from '../VaultPanel';
+import { ThreadPanel } from '../ThreadPanel';
 
 type Contract = {
   id: string;
@@ -522,6 +524,13 @@ export function ContractDetail() {
           </div>
         </div>
       )}
+
+      {/* Documents + discussion — embedded side by side on wide viewports. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-5">
+        <VaultPanel entityType="contracts" entityId={contract.id} title="Documents" />
+        <ThreadPanel entityType="contracts" entityId={contract.id} title="Discussion"
+                     currentParticipantId={data.current_user_id} />
+      </div>
     </div>
   );
 }

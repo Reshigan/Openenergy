@@ -115,6 +115,49 @@ function MIcon({ name, className = '', filled, size = 20 }: { name: string; clas
   return <MatIcon name={name} size={size} className={className} filled={filled} />;
 }
 
+/** Shell-bar notifications bell. Polls /api/notifications/unread-count
+ *  every 60s; navigates to /notifications on click. Badge shows live
+ *  unread count up to 99. */
+function NotificationsBell() {
+  const [n, setN] = useState(0);
+  const navigate = useNavigate();
+  useEffect(() => {
+    let cancelled = false;
+    const fetchN = async () => {
+      try {
+        const r = await fetch('/api/notifications/unread-count', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+        });
+        if (!r.ok || cancelled) return;
+        const j = await r.json();
+        setN(Number(j?.data?.unread_count || 0));
+      } catch { /* swallow */ }
+    };
+    void fetchN();
+    const id = setInterval(fetchN, 60_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
+  return (
+    <button
+      type="button"
+      aria-label={`Notifications${n > 0 ? ` — ${n} unread` : ''}`}
+      onClick={() => navigate('/notifications')}
+      className="relative w-10 h-10 rounded-md text-white/90 hover:bg-white/10 flex items-center justify-center transition-colors"
+    >
+      <MIcon name="notifications" size={18} />
+      {n > 0 && (
+        <span
+          aria-hidden="true"
+          className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-[#f86c52] text-white text-[9px] font-bold flex items-center justify-center"
+          style={{ boxShadow: '0 0 0 2px #0f2540' }}
+        >
+          {n > 99 ? '99+' : n}
+        </span>
+      )}
+    </button>
+  );
+}
+
 /** SAST wall clock — surfaces the active timezone in the shell bar so a
  *  trader / regulator viewing from outside SA sees that timestamps render
  *  in Africa/Johannesburg, not their local TZ. Ticks every 30s. */
@@ -243,11 +286,11 @@ export function FioriShell({ children }: { children: ReactNode }) {
 
   const sidebarWidth = collapsed ? 56 : 256;
 
-  // Submit search → /intelligence?q= for now (keeps wiring minimal).
+  // Submit search → /search?q= (backed by /api/search cross-entity lookup).
   function onSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!query.trim()) return;
-    navigate(`/intelligence?q=${encodeURIComponent(query.trim())}`);
+    navigate(`/search?q=${encodeURIComponent(query.trim())}`);
   }
 
   return (
@@ -393,17 +436,13 @@ export function FioriShell({ children }: { children: ReactNode }) {
           <SastClock />
           <button
             type="button"
-            aria-label="Notifications"
-            onClick={() => navigate('/launch')}
-            className="relative w-10 h-10 rounded-md text-white/90 hover:bg-white/10 flex items-center justify-center transition-colors"
+            aria-label="Schedule"
+            onClick={() => navigate('/schedule')}
+            className="w-10 h-10 rounded-md text-white/90 hover:bg-white/10 flex items-center justify-center transition-colors"
           >
-            <MIcon name="notifications" size={18} />
-            <span
-              aria-hidden="true"
-              className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
-              style={{ background: '#5fa8e8', boxShadow: '0 0 0 2px #0f2540' }}
-            />
+            <MIcon name="event" size={18} />
           </button>
+          <NotificationsBell />
           <button
             type="button"
             aria-label="Help"
