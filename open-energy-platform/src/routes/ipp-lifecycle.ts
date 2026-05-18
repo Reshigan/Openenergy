@@ -8,6 +8,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { appendAudit, getChainHead, verifyChain } from '../utils/audit-chain';
 
 const ipp = new Hono<HonoEnv>();
 ipp.use('*', authMiddleware);
@@ -60,6 +61,17 @@ ipp.post('/epc', async (c) => {
     status,
     created_at: createdAt,
   };
+
+  await appendAudit({
+    env: c.env, entity_type: 'ipp', entity_id: id,
+    event_type: 'epc.created', actor_id: user.id,
+    payload: {
+      epc_id: id, project_id: String(b.project_id),
+      contractor_name: String(b.contractor_name),
+      lump_sum_zar: row.lump_sum_zar, status,
+    },
+  }).catch((e) => console.warn('audit_epc_created_failed', (e as Error).message));
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -82,6 +94,17 @@ ipp.post('/epc/:id/variations', async (c) => {
     b.time_impact_days == null ? null : Number(b.time_impact_days),
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM epc_variations WHERE id = ?').bind(id).first();
+
+  await appendAudit({
+    env: c.env, entity_type: 'ipp', entity_id: id,
+    event_type: 'epc.variation_added', actor_id: user.id,
+    payload: {
+      variation_id: id, epc_id: epcId,
+      variation_number: b.variation_number, value_zar: Number(b.value_zar),
+      time_impact_days: b.time_impact_days == null ? null : Number(b.time_impact_days),
+    },
+  }).catch((e) => console.warn('audit_variation_failed', (e as Error).message));
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -120,6 +143,16 @@ ipp.post('/epc/:id/lds', async (c) => {
      VALUES (?, ?, ?, ?, ?, ?, ?, 'assessed')`,
   ).bind(id, epcId, b.event_type, b.event_date, b.description || null, calculated, capped).run();
   const row = await c.env.DB.prepare('SELECT * FROM epc_liquidated_damages WHERE id = ?').bind(id).first();
+
+  await appendAudit({
+    env: c.env, entity_type: 'ipp', entity_id: id,
+    event_type: 'epc.ld_assessed', actor_id: user.id,
+    payload: {
+      ld_id: id, epc_id: epcId, event_type: b.event_type, event_date: b.event_date,
+      calculated_amount_zar: calculated, capped_amount_zar: capped,
+    },
+  }).catch((e) => console.warn('audit_ld_assessed_failed', (e as Error).message));
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -309,6 +342,17 @@ ipp.post('/insurance/policies/:id/claim', async (c) => {
     b.quantum_zar == null ? null : Number(b.quantum_zar), b.description || null,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM insurance_claims WHERE id = ?').bind(id).first();
+
+  await appendAudit({
+    env: c.env, entity_type: 'ipp', entity_id: id,
+    event_type: 'insurance.claim_filed', actor_id: user.id,
+    payload: {
+      claim_id: id, policy_id: policyId, claim_number: b.claim_number,
+      loss_event_date: b.loss_event_date || null,
+      quantum_zar: b.quantum_zar == null ? null : Number(b.quantum_zar),
+    },
+  }).catch((e) => console.warn('audit_claim_filed_failed', (e as Error).message));
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -396,5 +440,267 @@ ipp.get('/community/ed-sed/:project_id/summary', async (c) => {
   ).bind(pid).all();
   return c.json({ success: true, data: rs.results || [] });
 });
+
+// ════════════════════════════════════════════════════════════════════════
+// L5 — Tamper-evident audit, NERSA generation-licence report, milestone recon.
+// ════════════════════════════════════════════════════════════════════════
+
+ipp.get('/audit/head', async (c) => {
+  const head = await getChainHead(c.env, 'ipp');
+  return c.json({ success: true, data: head });
+});
+
+ipp.get('/audit/events', async (c) => {
+  const user = getCurrentUser(c);
+  const limit = Math.min(200, Number(c.req.query('limit') || 50));
+  const where: string[] = [`entity_type = 'ipp'`];
+  const binds: unknown[] = [];
+  const isOfficer = user.role === 'admin' || user.role === 'regulator' || user.role === 'support';
+  if (!isOfficer) { where.push('actor_id = ?'); binds.push(user.id); }
+  const rs = await c.env.DB.prepare(
+    `SELECT id, entity_id, event_type, actor_id, sequence_no, content_hash, prev_hash, created_at, payload_json
+       FROM audit_events WHERE ${where.join(' AND ')}
+      ORDER BY sequence_no DESC LIMIT ?`,
+  ).bind(...binds, limit).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+ipp.post('/audit/verify', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const fromSeq = Number(c.req.query('from_seq') || 1) || 1;
+  const result = await verifyChain(c.env, 'ipp', fromSeq);
+  return c.json({ success: result.ok, data: result });
+});
+
+// POST /ipp/audit/export — NERSA generation-licence quarterly compliance
+// register. One row per project with EPC + environmental + insurance state.
+// Required for licensed generators (ERA 2006 s.10(2)(g) / NERSA Generation
+// Licence Standard Conditions Sec 9).
+ipp.post('/audit/export', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator' && user.role !== 'ipp_developer') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as { from?: string; to?: string };
+  const from = body.from || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const to = body.to || new Date().toISOString().slice(0, 10);
+
+  // Projects + EPC state + active insurance count + open environmental
+  // conditions. We join carefully so projects without EPCs / insurance
+  // still appear (LEFT JOIN).
+  const rows = await c.env.DB.prepare(
+    `SELECT p.id AS project_id, p.name, p.technology, p.capacity_mw,
+            p.cod_target_date, p.lifecycle_stage,
+            (SELECT MIN(ec.status) FROM epc_contracts ec WHERE ec.project_id = p.id) AS epc_status,
+            (SELECT COUNT(*) FROM insurance_policies ip WHERE ip.project_id = p.id AND ip.status = 'active') AS active_policies,
+            (SELECT COUNT(*) FROM environmental_compliance evc
+              INNER JOIN environmental_authorisations ea ON ea.id = evc.authorisation_id
+             WHERE ea.project_id = p.id AND evc.status != 'closed') AS open_env_conditions,
+            (SELECT COUNT(*) FROM project_milestones pm WHERE pm.project_id = p.id AND pm.status = 'satisfied') AS milestones_satisfied,
+            (SELECT COUNT(*) FROM project_milestones pm WHERE pm.project_id = p.id) AS milestones_total
+       FROM projects p
+      WHERE p.created_at <= ?
+      ORDER BY p.created_at ASC`,
+  ).bind(`${to}T23:59:59`).all<any>().catch(() => ({ results: [] } as any));
+  const data = rows.results || [];
+
+  const header = ['project_id','project_name','technology','capacity_mw','cod_target',
+                  'lifecycle_stage','epc_status','active_insurance_policies',
+                  'open_environmental_conditions','milestones_satisfied','milestones_total'].join(',');
+  const csvLines = [header];
+  for (const r of data as Array<Record<string, any>>) {
+    csvLines.push([
+      r.project_id, csvEscape(r.name || ''), r.technology || '',
+      r.capacity_mw ?? '', r.cod_target_date || '',
+      r.lifecycle_stage || '', r.epc_status || '',
+      r.active_policies ?? 0, r.open_env_conditions ?? 0,
+      r.milestones_satisfied ?? 0, r.milestones_total ?? 0,
+    ].join(','));
+  }
+  const csv = csvLines.join('\n') + '\n';
+  const csvBytes = new TextEncoder().encode(csv);
+  const csvSha = await sha256OfBytes(csvBytes);
+
+  const head = await getChainHead(c.env, 'ipp');
+  const exportId = 'exp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const csvKey = `audit-exports/ipp/${exportId}/generation-licence-register.csv`;
+  const manifestKey = `audit-exports/ipp/${exportId}/manifest.json`;
+  const manifest = {
+    export_id: exportId, entity_type: 'ipp', from, to,
+    generated_at: new Date().toISOString(), generated_by: user.id, row_count: data.length,
+    csv: { r2_key: csvKey, sha256: csvSha, bytes: csvBytes.byteLength },
+    chain: {
+      head_hash: head?.head_hash || null,
+      head_sequence: head?.head_sequence || 0,
+      last_verified_at: head?.last_verified_at || null,
+    },
+    format: { profile: 'NERSA Generation Licence Standard Conditions Sec 9 v1', encoding: 'utf-8' },
+  };
+  const manifestBytes = new TextEncoder().encode(JSON.stringify(manifest, null, 2));
+
+  try {
+    await c.env.R2.put(csvKey, csvBytes, { httpMetadata: { contentType: 'text/csv' } });
+    await c.env.R2.put(manifestKey, manifestBytes, { httpMetadata: { contentType: 'application/json' } });
+  } catch (e) {
+    return c.json({ success: false, error: 'R2 write failed', data: { detail: (e as Error).message } }, 502);
+  }
+
+  await c.env.DB.prepare(
+    `INSERT INTO audit_exports
+       (id, entity_type, from_ts, to_ts, row_count,
+        csv_r2_key, manifest_r2_key, chain_head_hash, generated_by, generated_at)
+     VALUES (?, 'ipp', ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+  ).bind(exportId, from, to, data.length, csvKey, manifestKey,
+         head?.head_hash || '', user.id).run();
+
+  await appendAudit({
+    env: c.env, entity_type: 'ipp', entity_id: exportId,
+    event_type: 'audit.export_generated', actor_id: user.id,
+    payload: { export_id: exportId, from, to, row_count: data.length, csv_sha256: csvSha },
+  }).catch(() => {});
+
+  return c.json({
+    success: true,
+    data: { export_id: exportId, row_count: data.length, csv_r2_key: csvKey, manifest_r2_key: manifestKey, manifest },
+  }, 201);
+});
+
+ipp.get('/audit/exports', async (c) => {
+  const rs = await c.env.DB.prepare(
+    `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
+            chain_head_hash, generated_by, generated_at
+       FROM audit_exports WHERE entity_type = 'ipp'
+      ORDER BY generated_at DESC LIMIT 50`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+// POST /ipp/audit/recon — milestone reconciliation against lender / investor
+// statement of completion. CSV columns:
+//   project_id, milestone_name, satisfied_at, evidence_ref
+// Matches against project_milestones (status='satisfied').
+ipp.post('/audit/recon', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'lender' && user.role !== 'ipp_developer') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as { source?: string; csv?: string };
+  const source = (body.source || 'lender_ie').toLowerCase();
+  if (typeof body.csv !== 'string' || body.csv.length < 10) {
+    return c.json({ success: false, error: 'csv body required' }, 400);
+  }
+  const lines = body.csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return c.json({ success: false, error: 'csv must have header + ≥1 row' }, 400);
+  const headers = lines[0].split(',').map((h) => h.trim());
+  const need = ['project_id','milestone_name','satisfied_at','evidence_ref'];
+  for (const k of need) {
+    if (!headers.includes(k)) return c.json({ success: false, error: `csv missing column: ${k}` }, 400);
+  }
+  const idxOf = (k: string) => headers.indexOf(k);
+  type TheirRow = { project_id: string; milestone_name: string; satisfied_at: string; evidence_ref: string };
+  const theirs: TheirRow[] = [];
+  for (const ln of lines.slice(1)) {
+    const cols = ln.split(',');
+    theirs.push({
+      project_id: (cols[idxOf('project_id')] || '').trim(),
+      milestone_name: (cols[idxOf('milestone_name')] || '').trim(),
+      satisfied_at: (cols[idxOf('satisfied_at')] || '').trim(),
+      evidence_ref: (cols[idxOf('evidence_ref')] || '').trim(),
+    });
+  }
+
+  const runId = 'recon_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const csvKey = `audit-recon/ipp/${runId}/lender.csv`;
+  await c.env.R2.put(csvKey, new TextEncoder().encode(body.csv), {
+    httpMetadata: { contentType: 'text/csv' },
+  }).catch(() => null);
+
+  const ours = await c.env.DB.prepare(
+    `SELECT project_id, name AS milestone_name, satisfied_at
+       FROM project_milestones WHERE status = 'satisfied'`,
+  ).all<{ project_id: string; milestone_name: string; satisfied_at: string }>().catch(() => ({ results: [] } as any));
+  const ourKey = (r: { project_id: string; milestone_name: string }) =>
+    `${r.project_id}|${r.milestone_name.trim().toLowerCase()}`;
+  const ourByKey = new Map<string, any>();
+  for (const r of (ours.results || []) as any[]) ourByKey.set(ourKey(r), r);
+
+  const matched = new Set<string>();
+  type Break = { type: string; project_id: string | null; our: unknown; their: unknown; field: string | null };
+  const breaks: Break[] = [];
+  for (const t of theirs) {
+    const k = `${t.project_id}|${t.milestone_name.trim().toLowerCase()}`;
+    const o = ourByKey.get(k);
+    if (!o) {
+      breaks.push({ type: 'missing_in_ours', project_id: t.project_id, our: null, their: t, field: null });
+      continue;
+    }
+    matched.add(k);
+  }
+  for (const [k, o] of ourByKey.entries()) {
+    if (!matched.has(k)) {
+      breaks.push({ type: 'missing_in_theirs', project_id: o.project_id, our: o, their: null, field: null });
+    }
+  }
+
+  const matchedCount = theirs.length - breaks.filter((b) => b.type === 'missing_in_ours').length;
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(
+    `INSERT INTO audit_recon_runs
+       (id, entity_type, source, uploaded_csv_r2_key, row_count,
+        matched_count, break_count, status, started_at, finished_at, started_by)
+     VALUES (?, 'ipp', ?, ?, ?, ?, ?, 'complete', ?, ?, ?)`,
+  ).bind(runId, source, csvKey, theirs.length, matchedCount,
+         breaks.length, now, now, user.id).run();
+
+  if (breaks.length > 0) {
+    const inserts = breaks.map((b) => c.env.DB.prepare(
+      `INSERT INTO audit_recon_breaks
+         (id, run_id, break_type, external_ref, our_value, their_value, field, resolution)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'open')`,
+    ).bind(
+      'brk_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+      runId, b.type, b.project_id,
+      b.our != null ? JSON.stringify(b.our) : null,
+      b.their != null ? JSON.stringify(b.their) : null,
+      b.field,
+    ));
+    await c.env.DB.batch(inserts);
+  }
+
+  await appendAudit({
+    env: c.env, entity_type: 'ipp', entity_id: runId,
+    event_type: 'audit.recon_run', actor_id: user.id,
+    payload: { run_id: runId, source, row_count: theirs.length, break_count: breaks.length },
+  }).catch(() => {});
+
+  return c.json({
+    success: true,
+    data: { run_id: runId, source, row_count: theirs.length, matched_count: matchedCount, break_count: breaks.length },
+  }, 201);
+});
+
+ipp.get('/audit/recon', async (c) => {
+  const rs = await c.env.DB.prepare(
+    `SELECT id, source, row_count, matched_count, break_count, status,
+            started_at, finished_at
+       FROM audit_recon_runs WHERE entity_type = 'ipp'
+      ORDER BY started_at DESC LIMIT 50`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+function csvEscape(s: string): string {
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+async function sha256OfBytes(b: Uint8Array): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', b);
+  return Array.from(new Uint8Array(buf)).map((x) => x.toString(16).padStart(2, '0')).join('');
+}
 
 export default ipp;

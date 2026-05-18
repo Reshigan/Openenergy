@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
+import { AuditPanel } from '../launch/AuditPanel';
 import { api } from '../../lib/api';
 
 export function IppWorkstationPage() {
@@ -15,6 +16,16 @@ export function IppWorkstationPage() {
         { key: 'milestones', label: 'Milestones', body: ({ onRefresh }) => <MilestonesTab onRefresh={onRefresh} /> },
         { key: 'insurance', label: 'Insurance', body: ({ onRefresh }) => <InsuranceTab onRefresh={onRefresh} /> },
         { key: 'community', label: 'Community', body: ({ onRefresh }) => <CommunityTab onRefresh={onRefresh} /> },
+        { key: 'audit', label: 'Audit & compliance',
+          body: ({ onRefresh }) => (
+            <AuditPanel
+              prefix="/ipp"
+              reconHint="project_id,milestone_name,satisfied_at,evidence_ref"
+              reconSourceOptions={['lender_ie', 'nersa', 'dmre']}
+              onChange={onRefresh}
+            />
+          ),
+        },
       ]}
     />
   );
