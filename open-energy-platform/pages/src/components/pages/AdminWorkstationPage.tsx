@@ -48,6 +48,9 @@ export function AdminWorkstationPage() {
             />
           ),
         },
+        { key: 'pii_access', label: 'PII access log',
+          body: () => <PiiAccessTab />,
+        },
       ]}
     />
   );
@@ -186,6 +189,32 @@ function FlagsTab({ onRefresh }: { onRefresh: () => void }) {
           }}
         />
       )}
+    </div>
+  );
+}
+
+function PiiAccessTab() {
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#3d4756]">
+        Every cross-tenant read of personal information is logged here under
+        POPIA s.18 (accountability) + s.19 (security safeguards). Each entry
+        is also chained on the <span className="font-mono">admin</span> audit
+        chain via the cascade hook, so this view is tamper-evident — a
+        regulator can verify any row against the chain head.
+      </div>
+      <ListingTable
+        endpoint="/popia/pii-access"
+        rowKey={(r) => r.id}
+        empty={{ title: 'No PII access logged', description: 'Cross-tenant data access by admins / support / regulators will appear here as it happens.' }}
+        columns={[
+          { key: 'created_at', label: 'When', render: (r) => new Date(r.created_at).toLocaleString() },
+          { key: 'actor_id', label: 'Actor', render: (r) => <span className="font-mono text-[11px]">{(r.actor_id || '').slice(0, 16)}…</span> },
+          { key: 'access_type', label: 'Type', render: (r) => <Pill tone={r.access_type === 'impersonation' ? 'bad' : 'info'}>{(r.access_type || '').replace(/_/g, ' ')}</Pill> },
+          { key: 'subject_id', label: 'Subject', render: (r) => <span className="font-mono text-[11px]">{(r.subject_id || '').slice(0, 16)}…</span> },
+          { key: 'justification', label: 'Justification', render: (r) => <span className="block truncate max-w-md" title={r.justification || ''}>{r.justification || '—'}</span> },
+        ]}
+      />
     </div>
   );
 }

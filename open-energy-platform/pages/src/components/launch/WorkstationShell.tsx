@@ -105,12 +105,16 @@ export function ListingTable({
   empty,
   rowKey,
   rowHref,
+  rowOnClick,
 }: {
   endpoint: string;
   columns: Column[];
   empty?: { title: string; description: string };
   rowKey: (row: any) => string;
   rowHref?: (row: any) => string;
+  /** Alternative to rowHref: fire a callback (e.g. open a modal). The
+   *  click handler still ignores clicks on buttons/inputs inside the row. */
+  rowOnClick?: (row: any) => void;
 }) {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -155,15 +159,16 @@ export function ListingTable({
             const clickHandler = (e: React.MouseEvent) => {
               // Only navigate when the click was on the row chrome — let
               // buttons / links inside the row keep their own handlers.
-              if (href && !(e.target as HTMLElement).closest('button, a, input, select, textarea')) {
-                nav(href);
-              }
+              if ((e.target as HTMLElement).closest('button, a, input, select, textarea')) return;
+              if (href) nav(href);
+              else if (rowOnClick) rowOnClick(r);
             };
+            const clickable = !!(href || rowOnClick);
             return (
               <tr
                 key={rowKey(r)}
                 onClick={clickHandler}
-                className={`border-t border-[#e5ebf2] hover:bg-[#f8fafc] ${href ? 'cursor-pointer' : ''}`}
+                className={`border-t border-[#e5ebf2] hover:bg-[#f8fafc] ${clickable ? 'cursor-pointer' : ''}`}
               >
                 {columns.map(col => (
                   <td key={col.key} className={`px-4 py-2 ${col.align === 'right' ? 'text-right' : ''}`}>

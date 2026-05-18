@@ -792,6 +792,22 @@ cr.get('/audit/exports/:id/manifest', async (c) => {
   let parsed: unknown = null;
   try { parsed = JSON.parse(text); } catch { /* */ }
   return c.json({ success: true, data: parsed ?? { raw: text } });
+
+cr.get('/audit/exports/:id/csv', async (c) => {
+  const id = c.req.param('id');
+  const row = await c.env.DB.prepare(
+    `SELECT csv_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'carbon'`,
+  ).bind(id).first<{ csv_r2_key: string }>();
+  if (!row) return c.json({ success: false, error: 'Export not found' }, 404);
+  const obj = await c.env.R2.get(row.csv_r2_key);
+  if (!obj) return c.json({ success: false, error: 'CSV object missing in R2' }, 404);
+  return new Response(await obj.arrayBuffer(), {
+    headers: {
+      'Content-Type': 'text/csv',
+      'Content-Disposition': `attachment; filename="${id}.csv"`,
+    },
+  });
+});
 });
 
 // POST /carbon-registry/audit/recon — registry reconciliation. Body:

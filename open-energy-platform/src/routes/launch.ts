@@ -205,6 +205,59 @@ launch.post('/:role/ai/:key/accept', authMiddleware, async (c) => {
 });
 
 // ───────────────────────────────────────────────────────────────────────
+// L5 audit KPIs — chain head + open breaks per feature chain. Spread into
+// each role's KPI list so users see "Chain length 1 234 · 0 open breaks"
+// without leaving the launch board.
+// ───────────────────────────────────────────────────────────────────────
+async function auditKpisFor(
+  env: any,
+  entity_type: string,
+  workstationHref: string,
+): Promise<Kpi[]> {
+  let head_sequence = 0;
+  let last_verified_at: string | null = null;
+  let open_breaks = 0;
+  try {
+    const head = await env.DB.prepare(
+      `SELECT head_sequence, last_verified_at FROM audit_chain_state WHERE entity_type = ?`,
+    ).bind(entity_type).first() as { head_sequence: number; last_verified_at: string | null } | null;
+    if (head) {
+      head_sequence = Number(head.head_sequence || 0);
+      last_verified_at = head.last_verified_at;
+    }
+  } catch { /* table may not exist on local dev */ }
+  try {
+    const breaks = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM audit_recon_breaks b
+         INNER JOIN audit_recon_runs r ON r.id = b.run_id
+        WHERE r.entity_type = ? AND (b.resolution IS NULL OR b.resolution = 'open' OR b.resolution = 'investigating')`,
+    ).bind(entity_type).first() as { n: number } | null;
+    open_breaks = Number(breaks?.n || 0);
+  } catch { /* */ }
+  const kpis: Kpi[] = [];
+  if (head_sequence > 0) {
+    kpis.push({
+      key: 'audit_chain_length',
+      label: 'Audit chain length',
+      value: head_sequence,
+      tone: last_verified_at ? 'good' : 'neutral',
+      href: workstationHref,
+      footer: last_verified_at ? 'verified' : 'pending verify',
+    });
+  }
+  if (open_breaks > 0) {
+    kpis.push({
+      key: 'audit_open_breaks',
+      label: 'Open recon breaks',
+      value: open_breaks,
+      tone: 'warn',
+      href: workstationHref,
+    });
+  }
+  return kpis;
+}
+
+// ───────────────────────────────────────────────────────────────────────
 // Per-role builders. Each returns a fully-shaped LaunchPayload.
 // Queries are one-shot compound SELECTs against indexed columns.
 // ───────────────────────────────────────────────────────────────────────
@@ -333,6 +386,7 @@ async function buildTraderBoard(c: any, user: any): Promise<LaunchPayload> {
             footer: '30 days',
           }] as Kpi[])
         : []),
+      ...(await auditKpisFor(c.env, 'trading', '/trader-risk/workstation?tab=audit'))
     ],
     workflows: [
       {
@@ -589,6 +643,7 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         tone: invoicesOut > 0 ? 'warn' : 'good',
         href: '/settlement?direction=outgoing',
       },
+      ...(await auditKpisFor(c.env, 'ipp', '/ipp-lifecycle/workstation?tab=audit'))
     ],
     workflows: [
       {
@@ -798,6 +853,7 @@ async function buildOfftakerBoard(c: any, user: any): Promise<LaunchPayload> {
             footer: 'late + dunning',
           }] as Kpi[])
         : []),
+      ...(await auditKpisFor(c.env, 'offtaker', '/offtaker-suite/workstation?tab=audit'))
     ],
     workflows: [
       {
@@ -916,6 +972,7 @@ async function buildLenderBoard(c: any, user: any): Promise<LaunchPayload> {
       { key: 'covenants_breached', label: 'Breached covenants', value: breached, tone: breached > 0 ? 'bad' : 'good', href: '/lender-suite' },
       { key: 'actions_open', label: 'Open workout actions', value: actionsN, tone: actionsN > 0 ? 'warn' : 'good', href: '/lender-suite?tab=actions' },
       { key: 'disbursements_pending', label: 'Pending disbursements', value: pending, tone: pending > 0 ? 'warn' : 'good', href: '/funds' },
+      ...(await auditKpisFor(c.env, 'lender', '/lender-suite/audit'))
     ],
     workflows: [
       { key: 'origination', title: 'Loan origination', description: 'Term sheets, credit memo, syndication.', href: '/lender-suite', cta_label: 'Open suite', icon: 'savings' },
@@ -998,6 +1055,7 @@ async function buildGridOperatorBoard(c: any, user: any): Promise<LaunchPayload>
       { key: 'outages', label: 'Ongoing outages', value: outages, tone: outages > 0 ? 'bad' : 'good', href: '/grid-operator' },
       { key: 'dispatch_active', label: 'Live dispatch schedules', value: dispatch, tone: 'neutral', href: '/grid-operator' },
       { key: 'operational_plants', label: 'Operating plants', value: plants, tone: 'good', href: '/grid' },
+      ...(await auditKpisFor(c.env, 'grid', '/grid-operator/workstation?tab=audit'))
     ],
     workflows: [
       { key: 'queue', title: 'Connection queue', description: 'Grid connection applications + EIA gates + advance / reject.', href: '/grid-operator', cta_label: 'Open queue', icon: 'cable', metric: { label: 'pending', value: connections, tone: connections > 0 ? 'warn' : 'good' } },
@@ -1083,6 +1141,7 @@ async function buildRegulatorBoard(c: any, user: any): Promise<LaunchPayload> {
       { key: 'surveillance_alerts', label: 'Surveillance alerts', value: alerts, tone: alerts > 0 ? 'bad' : 'good', href: '/regulator-suite' },
       { key: 'enforcement_open', label: 'Enforcement cases', value: enf, tone: enf > 0 ? 'warn' : 'good', href: '/regulator-suite' },
       { key: 'determinations_30d', label: 'Determinations 30d', value: det30, tone: 'neutral', href: '/regulator-suite' },
+      ...(await auditKpisFor(c.env, 'regulator', '/regulator-suite/workstation?tab=audit'))
     ],
     workflows: [
       { key: 'licences', title: 'Licence applications', description: 'Triage, grant, vary, suspend, revoke; CP audit trail.', href: '/regulator-suite', cta_label: 'Open licences', icon: 'badge', metric: { label: 'in flight', value: lic, tone: lic > 0 ? 'warn' : 'good' } },
@@ -1174,6 +1233,7 @@ async function buildCarbonFundBoard(c: any, user: any): Promise<LaunchPayload> {
       ...(navZar > 0
         ? ([{ key: 'nav', label: 'Latest NAV', value: navZar, unit: 'ZAR', tone: 'good' as Tone, href: '/carbon-registry' }] as Kpi[])
         : []),
+      ...(await auditKpisFor(c.env, 'carbon', '/carbon-registry/workstation?tab=audit'))
     ],
     workflows: [
       { key: 'carbon', title: 'Carbon book', description: 'Holdings, vintages, transfers — single view of the active book.', href: '/carbon', cta_label: 'Open carbon', icon: 'eco', metric: { label: 'holdings', value: holdings, tone: 'good' } },
@@ -1260,6 +1320,7 @@ async function buildAdminBoard(c: any, user: any): Promise<LaunchPayload> {
       { key: 'revenue_paid', label: 'Settled revenue', value: revenue, unit: 'ZAR', tone: 'good', href: '/reports' },
       { key: 'cascade_dlq', label: 'Cascade DLQ', value: cascadeDlq, tone: cascadeDlq > 0 ? 'bad' : 'good', href: '/admin/monitoring' },
       { key: 'settlement_dlq', label: 'Settlement DLQ', value: settlementDlq, tone: settlementDlq > 0 ? 'bad' : 'good', href: '/admin/monitoring' },
+      ...(await auditKpisFor(c.env, 'admin', '/admin-platform/workstation?tab=platform_audit'))
     ],
     workflows: [
       { key: 'platform', title: 'Tenants & users', description: 'Tenants, billing, user accounts, roles, role overrides.', href: '/admin-platform', cta_label: 'Open platform', icon: 'team', metric: { label: 'active', value: activeTenants, tone: 'good' } },
@@ -1345,6 +1406,7 @@ async function buildSupportBoard(c: any, user: any): Promise<LaunchPayload> {
       { key: 'cascade_dlq', label: 'Cascade DLQ', value: cascadeDlq, tone: cascadeDlq > 0 ? 'bad' : 'good', href: '/admin/monitoring' },
       { key: 'settlement_dlq', label: 'Settlement DLQ', value: settlementDlq, tone: settlementDlq > 0 ? 'bad' : 'good', href: '/admin/monitoring' },
       { key: 'resolved_7d', label: 'Resolved 7d', value: resolved7d, tone: 'good', href: '/support' },
+      ...(await auditKpisFor(c.env, 'support', '/support/workstation?tab=audit'))
     ],
     workflows: [
       { key: 'support', title: 'Support console', description: 'Tickets, escalations, cross-tenant search, walkthroughs.', href: '/support', cta_label: 'Open support', icon: 'help', metric: { label: 'queue', value: queue, tone: queue > 0 ? 'warn' : 'good' } },

@@ -19,6 +19,8 @@
 import React, { useEffect, useState } from 'react';
 import { ListingTable, Pill } from './WorkstationShell';
 import { api } from '../../lib/api';
+import { ReconBreaksModal, AuditEventsModal, ExportDetailModal } from './AuditDrillIns';
+import { ListTree } from 'lucide-react';
 
 type ChainHead = {
   entity_type: string;
@@ -58,6 +60,9 @@ export function AuditPanel({
   const [reconResult, setReconResult] = useState<any | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [bump, setBump] = useState(0);
+  const [showEvents, setShowEvents] = useState(false);
+  const [openReconRun, setOpenReconRun] = useState<string | null>(null);
+  const [openExport, setOpenExport] = useState<string | null>(null);
 
   const reload = () => { setBump((n) => n + 1); onChange?.(); };
 
@@ -136,6 +141,10 @@ export function AuditPanel({
           className="h-9 px-3 rounded-md bg-white border border-[#dde4ec] text-[12px] font-semibold disabled:opacity-50">
           {exporting ? 'Generating…' : 'Generate certified export (last 90 days)'}
         </button>
+        <button onClick={() => setShowEvents(true)}
+          className="h-9 px-3 rounded-md bg-white border border-[#dde4ec] text-[12px] font-semibold inline-flex items-center gap-2">
+          <ListTree size={14} /> View chain events
+        </button>
       </div>
 
       {verifyResult && (
@@ -154,6 +163,7 @@ export function AuditPanel({
         <ListingTable
           endpoint={`${prefix}/audit/exports`}
           rowKey={(r) => r.id}
+          rowOnClick={(r) => setOpenExport(r.id)}
           empty={{ title: 'No exports yet', description: 'Click “Generate certified export” to create a regulator-shape register backed by the audit chain head.' }}
           columns={[
             { key: 'generated_at', label: 'When', render: (r) => new Date(r.generated_at).toLocaleString() },
@@ -196,6 +206,7 @@ export function AuditPanel({
           <ListingTable
             endpoint={`${prefix}/audit/recon`}
             rowKey={(r) => r.id}
+            rowOnClick={(r) => setOpenReconRun(r.id)}
             empty={{ title: 'No reconciliation runs', description: 'Upload an external CSV to compare their view against ours.' }}
             columns={[
               { key: 'started_at', label: 'When', render: (r) => new Date(r.started_at).toLocaleString() },
@@ -208,6 +219,21 @@ export function AuditPanel({
           />
         </div>
       </section>
+
+      {showEvents && (
+        <AuditEventsModal prefix={prefix} onClose={() => setShowEvents(false)} />
+      )}
+      {openReconRun && (
+        <ReconBreaksModal
+          prefix={prefix}
+          runId={openReconRun}
+          onClose={() => setOpenReconRun(null)}
+          onChange={reload}
+        />
+      )}
+      {openExport && (
+        <ExportDetailModal prefix={prefix} exportId={openExport} onClose={() => setOpenExport(null)} />
+      )}
     </div>
   );
 }
