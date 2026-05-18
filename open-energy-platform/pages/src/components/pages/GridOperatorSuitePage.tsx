@@ -2,6 +2,7 @@ import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
 import { platformTabs } from '../platformTabs';
 import { gridCompletionTabs } from '../roleCompletionTabs';
+import { GridInsights } from '../widgets/GridInsights';
 
 const instructionTypes = [
   { value: 'curtail', label: 'Curtail' },
@@ -16,6 +17,14 @@ const instructionTypes = [
 
 export function GridOperatorSuitePage() {
   const tabs: TabSpec[] = [
+    {
+      key: 'insights',
+      label: 'Insights',
+      endpoint: '',
+      description: 'Generation profile, load-duration curve, outage MTTR trend.',
+      columns: [],
+      customContent: <GridInsights />,
+    },
     {
       key: 'dispatch',
       label: 'Dispatch schedules',

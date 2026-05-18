@@ -2,9 +2,18 @@ import React from 'react';
 import { SuitePage, StatusPill, Column, TabSpec } from '../SuitePage';
 import { platformTabs } from '../platformTabs';
 import { regulatorCompletionTabs } from '../roleCompletionTabs';
+import { RegulatorInsights } from '../widgets/RegulatorInsights';
 
 export function RegulatorSuitePage() {
   const tabs: TabSpec[] = [
+    {
+      key: 'insights',
+      label: 'Insights',
+      endpoint: '',
+      description: 'NERSA MYPD allowed-revenue calculator, cost-of-service breakout, affordability gauge.',
+      columns: [],
+      customContent: <RegulatorInsights />,
+    },
     // ─── Licences ────────────────────────────────────────────────────────
     {
       key: 'licences',

@@ -2,9 +2,18 @@ import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
 import { platformTabs } from '../platformTabs';
 import { carbonCompletionTabs } from '../roleCompletionTabs';
+import { CarbonInsights } from '../widgets/CarbonInsights';
 
 export function CarbonRegistryPage() {
   const tabs: TabSpec[] = [
+    {
+      key: 'insights',
+      label: 'Insights',
+      endpoint: '',
+      description: 'Vintage retirement schedule + methodology comparison.',
+      columns: [],
+      customContent: <CarbonInsights />,
+    },
     {
       key: 'registries',
       label: 'Registries',
