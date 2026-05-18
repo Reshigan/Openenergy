@@ -12,6 +12,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import { cachedAll } from '../utils/reference-cache';
+import { appendAudit, getChainHead, verifyChain } from '../utils/audit-chain';
 
 const gridOps = new Hono<HonoEnv>();
 gridOps.use('*', authMiddleware);
@@ -248,6 +249,18 @@ gridOps.post('/dispatch/instructions', async (c) => {
     },
     env: c.env,
   });
+
+  await appendAudit({
+    env: c.env, entity_type: 'grid', entity_id: id,
+    event_type: 'dispatch.instruction_issued', actor_id: user.id,
+    payload: {
+      instruction_id: id, instruction_number: b.instruction_number,
+      participant_id: b.participant_id, instruction_type: b.instruction_type,
+      target_mw: b.target_mw == null ? null : Number(b.target_mw),
+      effective_from: b.effective_from, reason: b.reason,
+    },
+  }).catch((e) => console.warn('audit_dispatch_failed', (e as Error).message));
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -301,6 +314,17 @@ gridOps.post('/dispatch/instructions/:id/compliance', async (c) => {
       env: c.env,
     });
   }
+
+  await appendAudit({
+    env: c.env, entity_type: 'grid', entity_id: id,
+    event_type: 'dispatch.compliance_recorded', actor_id: user.id,
+    payload: {
+      instruction_id: id, status,
+      evidence_r2_key: b.evidence_r2_key || null,
+      penalty_amount_zar: b.penalty_amount_zar == null ? null : Number(b.penalty_amount_zar),
+    },
+  }).catch((e) => console.warn('audit_compliance_failed', (e as Error).message));
+
   return c.json({ success: true, data: row });
 });
 
@@ -767,5 +791,260 @@ gridOps.get('/ancillary-events', async (c) => {
   ).bind(...binds).all().catch(() => ({ results: [] } as any));
   return c.json({ success: true, data: rows.results || [] });
 });
+
+// ════════════════════════════════════════════════════════════════════════
+// L5 — Tamper-evident audit, NRS-shape dispatch register, Eskom recon.
+// ════════════════════════════════════════════════════════════════════════
+
+gridOps.get('/audit/head', async (c) => {
+  const head = await getChainHead(c.env, 'grid');
+  return c.json({ success: true, data: head });
+});
+
+gridOps.get('/audit/events', async (c) => {
+  const user = getCurrentUser(c);
+  const limit = Math.min(200, Number(c.req.query('limit') || 50));
+  const where: string[] = [`entity_type = 'grid'`];
+  const binds: unknown[] = [];
+  const isOfficer = user.role === 'admin' || user.role === 'regulator' || user.role === 'support';
+  if (!isOfficer) { where.push('actor_id = ?'); binds.push(user.id); }
+  const rs = await c.env.DB.prepare(
+    `SELECT id, entity_id, event_type, actor_id, sequence_no, content_hash, prev_hash, created_at, payload_json
+       FROM audit_events WHERE ${where.join(' AND ')}
+      ORDER BY sequence_no DESC LIMIT ?`,
+  ).bind(...binds, limit).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+gridOps.post('/audit/verify', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const fromSeq = Number(c.req.query('from_seq') || 1) || 1;
+  const result = await verifyChain(c.env, 'grid', fromSeq);
+  return c.json({ success: result.ok, data: result });
+});
+
+// POST /grid-operator/audit/export — NRS 048-9 dispatch instruction register.
+// One row per dispatch instruction. Per SA Grid Code Section 9 (System
+// Operations Code).
+gridOps.post('/audit/export', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator' && user.role !== 'grid_operator') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as { from?: string; to?: string };
+  const from = body.from || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const to = body.to || new Date().toISOString().slice(0, 10);
+
+  const rows = await c.env.DB.prepare(
+    `SELECT id, instruction_number, participant_id, instruction_type,
+            issued_at, effective_from, effective_to, target_mw,
+            reason, status, acknowledged_at, penalty_amount_zar
+       FROM dispatch_instructions
+      WHERE substr(issued_at, 1, 10) BETWEEN ? AND ?
+      ORDER BY issued_at ASC`,
+  ).bind(from, to).all<any>().catch(() => ({ results: [] } as any));
+  const data = (rows.results || []) as Array<Record<string, any>>;
+
+  const header = ['instruction_id','instruction_number','participant_id','type',
+                  'issued_at','effective_from','effective_to','target_mw',
+                  'reason','status','acknowledged_at','penalty_zar'].join(',');
+  const csvLines = [header];
+  for (const r of data) {
+    csvLines.push([
+      r.id, r.instruction_number, r.participant_id,
+      r.instruction_type, r.issued_at, r.effective_from,
+      r.effective_to || '', r.target_mw ?? '',
+      csvEscape(r.reason || ''), r.status,
+      r.acknowledged_at || '', r.penalty_amount_zar ?? '',
+    ].join(','));
+  }
+  const csv = csvLines.join('\n') + '\n';
+  const csvBytes = new TextEncoder().encode(csv);
+  const csvSha = await sha256OfBytes(csvBytes);
+
+  const head = await getChainHead(c.env, 'grid');
+  const exportId = 'exp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const csvKey = `audit-exports/grid/${exportId}/dispatch-register.csv`;
+  const manifestKey = `audit-exports/grid/${exportId}/manifest.json`;
+  const manifest = {
+    export_id: exportId, entity_type: 'grid', from, to,
+    generated_at: new Date().toISOString(), generated_by: user.id, row_count: data.length,
+    csv: { r2_key: csvKey, sha256: csvSha, bytes: csvBytes.byteLength },
+    chain: {
+      head_hash: head?.head_hash || null,
+      head_sequence: head?.head_sequence || 0,
+      last_verified_at: head?.last_verified_at || null,
+    },
+    format: { profile: 'SA Grid Code Sec 9 dispatch instruction register v1', encoding: 'utf-8' },
+  };
+  const manifestBytes = new TextEncoder().encode(JSON.stringify(manifest, null, 2));
+
+  try {
+    await c.env.R2.put(csvKey, csvBytes, { httpMetadata: { contentType: 'text/csv' } });
+    await c.env.R2.put(manifestKey, manifestBytes, { httpMetadata: { contentType: 'application/json' } });
+  } catch (e) {
+    return c.json({ success: false, error: 'R2 write failed', data: { detail: (e as Error).message } }, 502);
+  }
+
+  await c.env.DB.prepare(
+    `INSERT INTO audit_exports
+       (id, entity_type, from_ts, to_ts, row_count,
+        csv_r2_key, manifest_r2_key, chain_head_hash, generated_by, generated_at)
+     VALUES (?, 'grid', ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+  ).bind(exportId, from, to, data.length, csvKey, manifestKey,
+         head?.head_hash || '', user.id).run();
+
+  await appendAudit({
+    env: c.env, entity_type: 'grid', entity_id: exportId,
+    event_type: 'audit.export_generated', actor_id: user.id,
+    payload: { export_id: exportId, from, to, row_count: data.length, csv_sha256: csvSha },
+  }).catch(() => {});
+
+  return c.json({
+    success: true,
+    data: { export_id: exportId, row_count: data.length, csv_r2_key: csvKey, manifest_r2_key: manifestKey, manifest },
+  }, 201);
+});
+
+gridOps.get('/audit/exports', async (c) => {
+  const rs = await c.env.DB.prepare(
+    `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
+            chain_head_hash, generated_by, generated_at
+       FROM audit_exports WHERE entity_type = 'grid'
+      ORDER BY generated_at DESC LIMIT 50`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+// POST /grid-operator/audit/recon — Eskom System Operator dispatch recon.
+// CSV columns: instruction_number, effective_from, target_mw, participant_id
+// Match against dispatch_instructions by instruction_number.
+gridOps.post('/audit/recon', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator' && user.role !== 'grid_operator') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as { source?: string; csv?: string };
+  const source = (body.source || 'eskom').toLowerCase();
+  if (typeof body.csv !== 'string' || body.csv.length < 10) {
+    return c.json({ success: false, error: 'csv body required' }, 400);
+  }
+  const lines = body.csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return c.json({ success: false, error: 'csv must have header + ≥1 row' }, 400);
+  const headers = lines[0].split(',').map((h) => h.trim());
+  const need = ['instruction_number','effective_from','target_mw','participant_id'];
+  for (const k of need) {
+    if (!headers.includes(k)) return c.json({ success: false, error: `csv missing column: ${k}` }, 400);
+  }
+  const idxOf = (k: string) => headers.indexOf(k);
+  type TheirRow = { instruction_number: string; effective_from: string; target_mw: number; participant_id: string };
+  const theirs: TheirRow[] = [];
+  for (const ln of lines.slice(1)) {
+    const cols = ln.split(',');
+    theirs.push({
+      instruction_number: (cols[idxOf('instruction_number')] || '').trim(),
+      effective_from: (cols[idxOf('effective_from')] || '').trim(),
+      target_mw: Number(cols[idxOf('target_mw')] || 0),
+      participant_id: (cols[idxOf('participant_id')] || '').trim(),
+    });
+  }
+
+  const runId = 'recon_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const csvKey = `audit-recon/grid/${runId}/eskom.csv`;
+  await c.env.R2.put(csvKey, new TextEncoder().encode(body.csv), {
+    httpMetadata: { contentType: 'text/csv' },
+  }).catch(() => null);
+
+  const ours = await c.env.DB.prepare(
+    `SELECT id, instruction_number, effective_from, target_mw, participant_id
+       FROM dispatch_instructions`,
+  ).all<{ id: string; instruction_number: string; effective_from: string; target_mw: number; participant_id: string }>().catch(() => ({ results: [] } as any));
+  const ourByNumber = new Map<string, any>();
+  for (const r of (ours.results || []) as any[]) ourByNumber.set(r.instruction_number, r);
+
+  const matched = new Set<string>();
+  type Break = { type: string; instruction_number: string | null; our: unknown; their: unknown; field: string | null };
+  const breaks: Break[] = [];
+  for (const t of theirs) {
+    if (!t.instruction_number) {
+      breaks.push({ type: 'missing_in_ours', instruction_number: null, our: null, their: t, field: null });
+      continue;
+    }
+    const o = ourByNumber.get(t.instruction_number);
+    if (!o) {
+      breaks.push({ type: 'missing_in_ours', instruction_number: t.instruction_number, our: null, their: t, field: null });
+      continue;
+    }
+    matched.add(t.instruction_number);
+    if (Math.abs(Number(o.target_mw || 0) - Number(t.target_mw)) > 1e-3) {
+      breaks.push({ type: 'field_mismatch', instruction_number: t.instruction_number, our: o, their: t, field: 'target_mw' });
+    }
+  }
+  for (const [n, o] of ourByNumber.entries()) {
+    if (!matched.has(n) && !theirs.some((t) => t.instruction_number === n)) {
+      breaks.push({ type: 'missing_in_theirs', instruction_number: n, our: o, their: null, field: null });
+    }
+  }
+
+  const matchedCount = theirs.length - breaks.filter((b) => b.type !== 'field_mismatch').length;
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(
+    `INSERT INTO audit_recon_runs
+       (id, entity_type, source, uploaded_csv_r2_key, row_count,
+        matched_count, break_count, status, started_at, finished_at, started_by)
+     VALUES (?, 'grid', ?, ?, ?, ?, ?, 'complete', ?, ?, ?)`,
+  ).bind(runId, source, csvKey, theirs.length, matchedCount,
+         breaks.length, now, now, user.id).run();
+
+  if (breaks.length > 0) {
+    const inserts = breaks.map((b) => c.env.DB.prepare(
+      `INSERT INTO audit_recon_breaks
+         (id, run_id, break_type, external_ref, our_value, their_value, field, resolution)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'open')`,
+    ).bind(
+      'brk_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+      runId, b.type, b.instruction_number,
+      b.our != null ? JSON.stringify(b.our) : null,
+      b.their != null ? JSON.stringify(b.their) : null,
+      b.field,
+    ));
+    await c.env.DB.batch(inserts);
+  }
+
+  await appendAudit({
+    env: c.env, entity_type: 'grid', entity_id: runId,
+    event_type: 'audit.recon_run', actor_id: user.id,
+    payload: { run_id: runId, source, row_count: theirs.length, break_count: breaks.length },
+  }).catch(() => {});
+
+  return c.json({
+    success: true,
+    data: { run_id: runId, source, row_count: theirs.length, matched_count: matchedCount, break_count: breaks.length },
+  }, 201);
+});
+
+gridOps.get('/audit/recon', async (c) => {
+  const rs = await c.env.DB.prepare(
+    `SELECT id, source, row_count, matched_count, break_count, status,
+            started_at, finished_at
+       FROM audit_recon_runs WHERE entity_type = 'grid'
+      ORDER BY started_at DESC LIMIT 50`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+function csvEscape(s: string): string {
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+async function sha256OfBytes(b: Uint8Array): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', b);
+  return Array.from(new Uint8Array(buf)).map((x) => x.toString(16).padStart(2, '0')).join('');
+}
 
 export default gridOps;

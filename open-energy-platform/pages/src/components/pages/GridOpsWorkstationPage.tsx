@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
+import { AuditPanel } from '../launch/AuditPanel';
 import { api } from '../../lib/api';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
@@ -24,6 +25,16 @@ export function GridOpsWorkstationPage() {
         { key: 'curtailment', label: 'Curtailment events', body: ({ onRefresh }) => <CurtailmentTab onRefresh={onRefresh} /> },
         { key: 'outage', label: 'Outage responses', body: ({ onRefresh }) => <OutageTab onRefresh={onRefresh} /> },
         { key: 'ancillary', label: 'Ancillary award events', body: ({ onRefresh }) => <AncillaryTab onRefresh={onRefresh} /> },
+        { key: 'audit', label: 'Audit & compliance',
+          body: ({ onRefresh }) => (
+            <AuditPanel
+              prefix="/grid-operator"
+              reconHint="instruction_number,effective_from,target_mw,participant_id"
+              reconSourceOptions={['eskom', 'nersa', 'so_internal']}
+              onChange={onRefresh}
+            />
+          ),
+        },
       ]}
     />
   );
