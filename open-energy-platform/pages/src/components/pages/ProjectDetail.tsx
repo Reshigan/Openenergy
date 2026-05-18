@@ -7,6 +7,7 @@ import { OEIcon } from '../OEIcon';
 import { StitchPage, StitchCard, StitchKpi, StitchPill } from '../StitchPage';
 import { VaultPanel } from '../VaultPanel';
 import { ThreadPanel } from '../ThreadPanel';
+import { ProjectScurve } from '../widgets/ProjectScurve';
 
 /* ════════════════════════════════════════════════════════════════════════
  * Project Detail page — /projects/:id
@@ -126,6 +127,20 @@ export function ProjectDetail() {
         </>
       }
     >
+      <ProjectScurve
+        milestones={milestones.map((m) => ({
+          id: m.id,
+          milestone_name: m.milestone_name,
+          milestone_type: m.milestone_type,
+          due_date: m.due_date,
+          achieved_date: m.achieved_date,
+          status: m.status,
+        }))}
+        capexZar={project.total_capex_zar}
+        startDate={project.created_at}
+        codDate={project.cod_date}
+      />
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StitchKpi label="Capacity"      value={`${num(project.capacity_mw || 0, 1)} MW`}     icon={() => <OEIcon name="bolt" size={14} />} />
         <StitchKpi label="Status"        value={project.status || '—'}                       icon={() => <OEIcon name="flag" size={14} />} />

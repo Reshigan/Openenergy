@@ -13,6 +13,7 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { Pill } from '../launch/WorkstationShell';
+import { SettlementWaterfall } from '../widgets/SettlementWaterfall';
 
 type InvoiceDetail = {
   invoice: any;
@@ -92,6 +93,13 @@ export function InvoiceDetailPage() {
         <Kpi label="Breaks open" value={String(breaks.filter(b => b.status === 'open' || b.status === 'investigating').length)} />
         <Kpi label="Line items" value={String(line_items.length)} />
       </div>
+
+      <SettlementWaterfall
+        totalAmount={Number(invoice.total_amount || 0)}
+        breaks={breaks}
+        fees={fees}
+        payments={payments}
+      />
 
       <Section title={`Line items (${line_items.length})`}>
         {line_items.length === 0 ? <Empty label="No structured line items. Legacy JSON line_items column may hold the breakdown." /> : (

@@ -14,6 +14,7 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
+import { OutageImpact } from '../widgets/OutageImpact';
 
 type Response = {
   id: string;
@@ -98,6 +99,19 @@ export function GridOutageDetailPage() {
 
       {loading && <Skeleton variant="card" rows={4} />}
       {err && <ErrorBanner message={err} onRetry={() => void load()} />}
+
+      {!loading && !err && (
+        <OutageImpact
+          durationHours={
+            firstResponse && (isRestored || isClosed)
+              ? Math.max(
+                  0.5,
+                  (new Date(sorted[0].responded_at).getTime() - new Date(firstResponse.responded_at).getTime()) / 3_600_000,
+                )
+              : undefined
+          }
+        />
+      )}
 
       {!loading && !err && responses.length === 0 && (
         <div className="rounded-xl border border-[#dde4ec] bg-white p-6 text-center">

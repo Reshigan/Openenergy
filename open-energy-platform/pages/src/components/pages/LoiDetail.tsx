@@ -7,6 +7,7 @@ import {
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
 import { NarrativeText } from '../NarrativeText';
+import { PpaRevenueModel } from '../widgets/PpaRevenueModel';
 
 type Loi = {
   id: string;
@@ -194,6 +195,15 @@ export function LoiDetail() {
           <AlertTriangle size={14} /> {error}
         </div>
       )}
+
+      {(loi.annual_mwh && loi.blended_price) ? (
+        <PpaRevenueModel
+          annualMwh={Number(loi.annual_mwh)}
+          blendedPriceZarPerMwh={Number(loi.blended_price)}
+          horizonYears={Number(loi.horizon_years || 15)}
+          capacityMw={loi.project_capacity_mw ? Number(loi.project_capacity_mw) : undefined}
+        />
+      ) : null}
 
       <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
         <header className="flex items-center gap-2 px-5 py-3 border-b border-[#f0f0f0] bg-[#eef2f7]">
