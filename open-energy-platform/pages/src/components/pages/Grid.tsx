@@ -8,6 +8,7 @@ import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { useAuth } from '../../lib/useAuth';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { StitchPage } from '../StitchPage';
 
 type Tab = 'connections' | 'wheeling' | 'constraints' | 'imbalance';
 
@@ -180,13 +181,13 @@ export function Grid() {
   const criticalCount = useMemo(() => allConstraints.filter(x => x.severity === 'critical' || x.severity === 'high').length, [allConstraints]);
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><Zap size={22} className="text-ionex-brand" /> Grid Operations</h1>
-          <p className="text-ionex-text-mute">Connections, wheeling agreements, constraints, imbalance — wired to /api/grid</p>
-        </div>
-        <div className="flex items-center gap-2">
+    <StitchPage
+      eyebrowIcon={Zap}
+      eyebrowLabel="Grid"
+      title="Grid Operations"
+      subtitle="Connections, wheeling agreements, constraints, imbalance — wired to /api/grid"
+      actions={
+        <>
           {tab === 'constraints' && isOperator && (
             <button onClick={() => setShowConstraintModal(true)} className="flex items-center gap-2 px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand/90">
               <Plus size={14} /> Publish constraint
@@ -195,9 +196,9 @@ export function Grid() {
           <button onClick={refreshAll} className="flex items-center gap-2 px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">
             <RefreshCw size={14} /> Refresh
           </button>
-        </div>
-      </div>
-
+        </>
+      }
+    >
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Tile icon={<Activity size={18} />} label="Connections" value={allConnections.length} hint={`${allConnections.filter(c => c.status === 'active').length} active`} />
         <Tile icon={<MapPin size={18} />} label="Wheeling" value={allWheeling.length} hint={`${allWheeling.filter(w => w.status === 'active').length} active`} />
@@ -290,7 +291,7 @@ export function Grid() {
           )}
 
       {showConstraintModal && <ConstraintModal onClose={() => setShowConstraintModal(false)} onCreated={() => { setShowConstraintModal(false); void refreshAll(); }} />}
-    </div>
+    </StitchPage>
   );
 }
 

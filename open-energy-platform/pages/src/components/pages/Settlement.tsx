@@ -6,6 +6,7 @@ import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { useAuth } from '../../lib/useAuth';
+import { StitchPage } from '../StitchPage';
 
 type Tab = 'invoices' | 'payments' | 'disputes' | 'breaks' | 'confirmations' | 'fees';
 
@@ -245,17 +246,17 @@ export function Settlement() {
   }, [allInvoices, allDisputes, allPayments, user?.id]);
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Settlement</h1>
-          <p className="text-ionex-text-mute">Invoices, payments, reconciliation and disputes.</p>
-        </div>
+    <StitchPage
+      eyebrowIcon={DollarSign}
+      eyebrowLabel="Settlement"
+      title="Settlement"
+      subtitle="Invoices, payments, reconciliation and disputes."
+      actions={
         <button onClick={() => void refreshAll()} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
           <RefreshCw className="w-4 h-4" />
         </button>
-      </div>
-
+      }
+    >
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Tile label="Outstanding" value={formatZAR(summary.outstanding)} />
         <Tile label="Overdue invoices" value={String(summary.overdue)} accent={summary.overdue ? 'text-red-600' : undefined} />
@@ -357,7 +358,7 @@ export function Settlement() {
       {breakInvoice && (
         <FileBreakModal invoice={breakInvoice} onClose={() => setBreakInvoice(null)} onDone={() => { setBreakInvoice(null); setTab('breaks'); setStatusFilter('all'); void refreshAll(); }} />
       )}
-    </div>
+    </StitchPage>
   );
 }
 

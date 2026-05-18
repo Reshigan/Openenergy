@@ -8,6 +8,7 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
+import { StitchPage } from '../StitchPage';
 
 type KycStatus = 'pending' | 'in_review' | 'approved' | 'rejected';
 type UserStatus = 'pending' | 'active' | 'suspended' | 'rejected';
@@ -317,17 +318,17 @@ export function Admin() {
   }, [stats]);
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Platform Admin</h1>
-          <p className="text-ionex-text-mute">KYC queue, users, modules, audit logs, billing.</p>
-        </div>
+    <StitchPage
+      eyebrowIcon={Shield}
+      eyebrowLabel="Platform Admin"
+      title="Platform Admin"
+      subtitle="KYC queue, users, modules, audit logs, billing."
+      actions={
         <button onClick={fetchAll} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
           <RefreshCw className="w-4 h-4" />
         </button>
-      </div>
-
+      }
+    >
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {overviewTiles.map(t => (
           <div key={t.label} className="p-4 bg-white border border-ionex-border-100 rounded-xl">
@@ -393,7 +394,7 @@ export function Admin() {
           <span className="break-all">{toast}</span>
         </div>
       )}
-    </div>
+    </StitchPage>
   );
 }
 

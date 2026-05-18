@@ -14,6 +14,7 @@ import { ExportBar } from '../ExportBar';
 import { EntityLink } from '../EntityLink';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 import { NarrativeText } from '../NarrativeText';
+import { StitchPage } from '../StitchPage';
 
 /* ════════════════════════════════════════════════════════════════════════
  * Carbon — Carbon Fund role
@@ -69,35 +70,21 @@ export function Carbon() {
   const [tab, setTab] = useState<Tab>('holdings');
 
   return (
-    <div className="p-6 lg:p-10 space-y-6 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
-      <header className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
-        <div>
-          <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6b7685] bg-white border border-[#dde4ec] rounded-full px-3 py-1">
-            <Leaf size={12} /> Carbon Markets
-          </div>
-          <h1 className="mt-2 font-display text-[28px] font-bold tracking-tight" style={{ color: 'var(--oe-on-surface)' }}>Carbon portfolio</h1>
-          <p className="text-[13px] text-[#3d4756]">Track VCU/REC holdings, issuance pipeline, retirement certificates and AI-computed fund NAV.</p>
-        </div>
-        <nav className="flex flex-wrap items-center gap-1 bg-white border border-[#dde4ec] rounded-lg p-1">
-          {TABS.map((t) => {
-            const Icon = t.icon;
-            const active = tab === t.id;
-            return (
-              <button key={t.id} onClick={() => setTab(t.id)}
-                className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-2 ${active ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'}`}>
-                <Icon size={14} /> {t.label}
-              </button>
-            );
-          })}
-        </nav>
-      </header>
-
+    <StitchPage
+      eyebrowIcon={Leaf}
+      eyebrowLabel="Carbon Markets"
+      title="Carbon portfolio"
+      subtitle="Track VCU/REC holdings, issuance pipeline, retirement certificates and AI-computed fund NAV."
+      tabs={TABS}
+      activeTab={tab}
+      onTabChange={(id) => setTab(id as Tab)}
+    >
       {tab === 'holdings' && <HoldingsTab />}
       {tab === 'issuance' && <IssuanceTab />}
       {tab === 'retire' && <RetirementTab />}
       {tab === 'nav' && <NavTab />}
       {tab === 'market' && <MarketTab />}
-    </div>
+    </StitchPage>
   );
 }
 

@@ -12,6 +12,7 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { ExportBar } from '../ExportBar';
+import { StitchPage } from '../StitchPage';
 
 /* ════════════════════════════════════════════════════════════════════════
  * Trading Terminal — Trader role
@@ -83,29 +84,15 @@ export function Trading() {
   const [tab, setTab] = useState<Tab>('terminal');
 
   return (
-    <div className="p-6 lg:p-10 space-y-6 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
-      <header className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
-        <div>
-          <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6b7685] bg-white border border-[#dde4ec] rounded-full px-3 py-1">
-            <Zap size={12} /> Energy Trading
-          </div>
-          <h1 className="mt-2 font-display text-[28px] font-bold tracking-tight" style={{ color: 'var(--oe-on-surface)' }}>Trading Terminal</h1>
-          <p className="text-[13px] text-[#3d4756]">Live order book, algorithmic rules, strategy backtester, real-time blotter and risk dashboard.</p>
-        </div>
-        <nav className="flex flex-wrap items-center gap-1 bg-white border border-[#dde4ec] rounded-lg p-1">
-          {TABS.map((t) => {
-            const Icon = t.icon;
-            const active = tab === t.id;
-            return (
-              <button key={t.id} onClick={() => setTab(t.id)}
-                className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-2 ${active ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'}`}>
-                <Icon size={14} /> {t.label}
-              </button>
-            );
-          })}
-        </nav>
-      </header>
-
+    <StitchPage
+      eyebrowIcon={Zap}
+      eyebrowLabel="Energy Trading"
+      title="Trading Terminal"
+      subtitle="Live order book, algorithmic rules, strategy backtester, real-time blotter and risk dashboard."
+      tabs={TABS}
+      activeTab={tab}
+      onTabChange={(id) => setTab(id as Tab)}
+    >
       {tab === 'terminal' && <TerminalTab onSeeRejections={() => setTab('rejections')} />}
       {tab === 'algo' && <AlgoRulesTab />}
       {tab === 'backtest' && <BacktesterTab />}
@@ -115,7 +102,7 @@ export function Trading() {
       {tab === 'exceptions' && <ExceptionsTab />}
       {tab === 'allocations' && <AllocationsTab />}
       {tab === 'fees' && <FeesTab />}
-    </div>
+    </StitchPage>
   );
 }
 

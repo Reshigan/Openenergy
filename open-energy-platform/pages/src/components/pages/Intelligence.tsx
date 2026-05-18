@@ -6,6 +6,7 @@ import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { useAuth } from '../../lib/useAuth';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { StitchPage } from '../StitchPage';
 
 type Severity = 'info' | 'warning' | 'critical';
 
@@ -116,13 +117,13 @@ export function Intelligence() {
   }, [summary]);
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Intelligence feed</h1>
-          <p className="text-ionex-text-mute">Operational, financial, regulatory and market signals.</p>
-        </div>
-        <div className="flex items-center gap-2">
+    <StitchPage
+      eyebrowIcon={Activity}
+      eyebrowLabel="Intelligence"
+      title="Intelligence feed"
+      subtitle="Operational, financial, regulatory and market signals."
+      actions={
+        <>
           <button onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -136,9 +137,9 @@ export function Intelligence() {
               {scanning ? 'Scanning…' : 'Run scan'}
             </button>
           )}
-        </div>
-      </div>
-
+        </>
+      }
+    >
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Tile label="Unresolved" value={summary?.unresolved_count ?? 0} />
         <Tile label="Critical" value={counts.critical} accent="text-red-600" />
@@ -210,7 +211,7 @@ export function Intelligence() {
           onResolve={() => resolveItem(selected)}
         />
       )}
-    </div>
+    </StitchPage>
   );
 }
 

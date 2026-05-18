@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
-import { ObjectPageHeader } from '../ObjectPageHeader';
 import { FioriTile } from '../FioriTile';
 import { EmptyState } from '../EmptyState';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { Search, LifeBuoy, Mail, Unlock, KeyRound, LogOut, UserCheck, Activity } from 'lucide-react';
+import { StitchPage } from '../StitchPage';
 
 // ---------------------------------------------------------------------------
 // Support Console
@@ -182,15 +182,14 @@ export function Support() {
   }), [results]);
 
   return (
-    <div className="flex flex-col gap-6">
-      <ObjectPageHeader
-        title="Support Console"
-        subtitle={user?.role === 'admin'
-          ? 'Admin-view of support tools. All writes are audit-logged.'
-          : 'Triage user issues. All writes are audit-logged and visible to admins.'}
-        icon={LifeBuoy}
-      />
-
+    <StitchPage
+      eyebrowIcon={LifeBuoy}
+      eyebrowLabel="Support"
+      title="Support Console"
+      subtitle={user?.role === 'admin'
+        ? 'Admin-view of support tools. All writes are audit-logged.'
+        : 'Triage user issues. All writes are audit-logged and visible to admins.'}
+    >
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <FioriTile title="Results" value={String(stats.total)} />
         <FioriTile title="Active" value={String(stats.active)} accent="green" />
@@ -373,7 +372,7 @@ export function Support() {
           )}
         </div>
       </div>
-    </div>
+    </StitchPage>
   );
 }
 

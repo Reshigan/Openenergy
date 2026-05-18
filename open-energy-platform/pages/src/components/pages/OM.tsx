@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { NarrativeText } from '../NarrativeText';
+import { StitchPage } from '../StitchPage';
 
 type Tab = 'fleet' | 'telemetry' | 'asoba' | 'forecast' | 'faults' | 'maintenance' | 'analytics' | 'insights' | 'simulate';
 
@@ -932,31 +933,18 @@ export function OM() {
   }, [tab, siteId]);
 
   return (
-    <div className="min-h-screen bg-[#f5f6fa] p-6 lg:p-10 space-y-6">
-      <header>
-        <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6b7685] bg-white border border-[#dde4ec] rounded-full px-3 py-1">
-          <Cog size={12} /> Operations &amp; Maintenance
-        </div>
-        <h1 className="mt-2 text-[24px] font-semibold text-[#0f1c2e]">O&amp;M control centre</h1>
-        <p className="text-[13px] text-[#6b7685]">Every Ona capability — asset fleet, live telemetry, AI generation outlook, fault triage, maintenance calendar, performance analytics and control-room AI — in one cockpit.</p>
-      </header>
-
+    <StitchPage
+      eyebrowIcon={Cog}
+      eyebrowLabel="Operations & Maintenance"
+      title="O&M control centre"
+      subtitle="Every Ona capability — asset fleet, live telemetry, AI generation outlook, fault triage, maintenance calendar, performance analytics and control-room AI — in one cockpit."
+      tabs={TABS}
+      activeTab={tab}
+      onTabChange={(id) => setTab(id as Tab)}
+    >
       <HeaderStrip />
-
-      <nav className="flex flex-wrap items-center gap-1 bg-white border border-[#dde4ec] rounded-lg p-1 w-fit">
-        {TABS.map((t) => {
-          const Icon = t.icon;
-          const active = tab === t.id;
-          return (
-            <button key={t.id} onClick={() => setTab(t.id)} className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-2 ${active ? 'bg-[#3b82c4] text-white' : 'text-[#6b7685] hover:bg-[#f5f6fa]'}`}>
-              <Icon size={14} /> {t.label}
-            </button>
-          );
-        })}
-      </nav>
-
       {body}
-    </div>
+    </StitchPage>
   );
 }
 
