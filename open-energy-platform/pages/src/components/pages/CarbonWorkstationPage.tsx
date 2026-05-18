@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
+import { AuditPanel } from '../launch/AuditPanel';
 import { api } from '../../lib/api';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
@@ -52,6 +53,18 @@ export function CarbonWorkstationPage() {
           key: 'certificates',
           label: 'Retirement certificates',
           body: ({ onRefresh }) => <CertificatesTab onRefresh={onRefresh} />,
+        },
+        {
+          key: 'audit',
+          label: 'Audit & compliance',
+          body: ({ onRefresh }) => (
+            <AuditPanel
+              prefix="/carbon-registry"
+              reconHint="serial_id,retirement_ref,quantity_tco2e,retired_at"
+              reconSourceOptions={['verra', 'gold_standard', 'cdm', 'sa_redd']}
+              onChange={onRefresh}
+            />
+          ),
         },
       ]}
     />
