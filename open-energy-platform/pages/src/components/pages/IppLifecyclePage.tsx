@@ -2,9 +2,18 @@ import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
 import { platformTabs } from '../platformTabs';
 import { ippCompletionTabs } from '../roleCompletionTabs';
+import { IppInsights } from '../widgets/IppInsights';
 
 export function IppLifecyclePage() {
   const tabs: TabSpec[] = [
+    {
+      key: 'insights',
+      label: 'Insights',
+      endpoint: '',
+      description: 'Project health scorecard, environmental compliance heatmap, milestone critical path, LD calculator, tariff comparison.',
+      columns: [],
+      customContent: <IppInsights />,
+    },
     {
       key: 'epc',
       label: 'EPC contracts',
