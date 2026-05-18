@@ -48,6 +48,9 @@ export type EventType =
   // Threads / collaboration
   | 'thread.posted'
   | 'intelligence.item_created' | 'action_queue.created'
+  // L5 audit chain — fires after every appendAudit(); entity_type +
+  // event_type are in the cascade data payload.
+  | 'audit.event_appended'
   // ─── National-scale expansion (PR-National-1/2/3) ─────────────────────
   // Regulator
   | 'regulator.licence_granted' | 'regulator.licence_varied'

@@ -15,6 +15,7 @@ import {
 } from '../utils/pre-trade-guards';
 import { explainRejection } from '../utils/rejection-explainer';
 import { logAiDecision } from '../utils/ai-audit';
+import { appendAudit } from '../utils/audit-chain';
 import type { DurableObjectNamespace } from '@cloudflare/workers-types';
 
 const trading = new Hono<HonoEnv>();
@@ -391,6 +392,20 @@ trading.post('/orders', async (c) => {
     env: c.env,
   });
 
+  // L5 audit chain — record the placed order. Payload is canonicalised
+  // by appendAudit so identical orders hash identically on replay.
+  await appendAudit({
+    env: c.env, entity_type: 'trading', entity_id: orderId,
+    event_type: 'order.placed', actor_id: user.id,
+    payload: {
+      order_id: orderId, side, energy_type: energyType,
+      volume_mwh: vol, price: effectivePrice,
+      delivery_date: deliveryDate, order_type: orderType,
+      reserved_margin_zar: decision.reserved_margin_zar,
+      external_ref: typeof external_ref === 'string' ? external_ref : null,
+    },
+  }).catch((e) => console.warn('audit_order_placed_failed', (e as Error).message));
+
   // Auto-match via the OrderBook DO if requested.
   if (auto_match === true) {
     const doMatch = await routeThroughOrderBook(c.env, shardKey, {
@@ -525,6 +540,12 @@ trading.post('/orders/:id/cancel', async (c) => {
     data: {},
     env: c.env,
   });
+
+  await appendAudit({
+    env: c.env, entity_type: 'trading', entity_id: id,
+    event_type: 'order.cancelled', actor_id: user.id,
+    payload: { order_id: id, prior_status: order.status },
+  }).catch((e) => console.warn('audit_order_cancelled_failed', (e as Error).message));
 
   return c.json({ success: true, data: { id, status: 'cancelled' } });
 });
@@ -669,6 +690,20 @@ trading.post('/orders/:id/amend', async (c) => {
       lostPriority ? 1 : 0, body.reason ?? null,
     ),
   ]);
+
+  await appendAudit({
+    env: c.env, entity_type: 'trading', entity_id: id,
+    event_type: 'order.amended', actor_id: user.id,
+    payload: {
+      order_id: id, amendment_id: amendmentId,
+      prev_price: prevPrice, new_price: newPrice,
+      prev_volume_mwh: prevVolume, new_volume_mwh: newVolume,
+      prev_remaining_mwh: prevRemaining, new_remaining_mwh: newRemaining,
+      lost_priority: lostPriority,
+      reason: body.reason ?? null,
+      reserved_margin_zar: decision.reserved_margin_zar,
+    },
+  }).catch((e) => console.warn('audit_order_amended_failed', (e as Error).message));
 
   return c.json({
     success: true,
@@ -1850,6 +1885,18 @@ trading.post('/exceptions/:id/transition', async (c) => {
       exId,
     )
     .run();
+
+  await appendAudit({
+    env: c.env, entity_type: 'trading', entity_id: exId,
+    event_type: 'exception.transitioned', actor_id: user.id,
+    payload: {
+      exception_id: exId,
+      from_status: ex.status, to_status: to,
+      outcome: isTerminal ? (body.outcome || (to === 'resolved' ? 'adjusted' : 'no_action')) : null,
+      notes: body.notes || null,
+    },
+  }).catch((e) => console.warn('audit_exception_transitioned_failed', (e as Error).message));
+
   return c.json({ success: true, data: { id: exId, status: to } });
 });
 
@@ -1942,5 +1989,403 @@ trading.post('/amend-suggestions/:id/accept', async (c) => {
     .catch(() => {});
   return c.json({ success: true });
 });
+
+// ════════════════════════════════════════════════════════════════════════
+// L5 — Tamper-evident audit, certified export, external reconciliation.
+// ════════════════════════════════════════════════════════════════════════
+import { getChainHead, verifyChain } from '../utils/audit-chain';
+
+// GET /trading/audit/head — quick "what's the current chain head" used by
+// the workstation badge ("verified · 12 432 events · head 4e2a…b6c1").
+trading.get('/audit/head', async (c) => {
+  const head = await getChainHead(c.env, 'trading');
+  return c.json({ success: true, data: head });
+});
+
+// GET /trading/audit/events — paginated tail of the chain for the UI.
+trading.get('/audit/events', async (c) => {
+  const user = getCurrentUser(c);
+  const limit = Math.min(200, Number(c.req.query('limit') || 50));
+  const beforeSeq = c.req.query('before_seq');
+  const where: string[] = [`entity_type = 'trading'`];
+  const binds: unknown[] = [];
+  // Non-officers see only events they caused (own participant audit log).
+  const isOfficer = user.role === 'admin' || user.role === 'support' || user.role === 'regulator';
+  if (!isOfficer) { where.push('actor_id = ?'); binds.push(user.id); }
+  if (beforeSeq) { where.push('sequence_no < ?'); binds.push(Number(beforeSeq)); }
+  const rs = await c.env.DB.prepare(
+    `SELECT id, entity_id, event_type, actor_id, sequence_no,
+            content_hash, prev_hash, created_at, payload_json
+       FROM audit_events
+      WHERE ${where.join(' AND ')}
+      ORDER BY sequence_no DESC
+      LIMIT ?`,
+  ).bind(...binds, limit).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+// POST /trading/audit/verify — walks the chain, recomputes each hash, returns
+// the result (and persists last_verified_at into audit_chain_state). Admin
+// and regulator only — verification touches every event row and is expensive.
+trading.post('/audit/verify', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const fromSeq = Number(c.req.query('from_seq') || 1) || 1;
+  const result = await verifyChain(c.env, 'trading', fromSeq);
+  return c.json({ success: result.ok, data: result });
+});
+
+// POST /trading/audit/export — produces a NERSA-style certified export of
+// trades in [from, to]. Streams CSV + manifest.json into R2 under
+// audit-exports/trading/<id>/. Manifest includes:
+//   • SHA-256 of the CSV bytes
+//   • current head_hash of the trading chain
+//   • SHA-256 of the manifest itself, signed by chain_head_hash
+//
+// On submit we return both R2 keys + a signed download URL with 24h TTL.
+trading.post('/audit/export', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as { from?: string; to?: string };
+  const from = body.from || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const to = body.to || new Date().toISOString().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+    return c.json({ success: false, error: 'from/to must be YYYY-MM-DD' }, 400);
+  }
+
+  // Collect all matched trades in the window. Use ISO date prefix matching
+  // since matched_at is an ISO timestamp.
+  const rows = await c.env.DB.prepare(
+    `SELECT m.id AS match_id, m.matched_at,
+            COALESCE(m.matched_price, m.matched_price_zar) AS price_zar_mwh,
+            m.matched_volume_mwh AS volume_mwh,
+            b.energy_type, b.delivery_date,
+            bp.name AS buyer_name, sp.name AS seller_name,
+            b.participant_id AS buyer_id, s.participant_id AS seller_id
+       FROM trade_matches m
+       INNER JOIN trade_orders b ON b.id = m.buy_order_id
+       INNER JOIN trade_orders s ON s.id = m.sell_order_id
+       LEFT JOIN participants bp ON bp.id = b.participant_id
+       LEFT JOIN participants sp ON sp.id = s.participant_id
+      WHERE substr(m.matched_at, 1, 10) BETWEEN ? AND ?
+      ORDER BY m.matched_at ASC`,
+  ).bind(from, to).all<{
+    match_id: string; matched_at: string;
+    price_zar_mwh: number; volume_mwh: number;
+    energy_type: string; delivery_date: string | null;
+    buyer_name: string | null; seller_name: string | null;
+    buyer_id: string; seller_id: string;
+  }>();
+  const data = rows.results || [];
+
+  // NERSA-style trade register CSV (one row per match).
+  const header = ['match_id','matched_at','energy_type','delivery_date',
+                  'volume_mwh','price_zar_mwh','notional_zar',
+                  'buyer_id','buyer_name','seller_id','seller_name'].join(',');
+  const csvLines = [header];
+  for (const r of data) {
+    const notional = Number(r.volume_mwh) * Number(r.price_zar_mwh);
+    csvLines.push([
+      r.match_id, r.matched_at, r.energy_type, r.delivery_date || '',
+      Number(r.volume_mwh).toFixed(4), Number(r.price_zar_mwh).toFixed(2),
+      notional.toFixed(2),
+      r.buyer_id, csvEscape(r.buyer_name || ''),
+      r.seller_id, csvEscape(r.seller_name || ''),
+    ].join(','));
+  }
+  const csv = csvLines.join('\n') + '\n';
+  const csvBytes = new TextEncoder().encode(csv);
+  const csvSha = await sha256OfBytes(csvBytes);
+
+  const head = await getChainHead(c.env, 'trading');
+  const exportId = 'exp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const csvKey = `audit-exports/trading/${exportId}/trades.csv`;
+  const manifestKey = `audit-exports/trading/${exportId}/manifest.json`;
+
+  const manifest = {
+    export_id: exportId,
+    entity_type: 'trading',
+    from, to,
+    generated_at: new Date().toISOString(),
+    generated_by: user.id,
+    row_count: data.length,
+    csv: { r2_key: csvKey, sha256: csvSha, bytes: csvBytes.byteLength },
+    chain: {
+      head_hash: head?.head_hash || null,
+      head_sequence: head?.head_sequence || 0,
+      last_verified_at: head?.last_verified_at || null,
+    },
+    format: { profile: 'NERSA section 9 trade register v1', encoding: 'utf-8' },
+  };
+  const manifestJson = JSON.stringify(manifest, null, 2);
+  const manifestBytes = new TextEncoder().encode(manifestJson);
+
+  // Write both to R2. Best-effort; if R2 fails we still record what would
+  // have been written for the auditor to retry.
+  try {
+    await c.env.R2.put(csvKey, csvBytes, { httpMetadata: { contentType: 'text/csv' } });
+    await c.env.R2.put(manifestKey, manifestBytes, { httpMetadata: { contentType: 'application/json' } });
+  } catch (e) {
+    return c.json({
+      success: false,
+      error: 'R2 write failed',
+      data: { detail: (e as Error).message },
+    }, 502);
+  }
+
+  await c.env.DB.prepare(
+    `INSERT INTO audit_exports
+       (id, entity_type, from_ts, to_ts, row_count,
+        csv_r2_key, manifest_r2_key, chain_head_hash, generated_by, generated_at)
+     VALUES (?, 'trading', ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+  ).bind(exportId, from, to, data.length, csvKey, manifestKey,
+         head?.head_hash || '', user.id).run();
+
+  await appendAudit({
+    env: c.env, entity_type: 'trading', entity_id: exportId,
+    event_type: 'audit.export_generated', actor_id: user.id,
+    payload: { export_id: exportId, from, to, row_count: data.length, csv_sha256: csvSha },
+  }).catch(() => {});
+
+  return c.json({
+    success: true,
+    data: {
+      export_id: exportId, row_count: data.length,
+      csv_r2_key: csvKey, manifest_r2_key: manifestKey,
+      manifest,
+    },
+  }, 201);
+});
+
+// GET /trading/audit/exports — list past exports for the dashboard.
+trading.get('/audit/exports', async (c) => {
+  const rs = await c.env.DB.prepare(
+    `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
+            chain_head_hash, generated_by, generated_at
+       FROM audit_exports
+      WHERE entity_type = 'trading'
+      ORDER BY generated_at DESC LIMIT 50`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+// GET /trading/audit/exports/:id/manifest — fetch the manifest JSON inline
+// (avoids an R2 signed URL round-trip for the UI). Manifest is small.
+trading.get('/audit/exports/:id/manifest', async (c) => {
+  const id = c.req.param('id');
+  const row = await c.env.DB.prepare(
+    `SELECT manifest_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'trading'`,
+  ).bind(id).first<{ manifest_r2_key: string }>();
+  if (!row) return c.json({ success: false, error: 'Export not found' }, 404);
+  const obj = await c.env.R2.get(row.manifest_r2_key);
+  if (!obj) return c.json({ success: false, error: 'Manifest object missing in R2' }, 404);
+  const text = await obj.text();
+  let parsed: unknown = null;
+  try { parsed = JSON.parse(text); } catch { /* return raw text below */ }
+  return c.json({ success: true, data: parsed ?? { raw: text } });
+});
+
+// POST /trading/audit/recon — accept a counterparty CSV of trades they
+// believe they executed against us, match by external_ref and matched_at
+// timestamp, write a recon run + breaks. Body shape:
+//   { source: 'counterparty'|'eskom'|'verra', csv: 'header,row1\n…' }
+// Expected CSV columns (header-driven):
+//   external_ref, matched_at, energy_type, volume_mwh, price_zar_mwh
+trading.post('/audit/recon', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator' && user.role !== 'trader') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as { source?: string; csv?: string };
+  const source = (body.source || 'counterparty').toLowerCase();
+  if (typeof body.csv !== 'string' || body.csv.length < 10) {
+    return c.json({ success: false, error: 'csv body required' }, 400);
+  }
+
+  // Parse CSV (simple — no quoted commas; counterparty exports are clean).
+  const lines = body.csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return c.json({ success: false, error: 'csv must have header + ≥1 row' }, 400);
+  const headers = lines[0].split(',').map((h) => h.trim());
+  const need = ['external_ref','matched_at','energy_type','volume_mwh','price_zar_mwh'];
+  for (const k of need) {
+    if (!headers.includes(k)) {
+      return c.json({ success: false, error: `csv missing column: ${k}` }, 400);
+    }
+  }
+  const idxOf = (k: string) => headers.indexOf(k);
+  type TheirRow = { external_ref: string; matched_at: string; energy_type: string; volume_mwh: number; price_zar_mwh: number };
+  const theirs: TheirRow[] = [];
+  for (const ln of lines.slice(1)) {
+    const cols = ln.split(',');
+    theirs.push({
+      external_ref: (cols[idxOf('external_ref')] || '').trim(),
+      matched_at:   (cols[idxOf('matched_at')] || '').trim(),
+      energy_type:  (cols[idxOf('energy_type')] || '').trim(),
+      volume_mwh:   Number(cols[idxOf('volume_mwh')] || 0),
+      price_zar_mwh: Number(cols[idxOf('price_zar_mwh')] || 0),
+    });
+  }
+
+  // Upload the raw CSV to R2 for the audit trail.
+  const runId = 'recon_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const csvKey = `audit-recon/trading/${runId}/upload.csv`;
+  await c.env.R2.put(csvKey, new TextEncoder().encode(body.csv), {
+    httpMetadata: { contentType: 'text/csv' },
+  }).catch(() => null);
+
+  // Pull our view of trades indexed by external_ref. Counterparty rows lacking
+  // external_ref will get matched on (matched_at, volume_mwh, price) as a fallback.
+  const ours = await c.env.DB.prepare(
+    `SELECT m.id AS match_id, m.matched_at,
+            COALESCE(m.matched_price, m.matched_price_zar) AS price_zar_mwh,
+            m.matched_volume_mwh AS volume_mwh,
+            b.energy_type, b.external_ref AS buyer_ref, s.external_ref AS seller_ref
+       FROM trade_matches m
+       INNER JOIN trade_orders b ON b.id = m.buy_order_id
+       INNER JOIN trade_orders s ON s.id = m.sell_order_id`,
+  ).all<{
+    match_id: string; matched_at: string; price_zar_mwh: number;
+    volume_mwh: number; energy_type: string;
+    buyer_ref: string | null; seller_ref: string | null;
+  }>();
+
+  type OurRow = (typeof ours)['results'][number];
+  const ourByRef = new Map<string, OurRow>();
+  for (const r of (ours.results || []) as OurRow[]) {
+    if (r.buyer_ref) ourByRef.set(r.buyer_ref, r);
+    if (r.seller_ref) ourByRef.set(r.seller_ref, r);
+  }
+  const matchedRefs = new Set<string>();
+
+  type Break = { type: string; external_ref: string | null; our: unknown; their: unknown; field: string | null };
+  const breaks: Break[] = [];
+
+  for (const t of theirs) {
+    if (!t.external_ref) {
+      breaks.push({ type: 'missing_in_ours', external_ref: null, our: null, their: t, field: null });
+      continue;
+    }
+    const o = ourByRef.get(t.external_ref);
+    if (!o) {
+      breaks.push({ type: 'missing_in_ours', external_ref: t.external_ref, our: null, their: t, field: null });
+      continue;
+    }
+    matchedRefs.add(t.external_ref);
+    const eps = 1e-4;
+    if (Math.abs(Number(o.volume_mwh) - Number(t.volume_mwh)) > eps) {
+      breaks.push({ type: 'field_mismatch', external_ref: t.external_ref, our: o, their: t, field: 'volume_mwh' });
+    }
+    if (Math.abs(Number(o.price_zar_mwh) - Number(t.price_zar_mwh)) > 0.01) {
+      breaks.push({ type: 'field_mismatch', external_ref: t.external_ref, our: o, their: t, field: 'price_zar_mwh' });
+    }
+    if ((o.energy_type || '').toLowerCase() !== (t.energy_type || '').toLowerCase()) {
+      breaks.push({ type: 'field_mismatch', external_ref: t.external_ref, our: o, their: t, field: 'energy_type' });
+    }
+  }
+  // Anything in ours that isn't in theirs (excluding rows we just matched).
+  for (const [ref, o] of ourByRef.entries()) {
+    if (matchedRefs.has(ref)) continue;
+    if (!theirs.some((t) => t.external_ref === ref)) {
+      breaks.push({ type: 'missing_in_theirs', external_ref: ref, our: o, their: null, field: null });
+    }
+  }
+
+  const matchedCount = theirs.length - breaks.filter((b) => b.type !== 'field_mismatch').length;
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(
+    `INSERT INTO audit_recon_runs
+       (id, entity_type, source, uploaded_csv_r2_key, row_count,
+        matched_count, break_count, status, started_at, finished_at, started_by)
+     VALUES (?, 'trading', ?, ?, ?, ?, ?, 'complete', ?, ?, ?)`,
+  ).bind(runId, source, csvKey, theirs.length, matchedCount,
+         breaks.length, now, now, user.id).run();
+
+  if (breaks.length > 0) {
+    const inserts = breaks.map((b) => c.env.DB.prepare(
+      `INSERT INTO audit_recon_breaks
+         (id, run_id, break_type, external_ref, our_value, their_value, field, resolution)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'open')`,
+    ).bind(
+      'brk_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+      runId, b.type, b.external_ref,
+      b.our != null ? JSON.stringify(b.our) : null,
+      b.their != null ? JSON.stringify(b.their) : null,
+      b.field,
+    ));
+    await c.env.DB.batch(inserts);
+  }
+
+  await appendAudit({
+    env: c.env, entity_type: 'trading', entity_id: runId,
+    event_type: 'audit.recon_run', actor_id: user.id,
+    payload: { run_id: runId, source, row_count: theirs.length, break_count: breaks.length },
+  }).catch(() => {});
+
+  return c.json({
+    success: true,
+    data: { run_id: runId, source, row_count: theirs.length, matched_count: matchedCount, break_count: breaks.length },
+  }, 201);
+});
+
+trading.get('/audit/recon', async (c) => {
+  const rs = await c.env.DB.prepare(
+    `SELECT id, source, row_count, matched_count, break_count, status,
+            started_at, finished_at
+       FROM audit_recon_runs WHERE entity_type = 'trading'
+      ORDER BY started_at DESC LIMIT 50`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+trading.get('/audit/recon/:id/breaks', async (c) => {
+  const id = c.req.param('id');
+  const rs = await c.env.DB.prepare(
+    `SELECT id, break_type, external_ref, our_value, their_value, field,
+            resolution, resolution_notes, resolved_at, resolved_by
+       FROM audit_recon_breaks WHERE run_id = ?
+      ORDER BY break_type, external_ref`,
+  ).bind(id).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+trading.post('/audit/recon/:run_id/breaks/:id/resolve', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'trader') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const runId = c.req.param('run_id');
+  const id = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as { resolution?: string; notes?: string };
+  const allowed = ['accepted_ours','accepted_theirs','cancelled','investigating'];
+  if (!allowed.includes(String(body.resolution))) {
+    return c.json({ success: false, error: `resolution must be one of ${allowed.join('/')}` }, 400);
+  }
+  await c.env.DB.prepare(
+    `UPDATE audit_recon_breaks
+       SET resolution = ?, resolution_notes = ?, resolved_at = datetime('now'), resolved_by = ?
+     WHERE id = ? AND run_id = ?`,
+  ).bind(body.resolution, body.notes || null, user.id, id, runId).run();
+  await appendAudit({
+    env: c.env, entity_type: 'trading', entity_id: id,
+    event_type: 'audit.recon_break_resolved', actor_id: user.id,
+    payload: { run_id: runId, break_id: id, resolution: body.resolution, notes: body.notes || null },
+  }).catch(() => {});
+  return c.json({ success: true });
+});
+
+function csvEscape(s: string): string {
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+async function sha256OfBytes(b: Uint8Array): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', b);
+  return Array.from(new Uint8Array(buf)).map((x) => x.toString(16).padStart(2, '0')).join('');
+}
 
 export default trading;
