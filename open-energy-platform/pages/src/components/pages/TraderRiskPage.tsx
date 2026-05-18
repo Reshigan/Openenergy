@@ -2,9 +2,18 @@ import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
 import { platformTabs } from '../platformTabs';
 import { traderCompletionTabs } from '../roleCompletionTabs';
+import { TraderInsights } from '../widgets/TraderInsights';
 
 export function TraderRiskPage() {
   const tabs: TabSpec[] = [
+    {
+      key: 'insights',
+      label: 'Insights',
+      endpoint: '',
+      description: 'P&L waterfall, mark term structure, order book depth, execution slippage.',
+      columns: [],
+      customContent: <TraderInsights />,
+    },
     {
       key: 'positions',
       label: 'Positions',

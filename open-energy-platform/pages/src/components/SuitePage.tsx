@@ -96,6 +96,9 @@ export interface TabSpec {
   create?: FormSpec;
   rowActions?: RowAction[];
   detail?: DetailSpec;
+  /** Render arbitrary content instead of the row table. Used for
+   *  insights tabs that show charts/calculators rather than a list. */
+  customContent?: React.ReactNode;
 }
 
 // ─── Main component ────────────────────────────────────────────────────────
@@ -166,7 +169,7 @@ export function SuitePage(props: SuitePageProps) {
         })}
       </div>
 
-      {active && <SuiteTable tab={active} />}
+      {active && (active.customContent ? <>{active.customContent}</> : <SuiteTable tab={active} />)}
     </div>
   );
 }
