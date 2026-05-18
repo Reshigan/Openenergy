@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
+import { AuditPanel } from '../launch/AuditPanel';
 import { api } from '../../lib/api';
 
 const formatZAR = (v: number) =>
@@ -27,6 +28,16 @@ export function AdminWorkstationPage() {
         { key: 'tenant_events', label: 'Tenant lifecycle', body: ({ onRefresh }) => <TenantTab onRefresh={onRefresh} /> },
         { key: 'billing', label: 'Billing runs', body: ({ onRefresh }) => <BillingTab onRefresh={onRefresh} /> },
         { key: 'flags', label: 'Flag overrides', body: ({ onRefresh }) => <FlagsTab onRefresh={onRefresh} /> },
+        { key: 'settlement_audit', label: 'Settlement audit',
+          body: ({ onRefresh }) => (
+            <AuditPanel
+              prefix="/settlement"
+              reconHint="bank_ref,value_date,amount_zar,narrative"
+              reconSourceOptions={['bank', 'absa', 'standard_bank', 'fnb', 'nedbank']}
+              onChange={onRefresh}
+            />
+          ),
+        },
       ]}
     />
   );

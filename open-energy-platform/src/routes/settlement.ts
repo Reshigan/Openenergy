@@ -9,6 +9,7 @@ import { fireCascade } from '../utils/cascade';
 import { computeFees, type InvoiceShape } from '../utils/settlement-fees';
 import { explainSettlementRunFailure } from '../utils/run-failure-explainer';
 import { adjustModifiedFollowing, buildD1Deps } from '../utils/business-day';
+import { appendAudit, getChainHead, verifyChain } from '../utils/audit-chain';
 
 const settlement = new Hono<HonoEnv>();
 settlement.use('*', authMiddleware);
@@ -165,6 +166,17 @@ settlement.post('/payments', async (c) => {
     });
   }
 
+  await appendAudit({
+    env: c.env, entity_type: 'settlement', entity_id: invoice_id,
+    event_type: 'payment.recorded', actor_id: user.id,
+    payload: {
+      payment_id: paymentId, invoice_id, invoice_number: invoice.invoice_number,
+      amount: Number(amount), payment_method: method, payment_reference: reference,
+      bank_reference: bank_reference || null,
+      prior_paid: priorPaid, new_paid: newPaid, new_status: nextStatus,
+    },
+  }).catch((e) => console.warn('audit_payment_failed', (e as Error).message));
+
   return c.json({
     success: true,
     data: {
@@ -201,6 +213,12 @@ settlement.post('/payments/:id/reconcile', async (c) => {
   await c.env.DB.prepare(`
     UPDATE payments SET reconciled = 1, reconciled_by = ?, reconciled_at = ?, bank_reference = COALESCE(?, bank_reference), notes = COALESCE(?, notes) WHERE id = ?
   `).bind(user.id, now, bank_reference || null, notes || null, id).run();
+
+  await appendAudit({
+    env: c.env, entity_type: 'settlement', entity_id: id,
+    event_type: 'payment.reconciled', actor_id: user.id,
+    payload: { payment_id: id, bank_reference: bank_reference || null, notes: notes || null },
+  }).catch((e) => console.warn('audit_recon_failed', (e as Error).message));
 
   return c.json({ success: true, data: { id, reconciled: true, reconciled_at: now } });
 });
@@ -282,6 +300,15 @@ settlement.post('/disputes', async (c) => {
     env: c.env,
   });
 
+  await appendAudit({
+    env: c.env, entity_type: 'settlement', entity_id: disputeId,
+    event_type: 'dispute.filed', actor_id: user.id,
+    payload: {
+      dispute_id: disputeId, invoice_id, invoice_number: invoice.invoice_number,
+      reason, evidence_keys: evidenceJson,
+    },
+  }).catch((e) => console.warn('audit_dispute_filed_failed', (e as Error).message));
+
   return c.json({ success: true, data: { id: disputeId, status: 'open' } }, 201);
 });
 
@@ -325,6 +352,15 @@ settlement.post('/disputes/:id/resolve', async (c) => {
     data: { invoice_id: dispute.invoice_id, invoice_number: dispute.invoice_number, outcome: finalOutcome, resolution },
     env: c.env,
   });
+
+  await appendAudit({
+    env: c.env, entity_type: 'settlement', entity_id: id,
+    event_type: 'dispute.resolved', actor_id: user.id,
+    payload: {
+      dispute_id: id, invoice_id: dispute.invoice_id,
+      outcome: finalOutcome, resolution,
+    },
+  }).catch((e) => console.warn('audit_dispute_resolved_failed', (e as Error).message));
 
   return c.json({ success: true, data: { id, status: finalOutcome } });
 });
@@ -848,5 +884,350 @@ settlement.get('/invoices/:id/detail', async (c) => {
     data: { invoice: inv, breaks, fees, confirmations, line_items: lineItems, payments },
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════
+// L5 — Tamper-evident audit, SARS/POPIA-shape export, bank-statement recon.
+// ════════════════════════════════════════════════════════════════════════
+
+settlement.get('/audit/head', async (c) => {
+  const head = await getChainHead(c.env, 'settlement');
+  return c.json({ success: true, data: head });
+});
+
+settlement.get('/audit/events', async (c) => {
+  const user = getCurrentUser(c);
+  const limit = Math.min(200, Number(c.req.query('limit') || 50));
+  const beforeSeq = c.req.query('before_seq');
+  const where: string[] = [`entity_type = 'settlement'`];
+  const binds: unknown[] = [];
+  const isOfficer = user.role === 'admin' || user.role === 'support' || user.role === 'regulator';
+  if (!isOfficer) { where.push('actor_id = ?'); binds.push(user.id); }
+  if (beforeSeq) { where.push('sequence_no < ?'); binds.push(Number(beforeSeq)); }
+  const rs = await c.env.DB.prepare(
+    `SELECT id, entity_id, event_type, actor_id, sequence_no,
+            content_hash, prev_hash, created_at, payload_json
+       FROM audit_events
+      WHERE ${where.join(' AND ')}
+      ORDER BY sequence_no DESC
+      LIMIT ?`,
+  ).bind(...binds, limit).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+settlement.post('/audit/verify', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const fromSeq = Number(c.req.query('from_seq') || 1) || 1;
+  const result = await verifyChain(c.env, 'settlement', fromSeq);
+  return c.json({ success: result.ok, data: result });
+});
+
+// POST /settlement/audit/export — SARS-style invoice register CSV. Includes:
+//   invoice_number, issued_at, payer_id, payee_id, currency, net_zar, vat_zar,
+//   gross_zar, paid_zar, status, confirmation_at, paid_at, match_id
+// Streams to R2 under audit-exports/settlement/<id>/. Manifest signed by the
+// settlement chain head so a SARS auditor can verify the export against the
+// audited state at the moment of generation.
+settlement.post('/audit/export', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as { from?: string; to?: string };
+  const from = body.from || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const to = body.to || new Date().toISOString().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+    return c.json({ success: false, error: 'from/to must be YYYY-MM-DD' }, 400);
+  }
+
+  const rows = await c.env.DB.prepare(
+    `SELECT i.id, i.invoice_number, i.created_at AS issued_at,
+            i.from_participant_id AS payee_id, i.to_participant_id AS payer_id,
+            i.currency, i.total_amount AS gross_zar, i.paid_amount AS paid_zar,
+            i.status, i.paid_at, i.match_id,
+            (SELECT MAX(confirmed_at) FROM invoice_confirmations
+              WHERE invoice_id = i.id) AS confirmation_at
+       FROM invoices i
+      WHERE substr(i.created_at, 1, 10) BETWEEN ? AND ?
+      ORDER BY i.created_at ASC`,
+  ).bind(from, to).all<{
+    id: string; invoice_number: string; issued_at: string;
+    payee_id: string; payer_id: string; currency: string;
+    gross_zar: number; paid_zar: number | null; status: string;
+    paid_at: string | null; match_id: string | null; confirmation_at: string | null;
+  }>();
+  const data = rows.results || [];
+
+  const header = ['invoice_id','invoice_number','issued_at','payer_id','payee_id','currency',
+                  'net_zar','vat_zar','gross_zar','paid_zar','status','confirmation_at','paid_at','match_id'].join(',');
+  const csvLines = [header];
+  for (const r of data) {
+    // VAT is 15% in SA; net = gross / 1.15. We don't have a separate VAT
+    // column today so we derive it for the register. This matches what
+    // SARS expects on a tax invoice register.
+    const gross = Number(r.gross_zar || 0);
+    const net = +(gross / 1.15).toFixed(2);
+    const vat = +(gross - net).toFixed(2);
+    csvLines.push([
+      r.id, r.invoice_number, r.issued_at,
+      r.payer_id, r.payee_id, r.currency || 'ZAR',
+      net.toFixed(2), vat.toFixed(2), gross.toFixed(2),
+      Number(r.paid_zar || 0).toFixed(2),
+      r.status, r.confirmation_at || '', r.paid_at || '',
+      r.match_id || '',
+    ].join(','));
+  }
+  const csv = csvLines.join('\n') + '\n';
+  const csvBytes = new TextEncoder().encode(csv);
+  const csvSha = await sha256OfBytes(csvBytes);
+
+  const head = await getChainHead(c.env, 'settlement');
+  const exportId = 'exp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const csvKey = `audit-exports/settlement/${exportId}/invoices.csv`;
+  const manifestKey = `audit-exports/settlement/${exportId}/manifest.json`;
+
+  const manifest = {
+    export_id: exportId,
+    entity_type: 'settlement',
+    from, to,
+    generated_at: new Date().toISOString(),
+    generated_by: user.id,
+    row_count: data.length,
+    csv: { r2_key: csvKey, sha256: csvSha, bytes: csvBytes.byteLength },
+    chain: {
+      head_hash: head?.head_hash || null,
+      head_sequence: head?.head_sequence || 0,
+      last_verified_at: head?.last_verified_at || null,
+    },
+    format: { profile: 'SARS tax-invoice register v1', encoding: 'utf-8',
+              vat_rate_pct: 15.0 },
+  };
+  const manifestJson = JSON.stringify(manifest, null, 2);
+  const manifestBytes = new TextEncoder().encode(manifestJson);
+
+  try {
+    await c.env.R2.put(csvKey, csvBytes, { httpMetadata: { contentType: 'text/csv' } });
+    await c.env.R2.put(manifestKey, manifestBytes, { httpMetadata: { contentType: 'application/json' } });
+  } catch (e) {
+    return c.json({ success: false, error: 'R2 write failed', data: { detail: (e as Error).message } }, 502);
+  }
+
+  await c.env.DB.prepare(
+    `INSERT INTO audit_exports
+       (id, entity_type, from_ts, to_ts, row_count,
+        csv_r2_key, manifest_r2_key, chain_head_hash, generated_by, generated_at)
+     VALUES (?, 'settlement', ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+  ).bind(exportId, from, to, data.length, csvKey, manifestKey,
+         head?.head_hash || '', user.id).run();
+
+  await appendAudit({
+    env: c.env, entity_type: 'settlement', entity_id: exportId,
+    event_type: 'audit.export_generated', actor_id: user.id,
+    payload: { export_id: exportId, from, to, row_count: data.length, csv_sha256: csvSha },
+  }).catch(() => {});
+
+  return c.json({
+    success: true,
+    data: { export_id: exportId, row_count: data.length, csv_r2_key: csvKey, manifest_r2_key: manifestKey, manifest },
+  }, 201);
+});
+
+settlement.get('/audit/exports', async (c) => {
+  const rs = await c.env.DB.prepare(
+    `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
+            chain_head_hash, generated_by, generated_at
+       FROM audit_exports WHERE entity_type = 'settlement'
+      ORDER BY generated_at DESC LIMIT 50`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+settlement.get('/audit/exports/:id/manifest', async (c) => {
+  const id = c.req.param('id');
+  const row = await c.env.DB.prepare(
+    `SELECT manifest_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'settlement'`,
+  ).bind(id).first<{ manifest_r2_key: string }>();
+  if (!row) return c.json({ success: false, error: 'Export not found' }, 404);
+  const obj = await c.env.R2.get(row.manifest_r2_key);
+  if (!obj) return c.json({ success: false, error: 'Manifest object missing in R2' }, 404);
+  const text = await obj.text();
+  let parsed: unknown = null;
+  try { parsed = JSON.parse(text); } catch { /* */ }
+  return c.json({ success: true, data: parsed ?? { raw: text } });
+});
+
+// POST /settlement/audit/recon — bank-statement reconciliation. Body:
+//   { source: 'bank' | 'absa' | 'standard_bank' | …, csv: 'header,row1\n…' }
+// CSV columns required: bank_ref, value_date, amount_zar, narrative
+// Matches against `payments.bank_reference`. Mismatches classified as:
+//   • missing_in_ours      — bank has a credit; we have no payment row
+//   • missing_in_theirs    — we have a payment with bank_reference unseen in bank file
+//   • field_mismatch       — amount differs >R0.01 between ours and theirs
+settlement.post('/audit/recon', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator' && user.role !== 'offtaker') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as { source?: string; csv?: string };
+  const source = (body.source || 'bank').toLowerCase();
+  if (typeof body.csv !== 'string' || body.csv.length < 10) {
+    return c.json({ success: false, error: 'csv body required' }, 400);
+  }
+
+  const lines = body.csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return c.json({ success: false, error: 'csv must have header + ≥1 row' }, 400);
+  const headers = lines[0].split(',').map((h) => h.trim());
+  const need = ['bank_ref','value_date','amount_zar','narrative'];
+  for (const k of need) {
+    if (!headers.includes(k)) {
+      return c.json({ success: false, error: `csv missing column: ${k}` }, 400);
+    }
+  }
+  const idxOf = (k: string) => headers.indexOf(k);
+  type TheirRow = { bank_ref: string; value_date: string; amount_zar: number; narrative: string };
+  const theirs: TheirRow[] = [];
+  for (const ln of lines.slice(1)) {
+    const cols = ln.split(',');
+    theirs.push({
+      bank_ref:  (cols[idxOf('bank_ref')] || '').trim(),
+      value_date: (cols[idxOf('value_date')] || '').trim(),
+      amount_zar: Number(cols[idxOf('amount_zar')] || 0),
+      narrative: (cols[idxOf('narrative')] || '').trim(),
+    });
+  }
+
+  const runId = 'recon_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const csvKey = `audit-recon/settlement/${runId}/bank-statement.csv`;
+  await c.env.R2.put(csvKey, new TextEncoder().encode(body.csv), {
+    httpMetadata: { contentType: 'text/csv' },
+  }).catch(() => null);
+
+  const ours = await c.env.DB.prepare(
+    `SELECT p.id, p.invoice_id, p.bank_reference, p.amount, p.payment_date,
+            i.invoice_number, i.to_participant_id AS payer_id
+       FROM payments p
+       INNER JOIN invoices i ON i.id = p.invoice_id
+      WHERE p.bank_reference IS NOT NULL`,
+  ).all<{
+    id: string; invoice_id: string; bank_reference: string; amount: number;
+    payment_date: string; invoice_number: string; payer_id: string;
+  }>();
+  type OurRow = (typeof ours)['results'][number];
+  const ourByRef = new Map<string, OurRow>();
+  for (const r of (ours.results || []) as OurRow[]) {
+    if (r.bank_reference) ourByRef.set(r.bank_reference, r);
+  }
+  const matchedRefs = new Set<string>();
+  type Break = { type: string; bank_ref: string | null; our: unknown; their: unknown; field: string | null };
+  const breaks: Break[] = [];
+  for (const t of theirs) {
+    if (!t.bank_ref) {
+      breaks.push({ type: 'missing_in_ours', bank_ref: null, our: null, their: t, field: null });
+      continue;
+    }
+    const o = ourByRef.get(t.bank_ref);
+    if (!o) {
+      breaks.push({ type: 'missing_in_ours', bank_ref: t.bank_ref, our: null, their: t, field: null });
+      continue;
+    }
+    matchedRefs.add(t.bank_ref);
+    if (Math.abs(Number(o.amount) - Number(t.amount_zar)) > 0.01) {
+      breaks.push({ type: 'field_mismatch', bank_ref: t.bank_ref, our: o, their: t, field: 'amount_zar' });
+    }
+  }
+  for (const [ref, o] of ourByRef.entries()) {
+    if (matchedRefs.has(ref)) continue;
+    breaks.push({ type: 'missing_in_theirs', bank_ref: ref, our: o, their: null, field: null });
+  }
+
+  const matchedCount = theirs.length - breaks.filter((b) => b.type !== 'field_mismatch').length;
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(
+    `INSERT INTO audit_recon_runs
+       (id, entity_type, source, uploaded_csv_r2_key, row_count,
+        matched_count, break_count, status, started_at, finished_at, started_by)
+     VALUES (?, 'settlement', ?, ?, ?, ?, ?, 'complete', ?, ?, ?)`,
+  ).bind(runId, source, csvKey, theirs.length, matchedCount,
+         breaks.length, now, now, user.id).run();
+
+  if (breaks.length > 0) {
+    const inserts = breaks.map((b) => c.env.DB.prepare(
+      `INSERT INTO audit_recon_breaks
+         (id, run_id, break_type, external_ref, our_value, their_value, field, resolution)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'open')`,
+    ).bind(
+      'brk_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+      runId, b.type, b.bank_ref,
+      b.our != null ? JSON.stringify(b.our) : null,
+      b.their != null ? JSON.stringify(b.their) : null,
+      b.field,
+    ));
+    await c.env.DB.batch(inserts);
+  }
+
+  await appendAudit({
+    env: c.env, entity_type: 'settlement', entity_id: runId,
+    event_type: 'audit.recon_run', actor_id: user.id,
+    payload: { run_id: runId, source, row_count: theirs.length, break_count: breaks.length },
+  }).catch(() => {});
+
+  return c.json({
+    success: true,
+    data: { run_id: runId, source, row_count: theirs.length, matched_count: matchedCount, break_count: breaks.length },
+  }, 201);
+});
+
+settlement.get('/audit/recon', async (c) => {
+  const rs = await c.env.DB.prepare(
+    `SELECT id, source, row_count, matched_count, break_count, status,
+            started_at, finished_at
+       FROM audit_recon_runs WHERE entity_type = 'settlement'
+      ORDER BY started_at DESC LIMIT 50`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+settlement.get('/audit/recon/:id/breaks', async (c) => {
+  const id = c.req.param('id');
+  const rs = await c.env.DB.prepare(
+    `SELECT id, break_type, external_ref, our_value, their_value, field,
+            resolution, resolution_notes, resolved_at, resolved_by
+       FROM audit_recon_breaks WHERE run_id = ?
+      ORDER BY break_type, external_ref`,
+  ).bind(id).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+settlement.post('/audit/recon/:run_id/breaks/:id/resolve', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'offtaker') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const runId = c.req.param('run_id');
+  const id = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as { resolution?: string; notes?: string };
+  const allowed = ['accepted_ours','accepted_theirs','cancelled','investigating'];
+  if (!allowed.includes(String(body.resolution))) {
+    return c.json({ success: false, error: `resolution must be one of ${allowed.join('/')}` }, 400);
+  }
+  await c.env.DB.prepare(
+    `UPDATE audit_recon_breaks
+       SET resolution = ?, resolution_notes = ?, resolved_at = datetime('now'), resolved_by = ?
+     WHERE id = ? AND run_id = ?`,
+  ).bind(body.resolution, body.notes || null, user.id, id, runId).run();
+  await appendAudit({
+    env: c.env, entity_type: 'settlement', entity_id: id,
+    event_type: 'audit.recon_break_resolved', actor_id: user.id,
+    payload: { run_id: runId, break_id: id, resolution: body.resolution, notes: body.notes || null },
+  }).catch(() => {});
+  return c.json({ success: true });
+});
+
+async function sha256OfBytes(b: Uint8Array): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', b);
+  return Array.from(new Uint8Array(buf)).map((x) => x.toString(16).padStart(2, '0')).join('');
+}
 
 export default settlement;

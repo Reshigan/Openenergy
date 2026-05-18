@@ -20,6 +20,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { computeSettlementRun, PpaContract, PeriodReading } from '../utils/settlement-engine';
 import { insertMeteringReading, invalidateMonthlyAggregate } from '../utils/metering-router';
+import { appendAudit } from '../utils/audit-chain';
 
 const sa = new Hono<HonoEnv>();
 
@@ -66,6 +67,17 @@ sa.post('/runs', async (c) => {
     c.env, runId,
     b.run_type as string, b.period_start as string, b.period_end as string,
   );
+
+  await appendAudit({
+    env: c.env, entity_type: 'settlement', entity_id: runId,
+    event_type: 'run.started', actor_id: user.id,
+    payload: {
+      run_id: runId, run_type: b.run_type, period_start: b.period_start,
+      period_end: b.period_end, idempotency_key: idempotencyKey,
+      outcome_status: (result as any)?.status || null,
+    },
+  }).catch((e) => console.warn('audit_run_started_failed', (e as Error).message));
+
   return c.json({ success: true, data: result });
 });
 
@@ -101,6 +113,17 @@ sa.post('/runs/:id/retry', async (c) => {
     `UPDATE settlement_runs SET status = 'running', error_message = NULL WHERE id = ?`,
   ).bind(id).run();
   const result = await executeSettlementRun(c.env, id, row.run_type, row.period_start, row.period_end);
+
+  await appendAudit({
+    env: c.env, entity_type: 'settlement', entity_id: id,
+    event_type: 'run.retried', actor_id: user.id,
+    payload: {
+      run_id: id, run_type: row.run_type,
+      period_start: row.period_start, period_end: row.period_end,
+      prior_status: row.status, outcome_status: (result as any)?.status || null,
+    },
+  }).catch((e) => console.warn('audit_run_retried_failed', (e as Error).message));
+
   return c.json({ success: true, data: result });
 });
 
@@ -124,6 +147,13 @@ sa.post('/dlq/:id/resolve', async (c) => {
     `UPDATE settlement_dlq SET status = ?, resolved_at = datetime('now'), resolved_by = ?, resolution_notes = ?
       WHERE id = ? AND status = 'open'`,
   ).bind(status, user.id, (b.resolution_notes as string) || null, id).run();
+
+  await appendAudit({
+    env: c.env, entity_type: 'settlement', entity_id: id,
+    event_type: 'dlq.resolved', actor_id: user.id,
+    payload: { dlq_id: id, status, resolution_notes: (b.resolution_notes as string) || null },
+  }).catch((e) => console.warn('audit_dlq_resolved_failed', (e as Error).message));
+
   return c.json({ success: true });
 });
 
