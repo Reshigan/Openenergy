@@ -28,6 +28,13 @@ test('login page renders with LTM partner logo and demo personas', async ({ page
 
   await page.goto(`${baseURL}/`, { waitUntil: 'networkidle' });
 
+  // P0 — assert React actually mounted into #root. A blank page (React
+  // failed to mount due to e.g. a chunk-split race) returns 200 with an
+  // empty <div id="root"></div>; without this check, downstream
+  // `getByRole` calls just time out with no signal about WHY.
+  const rootHtml = await page.locator('#root').innerHTML();
+  expect(rootHtml.length, 'React must mount into #root — empty means the SPA failed to boot').toBeGreaterThan(50);
+
   // Sign-in heading
   await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();
 

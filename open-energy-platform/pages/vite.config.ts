@@ -8,29 +8,19 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    // Vendor split — pulls the three largest dependency families into their
-    // own chunks so the main bundle doesn't ship them up front. Without this
-    // the SPA was 1.9 MB single chunk (gzip 503 KB); after split the main
-    // chunk drops to ~1 MB and each vendor chunk is only loaded when the
-    // first page that uses it is opened. Material impact on first-paint
-    // over 4G (most South African mobile users) and on the worker.dev
-    // fallback URL where assets aren't on the global CDN.
-    rollupOptions: {
-      output: {
-        manualChunks(id: string) {
-          if (!id.includes('node_modules')) return undefined;
-          if (id.includes('node_modules/recharts/')) return 'vendor-recharts';
-          if (id.includes('node_modules/jspdf/') ||
-              id.includes('node_modules/html2canvas/')) return 'vendor-pdf';
-          if (id.includes('node_modules/lucide-react/')) return 'vendor-lucide';
-          if (id.includes('node_modules/react/') ||
-              id.includes('node_modules/react-dom/') ||
-              id.includes('node_modules/react-router-dom/') ||
-              id.includes('node_modules/scheduler/')) return 'vendor-react';
-          return 'vendor-misc';
-        },
-      },
-    },
+    // Single-bundle build. We previously tried a manualChunks split
+    // (recharts / jspdf / lucide / react / misc) which dropped the main
+    // chunk from 1.9 MB → 834 KB, but it hit a top-level
+    // `React.createContext` race in vendor-misc that left prod blank
+    // until the rollback. Re-introducing the split requires explicitly
+    // bundling each React-dependent package (qrcode.react, recharts,
+    // lucide-react, …) into the same chunk as react itself — not
+    // letting any of them fall into a catch-all.
+    //
+    // Until that's done carefully, ship a single bundle. The 1.9 MB / gzip
+    // 503 KB main is acceptable for now; the chunk split can come back
+    // as a follow-up with a real e2e test that proves no createContext
+    // race.
   },
   server: {
     port: 3000,
