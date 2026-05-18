@@ -4,6 +4,7 @@ import { User, Bell, Globe, Lock, ShieldCheck, Save } from 'lucide-react';
 import { api } from '../../context/AuthContext';
 import { useAuth } from '../../lib/useAuth';
 import { Skeleton } from '../Skeleton';
+import { StitchPage } from '../StitchPage';
 
 // Unified /settings page — every role lands here from the avatar menu.
 // Four panes:
@@ -138,12 +139,12 @@ export default function Settings() {
   }
 
   return (
-    <div className="p-6 max-w-4xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-ionex-text-mute">Profile, preferences and security for {user?.email}</p>
-      </div>
-
+    <StitchPage
+      eyebrowIcon={User}
+      eyebrowLabel="Account"
+      title="Settings"
+      subtitle={`Profile, preferences and security for ${user?.email}`}
+    >
       {/* Profile */}
       <section className="bg-white border border-ionex-border-soft rounded-xl">
         <header className="px-5 py-4 border-b border-ionex-border-soft flex items-center gap-2">
@@ -280,7 +281,7 @@ export default function Settings() {
           </button>
         </div>
       </section>
-    </div>
+    </StitchPage>
   );
 }
 

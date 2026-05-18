@@ -9,6 +9,7 @@ import { ErrorBanner } from '../ErrorBanner';
 import { ExportBar } from '../ExportBar';
 import { EntityLink } from '../EntityLink';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { StitchPage } from '../StitchPage';
 
 const phases = ['draft', 'loi', 'term_sheet', 'hoa', 'draft_agreement', 'legal_review', 'statutory_check', 'execution', 'active', 'amended', 'terminated', 'expired'];
 
@@ -62,17 +63,17 @@ export function Contracts() {
   if (error) return <div className="p-6"><ErrorBanner message={error} onRetry={fetchContracts} /></div>;
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Contracts</h1>
-          <p className="text-ionex-text-mute">Manage your contract lifecycle</p>
-        </div>
+    <StitchPage
+      eyebrowIcon={FileText}
+      eyebrowLabel="Contracts"
+      title="Contracts"
+      subtitle="Manage your contract lifecycle"
+      actions={
         <button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2 px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-dark">
           <Plus className="w-4 h-4" /> New Contract
         </button>
-      </div>
-
+      }
+    >
       <div className="bg-white rounded-xl border border-ionex-border-100">
         <div className="p-4 border-b border-ionex-border-100 flex gap-4">
           <div className="flex-1 relative">
@@ -117,7 +118,7 @@ export function Contracts() {
       </div>
 
       {showCreateModal && <CreateContractModal onClose={() => setShowCreateModal(false)} onCreated={fetchContracts} />}
-    </div>
+    </StitchPage>
   );
 }
 

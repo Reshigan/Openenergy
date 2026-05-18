@@ -9,6 +9,7 @@ import { ErrorBanner } from '../ErrorBanner';
 import { ExportBar } from '../ExportBar';
 import { EntityLink } from '../EntityLink';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { StitchPage } from '../StitchPage';
 
 const formatZAR = (val: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(val);
 
@@ -171,20 +172,20 @@ export function Projects() {
   if (error) return <div className="p-6"><ErrorBanner message={error} onRetry={fetchProjects} /></div>;
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">IPP Projects</h1>
-          <p className="text-ionex-text-mute">Track and manage energy projects</p>
-        </div>
-        {canManage && (
+    <StitchPage
+      eyebrowIcon={Briefcase}
+      eyebrowLabel="IPP"
+      title="IPP Projects"
+      subtitle="Track and manage energy projects"
+      actions={
+        canManage ? (
           <button onClick={openCreate}
             className="flex items-center gap-2 px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-deep">
             <Plus className="w-4 h-4" /> New Project
           </button>
-        )}
-      </div>
-
+        ) : undefined
+      }
+    >
       <div className="bg-white rounded-xl border border-ionex-border-soft">
         <div className="p-4 border-b border-ionex-border-soft">
           <div className="relative max-w-md">
@@ -264,7 +265,7 @@ export function Projects() {
           showStatus={!!editId}
         />
       )}
-    </div>
+    </StitchPage>
   );
 }
 

@@ -6,6 +6,7 @@ import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { useAuth } from '../../lib/useAuth';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { StitchPage } from '../StitchPage';
 
 type ListingType = 'energy' | 'capacity' | 'carbon' | 'equipment' | 'service';
 type ListingStatus = 'active' | 'pending' | 'sold' | 'withdrawn';
@@ -194,22 +195,22 @@ export function Marketplace() {
   ]), [summary]);
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Marketplace</h1>
-          <p className="text-ionex-text-mute">Capacity, RECs and carbon credits — list, inquire, transact.</p>
-        </div>
-        <div className="flex items-center gap-2">
+    <StitchPage
+      eyebrowIcon={Store}
+      eyebrowLabel="Marketplace"
+      title="Marketplace"
+      subtitle="Capacity, RECs and carbon credits — list, inquire, transact."
+      actions={
+        <>
           <button onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
             <RefreshCw className="w-4 h-4" />
           </button>
           <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light">
             <Plus className="w-4 h-4" /> Create listing
           </button>
-        </div>
-      </div>
-
+        </>
+      }
+    >
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {summaryTiles.map(t => (
           <div key={t.label} className="p-4 bg-white border border-ionex-border-100 rounded-xl">
@@ -317,7 +318,7 @@ export function Marketplace() {
           onSent={() => { setShowInquire(null); setTab('inquiries'); }}
         />
       )}
-    </div>
+    </StitchPage>
   );
 }
 

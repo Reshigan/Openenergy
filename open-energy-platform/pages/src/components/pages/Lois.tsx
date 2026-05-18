@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Mail, Send, Inbox, Loader2, AlertTriangle, ArrowRight } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
+import { StitchPage } from '../StitchPage';
 
 type LoiRow = {
   id: string;
@@ -62,14 +63,12 @@ export function Lois() {
   }, [rows, user?.id]);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-5">
-      <header className="flex items-start justify-between">
-        <div>
-          <h1 className="text-[22px] font-semibold text-[#0f1c2e]">Letters of Intent</h1>
-          <p className="text-[13px] text-[#6b7685] mt-1">
-            Non-binding indications of offtake / supply. Accept to spawn a draft Term Sheet on your contracts list.
-          </p>
-        </div>
+    <StitchPage
+      eyebrowIcon={Mail}
+      eyebrowLabel="Letters of Intent"
+      title="Letters of Intent"
+      subtitle="Non-binding indications of offtake / supply. Accept to spawn a draft Term Sheet on your contracts list."
+      actions={
         <div className="flex items-center gap-2">
           {(['all', 'received', 'sent'] as const).map((d) => (
             <button
@@ -85,8 +84,8 @@ export function Lois() {
             </button>
           ))}
         </div>
-      </header>
-
+      }
+    >
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Kpi icon={<Inbox size={16} />} label="Total" value={counts.all} />
         <Kpi icon={<Send size={16} />} label="Sent by me" value={counts.sent} />
@@ -170,7 +169,7 @@ export function Lois() {
           </table>
         )}
       </div>
-    </div>
+    </StitchPage>
   );
 }
 

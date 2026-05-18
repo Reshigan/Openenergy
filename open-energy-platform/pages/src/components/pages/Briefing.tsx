@@ -7,6 +7,7 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
+import { StitchPage } from '../StitchPage';
 
 interface ActionItem {
   id: string;
@@ -152,13 +153,13 @@ export function Briefing() {
   const dateLabel = new Date(briefing.date).toLocaleDateString('en-ZA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><Sun size={22} className="text-ionex-brand" /> Daily briefing</h1>
-          <p className="text-ionex-text-mute">{dateLabel}</p>
-        </div>
-        <div className="flex items-center gap-2">
+    <StitchPage
+      eyebrowIcon={Sun}
+      eyebrowLabel="Briefing"
+      title="Daily briefing"
+      subtitle={dateLabel}
+      actions={
+        <>
           <button onClick={markAllRead} className="flex items-center gap-2 px-3 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50 text-sm">
             <CheckCheck size={14} /> Mark all read
           </button>
@@ -168,8 +169,9 @@ export function Briefing() {
           <button onClick={fetchBriefing} className="flex items-center gap-2 px-3 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50 text-sm">
             <RefreshCw size={14} /> Refresh
           </button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       <div className="rounded-xl border border-ionex-border-100 bg-gradient-to-r from-blue-50 to-green-50 p-5">
         <div className="text-xs uppercase tracking-wide text-ionex-text-mute mb-2">Summary for {briefing.role.replace(/_/g, ' ')}</div>
@@ -298,7 +300,7 @@ export function Briefing() {
           </Section>
         )}
       </div>
-    </div>
+    </StitchPage>
   );
 }
 

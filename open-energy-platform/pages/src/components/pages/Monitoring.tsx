@@ -5,7 +5,9 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React, { useEffect, useState } from 'react';
+import { Activity } from 'lucide-react';
 import { api } from '../../lib/api';
+import { StitchPage } from '../StitchPage';
 
 interface ErrorRow {
   id: string;
@@ -135,14 +137,12 @@ export function Monitoring(): React.JSX.Element {
     stats && stats.totals.total > 0 ? ((stats.totals.errors / stats.totals.total) * 100).toFixed(2) : '0.00';
 
   return (
-    <div style={{ padding: '24px 28px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <div>
-          <h1 style={{ fontSize: 22, margin: 0 }}>Monitoring</h1>
-          <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>
-            Structured errors + request stats from the past {hours} hour{hours === 1 ? '' : 's'}.
-          </div>
-        </div>
+    <StitchPage
+      eyebrowIcon={Activity}
+      eyebrowLabel="Admin / Support"
+      title="Monitoring"
+      subtitle={`Structured errors + request stats from the past ${hours} hour${hours === 1 ? '' : 's'}.`}
+      actions={
         <div style={{ display: 'flex', gap: 10 }}>
           <select
             value={hours}
@@ -167,7 +167,8 @@ export function Monitoring(): React.JSX.Element {
             <option value="client">Client</option>
           </select>
         </div>
-      </div>
+      }
+    >
 
       {err && (
         <div style={{ ...cardStyle, borderColor: '#fecaca', background: '#fef2f2', color: '#991b1b', marginBottom: 16 }}>
@@ -326,7 +327,7 @@ export function Monitoring(): React.JSX.Element {
           )}
         </div>
       </div>
-    </div>
+    </StitchPage>
   );
 }
 

@@ -3,6 +3,7 @@ import { FileText, Loader2, Printer, Sparkles, Filter, Download, Table as TableI
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
 import { NarrativeText } from '../NarrativeText';
+import { StitchPage } from '../StitchPage';
 
 type Period = '30d' | '90d' | '12m' | 'ytd';
 
@@ -201,15 +202,12 @@ export function Reports() {
   }, [role]);
 
   return (
-    <div className="min-h-screen bg-[#f5f6fa] p-6 lg:p-10 space-y-6">
-      <header className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
-        <div>
-          <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6b7685] bg-white border border-[#dde4ec] rounded-full px-3 py-1">
-            <FileText size={12} /> {role.replace('_', ' ')} — deep reporting
-          </div>
-          <h1 className="mt-2 text-[24px] font-semibold text-[#0f1c2e]">{title}</h1>
-          <p className="text-[13px] text-[#6b7685]">AI-narrated executive summary, detailed tables and CSV export — grounded in live platform data.</p>
-        </div>
+    <StitchPage
+      eyebrowIcon={FileText}
+      eyebrowLabel={`${role.replace('_', ' ')} — deep reporting`}
+      title={title}
+      subtitle="AI-narrated executive summary, detailed tables and CSV export — grounded in live platform data."
+      actions={
         <div className="flex items-center gap-2 flex-wrap">
           {isAdminLike && (
             <select
@@ -241,7 +239,8 @@ export function Reports() {
             <Printer size={14} /> Print / PDF
           </button>
         </div>
-      </header>
+      }
+    >
 
       {error && (
         <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] text-[13px] text-[#c0392b] px-4 py-2">
@@ -386,7 +385,7 @@ export function Reports() {
           {aiData ? JSON.stringify(aiData.kpis, null, 2) : ''}
         </pre>
       </section>
-    </div>
+    </StitchPage>
   );
 }
 

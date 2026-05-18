@@ -696,3 +696,26 @@ select.input {
   .kpi-value { font-size: 28px; }
   .fiori-hero, .oe-hero { padding: 20px; border-radius: 8px; }
 }
+
+/* ─── Mobile responsive sweep ─────────────────────────────────────────
+ * Two cross-cutting fixes that beat individually-tuning 58 pages:
+ *
+ * 1. Any naked <table> overflows the viewport on phones (no surrounding
+ *    overflow-x:auto wrapper). Force the table to behave like a block
+ *    with horizontal scroll on sub-768px so the layout doesn't break.
+ *    Desktop renders unchanged (the rule only applies inside the media
+ *    query).
+ *
+ * 2. The page canvas already uses p-6 (24px) on every page. On phones
+ *    24px on each side eats 48px of horizontal space — too much for
+ *    KPI tiles. Reduce to 16px on the smallest viewport.
+ * ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+  .p-6 { padding: 16px !important; }
+}

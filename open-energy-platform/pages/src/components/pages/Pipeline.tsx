@@ -5,6 +5,7 @@ import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { StitchPage } from '../StitchPage';
 
 type Stage = 'identification' | 'qualification' | 'proposal' | 'negotiation' | 'contracting' | 'closed';
 type DealStatus = 'active' | 'won' | 'lost' | 'cancelled';
@@ -116,22 +117,22 @@ export function Pipeline() {
   }, [deals]);
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Deal Pipeline</h1>
-          <p className="text-ionex-text-mute">Originated deals across the funnel.</p>
-        </div>
-        <div className="flex items-center gap-2">
+    <StitchPage
+      eyebrowIcon={Briefcase}
+      eyebrowLabel="Pipeline"
+      title="Deal Pipeline"
+      subtitle="Originated deals across the funnel."
+      actions={
+        <>
           <button onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
             <RefreshCw className="w-4 h-4" />
           </button>
           <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light flex items-center gap-2">
             <Plus className="w-4 h-4" /> New deal
           </button>
-        </div>
-      </div>
-
+        </>
+      }
+    >
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Tile label="Active pipeline" value={formatZAR(summary?.active_value_zar || 0)} />
         <Tile label="Weighted forecast" value={formatZAR(summary?.weighted_forecast_zar || 0)} />
@@ -202,7 +203,7 @@ export function Pipeline() {
       {showCreate && (
         <CreateDealModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); void fetchData(); }} />
       )}
-    </div>
+    </StitchPage>
   );
 }
 

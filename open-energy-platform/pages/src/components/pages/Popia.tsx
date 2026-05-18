@@ -6,6 +6,7 @@ import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 import { useAuth } from '../../lib/useAuth';
+import { StitchPage } from '../StitchPage';
 
 type Tab = 'consent' | 'dsar' | 'erasure' | 'objection' | 'correction' | 'breach';
 
@@ -190,19 +191,17 @@ export function Popia() {
   }, [fetchData]);
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <ShieldCheck className="w-6 h-6" /> POPIA (Act 4 of 2013)
-          </h1>
-          <p className="text-ionex-text-mute">Consent, data-subject access and right-to-erasure — Sections 23 and 24.</p>
-        </div>
+    <StitchPage
+      eyebrowIcon={ShieldCheck}
+      eyebrowLabel="POPIA (Act 4 of 2013)"
+      title="POPIA"
+      subtitle="Consent, data-subject access and right-to-erasure — Sections 23 and 24."
+      actions={
         <button onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
           <RefreshCw className="w-4 h-4" />
         </button>
-      </div>
-
+      }
+    >
       <div className="border-b border-ionex-border-100 flex gap-6 flex-wrap">
         {([
           { k: 'consent' as Tab, label: 'Consent' },
@@ -434,7 +433,7 @@ export function Popia() {
       {showBreach && (
         <BreachModal onClose={() => setShowBreach(false)} onSubmitted={() => { setShowBreach(false); void fetchData(); }} />
       )}
-    </div>
+    </StitchPage>
   );
 }
 
