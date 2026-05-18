@@ -7,8 +7,9 @@ import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { useAuth } from '../../lib/useAuth';
 import { StitchPage } from '../StitchPage';
+import { SettlementInsights } from '../widgets/SettlementInsights';
 
-type Tab = 'invoices' | 'payments' | 'disputes' | 'breaks' | 'confirmations' | 'fees';
+type Tab = 'insights' | 'invoices' | 'payments' | 'disputes' | 'breaks' | 'confirmations' | 'fees';
 
 type SettlementFeeRow = {
   id: string;
@@ -129,7 +130,7 @@ const formatZAR = (v: number) => new Intl.NumberFormat('en-ZA', { style: 'curren
 
 export function Settlement() {
   const { user } = useAuth();
-  const [tab, setTab] = useState<Tab>('invoices');
+  const [tab, setTab] = useState<Tab>('insights');
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [disputes, setDisputes] = useState<Dispute[]>([]);
@@ -138,6 +139,8 @@ export function Settlement() {
   const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
   const [allPayments, setAllPayments] = useState<Payment[]>([]);
   const [allDisputes, setAllDisputes] = useState<Dispute[]>([]);
+  const [allBreaks, setAllBreaks] = useState<Break[]>([]);
+  const [allFees, setAllFees] = useState<SettlementFeeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [directionFilter, setDirectionFilter] = useState<'all' | 'incoming' | 'outgoing'>('all');
@@ -150,14 +153,26 @@ export function Settlement() {
 
   const fetchSummary = useCallback(async () => {
     try {
-      const [inv, pay, dsp] = await Promise.all([
+      const [inv, pay, dsp, brk] = await Promise.all([
         api.get('/settlement/invoices'),
         api.get('/settlement/payments'),
         api.get('/settlement/disputes'),
+        api.get('/settlement/breaks').catch(() => ({ data: { data: [] } })),
       ]);
       setAllInvoices(inv.data?.data || []);
       setAllPayments(pay.data?.data || []);
       setAllDisputes(dsp.data?.data || []);
+      setAllBreaks((brk.data?.data as Break[]) || []);
+      // Insights needs fees too — gather from first ~30 invoices.
+      const feesAggregate: SettlementFeeRow[] = [];
+      const sourceInvoices = ((inv.data?.data as Invoice[]) || []).slice(0, 30);
+      for (const i of sourceInvoices) {
+        try {
+          const fr = await api.get(`/settlement/invoices/${i.id}/fees`);
+          for (const f of (fr.data?.data as SettlementFeeRow[]) || []) feesAggregate.push(f);
+        } catch { /* skip */ }
+      }
+      setAllFees(feesAggregate);
     } catch (err: any) {
       // Summary tile failures should not block the tab view; keep them silent.
       // eslint-disable-next-line no-console
@@ -266,6 +281,7 @@ export function Settlement() {
 
       <div className="border-b border-ionex-border-100 flex gap-6">
         {([
+          { k: 'insights', label: 'Insights' },
           { k: 'invoices', label: 'Invoices' },
           { k: 'payments', label: 'Payments' },
           { k: 'disputes', label: 'Disputes' },
@@ -316,6 +332,16 @@ export function Settlement() {
 
       {loading && <Skeleton variant="card" rows={4} />}
       {error && <ErrorBanner message={error} onRetry={() => void refreshAll()} />}
+
+      {tab === 'insights' && (
+        <SettlementInsights
+          invoices={allInvoices}
+          payments={allPayments}
+          breaks={allBreaks}
+          fees={allFees}
+          userId={user?.id}
+        />
+      )}
 
       {!loading && !error && tab === 'invoices' && (
         invoices.length === 0
