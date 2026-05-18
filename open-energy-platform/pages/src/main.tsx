@@ -3,7 +3,13 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { registerServiceWorker } from './lib/pwa';
+import { installSastClock } from './lib/sast';
 import './index.css';
+
+// Force every timestamp render across the SPA to South African Standard
+// Time (UTC+2). NERSA / SARS / PAIA filings all operate in SAST; a regulator
+// viewing an audit-chain export from London should still see SAST.
+installSastClock();
 
 registerServiceWorker();
 

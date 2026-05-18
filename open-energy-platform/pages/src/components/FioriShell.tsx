@@ -115,6 +115,35 @@ function MIcon({ name, className = '', filled, size = 20 }: { name: string; clas
   return <MatIcon name={name} size={size} className={className} filled={filled} />;
 }
 
+/** SAST wall clock — surfaces the active timezone in the shell bar so a
+ *  trader / regulator viewing from outside SA sees that timestamps render
+ *  in Africa/Johannesburg, not their local TZ. Ticks every 30s. */
+function SastClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const i = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(i);
+  }, []);
+  // installSastClock() in main.tsx already injects Africa/Johannesburg
+  // as the default for toLocaleTimeString. Pass an explicit timeZone
+  // here for safety in case this component renders before the patch.
+  const t = now.toLocaleTimeString('en-ZA', {
+    timeZone: 'Africa/Johannesburg', hour: '2-digit', minute: '2-digit', hour12: false,
+  });
+  return (
+    <div
+      role="status"
+      aria-label={`Current time in South African Standard Time: ${t}`}
+      title="South African Standard Time (UTC+2)"
+      className="hidden md:flex items-center gap-1.5 h-10 px-3 text-white/85 text-[12px] font-mono"
+    >
+      <span aria-hidden="true">🇿🇦</span>
+      <span>{t}</span>
+      <span className="text-white/45 text-[10px]">SAST</span>
+    </div>
+  );
+}
+
 /** Track whether the viewport is sub-md (Tailwind's md breakpoint = 768px).
  *  When mobile, the side rail is hidden in favour of the hamburger drawer
  *  + the bottom-nav strip, and the canvas reclaims the left padding. */
@@ -361,6 +390,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
 
         {/* Action icons */}
         <div className="flex items-center gap-1">
+          <SastClock />
           <button
             type="button"
             aria-label="Notifications"
