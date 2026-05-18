@@ -2,9 +2,18 @@ import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
 import { platformTabs } from '../platformTabs';
 import { lenderCompletionTabs } from '../roleCompletionTabs';
+import { LenderInsights } from '../widgets/LenderInsights';
 
 export function LenderSuitePage() {
   const tabs: TabSpec[] = [
+    {
+      key: 'insights',
+      label: 'Insights',
+      endpoint: '',
+      description: 'Covenant headroom, debt-service waterfall, facility IRR sensitivity, recovery NPV, stress test, portfolio waterfall.',
+      columns: [],
+      customContent: <LenderInsights />,
+    },
     {
       key: 'covenants',
       label: 'Covenants',
