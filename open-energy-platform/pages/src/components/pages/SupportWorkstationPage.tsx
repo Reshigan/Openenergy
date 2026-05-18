@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
+import { AuditPanel } from '../launch/AuditPanel';
 import { api } from '../../lib/api';
 import { X } from 'lucide-react';
 
@@ -148,6 +149,18 @@ export function SupportWorkstationPage() {
                   />
                 )}
               </div>
+            ),
+          },
+          {
+            key: 'audit',
+            label: 'Audit & compliance',
+            body: ({ onRefresh }) => (
+              <AuditPanel
+                prefix="/support"
+                reconHint="external_ref,agent_email,tenant_accessed,accessed_at"
+                reconSourceOptions={['zendesk', 'jira', 'freshdesk', 'manual']}
+                onChange={onRefresh}
+              />
             ),
           },
         ]}
