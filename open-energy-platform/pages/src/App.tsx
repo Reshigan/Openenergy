@@ -11,6 +11,7 @@ import { LtmLogo } from './components/LtmLogo';
 import { DesignGallery } from './components/pages/DesignGallery';
 import { RoleLaunchBoard } from './components/launch/RoleLaunchBoard';
 import { LenderWorkoutPage } from './components/pages/LenderWorkoutPage';
+import { LenderAuditPage } from './components/pages/LenderAuditPage';
 import { CarbonWorkstationPage } from './components/pages/CarbonWorkstationPage';
 import { GridOpsWorkstationPage } from './components/pages/GridOpsWorkstationPage';
 import { RegulatorWorkstationPage } from './components/pages/RegulatorWorkstationPage';
@@ -1292,6 +1293,7 @@ function AppRoutes() {
       <Route path="/trader-risk" element={<ProtectedRoute><Layout><LazyWorkbench><TraderRiskPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/lender-suite" element={<ProtectedRoute><Layout><LazyWorkbench><LenderSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/lender-suite/workout" element={<ProtectedRoute><Layout><LenderWorkoutPage /></Layout></ProtectedRoute>} />
+      <Route path="/lender-suite/audit" element={<ProtectedRoute><Layout><LenderAuditPage /></Layout></ProtectedRoute>} />
       <Route path="/carbon-registry/workstation" element={<ProtectedRoute><Layout><CarbonWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/grid-operator/workstation" element={<ProtectedRoute><Layout><GridOpsWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/regulator-suite/workstation" element={<ProtectedRoute><Layout><RegulatorWorkstationPage /></Layout></ProtectedRoute>} />

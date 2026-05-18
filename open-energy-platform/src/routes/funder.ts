@@ -17,6 +17,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { ask } from '../utils/ai';
 import { fireCascade } from '../utils/cascade';
+import { appendAudit, getChainHead, verifyChain } from '../utils/audit-chain';
 
 const funder = new Hono<HonoEnv>();
 funder.use('*', authMiddleware);
@@ -334,6 +335,16 @@ funder.post('/covenants/:id/check', async (c) => {
       env: c.env,
     });
   }
+  await appendAudit({
+    env: c.env, entity_type: 'lender', entity_id: id,
+    event_type: 'covenant.checked', actor_id: user.id,
+    payload: {
+      covenant_id: id, facility_id: covenant.facility_id,
+      prior_status: covenant.status, new_status: newStatus,
+      breach_risk: result.structured?.breach_risk || null,
+    },
+  }).catch((e) => console.warn('audit_covenant_failed', (e as Error).message));
+
   return c.json({ success: true, data: { ...result, new_status: newStatus } });
 });
 
@@ -383,6 +394,17 @@ funder.post('/disbursements/:id/approve', async (c) => {
     data: { amount: dr.amount, facility_id: dr.facility_id, project_id: dr.project_id },
     env: c.env,
   });
+
+  await appendAudit({
+    env: c.env, entity_type: 'lender', entity_id: id,
+    event_type: 'disbursement.approved', actor_id: user.id,
+    payload: {
+      disbursement_id: id, facility_id: dr.facility_id,
+      project_id: dr.project_id || null, amount: Number(dr.amount || 0),
+      currency: dr.currency || 'ZAR',
+    },
+  }).catch((e) => console.warn('audit_disbursement_approved_failed', (e as Error).message));
+
   return c.json({ success: true, data: { id, status: 'approved' } });
 });
 
@@ -514,5 +536,267 @@ funder.get('/waterfall', async (c) => {
   }
   return c.json({ success: true, data: rows });
 });
+
+// ════════════════════════════════════════════════════════════════════════
+// L5 — Tamper-evident audit, IFRS9 register export, disbursement recon.
+// ════════════════════════════════════════════════════════════════════════
+
+funder.get('/audit/head', async (c) => {
+  const head = await getChainHead(c.env, 'lender');
+  return c.json({ success: true, data: head });
+});
+
+funder.get('/audit/events', async (c) => {
+  const user = getCurrentUser(c);
+  const limit = Math.min(200, Number(c.req.query('limit') || 50));
+  const where: string[] = [`entity_type = 'lender'`];
+  const binds: unknown[] = [];
+  const isOfficer = user.role === 'admin' || user.role === 'regulator' || user.role === 'support';
+  if (!isOfficer) { where.push('actor_id = ?'); binds.push(user.id); }
+  const rs = await c.env.DB.prepare(
+    `SELECT id, entity_id, event_type, actor_id, sequence_no, content_hash, prev_hash, created_at, payload_json
+       FROM audit_events WHERE ${where.join(' AND ')}
+      ORDER BY sequence_no DESC LIMIT ?`,
+  ).bind(...binds, limit).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+funder.post('/audit/verify', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const fromSeq = Number(c.req.query('from_seq') || 1) || 1;
+  const result = await verifyChain(c.env, 'lender', fromSeq);
+  return c.json({ success: result.ok, data: result });
+});
+
+// POST /funder/audit/export — IFRS9 ECL provisioning register. One row per
+// facility: committed, drawn, undrawn, DSCR covenant, current status,
+// most recent covenant test result. Suitable for SARB / external auditor
+// quarterly review (IFRS9 stage-1/2/3 categorisation).
+funder.post('/audit/export', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'regulator' && user.role !== 'lender') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as { from?: string; to?: string };
+  const from = body.from || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const to = body.to || new Date().toISOString().slice(0, 10);
+
+  const rows = await c.env.DB.prepare(
+    `SELECT lf.id AS facility_id, lf.facility_name, lf.committed_amount, lf.drawn_amount,
+            COALESCE(lf.committed_amount,0) - COALESCE(lf.drawn_amount,0) AS undrawn_amount,
+            lf.dscr_covenant, lf.lender_id, lf.project_id, lf.created_at,
+            (SELECT MAX(last_checked_at) FROM loan_covenants lc WHERE lc.facility_id = lf.id) AS last_covenant_check,
+            (SELECT GROUP_CONCAT(status) FROM loan_covenants lc WHERE lc.facility_id = lf.id) AS covenant_statuses
+       FROM loan_facilities lf
+      WHERE lf.created_at <= ?
+      ORDER BY lf.created_at ASC`,
+  ).bind(`${to}T23:59:59`).all<any>().catch(() => ({ results: [] } as any));
+  const data = (rows.results || []) as Array<Record<string, any>>;
+
+  const header = ['facility_id','facility_name','lender_id','project_id',
+                  'committed_zar','drawn_zar','undrawn_zar',
+                  'dscr_covenant','covenant_statuses','last_covenant_check'].join(',');
+  const csvLines = [header];
+  for (const r of data) {
+    csvLines.push([
+      r.facility_id, csvEscape(r.facility_name || ''),
+      r.lender_id || '', r.project_id || '',
+      Number(r.committed_amount || 0).toFixed(2),
+      Number(r.drawn_amount || 0).toFixed(2),
+      Number(r.undrawn_amount || 0).toFixed(2),
+      r.dscr_covenant ?? '',
+      csvEscape(r.covenant_statuses || ''),
+      r.last_covenant_check || '',
+    ].join(','));
+  }
+  const csv = csvLines.join('\n') + '\n';
+  const csvBytes = new TextEncoder().encode(csv);
+  const csvSha = await sha256OfBytes(csvBytes);
+
+  const head = await getChainHead(c.env, 'lender');
+  const exportId = 'exp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const csvKey = `audit-exports/lender/${exportId}/ifrs9-ecl-register.csv`;
+  const manifestKey = `audit-exports/lender/${exportId}/manifest.json`;
+  const manifest = {
+    export_id: exportId, entity_type: 'lender', from, to,
+    generated_at: new Date().toISOString(), generated_by: user.id, row_count: data.length,
+    csv: { r2_key: csvKey, sha256: csvSha, bytes: csvBytes.byteLength },
+    chain: {
+      head_hash: head?.head_hash || null,
+      head_sequence: head?.head_sequence || 0,
+      last_verified_at: head?.last_verified_at || null,
+    },
+    format: { profile: 'SARB IFRS9 ECL facility register v1', encoding: 'utf-8' },
+  };
+  const manifestBytes = new TextEncoder().encode(JSON.stringify(manifest, null, 2));
+
+  try {
+    await c.env.R2.put(csvKey, csvBytes, { httpMetadata: { contentType: 'text/csv' } });
+    await c.env.R2.put(manifestKey, manifestBytes, { httpMetadata: { contentType: 'application/json' } });
+  } catch (e) {
+    return c.json({ success: false, error: 'R2 write failed', data: { detail: (e as Error).message } }, 502);
+  }
+
+  await c.env.DB.prepare(
+    `INSERT INTO audit_exports
+       (id, entity_type, from_ts, to_ts, row_count,
+        csv_r2_key, manifest_r2_key, chain_head_hash, generated_by, generated_at)
+     VALUES (?, 'lender', ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+  ).bind(exportId, from, to, data.length, csvKey, manifestKey,
+         head?.head_hash || '', user.id).run();
+
+  await appendAudit({
+    env: c.env, entity_type: 'lender', entity_id: exportId,
+    event_type: 'audit.export_generated', actor_id: user.id,
+    payload: { export_id: exportId, from, to, row_count: data.length, csv_sha256: csvSha },
+  }).catch(() => {});
+
+  return c.json({
+    success: true,
+    data: { export_id: exportId, row_count: data.length, csv_r2_key: csvKey, manifest_r2_key: manifestKey, manifest },
+  }, 201);
+});
+
+funder.get('/audit/exports', async (c) => {
+  const rs = await c.env.DB.prepare(
+    `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
+            chain_head_hash, generated_by, generated_at
+       FROM audit_exports WHERE entity_type = 'lender'
+      ORDER BY generated_at DESC LIMIT 50`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+// POST /funder/audit/recon — disbursement reconciliation. CSV columns:
+//   disbursement_id, value_date, amount_zar, facility_id
+// Match against disbursement_requests (status='approved'). Breaks:
+//   • missing_in_ours / missing_in_theirs / field_mismatch on amount.
+funder.post('/audit/recon', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin' && user.role !== 'lender') {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as { source?: string; csv?: string };
+  const source = (body.source || 'bank').toLowerCase();
+  if (typeof body.csv !== 'string' || body.csv.length < 10) {
+    return c.json({ success: false, error: 'csv body required' }, 400);
+  }
+  const lines = body.csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return c.json({ success: false, error: 'csv must have header + ≥1 row' }, 400);
+  const headers = lines[0].split(',').map((h) => h.trim());
+  const need = ['disbursement_id','value_date','amount_zar','facility_id'];
+  for (const k of need) {
+    if (!headers.includes(k)) return c.json({ success: false, error: `csv missing column: ${k}` }, 400);
+  }
+  const idxOf = (k: string) => headers.indexOf(k);
+  type TheirRow = { disbursement_id: string; value_date: string; amount_zar: number; facility_id: string };
+  const theirs: TheirRow[] = [];
+  for (const ln of lines.slice(1)) {
+    const cols = ln.split(',');
+    theirs.push({
+      disbursement_id: (cols[idxOf('disbursement_id')] || '').trim(),
+      value_date: (cols[idxOf('value_date')] || '').trim(),
+      amount_zar: Number(cols[idxOf('amount_zar')] || 0),
+      facility_id: (cols[idxOf('facility_id')] || '').trim(),
+    });
+  }
+
+  const runId = 'recon_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const csvKey = `audit-recon/lender/${runId}/bank.csv`;
+  await c.env.R2.put(csvKey, new TextEncoder().encode(body.csv), {
+    httpMetadata: { contentType: 'text/csv' },
+  }).catch(() => null);
+
+  const ours = await c.env.DB.prepare(
+    `SELECT id AS disbursement_id, amount AS amount_zar, facility_id, status
+       FROM disbursement_requests WHERE status IN ('approved','disbursed')`,
+  ).all<{ disbursement_id: string; amount_zar: number; facility_id: string; status: string }>().catch(() => ({ results: [] } as any));
+  const ourById = new Map<string, any>();
+  for (const r of (ours.results || []) as any[]) ourById.set(r.disbursement_id, r);
+
+  const matched = new Set<string>();
+  type Break = { type: string; disbursement_id: string | null; our: unknown; their: unknown; field: string | null };
+  const breaks: Break[] = [];
+  for (const t of theirs) {
+    if (!t.disbursement_id) {
+      breaks.push({ type: 'missing_in_ours', disbursement_id: null, our: null, their: t, field: null });
+      continue;
+    }
+    const o = ourById.get(t.disbursement_id);
+    if (!o) {
+      breaks.push({ type: 'missing_in_ours', disbursement_id: t.disbursement_id, our: null, their: t, field: null });
+      continue;
+    }
+    matched.add(t.disbursement_id);
+    if (Math.abs(Number(o.amount_zar) - Number(t.amount_zar)) > 0.01) {
+      breaks.push({ type: 'field_mismatch', disbursement_id: t.disbursement_id, our: o, their: t, field: 'amount_zar' });
+    }
+  }
+  for (const [id, o] of ourById.entries()) {
+    if (!matched.has(id) && !theirs.some((t) => t.disbursement_id === id)) {
+      breaks.push({ type: 'missing_in_theirs', disbursement_id: id, our: o, their: null, field: null });
+    }
+  }
+
+  const matchedCount = theirs.length - breaks.filter((b) => b.type !== 'field_mismatch').length;
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(
+    `INSERT INTO audit_recon_runs
+       (id, entity_type, source, uploaded_csv_r2_key, row_count,
+        matched_count, break_count, status, started_at, finished_at, started_by)
+     VALUES (?, 'lender', ?, ?, ?, ?, ?, 'complete', ?, ?, ?)`,
+  ).bind(runId, source, csvKey, theirs.length, matchedCount,
+         breaks.length, now, now, user.id).run();
+
+  if (breaks.length > 0) {
+    const inserts = breaks.map((b) => c.env.DB.prepare(
+      `INSERT INTO audit_recon_breaks
+         (id, run_id, break_type, external_ref, our_value, their_value, field, resolution)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'open')`,
+    ).bind(
+      'brk_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+      runId, b.type, b.disbursement_id,
+      b.our != null ? JSON.stringify(b.our) : null,
+      b.their != null ? JSON.stringify(b.their) : null,
+      b.field,
+    ));
+    await c.env.DB.batch(inserts);
+  }
+
+  await appendAudit({
+    env: c.env, entity_type: 'lender', entity_id: runId,
+    event_type: 'audit.recon_run', actor_id: user.id,
+    payload: { run_id: runId, source, row_count: theirs.length, break_count: breaks.length },
+  }).catch(() => {});
+
+  return c.json({
+    success: true,
+    data: { run_id: runId, source, row_count: theirs.length, matched_count: matchedCount, break_count: breaks.length },
+  }, 201);
+});
+
+funder.get('/audit/recon', async (c) => {
+  const rs = await c.env.DB.prepare(
+    `SELECT id, source, row_count, matched_count, break_count, status,
+            started_at, finished_at
+       FROM audit_recon_runs WHERE entity_type = 'lender'
+      ORDER BY started_at DESC LIMIT 50`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
+function csvEscape(s: string): string {
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+async function sha256OfBytes(b: Uint8Array): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', b);
+  return Array.from(new Uint8Array(buf)).map((x) => x.toString(16).padStart(2, '0')).join('');
+}
 
 export default funder;
