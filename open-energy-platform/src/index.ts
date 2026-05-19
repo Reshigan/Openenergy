@@ -279,6 +279,7 @@ app.route('/api/esums-om', esumsOmAnalysisRoutes);
 // every request that passes through it, including those that don't match
 // a route inside the sub-app — so order matters here.
 app.route('/api/public/status', publicStatusRoutes);
+app.route('/api/public/status', statusDeepPub);
 app.route('/api', platformFeaturesRoutes);
 app.route('/api/mfa',         mfaRoutes);
 app.route('/api/kyc',         kycRoutes);
@@ -286,7 +287,7 @@ app.route('/api/consent',     consentRoutes);
 app.route('/api/popia',       popiaSelfServiceRoutes);
 app.route('/api/regulator',   regulatorReportRoutes);
 // Depth additions — L4/L5 backends for the L2/L3 surfaces above
-app.route('/api/public/status', statusDeepPub);   // extends /api/public/status with /incidents /maintenance /uptime /subscribe
+// (statusDeepPub already mounted earlier, before the /api catch-all)
 app.route('/api/auth-deep',     authDeepRoutes);
 app.route('/api/kyc-deep',      kycDeepRoutes);
 app.route('/api/status-admin',  statusDeepAdmin);
