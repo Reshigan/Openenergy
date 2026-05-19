@@ -69,6 +69,7 @@ import notificationsRoutes from './routes/notifications';
 import scheduleRoutes from './routes/schedule';
 import esumsOmRoutes from './routes/esums-om';
 import esumsOmIntelRoutes from './routes/esums-om-intel';
+import esumsOmAnalysisRoutes from './routes/esums-om-analysis';
 import { portalAdmin as esumsOmPortalAdmin, portalPublic as esumsOmPortalPublic } from './routes/esums-om-portal';
 
 // Durable Object exports — required for Cloudflare to resolve the
@@ -255,6 +256,7 @@ app.route('/api/om-portal-view', esumsOmPortalPublic);
 app.route('/api/om-portal', esumsOmPortalAdmin);
 app.route('/api/esums-om', esumsOmRoutes);
 app.route('/api/esums-om', esumsOmIntelRoutes);
+app.route('/api/esums-om', esumsOmAnalysisRoutes);
 
 // Admin-only "run cron once" endpoint — invokes the same runCron() that the
 // Workers scheduler fires, but on demand so operators (and the smoke-cron

@@ -9,6 +9,7 @@
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
 import { EsumsOmCockpit } from '../widgets/EsumsOmCockpit';
+import { EsumsOmOpportunities } from '../widgets/EsumsOmOpportunities';
 
 export function EsumsOmPage() {
   const tabs: TabSpec[] = [
@@ -19,6 +20,14 @@ export function EsumsOmPage() {
       description: 'Live fleet revenue ticker, fault register with revenue impact, fleet health grid, AI briefing, work order kanban.',
       columns: [],
       customContent: <EsumsOmCockpit />,
+    },
+    {
+      key: 'opportunities',
+      label: 'Opportunities',
+      endpoint: '',
+      description: 'Deterministic rule-based scan of the fleet for monetisable performance improvements. Every card cites its evidence and quantifies annual R upside.',
+      columns: [],
+      customContent: <EsumsOmOpportunities />,
     },
     {
       key: 'sites',
