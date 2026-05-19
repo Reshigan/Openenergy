@@ -96,6 +96,7 @@ import marketplaceL5Routes from './routes/marketplace-l5';
 import aiAssistantRoutes from './routes/ai-assistant';
 import polishRoutes from './routes/polish';
 import publicLegalRoutes from './routes/public-legal';
+import businessDepthRoutes, { computeLatePaymentFees } from './routes/business-depth';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -316,6 +317,7 @@ app.route('/api/audit-l5',            auditL5Admin);
 app.route('/api/marketplace-l5',      marketplaceL5Routes);
 app.route('/api/ai-assistant',        aiAssistantRoutes);
 app.route('/api/polish',              polishRoutes);
+app.route('/api/business-depth',      businessDepthRoutes);
 
 // Admin-only "run cron once" endpoint — invokes the same runCron() that the
 // Workers scheduler fires, but on demand so operators (and the smoke-cron
@@ -684,6 +686,9 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       // every entity_type that had activity. Sealed with the platform
       // Ed25519 key when PLATFORM_ATTEST_KEY is set.
       await safe('audit_merkle_publish', () => buildDailyMerkleRoots(env, yesterday));
+      // Daily — accrue late-payment fees against overdue invoices using
+      // simple interest at prime + 1%, capped at 90 days.
+      await safe('late_fee_accrual', () => computeLatePaymentFees(env));
       // Daily digest sweep — find subscriptions due today by send_hour_sast.
       // Provider creds (SES/Twilio/WhatsApp) gate actual delivery; without
       // them rows land as 'would_send' so the history is still populated.
