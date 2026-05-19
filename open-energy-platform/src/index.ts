@@ -248,9 +248,12 @@ app.route('/api/backup', backupRoutes);
 app.route('/api/search', searchRoutes);
 app.route('/api/notifications', notificationsRoutes);
 app.route('/api/schedule', scheduleRoutes);
+// Public portal MUST be mounted BEFORE the auth-protected esums-om routes
+// otherwise the wildcard authMiddleware inside esums-om.ts intercepts the
+// /portal/view/:token requests (no Authorization header on those by design).
+app.route('/api/om-portal', esumsOmPortalRoutes);
 app.route('/api/esums-om', esumsOmRoutes);
 app.route('/api/esums-om', esumsOmIntelRoutes);
-app.route('/api/esums-om/portal', esumsOmPortalRoutes);
 
 // Admin-only "run cron once" endpoint — invokes the same runCron() that the
 // Workers scheduler fires, but on demand so operators (and the smoke-cron

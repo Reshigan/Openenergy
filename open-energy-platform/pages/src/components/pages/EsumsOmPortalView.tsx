@@ -33,7 +33,7 @@ export function EsumsOmPortalView() {
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch(`/api/esums-om/portal/view/${token}`);
+        const r = await fetch(`/api/om-portal/view/${token}`);
         const j = await r.json();
         if (!r.ok || !j.success) throw new Error(j.error || 'invalid token');
         setData(j.data);
