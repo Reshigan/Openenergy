@@ -266,9 +266,12 @@ app.route('/api/om-portal', esumsOmPortalAdmin);
 app.route('/api/esums-om', esumsOmRoutes);
 app.route('/api/esums-om', esumsOmIntelRoutes);
 app.route('/api/esums-om', esumsOmAnalysisRoutes);
-app.route('/api', platformFeaturesRoutes);
-// Public status page MUST be mounted BEFORE auth-protected siblings.
+// Public status page MUST be mounted BEFORE the catch-all platform router.
+// platformFeaturesRoutes is mounted at /api and applies authMiddleware to
+// every request that passes through it, including those that don't match
+// a route inside the sub-app — so order matters here.
 app.route('/api/public/status', publicStatusRoutes);
+app.route('/api', platformFeaturesRoutes);
 app.route('/api/mfa',         mfaRoutes);
 app.route('/api/kyc',         kycRoutes);
 app.route('/api/consent',     consentRoutes);
