@@ -69,7 +69,7 @@ import notificationsRoutes from './routes/notifications';
 import scheduleRoutes from './routes/schedule';
 import esumsOmRoutes from './routes/esums-om';
 import esumsOmIntelRoutes from './routes/esums-om-intel';
-import esumsOmPortalRoutes from './routes/esums-om-portal';
+import { portalAdmin as esumsOmPortalAdmin, portalPublic as esumsOmPortalPublic } from './routes/esums-om-portal';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -248,10 +248,11 @@ app.route('/api/backup', backupRoutes);
 app.route('/api/search', searchRoutes);
 app.route('/api/notifications', notificationsRoutes);
 app.route('/api/schedule', scheduleRoutes);
-// Public portal MUST be mounted BEFORE the auth-protected esums-om routes
-// otherwise the wildcard authMiddleware inside esums-om.ts intercepts the
-// /portal/view/:token requests (no Authorization header on those by design).
-app.route('/api/om-portal', esumsOmPortalRoutes);
+// Public portal MUST live on a sibling prefix outside the auth-protected
+// esums-om routes — and the public view + admin token endpoints are split
+// into two routers so they can have independent middleware chains.
+app.route('/api/om-portal-view', esumsOmPortalPublic);
+app.route('/api/om-portal', esumsOmPortalAdmin);
 app.route('/api/esums-om', esumsOmRoutes);
 app.route('/api/esums-om', esumsOmIntelRoutes);
 

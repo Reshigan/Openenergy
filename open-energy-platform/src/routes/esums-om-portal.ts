@@ -1,23 +1,18 @@
 // ════════════════════════════════════════════════════════════════════════
 // Esums O&M — Stakeholder portals.
 //
-// Endpoints mounted on /api/esums-om/portal/*:
-//   POST /tokens                  — create an invite token (admin/asset owner)
-//   GET  /tokens                  — list tokens the caller created
-//   POST /tokens/:id/revoke       — revoke a token
-//   GET  /view/:token             — fetch portal data using opaque token
-//                                   (no auth — token is the auth)
+// Two routers exported:
+//   portalAdmin  — auth-protected token mgmt (mount at /api/om-portal)
+//   portalPublic — opaque-token-authenticated view (mount at /api/om-portal-view)
 //
-// The /view/:token endpoint returns a slice of the platform data scoped
-// to the recipient's audience (lender / offtaker / insurer / contractor)
-// and the site_ids embedded in the token.
+// Splitting them prevents Hono's sub-app middleware chain from blocking
+// the public view endpoint with the auth middleware that protects the
+// admin endpoints.
 // ════════════════════════════════════════════════════════════════════════
 
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
-
-const portal = new Hono<HonoEnv>();
 
 function genId(prefix: string) {
   return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -27,11 +22,11 @@ function randomToken() {
     .map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-// ─── Admin-side token management — requires auth ─────────────────────────
-const admin = new Hono<HonoEnv>();
-admin.use('*', authMiddleware);
+// ─── Admin token management (auth required) ─────────────────────────────
+export const portalAdmin = new Hono<HonoEnv>();
+portalAdmin.use('*', authMiddleware);
 
-admin.post('/tokens', async (c) => {
+portalAdmin.post('/tokens', async (c) => {
   const user = getCurrentUser(c);
   const b = await c.req.json().catch(() => ({} as any));
   if (!b.audience || !['lender', 'offtaker', 'insurer', 'contractor'].includes(b.audience)) {
@@ -53,7 +48,7 @@ admin.post('/tokens', async (c) => {
   return c.json({ success: true, data: { id, token, expires_at: expiresAt, url: `/portal/${b.audience}/${token}` } }, 201);
 });
 
-admin.get('/tokens', async (c) => {
+portalAdmin.get('/tokens', async (c) => {
   const user = getCurrentUser(c);
   const isOfficer = ['admin', 'support'].includes(user.role);
   const rows = isOfficer
@@ -62,50 +57,45 @@ admin.get('/tokens', async (c) => {
   return c.json({ success: true, data: rows.results || [] });
 });
 
-admin.post('/tokens/:id/revoke', async (c) => {
+portalAdmin.post('/tokens/:id/revoke', async (c) => {
   const id = c.req.param('id');
   await c.env.DB.prepare(`UPDATE om_portal_tokens SET revoked = 1 WHERE id = ?`).bind(id).run();
   return c.json({ success: true });
 });
 
-portal.route('/', admin);
+// ─── Public token-authenticated view (NO auth middleware) ───────────────
+export const portalPublic = new Hono<HonoEnv>();
 
-// ─── Public token-authenticated portal view — no JWT required ───────────
-portal.get('/view/:token', async (c) => {
+portalPublic.get('/:token', async (c) => {
   const token = c.req.param('token');
   const t = await c.env.DB.prepare(`SELECT * FROM om_portal_tokens WHERE token = ?`).bind(token).first<any>();
   if (!t) return c.json({ success: false, error: 'invalid token' }, 401);
   if (t.revoked) return c.json({ success: false, error: 'revoked' }, 403);
   if (new Date(t.expires_at).getTime() < Date.now()) return c.json({ success: false, error: 'expired' }, 403);
 
-  // bump usage
   await c.env.DB.prepare(`UPDATE om_portal_tokens SET last_used_at = datetime('now'), use_count = use_count + 1 WHERE token = ?`).bind(token).run();
 
   const siteIds = t.scope_site_ids ? JSON.parse(t.scope_site_ids) as string[] : null;
   const audience = t.audience;
 
-  // Resolve sites in scope
   const sitesQuery = siteIds && siteIds.length
     ? `SELECT * FROM om_sites WHERE id IN (${siteIds.map(() => '?').join(',')})`
     : t.participant_id
       ? `SELECT * FROM om_sites WHERE participant_id = ? OR lender_id = ? OR om_contractor_id = ?`
       : `SELECT * FROM om_sites LIMIT 200`;
   const siteBinds = siteIds && siteIds.length ? siteIds : (t.participant_id ? [t.participant_id, t.participant_id, t.participant_id] : []);
-  const sites = await c.env.DB.prepare(sitesQuery).bind(...siteBinds).all();
+  const sites = await c.env.DB.prepare(sitesQuery).bind(...siteBinds).all<any>();
 
-  const siteIdsInScope = (sites.results || []).map((s: any) => s.id);
+  const siteIdsInScope = ((sites.results || []) as Array<{ id: string }>).map((s) => s.id);
   if (!siteIdsInScope.length) {
-    return c.json({ success: true, data: { audience, sites: [], view: 'empty' } });
+    return c.json({ success: true, data: { audience, sites: [], view: 'empty', generated_at: new Date().toISOString() } });
   }
   const placeholders = siteIdsInScope.map(() => '?').join(',');
 
-  // Audience-specific payload
   switch (audience) {
     case 'lender': {
-      // Sites + monthly generation, MTD revenue, open faults, DSCR proxy
       const perf = await c.env.DB.prepare(`
-        SELECT site_id,
-               COALESCE(SUM(interval_kwh),0) AS mtd_kwh
+        SELECT site_id, COALESCE(SUM(interval_kwh),0) AS mtd_kwh
         FROM om_telemetry
         WHERE site_id IN (${placeholders}) AND ts >= date('now', 'start of month')
         GROUP BY site_id
@@ -127,7 +117,6 @@ portal.get('/view/:token', async (c) => {
       });
     }
     case 'offtaker': {
-      // Delivery vs commitment — simplified to MTD MWh
       const deliv = await c.env.DB.prepare(`
         SELECT site_id, COALESCE(SUM(interval_kwh),0) / 1000.0 AS mtd_mwh
         FROM om_telemetry
@@ -145,7 +134,6 @@ portal.get('/view/:token', async (c) => {
       });
     }
     case 'insurer': {
-      // Faults likely to lead to claims + maintenance compliance
       const claimable = await c.env.DB.prepare(`
         SELECT * FROM om_faults
         WHERE site_id IN (${placeholders})
@@ -201,4 +189,6 @@ portal.get('/view/:token', async (c) => {
   }
 });
 
-export default portal;
+// Default export kept for backward compatibility with src/index.ts imports.
+// New mounts in src/index.ts will use the named exports above.
+export default portalAdmin;
