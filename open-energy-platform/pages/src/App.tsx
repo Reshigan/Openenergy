@@ -90,6 +90,7 @@ const PublicAuditPage       = React.lazy(() => import('./components/pages/Public
 const PlatformAdminConsolePage = React.lazy(() => import('./components/pages/PlatformAdminConsolePage').then(m => ({ default: m.PlatformAdminConsolePage })));
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { AiAssistantDock } from './components/AiAssistantDock';
+import { OnboardingTour } from './components/OnboardingTour';
 import { startAutoFlush, flushQueue } from './lib/offlineQueue';
 import { installRum } from './lib/rum';
 import { Skeleton } from './components/Skeleton';
@@ -1382,7 +1383,19 @@ export default function App() {
         <AppRoutes />
         <CookieConsentBanner />
         <AiAssistantDock />
+        <GlobalOnboardingTourWrapper />
       </AuthProvider>
     </BrowserRouter>
   );
+}
+
+function GlobalOnboardingTourWrapper() {
+  const { user } = useAuth();
+  if (!user) return null;
+  const baseSteps = [
+    { key: 'welcome', title: `Welcome to Open Energy, ${user.email.split('@')[0]}.`, body: 'This quick tour points out a couple of things to try first.' },
+    { key: 'ai-dock', title: 'Ask the assistant anything', body: 'The blue dock in the corner answers questions about any surface and can propose one-click actions you confirm before they run.' },
+    { key: 'workstation', title: 'Workstations are role-specific', body: `Your default workstation lives at /${user.role}/workstation — listings, KPIs and one-click actions are tailored to your role.` },
+  ];
+  return <OnboardingTour scope={`platform.${user.role}`} steps={baseSteps}/>;
 }
