@@ -76,6 +76,8 @@ const IppLifecyclePage      = React.lazy(() => import('./components/pages/IppLif
 const OfftakerSuitePage     = React.lazy(() => import('./components/pages/OfftakerSuitePage').then(m => ({ default: m.OfftakerSuitePage })));
 const CarbonRegistryPage    = React.lazy(() => import('./components/pages/CarbonRegistryPage').then(m => ({ default: m.CarbonRegistryPage })));
 const AdminPlatformPage     = React.lazy(() => import('./components/pages/AdminPlatformPage').then(m => ({ default: m.AdminPlatformPage })));
+const EsumsOmPage           = React.lazy(() => import('./components/pages/EsumsOmPage').then(m => ({ default: m.EsumsOmPage })));
+const EsumsOmPortalView     = React.lazy(() => import('./components/pages/EsumsOmPortalView').then(m => ({ default: m.EsumsOmPortalView })));
 import { Skeleton } from './components/Skeleton';
 import { EmptyState } from './components/EmptyState';
 import { ErrorBanner } from './components/ErrorBanner';
@@ -166,11 +168,12 @@ function getNavigationForRole(role: string) {
   const offtakerNav     = [{ path: '/offtaker-suite',   label: 'Offtaker workbench',  icon: LeafIcon }];
   const carbonNav       = [{ path: '/carbon-registry',  label: 'Carbon registry',     icon: LeafIcon }];
   const adminPlatformNav= [{ path: '/admin-platform',   label: 'Platform admin',      icon: SettingsIcon }];
+  const esumsOmNav      = [{ path: '/esums-om',         label: 'Esums O&M',           icon: WrenchIcon }];
 
   const adminNav = [
     ...baseNav,
     ...regulatorNav, ...gridOperatorNav, ...traderNav, ...lenderNav,
-    ...ippNav, ...offtakerNav, ...carbonNav, ...adminPlatformNav,
+    ...ippNav, ...offtakerNav, ...carbonNav, ...esumsOmNav, ...adminPlatformNav,
     { path: '/admin', label: 'Admin', icon: SettingsIcon },
   ];
 
@@ -180,12 +183,12 @@ function getNavigationForRole(role: string) {
     case 'ipp_developer':
       return [
         ...baseNav.filter((n) => !['/trading', '/funds', '/marketplace'].includes(n.path)),
-        ...ippNav,
+        ...ippNav, ...esumsOmNav,
       ];
     case 'lender':
       return [
         ...baseNav.filter((n) => ['/cockpit', '/projects', '/funds', '/om', '/intelligence', '/reports'].includes(n.path)),
-        ...lenderNav,
+        ...lenderNav, ...esumsOmNav,
       ];
     case 'trader':
       return [
@@ -1255,6 +1258,8 @@ function AppRoutes() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      {/* Public stakeholder portals — token-authenticated, no JWT */}
+      <Route path="/portal/:audience/:token" element={<LazyWorkbench><EsumsOmPortalView /></LazyWorkbench>} />
       <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
       <Route path="/settings/security" element={<ProtectedRoute><Layout><Security /></Layout></ProtectedRoute>} />
       {/* /cockpit and /launch (no role) both resolve to the signed-in user's
@@ -1302,6 +1307,10 @@ function AppRoutes() {
       <Route path="/lender-suite/audit" element={<ProtectedRoute><Layout><LenderAuditPage /></Layout></ProtectedRoute>} />
       <Route path="/carbon-registry/workstation" element={<ProtectedRoute><Layout><CarbonWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/grid-operator/workstation" element={<ProtectedRoute><Layout><GridOpsWorkstationPage /></Layout></ProtectedRoute>} />
+      <Route path="/esums-om" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/esums-om/faults/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/esums-om/workorders/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/esums-om/sites/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/regulator-suite/workstation" element={<ProtectedRoute><Layout><RegulatorWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/admin-platform/workstation" element={<ProtectedRoute><Layout><AdminWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/support/workstation" element={<ProtectedRoute><Layout><SupportWorkstationPage /></Layout></ProtectedRoute>} />
