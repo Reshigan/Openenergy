@@ -80,6 +80,11 @@ import {
   regulator as regulatorReportRoutes,
   status as publicStatusRoutes,
 } from './routes/go-live';
+import authDeepRoutes from './routes/auth-deep';
+import kycDeepRoutes from './routes/kyc-deep';
+import { admin as statusDeepAdmin, pub as statusDeepPub } from './routes/status-deep';
+import popiaDeepRoutes from './routes/popia-deep';
+import reportsDeepRoutes from './routes/reports-deep';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -277,6 +282,13 @@ app.route('/api/kyc',         kycRoutes);
 app.route('/api/consent',     consentRoutes);
 app.route('/api/popia',       popiaSelfServiceRoutes);
 app.route('/api/regulator',   regulatorReportRoutes);
+// Depth additions — L4/L5 backends for the L2/L3 surfaces above
+app.route('/api/public/status', statusDeepPub);   // extends /api/public/status with /incidents /maintenance /uptime /subscribe
+app.route('/api/auth-deep',     authDeepRoutes);
+app.route('/api/kyc-deep',      kycDeepRoutes);
+app.route('/api/status-admin',  statusDeepAdmin);
+app.route('/api/popia-deep',    popiaDeepRoutes);
+app.route('/api/reports-deep',  reportsDeepRoutes);
 
 // Admin-only "run cron once" endpoint — invokes the same runCron() that the
 // Workers scheduler fires, but on demand so operators (and the smoke-cron
@@ -479,6 +491,47 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
             (?, 'd1_query_ms', ?),
             (?, 'up', 1)
         `).bind(ts, dbMs, ts).run();
+      });
+      // Daily uptime rollup for /status page — derive from yesterday's
+      // status metrics + incidents. Per-component uptime % = 1 - (minutes
+      // of major+critical incident impact / 1440).
+      await safe('status_uptime_rollup', async () => {
+        const components = ['API', 'Settlement', 'Trading', 'Webhooks', 'Esums O&M'];
+        const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+        const incs = await env.DB.prepare(`
+          SELECT severity, affected_components, started_at, resolved_at
+          FROM oe_status_incidents
+          WHERE date(started_at) <= ? AND (resolved_at IS NULL OR date(resolved_at) >= ?)
+            AND severity IN ('major','critical')
+        `).bind(yesterday, yesterday).all<any>();
+        const incRows = (incs.results || []) as any[];
+        for (const comp of components) {
+          let impactedMinutes = 0;
+          let incidentCount = 0;
+          for (const i of incRows) {
+            const affected = JSON.parse(i.affected_components || '[]');
+            if (!affected.includes(comp)) continue;
+            incidentCount += 1;
+            const dayStart = new Date(`${yesterday}T00:00:00Z`).getTime();
+            const dayEnd = dayStart + 86_400_000;
+            const istart = Math.max(dayStart, new Date(i.started_at).getTime());
+            const iend = i.resolved_at ? Math.min(dayEnd, new Date(i.resolved_at).getTime()) : dayEnd;
+            impactedMinutes += Math.max(0, (iend - istart) / 60_000);
+          }
+          const uptimePct = Math.max(0, Math.min(100, 100 - (impactedMinutes / 1440) * 100));
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO oe_status_uptime_daily (day, component, uptime_pct, incident_count)
+            VALUES (?,?,?,?)
+          `).bind(yesterday, comp, Math.round(uptimePct * 1000) / 1000, incidentCount).run();
+        }
+      });
+      // POPIA SAR overdue alert — bump status for requests past their
+      // 30-day statutory deadline.
+      await safe('popia_sar_overdue', async () => {
+        await env.DB.prepare(`
+          UPDATE oe_popia_sar_requests SET status = 'escalated'
+          WHERE due_at < datetime('now') AND status NOT IN ('fulfilled','rejected','escalated')
+        `).run();
       });
       // POPIA: execute deletions whose 30-day cooling-off has elapsed.
       await safe('popia_deletion_executor', async () => {
