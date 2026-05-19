@@ -96,7 +96,7 @@ export function ProjectScurve({ milestones, capexZar, startDate, codDate }: Prop
 
   if (!data.series.length) {
     return (
-      <section className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#6b7685]">
+      <section className="widget-card widget-empty">
         Need at least two milestones with due dates to draw the S-curve.
       </section>
     );
@@ -106,7 +106,7 @@ export function ProjectScurve({ milestones, capexZar, startDate, codDate }: Prop
   const cpiTone = data.cpi == null ? 'info' : data.cpi >= 0.95 ? 'good' : data.cpi >= 0.85 ? 'warn' : 'bad';
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7] flex flex-wrap items-center justify-between gap-2">
         <div>
           <div className="text-[13px] font-semibold text-[#0f1c2e]">Earned-value S-curve</div>

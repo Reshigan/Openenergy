@@ -111,7 +111,7 @@ export function PpaRevenueModel({
       escalator, opexRatio, discount, debtRatio, coupon]);
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7] flex flex-wrap items-center justify-between gap-2">
         <div>
           <div className="text-[13px] font-semibold text-[#0f1c2e]">PPA economics — {horizonYears || 15}-year model</div>
@@ -129,7 +129,7 @@ export function PpaRevenueModel({
       </header>
 
       {/* Sliders */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 px-4 py-3 border-b border-[#eef2f7] bg-[#fafbfd]">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 px-4 py-3 widget-control-band">
         <Slider label="Price escalator" value={escalator} min={0} max={0.15} step={0.005} onChange={setEscalator} format={pct} />
         <Slider label="Opex ratio" value={opexRatio} min={0.05} max={0.50} step={0.01} onChange={setOpexRatio} format={pct} />
         <Slider label="Discount rate" value={discount} min={0.04} max={0.22} step={0.005} onChange={setDiscount} format={pct} />

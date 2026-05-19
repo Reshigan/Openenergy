@@ -62,7 +62,7 @@ function TariffOptimizer({ annualMwh, peakPct, stdPct, offPeakPct }:
   const cheapest = allRows.reduce((a, b) => a.total < b.total ? a : b);
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7] flex items-center justify-between gap-2">
         <div>
           <div className="text-[13px] font-semibold text-[#0f1c2e]">Tariff optimiser</div>
@@ -73,7 +73,7 @@ function TariffOptimizer({ annualMwh, peakPct, stdPct, offPeakPct }:
           <div className="font-mono font-semibold text-[#1a8a5b]">{cheapest.name} · {formatZAR(cheapest.total)}</div>
         </div>
       </header>
-      <div className="grid grid-cols-3 gap-3 px-4 py-3 border-b border-[#eef2f7] bg-[#fafbfd]">
+      <div className="grid grid-cols-3 gap-3 px-4 py-3 widget-control-band">
         <Slider label="PV offset %"     value={pvOffsetPct} min={0}    max={100}  step={5}   onChange={setPvOffsetPct} fmt={(v) => `${v}%`} />
         <Slider label="Notified kVA"    value={demandKva}   min={0}    max={5_000} step={50}  onChange={setDemandKva}   fmt={(v) => `${v}`} />
         <Slider label="PPA rate (R/MWh)"value={ppaRate}     min={500}  max={3_000} step={50}  onChange={setPpaRate}     fmt={(v) => `R${v}`} />
@@ -140,7 +140,7 @@ function LoadShapeClassifier({ profile }: { profile: ConsumptionProfile[] }) {
     : 'Balanced commercial — Megaflex or PPA both viable';
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Load shape classifier</div>
         <div className="text-[11px] text-[#6b7685]">{classification}</div>
@@ -194,12 +194,12 @@ function CarbonOffsetRoi({ annualMwh }: { annualMwh: number }) {
   const simplePayback = annualRevenue > 0 ? capex / annualRevenue : null;
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Carbon offset ROI</div>
         <div className="text-[11px] text-[#6b7685]">Rooftop PV / wheeled REC programme — simple payback + NPV @ 10%</div>
       </header>
-      <div className="grid grid-cols-3 gap-3 px-4 py-3 border-b border-[#eef2f7] bg-[#fafbfd]">
+      <div className="grid grid-cols-3 gap-3 px-4 py-3 widget-control-band">
         <Slider label="Capex (R)"          value={capex}        min={1_000_000} max={500_000_000} step={1_000_000} onChange={setCapex}        fmt={(v) => `R${(v / 1_000_000).toFixed(0)}m`} />
         <Slider label="Annual gen (MWh)"   value={generationMwh} min={0}         max={100_000}     step={100}        onChange={setGenerationMwh} fmt={(v) => `${v}`} />
         <Slider label="REC price (R/MWh)"  value={recPriceZar}   min={50}        max={500}         step={10}         onChange={setRecPriceZar}   fmt={(v) => `R${v}`} />
@@ -234,12 +234,12 @@ function RevenueRequirementCalc() {
   ];
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">NERSA revenue requirement</div>
         <div className="text-[11px] text-[#6b7685]">Opex + depreciation + (WACC × regulatory asset base) — values in R millions</div>
       </header>
-      <div className="grid grid-cols-4 gap-3 px-4 py-3 border-b border-[#eef2f7] bg-[#fafbfd]">
+      <div className="grid grid-cols-4 gap-3 px-4 py-3 widget-control-band">
         <Slider label="RAB (R m)"         value={rab}          min={10_000} max={500_000} step={5_000} onChange={setRab}          fmt={(v) => `R${v.toLocaleString()}m`} />
         <Slider label="Opex (R m)"        value={opex}         min={1_000}  max={100_000} step={500}   onChange={setOpex}         fmt={(v) => `R${v.toLocaleString()}m`} />
         <Slider label="Depreciation (R m)"value={depreciation} min={500}    max={30_000}  step={250}   onChange={setDepreciation} fmt={(v) => `R${v.toLocaleString()}m`} />

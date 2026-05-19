@@ -60,11 +60,11 @@ function GenerationProfile({ schedules }: { schedules: DispatchSchedule[] }) {
   };
 
   if (!schedules.length) {
-    return <section className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#6b7685]">No dispatch schedules — generation profile unavailable.</section>;
+    return <section className="widget-card widget-empty">No dispatch schedules — generation profile unavailable.</section>;
   }
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Generation profile · load duration</div>
         <div className="text-[11px] text-[#6b7685]">Hourly MW stack by source (left) and load-duration curve (right)</div>
@@ -120,10 +120,10 @@ function OutageMttrTrend({ outages }: { outages: Outage[] }) {
       .map(([month, r]) => ({ month, mean: r.total / r.count, max: r.max, count: r.count }));
   }, [outages]);
 
-  if (!series.length) return <section className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#6b7685]">No closed outages yet — MTTR trend unavailable.</section>;
+  if (!series.length) return <section className="widget-card widget-empty">No closed outages yet — MTTR trend unavailable.</section>;
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Outage MTTR trend</div>
         <div className="text-[11px] text-[#6b7685]">Mean and worst time-to-restore by month (hours)</div>

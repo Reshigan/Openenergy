@@ -87,7 +87,7 @@ function ReceivablesAgingChart({ invoices }: { invoices: Invoice[] }) {
   const overdueValue = buckets.filter((b) => b.bucket !== 'Current').reduce((s, b) => s + b.value, 0);
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7] flex items-center justify-between">
         <div>
           <div className="text-[13px] font-semibold text-[#0f1c2e]">Receivables aging</div>
@@ -147,7 +147,7 @@ function CashflowLadder({ invoices, userId }: { invoices: Invoice[]; userId?: st
   }, [invoices, userId]);
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Forward cashflow ladder (13 weeks)</div>
         <div className="text-[11px] text-[#6b7685]">Inflow (receivables due) vs outflow (payables due)</div>
@@ -183,14 +183,14 @@ function BreakSeverityHeatmap({ breaks }: { breaks: Break[] }) {
 
   if (!grid.length) {
     return (
-      <section className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#6b7685]">
+      <section className="widget-card widget-empty">
         No settlement breaks to plot.
       </section>
     );
   }
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Break severity heatmap</div>
         <div className="text-[11px] text-[#6b7685]">Where the problems live — break type × severity</div>
@@ -259,7 +259,7 @@ function FeeAccrualTrend({ fees }: { fees: Fee[] }) {
 
   if (!series.length) {
     return (
-      <section className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#6b7685]">
+      <section className="widget-card widget-empty">
         No fees accrued yet.
       </section>
     );
@@ -271,7 +271,7 @@ function FeeAccrualTrend({ fees }: { fees: Fee[] }) {
   };
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Fee accrual trend</div>
         <div className="text-[11px] text-[#6b7685]">Weekly fees by type — leading indicator of breakdown</div>

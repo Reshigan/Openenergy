@@ -90,7 +90,7 @@ export function SettlementWaterfall({ totalAmount, breaks, fees, payments }: Pro
   const proposedTotal = steps[steps.length - 1]?.breaksProposed || 0;
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7] flex items-center justify-between">
         <div>
           <div className="text-[13px] font-semibold text-[#0f1c2e]">Settlement waterfall</div>

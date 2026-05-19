@@ -53,13 +53,13 @@ export function OutageImpact({ affectedLoadMw, durationHours, techType }: Props)
   }, [mw, hours, price, techType]);
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Outage impact calculator</div>
         <div className="text-[11px] text-[#6b7685]">Lost generation × spot price — adjust inputs to model recovery scenarios</div>
       </header>
 
-      <div className="grid grid-cols-3 gap-3 px-4 py-3 border-b border-[#eef2f7] bg-[#fafbfd]">
+      <div className="grid grid-cols-3 gap-3 px-4 py-3 widget-control-band">
         <Field label="Affected load (MW)" value={mw} onChange={setMw} step={1} min={0} max={2000} />
         <Field label="Duration (hours)"   value={hours} onChange={setHours} step={0.5} min={0} max={168} />
         <Field label="Spot (R/MWh)"       value={price} onChange={setPrice} step={50} min={0} max={20000} hint="Pulled from latest power mark" />

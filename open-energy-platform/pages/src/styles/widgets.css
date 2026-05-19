@@ -1,0 +1,188 @@
+/* ════════════════════════════════════════════════════════════════════════
+ * Widget design tokens — derived from the Stitch "Open Energy Light"
+ * design system (Industrial-Fintech aesthetic).
+ *
+ *   • Card: white surface, 1px hairline outline, soft ambient shadow
+ *   • Header band: 8px rounded with low-contrast separator
+ *   • Control band: subtle #f1f5f9 fill to demarcate sliders/inputs
+ *   • Typography: Metropolis headlines, IBM Plex Sans body, JetBrains
+ *     Mono for numerics. Tabular figures everywhere.
+ *   • Hover lift: only on interactive cards.
+ *
+ * Used by /pages/src/components/widgets/*.tsx
+ * ════════════════════════════════════════════════════════════════════════ */
+
+.widget-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15, 28, 46, 0.04);
+  transition: box-shadow 120ms ease-out, transform 120ms ease-out;
+}
+
+.widget-card:hover {
+  box-shadow: 0 4px 12px rgba(15, 28, 46, 0.05);
+}
+
+.widget-card-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #eef2f7;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.widget-card-title {
+  font-family: Metropolis, 'IBM Plex Sans', Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.005em;
+  color: #0f1c2e;
+}
+
+.widget-card-subtitle {
+  font-family: 'IBM Plex Sans', Inter, sans-serif;
+  font-size: 11px;
+  line-height: 16px;
+  color: #6b7685;
+  margin-top: 2px;
+}
+
+.widget-card-footer {
+  padding: 8px 16px;
+  border-top: 1px solid #eef2f7;
+  font-size: 11px;
+  color: #6b7685;
+  background: #fafbfd;
+}
+
+/* Inputs band — subtle gray surface to separate sliders from charts. */
+.widget-control-band {
+  padding: 12px 16px;
+  border-bottom: 1px solid #eef2f7;
+  background: #f1f5f9;
+}
+
+/* KPI label — Metropolis caps, used inside tiles. */
+.widget-kpi-label {
+  font-family: Metropolis, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.widget-kpi-value {
+  font-family: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.widget-kpi-value-lg {
+  font-family: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 28px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+/* Tone helpers — match the existing pill colours used elsewhere. */
+.widget-tone-good { color: #1a8a5b; background: #e7f4ea; }
+.widget-tone-warn { color: #b04e0f; background: #fef3e6; }
+.widget-tone-bad  { color: #c0392b; background: #fde0db; }
+.widget-tone-info { color: #1a3a5c; background: #eef2f7; }
+.widget-tone-amber{ color: #b04e0f; background: #fff4e0; }
+
+.widget-tone-good-text { color: #1a8a5b; }
+.widget-tone-warn-text { color: #b04e0f; }
+.widget-tone-bad-text  { color: #c0392b; }
+.widget-tone-info-text { color: #1a3a5c; }
+
+/* Tile (compact KPI card inside a widget) */
+.widget-tile {
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Range slider — accent the platform navy. */
+.widget-card input[type="range"] {
+  accent-color: #1a3a5c;
+}
+
+/* Tabular numerics on every monospace block inside widgets — belt-and-
+ * braces; the body already declares tnum globally. */
+.widget-card .font-mono,
+.widget-card td.font-mono,
+.widget-card span.font-mono,
+.widget-card div.font-mono {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.005em;
+}
+
+/* Card data tables — finance-statement feel: solid navy headers,
+ * left-aligned text, right-aligned numerics. */
+.widget-card table thead tr {
+  background: #f1f5f9;
+}
+
+.widget-card table thead th {
+  color: #41493f;
+  font-family: Metropolis, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 6px 8px;
+}
+
+.widget-card table tbody td {
+  padding: 7px 8px;
+}
+
+.widget-card table tbody tr:hover {
+  background: rgba(59, 130, 196, 0.04);
+}
+
+/* Compact chart wrappers don't need rounding (they're inside cards). */
+.widget-card .recharts-wrapper {
+  font-family: 'IBM Plex Sans', Inter, sans-serif;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Empty / loading inside a widget card */
+.widget-empty {
+  padding: 16px;
+  font-size: 12px;
+  color: #6b7685;
+  background: #fafbfd;
+}
+
+/* Nested grids inside widgets — uniform gap. */
+.widget-grid {
+  display: grid;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .widget-card-header {
+    padding: 10px 12px;
+  }
+  .widget-card-footer,
+  .widget-control-band {
+    padding: 10px 12px;
+  }
+}

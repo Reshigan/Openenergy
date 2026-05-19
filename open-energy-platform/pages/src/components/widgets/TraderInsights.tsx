@@ -69,7 +69,7 @@ function PnlWaterfall({ positions }: { positions: Position[] }) {
   const net = steps[steps.length - 1]?.delta || 0;
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7] flex items-center justify-between">
         <div>
           <div className="text-[13px] font-semibold text-[#0f1c2e]">P&L waterfall</div>
@@ -117,11 +117,11 @@ function MarkTermStructure({ marks }: { marks: Mark[] }) {
   }, [marks]);
 
   if (!data.rows.length) {
-    return <section className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#6b7685]">No mark data.</section>;
+    return <section className="widget-card widget-empty">No mark data.</section>;
   }
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Mark term structure</div>
         <div className="text-[11px] text-[#6b7685]">Mark price by delivery date — contango (up) or backwardation (down)</div>
@@ -192,7 +192,7 @@ function OrderBookDepth() {
   const spread = Number.isFinite(bestAsk) && bestBid > 0 ? bestAsk - bestBid : null;
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7] flex flex-wrap items-center justify-between gap-2">
         <div>
           <div className="text-[13px] font-semibold text-[#0f1c2e]">Order book depth</div>
@@ -261,13 +261,13 @@ function ExecutionCostCard({ positions, marks }: { positions: Position[]; marks:
   }, [positions, marks]);
 
   if (!rows.length) {
-    return <section className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#6b7685]">No open positions to score.</section>;
+    return <section className="widget-card widget-empty">No open positions to score.</section>;
   }
 
   const totalCost = rows.reduce((s, r) => s + r.slippageZar, 0);
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7] flex items-center justify-between">
         <div>
           <div className="text-[13px] font-semibold text-[#0f1c2e]">Execution cost</div>

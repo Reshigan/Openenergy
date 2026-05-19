@@ -44,12 +44,12 @@ function MypdTariffCalc() {
   const allowedTariffMwh = allowedTariff * 1000;
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">NERSA MYPD allowed-revenue</div>
         <div className="text-[11px] text-[#6b7685]">Methodology: opex + depreciation + (WACC × RAB) divided by sales volume → allowed tariff</div>
       </header>
-      <div className="grid grid-cols-5 gap-3 px-4 py-3 border-b border-[#eef2f7] bg-[#fafbfd]">
+      <div className="grid grid-cols-5 gap-3 px-4 py-3 widget-control-band">
         <Slider label="RAB (R m)"          value={rab}          min={10_000} max={500_000} step={1_000} onChange={setRab}          fmt={(v) => v.toLocaleString()} />
         <Slider label="Opex (R m)"         value={opex}         min={1_000}  max={100_000} step={500}   onChange={setOpex}         fmt={(v) => v.toLocaleString()} />
         <Slider label="Depreciation (R m)" value={depreciation} min={500}    max={30_000}  step={250}   onChange={setDepreciation} fmt={(v) => v.toLocaleString()} />
@@ -70,7 +70,7 @@ function CostOfServiceBreakout() {
   const totalCost = 38_500; // R m
   const data = COS_BASE.map((c) => ({ ...c, amount: totalCost * c.share }));
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Cost of service breakout</div>
         <div className="text-[11px] text-[#6b7685]">Typical SA utility cost split at R{totalCost.toLocaleString()}m base</div>
@@ -115,12 +115,12 @@ function AffordabilityGauge() {
   });
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Affordability gauge</div>
         <div className="text-[11px] text-[#6b7685]">Electricity bill as % of monthly income, by household decile</div>
       </header>
-      <div className="grid grid-cols-2 gap-3 px-4 py-3 border-b border-[#eef2f7] bg-[#fafbfd]">
+      <div className="grid grid-cols-2 gap-3 px-4 py-3 widget-control-band">
         <Slider label="Tariff (R/kWh)" value={tariffKwh}   min={0.5} max={5}    step={0.05} onChange={setTariffKwh}   fmt={(v) => `R${v.toFixed(2)}`} />
         <Slider label="Use (kWh/month)"value={householdKwh} min={50}  max={1000} step={25}   onChange={setHouseholdKwh} fmt={(v) => `${v}`} />
       </div>

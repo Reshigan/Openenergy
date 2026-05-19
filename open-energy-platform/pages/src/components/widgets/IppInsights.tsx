@@ -58,7 +58,7 @@ const formatZAR = (v: number) =>
 // ─── 1 ─── EA condition heatmap ───────────────────────────────────────
 function EnvComplianceHeatmap({ conditions }: { conditions: EaCondition[] }) {
   if (!conditions.length) {
-    return <section className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#6b7685]">No environmental authorisation conditions tracked yet.</section>;
+    return <section className="widget-card widget-empty">No environmental authorisation conditions tracked yet.</section>;
   }
   const today = Date.now();
   const enriched = conditions.map((c) => {
@@ -82,7 +82,7 @@ function EnvComplianceHeatmap({ conditions }: { conditions: EaCondition[] }) {
     info: 'bg-[#eef2f7] text-[#3b82c4]',
   };
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Environmental compliance heatmap</div>
         <div className="text-[11px] text-[#6b7685]">EA conditions tinted by days-to-deadline and compliance status</div>
@@ -133,11 +133,11 @@ function MilestoneCriticalPath({ milestones }: { milestones: Milestone[] }) {
   }, [milestones]);
 
   if (!data.length) {
-    return <section className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#6b7685]">No milestones with due dates.</section>;
+    return <section className="widget-card widget-empty">No milestones with due dates.</section>;
   }
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Milestone critical path</div>
         <div className="text-[11px] text-[#6b7685]">Slip days vs plan — positive bars = late</div>
@@ -175,7 +175,7 @@ function LdCalculator({ epcs }: { epcs: Epc[] }) {
   const utilisationPct = capValue > 0 ? Math.min(100, (rawLd / capValue) * 100) : 0;
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Liquidated damages calculator</div>
         <div className="text-[11px] text-[#6b7685]">
@@ -183,7 +183,7 @@ function LdCalculator({ epcs }: { epcs: Epc[] }) {
                : 'No EPC contract on this project'}
         </div>
       </header>
-      <div className="grid grid-cols-3 gap-3 px-4 py-3 border-b border-[#eef2f7] bg-[#fafbfd]">
+      <div className="grid grid-cols-3 gap-3 px-4 py-3 widget-control-band">
         <label className="block text-[11px]">
           <div className="flex justify-between"><span>Delay days</span><span className="font-mono">{delayDays}</span></div>
           <input type="range" min={0} max={365} value={delayDays} onChange={(e) => setDelayDays(Number(e.target.value))} className="w-full accent-[#1a3a5c]" />
@@ -224,14 +224,14 @@ function TariffComparison({ project }: { project: Project | null }) {
   const savings = rows[1].annual - rows[0].annual;
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Tariff comparison</div>
         <div className="text-[11px] text-[#6b7685]">
           PPA vs utility vs spot — annualised at {(annualMwh / 1000).toFixed(0)} GWh
         </div>
       </header>
-      <div className="grid grid-cols-2 gap-3 px-4 py-3 border-b border-[#eef2f7] bg-[#fafbfd]">
+      <div className="grid grid-cols-2 gap-3 px-4 py-3 widget-control-band">
         <label className="block text-[11px]">
           <div className="flex justify-between"><span>PPA price (R/MWh)</span><span className="font-mono">{ppaPrice}</span></div>
           <input type="range" min={500} max={3000} step={50} value={ppaPrice} onChange={(e) => setPpaPrice(Number(e.target.value))} className="w-full accent-[#1a3a5c]" />
@@ -309,7 +309,7 @@ function ProjectHealthScorecard({
   };
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Project health scorecard</div>
         <div className="text-[11px] text-[#6b7685]">Schedule · environmental · EPC · PPA · financials</div>

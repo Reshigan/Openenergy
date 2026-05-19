@@ -62,10 +62,10 @@ function irr(cashflows: number[]): number | null {
 // ─── 1 ─── Covenant headroom gauges ───────────────────────────────────
 function CovenantHeadroomGauge({ covenants }: { covenants: Covenant[] }) {
   if (!covenants.length) {
-    return <section className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#6b7685]">No covenants tracked.</section>;
+    return <section className="widget-card widget-empty">No covenants tracked.</section>;
   }
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Covenant headroom</div>
         <div className="text-[11px] text-[#6b7685]">Each gauge: latest test value vs threshold</div>
@@ -103,7 +103,7 @@ function CovenantHeadroomGauge({ covenants }: { covenants: Covenant[] }) {
 // ─── 2 ─── Debt service waterfall ─────────────────────────────────────
 function DebtServiceWaterfall({ waterfall }: { waterfall: Waterfall | null }) {
   if (!waterfall) {
-    return <section className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#6b7685]">No waterfall records yet.</section>;
+    return <section className="widget-card widget-empty">No waterfall records yet.</section>;
   }
   const steps = [
     { label: 'Cashflow in',     value: Number(waterfall.cashflow_in || 0),                                kind: 'add' as const },
@@ -123,7 +123,7 @@ function DebtServiceWaterfall({ waterfall }: { waterfall: Waterfall | null }) {
     return { ...s, base, bar };
   });
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Debt service waterfall — {waterfall.period}</div>
         <div className="text-[11px] text-[#6b7685]">Cashflow priority through the capital stack</div>
@@ -180,7 +180,7 @@ function FacilityIrr() {
   }, [principal, feesPct]);
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7] flex items-center justify-between">
         <div>
           <div className="text-[13px] font-semibold text-[#0f1c2e]">Facility IRR</div>
@@ -190,7 +190,7 @@ function FacilityIrr() {
           {lifetimeIrr == null ? '—' : `${(lifetimeIrr * 100).toFixed(2)}%`}
         </div>
       </header>
-      <div className="grid grid-cols-4 gap-3 px-4 py-3 border-b border-[#eef2f7] bg-[#fafbfd]">
+      <div className="grid grid-cols-4 gap-3 px-4 py-3 widget-control-band">
         <Slider label="Principal (R)"  value={principal}  min={10_000_000} max={5_000_000_000} step={10_000_000} onChange={setPrincipal} fmt={(v) => `R${(v / 1_000_000).toFixed(0)}m`} />
         <Slider label="Coupon"         value={coupon}     min={0.04}       max={0.20}          step={0.0025}     onChange={setCoupon}    fmt={(v) => `${(v * 100).toFixed(2)}%`} />
         <Slider label="Tenor (years)"  value={tenor}      min={3}          max={25}            step={1}          onChange={setTenor}     fmt={(v) => `${v}y`} />
@@ -243,7 +243,7 @@ function RecoveryNpv() {
   const valueDiff = Math.abs(cureNpv - liquidationNpv);
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7] flex items-center justify-between">
         <div>
           <div className="text-[13px] font-semibold text-[#0f1c2e]">Workout recovery NPV</div>
@@ -253,7 +253,7 @@ function RecoveryNpv() {
           {optimal} · ΔNPV {formatZAR(valueDiff)}
         </div>
       </header>
-      <div className="grid grid-cols-4 gap-3 px-4 py-3 border-b border-[#eef2f7] bg-[#fafbfd]">
+      <div className="grid grid-cols-4 gap-3 px-4 py-3 widget-control-band">
         <Slider label="Outstanding"     value={outstanding}     min={10_000_000} max={5_000_000_000} step={5_000_000}  onChange={setOutstanding}     fmt={(v) => `R${(v / 1_000_000).toFixed(0)}m`} />
         <Slider label="Recovery rate"   value={recoveryRate}    min={0.05}       max={0.95}          step={0.05}       onChange={setRecoveryRate}    fmt={(v) => `${(v * 100).toFixed(0)}%`} />
         <Slider label="Cure cost"       value={cureCost}        min={0}          max={500_000_000}   step={1_000_000}  onChange={setCureCost}        fmt={(v) => `R${(v / 1_000_000).toFixed(0)}m`} />
@@ -283,12 +283,12 @@ function PortfolioStressTest() {
   const expectedLoss = baseDeployed * defaultRate * 0.55; // 55% LGD
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Portfolio stress test</div>
         <div className="text-[11px] text-[#6b7685]">Capex blow-out, fuel cost, default rate — sensitivities on portfolio IRR / DSCR / loss</div>
       </header>
-      <div className="grid grid-cols-3 gap-3 px-4 py-3 border-b border-[#eef2f7] bg-[#fafbfd]">
+      <div className="grid grid-cols-3 gap-3 px-4 py-3 widget-control-band">
         <Slider label="Capex shock"   value={capexShock}  min={0} max={0.40} step={0.01} onChange={setCapexShock}  fmt={(v) => `+${(v * 100).toFixed(0)}%`} />
         <Slider label="Fuel shock"    value={fuelShock}   min={-0.30} max={0.50} step={0.01} onChange={setFuelShock}   fmt={(v) => `${v >= 0 ? '+' : ''}${(v * 100).toFixed(0)}%`} />
         <Slider label="Default rate"  value={defaultRate} min={0} max={0.20} step={0.005} onChange={setDefaultRate} fmt={(v) => `${(v * 100).toFixed(1)}%`} />
@@ -325,12 +325,12 @@ function PortfolioWaterfall() {
   ];
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Portfolio waterfall</div>
         <div className="text-[11px] text-[#6b7685]">Fund-level called / distributed / NAV — MOIC, DPI, TVPI</div>
       </header>
-      <div className="grid grid-cols-3 gap-3 px-4 py-3 border-b border-[#eef2f7] bg-[#fafbfd]">
+      <div className="grid grid-cols-3 gap-3 px-4 py-3 widget-control-band">
         <Slider label="Called"      value={called}      min={0} max={committed} step={50_000_000} onChange={setCalled}      fmt={(v) => `R${(v / 1_000_000_000).toFixed(2)}bn`} />
         <Slider label="Distributed" value={distributed} min={0} max={committed} step={50_000_000} onChange={setDistributed} fmt={(v) => `R${(v / 1_000_000_000).toFixed(2)}bn`} />
         <Slider label="NAV"         value={nav}         min={0} max={committed} step={50_000_000} onChange={setNav}         fmt={(v) => `R${(v / 1_000_000_000).toFixed(2)}bn`} />

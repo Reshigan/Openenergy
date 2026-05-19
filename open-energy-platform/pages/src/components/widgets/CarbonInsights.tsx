@@ -38,10 +38,10 @@ function VintageRetirementSchedule({ vintages }: { vintages: Vintage[] }) {
       .map(([year, r]) => ({ year, issued: r.issued, retired: r.retired, outstanding: r.issued - r.retired }));
   }, [vintages]);
 
-  if (!data.length) return <section className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#6b7685]">No vintage data.</section>;
+  if (!data.length) return <section className="widget-card widget-empty">No vintage data.</section>;
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Vintage retirement schedule</div>
         <div className="text-[11px] text-[#6b7685]">Issued vs retired tCO₂e by vintage year</div>
@@ -86,10 +86,10 @@ function MethodologyComparison({ vintages }: { vintages: Vintage[] }) {
     })).sort((a, b) => b.tonnes - a.tonnes);
   }, [vintages]);
 
-  if (!rows.length) return <section className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#6b7685]">No methodology data.</section>;
+  if (!rows.length) return <section className="widget-card widget-empty">No methodology data.</section>;
 
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+    <section className="widget-card">
       <header className="px-4 py-3 border-b border-[#eef2f7]">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Methodology comparison</div>
         <div className="text-[11px] text-[#6b7685]">Volume / avg price / retirement velocity by methodology</div>
