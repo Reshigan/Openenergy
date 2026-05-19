@@ -85,6 +85,7 @@ const PublicStatusPage      = React.lazy(() => import('./components/pages/Public
 const ComplianceAdminPage   = React.lazy(() => import('./components/pages/ComplianceAdminPage').then(m => ({ default: m.ComplianceAdminPage })));
 const DepthOpsPage          = React.lazy(() => import('./components/pages/DepthOpsPage').then(m => ({ default: m.DepthOpsPage })));
 import { CookieConsentBanner } from './components/CookieConsentBanner';
+import { AiAssistantDock } from './components/AiAssistantDock';
 import { startAutoFlush, flushQueue } from './lib/offlineQueue';
 import { Skeleton } from './components/Skeleton';
 import { EmptyState } from './components/EmptyState';
@@ -1370,6 +1371,7 @@ export default function App() {
       <AuthProvider>
         <AppRoutes />
         <CookieConsentBanner />
+        <AiAssistantDock />
       </AuthProvider>
     </BrowserRouter>
   );
