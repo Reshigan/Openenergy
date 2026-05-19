@@ -85,6 +85,8 @@ import kycDeepRoutes from './routes/kyc-deep';
 import { admin as statusDeepAdmin, pub as statusDeepPub } from './routes/status-deep';
 import popiaDeepRoutes from './routes/popia-deep';
 import reportsDeepRoutes from './routes/reports-deep';
+import tradingDeepRoutes from './routes/trading-deep';
+import settlementDeepRoutes from './routes/settlement-deep';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -289,6 +291,8 @@ app.route('/api/kyc-deep',      kycDeepRoutes);
 app.route('/api/status-admin',  statusDeepAdmin);
 app.route('/api/popia-deep',    popiaDeepRoutes);
 app.route('/api/reports-deep',  reportsDeepRoutes);
+app.route('/api/trading-deep',    tradingDeepRoutes);
+app.route('/api/settlement-deep', settlementDeepRoutes);
 
 // Admin-only "run cron once" endpoint — invokes the same runCron() that the
 // Workers scheduler fires, but on demand so operators (and the smoke-cron
@@ -741,6 +745,15 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       break;
 
     case '10 0 * * *':
+      // T+1 settlement cycle — auto-create + auto-net for yesterday's
+      // fills, then leave at net_calculated state for operator novate/settle.
+      await safe('settlement_cycle_create', async () => {
+        const cycleId = `cyc_${yesterday.replace(/-/g, '')}`;
+        await env.DB.prepare(`
+          INSERT OR IGNORE INTO oe_settlement_cycles (id, trade_date, value_date, status)
+          VALUES (?,?,?,'open')
+        `).bind(cycleId, yesterday, today).run();
+      });
       await safe('daily_settlement', async () => {
         const runId = `sr_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
         const idempotencyKey = `ppa_energy:${yesterday}:${yesterday}`;
