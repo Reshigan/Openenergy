@@ -322,6 +322,115 @@ async function pollVictron(env: any, conn: any): Promise<PollResult> {
   }
 }
 
+// ─── Schneider Electric EcoStruxure Power Monitoring Expert ──────────────
+// Auth: Basic auth on the cloud edition; site_id/plant_id selects the asset.
+// Data: GET /api/v1/Sites/{site}/AggregatedKpis
+async function pollSchneider(env: any, conn: any): Promise<PollResult> {
+  const creds = await getCreds(env, conn.credentials_kv);
+  if (!creds?.username || !creds?.password || !creds?.site_id) {
+    return { adapter: 'schneider', ok: false, readings: [], error: 'creds missing (username/password/site_id)' };
+  }
+  const base = (conn.endpoint_url || 'https://ecostruxure.schneider-electric.com/api/v1').replace(/\/$/, '');
+  const auth = btoa(`${creds.username}:${creds.password}`);
+  try {
+    const r = await fetch(`${base}/Sites/${creds.site_id}/AggregatedKpis`, {
+      headers: { authorization: `Basic ${auth}`, accept: 'application/json' },
+    });
+    if (!r.ok) return { adapter: 'schneider', ok: false, readings: [], error: `kpis ${r.status}`, raw_status: r.status };
+    const j = await r.json() as any;
+    const power = Number(j?.activePowerKw || 0);
+    return {
+      adapter: 'schneider',
+      ok: true,
+      readings: [{
+        device_serial: String(creds.site_id),
+        ts: j?.lastUpdatedUtc ? new Date(j.lastUpdatedUtc).toISOString() : new Date().toISOString(),
+        ac_kw: power,
+        yield_kwh: Number(j?.energyTodayKwh || 0),
+        temperature_c: j?.ambientTempC != null ? Number(j.ambientTempC) : undefined,
+        quality: 'valid',
+      }],
+      raw_status: r.status,
+    };
+  } catch (e: any) {
+    return { adapter: 'schneider', ok: false, readings: [], error: e?.message };
+  }
+}
+
+// ─── ABB Ability — utility-scale ─────────────────────────────────────────
+// Auth: API key in `Ocp-Apim-Subscription-Key` header
+// Data: GET /v1/plants/{plant_id}/realtime
+async function pollAbb(env: any, conn: any): Promise<PollResult> {
+  const creds = await getCreds(env, conn.credentials_kv);
+  if (!creds?.api_key || !creds?.plant_id) {
+    return { adapter: 'abb', ok: false, readings: [], error: 'creds missing (api_key/plant_id)' };
+  }
+  const base = (conn.endpoint_url || 'https://api.abb.com/ability/v1').replace(/\/$/, '');
+  try {
+    const r = await fetch(`${base}/plants/${creds.plant_id}/realtime`, {
+      headers: { 'Ocp-Apim-Subscription-Key': creds.api_key, accept: 'application/json' },
+    });
+    if (!r.ok) return { adapter: 'abb', ok: false, readings: [], error: `realtime ${r.status}`, raw_status: r.status };
+    const j = await r.json() as any;
+    return {
+      adapter: 'abb',
+      ok: true,
+      readings: [{
+        device_serial: String(creds.plant_id),
+        ts: j?.timestamp ? new Date(j.timestamp).toISOString() : new Date().toISOString(),
+        ac_kw: Number(j?.power_kw || j?.activePowerKw || 0),
+        yield_kwh: Number(j?.energyTodayKwh || 0),
+        irradiance_w_m2: j?.irradiance_w_m2 != null ? Number(j.irradiance_w_m2) : undefined,
+        quality: 'valid',
+      }],
+      raw_status: r.status,
+    };
+  } catch (e: any) {
+    return { adapter: 'abb', ok: false, readings: [], error: e?.message };
+  }
+}
+
+// ─── GE Renewable Energy — Brilliant Wind/Solar farm controller ─────────
+// Auth: Bearer token + farm_id
+// Data: GET /api/v2/farms/{farm_id}/telemetry/current
+async function pollGe(env: any, conn: any): Promise<PollResult> {
+  const creds = await getCreds(env, conn.credentials_kv);
+  if (!creds?.token || !creds?.plant_id) {
+    return { adapter: 'ge', ok: false, readings: [], error: 'creds missing (token/plant_id)' };
+  }
+  const base = (conn.endpoint_url || 'https://api.ge.com/renewables/v2').replace(/\/$/, '');
+  try {
+    const r = await fetch(`${base}/farms/${creds.plant_id}/telemetry/current`, {
+      headers: { authorization: `Bearer ${creds.token}`, accept: 'application/json' },
+    });
+    if (!r.ok) return { adapter: 'ge', ok: false, readings: [], error: `telemetry ${r.status}`, raw_status: r.status };
+    const j = await r.json() as any;
+    // GE returns turbine-level for wind farms; collapse to a single farm
+    // reading if `turbines` exists, else use the top-level fields.
+    const turbines = Array.isArray(j?.turbines) ? j.turbines : null;
+    const ac = turbines
+      ? turbines.reduce((sum: number, t: any) => sum + Number(t.activePowerKw || 0), 0)
+      : Number(j?.activePowerKw || 0);
+    const yieldKwh = turbines
+      ? turbines.reduce((sum: number, t: any) => sum + Number(t.energyTodayKwh || 0), 0)
+      : Number(j?.energyTodayKwh || 0);
+    return {
+      adapter: 'ge',
+      ok: true,
+      readings: [{
+        device_serial: String(creds.plant_id),
+        ts: j?.timestamp ? new Date(j.timestamp).toISOString() : new Date().toISOString(),
+        ac_kw: ac,
+        yield_kwh: yieldKwh,
+        quality: 'valid',
+      }],
+      raw_status: r.status,
+    };
+  } catch (e: any) {
+    return { adapter: 'ge', ok: false, readings: [], error: e?.message };
+  }
+}
+
 // ─── Modbus + CSV/SFTP + Eskom AMR — agent-pushed (Workers can't TCP) ───
 async function pollAgentRequired(name: string): Promise<PollResult> {
   return {
@@ -343,6 +452,9 @@ export async function pollConnection(env: any, conn: any): Promise<PollResult> {
     case 'goodwe':       return pollGoodWe(env, conn);
     case 'enphase':      return pollEnphase(env, conn);
     case 'victron':      return pollVictron(env, conn);
+    case 'schneider':    return pollSchneider(env, conn);
+    case 'abb':          return pollAbb(env, conn);
+    case 'ge':           return pollGe(env, conn);
     case 'modbus':       return pollAgentRequired('modbus');
     case 'csv_sftp':     return pollAgentRequired('csv_sftp');
     case 'eskom_amr':    return pollAgentRequired('eskom_amr');

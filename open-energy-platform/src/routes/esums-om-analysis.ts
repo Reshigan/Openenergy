@@ -56,7 +56,9 @@ type Opportunity = {
     | 'parts_stockout'
     | 'warranty_leakage'
     | 'maintenance_backlog'
-    | 'om_cost_outlier';
+    | 'om_cost_outlier'
+    | 'module_degradation'
+    | 'curtailment_recovery';
   site_id?: string;
   site_name?: string;
   device_id?: string;
@@ -593,9 +595,110 @@ async function findOmCostOutliers(env: HonoEnv['Bindings'], siteIds: string[],
   return opps;
 }
 
+// ─── 12. Module degradation predictor ──────────────────────────────────
+// Tracks the rolling 90-day average kWh/kWp (specific yield) and compares
+// it to the prior 90-day window. A drop > 2% is flagged as accelerated
+// degradation — PV modules typically lose 0.5%/year, so > 8% YoY (≈ 2%
+// per 90 days) is well above warranty curves and warrants investigation.
+async function findModuleDegradation(env: HonoEnv['Bindings'], siteIds: string[],
+                                     sitesByID: Map<string, any>): Promise<Opportunity[]> {
+  if (!siteIds.length) return [];
+  const ph = siteIds.map(() => '?').join(',');
+  const rows = await env.DB.prepare(`
+    SELECT site_id,
+      SUM(CASE WHEN ts >= datetime('now','-90 days') THEN interval_kwh ELSE 0 END) AS recent_kwh,
+      SUM(CASE WHEN ts < datetime('now','-90 days')
+              AND ts >= datetime('now','-180 days') THEN interval_kwh ELSE 0 END) AS prior_kwh
+    FROM om_telemetry
+    WHERE site_id IN (${ph}) AND ts >= datetime('now','-180 days')
+    GROUP BY site_id HAVING recent_kwh > 0 AND prior_kwh > 0
+  `).bind(...siteIds).all<any>().catch(() => ({ results: [] as any[] }));
+  const opps: Opportunity[] = [];
+  for (const r of (rows.results || []) as any[]) {
+    const site = sitesByID.get(r.site_id);
+    if (!site || !site.capacity_mw) continue;
+    const recent = Number(r.recent_kwh);
+    const prior  = Number(r.prior_kwh);
+    if (prior <= 0) continue;
+    const dropPct = ((prior - recent) / prior) * 100;
+    if (dropPct < 2.0) continue;                                    // not yet over the alarm threshold
+    // Annual upside: closing half the gap saves (dropPct - 1)/100 of revenue
+    // assuming R1.2/kWh blended PPA and 1500 kWh/kWp annual specific yield.
+    const annualGenMwh = Number(site.capacity_mw) * 1500;
+    const lostMwh = annualGenMwh * ((dropPct - 1.0) / 100);
+    opps.push({
+      id: genId('opp'),
+      category: 'module_degradation',
+      site_id: r.site_id,
+      site_name: site.name,
+      title: `${site.name} specific yield down ${dropPct.toFixed(1)}% in last 90 days`,
+      detail: `Recent 90-day yield is ${dropPct.toFixed(1)}% below the prior window — outside the typical ` +
+              `0.5%/yr PV degradation curve. Possible PID (potential-induced degradation), hotspot or shading.`,
+      annual_upside_zar: Math.round(lostMwh * 1_200_000),            // R1.2/kWh × kWh/MWh
+      effort: 'medium',
+      confidence: 0.7,
+      evidence: [
+        `Recent 90d kWh: ${Math.round(recent).toLocaleString()}`,
+        `Prior 90d kWh: ${Math.round(prior).toLocaleString()}`,
+        `Drop: ${dropPct.toFixed(1)}%`,
+      ],
+      action: { kind: 'thermal_imaging', payload: { site_id: r.site_id } },
+    });
+  }
+  return opps;
+}
+
+// ─── 13. Curtailment loss recovery ─────────────────────────────────────
+// Sites with frequent grid curtailment events (logged as faults with
+// category = 'curtailment') are candidates for behind-the-meter battery
+// storage or inverter upsize. Annual upside = avg recovered MWh × R/kWh.
+async function findCurtailmentRecovery(env: HonoEnv['Bindings'], siteIds: string[],
+                                       sitesByID: Map<string, any>): Promise<Opportunity[]> {
+  if (!siteIds.length) return [];
+  const ph = siteIds.map(() => '?').join(',');
+  const rows = await env.DB.prepare(`
+    SELECT site_id,
+      COUNT(*) AS events,
+      SUM(total_loss_zar) AS lost_zar
+    FROM om_faults
+    WHERE site_id IN (${ph})
+      AND category = 'curtailment'
+      AND detected_at >= date('now', '-90 days')
+    GROUP BY site_id HAVING COUNT(*) >= 3
+  `).bind(...siteIds).all<any>().catch(() => ({ results: [] as any[] }));
+  const opps: Opportunity[] = [];
+  for (const r of (rows.results || []) as any[]) {
+    const site = sitesByID.get(r.site_id);
+    if (!site) continue;
+    const lost = Number(r.lost_zar);
+    // 4x to annualise; assume battery storage recovers ~60% of curtailed energy.
+    const annualLost = lost * 4;
+    const recoverable = annualLost * 0.6;
+    opps.push({
+      id: genId('opp'),
+      category: 'curtailment_recovery',
+      site_id: r.site_id,
+      site_name: site.name,
+      title: `${site.name} had ${r.events} curtailment events in last 90 days`,
+      detail: `Site is being curtailed frequently. A behind-the-meter battery sized to ` +
+              `60–80 % of the daily curtailed energy would recover the majority of this revenue.`,
+      annual_upside_zar: Math.round(recoverable),
+      effort: 'high',
+      confidence: 0.6,
+      evidence: [
+        `${r.events} curtailment events in 90d`,
+        `Lost in 90d: R${Math.round(lost).toLocaleString()}`,
+        `Annualised: R${Math.round(annualLost).toLocaleString()}`,
+      ],
+      action: { kind: 'investigate', payload: { site_id: r.site_id, focus: 'battery_sizing' } },
+    });
+  }
+  return opps;
+}
+
 // ─── Master endpoint ────────────────────────────────────────────────────
 // Cached 5 min — opportunity rules don't change minute-to-minute and the
-// scan does 11 parallel D1 queries.
+// scan does 13 parallel D1 queries.
 ana.get('/opportunities', async (c) => {
   const user = getCurrentUser(c);
   const isOfficer = ['admin', 'support', 'regulator'].includes(user.role);
@@ -605,7 +708,7 @@ ana.get('/opportunities', async (c) => {
     const siteIds = sites.map((s) => s.id);
     const sitesByID = new Map(sites.map((s) => [s.id, s]));
 
-    const [c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11] = await Promise.all([
+    const [c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13] = await Promise.all([
       findSoilingOpportunities(c.env, siteIds, sitesByID),
       findRecurringFaultOpportunities(c.env, siteIds, sitesByID),
       findUnderperformingStringOpportunities(c.env, siteIds, sitesByID),
@@ -617,8 +720,10 @@ ana.get('/opportunities', async (c) => {
       findWarrantyLeakage(c.env, siteIds, sitesByID),
       findMaintenanceBacklog(c.env, siteIds, sitesByID),
       findOmCostOutliers(c.env, siteIds, sitesByID),
+      findModuleDegradation(c.env, siteIds, sitesByID),
+      findCurtailmentRecovery(c.env, siteIds, sitesByID),
     ]);
-    const all = [...c1, ...c2, ...c3, ...c4, ...c5, ...c6, ...c7, ...c8, ...c9, ...c10, ...c11];
+    const all = [...c1, ...c2, ...c3, ...c4, ...c5, ...c6, ...c7, ...c8, ...c9, ...c10, ...c11, ...c12, ...c13];
     all.sort((a, b) => b.annual_upside_zar - a.annual_upside_zar);
 
     const total = all.reduce((s, o) => s + o.annual_upside_zar, 0);
