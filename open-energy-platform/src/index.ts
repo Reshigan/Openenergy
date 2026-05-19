@@ -100,6 +100,7 @@ import businessDepthRoutes, { computeLatePaymentFees } from './routes/business-d
 import bulkOpsRoutes from './routes/bulk-ops';
 import uxStateRoutes from './routes/ux-state';
 import documentsRoutes from './routes/documents';
+import printPacksRoutes from './routes/print-packs';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -324,6 +325,7 @@ app.route('/api/business-depth',      businessDepthRoutes);
 app.route('/api/bulk',                bulkOpsRoutes);
 app.route('/api/ux-state',            uxStateRoutes);
 app.route('/api/documents',           documentsRoutes);
+app.route('/api/print-packs',         printPacksRoutes);
 
 // Admin-only "run cron once" endpoint — invokes the same runCron() that the
 // Workers scheduler fires, but on demand so operators (and the smoke-cron
