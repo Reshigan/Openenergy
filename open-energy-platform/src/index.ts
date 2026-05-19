@@ -72,6 +72,14 @@ import esumsOmIntelRoutes from './routes/esums-om-intel';
 import esumsOmAnalysisRoutes from './routes/esums-om-analysis';
 import { portalAdmin as esumsOmPortalAdmin, portalPublic as esumsOmPortalPublic } from './routes/esums-om-portal';
 import platformFeaturesRoutes from './routes/platform-features';
+import {
+  mfa as mfaRoutes,
+  kyc as kycRoutes,
+  consent as consentRoutes,
+  popia as popiaSelfServiceRoutes,
+  regulator as regulatorReportRoutes,
+  status as publicStatusRoutes,
+} from './routes/go-live';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -259,6 +267,13 @@ app.route('/api/esums-om', esumsOmRoutes);
 app.route('/api/esums-om', esumsOmIntelRoutes);
 app.route('/api/esums-om', esumsOmAnalysisRoutes);
 app.route('/api', platformFeaturesRoutes);
+// Public status page MUST be mounted BEFORE auth-protected siblings.
+app.route('/api/public/status', publicStatusRoutes);
+app.route('/api/mfa',         mfaRoutes);
+app.route('/api/kyc',         kycRoutes);
+app.route('/api/consent',     consentRoutes);
+app.route('/api/popia',       popiaSelfServiceRoutes);
+app.route('/api/regulator',   regulatorReportRoutes);
 
 // Admin-only "run cron once" endpoint — invokes the same runCron() that the
 // Workers scheduler fires, but on demand so operators (and the smoke-cron
@@ -448,6 +463,33 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
             AND status NOT IN ('completed','verified','closed','cancelled')
             AND (sla_breached IS NULL OR sla_breached = 0)
         `).run();
+      });
+      // Status page: ingest a per-minute SLO sample.
+      await safe('status_slo_ingest', async () => {
+        const t0 = Date.now();
+        await env.DB.prepare(`SELECT 1`).first();
+        const dbMs = Date.now() - t0;
+        const minute = new Date(); minute.setSeconds(0, 0);
+        const ts = minute.toISOString();
+        await env.DB.prepare(`
+          INSERT OR REPLACE INTO oe_status_metrics (ts, metric, value) VALUES
+            (?, 'd1_query_ms', ?),
+            (?, 'up', 1)
+        `).bind(ts, dbMs, ts).run();
+      });
+      // POPIA: execute deletions whose 30-day cooling-off has elapsed.
+      await safe('popia_deletion_executor', async () => {
+        const due = await env.DB.prepare(`
+          SELECT id, participant_id FROM oe_deletion_requests
+          WHERE status = 'cooling_off' AND scheduled_for <= datetime('now') LIMIT 20
+        `).all<{ id: string; participant_id: string }>();
+        for (const r of (due.results || []) as Array<{ id: string; participant_id: string }>) {
+          // Soft-delete: anonymise PII columns + revoke sessions. Hard-delete
+          // would break audit chains.
+          await env.DB.prepare(`UPDATE participants SET email = NULL, name = '[deleted]', phone = NULL, kyc_status = 'deleted' WHERE id = ?`).bind(r.participant_id).run().catch(() => null);
+          await env.DB.prepare(`DELETE FROM sessions WHERE participant_id = ?`).bind(r.participant_id).run().catch(() => null);
+          await env.DB.prepare(`UPDATE oe_deletion_requests SET status = 'completed', completed_at = datetime('now') WHERE id = ?`).bind(r.id).run();
+        }
       });
       // Esums O&M: synthetic ingestion poll for enabled connections.
       // Batched INSERT per connection — one D1 round-trip instead of N.

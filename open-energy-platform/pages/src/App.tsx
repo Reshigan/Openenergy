@@ -80,6 +80,9 @@ const EsumsOmPage           = React.lazy(() => import('./components/pages/EsumsO
 const EsumsOmPortalView     = React.lazy(() => import('./components/pages/EsumsOmPortalView').then(m => ({ default: m.EsumsOmPortalView })));
 const PlatformSettingsPage  = React.lazy(() => import('./components/pages/PlatformSettingsPage').then(m => ({ default: m.PlatformSettingsPage })));
 const EsumsOmFieldWosPage   = React.lazy(() => import('./components/pages/EsumsOmFieldWosPage').then(m => ({ default: m.EsumsOmFieldWosPage })));
+const ComplianceSettingsPage= React.lazy(() => import('./components/pages/ComplianceSettingsPage').then(m => ({ default: m.ComplianceSettingsPage })));
+const PublicStatusPage      = React.lazy(() => import('./components/pages/PublicStatusPage').then(m => ({ default: m.PublicStatusPage })));
+import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { Skeleton } from './components/Skeleton';
 import { EmptyState } from './components/EmptyState';
 import { ErrorBanner } from './components/ErrorBanner';
@@ -1313,6 +1316,9 @@ function AppRoutes() {
       <Route path="/settings/platform" element={<ProtectedRoute><Layout><LazyWorkbench><PlatformSettingsPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       {/* Field-tech mobile WO flow — no app chrome by design (fullscreen PWA) */}
       <Route path="/esums-om/field/wos" element={<ProtectedRoute><LazyWorkbench><EsumsOmFieldWosPage /></LazyWorkbench></ProtectedRoute>} />
+      <Route path="/settings/compliance" element={<ProtectedRoute><Layout><LazyWorkbench><ComplianceSettingsPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      {/* Public status page — no auth required */}
+      <Route path="/status" element={<LazyWorkbench><PublicStatusPage /></LazyWorkbench>} />
       <Route path="/esums-om/faults/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/esums-om/workorders/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/esums-om/sites/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
@@ -1348,6 +1354,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <AppRoutes />
+        <CookieConsentBanner />
       </AuthProvider>
     </BrowserRouter>
   );
