@@ -147,3 +147,55 @@ self.addEventListener('notificationclick', (event) => {
   const target = event.notification.data?.url || '/cockpit';
   event.waitUntil(self.clients.openWindow(target));
 });
+
+// ─── Background Sync — flushes the IndexedDB mutation queue on
+// connectivity restore, even with the SPA closed. The SPA's
+// pages/src/lib/offlineQueue.ts registers `oe-flush-mutations` on every
+// enqueue; the browser fires `sync` when it sees the network return.
+self.addEventListener('sync', (event) => {
+  if (event.tag !== 'oe-flush-mutations') return;
+  event.waitUntil((async () => {
+    try {
+      const clients = await self.clients.matchAll({ includeUncontrolled: true });
+      for (const client of clients) {
+        client.postMessage({ type: 'oe:flush-mutations' });
+      }
+      if (!clients.length) await drainQueueFromSw();
+    } catch (e) { /* swallow — page will retry */ }
+  })());
+});
+
+async function drainQueueFromSw() {
+  return new Promise((resolve) => {
+    const req = indexedDB.open('oe-field', 1);
+    req.onerror = () => resolve(null);
+    req.onsuccess = async () => {
+      const db = req.result;
+      try {
+        const tx = db.transaction('mutations', 'readonly');
+        const store = tx.objectStore('mutations');
+        const all = await new Promise((res, rej) => {
+          const r = store.getAll();
+          r.onsuccess = () => res(r.result || []);
+          r.onerror = () => rej(r.error);
+        });
+        for (const m of (all || [])) {
+          try {
+            const headers = { ...(m.headers || {}) };
+            let body;
+            if (m.body != null) {
+              headers['content-type'] = 'application/json';
+              body = JSON.stringify(m.body);
+            }
+            const r = await fetch(m.url, { method: m.method, headers, body });
+            if (r.ok) {
+              const tx2 = db.transaction('mutations', 'readwrite');
+              tx2.objectStore('mutations').delete(m.id);
+            }
+          } catch { /* SPA will retry on next visibility */ }
+        }
+      } catch { /* ignore */ }
+      resolve(null);
+    };
+  });
+}

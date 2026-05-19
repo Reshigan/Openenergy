@@ -85,6 +85,7 @@ const PublicStatusPage      = React.lazy(() => import('./components/pages/Public
 const ComplianceAdminPage   = React.lazy(() => import('./components/pages/ComplianceAdminPage').then(m => ({ default: m.ComplianceAdminPage })));
 const DepthOpsPage          = React.lazy(() => import('./components/pages/DepthOpsPage').then(m => ({ default: m.DepthOpsPage })));
 import { CookieConsentBanner } from './components/CookieConsentBanner';
+import { startAutoFlush, flushQueue } from './lib/offlineQueue';
 import { Skeleton } from './components/Skeleton';
 import { EmptyState } from './components/EmptyState';
 import { ErrorBanner } from './components/ErrorBanner';
@@ -1354,6 +1355,16 @@ function AppRoutes() {
 
 // Main App
 export default function App() {
+  // Auto-flush IndexedDB mutation queue on visibility + connectivity.
+  // Also handle SW background-sync postMessage requesting drain.
+  React.useEffect(() => {
+    const stop = startAutoFlush(30_000);
+    const onMsg = (ev: MessageEvent) => {
+      if (ev.data?.type === 'oe:flush-mutations') void flushQueue();
+    };
+    navigator.serviceWorker?.addEventListener('message', onMsg);
+    return () => { stop(); navigator.serviceWorker?.removeEventListener('message', onMsg); };
+  }, []);
   return (
     <BrowserRouter>
       <AuthProvider>

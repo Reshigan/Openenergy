@@ -21,6 +21,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
+import { enqueueMutation, flushQueue, offlineFirstFetch, listPending } from '../../lib/offlineQueue';
 
 type WoRow = {
   id: string;
@@ -59,21 +60,58 @@ export function EsumsOmFieldWosPage() {
   const [active, setActive] = useState<WoRow | null>(null);
   const [busy, setBusy] = useState(false);
   const [refresh, setRefresh] = useState(0);
+  const [offline, setOffline] = useState(!navigator.onLine);
+  const [pendingCount, setPendingCount] = useState(0);
   const navigate = useNavigate();
 
+  // Online / offline indicator + queue badge
   useEffect(() => {
-    api.get(`/esums-om/work-orders${user?.id ? `?assigned_to=${user.id}` : ''}`)
-      .then((r) => setRows((r.data?.data || []).filter((w: WoRow) =>
-        !['completed', 'verified', 'closed', 'cancelled'].includes(w.status))))
-      .catch(() => setRows([]));
+    const update = () => { setOffline(!navigator.onLine); void listPending().then((p) => setPendingCount(p.length)); };
+    update();
+    const onOnline  = () => { update(); void flushQueue().then(update); };
+    const onOffline = () => update();
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    const tick = setInterval(update, 15_000);
+    return () => { window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline); clearInterval(tick); };
+  }, []);
+
+  // Offline-first load — try network, cache to IndexedDB, on failure
+  // read from cache. The detail screen still renders fully.
+  useEffect(() => {
+    const url = `/api/esums-om/work-orders${user?.id ? `?assigned_to=${user.id}` : ''}`;
+    void offlineFirstFetch(url, undefined, { cacheKey: `wos:${user?.id || 'all'}`, ttlSeconds: 24 * 3600 })
+      .then(({ data }) => {
+        const arr = (data?.data || []) as WoRow[];
+        setRows(arr.filter((w) => !['completed', 'verified', 'closed', 'cancelled'].includes(w.status)));
+      });
   }, [user?.id, refresh]);
 
   const transition = async (wo: WoRow, to: string, extra?: Record<string, any>) => {
     setBusy(true);
+    // Optimistic UI — flip status locally now, even if offline
+    setRows((rs) => rs.map((r) => r.id === wo.id ? { ...r, status: to } : r));
+    setActive((cur) => cur && cur.id === wo.id ? { ...cur, status: to } : cur);
     try {
-      await api.post(`/esums-om/work-orders/${wo.id}/transition`, { to, ...(extra || {}) });
+      if (navigator.onLine) {
+        await api.post(`/esums-om/work-orders/${wo.id}/transition`, { to, ...(extra || {}) });
+      } else {
+        await enqueueMutation({
+          url: `/api/esums-om/work-orders/${wo.id}/transition`,
+          method: 'POST',
+          body: { to, ...(extra || {}) },
+        });
+        void listPending().then((p) => setPendingCount(p.length));
+      }
       setRefresh((n) => n + 1);
-      setActive((cur) => cur && cur.id === wo.id ? { ...cur, status: to } : cur);
+    } catch (e) {
+      // Network blip even though `navigator.onLine` reported true — queue it
+      await enqueueMutation({
+        url: `/api/esums-om/work-orders/${wo.id}/transition`,
+        method: 'POST',
+        body: { to, ...(extra || {}) },
+      });
+      void listPending().then((p) => setPendingCount(p.length));
     } finally { setBusy(false); }
   };
 
@@ -95,18 +133,28 @@ export function EsumsOmFieldWosPage() {
   const uploadPhoto = async (wo: WoRow, file: File, label: string) => {
     setBusy(true);
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('entity_type', 'om_work_orders');
-      fd.append('entity_id', wo.id);
-      const up = await fetch('/api/vault/upload-direct', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
-        body: fd,
-      });
-      const j = await up.json();
-      if (j?.success && j?.data?.r2_key) {
-        await api.post(`/esums-om/work-orders/${wo.id}/photo`, { r2_key: j.data.r2_key, label });
+      if (navigator.onLine) {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('entity_type', 'om_work_orders');
+        fd.append('entity_id', wo.id);
+        const up = await fetch('/api/vault/upload-direct', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+          body: fd,
+        });
+        const j = await up.json();
+        if (j?.success && j?.data?.r2_key) {
+          await api.post(`/esums-om/work-orders/${wo.id}/photo`, { r2_key: j.data.r2_key, label });
+        }
+      } else {
+        // Offline — queue the multipart upload; the blob is held in IDB
+        await enqueueMutation({
+          url: '/api/vault/upload-direct',
+          method: 'POST',
+          formData: { file, fields: { entity_type: 'om_work_orders', entity_id: wo.id } },
+        });
+        void listPending().then((p) => setPendingCount(p.length));
       }
     } finally { setBusy(false); }
   };
@@ -126,10 +174,12 @@ export function EsumsOmFieldWosPage() {
   // ─── List view ───
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-20">
-      <header className="bg-[#1a3a5c] text-white px-4 py-3 sticky top-0 z-10 flex items-center justify-between shadow">
+      <header className={`text-white px-4 py-3 sticky top-0 z-10 flex items-center justify-between shadow ${offline ? 'bg-[#b04e0f]' : 'bg-[#1a3a5c]'}`}>
         <button onClick={() => navigate('/esums-om')} className="p-1.5 -ml-1.5"><ArrowLeft size={20} /></button>
         <div className="text-center flex-1">
-          <div className="text-[10px] uppercase tracking-wider opacity-80">Esums O&amp;M · Field</div>
+          <div className="text-[10px] uppercase tracking-wider opacity-80 inline-flex items-center gap-1">
+            {offline ? <>OFFLINE · {pendingCount} queued</> : <>Esums O&amp;M · Field{pendingCount > 0 ? ` · ${pendingCount} syncing` : ''}</>}
+          </div>
           <div className="text-[15px] font-semibold">My work orders</div>
         </div>
         <button onClick={() => setRefresh((n) => n + 1)} className="p-1.5 -mr-1.5"><RefreshCw size={18} /></button>
