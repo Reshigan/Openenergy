@@ -422,6 +422,51 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
           await doNs.get(id).fetch('https://order-book/snapshot', { method: 'POST' });
         }
       });
+      // Esums O&M: roll the live revenue impact ticker on open faults.
+      await safe('om_fault_tick', async () => {
+        await env.DB.prepare(`
+          UPDATE om_faults
+          SET total_loss_zar = MAX(total_loss_zar,
+                CAST(((julianday('now') - julianday(detected_at)) * 24 * hourly_loss_zar) AS INTEGER)),
+              updated_at = datetime('now')
+          WHERE status IN ('open','acknowledged','in_progress')
+        `).run();
+      });
+      // Esums O&M: flag SLA-breached work orders.
+      await safe('om_sla_check', async () => {
+        await env.DB.prepare(`
+          UPDATE om_work_orders SET sla_breached = 1
+          WHERE sla_deadline < datetime('now')
+            AND status NOT IN ('completed','verified','closed','cancelled')
+            AND (sla_breached IS NULL OR sla_breached = 0)
+        `).run();
+      });
+      // Esums O&M: synthetic ingestion poll for enabled connections.
+      await safe('om_ingestion_poll', async () => {
+        const conns = await env.DB.prepare(`
+          SELECT id, site_id, polling_minutes, last_poll_at FROM om_connections
+          WHERE enabled = 1
+            AND (last_poll_at IS NULL
+                 OR last_poll_at < datetime('now', '-' || polling_minutes || ' minutes'))
+          LIMIT 50
+        `).all<any>();
+        for (const conn of (conns.results || []) as any[]) {
+          // Synthetic per-device reading
+          const devices = await env.DB.prepare(`SELECT id, rated_kw FROM om_devices WHERE site_id = ?`).bind(conn.site_id).all<any>();
+          const nowIso = new Date().toISOString();
+          for (const d of (devices.results || []) as any[]) {
+            const kw = Number(d.rated_kw || 100) * (0.4 + Math.random() * 0.4);
+            await env.DB.prepare(`
+              INSERT INTO om_telemetry (id, device_id, site_id, ts, ac_kw, interval_kwh, quality)
+              VALUES (?,?,?,?,?,?,?)
+            `).bind(
+              `omt_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+              d.id, conn.site_id, nowIso, kw, kw * 0.25, 'valid',
+            ).run();
+          }
+          await env.DB.prepare(`UPDATE om_connections SET last_poll_at = ?, last_status = 'ok' WHERE id = ?`).bind(nowIso, conn.id).run();
+        }
+      });
       break;
 
     case '0 * * * *':

@@ -157,49 +157,61 @@ intel.post('/predictions/:id/action', async (c) => {
 intel.get('/briefing', async (c) => {
   const user = getCurrentUser(c);
   const isOfficer = ['admin', 'support', 'regulator'].includes(user.role);
-  const siteFilter = isOfficer ? '' : `AND (s.participant_id = '${user.id}' OR s.om_contractor_id = '${user.id}')`;
 
-  // 1. Today's revenue at risk = sum of hourly_loss × hours remaining today
+  // Resolve in-scope site ids once, then bind into each query.
+  const scoped = isOfficer
+    ? await c.env.DB.prepare(`SELECT id FROM om_sites`).all<{ id: string }>()
+    : await c.env.DB.prepare(
+        `SELECT id FROM om_sites WHERE participant_id = ? OR om_contractor_id = ?`,
+      ).bind(user.id, user.id).all<{ id: string }>();
+  const siteIds = ((scoped.results || []) as Array<{ id: string }>).map((s) => s.id);
+  if (!siteIds.length) {
+    return c.json({ success: true, data: {
+      generated_at: new Date().toISOString(),
+      summary: { open_faults: 0, bleed_rate_zar_hour: 0, sla_at_risk: 0, predictions_open: 0, maintenance_due_7d: 0 },
+      insights: [],
+    } });
+  }
+  const ph = siteIds.map(() => '?').join(',');
+
   const bleed = await c.env.DB.prepare(`
-    SELECT COALESCE(SUM(f.hourly_loss_zar), 0) AS bleed,
+    SELECT COALESCE(SUM(hourly_loss_zar), 0) AS bleed,
            COUNT(*) AS open_faults
-    FROM om_faults f LEFT JOIN om_sites s ON s.id = f.site_id
-    WHERE f.status IN ('open','acknowledged','in_progress') ${siteFilter}
-  `).first<any>();
+    FROM om_faults
+    WHERE site_id IN (${ph}) AND status IN ('open','acknowledged','in_progress')
+  `).bind(...siteIds).first<any>();
 
-  // 2. Top 3 most expensive open faults
   const topFaults = await c.env.DB.prepare(`
     SELECT f.id, f.site_id, f.severity, f.description, f.hourly_loss_zar, f.detected_at, s.name AS site_name
     FROM om_faults f LEFT JOIN om_sites s ON s.id = f.site_id
-    WHERE f.status IN ('open','acknowledged','in_progress') ${siteFilter}
+    WHERE f.site_id IN (${ph}) AND f.status IN ('open','acknowledged','in_progress')
     ORDER BY f.hourly_loss_zar DESC LIMIT 3
-  `).all();
+  `).bind(...siteIds).all();
 
-  // 3. SLA at-risk WOs (deadline within 1h)
   const slaWatch = await c.env.DB.prepare(`
     SELECT w.id, w.wo_number, w.priority, w.sla_deadline, s.name AS site_name
     FROM om_work_orders w LEFT JOIN om_sites s ON s.id = w.site_id
-    WHERE w.status NOT IN ('completed','verified','closed','cancelled')
-      AND w.sla_deadline < datetime('now', '+1 hour') ${siteFilter}
+    WHERE w.site_id IN (${ph})
+      AND w.status NOT IN ('completed','verified','closed','cancelled')
+      AND w.sla_deadline < datetime('now', '+1 hour')
     ORDER BY w.sla_deadline ASC LIMIT 5
-  `).all();
+  `).bind(...siteIds).all();
 
-  // 4. Maintenance due this week
   const maintenance = await c.env.DB.prepare(`
     SELECT m.id, m.task_type, m.next_due_at, s.name AS site_name
     FROM om_maintenance m LEFT JOIN om_sites s ON s.id = m.site_id
-    WHERE m.next_due_at <= date('now', '+7 days') AND m.status = 'scheduled' ${siteFilter}
+    WHERE m.site_id IN (${ph})
+      AND m.next_due_at <= date('now', '+7 days') AND m.status = 'scheduled'
     ORDER BY m.next_due_at ASC LIMIT 5
-  `).all();
+  `).bind(...siteIds).all();
 
-  // 5. Open predictions sorted by confidence
   const predictions = await c.env.DB.prepare(`
     SELECT p.id, p.site_id, p.prediction_type, p.confidence, p.recommended_action,
            p.estimated_loss_zar, s.name AS site_name
     FROM om_predictions p LEFT JOIN om_sites s ON s.id = p.site_id
-    WHERE p.status = 'open' ${siteFilter}
+    WHERE p.site_id IN (${ph}) AND p.status = 'open'
     ORDER BY p.confidence DESC LIMIT 3
-  `).all();
+  `).bind(...siteIds).all();
 
   // Compose narrative insights
   const insights: any[] = [];

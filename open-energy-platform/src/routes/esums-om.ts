@@ -696,20 +696,36 @@ om.get('/fleet-kpis', async (c) => {
   const user = getCurrentUser(c);
   const isOfficer = ['admin', 'support', 'regulator'].includes(user.role);
 
-  const siteFilter = isOfficer ? '' : `AND (s.participant_id = '${user.id}' OR s.om_contractor_id = '${user.id}')`;
+  // Resolve site IDs in scope up front, then bind into each query.
+  const scopedSites = isOfficer
+    ? await c.env.DB.prepare(`SELECT id, capacity_mw, ppa_tariff_zar_mwh FROM om_sites`).all<any>()
+    : await c.env.DB.prepare(
+        `SELECT id, capacity_mw, ppa_tariff_zar_mwh FROM om_sites
+         WHERE participant_id = ? OR om_contractor_id = ?`,
+      ).bind(user.id, user.id).all<any>();
+  const siteIds = ((scopedSites.results || []) as Array<{ id: string }>).map((s) => s.id);
+  const siteCount = siteIds.length;
+  const totalMw = ((scopedSites.results || []) as Array<{ capacity_mw: number }>).reduce((s, r) => s + Number(r.capacity_mw || 0), 0);
 
-  const totals = await c.env.DB.prepare(`
-    SELECT
-      COUNT(*) AS site_count,
-      COALESCE(SUM(s.capacity_mw),0) AS total_mw
-    FROM om_sites s WHERE 1=1 ${siteFilter}
-  `).first<any>();
+  if (!siteIds.length) {
+    return c.json({
+      success: true,
+      data: {
+        total_sites: 0, total_mw: 0, today_kwh: 0, today_revenue_zar: 0,
+        blended_tariff_zar_mwh: TARIFF_FALLBACK, availability_pct: 100,
+        open_faults: 0, critical_faults: 0, major_faults: 0,
+        bleed_rate_zar_hour: 0, lost_so_far_zar: 0,
+        open_work_orders: 0, sla_breached_open: 0,
+      },
+    });
+  }
+  const placeholders = siteIds.map(() => '?').join(',');
 
   const today = await c.env.DB.prepare(`
     SELECT COALESCE(SUM(t.interval_kwh), 0) AS today_kwh
-    FROM om_telemetry t JOIN om_sites s ON s.id = t.site_id
-    WHERE t.ts >= date('now') ${siteFilter}
-  `).first<any>();
+    FROM om_telemetry t
+    WHERE t.site_id IN (${placeholders}) AND t.ts >= date('now')
+  `).bind(...siteIds).first<any>();
 
   const faults = await c.env.DB.prepare(`
     SELECT
@@ -718,40 +734,42 @@ om.get('/fleet-kpis', async (c) => {
       COALESCE(SUM(total_loss_zar), 0)  AS lost_so_far,
       SUM(CASE severity WHEN 'critical' THEN 1 ELSE 0 END) AS critical_count,
       SUM(CASE severity WHEN 'major'    THEN 1 ELSE 0 END) AS major_count
-    FROM om_faults f
-    LEFT JOIN om_sites s ON s.id = f.site_id
-    WHERE f.status IN ('open','acknowledged','in_progress') ${siteFilter}
-  `).first<any>();
+    FROM om_faults
+    WHERE site_id IN (${placeholders})
+      AND status IN ('open','acknowledged','in_progress')
+  `).bind(...siteIds).first<any>();
 
   const wos = await c.env.DB.prepare(`
     SELECT
       COUNT(*) AS open_wos,
-      SUM(CASE WHEN sla_deadline < datetime('now') AND status NOT IN ('completed','verified','closed','cancelled') THEN 1 ELSE 0 END) AS sla_breached_open
-    FROM om_work_orders w
-    LEFT JOIN om_sites s ON s.id = w.site_id
-    WHERE w.status NOT IN ('completed','verified','closed','cancelled') ${siteFilter}
-  `).first<any>();
+      SUM(CASE WHEN sla_deadline < datetime('now')
+                AND status NOT IN ('completed','verified','closed','cancelled')
+               THEN 1 ELSE 0 END) AS sla_breached_open
+    FROM om_work_orders
+    WHERE site_id IN (${placeholders})
+      AND status NOT IN ('completed','verified','closed','cancelled')
+  `).bind(...siteIds).first<any>();
 
-  // Best-effort fleet PR / availability — derive from telemetry presence
   const onlineRatio = await c.env.DB.prepare(`
     SELECT
-      SUM(CASE WHEN d.status = 'online'  THEN 1 ELSE 0 END) AS online_devices,
+      SUM(CASE WHEN status = 'online' THEN 1 ELSE 0 END) AS online_devices,
       COUNT(*) AS total_devices
-    FROM om_devices d LEFT JOIN om_sites s ON s.id = d.site_id WHERE 1=1 ${siteFilter}
-  `).first<any>();
+    FROM om_devices
+    WHERE site_id IN (${placeholders})
+  `).bind(...siteIds).first<any>();
   const availability = Number(onlineRatio?.total_devices || 0) > 0
     ? Number(onlineRatio?.online_devices || 0) / Number(onlineRatio?.total_devices || 1)
     : 1;
 
-  // Today's revenue at 1500/MWh weighted average
   const todayKwh = Number(today?.today_kwh || 0);
-  // Compute weighted tariff from sites' ppa_tariff_zar_mwh
-  const wt = await c.env.DB.prepare(`
-    SELECT
-      COALESCE(SUM(s.ppa_tariff_zar_mwh * s.capacity_mw), 0) AS num,
-      COALESCE(SUM(s.capacity_mw), 0) AS den
-    FROM om_sites s WHERE s.ppa_tariff_zar_mwh IS NOT NULL ${siteFilter}
-  `).first<{ num: number; den: number }>();
+  // Weighted tariff from in-scope sites
+  let num = 0, den = 0;
+  for (const r of (scopedSites.results || []) as Array<{ capacity_mw: number; ppa_tariff_zar_mwh: number }>) {
+    if (!r.ppa_tariff_zar_mwh) continue;
+    num += Number(r.ppa_tariff_zar_mwh) * Number(r.capacity_mw || 0);
+    den += Number(r.capacity_mw || 0);
+  }
+  const wt = { num, den };
   const blendedTariff = Number(wt?.den || 0) > 0
     ? Number(wt?.num || 0) / Number(wt?.den || 1)
     : TARIFF_FALLBACK;
@@ -760,8 +778,8 @@ om.get('/fleet-kpis', async (c) => {
   return c.json({
     success: true,
     data: {
-      total_sites: Number(totals?.site_count || 0),
-      total_mw: Number(totals?.total_mw || 0),
+      total_sites: siteCount,
+      total_mw: totalMw,
       today_kwh: todayKwh,
       today_revenue_zar: todayRevenue,
       blended_tariff_zar_mwh: Math.round(blendedTariff),
