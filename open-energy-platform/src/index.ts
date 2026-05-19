@@ -67,6 +67,9 @@ import backupRoutes from './routes/backup';
 import searchRoutes from './routes/search';
 import notificationsRoutes from './routes/notifications';
 import scheduleRoutes from './routes/schedule';
+import esumsOmRoutes from './routes/esums-om';
+import esumsOmIntelRoutes from './routes/esums-om-intel';
+import esumsOmPortalRoutes from './routes/esums-om-portal';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -245,6 +248,9 @@ app.route('/api/backup', backupRoutes);
 app.route('/api/search', searchRoutes);
 app.route('/api/notifications', notificationsRoutes);
 app.route('/api/schedule', scheduleRoutes);
+app.route('/api/esums-om', esumsOmRoutes);
+app.route('/api/esums-om', esumsOmIntelRoutes);
+app.route('/api/esums-om/portal', esumsOmPortalRoutes);
 
 // Admin-only "run cron once" endpoint — invokes the same runCron() that the
 // Workers scheduler fires, but on demand so operators (and the smoke-cron
