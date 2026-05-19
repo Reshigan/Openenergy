@@ -60,6 +60,20 @@
       "icons": [{ "src": "/logos/oe-mark.svg", "sizes": "any", "type": "image/svg+xml" }]
     },
     {
+      "name": "Esums O&M Cockpit",
+      "short_name": "Esums O&M",
+      "description": "Asset intelligence cockpit",
+      "url": "/esums-om",
+      "icons": [{ "src": "/logos/oe-mark.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Field tech: my work orders",
+      "short_name": "WOs",
+      "description": "Assigned work orders for field technicians",
+      "url": "/esums-om/field/wos",
+      "icons": [{ "src": "/logos/oe-mark.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
       "name": "Marketplace",
       "short_name": "Market",
       "description": "Browse listings",
