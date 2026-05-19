@@ -88,6 +88,7 @@ import reportsDeepRoutes from './routes/reports-deep';
 import tradingDeepRoutes from './routes/trading-deep';
 import settlementDeepRoutes from './routes/settlement-deep';
 import { ipp as ippDeepRoutes, lender as lenderDeepRoutes, carbon as carbonDeepRoutes } from './routes/depth-3';
+import gridL5Routes from './routes/grid-l5';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -298,6 +299,7 @@ app.route('/api/settlement-deep', settlementDeepRoutes);
 app.route('/api/ipp-deep',        ippDeepRoutes);
 app.route('/api/lender-deep',     lenderDeepRoutes);
 app.route('/api/carbon-deep',     carbonDeepRoutes);
+app.route('/api/grid-l5',         gridL5Routes);
 
 // Admin-only "run cron once" endpoint — invokes the same runCron() that the
 // Workers scheduler fires, but on demand so operators (and the smoke-cron
