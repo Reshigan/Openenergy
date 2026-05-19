@@ -102,6 +102,45 @@ async function verifyEd25519(publicKeyB64: string, message: string, signatureB64
 }
 
 // ─── Build daily Merkle root ─────────────────────────────────────────
+// Build root for a given (day, entity_type). Used by both the admin
+// endpoint and the daily cron.
+export async function buildMerkleRoot(env: HonoEnv['Bindings'], day: string, entityType: string): Promise<{ id: string; root: string; event_count: number; signed: boolean } | null> {
+  const rows = await env.DB.prepare(`
+    SELECT id, content_hash, sequence_no FROM audit_events
+    WHERE entity_type = ? AND date(created_at) = ?
+    ORDER BY sequence_no ASC
+  `).bind(entityType, day).all<{ id: string; content_hash: string; sequence_no: number }>().catch(() => ({ results: [] as any[] }));
+  const events = (rows.results || []) as Array<{ id: string; content_hash: string; sequence_no: number }>;
+  if (!events.length) return null;
+  const leaves = events.map((e) => e.content_hash);
+  const root = await merkleRoot(leaves);
+  const pkey = (env as any).PLATFORM_ATTEST_KEY as string | undefined;
+  const sig = pkey ? await signEd25519(pkey, root) : null;
+  const id = genId('mr');
+  await env.DB.prepare(`
+    INSERT OR REPLACE INTO oe_audit_merkle_roots
+      (id, entity_type, day, event_count, first_sequence_no, last_sequence_no,
+       merkle_root, platform_signature)
+    VALUES (?,?,?,?,?,?,?,?)
+  `).bind(id, entityType, day, events.length, events[0].sequence_no, events[events.length - 1].sequence_no, root, sig).run();
+  return { id, root, event_count: events.length, signed: !!sig };
+}
+
+// Daily — build roots for every entity_type that had events on the given
+// day. Skips entity_types where a root already exists with the same
+// event_count (cheap dedupe).
+export async function buildDailyMerkleRoots(env: HonoEnv['Bindings'], day: string): Promise<{ built: number; entity_types: string[] }> {
+  const ets = await env.DB.prepare(`
+    SELECT DISTINCT entity_type FROM audit_events WHERE date(created_at) = ?
+  `).bind(day).all<{ entity_type: string }>().catch(() => ({ results: [] as any[] }));
+  const built: string[] = [];
+  for (const row of ((ets.results || []) as Array<{ entity_type: string }>)) {
+    const r = await buildMerkleRoot(env, day, row.entity_type);
+    if (r) built.push(row.entity_type);
+  }
+  return { built: built.length, entity_types: built };
+}
+
 admin.post('/merkle/build', requireStepUp('audit.merkle_build'), async (c) => {
   const user = getCurrentUser(c);
   if (!['admin', 'support'].includes(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);

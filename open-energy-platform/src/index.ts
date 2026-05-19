@@ -451,6 +451,8 @@ import { runSurveillanceScan } from './routes/regulator-suite';
 import { executeSettlementRun } from './routes/settlement-automation';
 import { executeSettlementRun as executeImbalanceRun } from './routes/imbalance';
 import { verifyChain } from './utils/audit-chain';
+import { runTradingSurveillanceScan } from './routes/trading-clearing-l5';
+import { buildDailyMerkleRoots } from './routes/audit-l5';
 
 async function safe<T>(label: string, fn: () => Promise<T>): Promise<T | null> {
   try {
@@ -474,7 +476,48 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
   switch (pattern) {
     case '*/15 * * * *':
       await safe('surveillance_scan', () => runSurveillanceScan(env));
+      await safe('trading_surveillance_scan', () => runTradingSurveillanceScan(env));
       await safe('siem_dispatch', () => dispatchAllForwarders(env));
+      // Block trades — flip to 'published' once publication_delay has elapsed
+      // so the market can see the print.
+      await safe('block_trade_publish', async () => {
+        await env.DB.prepare(`
+          UPDATE oe_block_trades
+          SET status = 'published', published_at = datetime('now')
+          WHERE status = 'confirmed'
+            AND datetime(trade_time, '+' || COALESCE(publication_delay_minutes,15) || ' minutes') <= datetime('now')
+        `).run().catch(() => null);
+      });
+      // Auctions — close past their end_at and lock the winning bid.
+      await safe('auction_close', async () => {
+        await env.DB.prepare(`
+          UPDATE oe_auctions SET status = 'closed', closed_at = datetime('now')
+          WHERE status = 'open' AND end_at <= datetime('now')
+        `).run().catch(() => null);
+      });
+      // RFQs — close past their close_at so quotes can be evaluated.
+      await safe('rfq_close', async () => {
+        await env.DB.prepare(`
+          UPDATE oe_rfqs SET status = 'evaluating'
+          WHERE status = 'open' AND close_at <= datetime('now')
+        `).run().catch(() => null);
+      });
+      // Curtailment events — mark as 'completed' past their end_at.
+      await safe('curtailment_complete', async () => {
+        await env.DB.prepare(`
+          UPDATE oe_curtailment_events SET status = 'completed'
+          WHERE status IN ('active','accepted') AND end_at <= datetime('now')
+        `).run().catch(() => null);
+      });
+      // Tariff hearings — auto-transition scheduled→in_session once
+      // scheduled_for has passed (operator still has to record the outcome).
+      await safe('hearing_start', async () => {
+        await env.DB.prepare(`
+          UPDATE oe_hearings SET status = 'in_session'
+          WHERE status = 'scheduled' AND scheduled_for <= datetime('now')
+            AND (concluded_at IS NULL)
+        `).run().catch(() => null);
+      });
       // Order-book depth snapshot — hit every shard that had a fill in the last hour.
       await safe('depth_snapshot', async () => {
         const shards = await env.DB.prepare(
@@ -637,6 +680,10 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       break;
 
     case '5 0 * * *':
+      // Daily — publish a Merkle root over yesterday's audit_events for
+      // every entity_type that had activity. Sealed with the platform
+      // Ed25519 key when PLATFORM_ATTEST_KEY is set.
+      await safe('audit_merkle_publish', () => buildDailyMerkleRoots(env, yesterday));
       // Daily digest sweep — find subscriptions due today by send_hour_sast.
       // Provider creds (SES/Twilio/WhatsApp) gate actual delivery; without
       // them rows land as 'would_send' so the history is still populated.

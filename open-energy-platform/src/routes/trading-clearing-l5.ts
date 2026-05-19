@@ -141,14 +141,11 @@ r.post('/surveillance/alerts/:id/report', requireStepUp('surveillance.report.hig
 
 // Detector — scans recent fills for common manipulation patterns. Runs
 // from the existing every-15-min cron via /scan; can also be invoked ad-hoc.
-r.post('/surveillance/scan', async (c) => {
-  const user = getCurrentUser(c);
-  if (!adminOnly(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
+export async function runTradingSurveillanceScan(env: HonoEnv['Bindings']): Promise<{ flagged_count: number; flagged: any[] }> {
   const flagged: any[] = [];
-
-  // 1. Wash trades — same buyer/seller within 5 minutes, same energy_type
+  // 1. Wash trades — same participant on both sides within last hour
   try {
-    const ws = await c.env.DB.prepare(`
+    const ws = await env.DB.prepare(`
       SELECT buyer_id, seller_id, energy_type, COUNT(*) AS n
       FROM trade_fills WHERE executed_at >= datetime('now','-1 hour')
         AND buyer_id = seller_id
@@ -156,7 +153,7 @@ r.post('/surveillance/scan', async (c) => {
     `).all<any>();
     for (const w of (ws.results || []) as any[]) {
       const id = genId('surv');
-      await c.env.DB.prepare(`
+      await env.DB.prepare(`
         INSERT INTO oe_surveillance_alerts (id, alert_type, participant_id, severity, score, evidence_json)
         VALUES (?,?,?,?,?,?)
       `).bind(id, 'wash_trade', w.buyer_id, 'high', 0.9, JSON.stringify(w)).run();
@@ -166,7 +163,7 @@ r.post('/surveillance/scan', async (c) => {
 
   // 2. Unusual volume — single participant fills >5x their own 30d avg in 1h
   try {
-    const us = await c.env.DB.prepare(`
+    const us = await env.DB.prepare(`
       SELECT buyer_id AS pid, SUM(volume_mwh) AS hour_vol,
              (SELECT AVG(volume_mwh) FROM trade_fills WHERE buyer_id = pid AND executed_at >= datetime('now','-30 days')) AS avg_vol
       FROM trade_fills WHERE executed_at >= datetime('now','-1 hour')
@@ -175,7 +172,7 @@ r.post('/surveillance/scan', async (c) => {
     for (const u of (us.results || []) as any[]) {
       if (u.avg_vol && Number(u.hour_vol) > Number(u.avg_vol) * 5) {
         const id = genId('surv');
-        await c.env.DB.prepare(`
+        await env.DB.prepare(`
           INSERT INTO oe_surveillance_alerts (id, alert_type, participant_id, severity, score, evidence_json)
           VALUES (?,?,?,?,?,?)
         `).bind(id, 'unusual_volume', u.pid, 'medium', 0.7, JSON.stringify(u)).run();
@@ -183,8 +180,14 @@ r.post('/surveillance/scan', async (c) => {
       }
     }
   } catch { /* swallow */ }
+  return { flagged_count: flagged.length, flagged };
+}
 
-  return c.json({ success: true, data: { flagged_count: flagged.length, flagged } });
+r.post('/surveillance/scan', async (c) => {
+  const user = getCurrentUser(c);
+  if (!adminOnly(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
+  const out = await runTradingSurveillanceScan(c.env);
+  return c.json({ success: true, data: out });
 });
 
 // ─── Market-maker obligations ───────────────────────────────────────────
