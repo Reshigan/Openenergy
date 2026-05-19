@@ -94,6 +94,7 @@ import tradingClearingL5Routes from './routes/trading-clearing-l5';
 import { admin as auditL5Admin, pub as auditL5Pub } from './routes/audit-l5';
 import marketplaceL5Routes from './routes/marketplace-l5';
 import aiAssistantRoutes from './routes/ai-assistant';
+import polishRoutes from './routes/polish';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -312,6 +313,7 @@ app.route('/api/trading-clearing-l5', tradingClearingL5Routes);
 app.route('/api/audit-l5',            auditL5Admin);
 app.route('/api/marketplace-l5',      marketplaceL5Routes);
 app.route('/api/ai-assistant',        aiAssistantRoutes);
+app.route('/api/polish',              polishRoutes);
 
 // Admin-only "run cron once" endpoint — invokes the same runCron() that the
 // Workers scheduler fires, but on demand so operators (and the smoke-cron

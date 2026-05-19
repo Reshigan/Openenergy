@@ -87,6 +87,7 @@ const DepthOpsPage          = React.lazy(() => import('./components/pages/DepthO
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { AiAssistantDock } from './components/AiAssistantDock';
 import { startAutoFlush, flushQueue } from './lib/offlineQueue';
+import { installRum } from './lib/rum';
 import { Skeleton } from './components/Skeleton';
 import { EmptyState } from './components/EmptyState';
 import { ErrorBanner } from './components/ErrorBanner';
@@ -1360,6 +1361,7 @@ export default function App() {
   // Also handle SW background-sync postMessage requesting drain.
   React.useEffect(() => {
     const stop = startAutoFlush(30_000);
+    installRum();
     const onMsg = (ev: MessageEvent) => {
       if (ev.data?.type === 'oe:flush-mutations') void flushQueue();
     };
