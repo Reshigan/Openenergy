@@ -95,6 +95,7 @@ import { admin as auditL5Admin, pub as auditL5Pub } from './routes/audit-l5';
 import marketplaceL5Routes from './routes/marketplace-l5';
 import aiAssistantRoutes from './routes/ai-assistant';
 import polishRoutes from './routes/polish';
+import publicLegalRoutes from './routes/public-legal';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -289,6 +290,7 @@ app.route('/api/public/status', publicStatusRoutes);
 app.route('/api/public/status', statusDeepPub);
 app.route('/api/public/regulator', regulatorL5Pub);
 app.route('/api/public/audit',     auditL5Pub);
+app.route('/api/public/legal',     publicLegalRoutes);
 app.route('/api', platformFeaturesRoutes);
 app.route('/api/mfa',         mfaRoutes);
 app.route('/api/kyc',         kycRoutes);
