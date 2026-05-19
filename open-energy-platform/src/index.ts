@@ -91,6 +91,7 @@ import { ipp as ippDeepRoutes, lender as lenderDeepRoutes, carbon as carbonDeepR
 import gridL5Routes from './routes/grid-l5';
 import { admin as regulatorL5Admin, pub as regulatorL5Pub } from './routes/regulator-l5';
 import tradingClearingL5Routes from './routes/trading-clearing-l5';
+import { admin as auditL5Admin, pub as auditL5Pub } from './routes/audit-l5';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -284,6 +285,7 @@ app.route('/api/esums-om', esumsOmAnalysisRoutes);
 app.route('/api/public/status', publicStatusRoutes);
 app.route('/api/public/status', statusDeepPub);
 app.route('/api/public/regulator', regulatorL5Pub);
+app.route('/api/public/audit',     auditL5Pub);
 app.route('/api', platformFeaturesRoutes);
 app.route('/api/mfa',         mfaRoutes);
 app.route('/api/kyc',         kycRoutes);
@@ -305,6 +307,7 @@ app.route('/api/carbon-deep',     carbonDeepRoutes);
 app.route('/api/grid-l5',         gridL5Routes);
 app.route('/api/regulator-l5',    regulatorL5Admin);
 app.route('/api/trading-clearing-l5', tradingClearingL5Routes);
+app.route('/api/audit-l5',            auditL5Admin);
 
 // Admin-only "run cron once" endpoint — invokes the same runCron() that the
 // Workers scheduler fires, but on demand so operators (and the smoke-cron
@@ -654,6 +657,41 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
             status === 'sent' ? new Date().toISOString() : null,
           ).run();
           await env.DB.prepare(`UPDATE oe_digest_subscriptions SET last_sent_at = datetime('now') WHERE id = ?`).bind(s.id).run();
+        }
+      });
+      // Daily Merkle root build over yesterday's audit events per entity_type.
+      // Provides O(log n) inclusion proofs from /api/public/audit/proof/:id.
+      await safe('audit_merkle_build', async () => {
+        const ets = await env.DB.prepare(
+          `SELECT entity_type, COUNT(*) AS n FROM audit_events WHERE date(created_at) = ? GROUP BY entity_type`,
+        ).bind(yesterday).all<any>();
+        for (const r of (ets.results || []) as any[]) {
+          const evs = await env.DB.prepare(
+            `SELECT content_hash, sequence_no FROM audit_events WHERE entity_type = ? AND date(created_at) = ? ORDER BY sequence_no ASC`,
+          ).bind(r.entity_type, yesterday).all<{ content_hash: string; sequence_no: number }>();
+          const leaves = ((evs.results || []) as any[]).map((e) => e.content_hash);
+          if (!leaves.length) continue;
+          let level = leaves.slice();
+          while (level.length > 1) {
+            const next: string[] = [];
+            for (let i = 0; i < level.length; i += 2) {
+              const a = level[i]; const b = i + 1 < level.length ? level[i + 1] : a;
+              const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(a + b));
+              next.push(Array.from(new Uint8Array(buf)).map((x) => x.toString(16).padStart(2, '0')).join(''));
+            }
+            level = next;
+          }
+          const root = level[0];
+          const arr = (evs.results || []) as any[];
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO oe_audit_merkle_roots
+              (id, entity_type, day, event_count, first_sequence_no, last_sequence_no, merkle_root)
+            VALUES (?,?,?,?,?,?,?)
+          `).bind(
+            `mr_${yesterday.replace(/-/g, '')}_${r.entity_type}`,
+            r.entity_type, yesterday, arr.length,
+            arr[0].sequence_no, arr[arr.length - 1].sequence_no, root,
+          ).run();
         }
       });
       // Tenant usage rollup for yesterday — counts API mutations + webhook
