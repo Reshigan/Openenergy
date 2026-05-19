@@ -18,6 +18,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { cached, shouldBypass } from '../utils/kv-cache';
 
 const intel = new Hono<HonoEnv>();
 intel.use('*', authMiddleware);
@@ -45,14 +46,14 @@ intel.get('/forecast/:site_id', async (c) => {
   if (!site) return c.json({ success: false, error: 'site not found' }, 404);
 
   // Try to fetch a fresh cached forecast first.
-  const cached = await c.env.DB.prepare(`
+  const cachedForecast = await c.env.DB.prepare(`
     SELECT * FROM om_forecasts
     WHERE site_id = ? AND horizon = ?
       AND forecast_for_ts >= datetime('now', '-1 hour')
     ORDER BY forecast_for_ts ASC LIMIT 200
   `).bind(siteId, horizon).all();
-  if ((cached.results || []).length > 0) {
-    return c.json({ success: true, data: { horizon, site_id: siteId, points: cached.results } });
+  if ((cachedForecast.results || []).length > 0) {
+    return c.json({ success: true, data: { horizon, site_id: siteId, points: cachedForecast.results } });
   }
 
   // Generate a fresh synthetic forecast — production would call ML model.
@@ -157,7 +158,14 @@ intel.post('/predictions/:id/action', async (c) => {
 intel.get('/briefing', async (c) => {
   const user = getCurrentUser(c);
   const isOfficer = ['admin', 'support', 'regulator'].includes(user.role);
+  const key = `om:briefing:${isOfficer ? 'all' : user.id}`;
+  const data = await cached(c.env, key, 90, async () => briefingCompute(c, user, isOfficer), {
+    bypass: shouldBypass(c.req.raw),
+  });
+  return c.json({ success: true, data });
+});
 
+async function briefingCompute(c: { env: HonoEnv['Bindings'] }, user: { id: string }, isOfficer: boolean) {
   // Resolve in-scope site ids once, then bind into each query.
   const scoped = isOfficer
     ? await c.env.DB.prepare(`SELECT id FROM om_sites`).all<{ id: string }>()
@@ -166,11 +174,11 @@ intel.get('/briefing', async (c) => {
       ).bind(user.id, user.id).all<{ id: string }>();
   const siteIds = ((scoped.results || []) as Array<{ id: string }>).map((s) => s.id);
   if (!siteIds.length) {
-    return c.json({ success: true, data: {
+    return {
       generated_at: new Date().toISOString(),
       summary: { open_faults: 0, bleed_rate_zar_hour: 0, sla_at_risk: 0, predictions_open: 0, maintenance_due_7d: 0 },
       insights: [],
-    } });
+    };
   }
   const ph = siteIds.map(() => '?').join(',');
 
@@ -255,21 +263,18 @@ intel.get('/briefing', async (c) => {
     });
   }
 
-  return c.json({
-    success: true,
-    data: {
-      generated_at: new Date().toISOString(),
-      summary: {
-        open_faults: Number(bleed?.open_faults || 0),
-        bleed_rate_zar_hour: Math.round(Number(bleed?.bleed || 0)),
-        sla_at_risk: (slaWatch.results || []).length,
-        predictions_open: (predictions.results || []).length,
-        maintenance_due_7d: (maintenance.results || []).length,
-      },
-      insights: insights.slice(0, 10),
+  return {
+    generated_at: new Date().toISOString(),
+    summary: {
+      open_faults: Number(bleed?.open_faults || 0),
+      bleed_rate_zar_hour: Math.round(Number(bleed?.bleed || 0)),
+      sla_at_risk: (slaWatch.results || []).length,
+      predictions_open: (predictions.results || []).length,
+      maintenance_due_7d: (maintenance.results || []).length,
     },
-  });
-});
+    insights: insights.slice(0, 10),
+  };
+}
 
 // ─── Performance KPIs ────────────────────────────────────────────────────
 intel.get('/performance/:site_id', async (c) => {

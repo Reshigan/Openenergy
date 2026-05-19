@@ -44,6 +44,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { cached, invalidatePrefix, shouldBypass } from '../utils/kv-cache';
 
 const om = new Hono<HonoEnv>();
 om.use('*', authMiddleware);
@@ -60,26 +61,33 @@ function canMutate(role: string) {
 const TARIFF_FALLBACK = 1500; // R/MWh — used when PPA tariff is unknown
 
 // ─── Sites ───────────────────────────────────────────────────────────────
+// Cached 90s. The sub-selects (device_count, open_faults, ...) are
+// expensive on large fleets; we trade ≤90s freshness for ~10× fewer
+// D1 row-reads under normal use.
 om.get('/sites', async (c) => {
   const user = getCurrentUser(c);
   const isOfficer = ['admin', 'support', 'regulator'].includes(user.role);
-  const rows = await c.env.DB.prepare(`
-    SELECT s.*,
-      (SELECT COUNT(*) FROM om_devices d WHERE d.site_id = s.id) AS device_count,
-      (SELECT COUNT(*) FROM om_faults f WHERE f.site_id = s.id
-         AND f.status IN ('open','acknowledged','in_progress')) AS open_faults,
-      (SELECT COALESCE(SUM(f.total_loss_zar), 0) FROM om_faults f
-         WHERE f.site_id = s.id
-         AND date(f.detected_at) >= date('now','start of month')) AS revenue_lost_mtd_zar,
-      (SELECT COUNT(*) FROM om_work_orders w
-         WHERE w.site_id = s.id
-         AND w.status NOT IN ('completed','verified','closed','cancelled')) AS open_wos
-    FROM om_sites s
-    WHERE (? OR s.participant_id = ? OR s.om_contractor_id = ?)
-    ORDER BY s.name
-    LIMIT 500
-  `).bind(isOfficer ? 1 : 0, user.id, user.id).all();
-  return c.json({ success: true, data: rows.results || [] });
+  const key = `om:sites:${isOfficer ? 'all' : user.id}`;
+  const data = await cached(c.env, key, 90, async () => {
+    const rows = await c.env.DB.prepare(`
+      SELECT s.*,
+        (SELECT COUNT(*) FROM om_devices d WHERE d.site_id = s.id) AS device_count,
+        (SELECT COUNT(*) FROM om_faults f WHERE f.site_id = s.id
+           AND f.status IN ('open','acknowledged','in_progress')) AS open_faults,
+        (SELECT COALESCE(SUM(f.total_loss_zar), 0) FROM om_faults f
+           WHERE f.site_id = s.id
+           AND date(f.detected_at) >= date('now','start of month')) AS revenue_lost_mtd_zar,
+        (SELECT COUNT(*) FROM om_work_orders w
+           WHERE w.site_id = s.id
+           AND w.status NOT IN ('completed','verified','closed','cancelled')) AS open_wos
+      FROM om_sites s
+      WHERE (? OR s.participant_id = ? OR s.om_contractor_id = ?)
+      ORDER BY s.name
+      LIMIT 500
+    `).bind(isOfficer ? 1 : 0, user.id, user.id).all();
+    return rows.results || [];
+  }, { bypass: shouldBypass(c.req.raw) });
+  return c.json({ success: true, data });
 });
 
 om.get('/sites/:id', async (c) => {
@@ -353,6 +361,11 @@ om.post('/faults', async (c) => {
     entity_type: 'om_faults', entity_id: id,
     data: { site_id: b.site_id, severity: b.severity, hourly_loss_zar: hourlyLoss }, env: c.env,
   });
+  // Bust caches that depend on fault state
+  await invalidatePrefix(c.env, 'om:fleet-kpis:');
+  await invalidatePrefix(c.env, 'om:sites:');
+  await invalidatePrefix(c.env, 'om:briefing:');
+  await invalidatePrefix(c.env, 'om:opportunities:');
   return c.json({ success: true, data: { id, hourly_loss_zar: hourlyLoss, fault_history_count: priorCount, warranty_covered: warranty } }, 201);
 });
 
@@ -383,6 +396,10 @@ om.post('/faults/:id/resolve', async (c) => {
     entity_type: 'om_faults', entity_id: id,
     data: { total_loss_zar: computedTotal }, env: c.env,
   });
+  await invalidatePrefix(c.env, 'om:fleet-kpis:');
+  await invalidatePrefix(c.env, 'om:sites:');
+  await invalidatePrefix(c.env, 'om:briefing:');
+  await invalidatePrefix(c.env, 'om:opportunities:');
   return c.json({ success: true, data: { total_loss_zar: computedTotal, hours_open: Math.round(elapsedH * 10) / 10 } });
 });
 
@@ -510,6 +527,8 @@ om.post('/work-orders/:id/transition', async (c) => {
     entity_type: 'om_work_orders', entity_id: id,
     data: { from: row.status, to }, env: c.env,
   });
+  await invalidatePrefix(c.env, 'om:fleet-kpis:');
+  await invalidatePrefix(c.env, 'om:sites:');
   return c.json({ success: true });
 });
 
@@ -692,10 +711,19 @@ om.post('/maintenance/:id/complete', async (c) => {
 });
 
 // ─── Fleet KPIs ──────────────────────────────────────────────────────────
+// Cached 60s in KV so cockpit polling (every 60s) reads at most ~1× per
+// minute per scope, not 5–6 D1 queries per call.
 om.get('/fleet-kpis', async (c) => {
   const user = getCurrentUser(c);
   const isOfficer = ['admin', 'support', 'regulator'].includes(user.role);
+  const cacheKey = `om:fleet-kpis:${isOfficer ? 'all' : user.id}`;
+  const data = await cached(c.env, cacheKey, 60, async () => fleetKpisCompute(c, user, isOfficer), {
+    bypass: shouldBypass(c.req.raw),
+  });
+  return c.json({ success: true, data });
+});
 
+async function fleetKpisCompute(c: { env: HonoEnv['Bindings'] }, user: { id: string }, isOfficer: boolean) {
   // Resolve site IDs in scope up front, then bind into each query.
   const scopedSites = isOfficer
     ? await c.env.DB.prepare(`SELECT id, capacity_mw, ppa_tariff_zar_mwh FROM om_sites`).all<any>()
@@ -708,16 +736,13 @@ om.get('/fleet-kpis', async (c) => {
   const totalMw = ((scopedSites.results || []) as Array<{ capacity_mw: number }>).reduce((s, r) => s + Number(r.capacity_mw || 0), 0);
 
   if (!siteIds.length) {
-    return c.json({
-      success: true,
-      data: {
-        total_sites: 0, total_mw: 0, today_kwh: 0, today_revenue_zar: 0,
-        blended_tariff_zar_mwh: TARIFF_FALLBACK, availability_pct: 100,
-        open_faults: 0, critical_faults: 0, major_faults: 0,
-        bleed_rate_zar_hour: 0, lost_so_far_zar: 0,
-        open_work_orders: 0, sla_breached_open: 0,
-      },
-    });
+    return {
+      total_sites: 0, total_mw: 0, today_kwh: 0, today_revenue_zar: 0,
+      blended_tariff_zar_mwh: TARIFF_FALLBACK, availability_pct: 100,
+      open_faults: 0, critical_faults: 0, major_faults: 0,
+      bleed_rate_zar_hour: 0, lost_so_far_zar: 0,
+      open_work_orders: 0, sla_breached_open: 0,
+    };
   }
   const placeholders = siteIds.map(() => '?').join(',');
 
@@ -775,24 +800,21 @@ om.get('/fleet-kpis', async (c) => {
     : TARIFF_FALLBACK;
   const todayRevenue = (todayKwh / 1000) * blendedTariff;
 
-  return c.json({
-    success: true,
-    data: {
-      total_sites: siteCount,
-      total_mw: totalMw,
-      today_kwh: todayKwh,
-      today_revenue_zar: todayRevenue,
-      blended_tariff_zar_mwh: Math.round(blendedTariff),
-      availability_pct: Math.round(availability * 1000) / 10,
-      open_faults: Number(faults?.open_count || 0),
-      critical_faults: Number(faults?.critical_count || 0),
-      major_faults: Number(faults?.major_count || 0),
-      bleed_rate_zar_hour: Math.round(Number(faults?.bleed_rate || 0)),
-      lost_so_far_zar: Math.round(Number(faults?.lost_so_far || 0)),
-      open_work_orders: Number(wos?.open_wos || 0),
-      sla_breached_open: Number(wos?.sla_breached_open || 0),
-    },
-  });
-});
+  return {
+    total_sites: siteCount,
+    total_mw: totalMw,
+    today_kwh: todayKwh,
+    today_revenue_zar: todayRevenue,
+    blended_tariff_zar_mwh: Math.round(blendedTariff),
+    availability_pct: Math.round(availability * 1000) / 10,
+    open_faults: Number(faults?.open_count || 0),
+    critical_faults: Number(faults?.critical_count || 0),
+    major_faults: Number(faults?.major_count || 0),
+    bleed_rate_zar_hour: Math.round(Number(faults?.bleed_rate || 0)),
+    lost_so_far_zar: Math.round(Number(faults?.lost_so_far || 0)),
+    open_work_orders: Number(wos?.open_wos || 0),
+    sla_breached_open: Number(wos?.sla_breached_open || 0),
+  };
+}
 
 export default om;

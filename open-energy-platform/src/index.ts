@@ -448,6 +448,7 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
         `).run();
       });
       // Esums O&M: synthetic ingestion poll for enabled connections.
+      // Batched INSERT per connection — one D1 round-trip instead of N.
       await safe('om_ingestion_poll', async () => {
         const conns = await env.DB.prepare(`
           SELECT id, site_id, polling_minutes, last_poll_at FROM om_connections
@@ -456,20 +457,25 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
                  OR last_poll_at < datetime('now', '-' || polling_minutes || ' minutes'))
           LIMIT 50
         `).all<any>();
+        const nowIso = new Date().toISOString();
         for (const conn of (conns.results || []) as any[]) {
-          // Synthetic per-device reading
           const devices = await env.DB.prepare(`SELECT id, rated_kw FROM om_devices WHERE site_id = ?`).bind(conn.site_id).all<any>();
-          const nowIso = new Date().toISOString();
-          for (const d of (devices.results || []) as any[]) {
+          const rows = (devices.results || []) as any[];
+          if (!rows.length) continue;
+          // Build one multi-VALUES INSERT
+          const valuesSql = rows.map(() => `(?,?,?,?,?,?,?)`).join(',');
+          const binds: any[] = [];
+          for (const d of rows) {
             const kw = Number(d.rated_kw || 100) * (0.4 + Math.random() * 0.4);
-            await env.DB.prepare(`
-              INSERT INTO om_telemetry (id, device_id, site_id, ts, ac_kw, interval_kwh, quality)
-              VALUES (?,?,?,?,?,?,?)
-            `).bind(
+            binds.push(
               `omt_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
               d.id, conn.site_id, nowIso, kw, kw * 0.25, 'valid',
-            ).run();
+            );
           }
+          await env.DB.prepare(`
+            INSERT INTO om_telemetry (id, device_id, site_id, ts, ac_kw, interval_kwh, quality)
+            VALUES ${valuesSql}
+          `).bind(...binds).run();
           await env.DB.prepare(`UPDATE om_connections SET last_poll_at = ?, last_status = 'ok' WHERE id = ?`).bind(nowIso, conn.id).run();
         }
       });

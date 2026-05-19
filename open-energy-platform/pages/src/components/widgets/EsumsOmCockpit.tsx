@@ -16,6 +16,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useVisiblePolling } from '../../hooks/useVisiblePolling';
 import {
   Activity, AlertTriangle, Banknote, Battery, Brain, Clock, Cpu, Gauge,
   MapPin, ShieldAlert, Sparkles, Sun, Wind, Zap,
@@ -482,7 +483,10 @@ export function EsumsOmCockpit() {
     }
   };
 
-  useEffect(() => { void load(); const id = setInterval(load, 60_000); return () => clearInterval(id); }, []);
+  // Visibility-aware polling — pauses fetches while the tab is hidden,
+  // refreshes immediately when the user returns. Cuts cockpit-driven D1
+  // reads to near-zero for inactive sessions.
+  useVisiblePolling(60_000, load);
 
   if (err) return <div className="widget-card widget-empty">Error: {err}</div>;
 

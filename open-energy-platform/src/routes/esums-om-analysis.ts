@@ -34,6 +34,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { cached, shouldBypass } from '../utils/kv-cache';
 
 const ana = new Hono<HonoEnv>();
 ana.use('*', authMiddleware);
@@ -593,43 +594,46 @@ async function findOmCostOutliers(env: HonoEnv['Bindings'], siteIds: string[],
 }
 
 // ─── Master endpoint ────────────────────────────────────────────────────
+// Cached 5 min — opportunity rules don't change minute-to-minute and the
+// scan does 11 parallel D1 queries.
 ana.get('/opportunities', async (c) => {
   const user = getCurrentUser(c);
   const isOfficer = ['admin', 'support', 'regulator'].includes(user.role);
-  const sites = await inScopeSites(c.env, user.id, isOfficer);
-  const siteIds = sites.map((s) => s.id);
-  const sitesByID = new Map(sites.map((s) => [s.id, s]));
+  const key = `om:opportunities:${isOfficer ? 'all' : user.id}`;
+  const data = await cached(c.env, key, 300, async () => {
+    const sites = await inScopeSites(c.env, user.id, isOfficer);
+    const siteIds = sites.map((s) => s.id);
+    const sitesByID = new Map(sites.map((s) => [s.id, s]));
 
-  const [c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11] = await Promise.all([
-    findSoilingOpportunities(c.env, siteIds, sitesByID),
-    findRecurringFaultOpportunities(c.env, siteIds, sitesByID),
-    findUnderperformingStringOpportunities(c.env, siteIds, sitesByID),
-    findFirmwarePatternOpportunities(c.env, siteIds, sitesByID),
-    findPreFailureOpportunities(c.env, siteIds, sitesByID),
-    findMttrOutliers(c.env, siteIds, sitesByID),
-    findSlaBreachClusters(c.env, siteIds, sitesByID),
-    findStockoutRisk(c.env),
-    findWarrantyLeakage(c.env, siteIds, sitesByID),
-    findMaintenanceBacklog(c.env, siteIds, sitesByID),
-    findOmCostOutliers(c.env, siteIds, sitesByID),
-  ]);
-  const all = [...c1, ...c2, ...c3, ...c4, ...c5, ...c6, ...c7, ...c8, ...c9, ...c10, ...c11];
-  all.sort((a, b) => b.annual_upside_zar - a.annual_upside_zar);
+    const [c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11] = await Promise.all([
+      findSoilingOpportunities(c.env, siteIds, sitesByID),
+      findRecurringFaultOpportunities(c.env, siteIds, sitesByID),
+      findUnderperformingStringOpportunities(c.env, siteIds, sitesByID),
+      findFirmwarePatternOpportunities(c.env, siteIds, sitesByID),
+      findPreFailureOpportunities(c.env, siteIds, sitesByID),
+      findMttrOutliers(c.env, siteIds, sitesByID),
+      findSlaBreachClusters(c.env, siteIds, sitesByID),
+      findStockoutRisk(c.env),
+      findWarrantyLeakage(c.env, siteIds, sitesByID),
+      findMaintenanceBacklog(c.env, siteIds, sitesByID),
+      findOmCostOutliers(c.env, siteIds, sitesByID),
+    ]);
+    const all = [...c1, ...c2, ...c3, ...c4, ...c5, ...c6, ...c7, ...c8, ...c9, ...c10, ...c11];
+    all.sort((a, b) => b.annual_upside_zar - a.annual_upside_zar);
 
-  const total = all.reduce((s, o) => s + o.annual_upside_zar, 0);
-  const byCategory: Record<string, number> = {};
-  for (const o of all) byCategory[o.category] = (byCategory[o.category] || 0) + o.annual_upside_zar;
+    const total = all.reduce((s, o) => s + o.annual_upside_zar, 0);
+    const byCategory: Record<string, number> = {};
+    for (const o of all) byCategory[o.category] = (byCategory[o.category] || 0) + o.annual_upside_zar;
 
-  return c.json({
-    success: true,
-    data: {
+    return {
       generated_at: new Date().toISOString(),
       total_annual_upside_zar: total,
       count: all.length,
       by_category: byCategory,
       opportunities: all,
-    },
-  });
+    };
+  }, { bypass: shouldBypass(c.req.raw) });
+  return c.json({ success: true, data });
 });
 
 // Summary-only endpoint for cockpit tiles
