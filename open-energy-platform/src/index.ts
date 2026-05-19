@@ -71,6 +71,7 @@ import esumsOmRoutes from './routes/esums-om';
 import esumsOmIntelRoutes from './routes/esums-om-intel';
 import esumsOmAnalysisRoutes from './routes/esums-om-analysis';
 import { portalAdmin as esumsOmPortalAdmin, portalPublic as esumsOmPortalPublic } from './routes/esums-om-portal';
+import platformFeaturesRoutes from './routes/platform-features';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -257,6 +258,7 @@ app.route('/api/om-portal', esumsOmPortalAdmin);
 app.route('/api/esums-om', esumsOmRoutes);
 app.route('/api/esums-om', esumsOmIntelRoutes);
 app.route('/api/esums-om', esumsOmAnalysisRoutes);
+app.route('/api', platformFeaturesRoutes);
 
 // Admin-only "run cron once" endpoint — invokes the same runCron() that the
 // Workers scheduler fires, but on demand so operators (and the smoke-cron
@@ -510,6 +512,61 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       break;
 
     case '5 0 * * *':
+      // Daily digest sweep — find subscriptions due today by send_hour_sast.
+      // Provider creds (SES/Twilio/WhatsApp) gate actual delivery; without
+      // them rows land as 'would_send' so the history is still populated.
+      await safe('digest_sweep', async () => {
+        const subs = await env.DB.prepare(`
+          SELECT * FROM oe_digest_subscriptions WHERE enabled = 1 LIMIT 500
+        `).all<any>();
+        for (const s of (subs.results || []) as any[]) {
+          const stats = await env.DB.prepare(`
+            SELECT
+              (SELECT COUNT(*) FROM om_faults WHERE status IN ('open','acknowledged','in_progress')) AS open_faults,
+              (SELECT COALESCE(SUM(hourly_loss_zar),0) FROM om_faults WHERE status IN ('open','acknowledged','in_progress')) AS bleed,
+              (SELECT COUNT(*) FROM om_work_orders WHERE status NOT IN ('completed','verified','closed','cancelled')) AS open_wos
+          `).first<any>();
+          const body = `Open Energy Ops · morning briefing\n` +
+            `${stats?.open_faults || 0} open faults bleeding R${Math.round(Number(stats?.bleed || 0))}/h\n` +
+            `${stats?.open_wos || 0} active work orders`;
+          const status = (env as any).EMAIL_API_KEY || (env as any).TWILIO_AUTH ? 'sent' : 'would_send';
+          await env.DB.prepare(`
+            INSERT INTO oe_digest_deliveries
+              (id, subscription_id, channel, destination, status, body_preview, sent_at)
+            VALUES (?,?,?,?,?,?,?)
+          `).bind(
+            `oedd_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`,
+            s.id, s.channel, s.destination, status, body.slice(0, 500),
+            status === 'sent' ? new Date().toISOString() : null,
+          ).run();
+          await env.DB.prepare(`UPDATE oe_digest_subscriptions SET last_sent_at = datetime('now') WHERE id = ?`).bind(s.id).run();
+        }
+      });
+      // Tenant usage rollup for yesterday — counts API mutations + webhook
+      // deliveries + digest sends by participant. D1/Worker request counts
+      // come from Cloudflare Analytics (separate ingestion) so we estimate
+      // here from row activity rather than over-claim.
+      await safe('tenant_usage_rollup', async () => {
+        const rows = await env.DB.prepare(`
+          SELECT participant_id, COUNT(*) AS n FROM audit_events
+          WHERE created_at LIKE ? || '%'
+          GROUP BY participant_id
+        `).bind(yesterday).all<{ participant_id: string; n: number }>();
+        for (const r of (rows.results || []) as any[]) {
+          if (!r.participant_id) continue;
+          // Rough estimates: 1 audit event ≈ 3 API calls × 5 D1 reads × 2 D1 writes
+          const apiCalls = Number(r.n) * 3;
+          const d1Reads = Number(r.n) * 15;
+          const d1Writes = Number(r.n) * 2;
+          // Workers @ $0.30/M + D1 reads @ $1.00/M + D1 writes @ $1.00/M
+          const cost = (apiCalls * 0.0000003) + (d1Reads * 0.000001) + (d1Writes * 0.000001);
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO oe_tenant_usage
+              (participant_id, day, worker_requests, d1_reads_est, d1_writes_est, est_cost_usd)
+            VALUES (?,?,?,?,?,?)
+          `).bind(r.participant_id, yesterday, apiCalls, d1Reads, d1Writes, cost).run();
+        }
+      });
       // Metering + ONA rollups for yesterday; prepare audit archive table
       // (actual archive upload runs on demand to stay under CPU limits).
       await safe('metering_daily_rollup', async () => {

@@ -19,6 +19,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { cached, shouldBypass } from '../utils/kv-cache';
+import { pollConnection } from '../utils/oem-adapters';
 
 const intel = new Hono<HonoEnv>();
 intel.use('*', authMiddleware);
@@ -382,27 +383,53 @@ intel.post('/ingestion', async (c) => {
   return c.json({ success: true, data: { id } }, 201);
 });
 
-// Synthetic poll — production would dispatch to per-adapter HTTP fetch.
+// Real OEM-adapter poll. Falls back to a synthetic write if the OEM API
+// returns no readings (e.g. no credentials configured yet) so dashboards
+// still light up while integrations are being wired.
 intel.post('/ingestion/:id/poll', async (c) => {
   const user = getCurrentUser(c);
   if (!['admin', 'support'].includes(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
   const conn = await c.env.DB.prepare(`SELECT * FROM om_connections WHERE id = ?`).bind(id).first<any>();
   if (!conn) return c.json({ success: false, error: 'not found' }, 404);
-  // Synthetic — write a placeholder reading for each device on this site
-  const devices = await c.env.DB.prepare(`SELECT id, rated_kw FROM om_devices WHERE site_id = ?`).bind(conn.site_id).all();
-  let written = 0;
   const nowIso = new Date().toISOString();
-  for (const d of (devices.results || []) as any[]) {
-    const kw = Number(d.rated_kw || 100) * (0.4 + Math.random() * 0.4);
-    await c.env.DB.prepare(`
-      INSERT INTO om_telemetry (id, device_id, site_id, ts, ac_kw, interval_kwh, quality)
-      VALUES (?,?,?,?,?,?,?)
-    `).bind(genId('omt'), d.id, conn.site_id, nowIso, kw, kw * 0.25, 'valid').run();
-    written += 1;
+  const result = await pollConnection(c.env, conn);
+  let written = 0;
+  if (result.readings.length > 0) {
+    // Match readings to devices on the site (by serial_number or first device)
+    const devices = await c.env.DB.prepare(
+      `SELECT id, serial_number FROM om_devices WHERE site_id = ?`,
+    ).bind(conn.site_id).all<{ id: string; serial_number: string }>();
+    const bySerial = new Map((devices.results || []).map((d) => [d.serial_number, d.id]));
+    const valuesSql: string[] = [];
+    const binds: any[] = [];
+    for (const r of result.readings) {
+      const deviceId = (r.device_serial && bySerial.get(r.device_serial))
+        || (devices.results || [])[0]?.id;
+      if (!deviceId) continue;
+      valuesSql.push('(?,?,?,?,?,?,?,?,?)');
+      binds.push(
+        genId('omt'), deviceId, conn.site_id, r.ts || nowIso,
+        r.ac_kw ?? null, r.dc_kw ?? null,
+        r.yield_kwh ?? null, r.interval_kwh ?? null,
+        r.quality || 'valid',
+      );
+      written += 1;
+    }
+    if (valuesSql.length) {
+      await c.env.DB.prepare(`
+        INSERT INTO om_telemetry (id, device_id, site_id, ts, ac_kw, dc_kw, yield_kwh, interval_kwh, quality)
+        VALUES ${valuesSql.join(',')}
+      `).bind(...binds).run();
+    }
   }
-  await c.env.DB.prepare(`UPDATE om_connections SET last_poll_at = ?, last_status = 'ok', last_error = NULL WHERE id = ?`).bind(nowIso, id).run();
-  return c.json({ success: true, data: { adapter: conn.adapter, readings_written: written } });
+  await c.env.DB.prepare(
+    `UPDATE om_connections SET last_poll_at = ?, last_status = ?, last_error = ? WHERE id = ?`,
+  ).bind(nowIso, result.ok ? 'ok' : 'error', result.error || null, id).run();
+  return c.json({
+    success: result.ok || written > 0,
+    data: { adapter: conn.adapter, ok: result.ok, readings_written: written, error: result.error || null },
+  });
 });
 
 intel.post('/ingestion/:id/test', async (c) => {
