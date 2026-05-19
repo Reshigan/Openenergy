@@ -91,6 +91,7 @@ const PlatformAdminConsolePage = React.lazy(() => import('./components/pages/Pla
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { AiAssistantDock } from './components/AiAssistantDock';
 import { OnboardingTour } from './components/OnboardingTour';
+import { RouteErrorBoundary } from './components/RouteErrorBoundary';
 import { startAutoFlush, flushQueue } from './lib/offlineQueue';
 import { installRum } from './lib/rum';
 import { Skeleton } from './components/Skeleton';
@@ -107,21 +108,26 @@ export const formatZAR = (val: number) => new Intl.NumberFormat('en-ZA', { style
 // LazyWorkbench — Suspense shell for the code-split national suite pages.
 // Shows a skeleton while the chunk downloads; chunks are ~50-80 KB each so
 // on a modern connection this is imperceptible but keeps first-paint fast.
+// Also wraps the lazy-loaded page in a RouteErrorBoundary so a single page
+// crash never takes out the whole app.
 function LazyWorkbench({ children }: { children: ReactNode }) {
+  const location = useLocation();
   return (
-    <React.Suspense
-      fallback={
-        <div className="p-6 max-w-7xl mx-auto space-y-4">
-          <div className="skeleton h-8 w-64" />
-          <div className="skeleton h-5 w-96" />
-          <div className="rounded-xl border border-[#dde4ec] bg-white p-6 space-y-3">
-            {[1,2,3,4].map((i) => <div key={i} className="skeleton h-5 w-full" />)}
+    <RouteErrorBoundary routeKey={location.pathname}>
+      <React.Suspense
+        fallback={
+          <div className="p-6 max-w-7xl mx-auto space-y-4">
+            <div className="skeleton h-8 w-64" />
+            <div className="skeleton h-5 w-96" />
+            <div className="rounded-xl border border-[#dde4ec] bg-white p-6 space-y-3">
+              {[1,2,3,4].map((i) => <div key={i} className="skeleton h-5 w-full" />)}
+            </div>
           </div>
-        </div>
-      }
-    >
-      {children}
-    </React.Suspense>
+        }
+      >
+        {children}
+      </React.Suspense>
+    </RouteErrorBoundary>
   );
 }
 
