@@ -88,6 +88,12 @@ const OpsL5Page             = React.lazy(() => import('./components/pages/OpsL5P
 const PublicLegalPage       = React.lazy(() => import('./components/pages/PublicLegalPage').then(m => ({ default: m.PublicLegalPage })));
 const PublicAuditPage       = React.lazy(() => import('./components/pages/PublicAuditPage').then(m => ({ default: m.PublicAuditPage })));
 const PlatformAdminConsolePage = React.lazy(() => import('./components/pages/PlatformAdminConsolePage').then(m => ({ default: m.PlatformAdminConsolePage })));
+const DocumentsPage         = React.lazy(() => import('./components/pages/DocumentsPage').then(m => ({ default: m.DocumentsPage })));
+const VariationOrdersPage   = React.lazy(() => import('./components/pages/VariationOrdersPage').then(m => ({ default: m.VariationOrdersPage })));
+const SettlementOpsPage     = React.lazy(() => import('./components/pages/SettlementOpsPage').then(m => ({ default: m.SettlementOpsPage })));
+const BulkOpsPage           = React.lazy(() => import('./components/pages/BulkOpsPage').then(m => ({ default: m.BulkOpsPage })));
+const PaiaAdminPage         = React.lazy(() => import('./components/pages/PaiaAdminPage').then(m => ({ default: m.PaiaAdminPage })));
+const PasskeysPage          = React.lazy(() => import('./components/pages/PasskeysPage').then(m => ({ default: m.PasskeysPage })));
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { AiAssistantDock } from './components/AiAssistantDock';
 import { OnboardingTour } from './components/OnboardingTour';
@@ -1337,6 +1343,12 @@ function AppRoutes() {
       <Route path="/ops/depth" element={<ProtectedRoute><Layout><LazyWorkbench><DepthOpsPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/ops/l5" element={<ProtectedRoute><Layout><LazyWorkbench><OpsL5Page /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/admin/platform-console" element={<ProtectedRoute><Layout><LazyWorkbench><PlatformAdminConsolePage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/documents" element={<ProtectedRoute><Layout><LazyWorkbench><DocumentsPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/ipp/variations" element={<ProtectedRoute><Layout><LazyWorkbench><VariationOrdersPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/settlement-ops" element={<ProtectedRoute><Layout><LazyWorkbench><SettlementOpsPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/admin/bulk-ops" element={<ProtectedRoute><Layout><LazyWorkbench><BulkOpsPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/admin/paia" element={<ProtectedRoute><Layout><LazyWorkbench><PaiaAdminPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/settings/passkeys" element={<ProtectedRoute><Layout><LazyWorkbench><PasskeysPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       {/* Public status page — no auth required */}
       <Route path="/status" element={<LazyWorkbench><PublicStatusPage /></LazyWorkbench>} />
       <Route path="/legal" element={<LazyWorkbench><PublicLegalPage /></LazyWorkbench>} />

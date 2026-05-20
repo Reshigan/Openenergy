@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AuthContext, api } from '../context/AuthContext';
 import type { AuthContextType } from '../lib/api';
+import { LocalePicker } from './LocalePicker';
 import {
   IonExLogo,
   LaunchpadIcon,
@@ -270,6 +271,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         
         {/* Right side actions */}
         <div className="flex items-center gap-2">
+          <LocalePicker compact/>
           <button className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
             <BellIcon size={18} />
           </button>

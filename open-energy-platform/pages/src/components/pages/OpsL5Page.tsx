@@ -109,13 +109,43 @@ function GridConstraintsTab() {
 
 function GridDispatchTab() {
   const [rows, setRows] = useState<any[]>([]);
+  const [creating, setCreating] = useState(false);
+  const [newRun, setNewRun] = useState({ interval_start: new Date(Date.now() + 30 * 60_000).toISOString().slice(0, 16), demand_mw: '' });
   const load = () => api.get('/grid-l5/dispatch/runs').then((r) => setRows(r.data?.data || []));
   useEffect(() => { void load(); }, []);
   const optimize = async (id: string) => {
     try { const r = await api.post(`/grid-l5/dispatch/runs/${id}/optimize`, {}); alert(`Cleared ${r.data?.data?.cleared_mw} MW @ ${formatZAR(r.data?.data?.marginal_price_zar)} marginal`); void load(); }
     catch (e: any) { alert(e?.response?.data?.error === 'step_up_required' ? 'Step-up MFA required' : 'failed'); }
   };
+  const createRun = async () => {
+    setCreating(true);
+    try {
+      const r = await api.post('/grid-l5/dispatch/runs', {
+        interval_start: new Date(newRun.interval_start).toISOString(),
+        total_demand_mw: Number(newRun.demand_mw),
+      });
+      if (!r.data?.success) throw new Error(r.data?.error || 'failed');
+      setNewRun({ ...newRun, demand_mw: '' });
+      await load();
+    } catch (e: any) { alert(e?.response?.data?.error || e?.message || 'failed'); }
+    finally { setCreating(false); }
+  };
   return (
+    <>
+      <div className="flex justify-end items-end gap-2 mb-2 text-[11px]">
+        <label className="font-semibold text-[#3a4658]">Interval
+          <input type="datetime-local" className="ml-1 h-7 px-2 rounded border border-[#dde4ec]"
+                 value={newRun.interval_start} onChange={(e) => setNewRun({ ...newRun, interval_start: e.target.value })}/>
+        </label>
+        <label className="font-semibold text-[#3a4658]">Demand (MW)
+          <input type="number" className="ml-1 h-7 px-2 rounded border border-[#dde4ec] w-24 font-mono"
+                 value={newRun.demand_mw} onChange={(e) => setNewRun({ ...newRun, demand_mw: e.target.value })}/>
+        </label>
+        <button disabled={creating || !newRun.demand_mw} onClick={createRun}
+                className="h-7 px-3 rounded bg-[#1a3a5c] text-white font-semibold disabled:opacity-50">
+          {creating ? 'Creating…' : 'New run'}
+        </button>
+      </div>
     <Section title="Economic dispatch runs (last 7 days)">
       <Table headers={['Interval', 'Demand', 'Supply', 'Marginal', 'Status', '']}>
         {rows.map((r) => (
@@ -134,6 +164,7 @@ function GridDispatchTab() {
         {!rows.length && <Empty cols={6} />}
       </Table>
     </Section>
+    </>
   );
 }
 
@@ -560,12 +591,45 @@ function AuctionsTab() {
 function AuditArea() {
   const [roots, setRoots] = useState<any[]>([]);
   const [attestors, setAttestors] = useState<any[]>([]);
-  useEffect(() => {
+  const [buildEntity, setBuildEntity] = useState('audit_events');
+  const [buildDay, setBuildDay] = useState(new Date(Date.now() - 86_400_000).toISOString().slice(0, 10));
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const refresh = () => {
     void fetch('/api/public/audit/merkle/roots').then((r) => r.json()).then((j) => setRoots(j?.data || []));
     void api.get('/audit-l5/attestors').then((r) => setAttestors(r.data?.data || []));
-  }, []);
+  };
+  useEffect(refresh, []);
+  const build = async () => {
+    setBusy(true); setMsg(null);
+    try {
+      const r = await api.post('/audit-l5/merkle/build', { entity_type: buildEntity, day: buildDay });
+      if (!r.data?.success) throw new Error(r.data?.error || 'failed');
+      setMsg(`Built root for ${buildDay}/${buildEntity}: ${r.data.data?.event_count} events`);
+      refresh();
+    } catch (e: any) {
+      const d = e?.response?.data;
+      setMsg(d?.step_up_required ? 'Step-up auth required.' : (d?.error || e?.message || 'failed'));
+    } finally { setBusy(false); }
+  };
   return (
     <div className="mt-3 space-y-3">
+      <Section title="Build daily Merkle root">
+        <div className="p-3 flex flex-wrap items-end gap-2 text-[11px]">
+          <label className="font-semibold text-[#3a4658]">Entity type
+            <input className="block mt-1 h-7 px-2 rounded border border-[#dde4ec] font-mono w-48"
+                   value={buildEntity} onChange={(e) => setBuildEntity(e.target.value)}/>
+          </label>
+          <label className="font-semibold text-[#3a4658]">Day
+            <input type="date" className="block mt-1 h-7 px-2 rounded border border-[#dde4ec]"
+                   value={buildDay} onChange={(e) => setBuildDay(e.target.value)}/>
+          </label>
+          <button onClick={build} disabled={busy} className="h-7 px-3 rounded bg-[#1a3a5c] text-white font-semibold disabled:opacity-50">
+            {busy ? 'Building…' : 'Build root'}
+          </button>
+          {msg && <span className="text-[#3a4658]">{msg}</span>}
+        </div>
+      </Section>
       <Section title="Daily Merkle roots (open data, verify externally)">
         <Table headers={['Day', 'Entity type', 'Events', 'Root', 'Signed', 'Attestor co-sign']}>
           {roots.map((r) => (
