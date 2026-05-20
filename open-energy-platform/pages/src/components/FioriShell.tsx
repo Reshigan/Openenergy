@@ -31,12 +31,18 @@ const BASE_NAV: NavItem[] = [
   { path: '/lois',         label: 'Letters of Intent', icon: 'assignment',     section: 'Commerce' },
   { path: '/trading',      label: 'Trading',       icon: 'trending_up',        section: 'Commerce' },
   { path: '/settlement',   label: 'Settlement',    icon: 'receipt_long',       section: 'Commerce' },
+  { path: '/settlement-ops', label: 'Settlement Ops', icon: 'receipt_long',    section: 'Commerce' },
   { path: '/procurement',  label: 'Procurement',   icon: 'shopping_cart',      section: 'Commerce' },
   { path: '/marketplace',  label: 'Marketplace',   icon: 'storefront',         section: 'Commerce' },
+  { path: '/documents',    label: 'Documents',     icon: 'description',        section: 'Commerce' },
   { path: '/projects',     label: 'IPP Projects',  icon: 'apartment',          section: 'Operations' },
+  { path: '/ipp/variations', label: 'Variation Orders', icon: 'assignment',    section: 'Operations' },
   { path: '/pipeline',     label: 'Pipeline',      icon: 'account_tree',       section: 'Operations' },
   { path: '/grid',         label: 'Grid',          icon: 'bolt',               section: 'Operations' },
   { path: '/om',           label: 'O&M',           icon: 'build',              section: 'Operations' },
+  { path: '/esums-om',     label: 'Esums O&M',     icon: 'build',              section: 'Operations' },
+  { path: '/ops/l5',       label: 'L5 Ops Console', icon: 'monitor_heart',     section: 'Operations' },
+  { path: '/ops/depth',    label: 'Depth Ops',     icon: 'monitor_heart',      section: 'Operations' },
   { path: '/carbon',       label: 'Carbon',        icon: 'eco',                section: 'Sustainability' },
   { path: '/esg',          label: 'ESG',           icon: 'public',             section: 'Sustainability' },
   { path: '/funds',        label: 'Funds',         icon: 'savings',            section: 'Finance' },
@@ -45,50 +51,71 @@ const BASE_NAV: NavItem[] = [
   { path: '/reports',      label: 'Reports',       icon: 'bar_chart',          section: 'Insights' },
   { path: '/design-gallery', label: 'Design gallery', icon: 'palette',          section: 'Insights' },
   { path: '/popia',        label: 'POPIA',         icon: 'privacy_tip',        section: 'Compliance' },
+  { path: '/audit',        label: 'Audit transparency', icon: 'privacy_tip',   section: 'Compliance' },
+  { path: '/admin/paia',   label: 'PAIA queue',    icon: 'privacy_tip',        section: 'Compliance' },
+  { path: '/settings/compliance-admin', label: 'Compliance admin', icon: 'privacy_tip', section: 'Compliance' },
   { path: '/admin',        label: 'Admin',         icon: 'settings',           section: 'System' },
+  { path: '/admin/platform-console', label: 'Platform console', icon: 'settings', section: 'System' },
+  { path: '/admin/bulk-ops', label: 'Bulk operations', icon: 'settings',       section: 'System' },
+  { path: '/settings/passkeys', label: 'Passkeys', icon: 'settings',           section: 'System' },
   { path: '/support',      label: 'Support',       icon: 'support_agent',      section: 'System' },
   { path: '/admin/monitoring', label: 'Monitoring', icon: 'monitor_heart',     section: 'System' },
 ];
 
 function navForRole(role: string | undefined): NavItem[] {
   // /admin is admin-only; /support is admin + support only. POPIA is visible
-  // to every role because every user has personal data rights.
-  const nonSystem = BASE_NAV.filter(
-    (n) => n.path !== '/admin' && n.path !== '/support' && n.path !== '/admin/monitoring',
-  );
+  // to every role because every user has personal data rights. Passkeys are
+  // available to every signed-in user.
+  const adminOnlyPaths = new Set(['/admin', '/support', '/admin/monitoring', '/admin/platform-console',
+    '/admin/bulk-ops', '/settings/compliance-admin']);
+  const nonSystem = BASE_NAV.filter((n) => !adminOnlyPaths.has(n.path));
   if (!role) return nonSystem;
   switch (role) {
     case 'admin':
       return BASE_NAV;
     case 'support':
       return BASE_NAV.filter((n) =>
-        ['/launch', '/support', '/admin/monitoring', '/intelligence', '/briefing', '/popia'].includes(n.path),
+        ['/launch', '/support', '/admin/monitoring', '/intelligence', '/briefing', '/popia',
+         '/esums-om', '/admin/paia', '/settlement-ops', '/settings/passkeys', '/documents',
+         '/audit'].includes(n.path),
       );
     case 'trader':
       return BASE_NAV.filter((n) =>
-        ['/launch', '/trading', '/settlement', '/contracts', '/marketplace', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
+        ['/launch', '/trading', '/settlement', '/contracts', '/marketplace', '/intelligence',
+         '/reports', '/popia', '/briefing', '/documents', '/ops/l5', '/settings/passkeys'].includes(n.path),
       );
     case 'ipp_developer':
       return BASE_NAV.filter((n) =>
-        ['/launch', '/projects', '/contracts', '/settlement', '/grid', '/om', '/marketplace', '/esg', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
+        ['/launch', '/projects', '/contracts', '/settlement', '/grid', '/om', '/marketplace',
+         '/esg', '/intelligence', '/reports', '/popia', '/briefing',
+         '/esums-om', '/ipp/variations', '/documents', '/settings/passkeys'].includes(n.path),
       );
     case 'carbon_fund':
       return BASE_NAV.filter((n) =>
-        ['/launch', '/carbon', '/marketplace', '/funds', '/pipeline', '/esg', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
+        ['/launch', '/carbon', '/marketplace', '/funds', '/pipeline', '/esg', '/intelligence',
+         '/reports', '/popia', '/briefing', '/documents', '/settings/passkeys'].includes(n.path),
       );
     case 'offtaker':
       return BASE_NAV.filter((n) =>
-        ['/launch', '/contracts', '/lois', '/procurement', '/marketplace', '/settlement', '/esg', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
+        ['/launch', '/contracts', '/lois', '/procurement', '/marketplace', '/settlement', '/esg',
+         '/intelligence', '/reports', '/popia', '/briefing',
+         '/ipp/variations', '/documents', '/settings/passkeys'].includes(n.path),
       );
     case 'lender':
       return BASE_NAV.filter((n) =>
-        ['/launch', '/projects', '/pipeline', '/funds', '/settlement', '/om', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
+        ['/launch', '/projects', '/pipeline', '/funds', '/settlement', '/om', '/intelligence',
+         '/reports', '/popia', '/briefing',
+         '/ipp/variations', '/documents', '/settings/passkeys'].includes(n.path),
       );
     case 'grid_operator':
-      return BASE_NAV.filter((n) => ['/launch', '/grid', '/settlement', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path));
+      return BASE_NAV.filter((n) =>
+        ['/launch', '/grid', '/settlement', '/intelligence', '/reports', '/popia', '/briefing',
+         '/ops/l5', '/documents', '/settings/passkeys'].includes(n.path),
+      );
     case 'regulator':
       return BASE_NAV.filter((n) =>
-        ['/launch', '/marketplace', '/esg', '/intelligence', '/reports', '/popia', '/briefing'].includes(n.path),
+        ['/launch', '/marketplace', '/esg', '/intelligence', '/reports', '/popia', '/briefing',
+         '/ops/l5', '/audit', '/documents', '/settings/passkeys'].includes(n.path),
       );
     default:
       return nonSystem;
