@@ -94,6 +94,7 @@ const SettlementOpsPage     = React.lazy(() => import('./components/pages/Settle
 const BulkOpsPage           = React.lazy(() => import('./components/pages/BulkOpsPage').then(m => ({ default: m.BulkOpsPage })));
 const PaiaAdminPage         = React.lazy(() => import('./components/pages/PaiaAdminPage').then(m => ({ default: m.PaiaAdminPage })));
 const PasskeysPage          = React.lazy(() => import('./components/pages/PasskeysPage').then(m => ({ default: m.PasskeysPage })));
+const EsumsSiteDetailPage   = React.lazy(() => import('./components/pages/EsumsSiteDetailPage').then(m => ({ default: m.EsumsSiteDetailPage })));
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { AiAssistantDock } from './components/AiAssistantDock';
 import { OnboardingTour } from './components/OnboardingTour';
@@ -1356,7 +1357,7 @@ function AppRoutes() {
       <Route path="/audit" element={<LazyWorkbench><PublicAuditPage /></LazyWorkbench>} />
       <Route path="/esums-om/faults/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/esums-om/workorders/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
-      <Route path="/esums-om/sites/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/esums-om/sites/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsSiteDetailPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/regulator-suite/workstation" element={<ProtectedRoute><Layout><RegulatorWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/admin-platform/workstation" element={<ProtectedRoute><Layout><AdminWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/support/workstation" element={<ProtectedRoute><Layout><SupportWorkstationPage /></Layout></ProtectedRoute>} />
