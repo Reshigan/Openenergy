@@ -23,13 +23,13 @@ r.get('/filters', async (c) => {
   const own = await c.env.DB.prepare(`
     SELECT id, surface, name, filter_json, shared, created_at, updated_at
     FROM oe_saved_filters
-    WHERE user_id = ? ${surface ? 'AND surface = ?' : ''}
+    WHERE participant_id = ? ${surface ? 'AND surface = ?' : ''}
     ORDER BY updated_at DESC
   `).bind(...(surface ? [user.id, surface] : [user.id])).all().catch(() => ({ results: [] as any[] }));
   const shared = await c.env.DB.prepare(`
-    SELECT id, surface, name, filter_json, shared, created_at, updated_at, user_id AS owner_id
+    SELECT id, surface, name, filter_json, shared, created_at, updated_at, participant_id AS owner_id
     FROM oe_saved_filters
-    WHERE shared = 1 AND (shared_role = ? OR shared_role IS NULL) AND user_id <> ?
+    WHERE shared = 1 AND (shared_role = ? OR shared_role IS NULL) AND participant_id <> ?
       ${surface ? 'AND surface = ?' : ''}
     ORDER BY updated_at DESC
   `).bind(...(surface ? [user.role, user.id, surface] : [user.role, user.id])).all().catch(() => ({ results: [] as any[] }));
@@ -43,11 +43,11 @@ r.post('/filters', async (c) => {
     return c.json({ success: false, error: 'surface + name + filter_json required' }, 400);
   }
   const id = genId('flt');
-  // Upsert by (user_id, surface, name).
+  // Upsert by (participant_id, surface, name).
   await c.env.DB.prepare(`
-    INSERT INTO oe_saved_filters (id, user_id, surface, name, filter_json, shared, shared_role)
-    VALUES (?,?,?,?,?,?,?)
-    ON CONFLICT(user_id, surface, name) DO UPDATE SET
+    INSERT INTO oe_saved_filters (id, participant_id, surface, name, filter_json, shared, shared_role, updated_at)
+    VALUES (?,?,?,?,?,?,?,datetime('now'))
+    ON CONFLICT(participant_id, surface, name) DO UPDATE SET
       filter_json = excluded.filter_json,
       shared = excluded.shared,
       shared_role = excluded.shared_role,
@@ -63,7 +63,7 @@ r.delete('/filters/:id', async (c) => {
   const user = getCurrentUser(c);
   const id = c.req.param('id');
   const res = await c.env.DB.prepare(
-    `DELETE FROM oe_saved_filters WHERE id = ? AND user_id = ?`
+    `DELETE FROM oe_saved_filters WHERE id = ? AND participant_id = ?`
   ).bind(id, user.id).run();
   if (!res.meta.changes) return c.json({ success: false, error: 'not found or not owner' }, 404);
   return c.json({ success: true });

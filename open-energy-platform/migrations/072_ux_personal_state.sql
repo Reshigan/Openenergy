@@ -1,31 +1,24 @@
 -- ════════════════════════════════════════════════════════════════════════
 -- 072_ux_personal_state.sql — per-user UI state.
 --
--- Saved filters: each user can name and store filter configurations
--- per workstation surface. Shared filters (visible to all in same role)
--- are flagged by `shared = 1`.
---
--- Onboarding completion: which first-run tour steps the user has dismissed,
--- so the SPA only ever shows each step once.
---
--- Help dismissals: tooltips / inline help cards have a dismiss button
--- and the choice persists so we don't nag.
+-- oe_saved_filters was added in 059 with participant_id; this migration
+-- only adds the new shared_role column + the two never-before-seen
+-- tables for onboarding completion and help dismissals.
 -- ════════════════════════════════════════════════════════════════════════
 
-CREATE TABLE IF NOT EXISTS oe_saved_filters (
-  id              TEXT PRIMARY KEY,
-  user_id         TEXT NOT NULL,
-  surface         TEXT NOT NULL,            -- e.g. 'trading.orders', 'esums.faults'
-  name            TEXT NOT NULL,
-  filter_json     TEXT NOT NULL,            -- arbitrary JSON serialised by the UI
-  shared          INTEGER NOT NULL DEFAULT 0, -- visible to other users with same role
-  shared_role     TEXT,
-  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
-);
-CREATE INDEX IF NOT EXISTS idx_oe_saved_filters_user ON oe_saved_filters(user_id, surface);
-CREATE INDEX IF NOT EXISTS idx_oe_saved_filters_shared ON oe_saved_filters(shared, shared_role, surface);
-CREATE UNIQUE INDEX IF NOT EXISTS uq_oe_saved_filters_name ON oe_saved_filters(user_id, surface, name);
+-- ALTER TABLE — add the shared_role column the ux-state router writes.
+-- Wrap in a no-op if the column already exists; SQLite has no "IF NOT
+-- EXISTS" on ALTER, so the migration helper treats a "duplicate column"
+-- error as already-applied (see CLAUDE.md migration-discipline section).
+ALTER TABLE oe_saved_filters ADD COLUMN shared_role TEXT;
+ALTER TABLE oe_saved_filters ADD COLUMN updated_at TEXT;
+
+-- Re-key uniqueness on (participant_id, surface, name) so the upsert in
+-- POST /api/ux-state/filters works.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_oe_saved_filters_pid_surf_name
+  ON oe_saved_filters(participant_id, surface, name);
+CREATE INDEX IF NOT EXISTS idx_oe_saved_filters_shared
+  ON oe_saved_filters(shared, shared_role, surface);
 
 CREATE TABLE IF NOT EXISTS oe_onboarding_state (
   user_id         TEXT NOT NULL,

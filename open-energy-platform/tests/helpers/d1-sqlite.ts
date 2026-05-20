@@ -18,6 +18,32 @@ import Database from 'better-sqlite3';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+/**
+ * Split a SQL string into statements at top-level semicolons.
+ * Skips semicolons inside single-quoted strings or line comments.
+ */
+function splitSqlStatements(sql: string): string[] {
+  const out: string[] = [];
+  let buf = '';
+  let inSingle = false;
+  let inLineComment = false;
+  for (let i = 0; i < sql.length; i++) {
+    const c = sql[i];
+    const n = sql[i + 1];
+    if (inLineComment) {
+      if (c === '\n') inLineComment = false;
+      buf += c;
+      continue;
+    }
+    if (!inSingle && c === '-' && n === '-') { inLineComment = true; buf += c; continue; }
+    if (c === "'") { inSingle = !inSingle; buf += c; continue; }
+    if (c === ';' && !inSingle) { out.push(buf); buf = ''; continue; }
+    buf += c;
+  }
+  if (buf.trim().length) out.push(buf);
+  return out.map((s) => s.trim()).filter((s) => s.length > 0);
+}
+
 export interface TestDbOptions {
   /** If true, apply migrations/*.sql in lexicographic order. */
   applyMigrations?: boolean;
@@ -38,12 +64,18 @@ export function createTestDb(opts: TestDbOptions = {}): Database.Database {
       : all.filter((f) => !/_seed\.sql$|_seed_/i.test(f));
     for (const f of files) {
       const sql = readFileSync(join(dir, f), 'utf8');
-      try {
-        db.exec(sql);
-      } catch (err) {
-        // Make failure loud so tests fail fast at setup rather than later
-        // with a cryptic missing-table error.
-        throw new Error(`Migration ${f} failed: ${(err as Error).message}`);
+      // Mirror CI behaviour: run statements one-by-one and treat
+      // "duplicate column" as already-applied (matches the
+      // ALTER TABLE … ADD COLUMN reconciliation we do in CI deploys).
+      const stmts = splitSqlStatements(sql);
+      for (const stmt of stmts) {
+        try {
+          db.exec(stmt);
+        } catch (err) {
+          const msg = (err as Error).message || '';
+          if (/duplicate column name/i.test(msg)) continue;
+          throw new Error(`Migration ${f} failed: ${msg}`);
+        }
       }
     }
   }

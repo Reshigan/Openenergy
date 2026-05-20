@@ -47,6 +47,7 @@ async function refreshAccessToken(): Promise<string | null> {
 
 interface RetryableConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
+  _stepUpRetry?: boolean;
 }
 
 api.interceptors.response.use(
@@ -54,7 +55,22 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const original = error.config as RetryableConfig | undefined;
     const status = error.response?.status;
+    const body = error.response?.data as any;
     const isAuthEndpoint = typeof original?.url === 'string' && /\/auth\/(login|refresh|register|forgot-password|reset-password|verify-email)/.test(original.url);
+
+    // Step-up MFA gate: the server returns 401 + { error: 'step_up_required' }
+    // when the op needs a fresh second factor. Show the global modal and,
+    // on success, retry the original request once.
+    if (status === 401 && body?.error === 'step_up_required' && original && !original._stepUpRetry) {
+      original._stepUpRetry = true;
+      // Lazy-load the bus to avoid a cycle with App.tsx on initial parse.
+      const { requestStepUp } = await import('./stepUp');
+      const opType = String(body?.data?.op_type || '*');
+      const ok = await requestStepUp(opType);
+      if (ok) return api.request(original);
+      return Promise.reject(error);
+    }
+
     if (status === 401 && original && !original._retry && !isAuthEndpoint) {
       original._retry = true;
       const newToken = await refreshAccessToken();

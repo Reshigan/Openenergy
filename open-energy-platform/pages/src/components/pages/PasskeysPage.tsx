@@ -77,15 +77,12 @@ export function PasskeysPage() {
       const cred = await navigator.credentials.create({ publicKey }) as PublicKeyCredential | null;
       if (!cred) throw new Error('credential creation cancelled');
       const att = cred.response as AuthenticatorAttestationResponse;
-      // The SPA does not parse the full attestation — it ships the credential
-      // id + the public key chunk to the server. The server records uniqueness
-      // and ties the credential to this participant.
-      const credentialId = bytesToB64u(cred.rawId);
-      const publicKeyB64 = bytesToB64u(att.getPublicKey?.() || new ArrayBuffer(0));
+      // Ship the raw attestationObject + clientDataJSON. The server parses
+      // the CBOR attestation, extracts the COSE public key, validates the
+      // challenge from clientDataJSON, and stores it for later verification.
       const finish = await api.post('/auth-deep/webauthn/register/finish', {
-        credential_id: credentialId,
-        public_key: publicKeyB64,
-        expected_challenge: opts.challenge,
+        attestation_object_b64u: bytesToB64u(att.attestationObject),
+        client_data_json_b64u: bytesToB64u(att.clientDataJSON),
         device_name: deviceName || ((navigator as any).userAgentData?.platform || 'Security key'),
         transports: att.getTransports?.() || [],
       });

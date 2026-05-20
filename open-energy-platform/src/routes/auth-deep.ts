@@ -26,6 +26,12 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { recordStepUpAuth } from '../middleware/step-up';
+import {
+  parseRegistrationAttestation as webauthnParseRegistrationAttestation,
+  b64uToBytes as webauthnB64uToBytes,
+  verifyAssertion as webauthnVerifyAssertion,
+  sha256 as webauthnSha256,
+} from '../utils/webauthn';
 
 const r = new Hono<HonoEnv>();
 r.use('*', authMiddleware);
@@ -177,13 +183,47 @@ r.post('/mfa/challenge/verify', async (c) => {
       ok = true;
     }
   } else if (method === 'webauthn') {
-    // Simplified WebAuthn verify — production checks origin, RP ID hash,
-    // clientDataJSON sig, etc. Here we trust the SPA's prior assertion
-    // (full ceremony lives in /webauthn/finish).
+    // Real WebAuthn assertion verification — the SPA performs
+    // navigator.credentials.get() and POSTs:
+    //   credential_id, authenticator_data_b64u, client_data_json_b64u,
+    //   signature_b64u, (optional) expected_challenge.
+    //
+    // We pull the COSE public key + last counter for the credential, then:
+    //   - parse + validate clientDataJSON (type, challenge, origin)
+    //   - validate authenticatorData rpIdHash + counter regression
+    //   - verify signature over (authData || SHA-256(clientDataJSON))
     const credId = String(b.credential_id || '');
-    const row = await c.env.DB.prepare(`SELECT id FROM oe_webauthn_credentials WHERE participant_id = ? AND credential_id = ? AND revoked_at IS NULL`).bind(user.id, credId).first<any>();
-    ok = !!row;
-    if (ok) await c.env.DB.prepare(`UPDATE oe_webauthn_credentials SET last_used_at = datetime('now'), counter = counter + 1 WHERE id = ?`).bind(row.id).run();
+    const row = await c.env.DB.prepare(`
+      SELECT id, public_key, counter FROM oe_webauthn_credentials
+      WHERE participant_id = ? AND credential_id = ? AND revoked_at IS NULL
+    `).bind(user.id, credId).first<{ id: string; public_key: string; counter: number }>();
+    if (!row) {
+      ok = false;
+    } else if (!b.authenticator_data_b64u || !b.client_data_json_b64u || !b.signature_b64u) {
+      // Strict mode — old clients that only send credential_id fail.
+      ok = false;
+    } else {
+      const reqOrigin = new URL(c.req.url).origin;
+      const rpId = new URL(c.req.url).hostname;
+      const rpIdHash = await webauthnSha256(rpId);
+      const result = await webauthnVerifyAssertion({
+        publicKeyCoseB64u: row.public_key,
+        authenticatorDataB64u: String(b.authenticator_data_b64u),
+        clientDataJSONB64u: String(b.client_data_json_b64u),
+        signatureB64u: String(b.signature_b64u),
+        expectedChallenge: b.expected_challenge ? String(b.expected_challenge) : undefined,
+        expectedRpIdHash: rpIdHash,
+        expectedOrigin: reqOrigin,
+        expectedType: 'webauthn.get',
+        storedCounter: Number(row.counter || 0),
+      });
+      ok = result.ok;
+      if (ok) {
+        await c.env.DB.prepare(
+          `UPDATE oe_webauthn_credentials SET last_used_at = datetime('now'), counter = ? WHERE id = ?`
+        ).bind(result.newCounter, row.id).run();
+      }
+    }
   }
 
   await c.env.DB.prepare(`INSERT INTO oe_mfa_attempts (id, participant_id, method, ok, ip) VALUES (?,?,?,?,?)`)
@@ -242,14 +282,37 @@ r.post('/webauthn/register/begin', async (c) => {
 r.post('/webauthn/register/finish', async (c) => {
   const user = getCurrentUser(c);
   const b = await c.req.json().catch(() => ({} as any));
-  if (!b.credential_id || !b.public_key) return c.json({ success: false, error: 'credential_id + public_key required' }, 400);
-  // Verify the challenge from KV — light-touch (full attestation parse is
-  // a much bigger lift; SPA performs the ceremony, server verifies the
-  // resulting credential id is unique and ties it to the participant)
+  // The SPA sends the raw attestationObject + clientDataJSON, both base64url-
+  // encoded. We parse the CBOR-encoded attestation to extract the credential
+  // id + COSE public key, verify the challenge from clientDataJSON, and
+  // store the COSE key for later assertion verification.
+  if (!b.attestation_object_b64u || !b.client_data_json_b64u) {
+    return c.json({ success: false, error: 'attestation_object_b64u + client_data_json_b64u required' }, 400);
+  }
+  let parsed: { credentialId: string; publicKeyCoseB64u: string; signCount: number; aaguid: string };
+  try {
+    parsed = webauthnParseRegistrationAttestation(b.attestation_object_b64u);
+  } catch (err) {
+    return c.json({ success: false, error: 'attestation parse failed: ' + (err as Error).message }, 400);
+  }
+  // Verify clientDataJSON challenge matches the one we issued in /begin
+  let clientData: any;
+  try {
+    clientData = JSON.parse(new TextDecoder().decode(webauthnB64uToBytes(b.client_data_json_b64u)));
+  } catch { return c.json({ success: false, error: 'clientDataJSON invalid' }, 400); }
+  if (clientData.type !== 'webauthn.create') {
+    return c.json({ success: false, error: 'clientData.type must be webauthn.create' }, 400);
+  }
   let cachedChallenge: string | null = null;
   if (c.env.KV) cachedChallenge = await c.env.KV.get(`webauthn:reg:${user.id}`);
-  if (b.expected_challenge && cachedChallenge && b.expected_challenge !== cachedChallenge) {
+  if (cachedChallenge && clientData.challenge !== cachedChallenge) {
     return c.json({ success: false, error: 'challenge mismatch' }, 400);
+  }
+  // Origin check — anchor to request origin so a hijacked SPA can't pin
+  // a stolen credential to a foreign domain.
+  const reqOrigin = new URL(c.req.url).origin;
+  if (clientData.origin && clientData.origin !== reqOrigin) {
+    return c.json({ success: false, error: `origin mismatch: ${clientData.origin}` }, 400);
   }
   const id = genId('wac');
   await c.env.DB.prepare(`
@@ -257,12 +320,12 @@ r.post('/webauthn/register/finish', async (c) => {
       (id, participant_id, credential_id, public_key, counter, transports, device_name)
     VALUES (?,?,?,?,?,?,?)
   `).bind(
-    id, user.id, b.credential_id, b.public_key, Number(b.counter || 0),
+    id, user.id, parsed.credentialId, parsed.publicKeyCoseB64u, Number(parsed.signCount || 0),
     b.transports ? JSON.stringify(b.transports) : null,
     b.device_name || 'Security key',
   ).run();
   if (c.env.KV) await c.env.KV.delete(`webauthn:reg:${user.id}`);
-  return c.json({ success: true, data: { id } }, 201);
+  return c.json({ success: true, data: { id, credential_id: parsed.credentialId } }, 201);
 });
 
 r.get('/webauthn/credentials', async (c) => {
