@@ -19,7 +19,17 @@ import { SignatureLaunchBoard } from './SignatureLaunchBoard';
 // Roles that have been migrated to the signature design system. Adding a
 // role to this set switches its launch board to the new chrome without
 // touching the API surface.
-const SIGNATURE_ROLES = new Set(['trader', 'lender']);
+const SIGNATURE_ROLES = new Set([
+  'trader',
+  'lender',
+  'ipp_developer',
+  'offtaker',
+  'grid_operator',
+  'regulator',
+  'carbon_fund',
+  'admin',
+  'support',
+]);
 
 const KNOWN_ROLES = new Set([
   'trader',

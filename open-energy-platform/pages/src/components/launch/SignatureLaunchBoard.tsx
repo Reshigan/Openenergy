@@ -104,9 +104,55 @@ function LenderWaterfallMotif({ kpis }: { kpis: Kpi[] }) {
   );
 }
 
+// "Vital signs" — a stack of StatusPulse rows derived from KPI tone. Used as
+// the default motif for ops roles (grid, regulator, support) that don't have
+// a bespoke visualization yet.
+function VitalSignsMotif({ kpis }: { kpis: Kpi[] }) {
+  if (kpis.length === 0) return null;
+  const toneToPulse = (t?: string): 'live' | 'warn' | 'critical' | 'idle' => {
+    if (t === 'good') return 'live';
+    if (t === 'warn') return 'warn';
+    if (t === 'bad') return 'critical';
+    return 'idle';
+  };
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {kpis.slice(0, 5).map((k) => (
+        <div
+          key={k.key}
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '10px 14px',
+            background: 'color-mix(in srgb, var(--role-surface-raised) 60%, transparent)',
+            border: '1px solid var(--role-border)',
+            borderRadius: 'var(--oe-radius-card)',
+          }}
+        >
+          <StatusPulse tone={toneToPulse(k.tone)} label={k.label} />
+          <span
+            className="oe-tnum"
+            style={{ fontFamily: 'var(--oe-num-font)', fontSize: 18, fontWeight: 600, color: 'var(--role-on-surface)' }}
+          >
+            {k.value}
+            {k.unit ? <span style={{ opacity: 0.6, fontSize: 12, marginLeft: 4 }}>{k.unit}</span> : null}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function HeroMotifFor({ role, kpis }: { role: string; kpis: Kpi[] }) {
   if (role === 'trader') return <TraderTickerMotif kpis={kpis} />;
   if (role === 'lender') return <LenderWaterfallMotif kpis={kpis} />;
+  if (role === 'grid_operator' || role === 'regulator' || role === 'support') {
+    return <VitalSignsMotif kpis={kpis} />;
+  }
+  if (role === 'admin' || role === 'ipp_developer' || role === 'offtaker' || role === 'carbon_fund') {
+    return <LenderWaterfallMotif kpis={kpis} />;
+  }
   return null;
 }
 
