@@ -14,6 +14,12 @@ import React from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../lib/useAuth';
 import { LaunchBoardShell } from './LaunchBoardShell';
+import { SignatureLaunchBoard } from './SignatureLaunchBoard';
+
+// Roles that have been migrated to the signature design system. Adding a
+// role to this set switches its launch board to the new chrome without
+// touching the API surface.
+const SIGNATURE_ROLES = new Set(['trader', 'lender']);
 
 const KNOWN_ROLES = new Set([
   'trader',
@@ -43,6 +49,7 @@ export function RoleLaunchBoard() {
     return <Navigate to={fallback} replace />;
   }
 
+  if (SIGNATURE_ROLES.has(role)) return <SignatureLaunchBoard role={role} />;
   return <LaunchBoardShell role={role} />;
 }
 
