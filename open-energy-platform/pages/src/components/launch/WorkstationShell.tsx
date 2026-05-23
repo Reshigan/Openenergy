@@ -14,6 +14,8 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
+import { RoleShell, CommandRail, type CommandItem } from '../signature';
+import { themeFor, type RoleKey } from '../../lib/role-themes';
 
 export type WorkstationTab = {
   key: string;
@@ -28,6 +30,8 @@ export function WorkstationShell({
   backHref,
   backLabel,
   tabs,
+  role,
+  commands,
 }: {
   eyebrow: string;
   title: string;
@@ -35,6 +39,12 @@ export function WorkstationShell({
   backHref?: string;
   backLabel?: string;
   tabs: WorkstationTab[];
+  /** Role key from role-themes. When provided, the workstation is wrapped in
+   *  RoleShell at the role's workstationDensity (bloomberg for ops, cinematic
+   *  for others) and chrome adopts signature tokens. */
+  role?: RoleKey | string;
+  /** Optional hotkey-driven command rail. Only rendered when role is given. */
+  commands?: CommandItem[];
 }) {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
@@ -51,6 +61,134 @@ export function WorkstationShell({
 
   const refresh = () => setBump(n => n + 1);
   const current = tabs.find(t => t.key === activeTab) || tabs[0];
+
+  if (role) {
+    const theme = themeFor(role);
+    return (
+      <RoleShell role={role} density={theme.workstationDensity}>
+        {commands && commands.length > 0 ? <CommandRail items={commands} /> : null}
+        <div style={{ padding: 'var(--oe-pad-section)', display: 'flex', flexDirection: 'column', gap: 16, minHeight: '100%' }}>
+          <header style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'var(--role-accent)',
+                  padding: '4px 10px',
+                  border: '1px solid var(--role-border)',
+                  borderRadius: 999,
+                  background: 'color-mix(in srgb, var(--role-accent-soft) 80%, transparent)',
+                }}
+              >
+                {eyebrow}
+              </div>
+              <h1
+                style={{
+                  fontFamily: 'var(--oe-display-font)',
+                  fontSize: theme.workstationDensity === 'bloomberg' ? 22 : 28,
+                  fontWeight: 600,
+                  letterSpacing: '-0.02em',
+                  marginTop: 8,
+                  color: 'var(--role-on-surface)',
+                }}
+              >
+                {title}
+              </h1>
+              <p style={{ fontSize: 13, color: 'var(--role-on-surface-muted)', maxWidth: 720, margin: '4px 0 0' }}>
+                {subtitle}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {backHref && (
+                <button
+                  onClick={() => navigate(backHref)}
+                  style={{
+                    height: 32,
+                    padding: '0 12px',
+                    border: '1px solid var(--role-border)',
+                    background: 'var(--role-surface-raised)',
+                    color: 'var(--role-on-surface)',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    borderRadius: 4,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <ArrowLeft size={12} /> {backLabel || 'Back'}
+                </button>
+              )}
+              <button
+                onClick={refresh}
+                style={{
+                  height: 32,
+                  padding: '0 12px',
+                  border: '1px solid var(--role-border)',
+                  background: 'var(--role-surface-raised)',
+                  color: 'var(--role-on-surface)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  borderRadius: 4,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  cursor: 'pointer',
+                }}
+              >
+                <RefreshCw size={12} /> Refresh
+              </button>
+            </div>
+          </header>
+
+          <nav
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 2,
+              padding: 4,
+              border: '1px solid var(--role-border)',
+              borderRadius: 'var(--oe-radius-card)',
+              background: 'var(--role-surface-raised)',
+            }}
+          >
+            {tabs.map(t => {
+              const isActive = activeTab === t.key;
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  style={{
+                    height: 30,
+                    padding: '0 12px',
+                    borderRadius: 4,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: isActive ? '#0a1622' : 'var(--role-on-surface-muted)',
+                    background: isActive ? 'var(--role-accent)' : 'transparent',
+                    transition: 'background 120ms ease-out',
+                  }}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div key={`${activeTab}-${bump}`}>{current.body({ onRefresh: refresh })}</div>
+        </div>
+      </RoleShell>
+    );
+  }
 
   return (
     <div className="p-6 lg:p-10 space-y-4 min-h-screen" style={{ background: 'var(--oe-surface)' }}>

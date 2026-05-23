@@ -19,6 +19,7 @@ function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
 export function AdminWorkstationPage() {
   return (
     <WorkstationShell
+      role="admin"
       eyebrow="Admin · Workstation"
       title="Platform admin workstation"
       subtitle="Tenant lifecycle · Billing runs · Feature-flag overrides. Audit trail for every platform-level change."

@@ -6,6 +6,7 @@ import { api } from '../../lib/api';
 export function OfftakerWorkstationPage() {
   return (
     <WorkstationShell
+      role="offtaker"
       eyebrow="Offtaker · Workstation"
       title="Offtaker workstation"
       subtitle="Delivery points · Tariffs · Budgets · RECs · Scope 2. Day-to-day energy ops for a corporate consumer."

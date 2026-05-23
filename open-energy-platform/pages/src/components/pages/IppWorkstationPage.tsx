@@ -6,6 +6,7 @@ import { api } from '../../lib/api';
 export function IppWorkstationPage() {
   return (
     <WorkstationShell
+      role="ipp_developer"
       eyebrow="IPP developer · Workstation"
       title="IPP workstation"
       subtitle="Projects · Milestones · Insurance · Community. The site-to-COD pipeline a developer runs every day."

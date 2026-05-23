@@ -12,6 +12,7 @@ export function SupportWorkstationPage() {
   return (
     <>
       <WorkstationShell
+        role="support"
         eyebrow="Support · Workstation"
         title="Support workstation"
         subtitle="Tickets · Escalations · Cross-tenant access audit. All the support tooling — no external ticketing system needed."

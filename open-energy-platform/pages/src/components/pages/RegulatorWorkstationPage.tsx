@@ -24,6 +24,7 @@ const LICENCE_TRANSITIONS = [
 export function RegulatorWorkstationPage() {
   return (
     <WorkstationShell
+      role="regulator"
       eyebrow="Regulator · Workstation"
       title="Regulator workstation"
       subtitle="Surveillance triage · Licence action workflow · Enforcement case events."

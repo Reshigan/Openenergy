@@ -16,6 +16,7 @@ function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
 export function GridOpsWorkstationPage() {
   return (
     <WorkstationShell
+      role="grid_operator"
       eyebrow="Grid operator · Workstation"
       title="Grid operations workstation"
       subtitle="Curtailment events · Outage responses · Ancillary award events. Single screen, all in-platform."

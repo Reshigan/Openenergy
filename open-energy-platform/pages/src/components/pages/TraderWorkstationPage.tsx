@@ -6,6 +6,7 @@ import { api } from '../../lib/api';
 export function TraderWorkstationPage() {
   return (
     <WorkstationShell
+      role="trader"
       eyebrow="Trader · Workstation"
       title="Trader workstation"
       subtitle="Open orders · Rejections · Exceptions · Margin calls · Audit. Every workflow a trader needs after the order is placed."

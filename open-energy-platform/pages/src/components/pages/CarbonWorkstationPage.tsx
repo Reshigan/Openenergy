@@ -33,6 +33,7 @@ const MRV_TRANSITIONS = [
 export function CarbonWorkstationPage() {
   return (
     <WorkstationShell
+      role="carbon_fund"
       eyebrow="Carbon fund · Workstation"
       title="Carbon workstation"
       subtitle="Vintage workflow · MRV submissions · Retirement certificates. All flows; no external tools needed."
