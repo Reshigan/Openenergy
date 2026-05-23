@@ -33,6 +33,7 @@ import { VintageDetailPage } from './components/pages/VintageDetailPage';
 import { LicenceActionDetailPage } from './components/pages/LicenceActionDetailPage';
 import { GridOutageDetailPage } from './components/pages/GridOutageDetailPage';
 import { BillingRunDetailPage } from './components/pages/BillingRunDetailPage';
+import SignaturePreview from './components/signature/__preview__/SignaturePreview';
 
 // Import page components
 import { Cockpit } from './components/pages/Cockpit';
@@ -1378,6 +1379,9 @@ function AppRoutes() {
       <Route path="/offtaker-suite" element={<ProtectedRoute><Layout><LazyWorkbench><OfftakerSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/carbon-registry" element={<ProtectedRoute><Layout><LazyWorkbench><CarbonRegistryPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/admin-platform" element={<ProtectedRoute><Layout><LazyWorkbench><AdminPlatformPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      {import.meta.env.DEV ? (
+        <Route path="/dev/signature" element={<SignaturePreview />} />
+      ) : null}
       <Route path="/" element={<Navigate to="/launch" replace />} />
       <Route path="*" element={<Navigate to="/launch" replace />} />
     </Routes>

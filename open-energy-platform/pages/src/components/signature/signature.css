@@ -1,0 +1,90 @@
+/* Signature design-system stylesheet.
+ *
+ * This file owns the CSS variables that <RoleShell> sets and the density-mode
+ * rules that downstream components consume. Component-level styling stays in
+ * Tailwind / inline styles — this file only carries things Tailwind can't
+ * express (CSS custom properties, prefers-reduced-motion, density switches).
+ */
+
+[data-role-shell] {
+  --role-accent: #f5b800;
+  --role-accent-secondary: #5fa8e8;
+  --role-accent-soft: rgba(245, 184, 0, 0.18);
+  --role-haze: radial-gradient(120% 80% at 20% 0%, rgba(245, 184, 0, 0.22) 0%, rgba(10, 22, 34, 0) 60%);
+
+  --role-surface: #ffffff;
+  --role-surface-raised: #f5f8fb;
+  --role-on-surface: #0f1c2e;
+  --role-on-surface-muted: #4a5666;
+  --role-border: rgba(15, 28, 46, 0.10);
+}
+
+[data-role-shell][data-chrome='dark'] {
+  --role-surface: #0f1c2e;
+  --role-surface-raised: #16263d;
+  --role-on-surface: #eef2f7;
+  --role-on-surface-muted: #9aa6b8;
+  --role-border: rgba(255, 255, 255, 0.10);
+}
+
+[data-role-shell][data-chrome='warm'] {
+  --role-surface: #fdf9f2;
+  --role-surface-raised: #f7f3ec;
+  --role-on-surface: #2a1f12;
+  --role-on-surface-muted: #6b5b48;
+  --role-border: rgba(42, 31, 18, 0.12);
+}
+
+[data-role-shell][data-density='cinematic'] {
+  --oe-pad-card: 24px;
+  --oe-pad-section: 32px;
+  --oe-radius-card: 16px;
+  --oe-hero-numeral: clamp(72px, 9vw, 128px);
+  --oe-num-font: 'Inter Tight Variable', 'Inter Tight', 'Inter Variable', 'Inter', system-ui, sans-serif;
+}
+
+[data-role-shell][data-density='bloomberg'] {
+  --oe-pad-card: 12px;
+  --oe-pad-section: 16px;
+  --oe-radius-card: 4px;
+  --oe-hero-numeral: 40px;
+  --oe-num-font: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+}
+
+[data-role-shell][data-display-font='newsreader'] {
+  --oe-display-font: 'Newsreader Variable', 'Newsreader', Georgia, serif;
+}
+[data-role-shell][data-display-font='inter-tight'] {
+  --oe-display-font: 'Inter Tight Variable', 'Inter Tight', 'Inter', system-ui, sans-serif;
+}
+
+@keyframes oe-flash-up {
+  0% { background-color: rgba(31, 138, 91, 0.45); }
+  100% { background-color: transparent; }
+}
+@keyframes oe-flash-down {
+  0% { background-color: rgba(192, 57, 43, 0.45); }
+  100% { background-color: transparent; }
+}
+[data-flash='up'] { animation: oe-flash-up 220ms ease-out; }
+[data-flash='down'] { animation: oe-flash-down 220ms ease-out; }
+
+@keyframes oe-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.65; }
+  50% { transform: scale(1.6); opacity: 0; }
+}
+.oe-pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: oe-pulse 1.6s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-flash='up'], [data-flash='down'] { animation: none; }
+  .oe-pulse::after { animation: none; opacity: 0.5; transform: scale(1.2); }
+}
+
+.oe-tnum { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; }

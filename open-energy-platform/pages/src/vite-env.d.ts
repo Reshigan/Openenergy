@@ -5,6 +5,10 @@
 
 declare module '*.css';
 declare module '*.module.css';
+declare module '@fontsource-variable/inter';
+declare module '@fontsource-variable/inter-tight';
+declare module '@fontsource-variable/newsreader';
+declare module '@fontsource-variable/jetbrains-mono';
 
 // Project icon module path — declared so Tile.tsx's deep import resolves
 // even when the icon barrel re-exports from a sub-folder.

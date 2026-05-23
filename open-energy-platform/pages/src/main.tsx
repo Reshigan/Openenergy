@@ -4,7 +4,12 @@ import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { registerServiceWorker } from './lib/pwa';
 import { installSastClock } from './lib/sast';
+import '@fontsource-variable/inter';
+import '@fontsource-variable/inter-tight';
+import '@fontsource-variable/newsreader';
+import '@fontsource-variable/jetbrains-mono';
 import './index.css';
+import './components/signature/signature.css';
 
 // Force every timestamp render across the SPA to South African Standard
 // Time (UTC+2). NERSA / SARS / PAIA filings all operate in SAST; a regulator

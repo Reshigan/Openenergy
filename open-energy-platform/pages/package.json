@@ -10,7 +10,12 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.1.0",
+    "@fontsource-variable/inter-tight": "^5.1.0",
+    "@fontsource-variable/jetbrains-mono": "^5.1.0",
+    "@fontsource-variable/newsreader": "^5.1.0",
     "axios": "^1.7.2",
+    "framer-motion": "^11.11.0",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.8.0",
     "qrcode.react": "^4.2.0",
