@@ -16,6 +16,8 @@ import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { RoleShell, CommandRail, type CommandItem } from '../signature';
 import { themeFor, type RoleKey } from '../../lib/role-themes';
+import { motion, AnimatePresence } from 'framer-motion';
+import { motionTransition } from '../../lib/motion';
 
 export type WorkstationTab = {
   key: string;
@@ -385,8 +387,24 @@ export function ActionModal({
   };
   const btnCls = cta === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-[#1a3a5c] hover:bg-[#0f1c2e]';
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+    <AnimatePresence>
+    <motion.div
+      key="modal-backdrop"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={motionTransition('snap')}
+      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 12, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 8, scale: 0.98 }}
+        transition={motionTransition('snap')}
+        className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
           <h3 className="text-[16px] font-semibold text-[#0f1c2e]">{title}</h3>
           <button onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e]">×</button>
@@ -416,7 +434,8 @@ export function ActionModal({
             </button>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+    </AnimatePresence>
   );
 }

@@ -4,6 +4,7 @@ import { useAuth } from '../lib/useAuth';
 import { LogoMark } from './Logo';
 import { MatIcon } from './OEIcon';
 import { LtmLogo } from './LtmLogo';
+import { themeFor } from '../lib/role-themes';
 
 /* ════════════════════════════════════════════════════════════════════════
  * Open Energy Platform — App Shell
@@ -332,8 +333,25 @@ export function FioriShell({ children }: { children: ReactNode }) {
     navigate(`/search?q=${encodeURIComponent(query.trim())}`);
   }
 
+  const roleTheme = themeFor(user?.role);
   return (
-    <div className="min-h-screen" style={{ background: 'var(--oe-surface)' }}>
+    <div className="min-h-screen" style={{ background: 'var(--oe-surface)' }} data-role={roleTheme.key}>
+      {/* Per-role accent strip — 2px ribbon at the very top of the chrome.
+       *  Subtle but immediate signal that "this is the trader's app vs the
+       *  regulator's app". See [[project-100m-experience]] Batch 4. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 2,
+          background: `linear-gradient(90deg, ${roleTheme.accent} 0%, ${roleTheme.accentSecondary ?? roleTheme.accent} 100%)`,
+          zIndex: 100,
+          pointerEvents: 'none',
+        }}
+      />
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-primary focus:px-3 focus:py-2 focus:rounded-md focus:shadow-lg focus:outline-none"
