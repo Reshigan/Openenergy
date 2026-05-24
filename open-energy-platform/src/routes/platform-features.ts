@@ -17,6 +17,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { fireCascade } from '../utils/cascade';
 
 const platform = new Hono<HonoEnv>();
 platform.use('*', authMiddleware);
@@ -79,6 +80,19 @@ platform.post('/api-keys', async (c) => {
     b.expires_at || null,
     user.id,
   ).run();
+  await fireCascade({
+    event: 'platform.api_key_issued',
+    actor_id: user.id,
+    entity_type: 'oe_api_keys',
+    entity_id: id,
+    data: {
+      id, name: b.name, key_preview: preview,
+      scopes: b.scopes || null,
+      rate_limit_per_minute: Number(b.rate_limit_per_minute || 60),
+      expires_at: b.expires_at || null,
+    },
+    env: c.env,
+  });
   // The raw key is returned ONCE in the response. Caller must store it.
   return c.json({ success: true, data: { id, key: raw, key_preview: preview, name: b.name } }, 201);
 });
@@ -94,6 +108,17 @@ platform.post('/api-keys/:id/revoke', async (c) => {
   }
   await c.env.DB.prepare(`UPDATE oe_api_keys SET revoked = 1, revoked_reason = ? WHERE id = ?`)
     .bind(b.reason || 'user_revoked', id).run();
+  await fireCascade({
+    event: 'platform.api_key_revoked',
+    actor_id: user.id,
+    entity_type: 'oe_api_keys',
+    entity_id: id,
+    data: {
+      id, reason: b.reason || 'user_revoked',
+      owner_participant_id: row.participant_id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -184,6 +209,17 @@ platform.post('/webhooks/subscriptions', async (c) => {
     id, user.id, b.target_url, secret,
     JSON.stringify(b.events), b.description || null, user.id,
   ).run();
+  await fireCascade({
+    event: 'platform.webhook_subscribed',
+    actor_id: user.id,
+    entity_type: 'oe_webhook_subscriptions',
+    entity_id: id,
+    data: {
+      id, target_url: b.target_url, events: b.events,
+      description: b.description || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, secret } }, 201);
 });
 
@@ -198,6 +234,14 @@ platform.post('/webhooks/subscriptions/:id/disable', async (c) => {
   await c.env.DB.prepare(
     `UPDATE oe_webhook_subscriptions SET enabled = 0, disabled_at = datetime('now') WHERE id = ?`,
   ).bind(id).run();
+  await fireCascade({
+    event: 'platform.webhook_disabled',
+    actor_id: user.id,
+    entity_type: 'oe_webhook_subscriptions',
+    entity_id: id,
+    data: { id, owner_participant_id: row.participant_id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 

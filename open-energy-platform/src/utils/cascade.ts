@@ -205,7 +205,10 @@ export type EventType =
   // ─── Support console (POPIA-sensitive impersonation + tickets) ─────────
   | 'support.impersonation_started' | 'support.ticket_opened'
   | 'support.ticket_transitioned' | 'support.escalation_filed'
-  | 'support.cross_tenant_access';
+  | 'support.cross_tenant_access'
+  // ─── Platform-features (api-keys + webhook subscriptions) ──────────────
+  | 'platform.api_key_issued' | 'platform.api_key_revoked'
+  | 'platform.webhook_subscribed' | 'platform.webhook_disabled';
 
 interface CascadeContext {
   event: EventType;
