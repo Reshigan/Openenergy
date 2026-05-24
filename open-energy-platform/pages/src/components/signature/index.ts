@@ -18,3 +18,7 @@ export { AiInlineCard } from './AiInlineCard';
 export type { AiInlineCardProps } from './AiInlineCard';
 export { StatusPulse } from './StatusPulse';
 export type { StatusPulseProps } from './StatusPulse';
+export { ToasterProvider, useToaster } from './Toaster';
+export type { ToastOptions, ToastTone } from './Toaster';
+export { DensityToggle } from './DensityToggle';
+export type { DensityToggleProps } from './DensityToggle';

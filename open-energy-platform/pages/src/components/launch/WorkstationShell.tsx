@@ -14,8 +14,9 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
-import { RoleShell, CommandRail, type CommandItem } from '../signature';
+import { RoleShell, CommandRail, DensityToggle, type CommandItem } from '../signature';
 import { themeFor, type RoleKey } from '../../lib/role-themes';
+import { useDensityPreference } from '../../lib/density';
 import { motion, AnimatePresence } from 'framer-motion';
 import { motionTransition } from '../../lib/motion';
 
@@ -64,10 +65,16 @@ export function WorkstationShell({
   const refresh = () => setBump(n => n + 1);
   const current = tabs.find(t => t.key === activeTab) || tabs[0];
 
+  // Density preference hook MUST be called unconditionally; for non-role
+  // workstations we just don't read it. We pass the fallback 'trader' theme
+  // in that case — it's discarded.
+  const roleTheme = themeFor(role ?? 'trader');
+  const densityState = useDensityPreference(roleTheme);
+
   if (role) {
-    const theme = themeFor(role);
+    const effectiveDensity = densityState.density;
     return (
-      <RoleShell role={role} density={theme.workstationDensity}>
+      <RoleShell role={role} density={effectiveDensity}>
         {commands && commands.length > 0 ? <CommandRail items={commands} /> : null}
         <div style={{ padding: 'var(--oe-pad-section)', display: 'flex', flexDirection: 'column', gap: 16, minHeight: '100%' }}>
           <header style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
@@ -93,7 +100,7 @@ export function WorkstationShell({
               <h1
                 style={{
                   fontFamily: 'var(--oe-display-font)',
-                  fontSize: theme.workstationDensity === 'bloomberg' ? 22 : 28,
+                  fontSize: effectiveDensity === 'bloomberg' ? 22 : 28,
                   fontWeight: 600,
                   letterSpacing: '-0.02em',
                   marginTop: 8,
@@ -106,7 +113,13 @@ export function WorkstationShell({
                 {subtitle}
               </p>
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              {densityState.canToggle ? (
+                <DensityToggle
+                  density={densityState.density}
+                  onChange={densityState.setDensity}
+                />
+              ) : null}
               {backHref && (
                 <button
                   onClick={() => navigate(backHref)}

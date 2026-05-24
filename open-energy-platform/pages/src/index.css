@@ -229,6 +229,79 @@ h1, h2, h3, h4, h5, h6, .font-display, .font-headline {
   padding: 12px 16px 4px;
 }
 
+/* ═══ Density-aware sidebar (role-scoped via data-density on aside) ═══
+   bloomberg = ops roles want dense, mono labels, hairline borders.
+   cinematic = strategic roles get more breathing room.
+   In both, the active indicator picks up the role's accent gradient. */
+.oe-rail[data-density='bloomberg'] .oe-rail-item,
+.fiori-rail[data-density='bloomberg'] .fiori-rail-item {
+  height: 32px; min-height: 32px;
+  margin: 1px 6px;
+  padding: 0 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  border-radius: 4px;
+  gap: 10px;
+}
+.oe-rail[data-density='bloomberg'] .oe-rail-section,
+.fiori-rail[data-density='bloomberg'] .fiori-rail-section {
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  padding: 10px 14px 2px;
+}
+
+.oe-rail[data-density='cinematic'] .oe-rail-item,
+.fiori-rail[data-density='cinematic'] .fiori-rail-item {
+  height: 44px; min-height: 44px;
+  margin: 3px 10px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  border-radius: 10px;
+  gap: 14px;
+}
+.oe-rail[data-density='cinematic'] .oe-rail-section,
+.fiori-rail[data-density='cinematic'] .fiori-rail-section {
+  font-size: 11px;
+  padding: 14px 18px 6px;
+}
+
+/* Role-accent treatment for the active item — wins over the generic
+   .fiori-rail-item.active rule because of the data-density specificity. */
+.oe-rail[data-density] .oe-rail-item.active::before,
+.fiori-rail[data-density] .fiori-rail-item.active::before {
+  background: linear-gradient(180deg, var(--rail-accent) 0%, var(--rail-accent-secondary) 100%);
+  width: 3px;
+  left: -6px;
+  top: 4px; bottom: 4px;
+}
+.oe-rail[data-density] .oe-rail-item.active,
+.fiori-rail[data-density] .fiori-rail-item.active {
+  background: var(--rail-accent-soft);
+  color: var(--oe-on-surface);
+  font-weight: 600;
+}
+.oe-rail[data-density] .oe-rail-item:hover,
+.fiori-rail[data-density] .fiori-rail-item:hover {
+  background: var(--rail-accent-soft);
+}
+
+/* Warm-chrome roles (regulator, ipp, offtaker) want a parchment rail. */
+.oe-rail[data-chrome='warm'],
+.fiori-rail[data-chrome='warm'] {
+  background: #fdf9f2;
+  border-right-color: rgba(42, 31, 18, 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oe-rail, .fiori-rail,
+  .oe-rail-item, .fiori-rail-item {
+    transition: none !important;
+  }
+}
+
 /* ═══ Hero strip ═══ */
 .fiori-hero, .oe-hero {
   position: relative; overflow: hidden;

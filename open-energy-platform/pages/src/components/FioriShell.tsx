@@ -600,11 +600,16 @@ export function FioriShell({ children }: { children: ReactNode }) {
       {/* ════════════ Sidebar rail (desktop ≥ 768px only) ════════════ */}
       <aside
         className={`oe-rail fiori-rail hidden md:flex fixed left-0 bottom-0 overflow-y-auto flex-col ${collapsed ? 'collapsed' : ''}`}
+        data-density={roleTheme.workstationDensity}
+        data-chrome={roleTheme.chrome}
         style={{
           top: 'var(--shell-height)',
           width: sidebarWidth,
           transition: 'width 200ms cubic-bezier(0.4,0,0.2,1)',
           zIndex: 40,
+          ['--rail-accent' as any]: roleTheme.accent,
+          ['--rail-accent-secondary' as any]: roleTheme.accentSecondary ?? roleTheme.accent,
+          ['--rail-accent-soft' as any]: roleTheme.accentSoft,
         }}
       >
         <nav className="flex-1 py-3" aria-label="Primary">
