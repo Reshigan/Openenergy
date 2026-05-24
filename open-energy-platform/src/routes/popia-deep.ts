@@ -7,6 +7,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { fireCascade } from '../utils/cascade';
 
 const r = new Hono<HonoEnv>();
 r.use('*', authMiddleware);
@@ -90,6 +91,18 @@ r.post('/sar', async (c) => {
     b.request_type, b.request_body || null, dueAt,
     c.req.header('cf-connecting-ip') || null,
   ).run();
+  await fireCascade({
+    event: 'popia.sar_received',
+    actor_id: user.id,
+    entity_type: 'popia_sar',
+    entity_id: id,
+    data: {
+      id, subject_email: b.subject_email, subject_name: b.subject_name || null,
+      participant_id: b.participant_id || user.id || null,
+      request_type: b.request_type, due_at: dueAt,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, due_at: dueAt } }, 201);
 });
 
@@ -101,6 +114,14 @@ r.post('/sar/:id/assign', async (c) => {
   await c.env.DB.prepare(`
     UPDATE oe_popia_sar_requests SET assigned_to = ?, status = 'in_progress', acknowledged_at = COALESCE(acknowledged_at, datetime('now')) WHERE id = ?
   `).bind(b.assigned_to || user.id, id).run();
+  await fireCascade({
+    event: 'popia.sar_assigned',
+    actor_id: user.id,
+    entity_type: 'popia_sar',
+    entity_id: String(id),
+    data: { id, assigned_to: b.assigned_to || user.id, assigned_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -117,6 +138,19 @@ r.post('/sar/:id/respond', async (c) => {
         response_summary = ?, rejection_reason = ?
     WHERE id = ?
   `).bind(outcome, b.response_summary || null, outcome === 'rejected' ? (b.rejection_reason || 'declined') : null, id).run();
+  await fireCascade({
+    event: 'popia.sar_responded',
+    actor_id: user.id,
+    entity_type: 'popia_sar',
+    entity_id: String(id),
+    data: {
+      id, outcome,
+      response_summary: b.response_summary || null,
+      rejection_reason: outcome === 'rejected' ? (b.rejection_reason || 'declined') : null,
+      responded_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -139,6 +173,20 @@ r.put('/retention/:data_type', async (c) => {
       (data_type, retention_days, lawful_basis, legal_reference, notes, updated_at)
     VALUES (?,?,?,?,?,datetime('now'))
   `).bind(dataType, Number(b.retention_days), b.lawful_basis, b.legal_reference || null, b.notes || null).run();
+  await fireCascade({
+    event: 'popia.retention_policy_updated',
+    actor_id: user.id,
+    entity_type: 'popia_retention_policy',
+    entity_id: String(dataType),
+    data: {
+      data_type: dataType,
+      retention_days: Number(b.retention_days),
+      lawful_basis: b.lawful_basis,
+      legal_reference: b.legal_reference || null,
+      updated_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 

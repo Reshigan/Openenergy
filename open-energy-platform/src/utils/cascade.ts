@@ -161,7 +161,14 @@ export type EventType =
   // ─── Documents (templates + envelopes) ──────────────────────────────────
   | 'document.template_created' | 'document.template_published' | 'document.template_deprecated'
   | 'document.envelope_created' | 'document.envelope_signed'
-  | 'document.envelope_completed' | 'document.envelope_cancelled';
+  | 'document.envelope_completed' | 'document.envelope_cancelled'
+  // ─── POPIA-deep (info officer / SAR / retention) ────────────────────────
+  | 'popia.sar_received' | 'popia.sar_assigned' | 'popia.sar_responded'
+  | 'popia.retention_policy_updated'
+  // ─── Polish (Ed25519 signatures) ────────────────────────────────────────
+  | 'document.signature_created'
+  // ─── Bulk ops (CSV import + bulk update) ────────────────────────────────
+  | 'bulk.import_completed' | 'bulk.update_applied';
 
 interface CascadeContext {
   event: EventType;

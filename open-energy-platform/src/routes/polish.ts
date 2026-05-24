@@ -11,6 +11,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { requireStepUp } from '../middleware/step-up';
+import { fireCascade } from '../utils/cascade';
 
 const r = new Hono<HonoEnv>();
 r.use('*', authMiddleware);
@@ -64,6 +65,19 @@ r.post('/signatures', requireStepUp('document.sign'), async (c) => {
     (c.req.header('user-agent') || '').slice(0, 300),
     b.signing_method || 'platform_key',
   ).run();
+  await fireCascade({
+    event: 'document.signature_created',
+    actor_id: user.id,
+    entity_type: 'signature',
+    entity_id: id,
+    data: {
+      id, document_kind: b.document_kind, document_ref: b.document_ref,
+      document_hash: b.document_hash, signer_id: user.id,
+      signer_role: b.signer_role || null,
+      signing_method: b.signing_method || 'platform_key',
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, signature_b64: sig } }, 201);
 });
 
@@ -139,6 +153,21 @@ r.put('/feature-flags/:key', requireStepUp('platform.feature_flag.high'), async 
     b.killed ? 1 : 0,
     user.id,
   ).run();
+  await fireCascade({
+    event: 'flag.changed',
+    actor_id: user.id,
+    entity_type: 'feature_flag',
+    entity_id: String(key),
+    data: {
+      key, description: b.description || null,
+      default_enabled: b.default_enabled ? 1 : 0,
+      rollout_pct: Number(b.rollout_pct || 0),
+      killed: b.killed ? 1 : 0,
+      role_overrides: b.role_overrides || null,
+      updated_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 

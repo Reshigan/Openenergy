@@ -19,6 +19,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { requireStepUp } from '../middleware/step-up';
+import { fireCascade } from '../utils/cascade';
 
 const r = new Hono<HonoEnv>();
 r.use('*', authMiddleware);
@@ -189,6 +190,19 @@ r.post('/:entity/import', async (c) => {
       if (errors.length < 5) errors.push(e?.message || 'insert failed');
     }
   }
+  await fireCascade({
+    event: 'bulk.import_completed',
+    actor_id: user.id,
+    entity_type: 'bulk_import',
+    entity_id: `${entity}_${Date.now()}`,
+    data: {
+      entity, table: def.table,
+      received: rows.length, inserted, failed,
+      errors: errors.slice(0, 5),
+      imported_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { received: rows.length, inserted, failed, errors } });
 });
 
@@ -214,6 +228,20 @@ r.post('/:entity/update', requireStepUp('bulk.update.high'), async (c) => {
   const res = await c.env.DB.prepare(
     `UPDATE ${def.table} SET ${setSql} WHERE ${idCol} IN (${placeholders})`
   ).bind(...vals).run();
+  await fireCascade({
+    event: 'bulk.update_applied',
+    actor_id: user.id,
+    entity_type: 'bulk_update',
+    entity_id: `${entity}_${Date.now()}`,
+    data: {
+      entity, table: def.table,
+      ids_count: ids.length,
+      columns_patched: cols,
+      affected: res.meta.changes || 0,
+      applied_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { affected: res.meta.changes || 0 } });
 });
 
