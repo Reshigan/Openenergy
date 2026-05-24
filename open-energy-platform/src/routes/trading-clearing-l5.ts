@@ -9,6 +9,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { requireStepUp } from '../middleware/step-up';
+import { fireCascade } from '../utils/cascade';
 
 const r = new Hono<HonoEnv>();
 r.use('*', authMiddleware);
@@ -39,6 +40,17 @@ r.post('/blocks', requireStepUp('trading.block_report'), async (c) => {
     Number(b.volume_mwh), Number(b.price_zar_mwh), value, b.trade_time,
     Number(b.publication_delay_minutes || 15),
   ).run();
+  await fireCascade({
+    event: 'block_trade.reported',
+    actor_id: user.id,
+    entity_type: 'oe_block_trades',
+    entity_id: id,
+    data: {
+      buyer_id: b.buyer_id, seller_id: b.seller_id, energy_type: b.energy_type,
+      volume_mwh: Number(b.volume_mwh), price_zar_mwh: Number(b.price_zar_mwh), value_zar: value,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, value_zar: value } }, 201);
 });
 
@@ -47,6 +59,14 @@ r.post('/blocks/:id/confirm', async (c) => {
   if (!adminOnly(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
   await c.env.DB.prepare(`UPDATE oe_block_trades SET status = 'confirmed' WHERE id = ? AND status = 'reported'`).bind(id).run();
+  await fireCascade({
+    event: 'block_trade.confirmed',
+    actor_id: user.id,
+    entity_type: 'oe_block_trades',
+    entity_id: String(id),
+    data: {},
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -63,6 +83,14 @@ r.post('/blocks/:id/publish', async (c) => {
     return c.json({ success: false, error: 'publication_delay_not_elapsed', data: { earliest: new Date(earliest).toISOString() } }, 425);
   }
   await c.env.DB.prepare(`UPDATE oe_block_trades SET status = 'published', published_at = datetime('now') WHERE id = ?`).bind(id).run();
+  await fireCascade({
+    event: 'block_trade.published',
+    actor_id: user.id,
+    entity_type: 'oe_block_trades',
+    entity_id: String(id),
+    data: { trade_time: row.trade_time, publication_delay_minutes: Number(row.publication_delay_minutes) },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -72,6 +100,14 @@ r.post('/blocks/:id/bust', requireStepUp('trading.block_bust.high'), async (c) =
   const id = c.req.param('id');
   const b = await c.req.json().catch(() => ({} as any));
   await c.env.DB.prepare(`UPDATE oe_block_trades SET status = 'bust', bust_reason = ? WHERE id = ?`).bind(b.reason || 'manual_bust', id).run();
+  await fireCascade({
+    event: 'block_trade.bust',
+    actor_id: user.id,
+    entity_type: 'oe_block_trades',
+    entity_id: String(id),
+    data: { reason: b.reason || 'manual_bust' },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -109,6 +145,14 @@ r.post('/surveillance/alerts', async (c) => {
     b.evidence ? JSON.stringify(b.evidence) : null,
     b.notes || null,
   ).run();
+  await fireCascade({
+    event: 'surveillance.alert_raised',
+    actor_id: user.id,
+    entity_type: 'oe_surveillance_alerts',
+    entity_id: id,
+    data: { alert_type: b.alert_type, participant_id: b.participant_id, severity: b.severity, score: b.score ?? null },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -124,6 +168,14 @@ r.post('/surveillance/alerts/:id/review', async (c) => {
   await c.env.DB.prepare(`
     UPDATE oe_surveillance_alerts SET status = ?, reviewer_id = ?, reviewed_at = datetime('now'), notes = ? WHERE id = ?
   `).bind(status, user.id, b.notes || null, id).run();
+  await fireCascade({
+    event: 'surveillance.alert_reviewed',
+    actor_id: user.id,
+    entity_type: 'oe_surveillance_alerts',
+    entity_id: String(id),
+    data: { status, notes: b.notes || null },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -136,6 +188,14 @@ r.post('/surveillance/alerts/:id/report', requireStepUp('surveillance.report.hig
   await c.env.DB.prepare(`
     UPDATE oe_surveillance_alerts SET status = 'reported_to_fic', reported_to = ?, reported_at = datetime('now'), notes = COALESCE(notes,'') || char(10) || ? WHERE id = ?
   `).bind(b.reported_to, `Reported to ${b.reported_to} on ${new Date().toISOString()}: ${b.report_notes || ''}`, id).run();
+  await fireCascade({
+    event: 'surveillance.alert_reported',
+    actor_id: user.id,
+    entity_type: 'oe_surveillance_alerts',
+    entity_id: String(id),
+    data: { reported_to: b.reported_to, report_notes: b.report_notes || null },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -218,6 +278,19 @@ r.post('/mm/obligations', requireStepUp('trading.mm_award.high'), async (c) => {
     b.effective_from, b.effective_to,
     b.monthly_fee_zar || null,
   ).run();
+  await fireCascade({
+    event: 'mm.obligation_awarded',
+    actor_id: user.id,
+    entity_type: 'oe_mm_obligations',
+    entity_id: id,
+    data: {
+      participant_id: b.participant_id, energy_type: b.energy_type,
+      obligation_type: b.obligation_type,
+      effective_from: b.effective_from, effective_to: b.effective_to,
+      monthly_fee_zar: b.monthly_fee_zar || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -247,6 +320,17 @@ r.post('/mm/performance', async (c) => {
     b.uptime_pct || null, b.total_volume_mwh || null,
     compliant ? 1 : 0, feeEarned, penalty,
   ).run();
+  await fireCascade({
+    event: 'mm.performance_recorded',
+    actor_id: user.id,
+    entity_type: 'oe_mm_performance',
+    entity_id: id,
+    data: {
+      obligation_id: b.obligation_id, day: b.day,
+      compliant, fee_earned_zar: feeEarned, penalty_zar: penalty,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, compliant, fee_earned_zar: feeEarned, penalty_zar: penalty } });
 });
 
@@ -276,6 +360,18 @@ r.post('/clearing/funds', requireStepUp('clearing.fund_create.high'), async (c) 
     INSERT INTO oe_clearing_fund (id, fund_year, total_size_zar, initial_contribution_pct, variable_assessment_basis)
     VALUES (?,?,?,?,?)
   `).bind(id, Number(b.fund_year), Number(b.total_size_zar), Number(b.initial_contribution_pct || 0.005), b.variable_assessment_basis || 'avg_daily_var').run();
+  await fireCascade({
+    event: 'clearing.fund_created',
+    actor_id: user.id,
+    entity_type: 'oe_clearing_fund',
+    entity_id: id,
+    data: {
+      fund_year: Number(b.fund_year),
+      total_size_zar: Number(b.total_size_zar),
+      initial_contribution_pct: Number(b.initial_contribution_pct || 0.005),
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -288,6 +384,14 @@ r.post('/clearing/contributions', async (c) => {
   await c.env.DB.prepare(`
     INSERT INTO oe_clearing_contributions (id, fund_id, participant_id, amount_zar) VALUES (?,?,?,?)
   `).bind(id, b.fund_id, b.participant_id, Number(b.amount_zar)).run();
+  await fireCascade({
+    event: 'clearing.contribution_posted',
+    actor_id: user.id,
+    entity_type: 'oe_clearing_contributions',
+    entity_id: id,
+    data: { fund_id: b.fund_id, participant_id: b.participant_id, amount_zar: Number(b.amount_zar) },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -361,6 +465,22 @@ r.post('/clearing/loss-events', requireStepUp('clearing.waterfall.high'), async 
       }
     }
   }
+  await fireCascade({
+    event: 'clearing.loss_event_executed',
+    actor_id: user.id,
+    entity_type: 'oe_clearing_loss_events',
+    entity_id: id,
+    data: {
+      default_event_id: b.default_event_id,
+      fund_id: b.fund_id,
+      loss_amount_zar: Number(b.loss_amount_zar),
+      defaulter_margin_used_zar: marginUsed,
+      defaulter_default_fund_used_zar: defContribUsed,
+      clearing_house_capital_used_zar: sitgUsed,
+      mutualised_amount_zar: mutualised,
+    },
+    env: c.env,
+  });
   return c.json({
     success: true,
     data: {

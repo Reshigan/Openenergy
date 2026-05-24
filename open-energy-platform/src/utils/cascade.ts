@@ -119,7 +119,24 @@ export type EventType =
   | 'scenario.run_completed'
   | 'ai.classification_logged'
   | 'audit_chain.appended'
-  | 'rec_market.listed' | 'rec_market.traded';
+  | 'rec_market.listed' | 'rec_market.traded'
+  // ─── Trading clearing L5 (block trades, surveillance, mm, default fund) ─
+  | 'block_trade.reported' | 'block_trade.confirmed' | 'block_trade.published' | 'block_trade.bust'
+  | 'surveillance.alert_raised' | 'surveillance.alert_reviewed' | 'surveillance.alert_reported'
+  | 'mm.obligation_awarded' | 'mm.performance_recorded'
+  | 'clearing.fund_created' | 'clearing.contribution_posted' | 'clearing.loss_event_executed'
+  // ─── Grid L5 (constraints, dispatch, ancillary, frequency, wheeling, blackstart) ─
+  | 'grid.constraint_added' | 'grid.constraint_deactivated'
+  | 'grid.dispatch_run_created' | 'grid.dispatch_run_optimized' | 'grid.dispatch_run_published'
+  | 'grid.ancillary_contract_awarded' | 'grid.ancillary_dispatched'
+  | 'grid.frequency_event_recorded'
+  | 'grid.wheeling_agreement_created' | 'grid.wheeling_agreement_approved'
+  | 'grid.blackstart_unit_registered' | 'grid.blackstart_test_recorded'
+  // ─── Marketplace L5 (RFQ, negotiation, auction) ─────────────────────────
+  | 'marketplace.rfq_created' | 'marketplace.rfq_published'
+  | 'marketplace.rfq_evaluation_started' | 'marketplace.rfq_awarded'
+  | 'marketplace.rfq_negotiation_initiated' | 'marketplace.rfq_negotiation_decided'
+  | 'marketplace.auction_created' | 'marketplace.auction_closed' | 'marketplace.auction_failed';
 
 interface CascadeContext {
   event: EventType;

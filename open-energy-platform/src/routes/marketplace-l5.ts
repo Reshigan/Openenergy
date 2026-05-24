@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { requireStepUp } from '../middleware/step-up';
+import { fireCascade } from '../utils/cascade';
 
 const r = new Hono<HonoEnv>();
 r.use('*', authMiddleware);
@@ -57,6 +58,19 @@ r.post('/rfqs', async (c) => {
     b.scoring_method || 'price_only',
     b.scoring_weights ? JSON.stringify(b.scoring_weights) : null,
   ).run();
+  await fireCascade({
+    event: 'marketplace.rfq_created',
+    actor_id: user.id,
+    entity_type: 'oe_rfqs',
+    entity_id: id,
+    data: {
+      rfq_number: num, product_type: b.product_type,
+      volume_mwh: b.volume_mwh ? Number(b.volume_mwh) : null,
+      quote_deadline: b.quote_deadline,
+      invitation_mode: b.invitation_mode || 'open',
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, rfq_number: num } }, 201);
 });
 
@@ -68,6 +82,14 @@ r.post('/rfqs/:id/publish', async (c) => {
   if (row.buyer_id !== user.id && !['admin', 'support'].includes(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   if (row.status !== 'draft') return c.json({ success: false, error: 'must be draft' }, 409);
   await c.env.DB.prepare(`UPDATE oe_rfqs SET status = 'published', updated_at = datetime('now') WHERE id = ?`).bind(id).run();
+  await fireCascade({
+    event: 'marketplace.rfq_published',
+    actor_id: user.id,
+    entity_type: 'oe_rfqs',
+    entity_id: String(id),
+    data: {},
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -130,6 +152,14 @@ r.post('/rfqs/:id/close-quotes', async (c) => {
     await c.env.DB.prepare(`UPDATE oe_rfq_quotes SET score = ?, status = 'shortlisted' WHERE id = ?`).bind(score, q.id).run();
   }
   await c.env.DB.prepare(`UPDATE oe_rfqs SET status = 'evaluation' WHERE id = ?`).bind(id).run();
+  await fireCascade({
+    event: 'marketplace.rfq_evaluation_started',
+    actor_id: user.id,
+    entity_type: 'oe_rfqs',
+    entity_id: String(id),
+    data: { scored_count: (quotes.results || []).length, scoring_method: row.scoring_method },
+    env: c.env,
+  });
   return c.json({ success: true, data: { scored_count: (quotes.results || []).length } });
 });
 
@@ -140,9 +170,23 @@ r.post('/rfqs/:id/award', requireStepUp('marketplace.rfq_award.high'), async (c)
   if (!b.quote_id) return c.json({ success: false, error: 'quote_id required' }, 400);
   const row = await c.env.DB.prepare(`SELECT buyer_id FROM oe_rfqs WHERE id = ?`).bind(id).first<any>();
   if (!row || (row.buyer_id !== user.id && !['admin', 'support'].includes(user.role))) return c.json({ success: false, error: 'forbidden' }, 403);
+  const awardedQuote = await c.env.DB.prepare(`SELECT seller_id, price_zar, volume_offered_mwh FROM oe_rfq_quotes WHERE id = ?`).bind(b.quote_id).first<any>();
   await c.env.DB.prepare(`UPDATE oe_rfq_quotes SET status = 'awarded' WHERE id = ?`).bind(b.quote_id).run();
   await c.env.DB.prepare(`UPDATE oe_rfq_quotes SET status = 'declined' WHERE rfq_id = ? AND id != ? AND status NOT IN ('awarded','withdrawn')`).bind(id, b.quote_id).run();
   await c.env.DB.prepare(`UPDATE oe_rfqs SET status = 'awarded', awarded_quote_id = ?, awarded_at = datetime('now') WHERE id = ?`).bind(b.quote_id, id).run();
+  await fireCascade({
+    event: 'marketplace.rfq_awarded',
+    actor_id: user.id,
+    entity_type: 'oe_rfqs',
+    entity_id: String(id),
+    data: {
+      awarded_quote_id: b.quote_id,
+      seller_id: awardedQuote?.seller_id ?? null,
+      price_zar: awardedQuote?.price_zar ?? null,
+      volume_offered_mwh: awardedQuote?.volume_offered_mwh ?? null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -174,15 +218,36 @@ r.post('/rfqs/:id/quotes/:quote_id/counter', async (c) => {
     b.proposed_terms || null, b.message || null,
   ).run();
   await c.env.DB.prepare(`UPDATE oe_rfq_quotes SET status = 'counter_offered' WHERE id = ?`).bind(quoteId).run();
+  await fireCascade({
+    event: 'marketplace.rfq_negotiation_initiated',
+    actor_id: user.id,
+    entity_type: 'oe_negotiation_rounds',
+    entity_id: id,
+    data: {
+      rfq_id: rfqId, quote_id: quoteId, round_number: roundNum,
+      proposer: isBuyer ? 'buyer' : 'seller',
+      proposed_price_zar: b.proposed_price_zar ? Number(b.proposed_price_zar) : null,
+      proposed_volume_mwh: b.proposed_volume_mwh ? Number(b.proposed_volume_mwh) : null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, round_number: roundNum } }, 201);
 });
 
 r.post('/negotiation/:id/decide', async (c) => {
-  void getCurrentUser(c);
+  const user = getCurrentUser(c);
   const id = c.req.param('id');
   const b = await c.req.json().catch(() => ({} as any));
   if (!['accepted', 'counter', 'rejected'].includes(b.decision)) return c.json({ success: false, error: 'invalid decision' }, 400);
   await c.env.DB.prepare(`UPDATE oe_negotiation_rounds SET decision = ?, decided_at = datetime('now') WHERE id = ?`).bind(b.decision, id).run();
+  await fireCascade({
+    event: 'marketplace.rfq_negotiation_decided',
+    actor_id: user.id,
+    entity_type: 'oe_negotiation_rounds',
+    entity_id: String(id),
+    data: { decision: b.decision },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -221,6 +286,19 @@ r.post('/auctions', async (c) => {
     Number(b.volume_mwh), b.starts_at, b.ends_at,
     b.extends_on_late_bid ? 1 : 0,
   ).run();
+  await fireCascade({
+    event: 'marketplace.auction_created',
+    actor_id: user.id,
+    entity_type: 'oe_auctions',
+    entity_id: id,
+    data: {
+      auction_number: num, auction_type: b.auction_type,
+      product_type: b.product_type, volume_mwh: Number(b.volume_mwh),
+      starts_at: b.starts_at, ends_at: b.ends_at,
+      reserve_price_zar: b.reserve_price_zar ? Number(b.reserve_price_zar) : null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, auction_number: num } }, 201);
 });
 
@@ -282,11 +360,27 @@ r.post('/auctions/:id/close', requireStepUp('marketplace.auction_close.high'), a
   const winning = await c.env.DB.prepare(winningSql).bind(id).first<any>();
   if (!winning) {
     await c.env.DB.prepare(`UPDATE oe_auctions SET status = 'failed' WHERE id = ?`).bind(id).run();
+    await fireCascade({
+      event: 'marketplace.auction_failed',
+      actor_id: user.id,
+      entity_type: 'oe_auctions',
+      entity_id: String(id),
+      data: { reason: 'no_bids' },
+      env: c.env,
+    });
     return c.json({ success: false, error: 'no_bids' }, 410);
   }
   await c.env.DB.prepare(`UPDATE oe_auction_bids SET visible = 1 WHERE auction_id = ?`).bind(id).run();
   await c.env.DB.prepare(`UPDATE oe_auction_bids SET is_winning = 1 WHERE id = ?`).bind(winning.id).run();
   await c.env.DB.prepare(`UPDATE oe_auctions SET status = 'awarded', awarded_bid_id = ?, awarded_at = datetime('now') WHERE id = ?`).bind(winning.id, id).run();
+  await fireCascade({
+    event: 'marketplace.auction_closed',
+    actor_id: user.id,
+    entity_type: 'oe_auctions',
+    entity_id: String(id),
+    data: { winning_bid_id: winning.id, auction_type: auc.auction_type },
+    env: c.env,
+  });
   return c.json({ success: true, data: { winning_bid_id: winning.id } });
 });
 

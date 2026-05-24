@@ -18,6 +18,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { requireStepUp } from '../middleware/step-up';
+import { fireCascade } from '../utils/cascade';
 
 const r = new Hono<HonoEnv>();
 r.use('*', authMiddleware);
@@ -51,6 +52,14 @@ r.post('/constraints', requireStepUp('grid.constraint_change'), async (c) => {
     id, b.zone, b.constraint_type, Number(b.limit_mw), b.direction,
     b.source || null, b.notes || null, user.id,
   ).run();
+  await fireCascade({
+    event: 'grid.constraint_added',
+    actor_id: user.id,
+    entity_type: 'oe_grid_constraints',
+    entity_id: id,
+    data: { zone: b.zone, constraint_type: b.constraint_type, limit_mw: Number(b.limit_mw), direction: b.direction },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -59,6 +68,14 @@ r.post('/constraints/:id/deactivate', requireStepUp('grid.constraint_change'), a
   if (!adminOnly(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
   await c.env.DB.prepare(`UPDATE oe_grid_constraints SET active_to = datetime('now') WHERE id = ?`).bind(id).run();
+  await fireCascade({
+    event: 'grid.constraint_deactivated',
+    actor_id: user.id,
+    entity_type: 'oe_grid_constraints',
+    entity_id: String(id),
+    data: {},
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -83,6 +100,14 @@ r.post('/dispatch/runs', async (c) => {
     INSERT INTO oe_dispatch_runs (id, trade_date, interval_start, status, created_by)
     VALUES (?,?,?,?,?)
   `).bind(id, tradeDate, b.interval_start, 'queued', user.id).run();
+  await fireCascade({
+    event: 'grid.dispatch_run_created',
+    actor_id: user.id,
+    entity_type: 'oe_dispatch_runs',
+    entity_id: id,
+    data: { trade_date: tradeDate, interval_start: b.interval_start },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -140,6 +165,19 @@ r.post('/dispatch/runs/:id/optimize', requireStepUp('grid.dispatch_optimize'), a
     SET status = 'optimized', total_supply_mw = ?, marginal_price_zar = ?, active_constraints = ?, optimization_seconds = ?
     WHERE id = ?
   `).bind(cleared, marginal, JSON.stringify([...new Set(binding)]), (Date.now() - t0) / 1000, id).run();
+  await fireCascade({
+    event: 'grid.dispatch_run_optimized',
+    actor_id: user.id,
+    entity_type: 'oe_dispatch_runs',
+    entity_id: String(id),
+    data: {
+      cleared_mw: cleared,
+      marginal_price_zar: marginal,
+      binding_constraints: [...new Set(binding)],
+      optimization_seconds: (Date.now() - t0) / 1000,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { cleared_mw: cleared, marginal_price_zar: marginal, binding_constraints: binding.length } });
 });
 
@@ -148,6 +186,14 @@ r.post('/dispatch/runs/:id/publish', requireStepUp('grid.dispatch_publish.high')
   if (!adminOnly(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
   await c.env.DB.prepare(`UPDATE oe_dispatch_runs SET status = 'published' WHERE id = ? AND status = 'optimized'`).bind(id).run();
+  await fireCascade({
+    event: 'grid.dispatch_run_published',
+    actor_id: user.id,
+    entity_type: 'oe_dispatch_runs',
+    entity_id: String(id),
+    data: {},
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -203,6 +249,18 @@ r.post('/ancillary/contracts', requireStepUp('grid.ancillary_award.high'), async
     b.utilisation_zar_per_mwh != null ? Number(b.utilisation_zar_per_mwh) : null,
     b.start_at, b.end_at,
   ).run();
+  await fireCascade({
+    event: 'grid.ancillary_contract_awarded',
+    actor_id: user.id,
+    entity_type: 'oe_ancillary_contracts',
+    entity_id: id,
+    data: {
+      participant_id: b.participant_id, service_type: b.service_type,
+      capacity_mw: Number(b.capacity_mw),
+      start_at: b.start_at, end_at: b.end_at,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -235,6 +293,19 @@ r.post('/ancillary/dispatch', async (c) => {
     `SELECT AVG(performance_pct) AS p FROM (SELECT performance_pct FROM oe_ancillary_dispatch WHERE contract_id = ? ORDER BY triggered_at DESC LIMIT 10)`,
   ).bind(b.contract_id).first<any>();
   await c.env.DB.prepare(`UPDATE oe_ancillary_contracts SET performance_score = ? WHERE id = ?`).bind(Number(recent?.p || 0), b.contract_id).run();
+  await fireCascade({
+    event: 'grid.ancillary_dispatched',
+    actor_id: user.id,
+    entity_type: 'oe_ancillary_dispatch',
+    entity_id: id,
+    data: {
+      contract_id: b.contract_id, event_type: b.event_type,
+      delivered_mw: delivered, contracted_mw: contracted,
+      performance_pct: performance, payment_zar: payment, penalty_zar: penalty,
+      response_time_seconds: b.response_time_seconds || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, performance_pct: performance, payment_zar: payment, penalty_zar: penalty } });
 });
 
@@ -266,6 +337,20 @@ r.post('/frequency/events', async (c) => {
     Number(b.min_frequency_hz) < 50 ? 'under_frequency' : 'over_frequency',
     severity, b.notes || null,
   ).run();
+  await fireCascade({
+    event: 'grid.frequency_event_recorded',
+    actor_id: user.id,
+    entity_type: 'oe_frequency_events',
+    entity_id: id,
+    data: {
+      detected_at: b.detected_at,
+      min_frequency_hz: Number(b.min_frequency_hz),
+      max_deviation_mhz: dev,
+      severity,
+      classification: Number(b.min_frequency_hz) < 50 ? 'under_frequency' : 'over_frequency',
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, severity, max_deviation_mhz: dev } });
 });
 
@@ -283,7 +368,7 @@ r.get('/wheeling', async (c) => {
 });
 
 r.post('/wheeling', async (c) => {
-  void getCurrentUser(c);
+  const user = getCurrentUser(c);
   const b = await c.req.json().catch(() => ({} as any));
   const required = ['generator_id', 'offtaker_id', 'injection_point', 'withdrawal_point', 'contracted_mw', 'loss_factor_pct', 'wheeling_tariff_zar_per_mwh'];
   for (const f of required) if (b[f] == null) return c.json({ success: false, error: `${f} required` }, 400);
@@ -298,6 +383,18 @@ r.post('/wheeling', async (c) => {
     Number(b.contracted_mw), Number(b.loss_factor_pct),
     Number(b.wheeling_tariff_zar_per_mwh), b.notes || null,
   ).run();
+  await fireCascade({
+    event: 'grid.wheeling_agreement_created',
+    actor_id: user.id,
+    entity_type: 'oe_wheeling_agreements',
+    entity_id: id,
+    data: {
+      generator_id: b.generator_id, offtaker_id: b.offtaker_id,
+      contracted_mw: Number(b.contracted_mw),
+      loss_factor_pct: Number(b.loss_factor_pct),
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -312,6 +409,17 @@ r.post('/wheeling/:id/approve', requireStepUp('grid.wheeling_approve.high'), asy
         effective_from = ?, effective_to = ?
     WHERE id = ?
   `).bind(user.id, b.effective_from || new Date().toISOString(), b.effective_to || null, id).run();
+  await fireCascade({
+    event: 'grid.wheeling_agreement_approved',
+    actor_id: user.id,
+    entity_type: 'oe_wheeling_agreements',
+    entity_id: String(id),
+    data: {
+      effective_from: b.effective_from || new Date().toISOString(),
+      effective_to: b.effective_to || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -342,6 +450,19 @@ r.post('/curtailment', async (c) => {
       (id, participant_id, asset_id, curtail_type, started_at, pre_curtail_mw, curtail_mw, reason)
     VALUES (?,?,?,?,?,?,?,?)
   `).bind(id, b.participant_id, b.asset_id || null, b.curtail_type, b.started_at, Number(b.pre_curtail_mw), Number(b.curtail_mw), b.reason || null).run();
+  await fireCascade({
+    event: 'grid.curtailment_issued',
+    actor_id: user.id,
+    entity_type: 'oe_curtailment_events',
+    entity_id: id,
+    data: {
+      participant_id: b.participant_id, asset_id: b.asset_id || null,
+      curtail_type: b.curtail_type, started_at: b.started_at,
+      pre_curtail_mw: Number(b.pre_curtail_mw), curtail_mw: Number(b.curtail_mw),
+      reason: b.reason || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -362,6 +483,17 @@ r.post('/curtailment/:id/close', async (c) => {
     SET ended_at = ?, curtailed_mwh = ?, estimated_loss_zar = ?, compensation_zar = ?
     WHERE id = ?
   `).bind(endedAt, curtailedMwh, lossZar, compensation, id).run();
+  await fireCascade({
+    event: 'grid.curtailment_lifted',
+    actor_id: user.id,
+    entity_type: 'oe_curtailment_events',
+    entity_id: String(id),
+    data: {
+      ended_at: endedAt, curtailed_mwh: curtailedMwh,
+      estimated_loss_zar: lossZar, compensation_zar: compensation,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { curtailed_mwh: curtailedMwh, estimated_loss_zar: lossZar } });
 });
 
@@ -384,6 +516,17 @@ r.post('/blackstart', requireStepUp('grid.blackstart_register.high'), async (c) 
       (id, participant_id, asset_id, capacity_mw, startup_minutes, payment_zar_per_month)
     VALUES (?,?,?,?,?,?)
   `).bind(id, b.participant_id, b.asset_id || null, Number(b.capacity_mw), Number(b.startup_minutes), b.payment_zar_per_month || null).run();
+  await fireCascade({
+    event: 'grid.blackstart_unit_registered',
+    actor_id: user.id,
+    entity_type: 'oe_blackstart_units',
+    entity_id: id,
+    data: {
+      participant_id: b.participant_id, asset_id: b.asset_id || null,
+      capacity_mw: Number(b.capacity_mw), startup_minutes: Number(b.startup_minutes),
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -396,6 +539,14 @@ r.post('/blackstart/:id/test', async (c) => {
     UPDATE oe_blackstart_units SET last_tested_at = datetime('now'), test_result = ?
     WHERE id = ?
   `).bind(b.test_result || 'passed', id).run();
+  await fireCascade({
+    event: 'grid.blackstart_test_recorded',
+    actor_id: user.id,
+    entity_type: 'oe_blackstart_units',
+    entity_id: String(id),
+    data: { test_result: b.test_result || 'passed' },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
