@@ -9,6 +9,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { dayCost, rankTariffs, scope2, SimpleTariff } from '../utils/tariff-compare';
 import { appendAudit, getChainHead, verifyChain } from '../utils/audit-chain';
+import { fireCascade } from '../utils/cascade';
 
 const off = new Hono<HonoEnv>();
 off.use('*', authMiddleware);
@@ -270,6 +271,22 @@ off.post('/recs/certificates', async (c) => {
     b.owner_participant_id || b.generator_participant_id || user.id,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM rec_certificates WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'offtaker.rec_issued',
+    actor_id: user.id,
+    entity_type: 'rec_certificates',
+    entity_id: id,
+    data: {
+      id,
+      certificate_serial: b.certificate_serial as string,
+      mwh_represented: Number(b.mwh_represented),
+      generator_participant_id: (b.generator_participant_id as string) || user.id,
+      project_id: (b.project_id as string) || null,
+      registry: (b.registry as string) || 'I-REC',
+      issuance_date: b.issuance_date as string,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -354,6 +371,23 @@ off.post('/recs/certificates/:id/retire', async (c) => {
     },
   }).catch((e) => console.warn('audit_rec_retired_failed', (e as Error).message));
 
+  await fireCascade({
+    event: 'offtaker.rec_retired',
+    actor_id: user.id,
+    entity_type: 'rec_retirements',
+    entity_id: id,
+    data: {
+      retirement_id: id, certificate_id: certId,
+      retiring_participant_id: user.id,
+      retirement_purpose: b.retirement_purpose as string,
+      retirement_certificate_number: b.retirement_certificate_number as string,
+      consumption_mwh: b.consumption_mwh == null ? null : Number(b.consumption_mwh),
+      beneficiary_name: (b.beneficiary_name as string) || null,
+    },
+    env: c.env,
+    skipAudit: true,
+  });
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -429,6 +463,24 @@ off.post('/scope2', async (c) => {
       renewable_percentage: computed.renewable_percentage,
     },
   }).catch((e) => console.warn('audit_scope2_failed', (e as Error).message));
+
+  await fireCascade({
+    event: 'offtaker.scope2_published',
+    actor_id: user.id,
+    entity_type: 'scope2_disclosures',
+    entity_id: id,
+    data: {
+      disclosure_id: id, participant_id: user.id,
+      reporting_year: Number(b.reporting_year),
+      total_consumption_mwh: Number(b.total_consumption_mwh),
+      location_based_emissions_tco2e: computed.location_based_tco2e,
+      market_based_emissions_tco2e: computed.market_based_tco2e,
+      renewable_mwh_claimed: recsMwh,
+      renewable_percentage: computed.renewable_percentage,
+    },
+    env: c.env,
+    skipAudit: true,
+  });
 
   return c.json({ success: true, data: row }, 201);
 });

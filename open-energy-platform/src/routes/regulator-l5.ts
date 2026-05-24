@@ -12,6 +12,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { requireStepUp } from '../middleware/step-up';
+import { fireCascade } from '../utils/cascade';
 
 export const admin = new Hono<HonoEnv>(); admin.use('*', authMiddleware);
 export const pub   = new Hono<HonoEnv>();
@@ -105,7 +106,7 @@ admin.get('/applications', async (c) => {
 });
 
 admin.post('/applications', async (c) => {
-  void getCurrentUser(c);
+  const user = getCurrentUser(c);
   const b = await c.req.json().catch(() => ({} as any));
   if (!b.applicant_id || !b.application_type) return c.json({ success: false, error: 'applicant_id + application_type required' }, 400);
   const id = genId('app');
@@ -125,6 +126,20 @@ admin.post('/applications', async (c) => {
     b.pct_change || null,
     b.documents_r2_prefix || null,
   ).run();
+  await fireCascade({
+    event: 'regulator.tariff_submitted',
+    actor_id: user.id,
+    entity_type: 'regulator_tariff_submissions',
+    entity_id: id,
+    data: {
+      id, application_ref: ref, applicant_id: b.applicant_id,
+      application_type: b.application_type,
+      filing_date: filing, comment_period_ends: commentPeriodEnds,
+      requested_revenue_zar: b.requested_revenue_zar || null,
+      pct_change: b.pct_change || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, application_ref: ref } }, 201);
 });
 
@@ -203,6 +218,18 @@ admin.post('/applications/:id/hearings', async (c) => {
     b.agenda || null,
   ).run();
   await c.env.DB.prepare(`UPDATE oe_tariff_applications SET hearing_scheduled_at = ?, status = 'scheduled_for_hearing' WHERE id = ?`).bind(b.scheduled_at, id).run();
+  await fireCascade({
+    event: 'regulator.tariff_hearing_scheduled',
+    actor_id: user.id,
+    entity_type: 'regulator_tariff_submissions',
+    entity_id: id,
+    data: {
+      hearing_id: hId, application_id: id,
+      scheduled_at: b.scheduled_at,
+      venue: b.venue || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id: hId } }, 201);
 });
 
@@ -243,6 +270,20 @@ admin.post('/applications/:id/decision', requireStepUp('regulator.decision.high'
     b.panel_signatories ? JSON.stringify(b.panel_signatories) : null,
   ).run();
   await c.env.DB.prepare(`UPDATE oe_tariff_applications SET status = 'decided', decision_id = ? WHERE id = ?`).bind(decId, id).run();
+  await fireCascade({
+    event: 'regulator.tariff_determined',
+    actor_id: user.id,
+    entity_type: 'regulator_tariff_decisions',
+    entity_id: decId,
+    data: {
+      id: decId, application_id: id, decision_ref: decRef,
+      decision_type: b.decision_type,
+      approved_revenue_zar: b.approved_revenue_zar || null,
+      approved_tariff_zar_kwh: b.approved_tariff_zar_kwh || null,
+      effective_from: b.effective_from || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id: decId, decision_ref: decRef } }, 201);
 });
 
@@ -250,7 +291,16 @@ admin.post('/decisions/:id/publish', requireStepUp('regulator.decision_publish.h
   const user = getCurrentUser(c);
   if (!isRegulator(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
+  if (!id) return c.json({ success: false, error: 'id required' }, 400);
   await c.env.DB.prepare(`UPDATE oe_regulator_decisions SET published_at = datetime('now') WHERE id = ?`).bind(id).run();
+  await fireCascade({
+    event: 'regulator.determination_published',
+    actor_id: user.id,
+    entity_type: 'regulator_tariff_decisions',
+    entity_id: id,
+    data: { id, published_at: new Date().toISOString() },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -270,6 +320,18 @@ admin.post('/appeals', async (c) => {
     VALUES (?,?,?,?,?,?)
   `).bind(id, b.decision_id, user.id, b.forum, b.grounds, b.matter_number || null).run();
   await c.env.DB.prepare(`UPDATE oe_tariff_applications SET status = 'on_appeal' WHERE decision_id = ?`).bind(b.decision_id).run();
+  await fireCascade({
+    event: 'regulator.enforcement_appealed',
+    actor_id: user.id,
+    entity_type: 'regulator_enforcement_cases',
+    entity_id: id,
+    data: {
+      id, decision_id: b.decision_id,
+      appellant_id: user.id, forum: b.forum,
+      grounds: b.grounds, matter_number: b.matter_number || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -297,6 +359,18 @@ admin.post('/audits', async (c) => {
     INSERT INTO oe_compliance_audits (id, licensee_id, audit_type, scope, lead_auditor)
     VALUES (?,?,?,?,?)
   `).bind(id, b.licensee_id, b.audit_type, b.scope || null, user.id).run();
+  await fireCascade({
+    event: 'regulator.enforcement_opened',
+    actor_id: user.id,
+    entity_type: 'regulator_enforcement_cases',
+    entity_id: id,
+    data: {
+      id, respondent_participant_id: b.licensee_id,
+      audit_type: b.audit_type, scope: b.scope || null,
+      lead_auditor: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -317,6 +391,18 @@ admin.post('/audits/:id/findings', async (c) => {
     VALUES (?,?,?,?,?,?,?,?)
   `).bind(fId, id, ref, b.severity, b.category, b.description, b.remediation_required || null, deadline).run();
   await c.env.DB.prepare(`UPDATE oe_compliance_audits SET findings_count = findings_count + 1 WHERE id = ?`).bind(id).run();
+  await fireCascade({
+    event: 'regulator.enforcement_finding',
+    actor_id: user.id,
+    entity_type: 'regulator_audit_findings',
+    entity_id: fId,
+    data: {
+      id: fId, audit_id: id, finding_ref: ref,
+      severity: b.severity, category: b.category,
+      description: b.description, remediation_deadline: deadline,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id: fId, ref } }, 201);
 });
 
