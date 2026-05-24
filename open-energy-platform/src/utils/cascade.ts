@@ -193,7 +193,10 @@ export type EventType =
   | 'popia.export_requested' | 'popia.erasure_requested' | 'popia.erasure_cancelled'
   | 'regulator.nersa_quarterly_generated' | 'regulator.sars_pack_generated'
   // ─── PAIA (public-legal) ────────────────────────────────────────────────
-  | 'paia.request_received';
+  | 'paia.request_received'
+  // ─── Settlement automation (runs + DLQ + meter ingest) ─────────────────
+  | 'settlement.run_started' | 'settlement.run_retried'
+  | 'settlement.dlq_resolved' | 'settlement.meter_channel_configured';
 
 interface CascadeContext {
   event: EventType;

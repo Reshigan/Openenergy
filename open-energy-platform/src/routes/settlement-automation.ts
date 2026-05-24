@@ -21,6 +21,7 @@ import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { computeSettlementRun, PpaContract, PeriodReading } from '../utils/settlement-engine';
 import { insertMeteringReading, invalidateMonthlyAggregate } from '../utils/metering-router';
 import { appendAudit } from '../utils/audit-chain';
+import { fireCascade } from '../utils/cascade';
 
 const sa = new Hono<HonoEnv>();
 
@@ -78,6 +79,21 @@ sa.post('/runs', async (c) => {
     },
   }).catch((e) => console.warn('audit_run_started_failed', (e as Error).message));
 
+  await fireCascade({
+    event: 'settlement.run_started',
+    actor_id: user.id,
+    entity_type: 'settlement_runs',
+    entity_id: runId,
+    data: {
+      run_id: runId, run_type: b.run_type,
+      period_start: b.period_start, period_end: b.period_end,
+      idempotency_key: idempotencyKey,
+      outcome_status: (result as any)?.status || null,
+    },
+    env: c.env,
+    skipAudit: true,
+  });
+
   return c.json({ success: true, data: result });
 });
 
@@ -124,6 +140,21 @@ sa.post('/runs/:id/retry', async (c) => {
     },
   }).catch((e) => console.warn('audit_run_retried_failed', (e as Error).message));
 
+  await fireCascade({
+    event: 'settlement.run_retried',
+    actor_id: user.id,
+    entity_type: 'settlement_runs',
+    entity_id: id,
+    data: {
+      run_id: id, run_type: row.run_type,
+      period_start: row.period_start, period_end: row.period_end,
+      prior_status: row.status,
+      outcome_status: (result as any)?.status || null,
+    },
+    env: c.env,
+    skipAudit: true,
+  });
+
   return c.json({ success: true, data: result });
 });
 
@@ -153,6 +184,19 @@ sa.post('/dlq/:id/resolve', async (c) => {
     event_type: 'dlq.resolved', actor_id: user.id,
     payload: { dlq_id: id, status, resolution_notes: (b.resolution_notes as string) || null },
   }).catch((e) => console.warn('audit_dlq_resolved_failed', (e as Error).message));
+
+  await fireCascade({
+    event: 'settlement.dlq_resolved',
+    actor_id: user.id,
+    entity_type: 'settlement_dlq',
+    entity_id: id,
+    data: {
+      dlq_id: id, status,
+      resolution_notes: (b.resolution_notes as string) || null,
+    },
+    env: c.env,
+    skipAudit: true,
+  });
 
   return c.json({ success: true });
 });
@@ -184,6 +228,20 @@ sa.post('/ingest/channels', async (c) => {
     b.enabled === false ? 0 : null,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM meter_ingest_channels WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'settlement.meter_channel_configured',
+    actor_id: user.id,
+    entity_type: 'meter_ingest_channels',
+    entity_id: id,
+    data: {
+      id, connection_id: b.connection_id, channel_type: b.channel_type,
+      endpoint_url: b.endpoint_url || null,
+      sampling_interval_seconds: b.sampling_interval_seconds == null
+        ? null : Number(b.sampling_interval_seconds),
+      enabled: b.enabled !== false,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
