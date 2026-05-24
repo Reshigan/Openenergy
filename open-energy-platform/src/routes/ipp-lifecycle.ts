@@ -9,6 +9,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { appendAudit, getChainHead, verifyChain } from '../utils/audit-chain';
+import { fireCascade } from '../utils/cascade';
 
 const ipp = new Hono<HonoEnv>();
 ipp.use('*', authMiddleware);
@@ -105,6 +106,20 @@ ipp.post('/epc/:id/variations', async (c) => {
     },
   }).catch((e) => console.warn('audit_variation_failed', (e as Error).message));
 
+  await fireCascade({
+    event: 'ipp.epc_variation_raised',
+    actor_id: user.id,
+    entity_type: 'epc_variations',
+    entity_id: id,
+    data: {
+      variation_id: id, epc_id: epcId,
+      variation_number: b.variation_number, value_zar: Number(b.value_zar),
+      time_impact_days: b.time_impact_days == null ? null : Number(b.time_impact_days),
+    },
+    env: c.env,
+    skipAudit: true,
+  });
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -153,6 +168,20 @@ ipp.post('/epc/:id/lds', async (c) => {
     },
   }).catch((e) => console.warn('audit_ld_assessed_failed', (e as Error).message));
 
+  await fireCascade({
+    event: 'ipp.ld_assessed',
+    actor_id: user.id,
+    entity_type: 'epc_liquidated_damages',
+    entity_id: id,
+    data: {
+      ld_id: id, epc_contract_id: epcId,
+      event_type: b.event_type, event_date: b.event_date,
+      calculated_amount_zar: calculated, capped_amount_zar: capped,
+    },
+    env: c.env,
+    skipAudit: true,
+  });
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -193,6 +222,20 @@ ipp.post('/environmental/authorisations', async (c) => {
     b.document_r2_key || null,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM environmental_authorisations WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'ipp.ea_granted',
+    actor_id: user.id,
+    entity_type: 'environmental_authorisations',
+    entity_id: id,
+    data: {
+      id, project_id: b.project_id as string,
+      authorisation_type: b.authorisation_type as string,
+      competent_authority: (b.competent_authority as string) || null,
+      decision: (b.decision as string) || null,
+      expiry_date: (b.expiry_date as string) || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -353,6 +396,21 @@ ipp.post('/insurance/policies/:id/claim', async (c) => {
     },
   }).catch((e) => console.warn('audit_claim_filed_failed', (e as Error).message));
 
+  await fireCascade({
+    event: 'ipp.insurance_claim_filed',
+    actor_id: user.id,
+    entity_type: 'insurance_claims',
+    entity_id: id,
+    data: {
+      claim_id: id, policy_id: policyId,
+      claim_number: b.claim_number as string,
+      loss_event_date: (b.loss_event_date as string) || null,
+      quantum_zar: b.quantum_zar == null ? null : Number(b.quantum_zar),
+    },
+    env: c.env,
+    skipAudit: true,
+  });
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -407,6 +465,27 @@ ipp.post('/community/engagements', async (c) => {
     b.follow_up_date || null, b.evidence_r2_key || null, user.id,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM community_engagements WHERE id = ?').bind(id).first();
+  // POPIA + REIPPPP audit: a grievance is a regulator-grade event; the
+  // generic engagement log is not. Only fire the cascade for grievances so
+  // the notification fan-out doesn't drown out the developer with low-stakes
+  // meeting minutes.
+  if (String(b.engagement_type).toLowerCase() === 'grievance') {
+    await fireCascade({
+      event: 'ipp.community_grievance_logged',
+      actor_id: user.id,
+      entity_type: 'community_engagements',
+      entity_id: id,
+      data: {
+        id, project_id: b.project_id as string,
+        engagement_date: b.engagement_date as string,
+        stakeholder_id: (b.stakeholder_id as string) || null,
+        topic: (b.topic as string) || null,
+        commitments: (b.commitments as string) || null,
+        follow_up_date: (b.follow_up_date as string) || null,
+      },
+      env: c.env,
+    });
+  }
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -576,6 +655,7 @@ ipp.get('/audit/exports', async (c) => {
       ORDER BY generated_at DESC LIMIT 50`,
   ).all();
   return c.json({ success: true, data: rs.results || [] });
+});
 
 ipp.get('/audit/exports/:id/manifest', async (c) => {
   const id = c.req.param('id');
@@ -605,7 +685,6 @@ ipp.get('/audit/exports/:id/csv', async (c) => {
       'Content-Disposition': `attachment; filename="${id}.csv"`,
     },
   });
-});
 });
 
 // POST /ipp/audit/recon — milestone reconciliation against lender / investor
