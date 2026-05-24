@@ -11,6 +11,7 @@
 
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
+import { fireCascade } from '../utils/cascade';
 
 const r = new Hono<HonoEnv>();
 
@@ -83,6 +84,18 @@ r.post('/paia-requests', async (c) => {
     id, requester_email, requester_name, 'paia_access', compactBody, 'open',
     c.req.header('cf-connecting-ip') || null,
   ).run().catch(() => null);
+  await fireCascade({
+    event: 'paia.request_received',
+    actor_id: undefined,
+    entity_type: 'popia_sar',
+    entity_id: id,
+    data: {
+      id, requester_name, requester_email,
+      subject, request_type: 'paia_access',
+      ip: c.req.header('cf-connecting-ip') || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, ack: 'Your PAIA request has been received. We will respond within 30 days.' } }, 201);
 });
 

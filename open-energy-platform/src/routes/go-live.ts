@@ -18,6 +18,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { fireCascade } from '../utils/cascade';
 
 const mfa      = new Hono<HonoEnv>(); mfa.use('*', authMiddleware);
 const kyc      = new Hono<HonoEnv>(); kyc.use('*', authMiddleware);
@@ -233,6 +234,17 @@ kyc.post('/submit', async (c) => {
       (id, participant_id, document_type, r2_key, file_name, mime_type, size_bytes)
     VALUES (?,?,?,?,?,?,?)
   `).bind(id, user.id, documentType, r2_key, safeName, file.type || null, file.size).run();
+  await fireCascade({
+    event: 'kyc.document_submitted',
+    actor_id: user.id,
+    entity_type: 'kyc_submission',
+    entity_id: id,
+    data: {
+      id, participant_id: user.id, document_type: documentType,
+      file_name: safeName, mime_type: file.type || null, size_bytes: file.size,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -248,12 +260,25 @@ kyc.post('/:id/decide', async (c) => {
     WHERE id = ?
   `).bind(decision, user.id, b.notes || null, id).run();
   // Bump participant kyc_status if all submissions approved
+  let participantId: string | null = null;
   if (decision === 'approved') {
     const sub = await c.env.DB.prepare(`SELECT participant_id FROM oe_kyc_submissions WHERE id = ?`).bind(id).first<any>();
     if (sub?.participant_id) {
+      participantId = sub.participant_id;
       await c.env.DB.prepare(`UPDATE participants SET kyc_status = 'approved' WHERE id = ?`).bind(sub.participant_id).run().catch(() => null);
     }
   }
+  await fireCascade({
+    event: 'kyc.document_reviewed',
+    actor_id: user.id,
+    entity_type: 'kyc_submission',
+    entity_id: String(id),
+    data: {
+      id, decision, participant_id: participantId,
+      notes: b.notes || null, reviewed_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -373,6 +398,14 @@ popia.post('/export', async (c) => {
       SET status = 'ready', r2_key = ?, byte_size = ?, completed_at = datetime('now'), expires_at = ?
       WHERE id = ?
     `).bind(r2_key, body.length, expiresAt, id).run();
+    await fireCascade({
+      event: 'popia.export_requested',
+      actor_id: user.id,
+      entity_type: 'popia_export',
+      entity_id: id,
+      data: { id, participant_id: user.id, byte_size: body.length, expires_at: expiresAt },
+      env: c.env,
+    });
     return c.json({ success: true, data: { id, status: 'ready', byte_size: body.length, expires_at: expiresAt } });
   } catch (e: any) {
     await c.env.DB.prepare(`UPDATE oe_data_export_requests SET status = 'failed', error = ? WHERE id = ?`).bind(e?.message || 'unknown', id).run();
@@ -424,6 +457,17 @@ popia.post('/erasure', async (c) => {
     INSERT INTO oe_deletion_requests (id, participant_id, status, reason, scheduled_for)
     VALUES (?,?,'cooling_off',?,?)
   `).bind(id, user.id, b.reason || null, scheduledFor).run();
+  await fireCascade({
+    event: 'popia.erasure_requested',
+    actor_id: user.id,
+    entity_type: 'popia_deletion',
+    entity_id: id,
+    data: {
+      id, participant_id: user.id,
+      reason: b.reason || null, scheduled_for: scheduledFor,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, scheduled_for: scheduledFor, message: '30-day cooling-off period started. Cancel any time before then.' } });
 });
 
@@ -434,6 +478,14 @@ popia.post('/erasure/:id/cancel', async (c) => {
   if (!row || row.participant_id !== user.id) return c.json({ success: false, error: 'not found' }, 404);
   if (row.status !== 'cooling_off') return c.json({ success: false, error: 'cannot cancel — request already finalised' }, 409);
   await c.env.DB.prepare(`UPDATE oe_deletion_requests SET status = 'cancelled', cancelled_at = datetime('now') WHERE id = ?`).bind(id).run();
+  await fireCascade({
+    event: 'popia.erasure_cancelled',
+    actor_id: user.id,
+    entity_type: 'popia_deletion',
+    entity_id: String(id),
+    data: { id, participant_id: user.id, cancelled_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -489,6 +541,17 @@ regulator.post('/nersa/quarterly', async (c) => {
     INSERT OR REPLACE INTO oe_nersa_reports (id, year, quarter, status, r2_key, summary_json, generated_at, generated_by)
     VALUES (?,?,?,?,?,?,?,?)
   `).bind(id, year, q, 'generated', r2_key, JSON.stringify(totals || {}), new Date().toISOString(), user.id).run();
+  await fireCascade({
+    event: 'regulator.nersa_quarterly_generated',
+    actor_id: user.id,
+    entity_type: 'nersa_report',
+    entity_id: id,
+    data: {
+      id, year, quarter: q, r2_key,
+      totals: totals || {}, generated_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, year, quarter: q, totals, r2_key } });
 });
 
@@ -567,6 +630,17 @@ regulator.post('/sars/generate', async (c) => {
     INSERT OR REPLACE INTO oe_sars_reports (id, period_type, period_label, status, r2_key, summary_json, generated_at, generated_by)
     VALUES (?,?,?,?,?,?,?,?)
   `).bind(id, periodType, periodLabel, 'generated', r2_key, JSON.stringify(pack.figures), new Date().toISOString(), user.id).run();
+  await fireCascade({
+    event: 'regulator.sars_pack_generated',
+    actor_id: user.id,
+    entity_type: 'sars_report',
+    entity_id: id,
+    data: {
+      id, period_type: periodType, period_label: periodLabel,
+      r2_key, figures: pack.figures, generated_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, period_type: periodType, period_label: periodLabel, figures: pack.figures, r2_key } });
 });
 

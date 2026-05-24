@@ -14,6 +14,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { fireCascade } from '../utils/cascade';
 
 const offtaker = new Hono<HonoEnv>();
 
@@ -101,6 +102,18 @@ offtaker.post('/delivery-points', async (c) => {
   const row = await c.env.DB
     .prepare('SELECT * FROM offtaker_delivery_points WHERE id = ?')
     .bind(id).first();
+  await fireCascade({
+    event: 'offtaker.delivery_point_created',
+    actor_id: user.id,
+    entity_type: 'offtaker_delivery_point',
+    entity_id: id,
+    data: {
+      id, name, participant_id: user.id,
+      meter_id: (body.meter_id as string) || null,
+      annual_kwh: body.annual_kwh != null ? Number(body.annual_kwh) : null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -138,6 +151,18 @@ offtaker.put('/delivery-points/:id', async (c) => {
   const row = await c.env.DB
     .prepare('SELECT * FROM offtaker_delivery_points WHERE id = ?')
     .bind(id).first();
+  await fireCascade({
+    event: 'offtaker.delivery_point_updated',
+    actor_id: user.id,
+    entity_type: 'offtaker_delivery_point',
+    entity_id: String(id),
+    data: {
+      id,
+      edited_fields: sets.map((s) => s.split(' = ')[0]).filter((s) => s !== 'updated_at'),
+      updated_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row });
 });
 
@@ -154,6 +179,14 @@ offtaker.delete('/delivery-points/:id', async (c) => {
     return c.json({ success: false, error: 'Not authorised' }, 403);
   }
   await c.env.DB.prepare('DELETE FROM offtaker_delivery_points WHERE id = ?').bind(id).run();
+  await fireCascade({
+    event: 'offtaker.delivery_point_deleted',
+    actor_id: user.id,
+    entity_type: 'offtaker_delivery_point',
+    entity_id: String(id),
+    data: { id, deleted_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, deleted: true } });
 });
 

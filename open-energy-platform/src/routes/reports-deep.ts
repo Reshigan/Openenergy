@@ -13,6 +13,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { requireStepUp } from '../middleware/step-up';
+import { fireCascade } from '../utils/cascade';
 
 const r = new Hono<HonoEnv>();
 r.use('*', authMiddleware);
@@ -164,6 +165,22 @@ r.post('/submissions', requireStepUp('regulator.submit'), async (c) => {
   // Mark parent report as submitted
   await c.env.DB.prepare(`UPDATE ${reportTable} SET status = 'submitted', submitted_at = datetime('now') WHERE id = ?`).bind(b.report_id).run();
 
+  await fireCascade({
+    event: 'report.submitted_to_regulator',
+    actor_id: user.id,
+    entity_type: 'report_submission',
+    entity_id: id,
+    data: {
+      id,
+      report_kind: b.report_kind,
+      report_id: b.report_id,
+      submitted_to: b.submitted_to,
+      envelope_r2_key: envelopeKey,
+      submitted_by: user.id,
+    },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: { id, envelope_r2_key: envelopeKey } }, 201);
 });
 
@@ -172,17 +189,31 @@ r.post('/submissions/:id/acknowledge', async (c) => {
   if (!adminOnly(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
   const b = await c.req.json().catch(() => ({} as any));
+  const newStatus = b.status === 'rejected' ? 'rejected' : (b.status === 'accepted' ? 'accepted' : 'acknowledged');
   await c.env.DB.prepare(`
     UPDATE oe_report_submissions
     SET status = ?, acknowledgment_id = ?, acknowledgment_received_at = datetime('now'),
         rejection_reason = ?
     WHERE id = ?
   `).bind(
-    b.status === 'rejected' ? 'rejected' : (b.status === 'accepted' ? 'accepted' : 'acknowledged'),
+    newStatus,
     b.acknowledgment_id || null,
     b.rejection_reason || null,
     id,
   ).run();
+  await fireCascade({
+    event: 'report.submission_acknowledged',
+    actor_id: user.id,
+    entity_type: 'report_submission',
+    entity_id: String(id),
+    data: {
+      id, status: newStatus,
+      acknowledgment_id: b.acknowledgment_id || null,
+      rejection_reason: b.rejection_reason || null,
+      recorded_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 

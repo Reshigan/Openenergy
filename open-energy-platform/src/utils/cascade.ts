@@ -168,7 +168,32 @@ export type EventType =
   // ─── Polish (Ed25519 signatures) ────────────────────────────────────────
   | 'document.signature_created'
   // ─── Bulk ops (CSV import + bulk update) ────────────────────────────────
-  | 'bulk.import_completed' | 'bulk.update_applied';
+  | 'bulk.import_completed' | 'bulk.update_applied'
+  // ─── Regulator filings ──────────────────────────────────────────────────
+  | 'regulator.filing_created' | 'regulator.filing_updated'
+  | 'regulator.filing_submitted' | 'regulator.filing_archived'
+  | 'regulator.filing_deleted' | 'regulator.filing_ai_generated'
+  // ─── IPP deep (drawdowns + LD engine) ──────────────────────────────────
+  | 'ipp.drawdown_requested' | 'ipp.drawdown_cp_waived'
+  | 'ipp.drawdown_approved' | 'ipp.drawdown_disbursed'
+  | 'ipp.ld_event_raised' | 'ipp.ld_event_cured'
+  // ─── Lender deep (IFRS 9 + watchlist + intercreditor) ──────────────────
+  | 'lender.ecl_computed' | 'lender.watchlist_added'
+  | 'lender.watchlist_cleared' | 'lender.intercreditor_agreed'
+  // ─── Carbon deep (PDD + monitoring + verification) ─────────────────────
+  | 'carbon.pdd_registered' | 'carbon.credits_issued'
+  | 'carbon.verification_transitioned'
+  // ─── Offtaker delivery points CRUD ─────────────────────────────────────
+  | 'offtaker.delivery_point_created' | 'offtaker.delivery_point_updated'
+  | 'offtaker.delivery_point_deleted'
+  // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
+  | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
+  // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
+  | 'kyc.document_submitted' | 'kyc.document_reviewed'
+  | 'popia.export_requested' | 'popia.erasure_requested' | 'popia.erasure_cancelled'
+  | 'regulator.nersa_quarterly_generated' | 'regulator.sars_pack_generated'
+  // ─── PAIA (public-legal) ────────────────────────────────────────────────
+  | 'paia.request_received';
 
 interface CascadeContext {
   event: EventType;

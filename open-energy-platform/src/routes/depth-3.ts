@@ -10,6 +10,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { requireStepUp } from '../middleware/step-up';
+import { fireCascade } from '../utils/cascade';
 
 export const ipp    = new Hono<HonoEnv>(); ipp.use('*', authMiddleware);
 export const lender = new Hono<HonoEnv>(); lender.use('*', authMiddleware);
@@ -42,7 +43,7 @@ ipp.get('/drawdowns', async (c) => {
 });
 
 ipp.post('/drawdowns', async (c) => {
-  void getCurrentUser(c);
+  const user = getCurrentUser(c);
   const b = await c.req.json().catch(() => ({} as any));
   if (!b.project_id || !b.requested_amount_zar) return c.json({ success: false, error: 'project_id + requested_amount_zar required' }, 400);
   const seq = await c.env.DB.prepare(`SELECT COALESCE(MAX(drawdown_number),0) AS m FROM oe_ipp_drawdowns WHERE project_id = ?`).bind(b.project_id).first<any>();
@@ -59,6 +60,19 @@ ipp.post('/drawdowns', async (c) => {
       VALUES (?,?,?,?,?)
     `).bind(genId('cp'), id, cp.cp_type, cp.description, 'pending').run();
   }
+  await fireCascade({
+    event: 'ipp.drawdown_requested',
+    actor_id: user.id,
+    entity_type: 'ipp_drawdown',
+    entity_id: id,
+    data: {
+      id, project_id: b.project_id, drawdown_number: num,
+      requested_amount_zar: Number(b.requested_amount_zar),
+      required_by: b.required_by || null,
+      cps_count: STANDARD_CPS.length, requested_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, drawdown_number: num, cps_count: STANDARD_CPS.length } }, 201);
 });
 
@@ -91,6 +105,17 @@ ipp.post('/drawdowns/:id/cps/:cp_id/waive', requireStepUp('ipp.cp_waive.high'), 
     UPDATE oe_ipp_drawdown_cps SET status = 'waived', waived_by = ?, waiver_reason = ?
     WHERE id = ?
   `).bind(user.id, b.reason, cpId).run();
+  await fireCascade({
+    event: 'ipp.drawdown_cp_waived',
+    actor_id: user.id,
+    entity_type: 'ipp_drawdown_cp',
+    entity_id: String(cpId),
+    data: {
+      cp_id: cpId, drawdown_id: c.req.param('id'),
+      reason: b.reason, waived_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -111,6 +136,18 @@ ipp.post('/drawdowns/:id/approve', requireStepUp('ipp.drawdown_approve.high'), a
     UPDATE oe_ipp_drawdowns SET status = 'approved', approved_amount_zar = ?, approved_by = ?, approved_at = datetime('now')
     WHERE id = ?
   `).bind(approvedAmount, user.id, id).run();
+  await fireCascade({
+    event: 'ipp.drawdown_approved',
+    actor_id: user.id,
+    entity_type: 'ipp_drawdown',
+    entity_id: String(id),
+    data: {
+      id, approved_amount_zar: approvedAmount,
+      requested_amount_zar: Number(dd.requested_amount_zar),
+      approved_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { approved_amount_zar: approvedAmount } });
 });
 
@@ -122,6 +159,22 @@ ipp.post('/drawdowns/:id/disburse', requireStepUp('settlement.transfer.high'), a
     UPDATE oe_ipp_drawdowns SET status = 'disbursed', disbursed_amount_zar = approved_amount_zar, disbursed_at = datetime('now')
     WHERE id = ? AND status = 'approved'
   `).bind(id).run();
+  const disbursed = await c.env.DB.prepare(
+    `SELECT disbursed_amount_zar, project_id FROM oe_ipp_drawdowns WHERE id = ?`
+  ).bind(id).first<any>();
+  await fireCascade({
+    event: 'ipp.drawdown_disbursed',
+    actor_id: user.id,
+    entity_type: 'ipp_drawdown',
+    entity_id: String(id),
+    data: {
+      id,
+      project_id: disbursed?.project_id,
+      disbursed_amount_zar: Number(disbursed?.disbursed_amount_zar || 0),
+      disbursed_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -138,7 +191,7 @@ ipp.get('/lds', async (c) => {
 });
 
 ipp.post('/lds', async (c) => {
-  void getCurrentUser(c);
+  const user = getCurrentUser(c);
   const b = await c.req.json().catch(() => ({} as any));
   const required = ['project_id', 'event_type', 'reference_date', 'daily_rate_zar', 'cap_pct', 'contract_price_zar'];
   for (const f of required) if (!b[f]) return c.json({ success: false, error: `${f} required` }, 400);
@@ -155,14 +208,38 @@ ipp.post('/lds', async (c) => {
     Number(b.daily_rate_zar), Number(b.cap_pct), Number(b.contract_price_zar),
     curePeriodDays, cureDeadline,
   ).run();
+  await fireCascade({
+    event: 'ipp.ld_event_raised',
+    actor_id: user.id,
+    entity_type: 'ipp_ld_event',
+    entity_id: id,
+    data: {
+      id, project_id: b.project_id, event_type: b.event_type,
+      reference_date: b.reference_date,
+      daily_rate_zar: Number(b.daily_rate_zar),
+      cap_pct: Number(b.cap_pct),
+      contract_price_zar: Number(b.contract_price_zar),
+      cure_deadline: cureDeadline,
+      raised_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, cure_deadline: cureDeadline } }, 201);
 });
 
 ipp.post('/lds/:id/cure', async (c) => {
-  void getCurrentUser(c);
+  const user = getCurrentUser(c);
   const id = c.req.param('id');
   const b = await c.req.json().catch(() => ({} as any));
   await c.env.DB.prepare(`UPDATE oe_ipp_ld_events SET status = 'cured', cured_at = datetime('now'), actual_date = ? WHERE id = ?`).bind(b.actual_date || new Date().toISOString(), id).run();
+  await fireCascade({
+    event: 'ipp.ld_event_cured',
+    actor_id: user.id,
+    entity_type: 'ipp_ld_event',
+    entity_id: String(id),
+    data: { id, actual_date: b.actual_date || new Date().toISOString(), cured_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -229,6 +306,18 @@ lender.post('/ecl/compute', requireStepUp('lender.ecl_compute'), async (c) => {
     new Date(Date.now() + 90 * 86_400_000).toISOString(),
     b.notes || null,
   ).run();
+  await fireCascade({
+    event: 'lender.ecl_computed',
+    actor_id: user.id,
+    entity_type: 'lender_ecl',
+    entity_id: id,
+    data: {
+      id, facility_id: b.facility_id, participant_id: b.participant_id,
+      stage, ead_zar: ead, pd, lgd_pct: lgd, ecl_amount_zar: ecl,
+      computed_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, stage, ecl_amount_zar: ecl } });
 });
 
@@ -259,6 +348,19 @@ lender.post('/watchlist', async (c) => {
     b.action_plan || null, user.id,
     new Date(Date.now() + 30 * 86_400_000).toISOString(),
   ).run();
+  await fireCascade({
+    event: 'lender.watchlist_added',
+    actor_id: user.id,
+    entity_type: 'lender_watchlist',
+    entity_id: id,
+    data: {
+      id, facility_id: b.facility_id, participant_id: b.participant_id,
+      tier: Number(b.watchlist_tier || 1),
+      trigger_signal: b.trigger_signal,
+      added_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -267,6 +369,14 @@ lender.post('/watchlist/:id/clear', async (c) => {
   if (!['admin', 'support', 'lender'].includes(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
   await c.env.DB.prepare(`UPDATE oe_lender_watchlist SET cleared_at = datetime('now') WHERE id = ?`).bind(id).run();
+  await fireCascade({
+    event: 'lender.watchlist_cleared',
+    actor_id: user.id,
+    entity_type: 'lender_watchlist',
+    entity_id: String(id),
+    data: { id, cleared_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -298,6 +408,22 @@ lender.post('/intercreditor', async (c) => {
     b.voting_thresholds ? JSON.stringify(b.voting_thresholds) : null,
     b.signed_at || null,
   ).run();
+  await fireCascade({
+    event: 'lender.intercreditor_agreed',
+    actor_id: user.id,
+    entity_type: 'lender_intercreditor',
+    entity_id: id,
+    data: {
+      id, project_id: b.project_id, agent_lender_id: b.agent_lender_id,
+      total_facility_zar: Number(b.total_facility_zar),
+      senior_pct: Number(b.senior_pct),
+      mezzanine_pct: b.mezzanine_pct != null ? Number(b.mezzanine_pct) : null,
+      subordinated_pct: b.subordinated_pct != null ? Number(b.subordinated_pct) : null,
+      signed_at: b.signed_at || null,
+      agreed_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -349,6 +475,14 @@ carbon.post('/pdd/:id/register', requireStepUp('carbon.pdd_register.high'), asyn
     UPDATE oe_carbon_pdd SET pdd_status = 'registered', registry_id = ?, registered_at = datetime('now'), updated_at = datetime('now')
     WHERE id = ?
   `).bind(b.registry_id, id).run();
+  await fireCascade({
+    event: 'carbon.pdd_registered',
+    actor_id: user.id,
+    entity_type: 'carbon_pdd',
+    entity_id: String(id),
+    data: { id, registry_id: b.registry_id, registered_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -387,6 +521,25 @@ carbon.post('/monitoring/:id/issue', requireStepUp('carbon.issuance.high'), asyn
     UPDATE oe_carbon_monitoring SET status = 'issued', issued_at = datetime('now'), issued_serial_range = ?
     WHERE id = ?
   `).bind(b.issued_serial_range || null, id).run();
+  const mon = await c.env.DB.prepare(
+    `SELECT pdd_id, period_start, period_end, measured_tco2e FROM oe_carbon_monitoring WHERE id = ?`
+  ).bind(id).first<any>();
+  await fireCascade({
+    event: 'carbon.credits_issued',
+    actor_id: user.id,
+    entity_type: 'carbon_monitoring',
+    entity_id: String(id),
+    data: {
+      id,
+      pdd_id: mon?.pdd_id,
+      period_start: mon?.period_start,
+      period_end: mon?.period_end,
+      measured_tco2e: mon?.measured_tco2e ? Number(mon.measured_tco2e) : null,
+      issued_serial_range: b.issued_serial_range || null,
+      issued_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -413,6 +566,7 @@ carbon.post('/verifications', async (c) => {
 });
 
 carbon.post('/verifications/:id/transition', async (c) => {
+  const user = getCurrentUser(c);
   const id = c.req.param('id');
   const b = await c.req.json().catch(() => ({} as any));
   const to = String(b.to || '');
@@ -429,6 +583,18 @@ carbon.post('/verifications/:id/transition', async (c) => {
   if (b.opinion_r2_key) { sets.push('opinion_r2_key = ?'); binds.push(b.opinion_r2_key); }
   binds.push(id);
   await c.env.DB.prepare(`UPDATE oe_carbon_verifications SET ${sets.join(',')} WHERE id = ?`).bind(...binds).run();
+  await fireCascade({
+    event: 'carbon.verification_transitioned',
+    actor_id: user.id,
+    entity_type: 'carbon_verification',
+    entity_id: String(id),
+    data: {
+      id, to_status: to,
+      opinion_r2_key: b.opinion_r2_key || null,
+      transitioned_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 

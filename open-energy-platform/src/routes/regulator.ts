@@ -11,6 +11,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { ask } from '../utils/ai';
+import { fireCascade } from '../utils/cascade';
 
 const regulator = new Hono<HonoEnv>();
 regulator.use('*', authMiddleware);
@@ -60,6 +61,14 @@ regulator.post('/filings', async (c) => {
     typeof body.evidence === 'object' ? JSON.stringify(body.evidence) : '{}',
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM regulator_filings WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'regulator.filing_created',
+    actor_id: user.id,
+    entity_type: 'regulator_filing',
+    entity_id: id,
+    data: { id, filing_type, reporting_period, filed_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -103,6 +112,14 @@ regulator.put('/filings/:id', async (c) => {
   binds.push(id);
   await c.env.DB.prepare(`UPDATE regulator_filings SET ${sets.join(', ')} WHERE id = ?`).bind(...binds).run();
   const out = await c.env.DB.prepare('SELECT * FROM regulator_filings WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'regulator.filing_updated',
+    actor_id: user.id,
+    entity_type: 'regulator_filing',
+    entity_id: String(id),
+    data: { id, edited_fields: sets.map((s) => s.split(' = ')[0]), updated_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true, data: out });
 });
 
@@ -125,6 +142,19 @@ regulator.post('/filings/:id/submit', async (c) => {
   }
   await c.env.DB.prepare(`UPDATE regulator_filings SET status = 'submitted' WHERE id = ?`).bind(id).run();
   const out = await c.env.DB.prepare('SELECT * FROM regulator_filings WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'regulator.filing_submitted',
+    actor_id: user.id,
+    entity_type: 'regulator_filing',
+    entity_id: String(id),
+    data: {
+      id,
+      filing_type: (out as any)?.filing_type,
+      reporting_period: (out as any)?.reporting_period,
+      submitted_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: out });
 });
 
@@ -145,6 +175,19 @@ regulator.post('/filings/:id/archive', async (c) => {
   }
   await c.env.DB.prepare(`UPDATE regulator_filings SET status = 'archived' WHERE id = ?`).bind(id).run();
   const out = await c.env.DB.prepare('SELECT * FROM regulator_filings WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'regulator.filing_archived',
+    actor_id: user.id,
+    entity_type: 'regulator_filing',
+    entity_id: String(id),
+    data: {
+      id,
+      prior_status: row.status,
+      filing_type: (out as any)?.filing_type,
+      archived_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: out });
 });
 
@@ -167,6 +210,14 @@ regulator.delete('/filings/:id', async (c) => {
     return c.json({ success: false, error: `Only drafts may be deleted (archive submitted/archived filings instead)` }, 400);
   }
   await c.env.DB.prepare('DELETE FROM regulator_filings WHERE id = ?').bind(id).run();
+  await fireCascade({
+    event: 'regulator.filing_deleted',
+    actor_id: user.id,
+    entity_type: 'regulator_filing',
+    entity_id: String(id),
+    data: { id, deleted_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, deleted: true } });
 });
 
@@ -241,6 +292,15 @@ numbered. Stay factual — ground every claim in the metrics given.`,
     `INSERT INTO regulator_filings (id, filing_type, reporting_period, filed_by, status, narrative, evidence_json)
      VALUES (?, ?, ?, ?, 'draft', ?, ?)`,
   ).bind(id, filingType, period, user.id, narrative, JSON.stringify(metrics || {})).run();
+
+  await fireCascade({
+    event: 'regulator.filing_ai_generated',
+    actor_id: user.id,
+    entity_type: 'regulator_filing',
+    entity_id: id,
+    data: { id, filing_type: filingType, reporting_period: period, narrative_length: narrative.length },
+    env: c.env,
+  });
 
   return c.json({ success: true, data: { id, ...result, text: narrative, metrics } });
 });
