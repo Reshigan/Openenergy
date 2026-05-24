@@ -21,6 +21,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { requireStepUp } from '../middleware/step-up';
+import { fireCascade } from '../utils/cascade';
 
 export const admin = new Hono<HonoEnv>(); admin.use('*', authMiddleware);
 export const pub   = new Hono<HonoEnv>();
@@ -167,6 +168,14 @@ admin.post('/merkle/build', requireStepUp('audit.merkle_build'), async (c) => {
        merkle_root, platform_signature)
     VALUES (?,?,?,?,?,?,?,?)
   `).bind(id, entityType, day, events.length, events[0].sequence_no, events[events.length - 1].sequence_no, root, sig).run();
+  await fireCascade({
+    event: 'audit.merkle_root_published',
+    actor_id: user.id,
+    entity_type: 'oe_audit_merkle_roots',
+    entity_id: id,
+    data: { day, target_entity_type: entityType, merkle_root: root, event_count: events.length, signed: !!sig },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, day, entity_type: entityType, root, event_count: events.length, signed: !!sig } });
 });
 
@@ -266,6 +275,14 @@ admin.post('/attestors', requireStepUp('audit.attestor_add.high'), async (c) => 
     b.contact_email || null,
     b.scope_entity_types ? JSON.stringify(b.scope_entity_types) : null,
   ).run();
+  await fireCascade({
+    event: 'audit.attestor_added',
+    actor_id: user.id,
+    entity_type: 'oe_audit_attestors',
+    entity_id: id,
+    data: { name: b.name, organisation: b.organisation || null, scope_entity_types: b.scope_entity_types || null },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -287,6 +304,14 @@ admin.post('/merkle/:root_id/cosign', async (c) => {
     UPDATE oe_audit_merkle_roots SET attestor_id = ?, attestor_signature = ?, attestor_received_at = datetime('now')
     WHERE id = ?
   `).bind(b.attestor_id, b.signature_b64, rootId).run();
+  await fireCascade({
+    event: 'audit.merkle_root_cosigned',
+    actor_id: user.id,
+    entity_type: 'oe_audit_merkle_roots',
+    entity_id: rootId,
+    data: { attestor_id: b.attestor_id, merkle_root: root.merkle_root, signature_valid: true },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 

@@ -64,6 +64,8 @@ export type EventType =
   // L5 audit chain — fires after every appendAudit(); entity_type +
   // event_type are in the cascade data payload.
   | 'audit.event_appended'
+  | 'audit.merkle_root_published' | 'audit.merkle_root_cosigned'
+  | 'audit.attestor_added'
   // ─── National-scale expansion (PR-National-1/2/3) ─────────────────────
   // Regulator
   | 'regulator.licence_granted' | 'regulator.licence_varied'
