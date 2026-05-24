@@ -26,6 +26,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { recordStepUpAuth } from '../middleware/step-up';
+import { fireCascade } from '../utils/cascade';
 import {
   parseRegistrationAttestation as webauthnParseRegistrationAttestation,
   b64uToBytes as webauthnB64uToBytes,
@@ -231,6 +232,18 @@ r.post('/mfa/challenge/verify', async (c) => {
   const lockState = await recordAttempt(c.env, user.id, ip, ok);
 
   if (!ok) {
+    await fireCascade({
+      event: lockState.locked ? 'auth.mfa_locked_out' : 'auth.mfa_failed',
+      actor_id: user.id,
+      entity_type: lockState.locked ? 'mfa_lockout' : 'mfa_attempt',
+      entity_id: `${user.id}:${ip}`,
+      data: {
+        method, op_type: opType, ip,
+        attempts: lockState.attempts,
+        locked_until: lockState.locked_until || null,
+      },
+      env: c.env,
+    });
     return c.json({
       success: false,
       error: lockState.locked ? 'locked_out' : 'invalid',
@@ -242,6 +255,14 @@ r.post('/mfa/challenge/verify', async (c) => {
   const policy = await c.env.DB.prepare(`SELECT step_up_grace_seconds FROM oe_mfa_policies WHERE role = ?`).bind(user.role).first<{ step_up_grace_seconds: number }>().catch(() => ({ step_up_grace_seconds: 900 }));
   const grace = Number(policy?.step_up_grace_seconds || 900);
   await recordStepUpAuth(c.env, user.id, opType, method, grace);
+  await fireCascade({
+    event: 'auth.mfa_verified',
+    actor_id: user.id,
+    entity_type: 'mfa_session',
+    entity_id: `${user.id}:${opType}`,
+    data: { method, op_type: opType, grace_seconds: grace, ip },
+    env: c.env,
+  });
   return c.json({ success: true, data: { method, op_type: opType, grace_seconds: grace } });
 });
 
@@ -325,6 +346,19 @@ r.post('/webauthn/register/finish', async (c) => {
     b.device_name || 'Security key',
   ).run();
   if (c.env.KV) await c.env.KV.delete(`webauthn:reg:${user.id}`);
+  await fireCascade({
+    event: 'auth.webauthn_credential_registered',
+    actor_id: user.id,
+    entity_type: 'webauthn_credential',
+    entity_id: id,
+    data: {
+      credential_id: parsed.credentialId,
+      device_name: b.device_name || 'Security key',
+      aaguid: parsed.aaguid,
+      sign_count: Number(parsed.signCount || 0),
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, credential_id: parsed.credentialId } }, 201);
 });
 
@@ -341,6 +375,14 @@ r.post('/webauthn/credentials/:id/revoke', async (c) => {
   const user = getCurrentUser(c);
   const id = c.req.param('id');
   await c.env.DB.prepare(`UPDATE oe_webauthn_credentials SET revoked_at = datetime('now') WHERE id = ? AND participant_id = ?`).bind(id, user.id).run();
+  await fireCascade({
+    event: 'auth.webauthn_credential_revoked',
+    actor_id: user.id,
+    entity_type: 'webauthn_credential',
+    entity_id: String(id),
+    data: { id, revoked_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -371,6 +413,19 @@ r.post('/devices/trust', async (c) => {
     (c.req.header('user-agent') || '').slice(0, 500),
     c.req.header('cf-connecting-ip') || null, expiresAt,
   ).run();
+  await fireCascade({
+    event: 'auth.device_trusted',
+    actor_id: user.id,
+    entity_type: 'trusted_device',
+    entity_id: id,
+    data: {
+      id,
+      device_label: b.device_label || 'Browser',
+      expires_at: expiresAt,
+      ip: c.req.header('cf-connecting-ip') || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, expires_at: expiresAt } });
 });
 
@@ -378,6 +433,14 @@ r.post('/devices/:id/revoke', async (c) => {
   const user = getCurrentUser(c);
   const id = c.req.param('id');
   await c.env.DB.prepare(`UPDATE oe_trusted_devices SET revoked = 1 WHERE id = ? AND participant_id = ?`).bind(id, user.id).run();
+  await fireCascade({
+    event: 'auth.device_revoked',
+    actor_id: user.id,
+    entity_type: 'trusted_device',
+    entity_id: String(id),
+    data: { id, revoked_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -396,6 +459,14 @@ r.post('/lockouts/:participant_id/clear', async (c) => {
   if (!['admin', 'support'].includes(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const pid = c.req.param('participant_id');
   await c.env.DB.prepare(`DELETE FROM oe_mfa_lockouts WHERE participant_id = ?`).bind(pid).run();
+  await fireCascade({
+    event: 'auth.mfa_lockout_cleared',
+    actor_id: user.id,
+    entity_type: 'mfa_lockout',
+    entity_id: String(pid),
+    data: { participant_id: pid, cleared_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -424,6 +495,21 @@ r.put('/policies/:role', async (c) => {
     Number(b.device_trust_days || 30),
     user.id,
   ).run();
+  await fireCascade({
+    event: 'auth.mfa_policy_changed',
+    actor_id: user.id,
+    entity_type: 'mfa_policy',
+    entity_id: String(role),
+    data: {
+      role,
+      required: b.required ? 1 : 0,
+      allowed_methods: Array.isArray(b.allowed_methods) ? b.allowed_methods : ['totp'],
+      step_up_grace_seconds: Number(b.step_up_grace_seconds || 900),
+      device_trust_days: Number(b.device_trust_days || 30),
+      updated_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 

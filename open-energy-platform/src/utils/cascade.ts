@@ -136,7 +136,16 @@ export type EventType =
   | 'marketplace.rfq_created' | 'marketplace.rfq_published'
   | 'marketplace.rfq_evaluation_started' | 'marketplace.rfq_awarded'
   | 'marketplace.rfq_negotiation_initiated' | 'marketplace.rfq_negotiation_decided'
-  | 'marketplace.auction_created' | 'marketplace.auction_closed' | 'marketplace.auction_failed';
+  | 'marketplace.auction_created' | 'marketplace.auction_closed' | 'marketplace.auction_failed'
+  // ─── Trading deep (algo, limits, breaches) ──────────────────────────────
+  | 'trader.algo_execution_submitted' | 'trader.algo_paused' | 'trader.algo_resumed' | 'trader.algo_cancelled'
+  | 'trader.position_limit_set'
+  | 'trader.position_breach_detected' | 'trader.position_breach_override' | 'trader.position_breach_cleared'
+  // ─── Auth deep (POPIA-grade access control) ─────────────────────────────
+  | 'auth.mfa_verified' | 'auth.mfa_failed' | 'auth.mfa_locked_out' | 'auth.mfa_lockout_cleared'
+  | 'auth.webauthn_credential_registered' | 'auth.webauthn_credential_revoked'
+  | 'auth.device_trusted' | 'auth.device_revoked'
+  | 'auth.mfa_policy_changed';
 
 interface CascadeContext {
   event: EventType;

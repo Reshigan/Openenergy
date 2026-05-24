@@ -15,6 +15,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { requireStepUp } from '../middleware/step-up';
+import { fireCascade } from '../utils/cascade';
 
 const r = new Hono<HonoEnv>();
 r.use('*', authMiddleware);
@@ -78,6 +79,18 @@ r.post('/algos', async (c) => {
       VALUES (?,?,?,?,?,?)
     `).bind(genId('slc'), id, i, new Date(start + i * sliceInterval).toISOString(), sliceSize, 'queued').run();
   }
+  await fireCascade({
+    event: 'trader.algo_execution_submitted',
+    actor_id: user.id,
+    entity_type: 'algo_execution',
+    entity_id: id,
+    data: {
+      algo_type: b.algo_type, energy_type: b.energy_type, side: b.side,
+      total_volume_mwh: Number(b.total_volume_mwh), limit_price: b.limit_price ? Number(b.limit_price) : null,
+      start_at: b.start_at, end_at: b.end_at, slice_count: sliceCount, slice_size_mwh: sliceSize,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, slice_count: sliceCount, slice_size_mwh: sliceSize } }, 201);
 });
 
@@ -90,21 +103,48 @@ r.get('/algos/:id', async (c) => {
 });
 
 r.post('/algos/:id/pause', async (c) => {
+  const user = getCurrentUser(c);
   const id = c.req.param('id');
   await c.env.DB.prepare(`UPDATE oe_algo_executions SET status = 'paused', updated_at = datetime('now') WHERE id = ? AND status IN ('pending','running')`).bind(id).run();
+  await fireCascade({
+    event: 'trader.algo_paused',
+    actor_id: user.id,
+    entity_type: 'algo_execution',
+    entity_id: String(id),
+    data: { id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
 r.post('/algos/:id/resume', async (c) => {
+  const user = getCurrentUser(c);
   const id = c.req.param('id');
   await c.env.DB.prepare(`UPDATE oe_algo_executions SET status = 'running', updated_at = datetime('now') WHERE id = ? AND status = 'paused'`).bind(id).run();
+  await fireCascade({
+    event: 'trader.algo_resumed',
+    actor_id: user.id,
+    entity_type: 'algo_execution',
+    entity_id: String(id),
+    data: { id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
 r.post('/algos/:id/cancel', async (c) => {
+  const user = getCurrentUser(c);
   const id = c.req.param('id');
   await c.env.DB.prepare(`UPDATE oe_algo_executions SET status = 'cancelled', updated_at = datetime('now') WHERE id = ? AND status NOT IN ('completed','cancelled')`).bind(id).run();
   await c.env.DB.prepare(`UPDATE oe_algo_slices SET status = 'skipped' WHERE algo_id = ? AND status = 'queued'`).bind(id).run();
+  await fireCascade({
+    event: 'trader.algo_cancelled',
+    actor_id: user.id,
+    entity_type: 'algo_execution',
+    entity_id: String(id),
+    data: { id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -137,6 +177,22 @@ r.put('/limits', requireStepUp('trading.limit_change'), async (c) => {
     b.daily_volume_limit_mwh ? Number(b.daily_volume_limit_mwh) : null,
     user.id,
   ).run();
+  await fireCascade({
+    event: 'trader.position_limit_set',
+    actor_id: user.id,
+    entity_type: 'position_limit',
+    entity_id: `${b.participant_id}:${b.energy_type}`,
+    data: {
+      participant_id: b.participant_id,
+      energy_type: b.energy_type,
+      net_long_limit_mwh: Number(b.net_long_limit_mwh || 0),
+      net_short_limit_mwh: Number(b.net_short_limit_mwh || 0),
+      per_delivery_limit_mwh: b.per_delivery_limit_mwh ? Number(b.per_delivery_limit_mwh) : null,
+      daily_pnl_floor_zar: b.daily_pnl_floor_zar ? Number(b.daily_pnl_floor_zar) : null,
+      daily_volume_limit_mwh: b.daily_volume_limit_mwh ? Number(b.daily_volume_limit_mwh) : null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -162,16 +218,32 @@ r.post('/limits/check', async (c) => {
   }
   if (breaches.length > 0) {
     for (const br of breaches) {
+      const breachId = genId('brc');
+      const severity = Math.abs(br.observed_value - br.limit_value) / Math.max(1, Math.abs(br.limit_value)) > 0.2 ? 'hard_breach' : 'breach';
       await c.env.DB.prepare(`
         INSERT INTO oe_position_breaches
           (id, participant_id, energy_type, limit_type, limit_value, observed_value, severity, status)
         VALUES (?,?,?,?,?,?,?,?)
       `).bind(
-        genId('brc'), b.participant_id, b.energy_type, br.limit_type,
-        br.limit_value, br.observed_value,
-        Math.abs(br.observed_value - br.limit_value) / Math.max(1, Math.abs(br.limit_value)) > 0.2 ? 'hard_breach' : 'breach',
-        'open',
+        breachId, b.participant_id, b.energy_type, br.limit_type,
+        br.limit_value, br.observed_value, severity, 'open',
       ).run();
+      await fireCascade({
+        event: 'trader.position_breach_detected',
+        actor_id: b.participant_id,
+        entity_type: 'position_breach',
+        entity_id: breachId,
+        data: {
+          participant_id: b.participant_id,
+          energy_type: b.energy_type,
+          limit_type: br.limit_type,
+          limit_value: br.limit_value,
+          observed_value: br.observed_value,
+          severity,
+          current, proposed,
+        },
+        env: c.env,
+      });
     }
     return c.json({ success: false, error: 'limit_breach', data: { breaches, current, proposed } }, 403);
   }
@@ -201,6 +273,14 @@ r.post('/breaches/:id/override', requireStepUp('trading.limit_override.high'), a
     SET status = 'override_granted', override_by = ?, override_at = datetime('now'), override_reason = ?
     WHERE id = ?
   `).bind(user.id, b.reason, id).run();
+  await fireCascade({
+    event: 'trader.position_breach_override',
+    actor_id: user.id,
+    entity_type: 'position_breach',
+    entity_id: String(id),
+    data: { id, reason: b.reason, override_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -209,6 +289,14 @@ r.post('/breaches/:id/clear', async (c) => {
   if (!['admin', 'support'].includes(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
   await c.env.DB.prepare(`UPDATE oe_position_breaches SET status = 'cleared', cleared_at = datetime('now') WHERE id = ?`).bind(id).run();
+  await fireCascade({
+    event: 'trader.position_breach_cleared',
+    actor_id: user.id,
+    entity_type: 'position_breach',
+    entity_id: String(id),
+    data: { id, cleared_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -242,6 +330,20 @@ r.post('/margin-calls', requireStepUp('trading.margin_call'), async (c) => {
     b.collateral_basket ? JSON.stringify(b.collateral_basket) : null,
     b.notes || null,
   ).run();
+  await fireCascade({
+    event: 'trader.margin_call_issued',
+    actor_id: user.id,
+    entity_type: 'margin_call',
+    entity_id: id,
+    data: {
+      participant_id: b.participant_id,
+      triggered_by: b.triggered_by || 'manual',
+      required_amount_zar: Number(b.required_amount_zar),
+      deadline_at: deadline,
+      notes: b.notes || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, deadline_at: deadline } }, 201);
 });
 
@@ -269,6 +371,29 @@ r.post('/margin-calls/:id/post-collateral', async (c) => {
   const posted = Number(totals?.s || 0);
   const status = posted >= Number(call?.required_amount_zar || 0) ? 'satisfied' : 'partial';
   await c.env.DB.prepare(`UPDATE oe_margin_calls SET posted_amount_zar = ?, status = ?, satisfied_at = CASE WHEN ? = 'satisfied' THEN datetime('now') ELSE satisfied_at END WHERE id = ?`).bind(posted, status, status, id).run();
+  await fireCascade({
+    event: 'trader.collateral_movement',
+    actor_id: user.id,
+    entity_type: 'collateral_posting',
+    entity_id: postingId,
+    data: {
+      action: 'post', margin_call_id: id, participant_id: user.id,
+      asset_type: b.asset_type, face_value_zar: Number(b.face_value_zar),
+      haircut_pct: haircut, collateral_value_zar: collValue,
+      posted_total: posted, margin_call_status: status,
+    },
+    env: c.env,
+  });
+  if (status === 'satisfied') {
+    await fireCascade({
+      event: 'trader.margin_call_met',
+      actor_id: user.id,
+      entity_type: 'margin_call',
+      entity_id: String(id),
+      data: { margin_call_id: id, posted_total: posted, required: Number(call?.required_amount_zar || 0) },
+      env: c.env,
+    });
+  }
   return c.json({ success: true, data: { posting_id: postingId, posted_total: posted, status } });
 });
 
@@ -289,6 +414,21 @@ r.post('/margin-calls/:id/substitute', requireStepUp('trading.collateral_substit
   `).bind(newId, id, user.id, b.new_asset_type, b.new_asset_ref || null, haircut, Number(b.new_face_value_zar), collValue).run();
   await c.env.DB.prepare(`UPDATE oe_collateral_postings SET released_at = datetime('now'), substituted_by = ? WHERE id = ?`).bind(newId, b.release_posting_id).run();
   await c.env.DB.prepare(`UPDATE oe_margin_calls SET status = 'substituted' WHERE id = ?`).bind(id).run();
+  await fireCascade({
+    event: 'trader.collateral_movement',
+    actor_id: user.id,
+    entity_type: 'collateral_posting',
+    entity_id: newId,
+    data: {
+      action: 'substitute', margin_call_id: id, participant_id: user.id,
+      released_posting_id: b.release_posting_id,
+      new_asset_type: b.new_asset_type,
+      new_face_value_zar: Number(b.new_face_value_zar),
+      new_haircut_pct: haircut,
+      new_collateral_value_zar: collValue,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { new_posting_id: newId } });
 });
 
