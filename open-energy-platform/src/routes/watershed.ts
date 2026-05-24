@@ -151,6 +151,11 @@ watershed.post('/pcaf/targets', async (c) => {
     INSERT INTO pcaf_targets (id, participant_id, framework, scope, sector, asset_class, base_year, base_intensity, target_year, target_intensity, pathway_alignment, notes)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(id, user.id, framework, scope, sector ?? null, asset_class ?? null, base_year, base_intensity ?? null, target_year, target_intensity ?? null, pathway_alignment ?? null, notes ?? null).run();
+  await fireCascade({
+    event: 'pcaf.target_committed',
+    actor_id: user.id, entity_type: 'pcaf_targets', entity_id: id,
+    data: { framework, scope, base_year, target_year, target_intensity }, env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -189,6 +194,11 @@ watershed.post('/pcaf/facilitated', async (c) => {
     issuer_evic_zar ?? null, issuer_scope1_tco2e ?? null, issuer_scope2_tco2e ?? null, issuer_scope3_tco2e ?? null, wf,
     facilitated, notes ?? null,
   ).run();
+  await fireCascade({
+    event: 'pcaf.facilitated_emissions_recorded',
+    actor_id: user.id, entity_type: 'pcaf_facilitated_emissions', entity_id: id,
+    data: { reporting_year, transaction_type, issuer_name, facilitated_tco2e: facilitated }, env: c.env,
+  });
   return c.json({ success: true, data: { id, facilitated_tco2e: facilitated } }, 201);
 });
 
@@ -255,6 +265,11 @@ watershed.post('/removals/projects', async (c) => {
     vintage_first_year ?? null, third_party_audit ?? null,
     cobenefits ? JSON.stringify(cobenefits) : null, risk_rating ?? null,
   ).run();
+  await fireCascade({
+    event: 'cdr.project_listed',
+    actor_id: user.id, entity_type: 'cdr_projects', entity_id: id,
+    data: { project_name, technology, category, registry, host_country, total_tco2e_committed }, env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -325,6 +340,11 @@ watershed.post('/removals/offtakes/:id/retire', async (c) => {
   const newRetired = (offtake.retired_tco2e || 0) + tco2e_retired;
   const newStatus = newRetired >= (offtake.total_tco2e || 0) ? 'complete' : 'active';
   await c.env.DB.prepare(`UPDATE cdr_offtakes SET retired_tco2e = ?, status = ? WHERE id = ?`).bind(newRetired, newStatus, id).run();
+  await fireCascade({
+    event: 'cdr.retirement_recorded',
+    actor_id: user.id, entity_type: 'cdr_retirements', entity_id: retId,
+    data: { offtake_id: id, tco2e_retired, vintage_year, reporting_year, serial_number, beneficiary, new_status: newStatus }, env: c.env,
+  });
   return c.json({ success: true, data: { retirement_id: retId, retired_total: newRetired, status: newStatus } }, 201);
 });
 
@@ -426,6 +446,13 @@ watershed.post('/cfe/score', async (c) => {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(user.id, period_start, period_end, totalLoad, totalCarbonFree, matchPct, fullMatchHours, zeroMatchHours, gridIntensity, avoided).run();
 
+  await fireCascade({
+    event: 'cfe.score_computed',
+    actor_id: user.id, entity_type: 'cfe_match_summary', entity_id: `${user.id}-${period_start}-${period_end}`,
+    data: { period_start, period_end, cfe_match_pct: matchPct, emissions_avoided_tco2e: avoided, total_load_kwh: totalLoad },
+    env: c.env,
+  });
+
   return c.json({
     success: true,
     data: {
@@ -488,6 +515,11 @@ watershed.post('/pcf', async (c) => {
     use_phase_tco2e_per_unit ?? 0, end_of_life_tco2e_per_unit ?? 0, total, units_sold ?? null,
     lifecycle, data_quality_score ?? null, assurance_status ?? null, notes ?? null,
   ).run();
+  await fireCascade({
+    event: 'pcf.published',
+    actor_id: user.id, entity_type: 'product_carbon_footprints', entity_id: id,
+    data: { product_code, product_name, reporting_year, total_tco2e_per_unit: total, total_lifecycle_tco2e: lifecycle, assurance_status }, env: c.env,
+  });
   return c.json({ success: true, data: { id, total_tco2e_per_unit: total, total_lifecycle_tco2e: lifecycle } }, 201);
 });
 
@@ -542,6 +574,7 @@ watershed.get('/assurance/engagements/:id/findings', async (c) => {
 });
 
 watershed.post('/assurance/engagements/:id/findings', async (c) => {
+  const user = getCurrentUser(c);
   const { id } = c.req.param();
   const body = await c.req.json().catch(() => ({} as any));
   const { finding_ref, severity, category, title, description, affected_table, affected_id, due_date } = body;
@@ -552,6 +585,11 @@ watershed.post('/assurance/engagements/:id/findings', async (c) => {
       affected_table, affected_id, due_date)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(fid, id, finding_ref ?? null, severity ?? 'observation', category ?? null, title, description ?? null, affected_table ?? null, affected_id ?? null, due_date ?? null).run();
+  await fireCascade({
+    event: 'assurance.finding_raised',
+    actor_id: user.id, entity_type: 'assurance_findings', entity_id: fid,
+    data: { engagement_id: id, severity: severity ?? 'observation', category, title, due_date }, env: c.env,
+  });
   return c.json({ success: true, data: { id: fid } }, 201);
 });
 
@@ -658,6 +696,12 @@ watershed.post('/maturity/score', async (c) => {
       (id, participant_id, reporting_year, measurement_score, governance_score, target_score, action_score, disclosure_score, overall_score, band)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(id, user.id, year, measurement, governance, target, action, disclosure, overall, band).run();
+
+  await fireCascade({
+    event: 'maturity.assessed',
+    actor_id: user.id, entity_type: 'climate_maturity_assessments', entity_id: id,
+    data: { reporting_year: year, overall_score: overall, band, measurement, governance, target, action, disclosure }, env: c.env,
+  });
 
   return c.json({
     success: true,
@@ -974,6 +1018,11 @@ watershed.post('/pcaf/insurance', async (c) => {
     insured_scope3_tco2e ?? null, emissions_data_source ?? null, pcaf_data_quality_score ?? null,
     attrib, associated, notes ?? null,
   ).run();
+  await fireCascade({
+    event: 'pcaf.insurance_recorded',
+    actor_id: user.id, entity_type: 'pcaf_insurance_emissions', entity_id: id,
+    data: { reporting_year, line_of_business, insured_name, premium_zar, insurance_associated_tco2e: associated }, env: c.env,
+  });
   return c.json({ success: true, data: { id, attribution_factor: attrib, insurance_associated_tco2e: associated } }, 201);
 });
 
@@ -1070,6 +1119,12 @@ watershed.post('/scenarios/run', async (c) => {
     baseEmissions, targetEmissions, atRisk, financialVar,
     worstSector, worstVar, JSON.stringify(sectorImpacts),
   ).run();
+
+  await fireCascade({
+    event: 'scenario.run_completed',
+    actor_id: user.id, entity_type: 'scenario_runs', entity_id: id,
+    data: { scenario_code, horizon_years: horizon, emissions_at_risk_tco2e: atRisk, financial_value_at_risk_zar: financialVar, worst_sector_nace: worstSector }, env: c.env,
+  });
 
   return c.json({
     success: true,
@@ -1172,6 +1227,11 @@ cpPortal.post('/counterparty/:token/submit', async (c) => {
     body.reporting_standard ?? null, body.assurance_provider ?? null,
     body.assurance_level ?? null, body.attestation ?? null, ip, ua).run();
   await c.env.DB.prepare(`UPDATE counterparty_data_requests SET status = 'submitted' WHERE id = ?`).bind(req.id).run();
+  await fireCascade({
+    event: 'pcaf.counterparty_data_submitted',
+    actor_id: 'system', entity_type: 'counterparty_submissions', entity_id: subId,
+    data: { request_id: req.id, submitter_email: body.submitter_email ?? null, scope1_tco2e: body.scope1_tco2e ?? null, scope2_tco2e: body.scope2_tco2e ?? null, scope3_tco2e: body.scope3_tco2e ?? null }, env: c.env,
+  }).catch(() => {});
   return c.json({ success: true, data: { submission_id: subId } }, 201);
 });
 
@@ -1396,6 +1456,11 @@ watershed.post('/rec-market/listings', async (c) => {
       available_kwh, remaining_kwh, price_zar_per_kwh, certificate_ref)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(id, user.id, technology, grid_zone, hour_utc, available_kwh, available_kwh, price_zar_per_kwh, certificate_ref ?? null).run();
+  await fireCascade({
+    event: 'rec_market.listed',
+    actor_id: user.id, entity_type: 'rec_hourly_listings', entity_id: id,
+    data: { technology, grid_zone, hour_utc, available_kwh, price_zar_per_kwh }, env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -1426,6 +1491,12 @@ watershed.post('/rec-market/buy', async (c) => {
   const newRemaining = (listing.remaining_kwh || 0) - kwh;
   const newStatus = newRemaining <= 0 ? 'sold_out' : 'partial';
   await c.env.DB.prepare(`UPDATE rec_hourly_listings SET remaining_kwh = ?, status = ? WHERE id = ?`).bind(newRemaining, newStatus, listing_id).run();
+
+  await fireCascade({
+    event: 'rec_market.traded',
+    actor_id: user.id, entity_type: 'rec_hourly_trades', entity_id: tradeId,
+    data: { listing_id, kwh, total_zar: total, retired: !!retire, hour_utc: listing.hour_utc, new_status: newStatus }, env: c.env,
+  });
 
   return c.json({ success: true, data: { trade_id: tradeId, kwh, total_zar: total, retired: !!retire } }, 201);
 });
