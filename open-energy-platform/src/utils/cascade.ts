@@ -85,9 +85,13 @@ export type EventType =
   | 'trader.algo_rule_created'
   // Lender
   | 'lender.covenant_breach' | 'lender.covenant_warn' | 'lender.covenant_waived'
-  | 'lender.covenant_updated'
+  | 'lender.covenant_updated' | 'lender.covenant_added'
+  | 'lender.waiver_requested' | 'lender.waiver_decided'
   | 'lender.ie_submitted' | 'lender.ie_certified' | 'lender.ie_rejected'
-  | 'lender.waterfall_executed' | 'lender.reserve_drawn'
+  | 'lender.waterfall_defined' | 'lender.waterfall_executed'
+  | 'lender.reserve_opened' | 'lender.reserve_movement' | 'lender.reserve_drawn'
+  | 'lender.stress_run_completed'
+  | 'lender.action_filed' | 'lender.action_transitioned'
   | 'disbursement.requested' | 'disbursement.approved'
   // IPP lifecycle
   | 'ipp.epc_variation_raised' | 'ipp.ld_assessed'

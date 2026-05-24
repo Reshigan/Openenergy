@@ -70,6 +70,21 @@ lender.post('/covenants', async (c) => {
     notes: b.notes || null,
     created_at: createdAt,
   };
+  await fireCascade({
+    event: 'lender.covenant_added',
+    actor_id: user.id,
+    entity_type: 'covenants',
+    entity_id: id,
+    data: {
+      project_id: b.project_id || null,
+      covenant_code: b.covenant_code,
+      covenant_type: b.covenant_type,
+      operator: b.operator,
+      threshold: b.threshold == null ? null : Number(b.threshold),
+      material_adverse_effect: Boolean(b.material_adverse_effect),
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -167,6 +182,14 @@ lender.post('/covenants/:id/waive', async (c) => {
      VALUES (?, ?, ?, ?, ?, 'requested')`,
   ).bind(id, covenantId, user.id, b.reason, b.requested_until).run();
   const row = await c.env.DB.prepare('SELECT * FROM covenant_waivers WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'lender.waiver_requested',
+    actor_id: user.id,
+    entity_type: 'covenant_waivers',
+    entity_id: id,
+    data: { covenant_id: covenantId, reason: b.reason, requested_until: b.requested_until },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -182,7 +205,19 @@ lender.post('/waivers/:id/decide', async (c) => {
         SET status = ?, granted_by = ?, granted_at = datetime('now'), conditions = ?
       WHERE id = ?`,
   ).bind(status, user.id, (b.conditions as string) || null, id).run();
-  const row = await c.env.DB.prepare('SELECT * FROM covenant_waivers WHERE id = ?').bind(id).first();
+  const row = await c.env.DB.prepare('SELECT * FROM covenant_waivers WHERE id = ?').bind(id).first<{ covenant_id: string }>();
+  await fireCascade({
+    event: status === 'granted' ? 'lender.covenant_waived' : 'lender.waiver_decided',
+    actor_id: user.id,
+    entity_type: 'covenant_waivers',
+    entity_id: id,
+    data: {
+      covenant_id: row?.covenant_id,
+      status,
+      conditions: (b.conditions as string) || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row });
 });
 
@@ -230,6 +265,19 @@ lender.post('/ie-certifications', async (c) => {
     document_r2_key: b.document_r2_key || null,
     created_at: createdAt,
   };
+  await fireCascade({
+    event: 'lender.ie_submitted',
+    actor_id: user.id,
+    entity_type: 'ie_certifications',
+    entity_id: id,
+    data: {
+      cert_number: b.cert_number,
+      project_id: b.project_id,
+      cert_type: b.cert_type,
+      recommended_drawdown_zar: b.recommended_drawdown_zar == null ? null : Number(b.recommended_drawdown_zar),
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -290,6 +338,7 @@ lender.post('/waterfalls', async (c) => {
      VALUES (?, ?, ?, ?, ?, ?)`,
   ).bind(id, b.project_id, b.waterfall_name, b.effective_from, b.effective_to || null, user.id).run();
 
+  let trancheCount = 0;
   if (Array.isArray(b.tranches)) {
     for (const t of b.tranches as Array<Record<string, unknown>>) {
       if (!t.priority || !t.tranche_name || !t.tranche_type) continue;
@@ -300,8 +349,22 @@ lender.post('/waterfalls', async (c) => {
         genId('wft'), id, Number(t.priority), t.tranche_name, t.tranche_type,
         t.target_account_id || null, t.notes || null,
       ).run();
+      trancheCount++;
     }
   }
+  await fireCascade({
+    event: 'lender.waterfall_defined',
+    actor_id: user.id,
+    entity_type: 'waterfall_structures',
+    entity_id: id,
+    data: {
+      project_id: b.project_id,
+      waterfall_name: b.waterfall_name,
+      effective_from: b.effective_from,
+      tranche_count: trancheCount,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -353,6 +416,22 @@ lender.post('/waterfalls/:id/run', async (c) => {
     ).bind(genId('wfa'), runId, a.tranche_id, a.allocated_zar, a.shortfall_zar).run();
   }
 
+  await fireCascade({
+    event: 'lender.waterfall_executed',
+    actor_id: user.id,
+    entity_type: 'waterfall_runs',
+    entity_id: runId,
+    data: {
+      project_id: b.project_id,
+      waterfall_id: waterfallId,
+      period: b.period,
+      available_cash_zar: Number(b.available_cash_zar),
+      total_allocated_zar: result.total_allocated_zar,
+      surplus_after_equity_zar: result.surplus_after_all_tranches_zar,
+    },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: { run_id: runId, ...result } });
 });
 
@@ -388,6 +467,19 @@ lender.post('/reserves', async (c) => {
     status: 'active',
     created_at: createdAt,
   };
+  await fireCascade({
+    event: 'lender.reserve_opened',
+    actor_id: user.id,
+    entity_type: 'reserve_accounts',
+    entity_id: id,
+    data: {
+      project_id: b.project_id,
+      reserve_type: b.reserve_type,
+      target_amount_zar: Number(b.target_amount_zar),
+      current_balance_zar: balance,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -412,7 +504,25 @@ lender.post('/reserves/:id/movement', async (c) => {
   await c.env.DB.prepare(
     `UPDATE reserve_accounts SET current_balance_zar = current_balance_zar + ? WHERE id = ?`,
   ).bind(delta, reserveId).run();
-  const row = await c.env.DB.prepare('SELECT * FROM reserve_accounts WHERE id = ?').bind(reserveId).first();
+  const row = await c.env.DB.prepare('SELECT * FROM reserve_accounts WHERE id = ?').bind(reserveId).first<{ project_id: string; reserve_type: string; current_balance_zar: number }>();
+  const isDraw = ['draw', 'release', 'transfer_out'].includes(mt);
+  await fireCascade({
+    event: isDraw ? 'lender.reserve_drawn' : 'lender.reserve_movement',
+    actor_id: user.id,
+    entity_type: 'reserve_movements',
+    entity_id: reserveId,
+    data: {
+      reserve_id: reserveId,
+      project_id: row?.project_id,
+      reserve_type: row?.reserve_type,
+      movement_type: mt,
+      amount_zar: Number(b.amount_zar),
+      delta_zar: delta,
+      new_balance_zar: row?.current_balance_zar,
+      waterfall_run_id: b.waterfall_run_id || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row });
 });
 
@@ -507,6 +617,22 @@ lender.post('/stress/run', async (c) => {
     baseIrr, stressedIrr, (b.notes as string) || null, user.id,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM stress_results WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'lender.stress_run_completed',
+    actor_id: user.id,
+    entity_type: 'stress_results',
+    entity_id: id,
+    data: {
+      scenario_id: b.scenario_id,
+      project_id: b.project_id,
+      base_dscr: baseDscr,
+      stressed_dscr: stressedDscr,
+      base_equity_irr: baseIrr,
+      stressed_equity_irr: stressedIrr,
+      breach: stressedDscr < 1.2,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row });
 });
 
@@ -612,6 +738,20 @@ lender.post('/covenant-tests/:id/actions', async (c) => {
       body.severity || 'medium', user.id, body.notes, body.cure_deadline || null,
     )
     .run();
+  await fireCascade({
+    event: 'lender.action_filed',
+    actor_id: user.id,
+    entity_type: 'lender_covenant_actions',
+    entity_id: id,
+    data: {
+      covenant_test_id: testId,
+      covenant_id: test.covenant_id,
+      action_type: action,
+      severity: body.severity || 'medium',
+      cure_deadline: body.cure_deadline || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, status: 'open' } });
 });
 
@@ -656,6 +796,19 @@ lender.post('/covenant-actions/:id/transition', async (c) => {
     now,
     actionId,
   ).run();
+  await fireCascade({
+    event: 'lender.action_transitioned',
+    actor_id: user.id,
+    entity_type: 'lender_covenant_actions',
+    entity_id: actionId,
+    data: {
+      from_status: action.status,
+      to_status: to,
+      outcome: isTerminal ? (body.outcome || (to === 'resolved' ? 'cured' : 'no_action')) : null,
+      terminal: isTerminal,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id: actionId, status: to } });
 });
 
