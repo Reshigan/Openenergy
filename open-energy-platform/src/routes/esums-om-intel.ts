@@ -20,6 +20,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { cached, shouldBypass } from '../utils/kv-cache';
 import { pollConnection } from '../utils/oem-adapters';
+import { fireCascade } from '../utils/cascade';
 
 const intel = new Hono<HonoEnv>();
 intel.use('*', authMiddleware);
@@ -122,7 +123,7 @@ intel.get('/predictions', async (c) => {
 });
 
 intel.post('/predictions/:id/action', async (c) => {
-  void getCurrentUser(c);
+  const user = getCurrentUser(c);
   const id = c.req.param('id');
   const b = await c.req.json().catch(() => ({} as any));
   const action = String(b.action || '');
@@ -132,6 +133,7 @@ intel.post('/predictions/:id/action', async (c) => {
   await c.env.DB.prepare(`
     UPDATE om_predictions SET status = ?, closed_at = datetime('now') WHERE id = ?
   `).bind(action, id).run();
+  let chainedWo: { id: string; number: string } | null = null;
   // If acted_on and notes asked for a WO, optionally chain one
   if (action === 'acted_on' && b.create_wo) {
     const pred = await c.env.DB.prepare(`SELECT * FROM om_predictions WHERE id = ?`).bind(id).first<any>();
@@ -149,8 +151,24 @@ intel.post('/predictions/:id/action', async (c) => {
         pred.recommended_action || null,
         240, 72, new Date(Date.now() + 72 * 3_600_000).toISOString(),
       ).run();
-      return c.json({ success: true, data: { wo_id: woId, wo_number: woNumber } });
+      chainedWo = { id: woId, number: woNumber };
     }
+  }
+  await fireCascade({
+    event: 'esums.prediction_actioned',
+    actor_id: user.id,
+    entity_type: 'om_predictions',
+    entity_id: id,
+    data: {
+      action,
+      wo_chained: !!chainedWo,
+      wo_id: chainedWo?.id || null,
+      wo_number: chainedWo?.number || null,
+    },
+    env: c.env,
+  });
+  if (chainedWo) {
+    return c.json({ success: true, data: { wo_id: chainedWo.id, wo_number: chainedWo.number } });
   }
   return c.json({ success: true });
 });
@@ -380,6 +398,20 @@ intel.post('/ingestion', async (c) => {
     id, b.site_id, b.adapter, b.endpoint_url || null,
     b.credentials_kv || null, Number(b.polling_minutes || 5), 1,
   ).run();
+  await fireCascade({
+    event: 'esums.connection_registered',
+    actor_id: user.id,
+    entity_type: 'om_connections',
+    entity_id: id,
+    data: {
+      site_id: b.site_id,
+      adapter: b.adapter,
+      has_endpoint: !!b.endpoint_url,
+      has_credentials_ref: !!b.credentials_kv,
+      polling_minutes: Number(b.polling_minutes || 5),
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
