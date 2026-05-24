@@ -12,6 +12,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { requireStepUp } from '../middleware/step-up';
+import { fireCascade } from '../utils/cascade';
 
 const r = new Hono<HonoEnv>();
 r.use('*', authMiddleware);
@@ -48,6 +49,14 @@ r.post('/late-fees/:id/waive', requireStepUp('settlement.late_fee_waive.high'), 
     WHERE id = ? AND status = 'pending'
   `).bind(user.id, b.reason, id).run();
   if (!res.meta.changes) return c.json({ success: false, error: 'not found or not pending' }, 404);
+  await fireCascade({
+    event: 'settlement.late_fee_waived',
+    actor_id: user.id,
+    entity_type: 'late_payment_fee',
+    entity_id: String(id),
+    data: { id, reason: b.reason, waived_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -58,6 +67,14 @@ r.post('/late-fees/:id/charge', async (c) => {
   await c.env.DB.prepare(
     `UPDATE oe_late_payment_fees SET status = 'charged' WHERE id = ? AND status = 'pending'`
   ).bind(id).run();
+  await fireCascade({
+    event: 'settlement.late_fee_charged',
+    actor_id: user.id,
+    entity_type: 'late_payment_fee',
+    entity_id: String(id),
+    data: { id, charged_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -83,6 +100,19 @@ r.post('/prime-rate', requireStepUp('settlement.prime_rate_update.high'), async 
     INSERT OR REPLACE INTO oe_prime_rate (effective_from, rate_pct, source, updated_by)
     VALUES (?,?,?,?)
   `).bind(b.effective_from, Number(b.rate_pct), b.source || 'manual', user.id).run();
+  await fireCascade({
+    event: 'settlement.prime_rate_updated',
+    actor_id: user.id,
+    entity_type: 'prime_rate',
+    entity_id: String(b.effective_from),
+    data: {
+      effective_from: b.effective_from,
+      rate_pct: Number(b.rate_pct),
+      source: b.source || 'manual',
+      updated_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -124,6 +154,20 @@ r.post('/variation-orders', async (c) => {
     String(b.rationale).slice(0, 4000),
     b.evidence_r2_key || null,
   ).run();
+  await fireCascade({
+    event: 'ipp.variation_order_raised',
+    actor_id: user.id,
+    entity_type: 'variation_order',
+    entity_id: id,
+    data: {
+      id, project_id: b.project_id, vo_number: voNum,
+      category: b.category,
+      cost_delta_zar: b.cost_delta_zar != null ? Number(b.cost_delta_zar) : null,
+      schedule_delta_days: b.schedule_delta_days != null ? Number(b.schedule_delta_days) : null,
+      raised_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, vo_number: voNum } }, 201);
 });
 
@@ -152,6 +196,34 @@ r.post('/variation-orders/:id/lender-decision', requireStepUp('ipp.variation_dec
     b.decision, user.id, b.comment || null,
     b.decision, b.decision, b.decision, b.comment || null, b.decision, id,
   ).run();
+  await fireCascade({
+    event: 'ipp.variation_order_lender_decided',
+    actor_id: user.id,
+    entity_type: 'variation_order',
+    entity_id: String(id),
+    data: { id, decision: b.decision, comment: b.comment || null, lender_id: user.id },
+    env: c.env,
+  });
+  const updated = await c.env.DB.prepare(`SELECT status FROM oe_variation_orders WHERE id = ?`).bind(id).first<{ status: string }>();
+  if (updated?.status === 'approved') {
+    await fireCascade({
+      event: 'ipp.variation_order_approved',
+      actor_id: user.id,
+      entity_type: 'variation_order',
+      entity_id: String(id),
+      data: { id, both_approved_at: 'lender' },
+      env: c.env,
+    });
+  } else if (updated?.status === 'rejected') {
+    await fireCascade({
+      event: 'ipp.variation_order_rejected',
+      actor_id: user.id,
+      entity_type: 'variation_order',
+      entity_id: String(id),
+      data: { id, rejected_by: 'lender', reason: b.comment || null },
+      env: c.env,
+    });
+  }
   return c.json({ success: true });
 });
 
@@ -180,6 +252,34 @@ r.post('/variation-orders/:id/offtaker-decision', requireStepUp('ipp.variation_d
     b.decision, user.id, b.comment || null,
     b.decision, b.decision, b.decision, b.comment || null, b.decision, id,
   ).run();
+  await fireCascade({
+    event: 'ipp.variation_order_offtaker_decided',
+    actor_id: user.id,
+    entity_type: 'variation_order',
+    entity_id: String(id),
+    data: { id, decision: b.decision, comment: b.comment || null, offtaker_id: user.id },
+    env: c.env,
+  });
+  const updated = await c.env.DB.prepare(`SELECT status FROM oe_variation_orders WHERE id = ?`).bind(id).first<{ status: string }>();
+  if (updated?.status === 'approved') {
+    await fireCascade({
+      event: 'ipp.variation_order_approved',
+      actor_id: user.id,
+      entity_type: 'variation_order',
+      entity_id: String(id),
+      data: { id, both_approved_at: 'offtaker' },
+      env: c.env,
+    });
+  } else if (updated?.status === 'rejected') {
+    await fireCascade({
+      event: 'ipp.variation_order_rejected',
+      actor_id: user.id,
+      entity_type: 'variation_order',
+      entity_id: String(id),
+      data: { id, rejected_by: 'offtaker', reason: b.comment || null },
+      env: c.env,
+    });
+  }
   return c.json({ success: true });
 });
 
@@ -191,6 +291,14 @@ r.post('/variation-orders/:id/withdraw', async (c) => {
   if (cur.raised_by !== user.id && !adminOrSupport(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   if (!['raised', 'lender_review', 'offtaker_review'].includes(cur.status)) return c.json({ success: false, error: 'cannot withdraw past current state' }, 400);
   await c.env.DB.prepare(`UPDATE oe_variation_orders SET status = 'withdrawn' WHERE id = ?`).bind(id).run();
+  await fireCascade({
+    event: 'ipp.variation_order_withdrawn',
+    actor_id: user.id,
+    entity_type: 'variation_order',
+    entity_id: String(id),
+    data: { id, withdrawn_by: user.id, prior_status: cur.status },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 

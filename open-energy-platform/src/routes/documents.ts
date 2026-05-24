@@ -18,6 +18,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { requireStepUp } from '../middleware/step-up';
+import { fireCascade } from '../utils/cascade';
 
 const r = new Hono<HonoEnv>();
 r.use('*', authMiddleware);
@@ -76,28 +77,58 @@ r.post('/templates', async (c) => {
     JSON.stringify(b.variables), JSON.stringify(b.required_signatories),
     b.jurisdiction || null, Number(b.version || 1), 'draft', user.id,
   ).run();
+  await fireCascade({
+    event: 'document.template_created',
+    actor_id: user.id,
+    entity_type: 'document_template',
+    entity_id: id,
+    data: {
+      id, template_key: b.template_key, display_name: b.display_name,
+      category: b.category, jurisdiction: b.jurisdiction || null,
+      version: Number(b.version || 1),
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
 r.post('/templates/:id/publish', requireStepUp('documents.template_publish.high'), async (c) => {
   const user = getCurrentUser(c);
   if (!isAdmin(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
+  const id = c.req.param('id');
   await c.env.DB.prepare(
     `UPDATE oe_document_templates
      SET status = 'published', published_at = datetime('now')
      WHERE id = ? AND status = 'draft'`
-  ).bind(c.req.param('id')).run();
+  ).bind(id).run();
+  await fireCascade({
+    event: 'document.template_published',
+    actor_id: user.id,
+    entity_type: 'document_template',
+    entity_id: String(id),
+    data: { id, published_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
 r.post('/templates/:id/deprecate', async (c) => {
   const user = getCurrentUser(c);
   if (!isAdmin(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
+  const id = c.req.param('id');
   await c.env.DB.prepare(
     `UPDATE oe_document_templates
      SET status = 'deprecated', deprecated_at = datetime('now')
      WHERE id = ? AND status = 'published'`
-  ).bind(c.req.param('id')).run();
+  ).bind(id).run();
+  await fireCascade({
+    event: 'document.template_deprecated',
+    actor_id: user.id,
+    entity_type: 'document_template',
+    entity_id: String(id),
+    data: { id, deprecated_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -175,6 +206,19 @@ r.post('/envelopes', async (c) => {
     JSON.stringify(b.variables), body, JSON.stringify(sigs),
     hash, 'sent',
   ).run();
+  await fireCascade({
+    event: 'document.envelope_created',
+    actor_id: user.id,
+    entity_type: 'document_envelope',
+    entity_id: id,
+    data: {
+      id, template_id: b.template_id, document_hash: hash,
+      signatory_count: sigs.length,
+      signatory_participant_ids: sigs.map((s) => s.participant_id),
+      raised_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, document_hash: hash } }, 201);
 });
 
@@ -198,6 +242,29 @@ r.post('/envelopes/:id/mark-signed', async (c) => {
         completed_at = CASE WHEN ? = 1 THEN datetime('now') ELSE completed_at END
     WHERE id = ?
   `).bind(JSON.stringify(sigs), allSigned ? 'completed' : 'in_progress', allSigned ? 1 : 0, id).run();
+  await fireCascade({
+    event: 'document.envelope_signed',
+    actor_id: user.id,
+    entity_type: 'document_envelope',
+    entity_id: String(id),
+    data: {
+      id, signer_id: user.id, signer_index: idx,
+      signed_count: sigs.filter((s) => !!s.signed_at).length,
+      total_signatories: sigs.length,
+      all_signed: allSigned,
+    },
+    env: c.env,
+  });
+  if (allSigned) {
+    await fireCascade({
+      event: 'document.envelope_completed',
+      actor_id: user.id,
+      entity_type: 'document_envelope',
+      entity_id: String(id),
+      data: { id, document_hash: env.document_hash, completed_at: new Date().toISOString() },
+      env: c.env,
+    });
+  }
   return c.json({ success: true, data: { all_signed: allSigned } });
 });
 
@@ -214,6 +281,14 @@ r.post('/envelopes/:id/cancel', async (c) => {
     SET status = 'cancelled', cancelled_at = datetime('now'), cancellation_reason = ?
     WHERE id = ?
   `).bind(b.reason || null, id).run();
+  await fireCascade({
+    event: 'document.envelope_cancelled',
+    actor_id: user.id,
+    entity_type: 'document_envelope',
+    entity_id: String(id),
+    data: { id, reason: b.reason || null, cancelled_by: user.id, prior_status: env.status },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 

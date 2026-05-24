@@ -145,7 +145,23 @@ export type EventType =
   | 'auth.mfa_verified' | 'auth.mfa_failed' | 'auth.mfa_locked_out' | 'auth.mfa_lockout_cleared'
   | 'auth.webauthn_credential_registered' | 'auth.webauthn_credential_revoked'
   | 'auth.device_trusted' | 'auth.device_revoked'
-  | 'auth.mfa_policy_changed';
+  | 'auth.mfa_policy_changed'
+  // ─── KYC-deep (FICA tiered KYC + PEP/sanctions + AML) ───────────────────
+  | 'kyc.tier_upgrade_requested' | 'kyc.tier_applied'
+  | 'kyc.screening_completed' | 'kyc.screening_reviewed'
+  | 'kyc.risk_score_computed'
+  | 'kyc.beneficial_owner_added'
+  // ─── Business depth (waivers, variation orders, prime rate) ─────────────
+  | 'settlement.late_fee_waived' | 'settlement.late_fee_charged'
+  | 'settlement.prime_rate_updated'
+  | 'ipp.variation_order_raised'
+  | 'ipp.variation_order_lender_decided' | 'ipp.variation_order_offtaker_decided'
+  | 'ipp.variation_order_approved' | 'ipp.variation_order_rejected'
+  | 'ipp.variation_order_withdrawn'
+  // ─── Documents (templates + envelopes) ──────────────────────────────────
+  | 'document.template_created' | 'document.template_published' | 'document.template_deprecated'
+  | 'document.envelope_created' | 'document.envelope_signed'
+  | 'document.envelope_completed' | 'document.envelope_cancelled';
 
 interface CascadeContext {
   event: EventType;

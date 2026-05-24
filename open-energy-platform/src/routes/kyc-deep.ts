@@ -32,6 +32,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { requireStepUp } from '../middleware/step-up';
+import { fireCascade } from '../utils/cascade';
 
 const r = new Hono<HonoEnv>();
 r.use('*', authMiddleware);
@@ -187,6 +188,14 @@ r.post('/tiers/upgrade-request', async (c) => {
   if (missing.length) {
     return c.json({ success: false, error: 'missing_documents', data: { missing } }, 409);
   }
+  await fireCascade({
+    event: 'kyc.tier_upgrade_requested',
+    actor_id: user.id,
+    entity_type: 'kyc_tier',
+    entity_id: user.id,
+    data: { participant_id: user.id, target_tier: target, requirements },
+    env: c.env,
+  });
   return c.json({ success: true, data: { message: `Tier ${target} upgrade queued for review`, target_tier: target } });
 });
 
@@ -204,6 +213,20 @@ r.post('/tiers/:participant_id', requireStepUp('kyc.tier_upgrade'), async (c) =>
       (participant_id, current_tier, per_trade_limit_zar, monthly_volume_limit_zar, upgraded_by, upgraded_at, updated_at)
     VALUES (?,?,?,?,?,datetime('now'),datetime('now'))
   `).bind(pid, target, limits.per_trade, limits.monthly, user.id).run();
+  await fireCascade({
+    event: 'kyc.tier_applied',
+    actor_id: user.id,
+    entity_type: 'kyc_tier',
+    entity_id: String(pid),
+    data: {
+      participant_id: pid, tier: target,
+      per_trade_limit_zar: limits.per_trade,
+      monthly_volume_limit_zar: limits.monthly,
+      tier_name: limits.name,
+      applied_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { participant_id: pid, tier: target, limits } });
 });
 
@@ -240,6 +263,22 @@ r.post('/screening', async (c) => {
       VALUES (?,?,?,?,?,?,?,?,datetime('now'))
     `).bind(genId('scr'), pid, 'sanctions', 'all_lists', 0, 0, 'cleared', user.id).run();
   }
+  await fireCascade({
+    event: 'kyc.screening_completed',
+    actor_id: user.id,
+    entity_type: 'kyc_screening',
+    entity_id: pid,
+    data: {
+      participant_id: pid,
+      full_name: String(b.full_name),
+      cleared: !result.lists_hit.length,
+      lists_hit: result.lists_hit,
+      match_count: result.matches.length,
+      max_match_score: result.max_score,
+      requires_review: result.lists_hit.length > 0 && result.max_score < 0.95,
+    },
+    env: c.env,
+  });
   return c.json({
     success: true,
     data: {
@@ -272,6 +311,14 @@ r.post('/screening/:id/review', async (c) => {
   }
   await c.env.DB.prepare(`UPDATE oe_kyc_screenings SET status = ?, reviewer_id = ?, reviewed_at = datetime('now'), notes = ? WHERE id = ?`)
     .bind(decision, user.id, b.notes || null, id).run();
+  await fireCascade({
+    event: 'kyc.screening_reviewed',
+    actor_id: user.id,
+    entity_type: 'kyc_screening',
+    entity_id: String(id),
+    data: { id, decision, reviewer_id: user.id, notes: b.notes || null },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -308,6 +355,22 @@ r.post('/risk-score/compute', async (c) => {
     result.score, result.tier,
     JSON.stringify({ ...b, monthly_volume_zar: Number(vol?.v || 0), age_of_account_days: ageDays }),
   ).run();
+  await fireCascade({
+    event: 'kyc.risk_score_computed',
+    actor_id: user.id,
+    entity_type: 'kyc_risk_score',
+    entity_id: pid,
+    data: {
+      participant_id: pid,
+      total_score: result.score,
+      risk_tier: result.tier,
+      breakdown: result.breakdown,
+      is_pep: !!b.is_pep,
+      country: b.country || null,
+      cross_border: !!b.cross_border,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { participant_id: pid, ...result } });
 });
 
@@ -343,6 +406,20 @@ r.post('/beneficial-owners', async (c) => {
       (id, participant_id, full_name, id_number, date_of_birth, ownership_pct, is_pep, source_of_funds)
     VALUES (?,?,?,?,?,?,?,?)
   `).bind(id, pid, b.full_name, b.id_number || null, b.date_of_birth || null, Number(b.ownership_pct), b.is_pep ? 1 : 0, b.source_of_funds || null).run();
+  await fireCascade({
+    event: 'kyc.beneficial_owner_added',
+    actor_id: user.id,
+    entity_type: 'kyc_beneficial_owner',
+    entity_id: id,
+    data: {
+      id, participant_id: pid,
+      full_name: b.full_name,
+      ownership_pct: Number(b.ownership_pct),
+      is_pep: !!b.is_pep,
+      source_of_funds: b.source_of_funds || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
