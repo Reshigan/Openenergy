@@ -196,7 +196,12 @@ export type EventType =
   | 'paia.request_received'
   // ─── Settlement automation (runs + DLQ + meter ingest) ─────────────────
   | 'settlement.run_started' | 'settlement.run_retried'
-  | 'settlement.dlq_resolved' | 'settlement.meter_channel_configured';
+  | 'settlement.dlq_resolved' | 'settlement.meter_channel_configured'
+  // ─── BRP imbalance settlement ──────────────────────────────────────────
+  | 'imbalance.prices_published' | 'imbalance.run_completed' | 'imbalance.run_failed'
+  // ─── Admin operations (user + tenant lifecycle) ────────────────────────
+  | 'admin.user_created' | 'admin.user_suspended'
+  | 'admin.password_reset_issued' | 'admin.tenant_created';
 
 interface CascadeContext {
   event: EventType;

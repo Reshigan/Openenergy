@@ -32,6 +32,7 @@ import {
   PeriodPricing,
   ImbalanceRecord,
 } from '../utils/imbalance-engine';
+import { fireCascade } from '../utils/cascade';
 
 const imb = new Hono<HonoEnv>();
 imb.use('*', authMiddleware);
@@ -90,6 +91,21 @@ imb.post('/prices', async (c) => {
     );
   }
   await c.env.DB.batch(stmts);
+  const firstPeriod = prices[0]?.period_start || null;
+  const lastPeriod = prices[prices.length - 1]?.period_start || null;
+  await fireCascade({
+    event: 'imbalance.prices_published',
+    actor_id: user.id,
+    entity_type: 'imbalance_prices',
+    entity_id: String(firstPeriod || `batch_${Date.now()}`),
+    data: {
+      count: stmts.length,
+      first_period: firstPeriod,
+      last_period: lastPeriod,
+      published_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { count: stmts.length } });
 });
 
@@ -207,6 +223,19 @@ imb.post('/runs', async (c) => {
            net_charge_zar_total = ?, finished_at = datetime('now')
        WHERE id = ?`,
     ).bind(result.periodsSettled, result.brpsSettled, result.netChargeTotal, runId).run();
+    await fireCascade({
+      event: 'imbalance.run_completed',
+      actor_id: user.id,
+      entity_type: 'imbalance_settlement_runs',
+      entity_id: runId,
+      data: {
+        run_id: runId, period_from: periodFrom, period_to: periodTo,
+        periods_settled: result.periodsSettled,
+        brps_settled: result.brpsSettled,
+        net_charge_zar_total: result.netChargeTotal,
+      },
+      env: c.env,
+    });
     return c.json({ success: true, data: { run_id: runId, ...result } });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -215,6 +244,17 @@ imb.post('/runs', async (c) => {
        SET status = 'failed', error_message = ?, finished_at = datetime('now')
        WHERE id = ?`,
     ).bind(msg, runId).run();
+    await fireCascade({
+      event: 'imbalance.run_failed',
+      actor_id: user.id,
+      entity_type: 'imbalance_settlement_runs',
+      entity_id: runId,
+      data: {
+        run_id: runId, period_from: periodFrom, period_to: periodTo,
+        error_message: msg,
+      },
+      env: c.env,
+    });
     return c.json({ success: false, error: msg, run_id: runId }, 500);
   }
 });

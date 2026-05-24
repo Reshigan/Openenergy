@@ -4,7 +4,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser, hashPassword, invalidateTenantCache } from '../middleware/auth';
-import { invalidateRoleRosterCache } from '../utils/cascade';
+import { invalidateRoleRosterCache, fireCascade } from '../utils/cascade';
 import { createPasswordResetToken, randomOpaqueToken, revokeAllSessionsForParticipant } from '../utils/auth-tokens';
 import { logPiiAccessBatch, inferAccessType } from '../utils/popia-access';
 
@@ -374,6 +374,15 @@ admin.post('/users', async (c) => {
   const resetUrl = `${c.env.APP_BASE_URL || new URL(c.req.url).origin}/reset-password?token=${rawToken}`;
 
   await auditLog(c.env, actor.id, 'admin.user_created', 'participants', id, { email, name, role, tenant_id: tenantId });
+  await fireCascade({
+    event: 'admin.user_created',
+    actor_id: actor.id,
+    entity_type: 'participants',
+    entity_id: id,
+    data: { id, email, name, role, tenant_id: tenantId },
+    env: c.env,
+    skipAudit: true,
+  });
   return c.json({ success: true, data: { id, email, reset_url: resetUrl } });
 });
 
@@ -391,6 +400,15 @@ admin.delete('/users/:id', async (c) => {
   await c.env.DB.prepare("UPDATE participants SET status = 'suspended', updated_at = datetime('now') WHERE id = ?").bind(id).run();
   await revokeAllSessionsForParticipant(c.env.DB, id, 'admin_suspend');
   await auditLog(c.env, actor.id, 'admin.user_suspended', 'participants', id, { email: row.email, role: row.role });
+  await fireCascade({
+    event: 'admin.user_suspended',
+    actor_id: actor.id,
+    entity_type: 'participants',
+    entity_id: id,
+    data: { id, email: row.email, role: row.role, reason: 'admin_suspend' },
+    env: c.env,
+    skipAudit: true,
+  });
   return c.json({ success: true });
 });
 
@@ -429,6 +447,15 @@ admin.post('/tenants', async (c) => {
   ).run();
 
   await auditLog(c.env, actor.id, 'admin.tenant_created', 'tenants', id, { slug, display_name: displayName });
+  await fireCascade({
+    event: 'admin.tenant_created',
+    actor_id: actor.id,
+    entity_type: 'tenants',
+    entity_id: id,
+    data: { id, slug, display_name: displayName },
+    env: c.env,
+    skipAudit: true,
+  });
   return c.json({ success: true, data: { id, slug, display_name: displayName } });
 });
 
@@ -480,6 +507,15 @@ admin.post('/users/:id/password-reset', async (c) => {
   const rawToken = await createPasswordResetToken(c.env.DB, id, c.req.header('CF-Connecting-IP') || null);
   const resetUrl = `${c.env.APP_BASE_URL || new URL(c.req.url).origin}/reset-password?token=${rawToken}`;
   await auditLog(c.env, actor.id, 'admin.password_reset_issued', 'participants', id, { email: row.email });
+  await fireCascade({
+    event: 'admin.password_reset_issued',
+    actor_id: actor.id,
+    entity_type: 'participants',
+    entity_id: id,
+    data: { id, email: row.email },
+    env: c.env,
+    skipAudit: true,
+  });
   return c.json({ success: true, data: { email: row.email, reset_url: resetUrl } });
 });
 
