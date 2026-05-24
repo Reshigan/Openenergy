@@ -59,6 +59,14 @@ pa.post('/tenants', async (c) => {
     b.country || 'ZA', b.tier || 'standard',
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM tenants WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'tenant.provisioned',
+    actor_id: user.id,
+    entity_type: 'tenants',
+    entity_id: id,
+    data: { tenant_id: id, name: b.name, tier: b.tier || 'standard', source: 'admin_console' },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -69,6 +77,14 @@ pa.post('/tenants/:id/suspend', async (c) => {
   await c.env.DB.prepare(
     `UPDATE tenants SET status = 'suspended', suspended_at = datetime('now') WHERE id = ?`,
   ).bind(id).run();
+  await fireCascade({
+    event: 'tenant.suspended',
+    actor_id: user.id,
+    entity_type: 'tenants',
+    entity_id: id,
+    data: { tenant_id: id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -79,6 +95,14 @@ pa.post('/tenants/:id/reactivate', async (c) => {
   await c.env.DB.prepare(
     `UPDATE tenants SET status = 'active', suspended_at = NULL WHERE id = ?`,
   ).bind(id).run();
+  await fireCascade({
+    event: 'tenant.reactivated',
+    actor_id: user.id,
+    entity_type: 'tenants',
+    entity_id: id,
+    data: { tenant_id: id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -215,6 +239,24 @@ pa.post('/subscriptions', async (c) => {
     id, b.tenant_id, b.plan_id, b.period_start, b.period_end,
     b.billing_frequency, Number(b.amount_zar), b.auto_renew === false ? 0 : 1,
   ).run();
+
+  await fireCascade({
+    event: 'tenant.subscription_created',
+    actor_id: user.id,
+    entity_type: 'tenant_subscriptions',
+    entity_id: id,
+    data: {
+      subscription_id: id,
+      tenant_id: b.tenant_id,
+      plan_id: b.plan_id,
+      period_start: b.period_start,
+      period_end: b.period_end,
+      billing_frequency: b.billing_frequency,
+      amount_zar: Number(b.amount_zar),
+    },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -255,6 +297,22 @@ pa.post('/invoices/run', async (c) => {
     ).run();
     issued++;
   }
+
+  if (issued > 0) {
+    await fireCascade({
+      event: 'tenant.invoice_issued',
+      actor_id: user.id,
+      entity_type: 'tenant_invoices',
+      entity_id: `run-${periodStart}-${periodEnd}`,
+      data: {
+        invoices_issued: issued,
+        period_start: periodStart,
+        period_end: periodEnd,
+      },
+      env: c.env,
+    });
+  }
+
   return c.json({ success: true, data: { invoices_issued: issued } });
 });
 
