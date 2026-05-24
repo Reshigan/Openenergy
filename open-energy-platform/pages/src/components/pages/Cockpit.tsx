@@ -16,6 +16,7 @@ import { ErrorBanner } from '../ErrorBanner';
 import { FioriTile, FioriTileGroup } from '../FioriTile';
 import { ActionQueueCard } from '../ActionQueueCard';
 import { AiBriefPanel, BriefRole } from '../AiBriefPanel';
+import { useToaster } from '../signature';
 
 const formatZAR = (val: number) =>
   new Intl.NumberFormat('en-ZA', {
@@ -76,6 +77,7 @@ const greeting = () => {
 export function Cockpit() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToaster();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
@@ -85,14 +87,25 @@ export function Cockpit() {
     const run = async () => {
       setLoading(true);
       setError(null);
+      let liveData = true;
       try {
         const [statsRes] = await Promise.all([
           api
             .get('/cockpit/stats')
-            .catch(() => ({ data: { success: true, data: defaultStats() } })),
+            .catch(() => {
+              liveData = false;
+              return { data: { success: true, data: defaultStats() } };
+            }),
         ]);
         if (!alive) return;
         setStats(statsRes.data?.data || defaultStats());
+        if (!liveData) {
+          toast({
+            tone: 'warn',
+            title: 'Cockpit running on cached data',
+            body: 'Live KPIs are unreachable. The dashboard is showing last-known defaults until the connection recovers.',
+          });
+        }
       } catch (e: any) {
         if (alive) setError(e.message || 'Failed to load dashboard');
       } finally {
@@ -103,7 +116,7 @@ export function Cockpit() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [toast]);
 
   const role = user?.role ?? 'admin';
   const today = useMemo(

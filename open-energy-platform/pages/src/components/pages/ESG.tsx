@@ -1188,11 +1188,11 @@ function EmptyMsg({ children }: { children: React.ReactNode }) {
 
 function Modal({ title, children, onClose, wide }: { title: string; children: React.ReactNode; onClose: () => void; wide?: boolean }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-label={title}>
       <div className={`bg-white rounded-xl shadow-xl w-full ${wide ? 'max-w-3xl' : 'max-w-md'} max-h-[90vh] overflow-auto`}>
         <header className="px-5 py-3 border-b border-[#eef2f7] flex items-center justify-between sticky top-0 bg-white">
           <div className="font-display font-semibold text-[15px] text-[#0f1c2e]">{title}</div>
-          <button onClick={onClose} className="text-[#6b7685] hover:text-[#0f1c2e]"><OEIcon name="close" size={18} /></button>
+          <button onClick={onClose} aria-label="Close dialog" className="text-[#6b7685] hover:text-[#0f1c2e]"><OEIcon name="close" size={18} /></button>
         </header>
         <div className="p-5">{children}</div>
       </div>

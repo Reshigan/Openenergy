@@ -16,6 +16,12 @@ export type EventType =
   // Settlement
   | 'invoice.created' | 'invoice.issued' | 'invoice.viewed' | 'invoice.paid' | 'invoice.overdue' | 'invoice.disputed'
   | 'dispute.filed' | 'dispute.resolved'
+  // Settlement-deep (T+1 cycles, default waterfall, bank instructions)
+  | 'settlement.cycle_opened' | 'settlement.cycle_netted'
+  | 'settlement.cycle_novated' | 'settlement.cycle_settled'
+  | 'settlement.default_declared' | 'settlement.default_close_out'
+  | 'settlement.default_recovered'
+  | 'settlement.instruction_confirmed' | 'settlement.instruction_failed'
   // Carbon
   | 'carbon.traded' | 'carbon.retired' | 'carbon.transferring' | 'carbon.fund_nav_updated'
   | 'carbon.option_exercised' | 'carbon.option_expired'

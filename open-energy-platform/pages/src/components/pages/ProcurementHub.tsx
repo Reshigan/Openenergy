@@ -555,11 +555,11 @@ function RfpDetailModal({ rfp, onClose, onUpdate }: { rfp: Rfp; onClose: () => v
 // ─────────── shared bits ───────────
 function Modal({ title, children, onClose, wide }: { title: string; children: React.ReactNode; onClose: () => void; wide?: boolean }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true" aria-label={title}>
       <div className={`bg-white rounded-xl shadow-xl w-full ${wide ? 'max-w-2xl' : 'max-w-md'} mx-4 max-h-[90vh] overflow-auto`}>
         <header className="px-5 py-3 border-b border-[#eef2f7] flex items-center justify-between">
           <div className="font-display font-semibold text-[15px] text-[#0f1c2e]">{title}</div>
-          <button onClick={onClose} className="text-[#6b7685] hover:text-[#0f1c2e]"><X size={18} /></button>
+          <button onClick={onClose} aria-label="Close dialog" className="text-[#6b7685] hover:text-[#0f1c2e]"><X size={18} /></button>
         </header>
         <div className="p-5">{children}</div>
       </div>

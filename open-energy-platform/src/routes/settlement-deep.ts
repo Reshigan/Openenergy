@@ -18,6 +18,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { requireStepUp } from '../middleware/step-up';
+import { fireCascade } from '../utils/cascade';
 
 const r = new Hono<HonoEnv>();
 r.use('*', authMiddleware);
@@ -47,6 +48,14 @@ r.post('/cycles', async (c) => {
     INSERT INTO oe_settlement_cycles (id, trade_date, value_date, status)
     VALUES (?,?,?,?)
   `).bind(id, tradeDate, valueDate, 'open').run();
+  await fireCascade({
+    event: 'settlement.cycle_opened',
+    actor_id: user.id,
+    entity_type: 'oe_settlement_cycles',
+    entity_id: id,
+    data: { trade_date: tradeDate, value_date: valueDate },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, trade_date: tradeDate, value_date: valueDate } }, 201);
 });
 
@@ -122,6 +131,20 @@ r.post('/cycles/:id/net', requireStepUp('settlement.net'), async (c) => {
         total_value_zar = ?, net_legs_count = ?, netting_efficiency = ?
     WHERE id = ?
   `).bind(fills.length, grossVolume, grossValue, netCount, efficiency, id).run();
+  await fireCascade({
+    event: 'settlement.cycle_netted',
+    actor_id: user.id,
+    entity_type: 'oe_settlement_cycles',
+    entity_id: String(id),
+    data: {
+      gross_trades: fills.length,
+      gross_volume_mwh: grossVolume,
+      gross_value_zar: grossValue,
+      net_legs: netCount,
+      netting_efficiency: efficiency,
+    },
+    env: c.env,
+  });
   return c.json({
     success: true,
     data: { id, gross_trades: fills.length, net_legs: netCount, netting_efficiency: Math.round(efficiency * 1000) / 10 },
@@ -137,6 +160,14 @@ r.post('/cycles/:id/novate', requireStepUp('settlement.novate'), async (c) => {
   // Mark legs as novated to the central counterparty
   await c.env.DB.prepare(`UPDATE oe_settlement_net_legs SET status = 'novated', novated_at = datetime('now') WHERE cycle_id = ? AND status = 'pending'`).bind(id).run();
   await c.env.DB.prepare(`UPDATE oe_settlement_cycles SET status = 'novated', novated_at = datetime('now') WHERE id = ?`).bind(id).run();
+  await fireCascade({
+    event: 'settlement.cycle_novated',
+    actor_id: user.id,
+    entity_type: 'oe_settlement_cycles',
+    entity_id: String(id),
+    data: {},
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -176,6 +207,14 @@ r.post('/cycles/:id/settle', requireStepUp('settlement.transfer'), async (c) => 
     queued += 2;
   }
   await c.env.DB.prepare(`UPDATE oe_settlement_cycles SET status = 'settled', settled_at = datetime('now') WHERE id = ?`).bind(id).run();
+  await fireCascade({
+    event: 'settlement.cycle_settled',
+    actor_id: user.id,
+    entity_type: 'oe_settlement_cycles',
+    entity_id: id,
+    data: { instructions_queued: queued, legs_count: (legs.results || []).length },
+    env: c.env,
+  });
   return c.json({ success: true, data: { instructions_queued: queued } });
 });
 
@@ -206,6 +245,18 @@ r.post('/defaults', requireStepUp('default.declare.high'), async (c) => {
   `).bind(id, b.participant_id, b.trigger_type, b.initial_exposure_zar || null, b.notes || null, user.id).run();
   // Suspend all open positions / orders — best-effort
   await c.env.DB.prepare(`UPDATE trade_orders SET status = 'cancelled' WHERE participant_id = ? AND status IN ('open','partial')`).bind(b.participant_id).run().catch(() => null);
+  await fireCascade({
+    event: 'settlement.default_declared',
+    actor_id: user.id,
+    entity_type: 'oe_default_events',
+    entity_id: id,
+    data: {
+      participant_id: b.participant_id,
+      trigger_type: b.trigger_type,
+      initial_exposure_zar: b.initial_exposure_zar || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -218,6 +269,14 @@ r.post('/defaults/:id/close-out', requireStepUp('default.close_out.high'), async
     UPDATE oe_default_events SET status = 'close_out_priced', close_out_priced_at = datetime('now'), notes = COALESCE(notes,'') || char(10) || ?
     WHERE id = ?
   `).bind(`Close-out priced at ${b.close_out_price || 'mark'} on ${new Date().toISOString()}`, id).run();
+  await fireCascade({
+    event: 'settlement.default_close_out',
+    actor_id: user.id,
+    entity_type: 'oe_default_events',
+    entity_id: String(id),
+    data: { close_out_price: b.close_out_price ?? null },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -231,6 +290,14 @@ r.post('/defaults/:id/recover', requireStepUp('default.recover'), async (c) => {
     SET status = 'recovered', recovery_amount_zar = ?, recovery_at = datetime('now')
     WHERE id = ?
   `).bind(Number(b.recovery_amount_zar || 0), id).run();
+  await fireCascade({
+    event: 'settlement.default_recovered',
+    actor_id: user.id,
+    entity_type: 'oe_default_events',
+    entity_id: String(id),
+    data: { recovery_amount_zar: Number(b.recovery_amount_zar || 0) },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -257,6 +324,14 @@ r.post('/instructions/:id/confirm', async (c) => {
     SET status = 'confirmed', confirmed_at = datetime('now'), bank_confirmation = ?
     WHERE id = ?
   `).bind(b.bank_confirmation || null, id).run();
+  await fireCascade({
+    event: 'settlement.instruction_confirmed',
+    actor_id: user.id,
+    entity_type: 'oe_settlement_instructions',
+    entity_id: String(id),
+    data: { bank_confirmation: b.bank_confirmation || null },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -270,6 +345,14 @@ r.post('/instructions/:id/fail', async (c) => {
     SET status = 'failed', failure_reason = ?
     WHERE id = ?
   `).bind(b.reason || 'unknown', id).run();
+  await fireCascade({
+    event: 'settlement.instruction_failed',
+    actor_id: user.id,
+    entity_type: 'oe_settlement_instructions',
+    entity_id: String(id),
+    data: { reason: b.reason || 'unknown' },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 

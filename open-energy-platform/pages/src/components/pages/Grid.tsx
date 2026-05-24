@@ -332,7 +332,7 @@ function ConstraintModal({ onClose, onCreated }: { onClose: () => void; onCreate
       <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-ionex-border-100">
           <h2 className="text-lg font-semibold">Publish grid constraint</h2>
-          <button onClick={onClose}><X size={18} /></button>
+          <button onClick={onClose} aria-label="Close dialog"><X size={18} /></button>
         </div>
         <div className="p-4 space-y-3">
           <label className="block"><span className="text-sm text-ionex-text-sub">Constraint type</span>

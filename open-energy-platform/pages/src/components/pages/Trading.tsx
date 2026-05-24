@@ -1298,7 +1298,7 @@ function AmendModal({
               {order.side.toUpperCase()} {num(Number(order.volume_mwh), 1)} MWh {order.energy_type}
             </div>
           </div>
-          <button onClick={onClose} className="text-[#6b7685] hover:text-[#3d4756]"><X size={16} /></button>
+          <button onClick={onClose} aria-label="Close dialog" className="text-[#6b7685] hover:text-[#3d4756]"><X size={16} /></button>
         </div>
         <form onSubmit={submit} className="space-y-3">
           <Field label="New price (R/MWh)">

@@ -143,7 +143,7 @@ function RaiseModal({ onClose, onCreated }: { onClose: () => void; onCreated: ()
       <div className="bg-white rounded-lg max-w-xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-4 border-b border-[#dde4ec] flex items-center justify-between">
           <div className="font-semibold text-[#0f1c2e]">Raise variation order</div>
-          <button onClick={onClose}><X size={16}/></button>
+          <button onClick={onClose} aria-label="Close dialog"><X size={16}/></button>
         </div>
         <div className="p-4 space-y-3">
           <label className="block text-[11px] font-semibold text-[#3a4658]">Project ID
@@ -232,7 +232,7 @@ function VoDetail({ vo, onClose, onChanged }: { vo: VO; onClose: () => void; onC
             <div className="text-[11px] text-[#6b7685]">project={vo.project_id} · raised by {vo.raised_by} on {new Date(vo.raised_at).toLocaleDateString('en-ZA')}</div>
             <div className="mt-1"><span className="px-2 py-0.5 rounded bg-[#eef2f7] text-[10px] uppercase font-bold">{vo.status}</span></div>
           </div>
-          <button onClick={onClose}><X size={16}/></button>
+          <button onClick={onClose} aria-label="Close dialog"><X size={16}/></button>
         </div>
         <div className="p-4 space-y-3 text-[12px]">
           <div><span className="text-[#6b7685]">Category:</span> <span className="font-semibold">{vo.category}</span></div>

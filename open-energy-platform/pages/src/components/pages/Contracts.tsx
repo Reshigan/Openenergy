@@ -192,7 +192,7 @@ function CreateContractModal({ onClose, onCreated }: { onClose: () => void; onCr
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-4 border-b border-ionex-border-100 flex items-center justify-between sticky top-0 bg-white">
           <h3 className="text-lg font-semibold">Create Contract</h3>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded"><XCircle className="w-5 h-5" /></button>
+          <button onClick={onClose} aria-label="Close dialog" className="p-1 hover:bg-gray-100 rounded"><XCircle className="w-5 h-5" /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}

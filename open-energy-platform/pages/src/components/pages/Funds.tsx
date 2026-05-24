@@ -435,7 +435,7 @@ function NewDisbursementModal({ onClose, onCreated }: { onClose: () => void; onC
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true" aria-label="New disbursement request">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
         <header className="px-5 py-3 border-b border-[#eef2f7] font-display font-semibold text-[15px]">New disbursement request</header>
         <form onSubmit={submit} className="p-5 space-y-3">

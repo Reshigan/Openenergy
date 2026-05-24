@@ -158,7 +158,7 @@ function SarDetail({ sar, onClose, onChanged }: { sar: Sar; onClose: () => void;
             <div className="text-[11px] text-[#6b7685]">{sar.subject_email} · {sar.request_type}</div>
             <div className="mt-1"><span className="px-2 py-0.5 rounded bg-[#eef2f7] text-[10px] uppercase font-bold">{sar.status}</span></div>
           </div>
-          <button onClick={onClose}><X size={16}/></button>
+          <button onClick={onClose} aria-label="Close dialog"><X size={16}/></button>
         </div>
         <div className="p-4 space-y-3 text-[12px]">
           <div><span className="text-[#6b7685]">Received:</span> {new Date(sar.received_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}</div>
