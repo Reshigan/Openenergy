@@ -6,6 +6,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { fireCascade } from '../utils/cascade';
 
 const vault = new Hono<HonoEnv>();
 vault.use('*', authMiddleware);
@@ -106,6 +107,22 @@ vault.post('/upload', async (c) => {
     INSERT INTO vault_files (id, entity_type, entity_id, file_name, r2_key, mime_type, size_bytes, uploaded_by, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(id, entity_type, entity_id, file_name, r2_key, mime_type || null, size_bytes != null ? Number(size_bytes) : null, user.id, new Date().toISOString()).run();
+  await fireCascade({
+    event: 'vault.file_uploaded',
+    actor_id: user.id,
+    entity_type: 'vault_files',
+    entity_id: id,
+    data: {
+      r2_key,
+      file_name,
+      mime_type: mime_type || null,
+      size_bytes: size_bytes != null ? Number(size_bytes) : null,
+      target_entity_type: entity_type,
+      target_entity_id: entity_id,
+      upload_method: 'referenced',
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, r2_key } }, 201);
 });
 
@@ -152,6 +169,22 @@ vault.post('/upload-direct', async (c) => {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(id, entity_type, entity_id, safeName, r2_key,
           file.type || null, file.size, user.id, new Date().toISOString()).run();
+  await fireCascade({
+    event: 'vault.file_uploaded',
+    actor_id: user.id,
+    entity_type: 'vault_files',
+    entity_id: id,
+    data: {
+      r2_key,
+      file_name: safeName,
+      mime_type: file.type || null,
+      size_bytes: file.size,
+      target_entity_type: entity_type,
+      target_entity_id: entity_id,
+      upload_method: 'direct',
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, r2_key, file_name: safeName, size_bytes: file.size } }, 201);
 });
 
@@ -191,6 +224,21 @@ vault.delete('/files/:id', async (c) => {
     try { await c.env.R2.delete(row.r2_key); } catch { /* best-effort */ }
   }
   await c.env.DB.prepare('DELETE FROM vault_files WHERE id = ?').bind(id).run();
+  await fireCascade({
+    event: 'vault.file_deleted',
+    actor_id: user.id,
+    entity_type: 'vault_files',
+    entity_id: id,
+    data: {
+      r2_key: row.r2_key,
+      file_name: row.file_name,
+      target_entity_type: row.entity_type,
+      target_entity_id: row.entity_id,
+      original_uploader: row.uploaded_by,
+      deleted_by_admin: user.role === 'admin' && row.uploaded_by !== user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 

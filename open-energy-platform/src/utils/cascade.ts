@@ -107,6 +107,8 @@ export type EventType =
   | 'tenant.provisioned' | 'tenant.suspended' | 'tenant.reactivated'
   | 'tenant.subscription_created' | 'tenant.invoice_issued'
   | 'flag.changed' | 'flag.override_set'
+  // Vault (POPIA s.23 access traceability for documents stored in R2)
+  | 'vault.file_uploaded' | 'vault.file_deleted'
   // ─── Watershed parity (migration 040) ────────────────────────────────
   | 'pcaf.financed_emissions_recorded' | 'pcaf.facilitated_emissions_recorded'
   | 'pcaf.target_committed'
