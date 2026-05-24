@@ -16,6 +16,7 @@ import { authMiddleware, getCurrentUser, signToken } from '../middleware/auth';
 import { createPasswordResetToken } from '../utils/auth-tokens';
 import { logPiiAccess } from '../utils/popia-access';
 import { appendAudit, getChainHead, verifyChain } from '../utils/audit-chain';
+import { fireCascade } from '../utils/cascade';
 
 const support = new Hono<HonoEnv>();
 
@@ -255,6 +256,20 @@ support.post('/participants/:id/impersonate', async (c) => {
     },
   }).catch((e) => console.warn('audit_impersonation_failed', (e as Error).message));
 
+  await fireCascade({
+    event: 'support.impersonation_started',
+    actor_id: actor.id,
+    entity_type: 'participants',
+    entity_id: target.id,
+    data: {
+      target_id: target.id, target_email: target.email,
+      target_role: target.role, reason, jti,
+      ttl_seconds: IMPERSONATION_TTL_SECONDS,
+    },
+    env: c.env,
+    skipAudit: true,
+  });
+
   return c.json({
     success: true,
     data: {
@@ -356,6 +371,19 @@ support.post('/tickets', async (c) => {
     body.subject, body.description || null,
     body.category, body.priority || 'normal',
   ).run();
+  await fireCascade({
+    event: 'support.ticket_opened',
+    actor_id: user.id,
+    entity_type: 'support_tickets',
+    entity_id: id,
+    data: {
+      id, ticket_number: ticketNumber, reporter_id: user.id,
+      tenant_id: body.tenant_id || null,
+      subject: body.subject, category: body.category,
+      priority: body.priority || 'normal',
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, ticket_number: ticketNumber } });
 });
 
@@ -420,6 +448,18 @@ support.post('/tickets/:id/transition', async (c) => {
            updated_at = ?
      WHERE id = ?`,
   ).bind(to, body.resolution || null, to, now, to, user.id, body.assignee_id || null, now, id).run();
+  await fireCascade({
+    event: 'support.ticket_transitioned',
+    actor_id: user.id,
+    entity_type: 'support_tickets',
+    entity_id: id,
+    data: {
+      id, to_status: to,
+      resolution: body.resolution || null,
+      assignee_id: body.assignee_id || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -459,6 +499,17 @@ support.post('/tickets/:id/escalate', async (c) => {
     `INSERT INTO support_escalations (id, ticket_id, escalated_by, escalated_to, reason)
      VALUES (?, ?, ?, ?, ?)`,
   ).bind(eid, id, user.id, body.escalated_to, body.reason).run();
+  await fireCascade({
+    event: 'support.escalation_filed',
+    actor_id: user.id,
+    entity_type: 'support_escalations',
+    entity_id: eid,
+    data: {
+      id: eid, ticket_id: id, escalated_to: body.escalated_to,
+      reason: body.reason,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id: eid } });
 });
 
@@ -499,6 +550,20 @@ support.post('/cross-tenant-access', async (c) => {
       justification: body.justification, ticket_id: body.ticket_id || null,
     },
   }).catch((e) => console.warn('audit_cross_tenant_failed', (e as Error).message));
+
+  await fireCascade({
+    event: 'support.cross_tenant_access',
+    actor_id: user.id,
+    entity_type: 'support_cross_tenant_access',
+    entity_id: id,
+    data: {
+      access_id: id, tenant_accessed: body.tenant_accessed,
+      resource_type: body.resource_type, resource_id: body.resource_id || null,
+      justification: body.justification, ticket_id: body.ticket_id || null,
+    },
+    env: c.env,
+    skipAudit: true,
+  });
 
   return c.json({ success: true, data: { id } });
 });

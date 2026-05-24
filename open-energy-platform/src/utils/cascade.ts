@@ -201,7 +201,11 @@ export type EventType =
   | 'imbalance.prices_published' | 'imbalance.run_completed' | 'imbalance.run_failed'
   // ─── Admin operations (user + tenant lifecycle) ────────────────────────
   | 'admin.user_created' | 'admin.user_suspended'
-  | 'admin.password_reset_issued' | 'admin.tenant_created';
+  | 'admin.password_reset_issued' | 'admin.tenant_created'
+  // ─── Support console (POPIA-sensitive impersonation + tickets) ─────────
+  | 'support.impersonation_started' | 'support.ticket_opened'
+  | 'support.ticket_transitioned' | 'support.escalation_filed'
+  | 'support.cross_tenant_access';
 
 interface CascadeContext {
   event: EventType;
