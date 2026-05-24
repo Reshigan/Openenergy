@@ -18,6 +18,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { dumpDatabase, gzipString } from '../utils/d1-export';
 import { logger } from '../utils/logger';
+import { fireCascade } from '../utils/cascade';
 
 const backup = new Hono<HonoEnv>();
 
@@ -82,6 +83,10 @@ function keyFor(now: Date = new Date()): string {
 backup.post('/run', async (c) => {
   const started = Date.now();
   const reqId = c.get('requestId') as string | undefined;
+  const tokenHeader = c.req.header('X-Backup-Token') || '';
+  const actorId = tokenHeader ? 'backup-cron' : (() => {
+    try { return getCurrentUser(c).id; } catch { return 'backup-cron'; }
+  })();
   try {
     const dump = await dumpDatabase(c.env.DB, { pageSize: 500 });
     const gz = await gzipString(dump.sql);
@@ -123,6 +128,23 @@ backup.post('/run', async (c) => {
       latency_ms: duration,
     });
 
+    await fireCascade({
+      event: 'backup.completed',
+      actor_id: actorId,
+      entity_type: 'backup_log',
+      entity_id: key,
+      data: {
+        r2_key: key,
+        size_bytes: gz.length,
+        total_rows: dump.total_rows,
+        table_count: dump.tables.length,
+        generated_at: dump.generated_at,
+        duration_ms: duration,
+        triggered_by: tokenHeader ? 'cron' : 'operator',
+      },
+      env: c.env,
+    });
+
     return c.json({
       success: true,
       key,
@@ -138,6 +160,19 @@ backup.post('/run', async (c) => {
       error_name: (err as Error).name,
       error_message: (err as Error).message,
       error_stack: (err as Error).stack,
+    });
+    await fireCascade({
+      event: 'backup.failed',
+      actor_id: actorId,
+      entity_type: 'backup_log',
+      entity_id: 'attempted',
+      data: {
+        error_name: (err as Error).name,
+        error_message: (err as Error).message,
+        duration_ms: Date.now() - started,
+        triggered_by: tokenHeader ? 'cron' : 'operator',
+      },
+      env: c.env,
     });
     return c.json(
       { success: false, error: 'Backup failed', detail: (err as Error).message },

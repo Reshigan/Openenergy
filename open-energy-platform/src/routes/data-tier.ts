@@ -15,6 +15,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { auditArchiveKey, dayBucket, meteringArchiveKey, monthBucket } from '../utils/data-tier';
 import { invalidateTenantRules } from '../middleware/tenant-quota';
+import { fireCascade } from '../utils/cascade';
 
 const dt = new Hono<HonoEnv>();
 dt.use('*', authMiddleware);
@@ -68,6 +69,14 @@ dt.post('/metering/rollup-day', async (c) => {
     ).run();
     rolled++;
   }
+  await fireCascade({
+    event: 'data_tier.metering_rolled',
+    actor_id: user.id,
+    entity_type: 'metering_readings_daily',
+    entity_id: day,
+    data: { day, connections_rolled: rolled },
+    env: c.env,
+  });
   return c.json({ success: true, data: { day, connections_rolled: rolled } });
 });
 
@@ -113,6 +122,22 @@ dt.post('/metering/archive-month', async (c) => {
     ).bind(...binds).run();
   }
 
+  if (!dry) {
+    await fireCascade({
+      event: 'data_tier.metering_archived',
+      actor_id: user.id,
+      entity_type: 'metering_readings_archives',
+      entity_id: key,
+      data: {
+        month,
+        connection_id: connectionId || 'all',
+        archived_rows: rows.length,
+        r2_key: key,
+        bytes,
+      },
+      env: c.env,
+    });
+  }
   return c.json({
     success: true,
     data: { month, connection_id: connectionId || null, archived_rows: rows.length, r2_key: key, dry_run: dry },
@@ -156,6 +181,21 @@ dt.post('/audit/archive-day', async (c) => {
     `DELETE FROM audit_logs WHERE created_at LIKE ? || '%'`,
   ).bind(day).run();
 
+  await fireCascade({
+    event: 'data_tier.audit_archived',
+    actor_id: user.id,
+    entity_type: 'audit_log_archives',
+    entity_id: key,
+    data: {
+      day,
+      archived_rows: rows.length,
+      r2_key: key,
+      bytes,
+      earliest_created_at: earliest || null,
+      latest_created_at: latest || null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { day, archived_rows: rows.length, r2_key: key } });
 });
 
@@ -199,6 +239,14 @@ dt.post('/ona/rollup-day', async (c) => {
     ).bind(genId('ofs'), r.site_id, day, r.da, r.id, r.wk, actual, variance).run();
     updated++;
   }
+  await fireCascade({
+    event: 'data_tier.ona_rolled',
+    actor_id: user.id,
+    entity_type: 'ona_forecast_summary',
+    entity_id: day,
+    data: { day, sites_updated: updated },
+    env: c.env,
+  });
   return c.json({ success: true, data: { day, sites_updated: updated } });
 });
 
@@ -227,6 +275,20 @@ dt.post('/snapshot', async (c) => {
     arRows?.n || 0, arBytes?.b || 0,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM data_tier_snapshots WHERE id = ?').bind(id).first();
+  await fireCascade({
+    event: 'data_tier.snapshot_taken',
+    actor_id: user.id,
+    entity_type: 'data_tier_snapshots',
+    entity_id: id,
+    data: {
+      metering_rows: mrCount?.n || 0,
+      audit_log_rows: alCount?.n || 0,
+      ona_forecast_rows: ofCount?.n || 0,
+      archives_rows: arRows?.n || 0,
+      archives_bytes: arBytes?.b || 0,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -257,6 +319,20 @@ dt.post('/tenant-quotas', async (c) => {
   ).run();
   // Bust the cache so the new rule applies on the next request.
   c.executionCtx?.waitUntil?.(invalidateTenantRules(c.env, String(b.tenant_id)));
+  await fireCascade({
+    event: 'data_tier.tenant_quota_set',
+    actor_id: user.id,
+    entity_type: 'tenant_rate_limits',
+    entity_id: `${b.tenant_id}:${b.route_prefix}`,
+    data: {
+      tenant_id: b.tenant_id,
+      route_prefix: b.route_prefix,
+      window_seconds: Number(b.window_seconds),
+      max_requests: Number(b.max_requests),
+      burst_capacity: b.burst_capacity == null ? null : Number(b.burst_capacity),
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 

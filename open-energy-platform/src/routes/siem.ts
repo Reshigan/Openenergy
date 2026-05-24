@@ -18,6 +18,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { fireCascade } from '../utils/cascade';
 
 const siem = new Hono<HonoEnv>();
 siem.use('*', authMiddleware);
@@ -75,28 +76,56 @@ siem.post('/forwarders', async (c) => {
     b.enabled === false ? 0 : null,
     user.id,
   ).run();
+  await fireCascade({
+    event: 'siem.forwarder_created',
+    actor_id: user.id,
+    entity_type: 'siem_forwarders',
+    entity_id: id,
+    data: {
+      name: b.name,
+      vendor: b.vendor,
+      has_secret_ref: !!b.secret_kv_key,
+      enabled: b.enabled !== false,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
 siem.put('/forwarders/:id', async (c) => {
+  const user = getCurrentUser(c);
   const id = c.req.param('id');
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   const sets: string[] = ['updated_at = datetime(\'now\')'];
   const binds: unknown[] = [];
+  const changedFields: string[] = [];
   for (const k of ['name', 'endpoint_url', 'secret_kv_key'] as const) {
-    if (k in b) { sets.push(`${k} = ?`); binds.push(b[k] == null ? null : String(b[k])); }
+    if (k in b) { sets.push(`${k} = ?`); binds.push(b[k] == null ? null : String(b[k])); changedFields.push(k); }
   }
   if ('subscribe' in b) {
     sets.push('subscribe_json = ?');
     binds.push(typeof b.subscribe === 'object' ? JSON.stringify(b.subscribe) : String(b.subscribe));
+    changedFields.push('subscribe');
   }
-  if ('enabled' in b) { sets.push('enabled = ?'); binds.push(b.enabled ? 1 : 0); }
+  if ('enabled' in b) { sets.push('enabled = ?'); binds.push(b.enabled ? 1 : 0); changedFields.push('enabled'); }
   binds.push(id);
   await c.env.DB.prepare(`UPDATE siem_forwarders SET ${sets.join(', ')} WHERE id = ?`).bind(...binds).run();
+  await fireCascade({
+    event: 'siem.forwarder_updated',
+    actor_id: user.id,
+    entity_type: 'siem_forwarders',
+    entity_id: id,
+    data: {
+      changed_fields: changedFields,
+      enabled: 'enabled' in b ? !!b.enabled : undefined,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
 siem.post('/forwarders/:id/test', async (c) => {
+  const user = getCurrentUser(c);
   const id = c.req.param('id');
   const fw = await c.env.DB.prepare('SELECT * FROM siem_forwarders WHERE id = ?').bind(id).first<ForwarderRow>();
   if (!fw) return c.json({ success: false, error: 'Not found' }, 404);
@@ -109,15 +138,36 @@ siem.post('/forwarders/:id/test', async (c) => {
       created_at: new Date().toISOString(),
     },
   ]);
+  await fireCascade({
+    event: 'siem.forwarder_tested',
+    actor_id: user.id,
+    entity_type: 'siem_forwarders',
+    entity_id: id,
+    data: {
+      http_status: result.http_status,
+      duration_ms: result.duration_ms,
+      ok: result.http_status < 400,
+    },
+    env: c.env,
+  });
   return c.json({ success: result.http_status < 400, data: result });
 });
 
 siem.post('/forwarders/:id/dispatch', async (c) => {
+  const user = getCurrentUser(c);
   const id = c.req.param('id');
   const fw = await c.env.DB.prepare('SELECT * FROM siem_forwarders WHERE id = ?').bind(id).first<ForwarderRow>();
   if (!fw) return c.json({ success: false, error: 'Not found' }, 404);
   if (!fw.enabled) return c.json({ success: false, error: 'Forwarder disabled' }, 400);
   const out = await dispatchForwarder(c.env, fw);
+  await fireCascade({
+    event: 'siem.events_dispatched',
+    actor_id: user.id,
+    entity_type: 'siem_forwarders',
+    entity_id: id,
+    data: { rows_sent: out.rows_sent, failures: out.failures, by_stream: out.by_stream },
+    env: c.env,
+  });
   return c.json({ success: true, data: out });
 });
 

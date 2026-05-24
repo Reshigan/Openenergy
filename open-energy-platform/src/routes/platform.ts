@@ -15,6 +15,7 @@
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { fireCascade } from '../utils/cascade';
 
 const platform = new Hono<HonoEnv>();
 platform.use('*', authMiddleware);
@@ -75,6 +76,19 @@ platform.post('/ai/classify', async (c) => {
     modelId, aiOut.label ?? null, JSON.stringify(aiOut.categories || []),
     aiOut.confidence ?? null, aiOut.reasoning ?? null).run();
 
+  await fireCascade({
+    event: 'platform.ai_classified',
+    actor_id: user.id,
+    entity_type: 'platform_ai_logs',
+    entity_id: id,
+    data: {
+      domain,
+      label: aiOut.label ?? null,
+      confidence: aiOut.confidence ?? null,
+      model_id: modelId,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, model_id: modelId, ...aiOut } });
 });
 
@@ -96,6 +110,14 @@ platform.patch('/ai/classify/:id', async (c) => {
     UPDATE platform_ai_logs SET user_accepted = ?, user_override = ?, resolved_at = datetime('now')
     WHERE id = ? AND participant_id = ?
   `).bind(body.accepted ? 1 : 0, body.override ?? null, id, user.id).run();
+  await fireCascade({
+    event: 'platform.ai_classification_overridden',
+    actor_id: user.id,
+    entity_type: 'platform_ai_logs',
+    entity_id: id,
+    data: { accepted: !!body.accepted, has_override: body.override != null },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -225,6 +247,24 @@ platform.post('/scenarios/run', async (c) => {
   `).bind(id, user.id, scenario_code, scenario.domain, hu, hv,
     baseValue, shockedValue, var_, pctChange, worstEntity, worstVar, JSON.stringify(details)).run();
 
+  await fireCascade({
+    event: 'platform.scenario_run',
+    actor_id: user.id,
+    entity_type: 'platform_scenario_runs',
+    entity_id: id,
+    data: {
+      scenario_code,
+      domain: scenario.domain,
+      horizon_unit: hu,
+      horizon_value: hv,
+      base_value_zar: baseValue,
+      shocked_value_zar: shockedValue,
+      value_at_risk_zar: var_,
+      pct_change: pctChange,
+      worst_entity: worstEntity,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: {
     id, scenario_code, domain: scenario.domain, base_value_zar: baseValue, shocked_value_zar: shockedValue,
     value_at_risk_zar: var_, pct_change: pctChange, worst_entity: worstEntity, worst_entity_var_zar: worstVar,
@@ -254,6 +294,14 @@ platform.post('/audit-chain/append', async (c) => {
       actor_id, payload_json, prev_hash, this_hash, domain)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(id, user.id, seq, entity_table, entity_id, operation, user.id, payloadJson, prev, hash, domain ?? null).run();
+  await fireCascade({
+    event: 'platform.audit_chain_appended',
+    actor_id: user.id,
+    entity_type: 'audit_chain',
+    entity_id: id,
+    data: { sequence_no: seq, entity_table, entity_id, operation, domain: domain ?? null, this_hash: hash },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id, sequence_no: seq, this_hash: hash } }, 201);
 });
 
@@ -292,6 +340,14 @@ platform.post('/anomalies', async (c) => {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(id, user.id, domain, entity_table ?? null, entity_id ?? null, rule,
     severity ?? 'medium', detail ?? null, expected_value ?? null, observed_value ?? null).run();
+  await fireCascade({
+    event: 'platform.anomaly_logged',
+    actor_id: user.id,
+    entity_type: 'platform_anomaly_flags',
+    entity_id: id,
+    data: { domain, rule, severity: severity ?? 'medium', entity_table: entity_table ?? null, entity_id: entity_id ?? null },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -366,6 +422,14 @@ platform.post('/anomalies/scan', async (c) => {
     }
   }
 
+  await fireCascade({
+    event: 'platform.anomaly_scanned',
+    actor_id: user.id,
+    entity_type: 'platform_anomaly_flags',
+    entity_id: `scan_${user.id}_${Date.now().toString(36)}`,
+    data: { domain, flagged_count: flagged.length, rules: flagged.map((f) => f.rule) },
+    env: c.env,
+  });
   return c.json({ success: true, data: { flagged_count: flagged.length, domain, flagged } });
 });
 
@@ -382,6 +446,14 @@ platform.patch('/anomalies/:id', async (c) => {
         resolved_by = ?
     WHERE id = ? AND participant_id = ?
   `).bind(body.status, body.status, user.id, id, user.id).run();
+  await fireCascade({
+    event: 'platform.anomaly_updated',
+    actor_id: user.id,
+    entity_type: 'platform_anomaly_flags',
+    entity_id: id,
+    data: { new_status: body.status },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -466,6 +538,14 @@ platform.post('/filings', async (c) => {
     INSERT INTO regulatory_filings (id, participant_id, body_code, reporting_period, due_date, notes, filed_by)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `).bind(id, user.id, body_code, reporting_period, due_date ?? null, notes ?? null, user.id).run();
+  await fireCascade({
+    event: 'platform.filing_created',
+    actor_id: user.id,
+    entity_type: 'regulatory_filings',
+    entity_id: id,
+    data: { body_code, reporting_period, due_date: due_date ?? null },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -479,6 +559,17 @@ platform.post('/filings/:id/submit', async (c) => {
         external_reference = ?, filing_pack_r2_key = ?
     WHERE id = ? AND participant_id = ?
   `).bind(body.external_reference ?? null, body.filing_pack_r2_key ?? null, id, user.id).run();
+  await fireCascade({
+    event: 'platform.filing_submitted',
+    actor_id: user.id,
+    entity_type: 'regulatory_filings',
+    entity_id: id,
+    data: {
+      external_reference: body.external_reference ?? null,
+      filing_pack_r2_key: body.filing_pack_r2_key ?? null,
+    },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -487,12 +578,21 @@ platform.patch('/filings/:id', async (c) => {
   const { id } = c.req.param();
   const body = await c.req.json().catch(() => ({} as any));
   const sets: string[] = []; const binds: any[] = [];
+  const changedFields: string[] = [];
   for (const k of ['status','submitted_at','acknowledged_at','external_reference','filing_pack_r2_key','notes','due_date']) {
-    if (body[k] !== undefined) { sets.push(`${k} = ?`); binds.push(body[k]); }
+    if (body[k] !== undefined) { sets.push(`${k} = ?`); binds.push(body[k]); changedFields.push(k); }
   }
   if (!sets.length) return c.json({ success: false, error: 'no fields to update' }, 400);
   binds.push(id, user.id);
   await c.env.DB.prepare(`UPDATE regulatory_filings SET ${sets.join(', ')} WHERE id = ? AND participant_id = ?`).bind(...binds).run();
+  await fireCascade({
+    event: 'platform.filing_updated',
+    actor_id: user.id,
+    entity_type: 'regulatory_filings',
+    entity_id: id,
+    data: { changed_fields: changedFields, new_status: body.status },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 

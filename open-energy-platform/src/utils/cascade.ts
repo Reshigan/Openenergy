@@ -226,7 +226,24 @@ export type EventType =
   // ─── Carbon registry extensions (serials, certificates, audit) ─────────
   | 'carbon.serial_transferred' | 'carbon.serial_retired'
   | 'carbon.retirement_certificate_issued'
-  | 'carbon.audit_exported' | 'carbon.recon_completed';
+  | 'carbon.audit_exported' | 'carbon.recon_completed'
+  // ─── Participants admin lifecycle ──────────────────────────────────────
+  | 'participant.kyc_verified' | 'participant.status_changed'
+  // ─── Backup & DR ───────────────────────────────────────────────────────
+  | 'backup.completed' | 'backup.failed'
+  // ─── SIEM forwarders ───────────────────────────────────────────────────
+  | 'siem.forwarder_created' | 'siem.forwarder_updated'
+  | 'siem.forwarder_tested' | 'siem.events_dispatched'
+  // ─── Platform AI / scenarios / filings / anomalies ─────────────────────
+  | 'platform.ai_classified' | 'platform.ai_classification_overridden'
+  | 'platform.scenario_run' | 'platform.audit_chain_appended'
+  | 'platform.anomaly_logged' | 'platform.anomaly_scanned'
+  | 'platform.anomaly_updated'
+  | 'platform.filing_created' | 'platform.filing_submitted' | 'platform.filing_updated'
+  // ─── Data-tier rollups & archives ──────────────────────────────────────
+  | 'data_tier.metering_rolled' | 'data_tier.metering_archived'
+  | 'data_tier.audit_archived' | 'data_tier.ona_rolled'
+  | 'data_tier.snapshot_taken' | 'data_tier.tenant_quota_set';
 
 interface CascadeContext {
   event: EventType;
