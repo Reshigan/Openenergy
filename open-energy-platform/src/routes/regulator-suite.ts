@@ -226,6 +226,20 @@ suite.post('/licences/:id/conditions', async (c) => {
      VALUES (?, ?, ?, ?, ?, COALESCE(?, 'compliant'))`,
   ).bind(id, licenceId, b.condition_number, b.condition_text, b.category || null, b.compliance_status || null).run();
   const row = await c.env.DB.prepare('SELECT * FROM regulator_licence_conditions WHERE id = ?').bind(id).first();
+
+  await fireCascade({
+    event: 'regulator.licence_condition_added',
+    actor_id: user.id,
+    entity_type: 'regulator_licence_conditions',
+    entity_id: id,
+    data: {
+      licence_id: licenceId,
+      condition_number: b.condition_number,
+      category: b.category || null,
+    },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -264,6 +278,22 @@ suite.post('/tariff-submissions', async (c) => {
     b.status || null,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM regulator_tariff_submissions WHERE id = ?').bind(id).first();
+
+  await fireCascade({
+    event: 'regulator.tariff_submitted',
+    actor_id: user.id,
+    entity_type: 'regulator_tariff_submissions',
+    entity_id: id,
+    data: {
+      reference_number: b.reference_number,
+      licensee_participant_id: user.id,
+      submission_title: b.submission_title,
+      period_start: b.tariff_period_start,
+      period_end: b.tariff_period_end,
+    },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -279,6 +309,19 @@ suite.post('/tariff-submissions/:id/hearing', async (c) => {
     `UPDATE regulator_tariff_submissions SET status = 'public_hearing', public_hearing_date = ? WHERE id = ?`,
   ).bind(b.public_hearing_date, id).run();
   const row = await c.env.DB.prepare('SELECT * FROM regulator_tariff_submissions WHERE id = ?').bind(id).first();
+
+  await fireCascade({
+    event: 'regulator.tariff_hearing_scheduled',
+    actor_id: user.id,
+    entity_type: 'regulator_tariff_submissions',
+    entity_id: id,
+    data: {
+      submission_id: id,
+      public_hearing_date: b.public_hearing_date,
+    },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: row });
 });
 
@@ -381,6 +424,22 @@ suite.post('/determinations', async (c) => {
     b.publication_date, b.gazette_reference || null, b.document_r2_key || null, user.id,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM regulator_determinations WHERE id = ?').bind(id).first();
+
+  await fireCascade({
+    event: 'regulator.determination_published',
+    actor_id: user.id,
+    entity_type: 'regulator_determinations',
+    entity_id: id,
+    data: {
+      reference_number: b.reference_number,
+      title: b.title,
+      category: b.category,
+      publication_date: b.publication_date,
+      gazette_reference: b.gazette_reference || null,
+    },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -478,6 +537,21 @@ suite.post('/enforcement-cases/:id/events', async (c) => {
     b.description || null, b.evidence_r2_key || null, user.id,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM regulator_enforcement_events WHERE id = ?').bind(id).first();
+
+  await fireCascade({
+    event: 'regulator.enforcement_event_logged',
+    actor_id: user.id,
+    entity_type: 'regulator_enforcement_events',
+    entity_id: id,
+    data: {
+      case_id: caseId,
+      event_type: b.event_type,
+      event_date: b.event_date,
+      has_evidence: !!b.evidence_r2_key,
+    },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -539,6 +613,21 @@ suite.post('/enforcement-cases/:id/appeal', async (c) => {
      VALUES (?, ?, 'appeal_filed', ?, ?, ?)`,
   ).bind(genId('eev'), id, appealDate, (b.grounds as string) || 'Appeal filed', user.id).run();
   const out = await c.env.DB.prepare('SELECT * FROM regulator_enforcement_cases WHERE id = ?').bind(id).first();
+
+  await fireCascade({
+    event: 'regulator.enforcement_appealed',
+    actor_id: user.id,
+    entity_type: 'regulator_enforcement_cases',
+    entity_id: id,
+    data: {
+      case_id: id,
+      respondent_participant_id: row.respondent_participant_id,
+      appeal_filed_at: appealDate,
+      grounds: (b.grounds as string) || null,
+    },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: out });
 });
 
@@ -571,6 +660,16 @@ suite.put('/surveillance/rules/:id', async (c) => {
   const row = await c.env.DB.prepare('SELECT * FROM regulator_surveillance_rules WHERE id = ?').bind(id).first();
   // Bust the surveillance-rules cache so the next scan sees the change.
   c.executionCtx?.waitUntil?.(invalidateReference(c.env, 'surveillance_rules_enabled'));
+
+  await fireCascade({
+    event: 'regulator.surveillance_rule_updated',
+    actor_id: user.id,
+    entity_type: 'regulator_surveillance_rules',
+    entity_id: id,
+    data: { rule_id: id, fields_updated: sets.map((s) => s.split(' ')[0]) },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: row });
 });
 
@@ -602,6 +701,20 @@ suite.post('/surveillance/alerts/:id/resolve', async (c) => {
      WHERE id = ?`,
   ).bind(nextStatus, nextStatus, b.resolution_notes || null, b.assigned_to || user.id, id).run();
   const row = await c.env.DB.prepare('SELECT * FROM regulator_surveillance_alerts WHERE id = ?').bind(id).first();
+
+  await fireCascade({
+    event: 'regulator.surveillance_alert_resolved',
+    actor_id: user.id,
+    entity_type: 'regulator_surveillance_alerts',
+    entity_id: id,
+    data: {
+      alert_id: id,
+      resolution_status: nextStatus,
+      resolution_notes: b.resolution_notes || null,
+    },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: row });
 });
 
@@ -1225,6 +1338,24 @@ suite.post('/audit/export', async (c) => {
     payload: { export_id: exportId, from, to, row_count: csvLines.length - 1, csv_sha256: csvSha },
   }).catch(() => {});
 
+  await fireCascade({
+    event: 'regulator.audit_exported',
+    actor_id: user.id,
+    entity_type: 'audit_exports',
+    entity_id: exportId,
+    data: {
+      export_id: exportId,
+      entity: 'regulator',
+      from,
+      to,
+      row_count: csvLines.length - 1,
+      csv_sha256: csvSha,
+      profile: 'NERSA PAIA s.14 gazette register v1',
+    },
+    env: c.env,
+    skipAudit: true,
+  });
+
   return c.json({
     success: true,
     data: { export_id: exportId, row_count: csvLines.length - 1, csv_r2_key: csvKey, manifest_r2_key: manifestKey, manifest },
@@ -1370,6 +1501,23 @@ suite.post('/audit/recon', async (c) => {
     event_type: 'audit.recon_run', actor_id: user.id,
     payload: { run_id: runId, source, row_count: theirs.length, break_count: breaks.length },
   }).catch(() => {});
+
+  await fireCascade({
+    event: 'regulator.recon_completed',
+    actor_id: user.id,
+    entity_type: 'audit_recon_runs',
+    entity_id: runId,
+    data: {
+      run_id: runId,
+      entity: 'regulator',
+      source,
+      row_count: theirs.length,
+      matched_count: matchedCount,
+      break_count: breaks.length,
+    },
+    env: c.env,
+    skipAudit: true,
+  });
 
   return c.json({
     success: true,

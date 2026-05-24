@@ -208,7 +208,12 @@ export type EventType =
   | 'support.cross_tenant_access'
   // ─── Platform-features (api-keys + webhook subscriptions) ──────────────
   | 'platform.api_key_issued' | 'platform.api_key_revoked'
-  | 'platform.webhook_subscribed' | 'platform.webhook_disabled';
+  | 'platform.webhook_subscribed' | 'platform.webhook_disabled'
+  // ─── Regulator suite extensions (conditions, surveillance, recon) ──────
+  | 'regulator.licence_condition_added'
+  | 'regulator.surveillance_rule_updated' | 'regulator.surveillance_alert_resolved'
+  | 'regulator.enforcement_event_logged'
+  | 'regulator.audit_exported' | 'regulator.recon_completed';
 
 interface CascadeContext {
   event: EventType;
