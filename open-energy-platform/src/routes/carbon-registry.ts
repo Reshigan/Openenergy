@@ -111,6 +111,26 @@ cr.post('/vintages', async (c) => {
        VALUES (?, ?, ?, ?, ?, ?, 'held')`,
     ).bind(genId('cs'), id, project.developer_id, start, end, quantity).run();
   }
+
+  await fireCascade({
+    event: 'carbon.vintage_issued',
+    actor_id: user.id,
+    entity_type: 'credit_vintages',
+    entity_id: id,
+    data: {
+      vintage_id: id,
+      project_id: b.project_id,
+      registry_id: b.registry_id,
+      vintage_year: Number(b.vintage_year),
+      serial_prefix: b.serial_prefix,
+      serial_start: start,
+      serial_end: end,
+      quantity,
+      sa_carbon_tax_eligible: !!b.sa_carbon_tax_eligible,
+    },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: { id, quantity } }, 201);
 });
 
@@ -186,6 +206,23 @@ cr.post('/serials/transfer', async (c) => {
     },
   }).catch((e) => console.warn('audit_serial_transfer_failed', (e as Error).message));
 
+  await fireCascade({
+    event: 'carbon.serial_transferred',
+    actor_id: user.id,
+    entity_type: 'credit_serials',
+    entity_id: serial.id,
+    data: {
+      serial_id: serial.id,
+      vintage_id: serial.vintage_id,
+      from_participant_id: serial.owner_participant_id,
+      to_participant_id: b.to_participant_id,
+      quantity: qty,
+      serial_range: { from: transferStart, to: transferEnd },
+    },
+    env: c.env,
+    skipAudit: true,
+  });
+
   return c.json({ success: true, data: { transferred_quantity: qty } });
 });
 
@@ -221,6 +258,22 @@ cr.post('/serials/retire', async (c) => {
     },
   }).catch((e) => console.warn('audit_serial_retire_failed', (e as Error).message));
 
+  await fireCascade({
+    event: 'carbon.serial_retired',
+    actor_id: user.id,
+    entity_type: 'credit_serials',
+    entity_id: String(b.serial_id),
+    data: {
+      serial_id: b.serial_id,
+      vintage_id: serial.vintage_id,
+      retirement_id: b.retirement_id,
+      quantity: serial.quantity,
+      owner_participant_id: serial.owner_participant_id,
+    },
+    env: c.env,
+    skipAudit: true,
+  });
+
   return c.json({ success: true });
 });
 
@@ -252,6 +305,22 @@ cr.post('/mrv/submissions', async (c) => {
     b.leakage_tco2e == null ? 0 : Number(b.leakage_tco2e),
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM mrv_submissions WHERE id = ?').bind(id).first();
+
+  await fireCascade({
+    event: 'carbon.mrv_submitted',
+    actor_id: user.id,
+    entity_type: 'mrv_submissions',
+    entity_id: id,
+    data: {
+      submission_id: id,
+      project_id: b.project_id,
+      reporting_period_start: b.reporting_period_start,
+      reporting_period_end: b.reporting_period_end,
+      claimed_reductions_tco2e: Number(b.claimed_reductions_tco2e),
+    },
+    env: c.env,
+  });
+
   return c.json({ success: true, data: row }, 201);
 });
 
@@ -631,6 +700,22 @@ cr.post('/retirement-certificates/issue', async (c) => {
     },
   }).catch((e) => console.warn('audit_cert_issued_failed', (e as Error).message));
 
+  await fireCascade({
+    event: 'carbon.retirement_certificate_issued',
+    actor_id: user.id,
+    entity_type: 'carbon_retirement_certificates',
+    entity_id: id,
+    data: {
+      certificate_id: id,
+      certificate_number: certNumber,
+      retirement_id: body.retirement_id,
+      retired_volume_tco2e: Number(body.retired_volume_tco2e),
+      beneficiary_name: body.beneficiary_name || null,
+    },
+    env: c.env,
+    skipAudit: true,
+  });
+
   return c.json({ success: true, data: { id, certificate_number: certNumber } });
 });
 
@@ -763,6 +848,24 @@ cr.post('/audit/export', async (c) => {
     event_type: 'audit.export_generated', actor_id: user.id,
     payload: { export_id: exportId, from, to, row_count: data.length, csv_sha256: csvSha },
   }).catch(() => {});
+
+  await fireCascade({
+    event: 'carbon.audit_exported',
+    actor_id: user.id,
+    entity_type: 'audit_exports',
+    entity_id: exportId,
+    data: {
+      export_id: exportId,
+      entity: 'carbon',
+      from,
+      to,
+      row_count: data.length,
+      csv_sha256: csvSha,
+      profile: 'Verra VCS retirement register v1',
+    },
+    env: c.env,
+    skipAudit: true,
+  });
 
   return c.json({
     success: true,
@@ -915,6 +1018,23 @@ cr.post('/audit/recon', async (c) => {
     event_type: 'audit.recon_run', actor_id: user.id,
     payload: { run_id: runId, source, row_count: theirs.length, break_count: breaks.length },
   }).catch(() => {});
+
+  await fireCascade({
+    event: 'carbon.recon_completed',
+    actor_id: user.id,
+    entity_type: 'audit_recon_runs',
+    entity_id: runId,
+    data: {
+      run_id: runId,
+      entity: 'carbon',
+      source,
+      row_count: theirs.length,
+      matched_count: matchedCount,
+      break_count: breaks.length,
+    },
+    env: c.env,
+    skipAudit: true,
+  });
 
   return c.json({
     success: true,

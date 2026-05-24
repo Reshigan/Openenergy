@@ -213,7 +213,11 @@ export type EventType =
   | 'regulator.licence_condition_added'
   | 'regulator.surveillance_rule_updated' | 'regulator.surveillance_alert_resolved'
   | 'regulator.enforcement_event_logged'
-  | 'regulator.audit_exported' | 'regulator.recon_completed';
+  | 'regulator.audit_exported' | 'regulator.recon_completed'
+  // ─── Carbon registry extensions (serials, certificates, audit) ─────────
+  | 'carbon.serial_transferred' | 'carbon.serial_retired'
+  | 'carbon.retirement_certificate_issued'
+  | 'carbon.audit_exported' | 'carbon.recon_completed';
 
 interface CascadeContext {
   event: EventType;
