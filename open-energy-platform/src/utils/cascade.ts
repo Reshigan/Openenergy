@@ -47,6 +47,7 @@ export type EventType =
   | 'om.work_order_verified' | 'om.work_order_closed' | 'om.work_order_cancelled'
   | 'om.work_order_reopened'
   | 'esums.prediction_actioned' | 'esums.connection_registered'
+  | 'esums.ingest_key_created' | 'esums.ingest_key_revoked'
   // Grid / Metering extras
   | 'grid.connection_commissioned' | 'metering.reading_validated'
   // Pipeline / Threads / Dealroom

@@ -71,6 +71,7 @@ import esumsOmRoutes from './routes/esums-om';
 import esumsOmIntelRoutes from './routes/esums-om-intel';
 import esumsOmAnalysisRoutes from './routes/esums-om-analysis';
 import { portalAdmin as esumsOmPortalAdmin, portalPublic as esumsOmPortalPublic } from './routes/esums-om-portal';
+import esumsIngestRoutes from './routes/esums-ingest';
 import platformFeaturesRoutes from './routes/platform-features';
 import {
   mfa as mfaRoutes,
@@ -292,6 +293,9 @@ app.route('/api/schedule', scheduleRoutes);
 // into two routers so they can have independent middleware chains.
 app.route('/api/esums-portal-view', esumsOmPortalPublic);
 app.route('/api/esums-portal', esumsOmPortalAdmin);
+// Native device ingestion (per-site opaque ingest keys, NO user JWT).
+// MUST be sibling to /api/esums so authMiddleware doesn't intercept.
+app.route('/api/esums-ingest', esumsIngestRoutes);
 app.route('/api/esums', esumsOmRoutes);
 app.route('/api/esums', esumsOmIntelRoutes);
 app.route('/api/esums', esumsOmAnalysisRoutes);

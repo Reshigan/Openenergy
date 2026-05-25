@@ -45,6 +45,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import { cached, invalidatePrefix, shouldBypass } from '../utils/kv-cache';
+import { hashToken, randomIngestToken } from '../utils/esums-ingest-auth';
 
 const om = new Hono<HonoEnv>();
 om.use('*', authMiddleware);
@@ -708,6 +709,89 @@ om.post('/maintenance/:id/complete', async (c) => {
     WHERE id = ?
   `).bind(nextDue, id).run();
   return c.json({ success: true, data: { next_due_at: nextDue } });
+});
+
+// ─── Ingest keys (per-site, for headless device pushes) ──────────────────
+// Tokens are generated server-side; the raw value is shown exactly once
+// on creation. SHA-256 hash is stored so a DB read can't replay it.
+// Public consumer of these tokens lives in src/routes/esums-ingest.ts.
+
+om.get('/sites/:id/ingest-keys', async (c) => {
+  const siteId = c.req.param('id');
+  const rows = await c.env.DB.prepare(`
+    SELECT id, site_id, label, token_prefix, scope, created_at, last_used_at,
+           use_count, expires_at, revoked
+    FROM om_ingest_keys WHERE site_id = ?
+    ORDER BY created_at DESC
+  `).bind(siteId).all();
+  return c.json({ success: true, data: rows.results || [] });
+});
+
+om.post('/sites/:id/ingest-keys', async (c) => {
+  const user = getCurrentUser(c);
+  if (!canMutate(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
+  const siteId = c.req.param('id');
+  const b = await c.req.json().catch(() => ({} as any));
+  const label = (b.label || 'gateway').toString().slice(0, 80);
+  const scope = ['write_telemetry', 'write_faults', 'full'].includes(b.scope) ? b.scope : 'write_telemetry';
+  const expiresAt = b.expires_at || null;
+  const id = genId('omik');
+  const raw = randomIngestToken();
+  const tokenHash = await hashToken(raw);
+  const tokenPrefix = raw.slice(0, 12);
+  await c.env.DB.prepare(`
+    INSERT INTO om_ingest_keys
+      (id, site_id, label, token_hash, token_prefix, scope, created_by, expires_at)
+    VALUES (?,?,?,?,?,?,?,?)
+  `).bind(id, siteId, label, tokenHash, tokenPrefix, scope, user.id, expiresAt).run();
+  await fireCascade({
+    event: 'esums.ingest_key_created',
+    actor_id: user.id,
+    entity_type: 'om_ingest_keys',
+    entity_id: id,
+    data: { site_id: siteId, label, scope },
+    env: c.env,
+  });
+  return c.json({
+    success: true,
+    data: {
+      id, site_id: siteId, label, scope, expires_at: expiresAt,
+      token: raw,
+      // Only returned this once. Store it in your gateway config; we keep
+      // only the SHA-256 hash on the server.
+      reveal_warning: 'Store this token now — it cannot be recovered later.',
+    },
+  }, 201);
+});
+
+om.post('/ingest-keys/:id/revoke', async (c) => {
+  const user = getCurrentUser(c);
+  if (!canMutate(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
+  const id = c.req.param('id');
+  await c.env.DB.prepare(`UPDATE om_ingest_keys SET revoked = 1 WHERE id = ?`).bind(id).run();
+  await fireCascade({
+    event: 'esums.ingest_key_revoked',
+    actor_id: user.id,
+    entity_type: 'om_ingest_keys',
+    entity_id: id,
+    data: {},
+    env: c.env,
+  });
+  return c.json({ success: true });
+});
+
+// ─── Connector runs (Live tab — ingestion history per site) ──────────────
+om.get('/sites/:id/connector-runs', async (c) => {
+  const siteId = c.req.param('id');
+  const limit = Math.min(Number(c.req.query('limit') || 50), 200);
+  const rows = await c.env.DB.prepare(`
+    SELECT id, site_id, source, ingest_key_id, started_at, finished_at, status,
+           rows_received, rows_written, rows_rejected, first_ts, last_ts,
+           error_sample, metadata
+    FROM om_connector_runs WHERE site_id = ?
+    ORDER BY started_at DESC LIMIT ?
+  `).bind(siteId, limit).all().catch(() => ({ results: [] } as any));
+  return c.json({ success: true, data: rows.results || [] });
 });
 
 // ─── Fleet KPIs ──────────────────────────────────────────────────────────
