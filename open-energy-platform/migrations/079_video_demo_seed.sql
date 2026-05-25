@@ -183,3 +183,16 @@ UNION ALL SELECT 'sup-vid-04', 'TKT-25-0004', r.id, 'default',
 UPDATE support_tickets
    SET resolved_at = datetime('now','-1 day'), resolution = 'Documented in user guide; export endpoint shipped 2026-05-20.'
  WHERE id = 'sup-vid-03' AND resolved_at IS NULL;
+
+-- ─── 7. Link 074-seeded esums sites to the IPP demo user ──────────────────────
+-- The fleet-kpis route scopes by `participant_id = ? OR om_contractor_id = ?`
+-- for non-officer roles. The 074 seed inserted the sites with NULL participant,
+-- which is why the IPP launch header reads "0 sites · 0.0 MW" despite the site
+-- cards rendering below (the sites list endpoint scopes more permissively).
+-- Set participant_id on each demo site so the IPP developer sees them in
+-- their KPI rollup.
+UPDATE om_sites
+   SET participant_id = (SELECT id FROM participants WHERE email='ipp@openenergy.co.za')
+ WHERE id LIKE 'demo_site_%'
+   AND participant_id IS NULL
+   AND EXISTS (SELECT 1 FROM participants WHERE email='ipp@openenergy.co.za');

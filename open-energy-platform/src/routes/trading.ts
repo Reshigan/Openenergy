@@ -65,7 +65,7 @@ async function loadRiskSnapshot(
     ).bind(participantId, energyType).first<{ pos: number }>(),
     env.DB.prepare(
       `SELECT mark_price_zar_mwh,
-              CAST((julianday('now') - julianday(COALESCE(computed_at, created_at))) * 24 * 60 AS INTEGER) AS age_minutes
+              CAST((julianday('now') - julianday(computed_at)) * 24 * 60 AS INTEGER) AS age_minutes
          FROM mark_prices
         WHERE energy_type = ?
           AND (delivery_date = ? OR (delivery_date IS NULL AND ? IS NULL))
