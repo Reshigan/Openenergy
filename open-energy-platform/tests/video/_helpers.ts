@@ -117,6 +117,16 @@ export interface ShotOptions {
 // spinner for ~2s at the start of every shot.
 const SHELL_READY = 'nav[aria-label="Primary"], header';
 
+// Selectors that confirm DATA has hydrated, not just the page chrome.
+// Each spec's `waitFor` typically matches a KPI card (paints fast, from
+// route-level lazy data), but the row tables / charts below take another
+// ~1-3s to fill. Waiting on any of these after the spec's own selector
+// keeps the dwell window over a populated frame, not a skeleton flash.
+// Optional — if none of them appear within the budget, we proceed
+// anyway (some shots are list-less, e.g. KPI-only dashboards).
+const DATA_READY =
+  'table tbody tr, [data-test$="-row"], [role="row"]:not([aria-rowindex="1"]), canvas, svg .recharts-layer';
+
 /**
  * Drives a single shot. The test wrapping this call gets one MP4 per shot
  * via Playwright's `video: 'on'` recording — the shot key is the test
@@ -144,6 +154,12 @@ export async function shot(
     // Then wait for the caller's content selector so we never start mid-skeleton.
     await page.waitForSelector(opts.waitFor, { state: 'visible', timeout: 20_000 }).catch(() => undefined);
   }
+  // Belt-and-braces: most workstations have a table or chart below the KPI
+  // strip that hydrates a beat after `waitFor` paints. Without this extra
+  // wait, the trimmed composite catches the skeleton-row flash in the
+  // first frame of the clip. Best-effort — KPI-only dashboards have no
+  // matching selector and we proceed after the short timeout.
+  await page.waitForSelector(DATA_READY, { state: 'visible', timeout: 8_000 }).catch(() => undefined);
   await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => undefined);
   // Settle frame before any motion — gives the recording a still beat to
   // start from, then the cursor/scroll moves register as a deliberate change.
