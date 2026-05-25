@@ -72,11 +72,16 @@ admin.get('/users', async (c) => {
   // POPIA s.19 accountability — record that the admin read this list of
   // participants (each listed row contains PII). The KYC queue and any
   // other privileged read endpoints do the same.
+  //
+  // Logged via waitUntil: the batch fans out one cascade per row, which
+  // serialises into ~15s on a 500-row list. The audit write must not
+  // block the response. waitUntil keeps the Worker alive until it
+  // completes; POPIA accountability is preserved.
   const subjectIds = (rows.results || []).map((r: Record<string, unknown>) => r.id as string);
-  await logPiiAccessBatch(
+  c.executionCtx?.waitUntil?.(logPiiAccessBatch(
     c.env, user.id, subjectIds, inferAccessType(user.role),
     `Admin user list (role=${role || 'any'}, status=${status || 'any'}, q=${q || ''})`,
-  );
+  ));
   return c.json({ success: true, data: rows.results || [] });
 });
 
@@ -121,10 +126,10 @@ admin.get('/kyc', async (c) => {
   `).bind(status).all();
   const actor = getCurrentUser(c);
   const subjectIds = (users.results || []).map((r: Record<string, unknown>) => r.id as string);
-  await logPiiAccessBatch(
+  c.executionCtx?.waitUntil?.(logPiiAccessBatch(
     c.env, actor.id, subjectIds, inferAccessType(actor.role),
     `KYC queue (status=${status})`,
-  );
+  ));
   return c.json({ success: true, data: users.results || [] });
 });
 
