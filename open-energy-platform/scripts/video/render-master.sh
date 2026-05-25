@@ -50,8 +50,10 @@ for i in range(1, len(acts), 2):
     print(f"{act_id}\t" + "\t".join(shots))
 PY
 
-# Per-act compose.
-while IFS=$'\t' read -r ACT_ID rest; do
+# Per-act compose. Use FD 3 for the TSV so ffmpeg's stdin reads do not
+# consume from the same stream (that would corrupt the next iteration's
+# ACT_ID — we hit exactly that bug the first time around).
+while IFS=$'\t' read -r -u 3 ACT_ID rest; do
   IFS=$'\t' read -r -a KEYS <<<"$rest"
   echo "▶ Act $ACT_ID — ${#KEYS[@]} shots"
 
@@ -75,7 +77,7 @@ while IFS=$'\t' read -r ACT_ID rest; do
 
   # Concat the shots into a single silent 1080p MP4 segment.
   VIDEO_SEG="$OUT_DIR/_work/act-${ACT_ID}-video.mp4"
-  ffmpeg -y -loglevel error -f concat -safe 0 -i "$LIST" \
+  ffmpeg -nostdin -y -loglevel error -f concat -safe 0 -i "$LIST" \
     -vf "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30" \
     -c:v libx264 -preset medium -crf 20 -pix_fmt yuv420p -an "$VIDEO_SEG"
 
@@ -88,23 +90,24 @@ while IFS=$'\t' read -r ACT_ID rest; do
   AUD_DUR=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$AUDIO")
   VID_DUR=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$VIDEO_SEG")
 
-  # If video is shorter than audio, loop the last shot (held still); if
-  # video is longer, trim. We do this by re-encoding with -t = audio dur and
-  # tpad to extend if needed.
+  # Pad video with clone-frame to the audio duration. The tpad expression
+  # must be in the -filter_complex form so we can pin the OUTPUT duration
+  # via -t (otherwise -shortest wins against tpad's clone padding when the
+  # input video is shorter than the audio).
   ACT_OUT="$OUT_DIR/act-${ACT_ID}.mp4"
-  ffmpeg -y -loglevel error -i "$VIDEO_SEG" -i "$AUDIO" \
-    -vf "tpad=stop_mode=clone:stop_duration=$AUD_DUR,trim=duration=$AUD_DUR,setpts=PTS-STARTPTS" \
-    -map 0:v:0 -map 1:a:0 \
+  ffmpeg -nostdin -y -loglevel error -i "$VIDEO_SEG" -i "$AUDIO" \
+    -filter_complex "[0:v]tpad=stop_mode=clone:stop_duration=${AUD_DUR},setpts=PTS-STARTPTS[v]" \
+    -map "[v]" -map 1:a:0 \
+    -t "$AUD_DUR" \
     -c:v libx264 -preset medium -crf 20 -pix_fmt yuv420p \
     -c:a aac -b:a 192k -ar 48000 -ac 2 \
-    -shortest \
     "$ACT_OUT"
 
   OUT_DUR=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$ACT_OUT")
   printf "  · %s (%.1fs audio, %.1fs video, %.1fs out)\n" \
     "$ACT_OUT" "$AUD_DUR" "$VID_DUR" "$OUT_DUR"
 
-done < "$OUT_DIR/_work/act-shots.tsv"
+done 3< "$OUT_DIR/_work/act-shots.tsv"
 
 # Master concat.
 MASTER_LIST="$OUT_DIR/_work/master.txt"
@@ -118,7 +121,7 @@ for ACT_ID in 1 2 3 4 5 6; do
 done
 
 MASTER="$OUT_DIR/cec-product-film-15min.mp4"
-ffmpeg -y -loglevel error -f concat -safe 0 -i "$MASTER_LIST" \
+ffmpeg -nostdin -y -loglevel error -f concat -safe 0 -i "$MASTER_LIST" \
   -c copy "$MASTER"
 
 MASTER_DUR=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$MASTER")
