@@ -267,18 +267,18 @@ async function buildTraderBoard(c: any, user: any): Promise<LaunchPayload> {
     SELECT
       (SELECT COUNT(*) FROM trade_orders
         WHERE participant_id = ? AND status IN ('open','partial'))             AS open_orders,
-      (SELECT COUNT(*) FROM trade_matches
-        WHERE (buyer_id = ? OR seller_id = ?)
-          AND matched_at >= datetime('now','-1 day'))                          AS fills_24h,
-      (SELECT COALESCE(SUM(matched_volume_mwh * matched_price_zar), 0)
-        FROM trade_matches
-        WHERE (buyer_id = ? OR seller_id = ?)
-          AND matched_at >= datetime('now','-1 day'))                          AS notional_24h,
-      (SELECT COUNT(*) FROM trade_rejections
+      (SELECT COUNT(*) FROM trade_fills
         WHERE participant_id = ?
-          AND created_at >= datetime('now','-1 day'))                          AS rejections_24h
+          AND executed_at >= datetime('now','-1 day'))                          AS fills_24h,
+      (SELECT COALESCE(SUM(gross_zar), 0)
+        FROM trade_fills
+        WHERE participant_id = ?
+          AND executed_at >= datetime('now','-1 day'))                          AS notional_24h,
+      (SELECT COUNT(*) FROM trade_order_rejections
+        WHERE participant_id = ?
+          AND attempted_at >= datetime('now','-1 day'))                        AS rejections_24h
   `)
-    .bind(user.id, user.id, user.id, user.id, user.id, user.id)
+    .bind(user.id, user.id, user.id, user.id)
     .first()
     .catch(() => ({}));
 
@@ -448,8 +448,8 @@ async function buildTraderAiSuggestions(
   // common rejection code in the last 24h. The trader can click through.
   if (ctx.rejections >= 3) {
     const top = await c.env.DB.prepare(
-      `SELECT reason_code, COUNT(*) AS c FROM trade_rejections
-        WHERE participant_id = ? AND created_at >= datetime('now','-1 day')
+      `SELECT reason_code, COUNT(*) AS c FROM trade_order_rejections
+        WHERE participant_id = ? AND attempted_at >= datetime('now','-1 day')
         GROUP BY reason_code ORDER BY c DESC LIMIT 1`,
     )
       .bind(user.id)
@@ -560,7 +560,8 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
       (SELECT COUNT(*) FROM ipp_projects WHERE developer_id = ?)                          AS projects_total,
       (SELECT COUNT(*) FROM ipp_projects WHERE developer_id = ? AND status = 'development')  AS projects_development,
       (SELECT COUNT(*) FROM ipp_projects WHERE developer_id = ? AND status = 'construction') AS projects_construction,
-      (SELECT COUNT(*) FROM ipp_projects WHERE developer_id = ? AND status = 'operational')  AS projects_operational,
+      (SELECT COUNT(*) FROM ipp_projects WHERE developer_id = ?
+        AND status IN ('operational','commercial_operations','commissioning'))                 AS projects_operational,
       (SELECT COUNT(*) FROM invoices
         WHERE from_participant_id = ? AND status IN ('issued','partial','overdue'))       AS invoices_outstanding,
       (SELECT COALESCE(SUM(total_amount), 0) FROM invoices
@@ -742,7 +743,7 @@ async function buildOfftakerBoard(c: any, user: any): Promise<LaunchPayload> {
       (SELECT COALESCE(SUM(total_amount), 0) FROM invoices
         WHERE to_participant_id = ? AND status IN ('issued','partial','overdue')) AS invoices_to_pay_zar,
       (SELECT COUNT(*) FROM settlement_disputes
-        WHERE raised_by = ? AND status = 'open')                              AS open_disputes
+        WHERE filed_by = ? AND status = 'open')                               AS open_disputes
   `)
     .bind(user.id, user.id, user.id, user.id)
     .first()
