@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { ensureToken, seedTokenAuth, shot } from './_helpers';
+import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor } from './_helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -14,48 +14,79 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('regulator-surveillance-alerts', async ({ page }) => {
-  await shot(page, '/admin', {
+  await shot(page, '/regulator-suite/workstation', {
     dwell: 14_000,
-    waitFor: 'h1, h2',
+    waitFor: '[data-test^="kpi"], table tbody tr, main',
     interact: async (p) => {
       await p.getByRole('tab', { name: /Surveillance|Alerts/i }).click().catch(() => undefined);
-      await p.waitForTimeout(800);
+      await p.waitForTimeout(900);
+      // Glide to the alert table and click the freshest red flag.
+      await smoothScroll(p, 260, 1000);
+      await moveCursor(p, 880, 460);
+      await p.locator('[data-test="alert-row"], table tbody tr').first()
+        .click().catch(() => undefined);
+      await p.waitForTimeout(1_100);
     },
   });
 });
 
 test('regulator-workstation', async ({ page }) => {
-  await shot(page, '/regulator/workstation', { dwell: 14_000, waitFor: 'h1, h2' });
+  await shot(page, '/regulator-suite/workstation', {
+    dwell: 14_000,
+    waitFor: '[data-test^="kpi"], main',
+    interact: async (p) => {
+      await smoothScroll(p, 320, 1000);
+      await moveCursor(p, 720, 480);
+      await p.locator('[data-test^="kpi"], .card').first()
+        .hover().catch(() => undefined);
+      await p.waitForTimeout(900);
+    },
+  });
 });
 
 test('regulator-surveillance-rules', async ({ page }) => {
-  await shot(page, '/regulator/workstation', {
-    dwell: 12_000,
-    waitFor: 'h1, h2',
+  await shot(page, '/regulator-suite/workstation', {
+    dwell: 14_000,
+    waitFor: '[data-test^="kpi"], main',
     interact: async (p) => {
       await p.getByRole('tab', { name: /Rules|Surveillance rules/i }).click().catch(() => undefined);
+      await p.waitForTimeout(900);
+      // Pan down the rules grid then hover a rule chip for the threshold popover.
+      await smoothScroll(p, 240, 1000);
+      await p.locator('[data-test="rule-row"], table tbody tr, .card').first()
+        .hover().catch(() => undefined);
       await p.waitForTimeout(800);
     },
   });
 });
 
 test('regulator-investigation-open', async ({ page }) => {
-  await shot(page, '/regulator/workstation', {
-    dwell: 12_000,
-    waitFor: 'h1, h2',
+  await shot(page, '/regulator-suite/workstation', {
+    dwell: 14_000,
+    waitFor: '[data-test^="kpi"], main',
     interact: async (p) => {
       await p.getByRole('button', { name: /Open investigation|Investigate/i }).first().click().catch(() => undefined);
       await p.waitForTimeout(1_200);
+      // Type a reason into the first text/textarea field of the modal.
+      const reason = p.getByLabel(/Reason|Notes|Summary|Description/i).first();
+      await reason.click().catch(() => undefined);
+      await p.keyboard.type('Spoofing pattern detected on JNB-east node', { delay: 70 });
+      await p.waitForTimeout(900);
     },
   });
 });
 
 test('regulator-decisions-list', async ({ page }) => {
-  await shot(page, '/regulator/workstation', {
-    dwell: 12_000,
-    waitFor: 'h1, h2',
+  await shot(page, '/regulator-suite/workstation', {
+    dwell: 14_000,
+    waitFor: '[data-test^="kpi"], main',
     interact: async (p) => {
       await p.getByRole('tab', { name: /Decisions/i }).click().catch(() => undefined);
+      await p.waitForTimeout(900);
+      // Smooth-scroll the decision register and hover the latest ruling.
+      await smoothScroll(p, 300, 1000);
+      await p.locator('[data-test="decision-row"], table tbody tr').first()
+        .hover().catch(() => undefined);
       await p.waitForTimeout(800);
     },
   });

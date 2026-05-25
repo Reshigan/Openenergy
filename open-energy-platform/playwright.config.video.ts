@@ -20,7 +20,7 @@ export default defineConfig({
   // The Phase 1 walker (audit.spec.ts) lives in the same directory but
   // writes PNG screenshots rather than recording shots — exclude it from
   // the shot suite so we don't waste video=on captures on it.
-  testIgnore: ['**/audit.spec.ts'],
+  testIgnore: ['**/audit.spec.ts', '**/preflight.spec.ts'],
   // Each test does its own navigate + N-second on-screen settle + capture.
   // 90s is plenty for the longest shot (drawdown modal walk-through).
   timeout: 90_000,

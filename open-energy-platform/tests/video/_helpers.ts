@@ -133,3 +133,23 @@ export async function shot(
   }
   await page.waitForTimeout(dwell);
 }
+
+/**
+ * Smoothly scrolls the page to a given Y offset, then waits `ms` milliseconds
+ * so the scroll animation actually plays on camera. We hand the recording
+ * something to look at instead of a static viewport while V/O continues.
+ */
+export async function smoothScroll(p: Page, top: number, ms = 900): Promise<void> {
+  await p.evaluate((y) => window.scrollTo({ top: y, behavior: 'smooth' }), top);
+  await p.waitForTimeout(ms);
+}
+
+/**
+ * Moves the mouse cursor to (x, y) over 25 intermediate steps. Playwright's
+ * default `move` jumps the cursor instantly; the stepped variant gives the
+ * recording a visible glide so the audience can follow what the operator
+ * is reaching for.
+ */
+export async function moveCursor(p: Page, x: number, y: number): Promise<void> {
+  await p.mouse.move(x, y, { steps: 25 });
+}

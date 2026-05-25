@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { ensureToken, seedTokenAuth, shot } from './_helpers';
+import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor } from './_helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -16,28 +16,53 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('esums-site-list', async ({ page }) => {
-  await shot(page, '/esums', { dwell: 14_000, waitFor: 'h1, h2' });
+  await shot(page, '/esums', {
+    dwell: 14_000,
+    waitFor: '[data-test="site-card"], a[href^="/esums/sites/"], main',
+    interact: async (p) => {
+      // Pan down the site grid then hover the headline site so the health
+      // badge + opportunity count chip surface.
+      await smoothScroll(p, 280, 1000);
+      await moveCursor(p, 760, 460);
+      await p.locator('[data-test="site-card"], a[href^="/esums/sites/"]')
+        .first().hover().catch(() => undefined);
+      await p.waitForTimeout(900);
+    },
+  });
 });
 
 test('esums-site-detail-live', async ({ page }) => {
   await shot(page, '/esums', {
-    dwell: 14_000,
-    waitFor: 'h1, h2',
+    dwell: 16_000,
+    waitFor: '[data-test="site-card"], a[href^="/esums/sites/"], main',
     interact: async (p) => {
       // Open the first site card / row.
-      await p.locator('a[href^="/esums/sites/"], [data-test="site-card"]').first().click().catch(() => undefined);
-      await p.waitForTimeout(1_200);
+      await p.locator('a[href^="/esums/sites/"], [data-test="site-card"]')
+        .first().click().catch(() => undefined);
+      await p.waitForTimeout(1_400);
+      // Once detail paints, pan down to the live telemetry strip + hover
+      // a data point so its tooltip pops.
+      await smoothScroll(p, 320, 1100);
+      await p.locator('canvas, svg, [data-test^="telemetry"]').first()
+        .hover({ position: { x: 200, y: 80 } }).catch(() => undefined);
+      await p.waitForTimeout(900);
     },
   });
 });
 
 test('esums-opportunity-feed', async ({ page }) => {
   await shot(page, '/esums', {
-    dwell: 12_000,
-    waitFor: 'h1, h2',
+    dwell: 14_000,
+    waitFor: '[data-test="site-card"], a[href^="/esums/sites/"], main',
     interact: async (p) => {
       await p.getByRole('tab', { name: /Opportunit/i }).click().catch(() => undefined);
-      await p.waitForTimeout(800);
+      await p.waitForTimeout(900);
+      // Glide down the opportunity feed and hover the top-value card so
+      // the savings/payback annotation surfaces.
+      await smoothScroll(p, 260, 1000);
+      await p.locator('.opportunity-card, [data-test="opportunity-row"], table tbody tr')
+        .first().hover().catch(() => undefined);
+      await p.waitForTimeout(900);
     },
   });
 });
@@ -67,11 +92,17 @@ test('esums-work-order-detail', async ({ page }) => {
 
 test('esums-portal-share-token', async ({ page }) => {
   await shot(page, '/esums', {
-    dwell: 12_000,
-    waitFor: 'h1, h2',
+    dwell: 14_000,
+    waitFor: '[data-test="site-card"], a[href^="/esums/sites/"], main',
     interact: async (p) => {
-      await p.getByRole('button', { name: /Share|Portal/i }).first().click().catch(() => undefined);
-      await p.waitForTimeout(1_200);
+      await p.getByRole('button', { name: /Share|Portal/i }).first()
+        .click().catch(() => undefined);
+      await p.waitForTimeout(1_300);
+      // Type an external auditor email so the share-token modal looks real.
+      const email = p.getByLabel(/Email|Recipient/i).first();
+      await email.click().catch(() => undefined);
+      await p.keyboard.type('auditor@deloitte.co.za', { delay: 70 });
+      await p.waitForTimeout(900);
     },
   });
 });

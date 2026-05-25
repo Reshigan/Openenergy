@@ -32,6 +32,13 @@ export function OnboardingTour({ scope, steps }: Props) {
   const [cursor, setCursor] = useState(0);
   useEffect(() => { setCursor(0); }, [remaining.length]);
 
+  // Session-wide kill switch used by recording/automation. The video helper
+  // sets `oe.onboarding.skipped=1` before navigating so the tooltip never
+  // paints on top of a shot.
+  if (typeof window !== 'undefined' && window.localStorage?.getItem('oe.onboarding.skipped') === '1') {
+    return null;
+  }
+
   if (skip || remaining.length === 0) return null;
 
   const step = remaining[cursor];
