@@ -42,6 +42,29 @@ test('esums-opportunity-feed', async ({ page }) => {
   });
 });
 
+test('esums-work-order-detail', async ({ page }) => {
+  // Walk: Esums list → Site Bravo → Opportunities tab → open first opportunity
+  // → "Create work order" modal in view. Mirrors Beat 5.2 of the script.
+  await shot(page, '/esums', {
+    dwell: 14_000,
+    waitFor: 'h1, h2',
+    interact: async (p) => {
+      await p.locator('a[href^="/esums/sites/"], [data-test="site-card"]').first()
+        .click().catch(() => undefined);
+      await p.waitForTimeout(1_200);
+      await p.getByRole('tab', { name: /Opportunit/i }).click().catch(() => undefined);
+      await p.waitForTimeout(800);
+      // Smooth scroll the highest-value opportunity into mid-frame.
+      await p.evaluate(() => window.scrollTo({ top: 160, behavior: 'smooth' }));
+      await p.waitForTimeout(900);
+      // Open the first opportunity row (handles either button or row click).
+      await p.locator('[data-test="opportunity-row"], button:has-text("Open"), button:has-text("Create work order")')
+        .first().click().catch(() => undefined);
+      await p.waitForTimeout(1_500);
+    },
+  });
+});
+
 test('esums-portal-share-token', async ({ page }) => {
   await shot(page, '/esums', {
     dwell: 12_000,

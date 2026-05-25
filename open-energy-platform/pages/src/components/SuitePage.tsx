@@ -121,7 +121,7 @@ export function SuitePage(props: SuitePageProps) {
   );
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-5">
+    <div className="p-4 sm:p-6 w-full mx-auto space-y-4 sm:space-y-5">
       <header>
         <h1 className="text-[18px] sm:text-[22px] font-semibold text-[#0f1c2e] leading-tight">{props.title}</h1>
         {props.subtitle && <p className="text-[12px] sm:text-[13px] text-[#6b7685] mt-1">{props.subtitle}</p>}

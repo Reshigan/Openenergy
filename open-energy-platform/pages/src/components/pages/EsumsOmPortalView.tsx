@@ -62,7 +62,7 @@ export function EsumsOmPortalView() {
   return (
     <div className="min-h-screen bg-[#f8fafc]">
       <header className="text-white px-6 py-5 shadow-md" style={{ background: `linear-gradient(135deg, ${meta.accent}, #0b1c30)` }}>
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
+        <div className="w-full max-w-[1760px] mx-auto flex items-center justify-between gap-3">
           <div>
             <div className="text-[11px] uppercase tracking-wider text-white/70">Esums O&amp;M · stakeholder portal</div>
             <h1 className="font-display text-[24px] font-bold mt-1">{meta.title}</h1>
@@ -75,7 +75,7 @@ export function EsumsOmPortalView() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto p-4 lg:p-6 space-y-4">
+      <main className="w-full max-w-[1760px] mx-auto p-4 lg:p-6 space-y-4">
         <SitesPanel sites={data.sites} />
         {audience === 'lender'     && <LenderBlocks data={data} />}
         {audience === 'offtaker'   && <OfftakerBlocks data={data} />}
@@ -83,7 +83,7 @@ export function EsumsOmPortalView() {
         {audience === 'contractor' && <ContractorBlocks data={data} />}
       </main>
 
-      <footer className="max-w-6xl mx-auto px-6 py-4 text-[11px] text-[#6b7685] text-center">
+      <footer className="w-full max-w-[1760px] mx-auto px-6 py-4 text-[11px] text-[#6b7685] text-center">
         <Sparkles size={11} className="inline" /> Powered by Consolidated Energy Cockpit · Esums Ops. Token expires per your invite.
       </footer>
     </div>

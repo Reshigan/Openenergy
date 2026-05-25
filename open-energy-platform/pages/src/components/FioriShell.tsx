@@ -670,7 +670,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
           ['--sidebar-width' as any]: isMobile ? '0px' : `${sidebarWidth}px`,
         }}
       >
-        <div className="mx-auto max-w-[1440px] px-3 sm:px-6 lg:px-8 py-4 sm:py-6 fade-in">
+        <div className="mx-auto w-full max-w-[1840px] px-3 sm:px-6 lg:px-8 py-4 sm:py-6 fade-in">
           {children}
         </div>
       </main>

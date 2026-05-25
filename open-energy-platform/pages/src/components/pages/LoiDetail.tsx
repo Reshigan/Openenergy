@@ -145,7 +145,7 @@ export function LoiDetail() {
   const pill = statusPill[loi.status] || statusPill.drafted;
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-5">
+    <div className="p-6 w-full max-w-[1600px] mx-auto space-y-5">
       <button
         onClick={() => navigate('/lois')}
         className="inline-flex items-center gap-1.5 text-[12px] text-[#6b7685] hover:text-[#3b82c4]"

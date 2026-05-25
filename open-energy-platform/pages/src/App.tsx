@@ -124,7 +124,7 @@ function LazyWorkbench({ children }: { children: ReactNode }) {
     <RouteErrorBoundary routeKey={location.pathname}>
       <React.Suspense
         fallback={
-          <div className="p-6 max-w-7xl mx-auto space-y-4">
+          <div className="p-6 w-full mx-auto space-y-4">
             <div className="skeleton h-8 w-64" />
             <div className="skeleton h-5 w-96" />
             <div className="rounded-xl border border-[#dde4ec] bg-white p-6 space-y-3">
