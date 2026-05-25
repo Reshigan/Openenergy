@@ -5,6 +5,13 @@
 -- dashboard that looks alive.
 --
 -- All inserts are idempotent (INSERT OR IGNORE).
+--
+-- The "resolved" disputes/breaks at the bottom reference historical invoice
+-- IDs (inv_009, inv_011) seeded by 003_seed.sql. In test/replay runs that
+-- skip seed migrations, those parents don't exist — so we disable FK
+-- enforcement for the duration of this migration. Prod always has the
+-- targets so this is purely a test-replay concern.
+PRAGMA foreign_keys = OFF;
 
 -- ───────────────────────── New invoices (15 rows, varied statuses) ─────────────────────────
 -- IDs start at inv_101 to avoid collisions with the existing inv_001..020.
@@ -228,3 +235,5 @@ VALUES
   ('fee_006', 'inv_108', 'wheeling_uplift', 'volume',   47150, 'Wheeling charge — Eskom transmission corridor',     'v1.4', datetime('now', '-20 days')),
   ('fee_007', 'inv_109', 'wheeling_uplift', 'volume',   24725, 'Wheeling charge — Port Elizabeth distribution',     'v1.4', datetime('now', '-25 days')),
   ('fee_008', 'inv_110', 'dunning',         'notional',  2472, '1.0% platform fee on R247K',                        'v1.4', datetime('now', '-32 days'));
+
+PRAGMA foreign_keys = ON;
