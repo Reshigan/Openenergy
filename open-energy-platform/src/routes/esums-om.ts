@@ -46,6 +46,7 @@ import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import { cached, invalidatePrefix, shouldBypass } from '../utils/kv-cache';
 import { hashToken, randomIngestToken } from '../utils/esums-ingest-auth';
+import { runFaultEngine } from '../utils/esums-fault-engine';
 
 const om = new Hono<HonoEnv>();
 om.use('*', authMiddleware);
@@ -792,6 +793,68 @@ om.get('/sites/:id/connector-runs', async (c) => {
     ORDER BY started_at DESC LIMIT ?
   `).bind(siteId, limit).all().catch(() => ({ results: [] } as any));
   return c.json({ success: true, data: rows.results || [] });
+});
+
+// ─── Live tab — composite snapshot for the per-site dashboard ────────────
+// Single round-trip the SPA can poll every 30s: open faults, recent
+// connector runs, last-hour telemetry summary, device health.
+om.get('/sites/:id/live', async (c) => {
+  const siteId = c.req.param('id');
+  const [site, devices, openFaults, runs, lastHour] = await Promise.all([
+    c.env.DB.prepare(`SELECT * FROM om_sites WHERE id = ?`).bind(siteId).first<any>(),
+    c.env.DB.prepare(`SELECT id, device_type, manufacturer, model, status, rated_kw, last_seen_at
+                        FROM om_devices WHERE site_id = ? ORDER BY device_type, id`).bind(siteId).all<any>(),
+    c.env.DB.prepare(`SELECT id, device_id, category, severity, fault_code, description,
+                             detected_at, hourly_loss_zar, total_loss_zar
+                        FROM om_faults WHERE site_id = ?
+                          AND status IN ('open','acknowledged','in_progress')
+                       ORDER BY CASE severity WHEN 'critical' THEN 1 WHEN 'major' THEN 2
+                                              WHEN 'minor' THEN 3 ELSE 4 END,
+                                detected_at DESC LIMIT 50`).bind(siteId).all<any>(),
+    c.env.DB.prepare(`SELECT id, source, status, started_at, rows_received, rows_written, rows_rejected
+                        FROM om_connector_runs WHERE site_id = ?
+                       ORDER BY started_at DESC LIMIT 10`).bind(siteId).all<any>().catch(() => ({ results: [] } as any)),
+    c.env.DB.prepare(`SELECT COUNT(*) AS readings,
+                             COALESCE(SUM(interval_kwh),0) AS kwh,
+                             MAX(ts) AS last_ts,
+                             COALESCE(AVG(ac_kw),0) AS avg_ac_kw,
+                             COALESCE(MAX(temperature_c),0) AS max_temp_c
+                        FROM om_telemetry WHERE site_id = ?
+                          AND ts >= datetime('now','-1 hour')`).bind(siteId).first<any>(),
+  ]);
+  if (!site) return c.json({ success: false, error: 'site not found' }, 404);
+  const devs = (devices.results || []) as Array<{ status: string }>;
+  const onlineRatio = devs.length ? devs.filter((d) => d.status === 'online').length / devs.length : 1;
+  return c.json({
+    success: true,
+    data: {
+      site,
+      devices: devices.results || [],
+      device_count: devs.length,
+      online_pct: Math.round(onlineRatio * 1000) / 10,
+      open_faults: openFaults.results || [],
+      open_fault_count: (openFaults.results || []).length,
+      connector_runs: runs.results || [],
+      last_hour: lastHour || { readings: 0, kwh: 0, last_ts: null, avg_ac_kw: 0, max_temp_c: 0 },
+      generated_at: new Date().toISOString(),
+    },
+  });
+});
+
+// ─── Deterministic fault engine — manual trigger ─────────────────────────
+// Schedules also run this every 15 min; this endpoint lets operators and
+// the smoke-cron job invoke it on demand. Admin/support only.
+om.post('/scan', async (c) => {
+  const user = getCurrentUser(c);
+  if (!['admin', 'support'].includes(user.role)) {
+    return c.json({ success: false, error: 'admin or support role required' }, 403);
+  }
+  const body = await c.req.json().catch(() => ({} as any));
+  const result = await runFaultEngine(c.env, {
+    sites: Array.isArray(body?.sites) ? body.sites : undefined,
+    windowMinutes: typeof body?.window_minutes === 'number' ? body.window_minutes : undefined,
+  });
+  return c.json({ success: true, data: result });
 });
 
 // ─── Fleet KPIs ──────────────────────────────────────────────────────────

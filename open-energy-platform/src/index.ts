@@ -72,6 +72,7 @@ import esumsOmIntelRoutes from './routes/esums-om-intel';
 import esumsOmAnalysisRoutes from './routes/esums-om-analysis';
 import { portalAdmin as esumsOmPortalAdmin, portalPublic as esumsOmPortalPublic } from './routes/esums-om-portal';
 import esumsIngestRoutes from './routes/esums-ingest';
+import { runFaultEngine } from './utils/esums-fault-engine';
 import platformFeaturesRoutes from './routes/platform-features';
 import {
   mfa as mfaRoutes,
@@ -562,6 +563,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
               updated_at = datetime('now')
           WHERE status IN ('open','acknowledged','in_progress')
         `).run();
+      });
+      // Esums: deterministic fault engine — scan last 60 min of telemetry
+      // and open new faults where rule conditions trip. Idempotent against
+      // existing open faults of the same (device_id, fault_code).
+      await safe('esums_fault_engine', async () => {
+        await runFaultEngine(env, { windowMinutes: 60 });
       });
       // Esums: flag SLA-breached work orders.
       await safe('om_sla_check', async () => {
