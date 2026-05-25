@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════════════════
-// Esums O&M — Intelligence layer.
+// Esums — Intelligence layer.
 //
-// Endpoints (mounted on /api/esums-om/*):
+// Endpoints (mounted on /api/esums/*):
 //   GET  /forecast/:site_id             — generation + revenue forecast
 //   POST /forecast/:site_id/refresh     — regenerate forecast (admin)
 //   GET  /predictions                   — predictive maintenance signals
@@ -248,7 +248,7 @@ async function briefingCompute(c: { env: HonoEnv['Bindings'] }, user: { id: stri
       severity: f.severity,
       title: `${f.site_name} bleeding R${Number(f.hourly_loss_zar || 0).toFixed(0)}/hour`,
       body: f.description || `Fault on site since ${f.detected_at}`,
-      cta: { label: 'Open fault', href: `/esums-om/faults/${f.id}` },
+      cta: { label: 'Open fault', href: `/esums/faults/${f.id}` },
     });
   }
   for (const w of (slaWatch.results || []) as any[]) {
@@ -258,7 +258,7 @@ async function briefingCompute(c: { env: HonoEnv['Bindings'] }, user: { id: stri
       severity: 'critical',
       title: `WO ${w.wo_number} SLA in ${minsLeft} min`,
       body: `${w.site_name} · priority ${w.priority}`,
-      cta: { label: 'Open work order', href: `/esums-om/workorders/${w.id}` },
+      cta: { label: 'Open work order', href: `/esums/workorders/${w.id}` },
     });
   }
   for (const p of (predictions.results || []) as any[]) {
@@ -268,7 +268,7 @@ async function briefingCompute(c: { env: HonoEnv['Bindings'] }, user: { id: stri
       title: `${p.site_name} · ${String(p.prediction_type).replace(/_/g, ' ')} (${Math.round(Number(p.confidence) * 100)}% conf.)`,
       body: p.recommended_action,
       estimated_loss_zar: p.estimated_loss_zar,
-      cta: { label: 'Schedule WO', href: `/esums-om/predictions/${p.id}` },
+      cta: { label: 'Schedule WO', href: `/esums/predictions/${p.id}` },
     });
   }
   for (const m of (maintenance.results || []) as any[]) {
@@ -278,7 +278,7 @@ async function briefingCompute(c: { env: HonoEnv['Bindings'] }, user: { id: stri
       severity: daysLeft <= 1 ? 'major' : 'minor',
       title: `${m.site_name} · ${m.task_type.replace(/_/g, ' ')} in ${daysLeft}d`,
       body: 'Preventive maintenance window opening',
-      cta: { label: 'Plan visit', href: `/esums-om/maintenance/${m.id}` },
+      cta: { label: 'Plan visit', href: `/esums/maintenance/${m.id}` },
     });
   }
 

@@ -39,13 +39,6 @@ export interface HonoBindings {
   // Shared secret used by the scheduled GitHub Actions cron job to trigger
   // /api/backup/run without a user JWT. Set via `wrangler secret put BACKUP_TOKEN`.
   BACKUP_TOKEN?: string;
-  // ASOBA Cloud (Ona) integration — solar/IPP telemetry, OODA fault stream and
-  // forecasting. The API key is set via `wrangler secret put ASOBA_API_KEY` and
-  // is sent on the `x-api-key` header. Base URLs default to ASOBA's public
-  // production endpoints but can be overridden per tenant via [vars].
-  ASOBA_API_KEY?: string;
-  ASOBA_TELEMETRY_BASE?: string;
-  ASOBA_OODA_BASE?: string;
 }
 
 // Authenticated user attached to the request context by authMiddleware.

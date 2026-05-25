@@ -1,9 +1,9 @@
 // ════════════════════════════════════════════════════════════════════════
-// Esums O&M — Stakeholder portals.
+// Esums — Stakeholder portals.
 //
 // Two routers exported:
-//   portalAdmin  — auth-protected token mgmt (mount at /api/om-portal)
-//   portalPublic — opaque-token-authenticated view (mount at /api/om-portal-view)
+//   portalAdmin  — auth-protected token mgmt (mount at /api/esums-portal)
+//   portalPublic — opaque-token-authenticated view (mount at /api/esums-portal-view)
 //
 // Splitting them prevents Hono's sub-app middleware chain from blocking
 // the public view endpoint with the auth middleware that protects the

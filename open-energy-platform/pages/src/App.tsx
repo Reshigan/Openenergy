@@ -53,7 +53,6 @@ import { Admin } from './components/pages/Admin';
 import { Support } from './components/pages/Support';
 import { Pipeline } from './components/pages/Pipeline';
 import { Reports } from './components/pages/Reports';
-import { OM } from './components/pages/OM';
 import { Lois } from './components/pages/Lois';
 import { LoiDetail } from './components/pages/LoiDetail';
 import { Intelligence } from './components/pages/Intelligence';
@@ -183,7 +182,6 @@ function getNavigationForRole(role: string) {
     { path: '/pipeline', label: 'Pipeline', icon: FlowIcon },
     { path: '/procurement', label: 'Procurement', icon: ShoppingIcon },
     { path: '/marketplace', label: 'Marketplace', icon: ShopIcon },
-    { path: '/om', label: 'O&M', icon: WrenchIcon },
     { path: '/lois', label: 'Letters of Intent', icon: DocumentIcon },
     { path: '/intelligence', label: 'Intelligence', icon: ChartIcon },
     { path: '/reports', label: 'Reports', icon: ChartIcon },
@@ -198,7 +196,7 @@ function getNavigationForRole(role: string) {
   const offtakerNav     = [{ path: '/offtaker-suite',   label: 'Offtaker workbench',  icon: LeafIcon }];
   const carbonNav       = [{ path: '/carbon-registry',  label: 'Carbon registry',     icon: LeafIcon }];
   const adminPlatformNav= [{ path: '/admin-platform',   label: 'Platform admin',      icon: SettingsIcon }];
-  const esumsOmNav      = [{ path: '/esums-om',         label: 'Esums O&M',           icon: WrenchIcon }];
+  const esumsOmNav      = [{ path: '/esums',            label: 'Esums',               icon: WrenchIcon }];
 
   const adminNav = [
     ...baseNav,
@@ -217,7 +215,7 @@ function getNavigationForRole(role: string) {
       ];
     case 'lender':
       return [
-        ...baseNav.filter((n) => ['/cockpit', '/projects', '/funds', '/om', '/intelligence', '/reports'].includes(n.path)),
+        ...baseNav.filter((n) => ['/cockpit', '/projects', '/funds', '/intelligence', '/reports'].includes(n.path)),
         ...lenderNav, ...esumsOmNav,
       ];
     case 'trader':
@@ -1317,7 +1315,6 @@ function AppRoutes() {
       <Route path="/support" element={<ProtectedRoute><Layout><Support /></Layout></ProtectedRoute>} />
       <Route path="/admin/monitoring" element={<ProtectedRoute><Layout><Monitoring /></Layout></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
-      <Route path="/om" element={<ProtectedRoute><Layout><OM /></Layout></ProtectedRoute>} />
       <Route path="/lois" element={<ProtectedRoute><Layout><Lois /></Layout></ProtectedRoute>} />
       <Route path="/lois/:id" element={<ProtectedRoute><Layout><LoiDetail /></Layout></ProtectedRoute>} />
       <Route path="/intelligence" element={<ProtectedRoute><Layout><Intelligence /></Layout></ProtectedRoute>} />
@@ -1337,10 +1334,10 @@ function AppRoutes() {
       <Route path="/lender-suite/audit" element={<ProtectedRoute><Layout><LenderAuditPage /></Layout></ProtectedRoute>} />
       <Route path="/carbon-registry/workstation" element={<ProtectedRoute><Layout><CarbonWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/grid-operator/workstation" element={<ProtectedRoute><Layout><GridOpsWorkstationPage /></Layout></ProtectedRoute>} />
-      <Route path="/esums-om" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/esums" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/settings/platform" element={<ProtectedRoute><Layout><LazyWorkbench><PlatformSettingsPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       {/* Field-tech mobile WO flow — no app chrome by design (fullscreen PWA) */}
-      <Route path="/esums-om/field/wos" element={<ProtectedRoute><LazyWorkbench><EsumsOmFieldWosPage /></LazyWorkbench></ProtectedRoute>} />
+      <Route path="/esums/field/wos" element={<ProtectedRoute><LazyWorkbench><EsumsOmFieldWosPage /></LazyWorkbench></ProtectedRoute>} />
       <Route path="/settings/compliance" element={<ProtectedRoute><Layout><LazyWorkbench><ComplianceSettingsPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/settings/compliance-admin" element={<ProtectedRoute><Layout><LazyWorkbench><ComplianceAdminPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/ops/depth" element={<ProtectedRoute><Layout><LazyWorkbench><DepthOpsPage /></LazyWorkbench></Layout></ProtectedRoute>} />
@@ -1356,9 +1353,9 @@ function AppRoutes() {
       <Route path="/status" element={<LazyWorkbench><PublicStatusPage /></LazyWorkbench>} />
       <Route path="/legal" element={<LazyWorkbench><PublicLegalPage /></LazyWorkbench>} />
       <Route path="/audit" element={<LazyWorkbench><PublicAuditPage /></LazyWorkbench>} />
-      <Route path="/esums-om/faults/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
-      <Route path="/esums-om/workorders/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
-      <Route path="/esums-om/sites/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsSiteDetailPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/esums/faults/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/esums/workorders/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/esums/sites/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsSiteDetailPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/regulator-suite/workstation" element={<ProtectedRoute><Layout><RegulatorWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/admin-platform/workstation" element={<ProtectedRoute><Layout><AdminWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/support/workstation" element={<ProtectedRoute><Layout><SupportWorkstationPage /></Layout></ProtectedRoute>} />

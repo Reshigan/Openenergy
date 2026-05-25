@@ -128,7 +128,15 @@ app.use('/api/*', tenantQuotaMiddleware);
 
 // Basic health check — always responds 200 so uptime monitors see a
 // stable signal. Detailed probe lives at /api/health/deep.
-app.get('/api/health', (c) => c.json({ status: 'healthy', version: '1.0.0' }));
+app.get('/api/health', (c) => c.json({
+  status: 'healthy',
+  version: '1.0.0',
+  // Tiny capabilities envelope the SPA reads to self-disable AI surfaces
+  // when the operator has flipped the kill-switch (saves Workers-AI spend).
+  features: {
+    ai_enabled: !((c.env as any).OE_AI_DISABLED === '1' || (c.env as any).OE_AI_DISABLED === 'true'),
+  },
+}));
 
 // Deep health probe — exercises every Cloudflare binding the platform
 // depends on. Returns 200 iff every subsystem responds; otherwise 503
@@ -280,13 +288,13 @@ app.route('/api/search', searchRoutes);
 app.route('/api/notifications', notificationsRoutes);
 app.route('/api/schedule', scheduleRoutes);
 // Public portal MUST live on a sibling prefix outside the auth-protected
-// esums-om routes — and the public view + admin token endpoints are split
+// esums routes — and the public view + admin token endpoints are split
 // into two routers so they can have independent middleware chains.
-app.route('/api/om-portal-view', esumsOmPortalPublic);
-app.route('/api/om-portal', esumsOmPortalAdmin);
-app.route('/api/esums-om', esumsOmRoutes);
-app.route('/api/esums-om', esumsOmIntelRoutes);
-app.route('/api/esums-om', esumsOmAnalysisRoutes);
+app.route('/api/esums-portal-view', esumsOmPortalPublic);
+app.route('/api/esums-portal', esumsOmPortalAdmin);
+app.route('/api/esums', esumsOmRoutes);
+app.route('/api/esums', esumsOmIntelRoutes);
+app.route('/api/esums', esumsOmAnalysisRoutes);
 // Public status page MUST be mounted BEFORE the catch-all platform router.
 // platformFeaturesRoutes is mounted at /api and applies authMiddleware to
 // every request that passes through it, including those that don't match
@@ -463,6 +471,7 @@ import { executeSettlementRun as executeImbalanceRun } from './routes/imbalance'
 import { verifyChain } from './utils/audit-chain';
 import { runTradingSurveillanceScan } from './routes/trading-clearing-l5';
 import { buildDailyMerkleRoots } from './routes/audit-l5';
+import { runTelemetryRollupAndPurge } from './utils/telemetry-retention';
 
 async function safe<T>(label: string, fn: () => Promise<T>): Promise<T | null> {
   try {
@@ -540,7 +549,7 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
           await doNs.get(id).fetch('https://order-book/snapshot', { method: 'POST' });
         }
       });
-      // Esums O&M: roll the live revenue impact ticker on open faults.
+      // Esums: roll the live revenue impact ticker on open faults.
       await safe('om_fault_tick', async () => {
         await env.DB.prepare(`
           UPDATE om_faults
@@ -550,7 +559,7 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
           WHERE status IN ('open','acknowledged','in_progress')
         `).run();
       });
-      // Esums O&M: flag SLA-breached work orders.
+      // Esums: flag SLA-breached work orders.
       await safe('om_sla_check', async () => {
         await env.DB.prepare(`
           UPDATE om_work_orders SET sla_breached = 1
@@ -576,7 +585,7 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       // status metrics + incidents. Per-component uptime % = 1 - (minutes
       // of major+critical incident impact / 1440).
       await safe('status_uptime_rollup', async () => {
-        const components = ['API', 'Settlement', 'Trading', 'Webhooks', 'Esums O&M'];
+        const components = ['API', 'Settlement', 'Trading', 'Webhooks', 'Esums'];
         const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
         const incs = await env.DB.prepare(`
           SELECT severity, affected_components, started_at, resolved_at
@@ -627,7 +636,7 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
           await env.DB.prepare(`UPDATE oe_deletion_requests SET status = 'completed', completed_at = datetime('now') WHERE id = ?`).bind(r.id).run();
         }
       });
-      // Esums O&M: synthetic ingestion poll for enabled connections.
+      // Esums: synthetic ingestion poll for enabled connections.
       // Batched INSERT per connection — one D1 round-trip instead of N.
       await safe('om_ingestion_poll', async () => {
         const conns = await env.DB.prepare(`
@@ -697,6 +706,10 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       // Daily — accrue late-payment fees against overdue invoices using
       // simple interest at prime + 1%, capped at 90 days.
       await safe('late_fee_accrual', () => computeLatePaymentFees(env));
+      // Daily — roll om_telemetry into om_telemetry_daily / _weekly and
+      // purge raw rows past the retention horizon. Bounds D1 storage cost
+      // without losing the analytics history.
+      await safe('telemetry_rollup', () => runTelemetryRollupAndPurge(env));
       // Daily digest sweep — find subscriptions due today by send_hour_sast.
       // Provider creds (SES/Twilio/WhatsApp) gate actual delivery; without
       // them rows land as 'would_send' so the history is still populated.

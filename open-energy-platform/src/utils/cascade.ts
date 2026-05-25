@@ -39,7 +39,7 @@ export type EventType =
   // Ona
   | 'ona.fault_detected' | 'ona.fault_triaged' | 'ona.fault_resolved'
   | 'ona.forecast_synced' | 'ona.maintenance_scheduled' | 'ona.maintenance_updated'
-  // Esums O&M
+  // Esums
   | 'om.site_created' | 'om.fault_detected' | 'om.fault_resolved'
   | 'om.work_order_created' | 'om.work_order_assigned' | 'om.work_order_acknowledged'
   | 'om.work_order_en_route' | 'om.work_order_on_site' | 'om.work_order_diagnosing'

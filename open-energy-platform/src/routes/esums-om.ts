@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════════════════
-// Esums O&M — Asset Intelligence & Operations module.
+// Esums — Asset Intelligence & Operations module.
 //
-// Mounts under /api/esums-om/*. Spec:
+// Mounts under /api/esums/*. Spec:
 //   Open-Energy-Ops-Asset-Intelligence-Specification.md
 //
 // Endpoints in this file (core CRUD):

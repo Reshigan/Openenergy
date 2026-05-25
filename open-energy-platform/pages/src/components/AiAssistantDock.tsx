@@ -21,10 +21,18 @@ export function AiAssistantDock() {
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Probe /api/health.features.ai_enabled once — if false, the operator
+  // has the OE_AI_DISABLED kill-switch on and the dock should not render.
+  const [aiEnabled, setAiEnabled] = useState<boolean | null>(null);
+  useEffect(() => {
+    fetch('/api/health').then((r) => r.json())
+      .then((j) => setAiEnabled(j?.features?.ai_enabled !== false))
+      .catch(() => setAiEnabled(true));
+  }, []);
 
   const surfaceFromPath = (() => {
     const p = location.pathname;
-    if (p.startsWith('/esums-om')) return 'esums-om';
+    if (p.startsWith('/esums')) return 'esums';
     if (p.startsWith('/trading') || p.startsWith('/trader')) return 'trading';
     if (p.startsWith('/settlement')) return 'settlement';
     if (p.startsWith('/lender')) return 'lender';
@@ -77,9 +85,9 @@ export function AiAssistantDock() {
     try {
       switch (kind) {
         case 'create_work_order':
-          result = await api.post('/esums-om/work-orders', payload).then((x) => x.data); break;
+          result = await api.post('/esums/work-orders', payload).then((x) => x.data); break;
         case 'acknowledge_fault':
-          result = await api.post(`/esums-om/faults/${payload.fault_id}/acknowledge`, {}).then((x) => x.data); break;
+          result = await api.post(`/esums/faults/${payload.fault_id}/acknowledge`, {}).then((x) => x.data); break;
         case 'submit_algo_execution':
           result = await api.post('/trading-deep/algos', payload).then((x) => x.data); break;
         case 'request_drawdown':
@@ -109,8 +117,12 @@ export function AiAssistantDock() {
   const hideOnPaths = ['/login', '/sso-landing', '/register', '/forgot-password', '/reset-password', '/status', '/legal'];
   if (hideOnPaths.some((p) => location.pathname.startsWith(p))) return null;
   if (location.pathname.startsWith('/portal/')) return null;
-  if (location.pathname.startsWith('/esums-om/field')) return null; // small-screen UI
+  if (location.pathname.startsWith('/esums/field')) return null; // small-screen UI
   if (!localStorage.getItem('token')) return null;
+  // Hide when operator has flipped OE_AI_DISABLED — /api/health returns
+  // features.ai_enabled = false. The deterministic opportunity engine in
+  // Esums + per-role launch boards keep the platform fully usable.
+  if (aiEnabled === false) return null;
 
   if (!open) {
     return (

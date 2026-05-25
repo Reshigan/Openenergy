@@ -111,7 +111,7 @@ export function Lois() {
               {user?.role === 'offtaker'
                 ? 'Use the Offtaker AI copilot on your cockpit to upload a bill and generate LOIs from the optimal mix.'
                 : user?.role === 'ipp_developer'
-                  ? 'Simulate a project in the O&M hub and run batch LOI outreach to offtakers.'
+                  ? 'Simulate a project in the Esums hub and run batch LOI outreach to offtakers.'
                   : 'Once LOIs are drafted by offtakers or IPPs, they will appear here.'}
             </p>
           </div>

@@ -24,7 +24,7 @@ const KNOWN_FAILURES: Record<string, FailureExplanation> = {
     explanation:
       'The settlement engine could not find meter readings covering the full delivery period.',
     suggested_action:
-      'Ask the IPP developer to re-sync ASOBA telemetry for the period, or backfill manually via /ona/meter-ingest.',
+      'Re-sync site telemetry for the period via the OEM connector, or backfill manually at POST /api/esums/telemetry/import.',
     confidence: 0.95,
     source: 'deterministic',
   },

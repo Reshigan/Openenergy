@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-// EsumsSiteDetailPage — /esums-om/sites/:id (replaces the listing fallback)
+// EsumsSiteDetailPage — /esums/sites/:id (replaces the listing fallback)
 //
 // Per-asset operations view:
 //   • Overview  — KPIs (PR, CUF, MTTR, first-time-fix, faults) +
@@ -62,8 +62,8 @@ export function EsumsSiteDetailPage() {
     setErr(null);
     try {
       const [d, p] = await Promise.all([
-        api.get(`/esums-om/sites/${encodeURIComponent(id)}`),
-        api.get(`/esums-om/intel/performance/${encodeURIComponent(id)}`, { params: { days: 30 } }),
+        api.get(`/esums/sites/${encodeURIComponent(id)}`),
+        api.get(`/esums/intel/performance/${encodeURIComponent(id)}`, { params: { days: 30 } }),
       ]);
       if (!d.data.success) throw new Error(d.data.error || 'load failed');
       setDetail(d.data.data);
@@ -78,7 +78,7 @@ export function EsumsSiteDetailPage() {
   if (err && !detail) {
     return (
       <div className="p-6">
-        <Link to="/esums-om" className="text-[12px] text-[#1a3a5c] underline inline-flex items-center gap-1">
+        <Link to="/esums" className="text-[12px] text-[#1a3a5c] underline inline-flex items-center gap-1">
           <ArrowLeft size={12}/> Back to fleet
         </Link>
         <div className="widget-card widget-tone-bad p-4 mt-2">{err}</div>
@@ -93,12 +93,12 @@ export function EsumsSiteDetailPage() {
   return (
     <StitchPage
       eyebrowIcon={Zap}
-      eyebrowLabel={`Esums O&M · site detail · ${id}`}
+      eyebrowLabel={`Esums · site detail · ${id}`}
       title={site.name}
       subtitle={subtitle}
     >
       <div className="flex items-center gap-2 mb-3">
-        <Link to="/esums-om" className="text-[11px] text-[#6b7685] hover:text-[#0f1c2e] inline-flex items-center gap-1">
+        <Link to="/esums" className="text-[11px] text-[#6b7685] hover:text-[#0f1c2e] inline-flex items-center gap-1">
           <ArrowLeft size={12}/> Back to fleet
         </Link>
         <button onClick={load} className="ml-auto h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1">
@@ -238,7 +238,7 @@ function DevicesTab({ devices }: { devices: Device[] }) {
 // ─── Charts ────────────────────────────────────────────────────────────
 function ChartsTab({ perf }: { perf: Perf | null }) {
   if (!perf || perf.series.length === 0) {
-    return <div className="widget-card p-6 text-center text-[12px] text-[#6b7685]">No telemetry yet — connect an OEM adapter or push data to /api/esums-om/telemetry to start populating charts.</div>;
+    return <div className="widget-card p-6 text-center text-[12px] text-[#6b7685]">No telemetry yet — connect an OEM adapter or push data to /api/esums/telemetry to start populating charts.</div>;
   }
   const maxKwh = Math.max(1, ...perf.series.map((s) => s.kwh));
   const maxPr  = Math.max(1, ...perf.series.map((s) => s.pr));

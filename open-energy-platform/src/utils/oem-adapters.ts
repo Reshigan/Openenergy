@@ -437,7 +437,7 @@ async function pollAgentRequired(name: string): Promise<PollResult> {
     adapter: name,
     ok: false,
     readings: [],
-    error: 'agent_required — TCP/SFTP adapters require an on-prem polling agent that POSTs to /api/esums-om/telemetry with an API key',
+    error: 'agent_required — TCP/SFTP adapters require an on-prem polling agent that POSTs to /api/esums/telemetry with an API key',
   };
 }
 

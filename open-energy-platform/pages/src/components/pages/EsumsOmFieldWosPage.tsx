@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-// EsumsOmFieldWosPage — /esums-om/field/wos
+// EsumsOmFieldWosPage — /esums/field/wos
 //
 // Mobile-optimised field-tech work order screen. Designed for one-handed
 // use on a phone in the field:
@@ -10,7 +10,7 @@
 //   • Photo evidence via the device camera (input[type=file capture])
 //   • Works as a PWA shortcut for techs ("Field tech: my work orders")
 //
-// Pulls /esums-om/work-orders?assigned_to=me + transition + photo APIs.
+// Pulls /esums/work-orders?assigned_to=me + transition + photo APIs.
 // ════════════════════════════════════════════════════════════════════════
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -79,7 +79,7 @@ export function EsumsOmFieldWosPage() {
   // Offline-first load — try network, cache to IndexedDB, on failure
   // read from cache. The detail screen still renders fully.
   useEffect(() => {
-    const url = `/api/esums-om/work-orders${user?.id ? `?assigned_to=${user.id}` : ''}`;
+    const url = `/api/esums/work-orders${user?.id ? `?assigned_to=${user.id}` : ''}`;
     void offlineFirstFetch(url, undefined, { cacheKey: `wos:${user?.id || 'all'}`, ttlSeconds: 24 * 3600 })
       .then(({ data }) => {
         const arr = (data?.data || []) as WoRow[];
@@ -94,10 +94,10 @@ export function EsumsOmFieldWosPage() {
     setActive((cur) => cur && cur.id === wo.id ? { ...cur, status: to } : cur);
     try {
       if (navigator.onLine) {
-        await api.post(`/esums-om/work-orders/${wo.id}/transition`, { to, ...(extra || {}) });
+        await api.post(`/esums/work-orders/${wo.id}/transition`, { to, ...(extra || {}) });
       } else {
         await enqueueMutation({
-          url: `/api/esums-om/work-orders/${wo.id}/transition`,
+          url: `/api/esums/work-orders/${wo.id}/transition`,
           method: 'POST',
           body: { to, ...(extra || {}) },
         });
@@ -107,7 +107,7 @@ export function EsumsOmFieldWosPage() {
     } catch (e) {
       // Network blip even though `navigator.onLine` reported true — queue it
       await enqueueMutation({
-        url: `/api/esums-om/work-orders/${wo.id}/transition`,
+        url: `/api/esums/work-orders/${wo.id}/transition`,
         method: 'POST',
         body: { to, ...(extra || {}) },
       });
@@ -145,7 +145,7 @@ export function EsumsOmFieldWosPage() {
         });
         const j = await up.json();
         if (j?.success && j?.data?.r2_key) {
-          await api.post(`/esums-om/work-orders/${wo.id}/photo`, { r2_key: j.data.r2_key, label });
+          await api.post(`/esums/work-orders/${wo.id}/photo`, { r2_key: j.data.r2_key, label });
         }
       } else {
         // Offline — queue the multipart upload; the blob is held in IDB
@@ -175,7 +175,7 @@ export function EsumsOmFieldWosPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-20">
       <header className={`text-white px-4 py-3 sticky top-0 z-10 flex items-center justify-between shadow ${offline ? 'bg-[#b04e0f]' : 'bg-[#1a3a5c]'}`}>
-        <button onClick={() => navigate('/esums-om')} className="p-1.5 -ml-1.5"><ArrowLeft size={20} /></button>
+        <button onClick={() => navigate('/esums')} className="p-1.5 -ml-1.5"><ArrowLeft size={20} /></button>
         <div className="text-center flex-1">
           <div className="text-[10px] uppercase tracking-wider opacity-80 inline-flex items-center gap-1">
             {offline ? <>OFFLINE · {pendingCount} queued</> : <>Esums O&amp;M · Field{pendingCount > 0 ? ` · ${pendingCount} syncing` : ''}</>}

@@ -266,6 +266,14 @@ export async function ask(
     },
   ];
 
+  // Hard kill-switch: operator sets OE_AI_DISABLED=1 (wrangler secret) to
+  // turn off every inference call platform-wide so there is no Workers-AI
+  // spend. The deterministic heuristic fallback covers every consumer of
+  // ask(), so the UI stays functional with no LLM costs.
+  if ((env as any).OE_AI_DISABLED === '1' || (env as any).OE_AI_DISABLED === 'true') {
+    return heuristicFallback(opts.intent, opts.context, model);
+  }
+
   // Graceful fallback when the AI binding isn't present (local dev).
   if (!env.AI || typeof env.AI.run !== 'function') {
     return heuristicFallback(opts.intent, opts.context, model);

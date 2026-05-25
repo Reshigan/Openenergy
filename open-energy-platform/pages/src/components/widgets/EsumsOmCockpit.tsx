@@ -1,17 +1,17 @@
 // ════════════════════════════════════════════════════════════════════════
-// EsumsOmCockpit — Fleet Overview Insights tab for the Esums O&M module.
+// EsumsOmCockpit — Fleet Overview Insights tab for the Esums module.
 //
 // The differentiating screen: every fault carries a live revenue-impact
 // ticker, every AI insight has a 1-click CTA, and the WO kanban shows
 // SLA countdowns inline.
 //
 // Pulls:
-//   GET /esums-om/fleet-kpis          — portfolio aggregate
-//   GET /esums-om/sites               — sites with KPI rollups
-//   GET /esums-om/faults?status=...   — open fault register
-//   GET /esums-om/work-orders         — kanban data
-//   GET /esums-om/briefing            — proactive AI insights
-//   GET /esums-om/predictions         — predictive maintenance
+//   GET /esums/fleet-kpis          — portfolio aggregate
+//   GET /esums/sites               — sites with KPI rollups
+//   GET /esums/faults?status=...   — open fault register
+//   GET /esums/work-orders         — kanban data
+//   GET /esums/briefing            — proactive AI insights
+//   GET /esums/predictions         — predictive maintenance
 // ════════════════════════════════════════════════════════════════════════
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -226,7 +226,7 @@ function FaultRegister({ faults }: { faults: FaultRow[] }) {
           <div className="widget-card-title">Fault register — live revenue impact</div>
           <div className="widget-card-subtitle">Sorted by severity then bleed rate. Every row updates as time passes.</div>
         </div>
-        <Link to="/esums-om/faults" className="text-[11px] font-semibold text-[#3b82c4] hover:underline">View all →</Link>
+        <Link to="/esums/faults" className="text-[11px] font-semibold text-[#3b82c4] hover:underline">View all →</Link>
       </header>
       <div className="overflow-x-auto">
         <table className="w-full text-[12px]">
@@ -255,7 +255,7 @@ function FaultRegister({ faults }: { faults: FaultRow[] }) {
                 <td className="text-right font-mono">{formatZAR(f.hourly_loss_zar)}</td>
                 <td className="text-right font-mono widget-tone-bad-text">{formatZAR(f.total_loss_zar)}</td>
                 <td className="text-right">
-                  <Link to={`/esums-om/faults/${f.id}`} className="text-[11px] font-semibold text-[#3b82c4] hover:underline">
+                  <Link to={`/esums/faults/${f.id}`} className="text-[11px] font-semibold text-[#3b82c4] hover:underline">
                     {f.status === 'open' ? 'Dispatch' : f.status === 'acknowledged' ? 'View' : 'Track'}
                   </Link>
                 </td>
@@ -285,7 +285,7 @@ function FleetHealthGrid({ sites }: { sites: SiteRow[] }) {
             ? 'widget-tone-bad'
             : s.open_faults > 0 ? 'widget-tone-amber' : 'widget-tone-good';
           return (
-            <Link key={s.id} to={`/esums-om/sites/${s.id}`}
+            <Link key={s.id} to={`/esums/sites/${s.id}`}
                   className="rounded-lg border border-[#e2e8f0] p-3 hover:border-[#3b82c4] hover:bg-[#f8fafc] transition-colors block">
               <div className="flex items-center gap-2">
                 <Icon size={14} className="text-[#3b82c4]" />
@@ -395,7 +395,7 @@ function WoKanban({ wos }: { wos: WoRow[] }) {
           <div className="widget-card-title">Active work orders</div>
           <div className="widget-card-subtitle">Drag-to-reassign in the WO Board · countdown shown for SLA</div>
         </div>
-        <Link to="/esums-om/workorders" className="text-[11px] font-semibold text-[#3b82c4] hover:underline">View board →</Link>
+        <Link to="/esums/workorders" className="text-[11px] font-semibold text-[#3b82c4] hover:underline">View board →</Link>
       </header>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 p-3">
         {lanes.map((lane) => (
@@ -427,7 +427,7 @@ function WoCard({ wo }: { wo: WoRow }) {
   const minsLeft = Math.round((new Date(wo.sla_deadline).getTime() - Date.now()) / 60_000);
   const slaTone = minsLeft < 0 ? 'widget-tone-bad-text' : minsLeft < 60 ? 'widget-tone-warn-text' : 'widget-tone-good-text';
   return (
-    <Link to={`/esums-om/workorders/${wo.id}`}
+    <Link to={`/esums/workorders/${wo.id}`}
           className="block rounded bg-white border border-[#e2e8f0] p-2 text-[11px] hover:border-[#3b82c4] transition-colors">
       <div className="flex items-center justify-between gap-1">
         <span className="font-mono font-semibold text-[#0f1c2e]">{wo.wo_number}</span>
@@ -461,18 +461,18 @@ export function EsumsOmCockpit() {
   const load = async () => {
     try {
       const [k, s, f, w, b] = await Promise.all([
-        api.get('/esums-om/fleet-kpis'),
-        api.get('/esums-om/sites'),
-        api.get('/esums-om/faults?status=open').catch(() => ({ data: { data: [] } })),
-        api.get('/esums-om/work-orders'),
-        api.get('/esums-om/briefing'),
+        api.get('/esums/fleet-kpis'),
+        api.get('/esums/sites'),
+        api.get('/esums/faults?status=open').catch(() => ({ data: { data: [] } })),
+        api.get('/esums/work-orders'),
+        api.get('/esums/briefing'),
       ]);
       setKpis(k.data?.data || null);
       setSites((s.data?.data as SiteRow[]) || []);
       // include acknowledged + in_progress too
       const [fb, fc] = await Promise.all([
-        api.get('/esums-om/faults?status=acknowledged'),
-        api.get('/esums-om/faults?status=in_progress'),
+        api.get('/esums/faults?status=acknowledged'),
+        api.get('/esums/faults?status=in_progress'),
       ]);
       const merged = [...(f.data?.data || []), ...(fb.data?.data || []), ...(fc.data?.data || [])];
       setFaults(merged as FaultRow[]);

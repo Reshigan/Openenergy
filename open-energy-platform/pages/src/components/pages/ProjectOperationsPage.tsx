@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════════════════
 // ProjectOperationsPage — drill-in at /projects/:id/operations
 //
-// Operational view of an IPP project: O&M work orders, ASOBA telemetry,
+// Operational view of an IPP project: O&M work orders, site telemetry,
 // nominations, spares, faults. Companion to /projects/:id/lifecycle.
 // ════════════════════════════════════════════════════════════════════════
 
@@ -100,7 +100,7 @@ export function ProjectOperationsPage() {
       </div>
 
       <Section title={`Work orders (${workOrders.length})`}>
-        {workOrders.length === 0 ? <Empty label="No work orders. Schedule preventive + corrective via the O&M page." /> : (
+        {workOrders.length === 0 ? <Empty label="No work orders. Schedule preventive + corrective via the Esums page." /> : (
           <Table headers={['When', 'Type', 'Status', 'Asset', 'Notes']}>
             {workOrders.slice(0, 50).map(w => (
               <tr key={w.id} className="border-t border-[#e5ebf2]">
@@ -145,7 +145,7 @@ export function ProjectOperationsPage() {
       </Section>
 
       <Section title={`Faults (${faults.length})`}>
-        {faults.length === 0 ? <Empty label="No faults — clean run. ASOBA OODA alerts auto-promote here." /> : (
+        {faults.length === 0 ? <Empty label="No faults — clean run. Deterministic fault engine surfaces issues here as they trip." /> : (
           <Table headers={['When', 'Severity', 'Status', 'Description']}>
             {faults.slice(0, 50).map(f => (
               <tr key={f.id} className="border-t border-[#e5ebf2]">

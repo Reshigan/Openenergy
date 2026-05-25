@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════════════════
 // EsumsOmOpportunities — performance-improvement opportunity engine UI.
 //
-// Renders the ranked output of GET /api/esums-om/opportunities. Every
+// Renders the ranked output of GET /api/esums/opportunities. Every
 // opportunity is rule-derived (deterministic SQL + math), so each card
 // shows the cited evidence + a one-click CTA.
 // ════════════════════════════════════════════════════════════════════════
@@ -60,7 +60,7 @@ export function EsumsOmOpportunities() {
   const load = async () => {
     setErr(null);
     try {
-      const r = await api.get('/esums-om/opportunities');
+      const r = await api.get('/esums/opportunities');
       setData(r.data?.data || null);
     } catch (e: any) {
       setErr(e?.message || 'failed to load');
@@ -77,7 +77,7 @@ export function EsumsOmOpportunities() {
     if (!opp.action) return;
     setActing(opp.id);
     try {
-      await api.post('/esums-om/opportunities/act', { category: opp.category, action: opp.action });
+      await api.post('/esums/opportunities/act', { category: opp.category, action: opp.action });
       await load();
     } finally { setActing(null); }
   };

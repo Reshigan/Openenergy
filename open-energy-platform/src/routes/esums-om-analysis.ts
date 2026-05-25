@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-// Esums O&M — Performance Opportunity Engine.
+// Esums — Performance Opportunity Engine.
 //
 // Deterministic, rule-based analysis layer. Zero LLM inference — every
 // opportunity is computed from SQL queries + arithmetic against the
@@ -58,7 +58,10 @@ type Opportunity = {
     | 'maintenance_backlog'
     | 'om_cost_outlier'
     | 'module_degradation'
-    | 'curtailment_recovery';
+    | 'curtailment_recovery'
+    | 'water_leak'
+    | 'pump_inefficiency'
+    | 'treatment_recovery';
   site_id?: string;
   site_name?: string;
   device_id?: string;
@@ -696,9 +699,167 @@ async function findCurtailmentRecovery(env: HonoEnv['Bindings'], siteIds: string
   return opps;
 }
 
+// ─── 14. Water — overnight leak (off-peak flow > 0) ────────────────────
+// If the site has any flow_meter telemetry showing meaningful flow during
+// the 00:00-05:00 window over the last 14 days, treat it as leakage and
+// quantify the lost revenue at the site's water tariff.
+async function findWaterLeak(env: HonoEnv['Bindings'], siteIds: string[],
+                             sitesByID: Map<string, any>): Promise<Opportunity[]> {
+  if (!siteIds.length) return [];
+  const ph = siteIds.map(() => '?').join(',');
+  // Use the daily rollup if it exists; otherwise the raw fault entry
+  // gives us the signal. We piggy-back on the existing fault category
+  // 'water' with code 'LEAK-NOC' for the recurring case.
+  const rows = await env.DB.prepare(`
+    SELECT f.site_id, f.hourly_loss_zar, f.total_loss_zar, f.detected_at
+    FROM om_faults f
+    WHERE f.site_id IN (${ph})
+      AND f.category = 'water'
+      AND f.fault_code = 'LEAK-NOC'
+      AND f.status NOT IN ('resolved','closed','false_positive')
+  `).bind(...siteIds).all<any>().catch(() => ({ results: [] as any[] }));
+  const opps: Opportunity[] = [];
+  for (const r of (rows.results || []) as any[]) {
+    const site = sitesByID.get(r.site_id);
+    if (!site) continue;
+    const hourly = Number(r.hourly_loss_zar || 0);
+    const annual = hourly * 8 * 365;   // off-peak hours/day × days/year
+    opps.push({
+      id: genId('opp'),
+      category: 'water_leak',
+      site_id: r.site_id,
+      site_name: site.name,
+      title: `${site.name} — off-peak flow suggests pipe leak`,
+      detail: `Sustained overnight flow indicates leakage past primary isolation valves. ` +
+              `At the published water tariff this is bleeding R${Math.round(hourly).toLocaleString('en-ZA')}/h off-peak.`,
+      annual_upside_zar: Math.round(annual),
+      effort: 'low',
+      confidence: 0.85,
+      evidence: [
+        `Loss accumulated: R${Math.round(Number(r.total_loss_zar || 0)).toLocaleString('en-ZA')}`,
+        `Detected ${new Date(r.detected_at).toLocaleDateString('en-ZA')}`,
+      ],
+      action: { kind: 'investigate', payload: { site_id: r.site_id, focus: 'leak_pressure_test' } },
+    });
+  }
+  return opps;
+}
+
+// ─── 15. Water — pump efficiency drift ─────────────────────────────────
+// Compare each pump's pump_kwh against the site's other pumps. > 30%
+// above the fleet median is flagged.
+async function findPumpInefficiency(env: HonoEnv['Bindings'], siteIds: string[],
+                                    sitesByID: Map<string, any>): Promise<Opportunity[]> {
+  if (!siteIds.length) return [];
+  const ph = siteIds.map(() => '?').join(',');
+  const rows = await env.DB.prepare(`
+    SELECT d.site_id, d.id AS device_id, d.location_in_plant,
+           AVG(t.pump_kw) AS avg_kw,
+           AVG(t.flow_lps) AS avg_lps,
+           SUM(t.interval_kwh) AS pump_kwh_30d
+    FROM om_devices d
+    JOIN om_telemetry t ON t.device_id = d.id
+    WHERE d.device_type = 'pump' AND d.site_id IN (${ph})
+      AND t.ts >= date('now','-30 days')
+    GROUP BY d.id
+    HAVING pump_kwh_30d > 0
+  `).bind(...siteIds).all<any>().catch(() => ({ results: [] as any[] }));
+  const pumps = ((rows.results || []) as any[]);
+  // Group by site, compute median pump_kwh per site, flag outliers
+  const bySite = new Map<string, any[]>();
+  for (const p of pumps) {
+    if (!bySite.has(p.site_id)) bySite.set(p.site_id, []);
+    bySite.get(p.site_id)!.push(p);
+  }
+  const opps: Opportunity[] = [];
+  for (const [siteId, list] of bySite) {
+    if (list.length < 2) continue;
+    const sorted = [...list].sort((a, b) => a.pump_kwh_30d - b.pump_kwh_30d);
+    const median = sorted[Math.floor(sorted.length / 2)].pump_kwh_30d;
+    for (const p of list) {
+      if (median <= 0 || p.pump_kwh_30d <= median * 1.30) continue;
+      const site = sitesByID.get(siteId);
+      if (!site) continue;
+      // Excess kWh × R1.80/kWh grid energy cost → annual
+      const excessKwh = (p.pump_kwh_30d - median) * 12; // 30d → annualised
+      const annual = Math.round(excessKwh * 1.80);
+      opps.push({
+        id: genId('opp'),
+        category: 'pump_inefficiency',
+        site_id: siteId,
+        site_name: site.name,
+        device_id: p.device_id,
+        title: `${site.name} — pump ${p.location_in_plant} burning ${Math.round((p.pump_kwh_30d / median - 1) * 100)}% more energy`,
+        detail: `Pump is consuming significantly more kWh than its sister pumps for similar duty. ` +
+                `Likely worn impeller or scale build-up. Replace or refurbish to recover the energy spread.`,
+        annual_upside_zar: annual,
+        effort: 'medium',
+        confidence: 0.75,
+        evidence: [
+          `30d kWh this pump: ${Math.round(p.pump_kwh_30d).toLocaleString('en-ZA')}`,
+          `30d kWh fleet median: ${Math.round(median).toLocaleString('en-ZA')}`,
+        ],
+        action: { kind: 'investigate', payload: { site_id: siteId, device_id: p.device_id, focus: 'pump_overhaul' } },
+      });
+    }
+  }
+  return opps;
+}
+
+// ─── 16. Water — treatment recovery slipping ───────────────────────────
+// raw_kl vs treated_kl ratio over last 30 days vs prior 60 days.
+async function findTreatmentRecovery(env: HonoEnv['Bindings'], siteIds: string[],
+                                     sitesByID: Map<string, any>): Promise<Opportunity[]> {
+  if (!siteIds.length) return [];
+  const ph = siteIds.map(() => '?').join(',');
+  const rows = await env.DB.prepare(`
+    SELECT site_id,
+      SUM(CASE WHEN ts >= datetime('now','-30 days') THEN treated_kl ELSE 0 END) AS recent_treated,
+      SUM(CASE WHEN ts >= datetime('now','-30 days') THEN raw_kl    ELSE 0 END) AS recent_raw,
+      SUM(CASE WHEN ts <  datetime('now','-30 days') AND ts >= datetime('now','-90 days') THEN treated_kl ELSE 0 END) AS prior_treated,
+      SUM(CASE WHEN ts <  datetime('now','-30 days') AND ts >= datetime('now','-90 days') THEN raw_kl    ELSE 0 END) AS prior_raw
+    FROM om_telemetry
+    WHERE site_id IN (${ph}) AND ts >= datetime('now','-90 days')
+    GROUP BY site_id
+    HAVING recent_raw > 0 AND prior_raw > 0
+  `).bind(...siteIds).all<any>().catch(() => ({ results: [] as any[] }));
+  const opps: Opportunity[] = [];
+  for (const r of (rows.results || []) as any[]) {
+    const site = sitesByID.get(r.site_id);
+    if (!site) continue;
+    const recentRate = Number(r.recent_treated) / Number(r.recent_raw);
+    const priorRate  = Number(r.prior_treated)  / Number(r.prior_raw);
+    if (priorRate <= 0 || recentRate >= priorRate * 0.97) continue;   // < 3% drop, ignore
+    const dropPct = (priorRate - recentRate) * 100;
+    const annualRawKl = Number(r.recent_raw) * 12; // 30d → year
+    const recoverableKl = annualRawKl * (priorRate - recentRate);
+    const tariff = Number(site.water_tariff_zar_kl || 12);
+    const annual = Math.round(recoverableKl * tariff);
+    opps.push({
+      id: genId('opp'),
+      category: 'treatment_recovery',
+      site_id: r.site_id,
+      site_name: site.name,
+      title: `${site.name} — treatment yield down ${dropPct.toFixed(1)}% in last 30 days`,
+      detail: `Treated/raw recovery has slipped from ${(priorRate * 100).toFixed(1)}% to ${(recentRate * 100).toFixed(1)}%. ` +
+              `Filter media replacement or membrane CIP would recover the gap.`,
+      annual_upside_zar: annual,
+      effort: 'medium',
+      confidence: 0.7,
+      evidence: [
+        `Recent recovery: ${(recentRate * 100).toFixed(1)}%`,
+        `Prior recovery: ${(priorRate * 100).toFixed(1)}%`,
+        `Annualised kL recoverable: ${Math.round(recoverableKl).toLocaleString('en-ZA')}`,
+      ],
+      action: { kind: 'investigate', payload: { site_id: r.site_id, focus: 'filter_media' } },
+    });
+  }
+  return opps;
+}
+
 // ─── Master endpoint ────────────────────────────────────────────────────
 // Cached 5 min — opportunity rules don't change minute-to-minute and the
-// scan does 13 parallel D1 queries.
+// scan does 16 parallel D1 queries.
 ana.get('/opportunities', async (c) => {
   const user = getCurrentUser(c);
   const isOfficer = ['admin', 'support', 'regulator'].includes(user.role);
@@ -708,7 +869,7 @@ ana.get('/opportunities', async (c) => {
     const siteIds = sites.map((s) => s.id);
     const sitesByID = new Map(sites.map((s) => [s.id, s]));
 
-    const [c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13] = await Promise.all([
+    const [c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16] = await Promise.all([
       findSoilingOpportunities(c.env, siteIds, sitesByID),
       findRecurringFaultOpportunities(c.env, siteIds, sitesByID),
       findUnderperformingStringOpportunities(c.env, siteIds, sitesByID),
@@ -722,8 +883,11 @@ ana.get('/opportunities', async (c) => {
       findOmCostOutliers(c.env, siteIds, sitesByID),
       findModuleDegradation(c.env, siteIds, sitesByID),
       findCurtailmentRecovery(c.env, siteIds, sitesByID),
+      findWaterLeak(c.env, siteIds, sitesByID),
+      findPumpInefficiency(c.env, siteIds, sitesByID),
+      findTreatmentRecovery(c.env, siteIds, sitesByID),
     ]);
-    const all = [...c1, ...c2, ...c3, ...c4, ...c5, ...c6, ...c7, ...c8, ...c9, ...c10, ...c11, ...c12, ...c13];
+    const all = [...c1, ...c2, ...c3, ...c4, ...c5, ...c6, ...c7, ...c8, ...c9, ...c10, ...c11, ...c12, ...c13, ...c14, ...c15, ...c16];
     all.sort((a, b) => b.annual_upside_zar - a.annual_upside_zar);
 
     const total = all.reduce((s, o) => s + o.annual_upside_zar, 0);

@@ -688,7 +688,7 @@ status.get('/', async (c) => {
         { name: 'Settlement',     status: overallStatus, metric: 'cron schedule current' },
         { name: 'Trading',        status: overallStatus, metric: 'matching engine current' },
         { name: 'Webhooks',       status: overallStatus, metric: 'deliveries within SLA' },
-        { name: 'Esums O&M',      status: overallStatus, metric: 'ingestion poll current' },
+        { name: 'Esums',      status: overallStatus, metric: 'ingestion poll current' },
       ],
       metrics_24h: metrics.results || [],
       metrics_recent: recent.results || [],

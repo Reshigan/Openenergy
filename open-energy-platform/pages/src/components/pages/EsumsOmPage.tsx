@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-// EsumsOmPage — /esums-om role workbench.
+// EsumsOmPage — /esums role workbench.
 //
 // Bundles the cockpit + CRUD list tabs for the Asset Intelligence module.
 // Built on SuitePage so it inherits the platform's tab chrome + AI brief
@@ -32,7 +32,7 @@ export function EsumsOmPage() {
     {
       key: 'sites',
       label: 'Sites',
-      endpoint: '/esums-om/sites',
+      endpoint: '/esums/sites',
       description: 'Generation sites with live KPIs. Click into a site for the asset-level dashboard.',
       columns: [
         { key: 'name', label: 'Site' },
@@ -49,7 +49,7 @@ export function EsumsOmPage() {
     {
       key: 'devices',
       label: 'Devices',
-      endpoint: '/esums-om/devices',
+      endpoint: '/esums/devices',
       description: 'Inverters, meters, batteries and sensors across all sites. Filter by site_id.',
       columns: [
         { key: 'site_id', label: 'Site' },
@@ -65,7 +65,7 @@ export function EsumsOmPage() {
     {
       key: 'faults',
       label: 'Faults',
-      endpoint: '/esums-om/faults',
+      endpoint: '/esums/faults',
       description: 'Live fault register with Revenue Impact Engine. Hourly bleed + total loss accumulate in real time.',
       columns: [
         { key: 'site_id',     label: 'Site' },
@@ -78,8 +78,8 @@ export function EsumsOmPage() {
         { key: 'status',      label: 'Status', render: (r) => <StatusPill status={String(r.status)} /> },
       ],
       rowActions: [
-        { label: 'Acknowledge', tone: 'primary', endpoint: '/esums-om/faults/{id}/acknowledge', confirm: 'Acknowledge this fault?' },
-        { label: 'Resolve',     tone: 'default', endpoint: '/esums-om/faults/{id}/resolve',
+        { label: 'Acknowledge', tone: 'primary', endpoint: '/esums/faults/{id}/acknowledge', confirm: 'Acknowledge this fault?' },
+        { label: 'Resolve',     tone: 'default', endpoint: '/esums/faults/{id}/resolve',
           form: { title: 'Resolve fault', endpoint: '', fields: [
             { name: 'root_cause', label: 'Root cause', type: 'textarea', required: true },
           ]}},
@@ -88,7 +88,7 @@ export function EsumsOmPage() {
     {
       key: 'workorders',
       label: 'Work orders',
-      endpoint: '/esums-om/work-orders',
+      endpoint: '/esums/work-orders',
       description: '12-state WO lifecycle. Tap a row to drill into the timeline, parts, photos and SLA tracking.',
       columns: [
         { key: 'wo_number',     label: 'WO #' },
@@ -101,20 +101,20 @@ export function EsumsOmPage() {
         { key: 'sla_deadline',  label: 'SLA', date: true },
       ],
       rowActions: [
-        { label: 'Acknowledge', endpoint: '/esums-om/work-orders/{id}/transition',
+        { label: 'Acknowledge', endpoint: '/esums/work-orders/{id}/transition',
           form: { title: 'Acknowledge WO', endpoint: '', fields: [
             { name: 'to', label: 'Next state', type: 'select', required: true,
               options: [{ value: 'acknowledged', label: 'Acknowledged' }, { value: 'cancelled', label: 'Cancelled' }]},
           ]}},
-        { label: 'En route', endpoint: '/esums-om/work-orders/{id}/transition',
+        { label: 'En route', endpoint: '/esums/work-orders/{id}/transition',
           form: { title: 'Mark en route', endpoint: '', fields: [
             { name: 'to', label: 'Next state', type: 'select', required: true, options: [{ value: 'en_route', label: 'En route' }]},
           ]}},
-        { label: 'On site', endpoint: '/esums-om/work-orders/{id}/transition',
+        { label: 'On site', endpoint: '/esums/work-orders/{id}/transition',
           form: { title: 'Arrived on site', endpoint: '', fields: [
             { name: 'to', label: 'Next state', type: 'select', required: true, options: [{ value: 'on_site', label: 'On site' }]},
           ]}},
-        { label: 'Complete', tone: 'primary', endpoint: '/esums-om/work-orders/{id}/transition',
+        { label: 'Complete', tone: 'primary', endpoint: '/esums/work-orders/{id}/transition',
           form: { title: 'Complete WO', endpoint: '', fields: [
             { name: 'to', label: 'Next state', type: 'select', required: true, options: [{ value: 'completed', label: 'Completed' }]},
             { name: 'resolution_notes', label: 'Resolution notes', type: 'textarea', required: true },
@@ -124,7 +124,7 @@ export function EsumsOmPage() {
     {
       key: 'technicians',
       label: 'Team',
-      endpoint: '/esums-om/technicians',
+      endpoint: '/esums/technicians',
       description: 'Field technicians: skills, certifications, current location, availability.',
       columns: [
         { key: 'name', label: 'Name' },
@@ -137,7 +137,7 @@ export function EsumsOmPage() {
     {
       key: 'parts',
       label: 'Parts',
-      endpoint: '/esums-om/parts',
+      endpoint: '/esums/parts',
       description: 'Parts catalogue and stock. Low-stock items highlighted for reorder.',
       columns: [
         { key: 'part_number', label: 'Part #' },
@@ -152,7 +152,7 @@ export function EsumsOmPage() {
     {
       key: 'maintenance',
       label: 'Maintenance',
-      endpoint: '/esums-om/maintenance',
+      endpoint: '/esums/maintenance',
       description: 'Scheduled preventive maintenance. Auto-creates work orders 7 days before due date.',
       columns: [
         { key: 'site_id', label: 'Site' },
@@ -167,7 +167,7 @@ export function EsumsOmPage() {
     {
       key: 'predictions',
       label: 'Predictive',
-      endpoint: '/esums-om/predictions',
+      endpoint: '/esums/predictions',
       description: 'AI-derived predictive maintenance signals — surfaces likely failures weeks before they happen.',
       params: { status: 'open' },
       columns: [
@@ -183,7 +183,7 @@ export function EsumsOmPage() {
     {
       key: 'ingestion',
       label: 'Ingestion',
-      endpoint: '/esums-om/ingestion',
+      endpoint: '/esums/ingestion',
       description: 'OEM connections (Huawei FusionSolar, SolarEdge, SMA, Sungrow, Modbus TCP, Eskom AMR, ...) with last-poll status.',
       columns: [
         { key: 'site_id', label: 'Site' },
@@ -197,7 +197,7 @@ export function EsumsOmPage() {
     {
       key: 'alerts',
       label: 'Alerts',
-      endpoint: '/esums-om/alerts',
+      endpoint: '/esums/alerts',
       description: 'All alerts fired across the fleet in the last 7 days.',
       columns: [
         { key: 'severity', label: 'Severity', render: (r) => <StatusPill status={String(r.severity)} /> },
@@ -212,7 +212,7 @@ export function EsumsOmPage() {
 
   return (
     <SuitePage
-      title="Esums O&M"
+      title="Esums"
       subtitle="Asset Intelligence & Operations — the operational brain that connects physical assets to commercial outcomes."
       tabs={tabs}
       initialTab="cockpit"

@@ -666,7 +666,7 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
       {
         key: 'om',
         title: 'O&M and generation',
-        description: 'Asset telemetry from ASOBA Cloud, OODA alerts, fault tickets, OEM warranty register.',
+        description: 'Site telemetry, deterministic fault detection, work orders, OEM warranty register.',
         href: '/om',
         cta_label: 'Open O&M',
         icon: 'build',

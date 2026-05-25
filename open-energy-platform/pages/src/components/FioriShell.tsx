@@ -40,8 +40,7 @@ const BASE_NAV: NavItem[] = [
   { path: '/ipp/variations', label: 'Variation Orders', icon: 'assignment',    section: 'Operations' },
   { path: '/pipeline',     label: 'Pipeline',      icon: 'account_tree',       section: 'Operations' },
   { path: '/grid',         label: 'Grid',          icon: 'bolt',               section: 'Operations' },
-  { path: '/om',           label: 'O&M',           icon: 'build',              section: 'Operations' },
-  { path: '/esums-om',     label: 'Esums O&M',     icon: 'build',              section: 'Operations' },
+  { path: '/esums',        label: 'Esums',         icon: 'build',              section: 'Operations' },
   { path: '/ops/l5',       label: 'L5 Ops Console', icon: 'monitor_heart',     section: 'Operations' },
   { path: '/ops/depth',    label: 'Depth Ops',     icon: 'monitor_heart',      section: 'Operations' },
   { path: '/carbon',       label: 'Carbon',        icon: 'eco',                section: 'Sustainability' },
@@ -77,7 +76,7 @@ function navForRole(role: string | undefined): NavItem[] {
     case 'support':
       return BASE_NAV.filter((n) =>
         ['/launch', '/support', '/admin/monitoring', '/intelligence', '/briefing', '/popia',
-         '/esums-om', '/admin/paia', '/settlement-ops', '/settings/passkeys', '/documents',
+         '/esums', '/admin/paia', '/settlement-ops', '/settings/passkeys', '/documents',
          '/audit'].includes(n.path),
       );
     case 'trader':
@@ -87,9 +86,9 @@ function navForRole(role: string | undefined): NavItem[] {
       );
     case 'ipp_developer':
       return BASE_NAV.filter((n) =>
-        ['/launch', '/projects', '/contracts', '/settlement', '/grid', '/om', '/marketplace',
+        ['/launch', '/projects', '/contracts', '/settlement', '/grid', '/marketplace',
          '/esg', '/intelligence', '/reports', '/popia', '/briefing',
-         '/esums-om', '/ipp/variations', '/documents', '/settings/passkeys'].includes(n.path),
+         '/esums', '/ipp/variations', '/documents', '/settings/passkeys'].includes(n.path),
       );
     case 'carbon_fund':
       return BASE_NAV.filter((n) =>
@@ -104,7 +103,7 @@ function navForRole(role: string | undefined): NavItem[] {
       );
     case 'lender':
       return BASE_NAV.filter((n) =>
-        ['/launch', '/projects', '/pipeline', '/funds', '/settlement', '/om', '/intelligence',
+        ['/launch', '/projects', '/pipeline', '/funds', '/settlement', '/esums', '/intelligence',
          '/reports', '/popia', '/briefing',
          '/ipp/variations', '/documents', '/settings/passkeys'].includes(n.path),
       );

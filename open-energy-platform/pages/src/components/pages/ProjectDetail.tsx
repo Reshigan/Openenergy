@@ -13,7 +13,7 @@ import { ProjectScurve } from '../widgets/ProjectScurve';
  * Project Detail page — /projects/:id
  *
  * Surfaces the project's metadata, milestones, and a link out to the
- * O&M page filtered to its ASOBA site (if linked). Fixes the 404 path
+ * Esums page filtered to its linked esums site (if any). Fixes the 404 path
  * the Projects list used to navigate to.
  * ═══════════════════════════════════════════════════════════════════════ */
 
@@ -214,8 +214,8 @@ export function ProjectDetail() {
 
           <StitchCard title="Linked workspaces">
             <div className="space-y-2 text-[13px]">
-              <Link to="/om" className="flex items-center justify-between p-2 rounded hover:bg-[#eef2f7]">
-                <span className="inline-flex items-center gap-2"><OEIcon name="wrench" size={14} tone="teal" /> O&amp;M cockpit</span>
+              <Link to="/esums" className="flex items-center justify-between p-2 rounded hover:bg-[#eef2f7]">
+                <span className="inline-flex items-center gap-2"><OEIcon name="wrench" size={14} tone="teal" /> Esums cockpit</span>
                 <OEIcon name="chevron-right" size={14} tone="muted" />
               </Link>
               <Link to="/contracts" className="flex items-center justify-between p-2 rounded hover:bg-[#eef2f7]">

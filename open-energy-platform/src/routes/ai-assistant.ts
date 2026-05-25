@@ -35,7 +35,7 @@ the UI will surface as a one-click confirm — never execute on your own.`;
 // Tool catalog — assistant can propose these as tool_calls and the UI
 // shows a confirm-and-execute button.
 const TOOLS = [
-  { name: 'create_work_order',     description: 'Create an Esums O&M work order',
+  { name: 'create_work_order',     description: 'Create an Esums work order',
     params: { site_id: 'string', title: 'string', priority: 'critical|high|medium|low', category: 'string' } },
   { name: 'acknowledge_fault',     description: 'Acknowledge an open fault',
     params: { fault_id: 'string' } },
@@ -69,7 +69,7 @@ function fallbackResponse(message: string, context: string): { content: string; 
   const tool_calls: any[] = [];
   let content = '';
   if (m.includes('fault')) {
-    content = `Live context: ${context}. Tap a fault in the Esums O&M cockpit to acknowledge or dispatch a technician.`;
+    content = `Live context: ${context}. Tap a fault in the Esums cockpit to acknowledge or dispatch a technician.`;
     if (m.includes('acknowledge')) tool_calls.push({ tool: 'acknowledge_fault', params: { fault_id: '<select-from-fault-list>' } });
   } else if (m.includes('work order') || m.includes('wo')) {
     content = `Open work orders: ${context}. Need to create one? I can prepare a draft.`;
@@ -78,13 +78,19 @@ function fallbackResponse(message: string, context: string): { content: string; 
     content = 'I can stage a TWAP/VWAP execution. Tell me side, volume and window.';
     tool_calls.push({ tool: 'submit_algo_execution', params: { algo_type: 'twap', side: 'buy', energy_type: 'solar', volume_mwh: 0, start_at: '', end_at: '' } });
   } else {
-    content = `I'm here to help across trading, settlement, Esums O&M, IPP, lender, carbon and regulator surfaces. Live numbers: ${context}. Ask me to "show open faults", "summarise my work orders", "stage a TWAP execution" or "request a drawdown".`;
+    content = `I'm here to help across trading, settlement, Esums, IPP, lender, carbon and regulator surfaces. Live numbers: ${context}. Ask me to "show open faults", "summarise my work orders", "stage a TWAP execution" or "request a drawdown".`;
   }
   return { content, tool_calls };
 }
 
 // ─── Workers AI invocation ──────────────────────────────────────────────
 async function callWorkersAi(env: any, history: Array<{ role: string; content: string }>, context: string): Promise<{ content: string; tool_calls: any[] }> {
+  // Honour the platform-wide OE_AI_DISABLED kill-switch — fallback responder
+  // is fully deterministic and incurs zero Workers-AI cost.
+  if (env.OE_AI_DISABLED === '1' || env.OE_AI_DISABLED === 'true') {
+    const lastUser = [...history].reverse().find((m) => m.role === 'user')?.content || '';
+    return fallbackResponse(lastUser, context);
+  }
   if (!env.AI || typeof env.AI.run !== 'function') {
     return fallbackResponse(history[history.length - 1]?.content || '', context);
   }
