@@ -41,7 +41,7 @@ export function PublicLegalPage() {
           <div className="flex items-center gap-3">
             <Scale size={28} />
             <div>
-              <div className="text-[11px] uppercase tracking-wider opacity-80">Open Energy · legal</div>
+              <div className="text-[11px] uppercase tracking-wider opacity-80">Consolidated Energy Cockpit · legal</div>
               <h1 className="font-display text-[22px] font-bold tracking-tight">Public legal information</h1>
             </div>
           </div>
@@ -81,7 +81,7 @@ export function PublicLegalPage() {
         {tab === 'submit' && <SubmitForm />}
 
         <footer className="text-center text-[11px] text-[#6b7685] pt-2">
-          Open Energy Platform · oe.vantax.co.za · operated by GONXT Technology (Pty) Ltd
+          Consolidated Energy Cockpit · oe.vantax.co.za · operated by GONXT Technology (Pty) Ltd
         </footer>
       </main>
     </div>
@@ -99,7 +99,7 @@ function Overview({ manual, appCount, decisionCount }: { manual: Manual | null; 
         <p className="text-[12px] text-[#3a4658] leading-relaxed">
           This page is published under section 14 of the Promotion of Access to Information Act (PAIA, Act 2 of 2000)
           and section 18 of the Protection of Personal Information Act (POPIA, Act 4 of 2013). It documents the data
-          held by the Open Energy Platform, who to contact to request access or correction, and how tariff applications
+          held by the Consolidated Energy Cockpit (CEC), who to contact to request access or correction, and how tariff applications
           and regulator decisions are made available to the public.
         </p>
       </div>

@@ -141,7 +141,7 @@ export function AiAssistantDock() {
       <header className="px-3 py-2 border-b border-[#eef2f7] flex items-center gap-2 bg-gradient-to-r from-[#1e3a5f] to-[#0b1c30] text-white rounded-t-xl">
         <Sparkles size={16} className="text-[#f6c44a]" />
         <div className="flex-1">
-          <div className="text-[13px] font-semibold">Open Energy Assistant</div>
+          <div className="text-[13px] font-semibold">CEC Assistant</div>
           <div className="text-[10px] opacity-80 capitalize">context: {surfaceFromPath}</div>
         </div>
         <button onClick={() => setOpen(false)} aria-label="Close" className="p-1 hover:bg-white/10 rounded">

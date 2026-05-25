@@ -1,6 +1,6 @@
 {
-  "name": "Open Energy — Industrial Energy Exchange",
-  "short_name": "Open Energy",
+  "name": "Consolidated Energy Cockpit — Industrial Energy Exchange",
+  "short_name": "CEC",
   "description": "Unified South African energy exchange — power trading, carbon markets, IPP project lifecycle, settlement, regulatory compliance.",
   "start_url": "/cockpit",
   "scope": "/",

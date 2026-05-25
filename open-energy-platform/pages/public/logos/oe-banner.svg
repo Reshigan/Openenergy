@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 240" role="img" aria-label="Open Energy">
-  <title>Open Energy</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 240" role="img" aria-label="Consolidated Energy Cockpit">
+  <title>Consolidated Energy Cockpit</title>
   <!-- Mark group, vertically centred at left -->
   <g transform="translate(20,20) scale(0.5)">
     <g fill="none" stroke-linecap="round">
@@ -15,7 +15,7 @@
   </g>
   <!-- Wordmark — Metropolis-style geometric sans -->
   <g font-family="Metropolis, 'IBM Plex Sans', Inter, sans-serif" font-weight="800" letter-spacing="0">
-    <text x="240" y="100" fill="#1a3a5c" font-size="72">OPEN</text>
-    <text x="240" y="190" fill="#3b82c4" font-size="72">ENERGY</text>
+    <text x="240" y="100" fill="#1a3a5c" font-size="72">ENERGY</text>
+    <text x="240" y="190" fill="#3b82c4" font-size="72">COCKPIT</text>
   </g>
 </svg>

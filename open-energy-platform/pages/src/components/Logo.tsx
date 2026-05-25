@@ -22,7 +22,7 @@ export interface LogoProps {
   variant?: 'colour' | 'light';
 }
 
-export function LogoMark({ size = 32, className = '', title = 'Open Energy', variant = 'colour' }: LogoProps) {
+export function LogoMark({ size = 32, className = '', title = 'Consolidated Energy Cockpit', variant = 'colour' }: LogoProps) {
   const blue = variant === 'light' ? '#9bc8ee' : '#3b82c4';
   const teal = variant === 'light' ? '#7fd5cf' : '#1f9b95';
   const navy = variant === 'light' ? '#ffffff' : '#1a3a5c';

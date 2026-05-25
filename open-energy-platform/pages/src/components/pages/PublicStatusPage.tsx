@@ -66,7 +66,7 @@ export function PublicStatusPage() {
             <Icon size={28} />
             <div>
               <div className="text-[11px] uppercase tracking-wider opacity-80 inline-flex items-center gap-1">
-                <Activity size={11} /> Open Energy · platform status
+                <Activity size={11} /> Consolidated Energy Cockpit · platform status
               </div>
               <h1 className="font-display text-[22px] font-bold tracking-tight">{meta.label}</h1>
             </div>
@@ -125,7 +125,7 @@ export function PublicStatusPage() {
           </div>
         </section>
         <footer className="text-center text-[11px] text-[#6b7685] pt-2">
-          Open Energy Platform · oe.vantax.co.za · operated by GONXT Technology (Pty) Ltd
+          Consolidated Energy Cockpit · oe.vantax.co.za · operated by GONXT Technology (Pty) Ltd
         </footer>
       </main>
     </div>

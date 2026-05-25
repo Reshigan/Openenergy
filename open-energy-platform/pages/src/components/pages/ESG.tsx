@@ -810,7 +810,7 @@ function InviteSupplierModal({ onClose, onSent }: { onClose: () => void; onSent:
         </StitchField>
         <StitchField label="Survey type">
           <select value={f.survey_type} onChange={(e) => setF({ ...f, survey_type: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
-            <option value="custom">Custom (Open Energy)</option>
+            <option value="custom">Custom (CEC)</option>
             <option value="CDP_supply_chain">CDP Supply Chain</option>
             <option value="SBTi_PRTS">SBTi PRTS</option>
           </select>

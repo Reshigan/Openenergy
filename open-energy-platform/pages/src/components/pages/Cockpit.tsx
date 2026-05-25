@@ -147,7 +147,7 @@ export function Cockpit() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 text-[12px] tracking-widest uppercase text-white/70 font-semibold">
               <Sparkles size={12} />
-              <span>Open Energy Exchange · {today}</span>
+              <span>Consolidated Energy Cockpit · {today}</span>
             </div>
             <h1 className="mt-2 text-[28px] sm:text-[32px] font-bold tracking-tight">
               {greeting()}, {user?.name?.split(' ')[0] ?? 'there'}
@@ -206,7 +206,7 @@ export function Cockpit() {
       {/* Market Pulse */}
       <FioriTileGroup
         title="Market Pulse"
-        description="Live snapshot of today's Open Energy market"
+        description="Live snapshot of today's energy market"
       >
         <FioriTile
           title="Market Price"
@@ -553,7 +553,7 @@ export function Cockpit() {
           title="Funds AUM"
           value={formatCompact(stats?.aum ?? 1_240_000_000)}
           unit="ZAR"
-          subtitle="Open Energy Fund I"
+          subtitle="CEC Energy Fund I"
           icon={Coins}
           accent="plum"
           footer="View funds →"
@@ -665,7 +665,7 @@ function heroSubtitleFor(role: string): string {
     case 'regulator':
       return 'Market oversight — licensed entities, submissions queue, investigations and audit trail.';
     default:
-      return "Here's today's snapshot of your Open Energy workspace.";
+      return "Here's today's snapshot of your Consolidated Energy Cockpit workspace.";
   }
 }
 

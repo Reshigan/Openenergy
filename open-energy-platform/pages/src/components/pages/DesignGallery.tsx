@@ -186,7 +186,7 @@ export function DesignGallery(): React.JSX.Element {
       <header className="border-b" style={{ background: '#fff', borderColor: '#dde4ec' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <p className="text-[11px] uppercase tracking-[0.18em] font-mono" style={{ color: '#525a66' }}>
-            Design references · Stitch · Open Energy
+            Design references · Stitch · Consolidated Energy Cockpit
           </p>
           <h1 className="mt-1 text-[32px] font-bold tracking-tight" style={{ color: '#0f1c2e' }}>
             Design Gallery

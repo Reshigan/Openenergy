@@ -505,7 +505,7 @@ function LoginPage() {
         </div>
 
         <div className="relative z-10 text-[12px] text-white/55">
-          © {new Date().getFullYear()} Open Energy · Vanta X Holdings
+          © {new Date().getFullYear()} Consolidated Energy Cockpit · Vanta X Holdings
         </div>
       </div>
 
@@ -521,7 +521,7 @@ function LoginPage() {
             Sign in
           </h2>
           <p className="mt-1 text-[14px]" style={{ color: '#3d4756' }}>
-            Welcome back. Use your Open Energy credentials to continue.
+            Welcome back. Use your Consolidated Energy Cockpit credentials to continue.
           </p>
 
           {error && (
@@ -736,7 +736,7 @@ const PERSONAS: Persona[] = [
   { email: 'grid@openenergy.co.za',      label: 'Grid Operator',   subtitle: 'Eskom Holdings',                   icon: 'gridmap',  accent: '#1a3a5c', group: 'Network' },
   // Oversight
   { email: 'regulator@openenergy.co.za', label: 'Regulator',       subtitle: 'NERSA / Energy Research Institute', icon: 'shield',  accent: '#0e6d68', group: 'Oversight' },
-  { email: 'admin@openenergy.co.za',     label: 'Platform Admin',  subtitle: 'Open Energy Platform',             icon: 'settings', accent: '#0f2540', group: 'Oversight' },
+  { email: 'admin@openenergy.co.za',     label: 'Platform Admin',  subtitle: 'Consolidated Energy Cockpit',      icon: 'settings', accent: '#0f2540', group: 'Oversight' },
 ];
 
 const GROUP_ORDER: Persona['group'][] = ['Producers', 'Markets', 'Capital', 'Network', 'Oversight'];
@@ -869,7 +869,7 @@ function RegisterPage() {
       <div className="aurora" />
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-display font-bold text-white mb-2">Open Energy</h1>
+          <h1 className="text-4xl font-display font-bold text-white mb-2">Consolidated Energy Cockpit</h1>
           <p className="text-white/75 font-mono text-[12px] uppercase tracking-[0.2em]">Industrial Energy Exchange</p>
         </div>
 
@@ -1403,7 +1403,7 @@ function GlobalOnboardingTourWrapper() {
   const { user } = useAuth();
   if (!user) return null;
   const baseSteps = [
-    { key: 'welcome', title: `Welcome to Open Energy, ${user.email.split('@')[0]}.`, body: 'This quick tour points out a couple of things to try first.' },
+    { key: 'welcome', title: `Welcome to Consolidated Energy Cockpit, ${user.email.split('@')[0]}.`, body: 'This quick tour points out a couple of things to try first.' },
     { key: 'ai-dock', title: 'Ask the assistant anything', body: 'The blue dock in the corner answers questions about any surface and can propose one-click actions you confirm before they run.' },
     { key: 'workstation', title: 'Workstations are role-specific', body: `Your default workstation lives at /${user.role}/workstation — listings, KPIs and one-click actions are tailored to your role.` },
   ];

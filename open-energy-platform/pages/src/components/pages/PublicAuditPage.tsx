@@ -50,7 +50,7 @@ export function PublicAuditPage() {
         <div className="max-w-5xl mx-auto flex items-center gap-3 flex-wrap">
           <ShieldCheck size={28} />
           <div>
-            <div className="text-[11px] uppercase tracking-wider opacity-80">Open Energy · transparency</div>
+            <div className="text-[11px] uppercase tracking-wider opacity-80">Consolidated Energy Cockpit · transparency</div>
             <h1 className="font-display text-[22px] font-bold tracking-tight">Public audit transparency</h1>
             <div className="text-[11px] opacity-80 mt-0.5">
               Hash-chained, Ed25519-signed, optionally co-signed by independent attestors.
@@ -85,7 +85,7 @@ export function PublicAuditPage() {
         {tab === 'verify' && <VerifyPanel />}
 
         <footer className="text-center text-[11px] text-[#6b7685] pt-2">
-          Open Energy Platform · transparency log · oe.vantax.co.za
+          Consolidated Energy Cockpit · transparency log · oe.vantax.co.za
         </footer>
       </main>
     </div>

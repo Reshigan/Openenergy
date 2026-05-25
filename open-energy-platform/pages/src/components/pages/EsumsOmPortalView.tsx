@@ -84,7 +84,7 @@ export function EsumsOmPortalView() {
       </main>
 
       <footer className="max-w-6xl mx-auto px-6 py-4 text-[11px] text-[#6b7685] text-center">
-        <Sparkles size={11} className="inline" /> Powered by Open Energy Ops. Token expires per your invite.
+        <Sparkles size={11} className="inline" /> Powered by Consolidated Energy Cockpit · Esums Ops. Token expires per your invite.
       </footer>
     </div>
   );
