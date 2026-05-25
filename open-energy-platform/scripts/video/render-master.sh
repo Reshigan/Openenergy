@@ -25,6 +25,57 @@ SHOTS_DIR="media/shots"
 VO_DIR="media/voiceover"
 OUT_DIR="media/master"
 
+# Per-shot trim of the Loading splash. Playwright's video: 'on' records
+# from page creation, so each clip's front ~3-8s catches the ProtectedRoute
+# spinner before the FioriShell + content paint. probe_trim() finds the
+# first second where a sampled JPEG frame is over THRESH bytes — that's
+# the signal that the SPA has hydrated past the near-blank splash.
+#
+# A floor (TRIM_MIN) guarantees we always skip the immediate first
+# moments; a ceiling (TRIM_MAX) prevents runaway in pathological cases.
+# Both overridable via env.
+TRIM_MIN="${VIDEO_TRIM_MIN:-2}"
+TRIM_MAX="${VIDEO_TRIM_MAX:-12}"
+TRIM_THRESH_BYTES="${VIDEO_TRIM_THRESH:-30000}"
+
+probe_trim() {
+  local f="$1"
+  local tmp
+  tmp=$(mktemp /tmp/oe-trim.XXXXXX)
+
+  # The concat demuxer's `inpoint` snaps to the nearest keyframe at-or-
+  # before the value, so the only useful trim points are the source's
+  # actual keyframes. ffprobe gives us their timestamps; we then sample
+  # an mjpeg frame at each and pick the first one over the byte
+  # threshold (the SPA has hydrated past the near-blank splash by then).
+  local kfs
+  kfs=$(ffprobe -loglevel error -select_streams v:0 \
+        -read_intervals "%+${TRIM_MAX}" \
+        -show_frames -show_entries frame=pict_type,best_effort_timestamp_time \
+        -of csv "$f" 2>/dev/null \
+        | awk -F, '$3=="I"{print $2}')
+
+  for off in $kfs; do
+    if awk -v o="$off" -v m="$TRIM_MAX" 'BEGIN{exit !(o>m)}'; then break; fi
+    ffmpeg -nostdin -loglevel quiet -y -ss "$off" -i "$f" -frames:v 1 \
+      -f mjpeg "$tmp" 2>/dev/null || true
+    local sz
+    sz=$(wc -c < "$tmp" 2>/dev/null || echo 0)
+    if (( sz > TRIM_THRESH_BYTES )); then
+      # Floor the trim at TRIM_MIN — if a shot is already painted at 0,
+      # we still snip a small head buffer to drop any initial flash.
+      if awk -v o="$off" -v m="$TRIM_MIN" 'BEGIN{exit !(o<m)}'; then
+        off="$TRIM_MIN"
+      fi
+      rm -f "$tmp"
+      echo "$off"
+      return 0
+    fi
+  done
+  rm -f "$tmp"
+  echo "$TRIM_MIN"
+}
+
 mkdir -p "$OUT_DIR" "$OUT_DIR/_work"
 
 if ! command -v ffmpeg >/dev/null 2>&1; then
@@ -57,7 +108,12 @@ while IFS=$'\t' read -r -u 3 ACT_ID rest; do
   IFS=$'\t' read -r -a KEYS <<<"$rest"
   echo "▶ Act $ACT_ID — ${#KEYS[@]} shots"
 
-  # Build a concat list, skipping missing shots gracefully.
+  # Build a concat list, skipping missing shots gracefully. Each `file`
+  # entry is followed by `inpoint $trim` so ffmpeg seeks past the Loading
+  # splash before concatenating. probe_trim() picks the offset per shot
+  # by sampling frame complexity — fast pages land at TRIM_MIN, slow
+  # pages bump out to 6-8s. The concat step below re-encodes anyway so
+  # the keyframe seek is exact enough for the visible composite.
   LIST="$OUT_DIR/_work/act-${ACT_ID}.txt"
   : > "$LIST"
   for k in "${KEYS[@]}"; do
@@ -67,7 +123,10 @@ while IFS=$'\t' read -r -u 3 ACT_ID rest; do
       continue
     fi
     abs=$(cd "$(dirname "$src")" && pwd)/$(basename "$src")
+    trim=$(probe_trim "$src")
+    echo "  · $k trim=${trim}s" >&2
     echo "file '$abs'" >> "$LIST"
+    echo "inpoint $trim" >> "$LIST"
   done
 
   if [[ ! -s "$LIST" ]]; then
