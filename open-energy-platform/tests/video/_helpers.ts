@@ -111,10 +111,25 @@ export interface ShotOptions {
   interact?: (page: Page) => Promise<void>;
 }
 
+// Selectors that prove the SPA's first-paint "Loading…" splash (rendered by
+// ProtectedRoute while useAuth().loading is true) has resolved into the
+// FioriShell chrome. Without this, the recording captures the loading
+// spinner for ~2s at the start of every shot.
+const SHELL_READY = 'nav[aria-label="Primary"], header';
+
 /**
  * Drives a single shot. The test wrapping this call gets one MP4 per shot
  * via Playwright's `video: 'on'` recording — the shot key is the test
  * title which we use later to rename the resulting media file.
+ *
+ * Recording timing is the difference between a polished and a raw shot:
+ *   1. goto(domcontentloaded)
+ *   2. wait for the FioriShell chrome — guarantees the "Loading…" splash is gone
+ *   3. wait for the caller's content selector — guarantees real data has rendered
+ *   4. networkidle — guarantees no remaining XHRs are about to repaint the view
+ *   5. small pre-roll pause so the audience sees the steady frame before any motion
+ *   6. interact (clicks, scrolls, hovers)
+ *   7. dwell so the V/O beat plays over the final frame
  */
 export async function shot(
   page: Page,
@@ -123,11 +138,16 @@ export async function shot(
 ): Promise<void> {
   const dwell = opts.dwell ?? 10_000;
   await page.goto(url, { waitUntil: 'domcontentloaded' });
+  // First, get past the SPA's "Loading…" splash by waiting for shell chrome.
+  await page.waitForSelector(SHELL_READY, { state: 'visible', timeout: 20_000 }).catch(() => undefined);
   if (opts.waitFor) {
-    await page.waitForSelector(opts.waitFor, { state: 'visible', timeout: 20_000 });
+    // Then wait for the caller's content selector so we never start mid-skeleton.
+    await page.waitForSelector(opts.waitFor, { state: 'visible', timeout: 20_000 }).catch(() => undefined);
   }
-  // Settle: brief idle so React has finished painting + data fetches resolve
   await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => undefined);
+  // Settle frame before any motion — gives the recording a still beat to
+  // start from, then the cursor/scroll moves register as a deliberate change.
+  await page.waitForTimeout(600);
   if (opts.interact) {
     await opts.interact(page);
   }
@@ -142,6 +162,23 @@ export async function shot(
 export async function smoothScroll(p: Page, top: number, ms = 900): Promise<void> {
   await p.evaluate((y) => window.scrollTo({ top: y, behavior: 'smooth' }), top);
   await p.waitForTimeout(ms);
+}
+
+/**
+ * Clicks a tab/button by accessible name, then waits for the swap to settle.
+ * Without the networkidle wait, the recording catches a half-skeleton flash
+ * while the new tab fetches data — kills the "smooth" feel the V/O sells.
+ */
+export async function clickTabAndSettle(
+  p: Page,
+  pattern: RegExp,
+): Promise<void> {
+  await p.getByRole('tab', { name: pattern }).click().catch(async () => {
+    // Fallback for non-aria tabs (e.g. button-based tab strips)
+    await p.getByRole('button', { name: pattern }).first().click().catch(() => undefined);
+  });
+  await p.waitForLoadState('networkidle', { timeout: 8_000 }).catch(() => undefined);
+  await p.waitForTimeout(600);
 }
 
 /**
