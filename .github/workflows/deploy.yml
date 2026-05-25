@@ -118,10 +118,13 @@ jobs:
             fi
             echo "::endgroup::"
           }
-          # posted_at was supposed to come from migration 020 (force-skipped on
-          # prod). Migration 085 binds posted_at on INSERT into trade_orders,
-          # so the column must exist before 085 runs.
-          attempt "ALTER trade_orders ADD posted_at" "ALTER TABLE trade_orders ADD COLUMN posted_at TEXT;"
+          # posted_at, time_in_force, shard_key were supposed to come from
+          # migration 020 (force-skipped on prod). Migration 085 binds all
+          # three on INSERT into trade_orders, so the columns must exist
+          # before 085 runs.
+          attempt "ALTER trade_orders ADD posted_at"      "ALTER TABLE trade_orders ADD COLUMN posted_at TEXT;"
+          attempt "ALTER trade_orders ADD time_in_force"  "ALTER TABLE trade_orders ADD COLUMN time_in_force TEXT;"
+          attempt "ALTER trade_orders ADD shard_key"      "ALTER TABLE trade_orders ADD COLUMN shard_key TEXT;"
           $ok || exit 1
 
       - name: Apply D1 migrations (remote)
