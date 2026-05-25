@@ -19,14 +19,19 @@ cd "$(dirname "$0")/../.."
 
 SCRIPT_PATH="../docs/video/script-2026-05-25.md"
 VOICE="en-US-AriaNeural"
+# +8% rate — Aria's neutral pace lands ~16:30 for this script's word count;
+# +8% compresses to ~15:00. Still professional, well below the point where
+# the cadence sounds rushed.
+RATE="${EDGE_TTS_RATE:-+8%}"
 OUT_DIR="media/voiceover"
 
 mkdir -p "$OUT_DIR"
 
-if ! command -v edge-tts >/dev/null 2>&1; then
-  echo "✗ edge-tts not installed. Run: pip install edge-tts" >&2
+if ! python3 -c "import edge_tts" 2>/dev/null; then
+  echo "✗ edge-tts not installed. Run: pip install --user edge-tts" >&2
   exit 1
 fi
+EDGE_TTS=(python3 -m edge_tts)
 
 # Split the script into per-act narrator text files, then render each one.
 python3 - <<'PY'
@@ -66,9 +71,10 @@ for ACT in 1 2 3 4 5 6; do
     echo "✗ no text for act $ACT at $IN" >&2
     continue
   fi
-  echo "▶ Rendering act $ACT with $VOICE"
-  edge-tts \
+  echo "▶ Rendering act $ACT with $VOICE rate=$RATE"
+  "${EDGE_TTS[@]}" \
     --voice "$VOICE" \
+    --rate "$RATE" \
     --file "$IN" \
     --write-media "$OUT_MP3"
   # Normalise to 48 kHz mono WAV for ffmpeg composite step.
@@ -79,5 +85,9 @@ done
 
 echo
 echo "▶ Done. WAV duration sum:"
-ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUT_DIR"/act-*.wav \
-  | awk '{ s += $1 } END { printf "  %0.1f seconds (%0.1f min)\n", s, s/60 }'
+TOTAL=0
+for w in "$OUT_DIR"/act-*.wav; do
+  d=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$w")
+  TOTAL=$(echo "$TOTAL + $d" | bc -l)
+done
+printf "  %0.1f seconds (%0.1f min)\n" "$TOTAL" "$(echo "$TOTAL / 60" | bc -l)"
