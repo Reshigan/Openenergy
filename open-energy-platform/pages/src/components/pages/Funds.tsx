@@ -111,7 +111,7 @@ function PortfolioTab() {
       const [s, f, nh] = await Promise.all([
         api.get('/funder/summary').catch(() => ({ data: { success: true, data: null } })),
         api.get('/funder/facilities').catch(() => ({ data: { success: true, data: [] } })),
-        api.get('/funds/nav-history').catch(() => ({ data: { success: true, data: [] } })),
+        api.get('/funder/nav-history').catch(() => ({ data: { success: true, data: [] } })),
       ]);
       setSummary(s.data?.data || null);
       setFacilities((f.data?.data || []) as Facility[]);

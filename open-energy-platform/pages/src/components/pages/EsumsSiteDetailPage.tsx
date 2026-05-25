@@ -81,7 +81,7 @@ export function EsumsSiteDetailPage() {
     try {
       const [d, p] = await Promise.all([
         api.get(`/esums/sites/${encodeURIComponent(id)}`),
-        api.get(`/esums/intel/performance/${encodeURIComponent(id)}`, { params: { days: 30 } }),
+        api.get(`/esums/performance/${encodeURIComponent(id)}`, { params: { days: 30 } }),
       ]);
       if (!d.data.success) throw new Error(d.data.error || 'load failed');
       setDetail(d.data.data);

@@ -35,7 +35,7 @@ export function IppWorkstationPage() {
 function ProjectsTab() {
   return (
     <ListingTable
-      endpoint="/projects/"
+      endpoint="/projects"
       rowKey={(r) => r.id}
       rowHref={(r) => `/projects/${r.id}`}
       empty={{ title: 'No projects', description: 'Register your first project from the IPP lifecycle page.' }}
@@ -65,7 +65,7 @@ function MilestonesTab({ onRefresh }: { onRefresh: () => void }) {
   useEffect(() => {
     (async () => {
       try {
-        const r = await api.get('/projects/');
+        const r = await api.get('/projects');
         const rows = (r.data?.data || []) as Project[];
         setProjects(rows);
         if (rows.length > 0) setPid(rows[0].id);
@@ -208,7 +208,7 @@ function CommunityTab({ onRefresh }: { onRefresh: () => void }) {
   useEffect(() => {
     (async () => {
       try {
-        const r = await api.get('/projects/');
+        const r = await api.get('/projects');
         const rows = (r.data?.data || []) as Project[];
         setProjects(rows);
         if (rows.length > 0) setPid(rows[0].id);

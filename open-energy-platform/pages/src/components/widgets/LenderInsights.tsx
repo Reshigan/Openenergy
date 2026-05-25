@@ -78,9 +78,12 @@ function CovenantHeadroomGauge({ covenants }: { covenants: Covenant[] }) {
           const status = c.status || (headroom >= 0.2 ? 'pass' : headroom >= 0 ? 'warn' : 'breach');
           const colour = status === 'pass' ? '#1a8a5b' : status === 'warn' ? '#b04e0f' : '#c0392b';
           const pct = Math.max(0, Math.min(100, (Math.abs(headroom) * 100)));
+          // Server returns covenants with `covenant_code`/`covenant_name`; the
+          // older shape used `metric`. Stay defensive so neither blows up.
+          const label = String(c.metric ?? c.covenant_code ?? c.covenant_name ?? 'covenant').replace(/_/g, ' ');
           return (
             <div key={c.id} className="rounded border border-[#eef2f7] p-3">
-              <div className="text-[11px] text-[#6b7685] uppercase tracking-wider">{c.metric.replace(/_/g, ' ')}</div>
+              <div className="text-[11px] text-[#6b7685] uppercase tracking-wider">{label}</div>
               <div className="mt-1 flex items-baseline gap-2">
                 <span className="text-[16px] font-mono font-semibold text-[#0f1c2e]">{v.toFixed(2)}</span>
                 <span className="text-[11px] text-[#6b7685]">{c.operator} {t.toFixed(2)}</span>

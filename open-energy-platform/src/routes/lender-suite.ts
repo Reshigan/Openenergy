@@ -435,6 +435,30 @@ lender.post('/waterfalls/:id/run', async (c) => {
   return c.json({ success: true, data: { run_id: runId, ...result } });
 });
 
+// List configured waterfalls (with tranches + latest run summary) so
+// LenderSuitePage's "Waterfalls" tab and LenderInsights widget render.
+lender.get('/waterfalls', async (c) => {
+  const projectId = c.req.query('project_id');
+  const sql = projectId
+    ? `SELECT * FROM waterfall_structures WHERE project_id = ? ORDER BY created_at DESC LIMIT 200`
+    : `SELECT * FROM waterfall_structures ORDER BY created_at DESC LIMIT 200`;
+  const stmt = projectId ? c.env.DB.prepare(sql).bind(projectId) : c.env.DB.prepare(sql);
+  const rows = await stmt.all<any>();
+  const waterfalls = rows.results || [];
+  for (const w of waterfalls) {
+    const t = await c.env.DB.prepare(
+      `SELECT id, priority, tranche_name, tranche_type, notes FROM waterfall_tranches WHERE waterfall_id = ? ORDER BY priority`,
+    ).bind(w.id).all<any>();
+    w.tranches = t.results || [];
+    const lastRun = await c.env.DB.prepare(
+      `SELECT period, available_cash_zar, total_allocated_zar, surplus_after_equity_zar, executed_at
+         FROM waterfall_runs WHERE waterfall_id = ? ORDER BY executed_at DESC LIMIT 1`,
+    ).bind(w.id).first<any>();
+    if (lastRun) w.latest_run = lastRun;
+  }
+  return c.json({ success: true, data: waterfalls });
+});
+
 // ─── Reserve accounts ──────────────────────────────────────────────────────
 lender.post('/reserves', async (c) => {
   const user = getCurrentUser(c);
