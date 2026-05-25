@@ -20,7 +20,12 @@ export default defineConfig({
   // The Phase 1 walker (audit.spec.ts) lives in the same directory but
   // writes PNG screenshots rather than recording shots — exclude it from
   // the shot suite so we don't waste video=on captures on it.
-  testIgnore: ['**/audit.spec.ts', '**/preflight.spec.ts'],
+  // admin.spec.ts is excluded by request: the UN/ESCO product film does
+  // not feature the operator/admin role; the four shots it captured
+  // (launch-admin-overview, settlement-cleared-trades,
+  // admin-platform-stats, audit-chain-summary) have been replaced in the
+  // script with non-admin equivalents (trader / regulator / public).
+  testIgnore: ['**/audit.spec.ts', '**/preflight.spec.ts', '**/admin.spec.ts'],
   // Each test does its own navigate + N-second on-screen settle + capture.
   // 90s is plenty for the longest shot (drawdown modal walk-through).
   timeout: 90_000,
