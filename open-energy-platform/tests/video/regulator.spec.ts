@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor } from './_helpers';
+import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle } from './_helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -16,10 +16,9 @@ test.beforeEach(async ({ page }) => {
 test('regulator-surveillance-alerts', async ({ page }) => {
   await shot(page, '/regulator-suite/workstation', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], table tbody tr, main',
+    waitFor: '[data-test^="kpi"], table tbody tr',
     interact: async (p) => {
-      await p.getByRole('tab', { name: /Surveillance|Alerts/i }).click().catch(() => undefined);
-      await p.waitForTimeout(900);
+      await clickTabAndSettle(p, /Surveillance|Alerts/i);
       // Glide to the alert table and click the freshest red flag.
       await smoothScroll(p, 260, 1000);
       await moveCursor(p, 880, 460);
@@ -33,7 +32,7 @@ test('regulator-surveillance-alerts', async ({ page }) => {
 test('regulator-workstation', async ({ page }) => {
   await shot(page, '/regulator-suite/workstation', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], main',
+    waitFor: '[data-test^="kpi"]',
     interact: async (p) => {
       await smoothScroll(p, 320, 1000);
       await moveCursor(p, 720, 480);
@@ -47,10 +46,9 @@ test('regulator-workstation', async ({ page }) => {
 test('regulator-surveillance-rules', async ({ page }) => {
   await shot(page, '/regulator-suite/workstation', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], main',
+    waitFor: '[data-test^="kpi"]',
     interact: async (p) => {
-      await p.getByRole('tab', { name: /Rules|Surveillance rules/i }).click().catch(() => undefined);
-      await p.waitForTimeout(900);
+      await clickTabAndSettle(p, /Rules|Surveillance rules/i);
       // Pan down the rules grid then hover a rule chip for the threshold popover.
       await smoothScroll(p, 240, 1000);
       await p.locator('[data-test="rule-row"], table tbody tr, .card').first()
@@ -63,7 +61,7 @@ test('regulator-surveillance-rules', async ({ page }) => {
 test('regulator-investigation-open', async ({ page }) => {
   await shot(page, '/regulator-suite/workstation', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], main',
+    waitFor: '[data-test^="kpi"]',
     interact: async (p) => {
       await p.getByRole('button', { name: /Open investigation|Investigate/i }).first().click().catch(() => undefined);
       await p.waitForTimeout(1_200);
@@ -79,10 +77,9 @@ test('regulator-investigation-open', async ({ page }) => {
 test('regulator-decisions-list', async ({ page }) => {
   await shot(page, '/regulator-suite/workstation', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], main',
+    waitFor: '[data-test^="kpi"]',
     interact: async (p) => {
-      await p.getByRole('tab', { name: /Decisions/i }).click().catch(() => undefined);
-      await p.waitForTimeout(900);
+      await clickTabAndSettle(p, /Decisions/i);
       // Smooth-scroll the decision register and hover the latest ruling.
       await smoothScroll(p, 300, 1000);
       await p.locator('[data-test="decision-row"], table tbody tr').first()

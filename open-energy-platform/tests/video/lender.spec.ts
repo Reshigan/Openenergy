@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor } from './_helpers';
+import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle } from './_helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 test('lender-portfolio-watchlist', async ({ page }) => {
   await shot(page, '/launch/lender', {
     dwell: 14_000,
-    waitFor: '[data-test="launch-board"], [data-test^="kpi"], main',
+    waitFor: '[data-test="launch-board"], [data-test^="kpi"]',
     interact: async (p) => {
       // Glide down the portfolio list and hover the first watchlist row so
       // the covenant/health indicator chip becomes visible.
@@ -32,10 +32,9 @@ test('lender-portfolio-watchlist', async ({ page }) => {
 test('lender-drawdown-queue', async ({ page }) => {
   await shot(page, '/funds', {
     dwell: 12_000,
-    waitFor: 'table tbody tr, [data-test^="kpi"], main',
+    waitFor: 'table tbody tr, [data-test^="kpi"]',
     interact: async (p) => {
-      await p.getByRole('tab', { name: /Drawdown|Draw/i }).click().catch(() => undefined);
-      await p.waitForTimeout(900);
+      await clickTabAndSettle(p, /Drawdown|Draw/i);
       // Click into the top drawdown row so the detail panel/modal opens.
       await smoothScroll(p, 200, 800);
       await p.locator('[data-test="drawdown-row"], table tbody tr').first()
@@ -50,7 +49,7 @@ test('lender-workstation', async ({ page }) => {
   // the workstation. We capture that.
   await shot(page, '/lender-suite', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], table tbody tr, main',
+    waitFor: '[data-test^="kpi"], table tbody tr',
     interact: async (p) => {
       await smoothScroll(p, 320, 1000);
       await moveCursor(p, 760, 500);
@@ -64,10 +63,9 @@ test('lender-workstation', async ({ page }) => {
 test('lender-covenant-dashboard', async ({ page }) => {
   await shot(page, '/lender-suite', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], main',
+    waitFor: '[data-test^="kpi"]',
     interact: async (p) => {
-      await p.getByRole('tab', { name: /Covenant/i }).click().catch(() => undefined);
-      await p.waitForTimeout(900);
+      await clickTabAndSettle(p, /Covenant/i);
       // Pan down the covenant grid then hover a breach indicator so the
       // tooltip explains DSCR/LTV state.
       await smoothScroll(p, 280, 1000);
@@ -81,10 +79,9 @@ test('lender-covenant-dashboard', async ({ page }) => {
 test('lender-watchlist-alert', async ({ page }) => {
   await shot(page, '/lender-suite', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], main',
+    waitFor: '[data-test^="kpi"]',
     interact: async (p) => {
-      await p.getByRole('tab', { name: /Watchlist|Watch/i }).click().catch(() => undefined);
-      await p.waitForTimeout(900);
+      await clickTabAndSettle(p, /Watchlist|Watch/i);
       // Click the first alert to open the detail drawer.
       await smoothScroll(p, 180, 800);
       await p.locator('[data-test="alert-row"], table tbody tr, .alert-card')

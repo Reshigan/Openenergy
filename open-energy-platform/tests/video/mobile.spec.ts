@@ -37,7 +37,7 @@ test('mobile-pwa-launch', async ({ page }) => {
   await seedTokenAuth(page, TRADER_TOKEN);
   await shot(page, '/launch/trader', {
     dwell: 12_000,
-    waitFor: '[data-test="launch-board"], [data-test^="kpi"], main',
+    waitFor: '[data-test="launch-board"], [data-test^="kpi"]',
     interact: async (p) => {
       // Mobile launchpad: smooth-scroll the tile column so the audience
       // sees there's more below the fold, then ease back up.

@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor } from './_helpers';
+import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle } from './_helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 test('ipp-projects-list', async ({ page }) => {
   await shot(page, '/projects', {
     dwell: 14_000,
-    waitFor: 'table tbody tr, [data-test="project-row"], main',
+    waitFor: 'table tbody tr, [data-test="project-row"]',
     interact: async (p) => {
       // Glide down the project list and hover the headline project so the
       // status pill + stage chip pop on camera.
@@ -32,13 +32,12 @@ test('ipp-projects-list', async ({ page }) => {
 test('ipp-project-detail-financial-model', async ({ page }) => {
   await shot(page, '/projects', {
     dwell: 14_000,
-    waitFor: 'table tbody tr, [data-test="project-row"], main',
+    waitFor: 'table tbody tr, [data-test="project-row"]',
     interact: async (p) => {
       // Open the first project row, then the financial-model tab if present.
       await p.locator('table tbody tr, [data-test="project-row"]').first().click().catch(() => undefined);
       await p.waitForTimeout(1_100);
-      await p.getByRole('tab', { name: /Financial|Model/i }).click().catch(() => undefined);
-      await p.waitForTimeout(900);
+      await clickTabAndSettle(p, /Financial|Model/i);
       // Pan the model so the IRR / NPV cards scroll into mid-frame and
       // hover one of the cards to expose its tooltip.
       await smoothScroll(p, 240, 1000);
@@ -52,7 +51,7 @@ test('ipp-project-detail-financial-model', async ({ page }) => {
 test('ipp-workstation', async ({ page }) => {
   await shot(page, '/ipp-lifecycle/workstation', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], table tbody tr, main',
+    waitFor: '[data-test^="kpi"], table tbody tr',
     interact: async (p) => {
       await smoothScroll(p, 320, 1000);
       await moveCursor(p, 800, 460);
@@ -66,7 +65,7 @@ test('ipp-workstation', async ({ page }) => {
 test('ipp-drawdown-request', async ({ page }) => {
   await shot(page, '/ipp-lifecycle/workstation', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], main',
+    waitFor: '[data-test^="kpi"]',
     interact: async (p) => {
       await p.getByRole('button', { name: /Drawdown|Request draw/i }).first().click().catch(() => undefined);
       await p.waitForTimeout(1_200);

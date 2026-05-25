@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor } from './_helpers';
+import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle } from './_helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 test('launch-admin-overview', async ({ page }) => {
   await shot(page, '/launch/admin', {
     dwell: 14_000,
-    waitFor: '[data-test="launch-board"], [data-test^="kpi"], main',
+    waitFor: '[data-test="launch-board"], [data-test^="kpi"]',
     interact: async (p) => {
       // Pan the launch board down to show the cross-tenant KPI strip and
       // hover the headline tile.
@@ -32,7 +32,7 @@ test('launch-admin-overview', async ({ page }) => {
 test('settlement-cleared-trades', async ({ page }) => {
   await shot(page, '/settlement', {
     dwell: 14_000,
-    waitFor: 'table tbody tr, [data-test^="kpi"], main',
+    waitFor: 'table tbody tr, [data-test^="kpi"]',
     interact: async (p) => {
       // Glide through the cleared-trade ledger and hover the most recent fill.
       await smoothScroll(p, 280, 1000);
@@ -47,7 +47,7 @@ test('settlement-cleared-trades', async ({ page }) => {
 test('admin-platform-stats', async ({ page }) => {
   await shot(page, '/admin', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], main',
+    waitFor: '[data-test^="kpi"]',
     interact: async (p) => {
       // Smooth scroll through the platform stats and hover the throughput card.
       await smoothScroll(p, 360, 1100);
@@ -64,11 +64,10 @@ test('audit-chain-summary', async ({ page }) => {
   // page is captured in public.spec.ts.
   await shot(page, '/admin', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], main',
+    waitFor: '[data-test^="kpi"]',
     interact: async (p) => {
       await p.getByRole('link', { name: /Audit/i }).click().catch(() => undefined);
-      await p.getByRole('tab', { name: /Audit/i }).click().catch(() => undefined);
-      await p.waitForTimeout(900);
+      await clickTabAndSettle(p, /Audit/i);
       // Pan down the block roots and hover a single block so its hash
       // popover shows up.
       await smoothScroll(p, 240, 1000);

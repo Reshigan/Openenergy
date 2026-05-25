@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor } from './_helpers';
+import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle } from './_helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 test('carbon-portfolio', async ({ page }) => {
   await shot(page, '/carbon', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], table tbody tr, main',
+    waitFor: '[data-test^="kpi"], table tbody tr',
     interact: async (p) => {
       // Pan down the portfolio strip so the vintage breakdown comes on
       // screen and hover the top certificate.
@@ -32,10 +32,9 @@ test('carbon-portfolio', async ({ page }) => {
 test('carbon-issuance-queue', async ({ page }) => {
   await shot(page, '/carbon', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], main',
+    waitFor: '[data-test^="kpi"]',
     interact: async (p) => {
-      await p.getByRole('tab', { name: /Issuance|Issue/i }).click().catch(() => undefined);
-      await p.waitForTimeout(900);
+      await clickTabAndSettle(p, /Issuance|Issue/i);
       // Glide to the pending issuance row and hover so the verification
       // state badge ("verifier signed", "ready to mint") shows up.
       await smoothScroll(p, 240, 1000);

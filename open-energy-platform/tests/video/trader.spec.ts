@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor } from './_helpers';
+import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle } from './_helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 test('trading-order-book-energy', async ({ page }) => {
   await shot(page, '/trading', {
     dwell: 14_000,
-    waitFor: 'table tbody tr, [data-test^="orderbook"], main',
+    waitFor: 'table tbody tr, [data-test^="orderbook"]',
     interact: async (p) => {
       // Scroll the depth ladder to show below-the-fold bids/asks, then
       // hover the top resting order so the row highlight + tooltip surface.
@@ -32,10 +32,9 @@ test('trading-order-book-energy', async ({ page }) => {
 test('trading-trade-blotter', async ({ page }) => {
   await shot(page, '/trading', {
     dwell: 12_000,
-    waitFor: 'table tbody tr, [data-test^="orderbook"], main',
+    waitFor: 'table tbody tr, [data-test^="orderbook"]',
     interact: async (p) => {
-      await p.getByRole('tab', { name: /Blotter|Trades/i }).click().catch(() => undefined);
-      await p.waitForTimeout(900);
+      await clickTabAndSettle(p, /Blotter|Trades/i);
       // After the tab paints, glide down the blotter and hover the freshest fill.
       await smoothScroll(p, 240, 900);
       await p.locator('table tbody tr').first().hover().catch(() => undefined);
@@ -47,7 +46,7 @@ test('trading-trade-blotter', async ({ page }) => {
 test('trader-workstation', async ({ page }) => {
   await shot(page, '/trader-risk/workstation', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], table tbody tr, main',
+    waitFor: '[data-test^="kpi"], table tbody tr',
     interact: async (p) => {
       // Pan through the workstation: KPI strip → middle band → AI suggestions.
       await smoothScroll(p, 320, 1000);
@@ -62,7 +61,7 @@ test('trader-workstation', async ({ page }) => {
 test('trader-place-order', async ({ page }) => {
   await shot(page, '/trading', {
     dwell: 14_000,
-    waitFor: 'table tbody tr, [data-test^="orderbook"], main',
+    waitFor: 'table tbody tr, [data-test^="orderbook"]',
     interact: async (p) => {
       await p.getByRole('button', { name: /Place order|New order|Order/i }).first()
         .click().catch(() => undefined);
@@ -84,7 +83,7 @@ test('trader-place-order', async ({ page }) => {
 test('trader-ai-suggestion-accept', async ({ page }) => {
   await shot(page, '/trader-risk/workstation', {
     dwell: 12_000,
-    waitFor: '[data-test^="kpi"], main',
+    waitFor: '[data-test^="kpi"]',
     interact: async (p) => {
       // Glide to where the AI suggestion card paints, hover it (shows "why"
       // chip), then click the 1-click accept CTA — the canonical AI beat.

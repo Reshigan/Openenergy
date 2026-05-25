@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor } from './_helpers';
+import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle } from './_helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -18,7 +18,7 @@ test.beforeEach(async ({ page }) => {
 test('esums-site-list', async ({ page }) => {
   await shot(page, '/esums', {
     dwell: 14_000,
-    waitFor: '[data-test="site-card"], a[href^="/esums/sites/"], main',
+    waitFor: '[data-test="site-card"], a[href^="/esums/sites/"]',
     interact: async (p) => {
       // Pan down the site grid then hover the headline site so the health
       // badge + opportunity count chip surface.
@@ -34,7 +34,7 @@ test('esums-site-list', async ({ page }) => {
 test('esums-site-detail-live', async ({ page }) => {
   await shot(page, '/esums', {
     dwell: 16_000,
-    waitFor: '[data-test="site-card"], a[href^="/esums/sites/"], main',
+    waitFor: '[data-test="site-card"], a[href^="/esums/sites/"]',
     interact: async (p) => {
       // Open the first site card / row.
       await p.locator('a[href^="/esums/sites/"], [data-test="site-card"]')
@@ -53,10 +53,9 @@ test('esums-site-detail-live', async ({ page }) => {
 test('esums-opportunity-feed', async ({ page }) => {
   await shot(page, '/esums', {
     dwell: 14_000,
-    waitFor: '[data-test="site-card"], a[href^="/esums/sites/"], main',
+    waitFor: '[data-test="site-card"], a[href^="/esums/sites/"]',
     interact: async (p) => {
-      await p.getByRole('tab', { name: /Opportunit/i }).click().catch(() => undefined);
-      await p.waitForTimeout(900);
+      await clickTabAndSettle(p, /Opportunit/i);
       // Glide down the opportunity feed and hover the top-value card so
       // the savings/payback annotation surfaces.
       await smoothScroll(p, 260, 1000);
@@ -77,8 +76,7 @@ test('esums-work-order-detail', async ({ page }) => {
       await p.locator('a[href^="/esums/sites/"], [data-test="site-card"]').first()
         .click().catch(() => undefined);
       await p.waitForTimeout(1_200);
-      await p.getByRole('tab', { name: /Opportunit/i }).click().catch(() => undefined);
-      await p.waitForTimeout(800);
+      await clickTabAndSettle(p, /Opportunit/i);
       // Smooth scroll the highest-value opportunity into mid-frame.
       await p.evaluate(() => window.scrollTo({ top: 160, behavior: 'smooth' }));
       await p.waitForTimeout(900);
@@ -93,7 +91,7 @@ test('esums-work-order-detail', async ({ page }) => {
 test('esums-portal-share-token', async ({ page }) => {
   await shot(page, '/esums', {
     dwell: 14_000,
-    waitFor: '[data-test="site-card"], a[href^="/esums/sites/"], main',
+    waitFor: '[data-test="site-card"], a[href^="/esums/sites/"]',
     interact: async (p) => {
       await p.getByRole('button', { name: /Share|Portal/i }).first()
         .click().catch(() => undefined);

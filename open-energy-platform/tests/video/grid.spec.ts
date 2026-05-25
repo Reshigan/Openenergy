@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor } from './_helpers';
+import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle } from './_helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 test('grid-frequency-chart-live', async ({ page }) => {
   await shot(page, '/grid', {
     dwell: 16_000,
-    waitFor: '[data-test^="kpi"], canvas, svg, main',
+    waitFor: '[data-test^="kpi"], canvas, svg',
     interact: async (p) => {
       // Glide the cursor along the frequency trace so the tooltip
       // surfaces a live 49.98/50.01 Hz value.
@@ -34,10 +34,9 @@ test('grid-frequency-chart-live', async ({ page }) => {
 test('grid-congestion-map', async ({ page }) => {
   await shot(page, '/grid', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], canvas, svg, main',
+    waitFor: '[data-test^="kpi"], canvas, svg',
     interact: async (p) => {
-      await p.getByRole('tab', { name: /Congestion|Map/i }).click().catch(() => undefined);
-      await p.waitForTimeout(900);
+      await clickTabAndSettle(p, /Congestion|Map/i);
       // Hover a congested zone polygon and then click to open its panel.
       await smoothScroll(p, 200, 900);
       const zone = p.locator('[data-test="zone-polygon"], svg path, .zone').first();
@@ -52,7 +51,7 @@ test('grid-congestion-map', async ({ page }) => {
 test('grid-operator-workstation', async ({ page }) => {
   await shot(page, '/grid-operator/workstation', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], main',
+    waitFor: '[data-test^="kpi"]',
     interact: async (p) => {
       await smoothScroll(p, 300, 1000);
       await moveCursor(p, 800, 480);
@@ -66,10 +65,9 @@ test('grid-operator-workstation', async ({ page }) => {
 test('grid-frequency-live', async ({ page }) => {
   await shot(page, '/grid-operator/workstation', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], main',
+    waitFor: '[data-test^="kpi"]',
     interact: async (p) => {
-      await p.getByRole('tab', { name: /Frequency|Live/i }).click().catch(() => undefined);
-      await p.waitForTimeout(900);
+      await clickTabAndSettle(p, /Frequency|Live/i);
       // Glide along the live frequency chart so the data-point tooltip fires.
       await smoothScroll(p, 200, 900);
       await p.locator('canvas, svg, [data-test="freq-chart"]').first()
@@ -82,10 +80,9 @@ test('grid-frequency-live', async ({ page }) => {
 test('grid-curtailment-event', async ({ page }) => {
   await shot(page, '/grid-operator/workstation', {
     dwell: 14_000,
-    waitFor: '[data-test^="kpi"], main',
+    waitFor: '[data-test^="kpi"]',
     interact: async (p) => {
-      await p.getByRole('tab', { name: /Curtailment/i }).click().catch(() => undefined);
-      await p.waitForTimeout(900);
+      await clickTabAndSettle(p, /Curtailment/i);
       // Drill into the freshest curtailment event so the cause-chain pane
       // (renewable headroom → reserve margin → instruction) paints.
       await smoothScroll(p, 260, 1000);
