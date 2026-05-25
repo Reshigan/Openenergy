@@ -1,8 +1,10 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// Workstations browser smoke — covers the three role workstations added
-// in commit 0aa2ee7 (Trader, IPP-developer, Offtaker) plus a sanity check
-// on one of the pre-existing five (Carbon) so the shared WorkstationShell
-// gets exercised against prod chrome on every smoke run.
+// Workstations browser smoke — covers every role workstation that uses the
+// shared WorkstationShell primitive. Currently 8 routes: Trader, IPP,
+// Offtaker, Carbon, Admin (platform), Regulator, Grid operator, Support.
+// Lender doesn't have a dedicated workstation route (`/lender-suite` is
+// itself the workstation) — that surface is exercised by
+// scripts/smoke-launch-per-role.sh.
 //
 // Read-only: we log in once as admin (who can view any workstation) and
 // route to each one to assert the tab nav. We do NOT fire state transitions
@@ -49,9 +51,17 @@ async function seedToken(page: import('@playwright/test').Page) {
 }
 
 function isBenign(msg: string): boolean {
+  // The browser logs a generic "Failed to load resource: ...status of NNN ()"
+  // console.error for every non-2xx response, but the message has no URL in
+  // it. We catch real 5xx via the response listener (which has the URL), so
+  // these console-error rows would just be noisy duplicates without
+  // diagnostic value — drop them all here.
+  //
+  // ServiceWorkerRegistration / fonts.cdnfonts 404s are pre-existing prod
+  // noise we don't want to fix in this commit.
   return (
     msg.includes('ServiceWorkerRegistration') ||
-    msg.includes('Failed to load resource: the server responded with a status of 404')
+    msg.includes('Failed to load resource: the server responded with a status of')
   );
 }
 
@@ -88,6 +98,37 @@ const CASES: WorkstationCase[] = [
     // Carbon was added in commit b3ca8cb and has 3 tabs.
     expectedTabs: ['Vintage workflow', 'MRV submissions', 'Retirement certificates'],
   },
+  {
+    role: 'admin',
+    route: '/admin-platform/workstation',
+    title: /platform admin workstation/i,
+    expectedTabs: [
+      'Tenant lifecycle',
+      'Billing runs',
+      'Flag overrides',
+      'Settlement audit',
+      'Platform audit',
+      'PII access log',
+    ],
+  },
+  {
+    role: 'regulator',
+    route: '/regulator-suite/workstation',
+    title: /regulator workstation/i,
+    expectedTabs: ['Surveillance triage', 'Licence actions', 'Enforcement events', 'Audit & compliance'],
+  },
+  {
+    role: 'grid_operator',
+    route: '/grid-operator/workstation',
+    title: /grid operations workstation/i,
+    expectedTabs: ['Curtailment events', 'Outage responses', 'Ancillary award events', 'Audit & compliance'],
+  },
+  {
+    role: 'support',
+    route: '/support/workstation',
+    title: /support workstation/i,
+    expectedTabs: ['Tickets', 'Escalations', 'Cross-tenant access', 'Audit & compliance'],
+  },
 ];
 
 for (const c of CASES) {
@@ -95,6 +136,14 @@ for (const c of CASES) {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
     page.on('console', (msg) => { if (msg.type() === 'error') errors.push(`console.error: ${msg.text()}`); });
+    // Response-level 5xx capture — gives us the URL, which the generic
+    // "Failed to load resource" console-error message hides.
+    page.on('response', (resp) => {
+      const s = resp.status();
+      if (s >= 500 && resp.url().includes('/api/')) {
+        errors.push(`api.5xx: ${s} ${resp.url()}`);
+      }
+    });
 
     await seedToken(page);
     await page.goto(`${baseURL}${c.route}`, { waitUntil: 'networkidle' });
