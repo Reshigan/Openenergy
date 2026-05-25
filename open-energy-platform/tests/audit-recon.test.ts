@@ -57,12 +57,14 @@ describe('trading recon', () => {
   beforeEach(() => {
     db = createTestDb({ applyMigrations: true });
     envObj = envFor(db);
+    // INSERT OR IGNORE — migration 082's participant guard block may have
+    // already populated demo_admin_001 (and friends) before this test runs.
     db.prepare(
-      `INSERT INTO participants (id, email, password_hash, name, role, status, kyc_status, subscription_tier)
+      `INSERT OR IGNORE INTO participants (id, email, password_hash, name, role, status, kyc_status, subscription_tier)
        VALUES (?, ?, 'x', 'Admin', 'admin', 'active', 'approved', 'enterprise')`,
     ).run(ADMIN, 'admin@test');
     db.prepare(
-      `INSERT INTO participants (id, email, password_hash, name, role, status, kyc_status, subscription_tier)
+      `INSERT OR IGNORE INTO participants (id, email, password_hash, name, role, status, kyc_status, subscription_tier)
        VALUES (?, ?, 'x', 'CP', 'trader', 'active', 'approved', 'enterprise')`,
     ).run(COUNTERPARTY, 'cp@test');
   });
