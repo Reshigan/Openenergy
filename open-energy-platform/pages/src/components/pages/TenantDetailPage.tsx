@@ -27,8 +27,7 @@ export function TenantDetailPage() {
     if (!id) return;
     setLoading(true); setErr(null);
     try {
-      // Tenant header from /support/participants/:id (admin can also see this)
-      const t = await api.get(`/support/participants/${id}`).catch(() => null);
+      const t = await api.get(`/admin/tenants/${encodeURIComponent(id)}`).catch(() => null);
       setTenant(t?.data?.data);
       const ev = await api.get(`/admin-platform/tenant-events?tenant_id=${id}`).catch(() => ({ data: { data: [] } }));
       setEvents((ev.data?.data as any[]) || []);
@@ -59,14 +58,16 @@ export function TenantDetailPage() {
             <span style={{ color: '#0f1c2e', fontWeight: 600 }}>Tenant</span>
           </div>
           <h1 className="mt-2 font-display text-[24px] font-bold tracking-tight" style={{ color: 'var(--oe-on-surface)' }}>
-            {tenant.name || tenant.company_name || tenant.email || id}
+            {tenant.display_name || tenant.slug || id}
           </h1>
           <p className="text-[13px] text-[#3d4756]">
-            <Pill tone="info">{tenant.role || 'tenant'}</Pill>
-            {' '}<Pill tone={tenant.kyc_status === 'approved' ? 'good' : tenant.kyc_status === 'rejected' ? 'bad' : 'warn'}>kyc: {tenant.kyc_status || '—'}</Pill>
-            {tenant.email && <> · {tenant.email}</>}
-            {' '}· joined {tenant.created_at ? new Date(tenant.created_at).toLocaleDateString() : '—'}
+            <Pill tone="info">slug: {tenant.slug || '—'}</Pill>
+            {' '}<Pill tone="neutral">{tenant.participant_count ?? 0} participants</Pill>
+            {' '}· created {tenant.created_at ? new Date(tenant.created_at).toLocaleDateString() : '—'}
           </p>
+          {tenant.description && (
+            <p className="text-[12px] text-[#6b7685] mt-1 max-w-2xl">{tenant.description}</p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={() => navigate('/admin-platform/workstation')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
@@ -82,10 +83,10 @@ export function TenantDetailPage() {
       </header>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Kpi label="Participants" value={String(tenant.participant_count ?? 0)} />
         <Kpi label="Lifecycle events" value={String(events.length)} />
         <Kpi label="Flag overrides" value={String(flags.length)} />
-        <Kpi label="Role" value={tenant.role || '—'} />
-        <Kpi label="KYC" value={tenant.kyc_status || '—'} />
+        <Kpi label="Slug" value={tenant.slug || '—'} />
       </div>
 
       <Section title={`Lifecycle events (${events.length})`}>

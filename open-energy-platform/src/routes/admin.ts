@@ -427,6 +427,17 @@ admin.get('/tenants', async (c) => {
   return c.json({ success: true, data: rows.results || [] });
 });
 
+admin.get('/tenants/:id', async (c) => {
+  const id = c.req.param('id');
+  const row = await c.env.DB.prepare(`
+    SELECT t.id, t.slug, t.display_name, t.description, t.created_at, t.updated_at,
+           (SELECT COUNT(*) FROM participants p WHERE COALESCE(p.tenant_id, 'default') = t.id) AS participant_count
+    FROM tenants t WHERE t.id = ?
+  `).bind(id).first();
+  if (!row) return c.json({ success: false, error: 'Tenant not found' }, 404);
+  return c.json({ success: true, data: row });
+});
+
 admin.post('/tenants', async (c) => {
   const actor = getCurrentUser(c);
   const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;

@@ -70,13 +70,14 @@ const CASES: DetailCase[] = [
     // "Back to contracts" only appears in the load-error fallback.
     anchorText: /all contracts/i,
   },
-  // NOTE: `tenant` (admin-platform/tenants/:id) intentionally not covered
-  // yet — the SPA's TenantDetailPage calls /api/support/participants/:id
-  // with the *tenant* id from the list. Tenant IDs and participant IDs
-  // are different surfaces, so the detail page renders "Tenant not
-  // found" even though the list shows the row. Tracked separately —
-  // either add a real GET /api/admin/tenants/:id endpoint, or change
-  // the row link target. Adding back to this spec once that's decided.
+  {
+    label: 'tenant',
+    listPath: '/api/admin/tenants',
+    routePrefix: '/admin-platform/tenants/',
+    // Breadcrumb link back to the admin workstation — only rendered on
+    // the success path (the load-error fallback shows an ErrorBanner).
+    anchorText: /admin workstation/i,
+  },
 ];
 
 async function firstRowId(
