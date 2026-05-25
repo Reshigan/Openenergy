@@ -1255,18 +1255,6 @@ function TradingPage() {
   );
 }
 
-// Placeholder pages for other routes
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">{title}</h1>
-      <div className="card p-6">
-        <p className="text-gray-500">This page is under construction.</p>
-      </div>
-    </div>
-  );
-}
-
 // LaunchRedirect — when a signed-in user hits /launch (no role) or the legacy
 // /cockpit URL, resolve their role from AuthContext and bounce them to the
 // canonical /launch/:role. Anonymous users were already kicked to /login by

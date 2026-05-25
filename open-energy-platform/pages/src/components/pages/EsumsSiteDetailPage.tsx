@@ -15,7 +15,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   Activity, AlertCircle, ArrowLeft, BarChart3, Calculator, FileText, Layers,
-  RefreshCw, Wrench, Zap,
+  Radio, RefreshCw, Wrench, Zap,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { StitchPage } from '../StitchPage';
@@ -48,7 +48,25 @@ type Perf = {
   work_orders: { total: number; first_time_fix_pct: number; avg_resolve_hours: number | null; sla_breached: number };
 };
 
-type Tab = 'overview' | 'devices' | 'charts' | 'tools' | 'print';
+type Tab = 'overview' | 'live' | 'devices' | 'charts' | 'tools' | 'print';
+
+type LivePayload = {
+  site: Site;
+  devices: Device[];
+  device_count: number;
+  online_pct: number;
+  open_faults: any[];
+  open_fault_count: number;
+  connector_runs: any[];
+  last_hour: {
+    readings: number;
+    kwh: number;
+    last_ts: string | null;
+    avg_ac_kw: number;
+    max_temp_c: number;
+  };
+  generated_at: string;
+};
 
 export function EsumsSiteDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -109,6 +127,7 @@ export function EsumsSiteDetailPage() {
       <div className="border-b border-[#dde4ec] flex flex-wrap gap-1 mb-3">
         {([
           ['overview', 'Overview', Activity],
+          ['live', 'Live', Radio],
           ['devices', 'Devices', Layers],
           ['charts', 'Charts', BarChart3],
           ['tools', 'Tools', Calculator],
@@ -124,6 +143,7 @@ export function EsumsSiteDetailPage() {
       </div>
 
       {tab === 'overview' && <OverviewTab detail={detail} perf={perf}/>}
+      {tab === 'live' && <LiveTab siteId={id}/>}
       {tab === 'devices' && <DevicesTab devices={detail.devices}/>}
       {tab === 'charts' && <ChartsTab perf={perf}/>}
       {tab === 'tools' && <ToolsTab site={site} perf={perf}/>}
@@ -180,6 +200,134 @@ function OverviewTab({ detail, perf }: { detail: Detail; perf: Perf | null }) {
             <li className="px-4 py-3 text-[12px] text-[#6b7685] italic">No open work orders.</li>
           )}
         </ul>
+      </div>
+    </section>
+  );
+}
+
+// ─── Live ──────────────────────────────────────────────────────────────
+// Auto-refreshing operations view backed by GET /esums/sites/:id/live.
+// One round trip returns: open faults, recent connector runs, last-hour
+// telemetry summary, and device freshness — so you don't fan-out four
+// requests every 30s.
+function LiveTab({ siteId }: { siteId: string }) {
+  const [data, setData] = useState<LivePayload | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [lastAt, setLastAt] = useState<number | null>(null);
+
+  const load = async () => {
+    setLoading(true); setErr(null);
+    try {
+      const r = await api.get(`/esums/sites/${encodeURIComponent(siteId)}/live`);
+      if (!r.data.success) throw new Error(r.data.error || 'live load failed');
+      setData(r.data.data);
+      setLastAt(Date.now());
+    } catch (e: any) {
+      setErr(e?.response?.data?.error || e?.message || 'live load failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    void load();
+    const t = setInterval(() => { void load(); }, 30_000);
+    return () => clearInterval(t);
+  }, [siteId]);
+
+  if (err && !data) return <div className="widget-card widget-tone-bad p-4">{err}</div>;
+  if (!data) return <div className="widget-card p-6 text-center text-[12px] text-[#6b7685]">Loading live snapshot…</div>;
+
+  const devicesOnline = data.devices.filter((d) => d.status === 'online').length;
+  const devicesStale = data.devices.filter((d) => {
+    if (!d.last_seen_at) return true;
+    return Date.now() - new Date(d.last_seen_at).getTime() > 60 * 60_000;
+  }).length;
+  const onlinePct = data.devices.length > 0 ? Math.round((devicesOnline / data.devices.length) * 100) : 0;
+  const lh = data.last_hour;
+
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center gap-2 text-[11px] text-[#6b7685]">
+        <Radio size={11} className={loading ? 'animate-pulse text-[#1a8a5b]' : 'text-[#1a8a5b]'}/>
+        <span>Auto-refresh every 30s</span>
+        {lastAt && <span className="font-mono">· last {new Date(lastAt).toLocaleTimeString('en-ZA', { timeZone: 'Africa/Johannesburg' })}</span>}
+        <button onClick={load} className="ml-auto h-7 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1">
+          <RefreshCw size={11}/> Refresh now
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <KpiSm label="Devices online" value={`${devicesOnline}/${data.devices.length}`} sub={`${onlinePct}% online`}/>
+        <KpiSm label="Stale (>60m)" value={devicesStale} sub={devicesStale > 0 ? 'check comms' : 'fresh'}/>
+        <KpiSm label="Last hr kWh" value={Math.round(lh.kwh).toLocaleString('en-ZA')} sub={`${lh.readings} readings`}/>
+        <KpiSm label="Avg AC kW" value={lh.avg_ac_kw ? Number(lh.avg_ac_kw).toFixed(1) : '—'}/>
+        <KpiSm label="Peak temp °C" value={lh.max_temp_c ? Number(lh.max_temp_c).toFixed(1) : '—'} sub={Number(lh.max_temp_c) > 75 ? 'overtemp risk' : ''}/>
+      </div>
+
+      <div className="widget-card">
+        <header className="widget-card-header flex items-center gap-2">
+          <AlertCircle size={13} className={data.open_faults.length > 0 ? 'text-[#c0392b]' : 'text-[#1a8a5b]'}/>
+          <div className="widget-card-title">Open faults ({data.open_faults.length})</div>
+        </header>
+        <ul className="divide-y divide-[#eef2f7] text-[12px]">
+          {data.open_faults.slice(0, 20).map((f) => (
+            <li key={f.id} className="px-4 py-2 flex items-center gap-3">
+              <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
+                f.severity === 'critical' ? 'bg-[#fbe9e6] text-[#c0392b]' :
+                f.severity === 'major' ? 'bg-[#fff4d6] text-[#a06200]' :
+                'bg-[#eef2f7] text-[#0f1c2e]'
+              }`}>{f.severity}</span>
+              {f.fault_code && <span className="font-mono text-[10px] text-[#6b7685]">{f.fault_code}</span>}
+              <span className="flex-1 truncate">{f.description}</span>
+              <span className="font-mono text-[11px] text-[#c0392b]">R{Math.round(Number(f.hourly_loss_zar || 0))}/h</span>
+              <span className="font-mono text-[10px] text-[#6b7685]">{new Date(f.detected_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}</span>
+            </li>
+          ))}
+          {data.open_faults.length === 0 && (
+            <li className="px-4 py-3 text-[12px] text-[#6b7685] italic">No open faults — fleet is healthy.</li>
+          )}
+        </ul>
+      </div>
+
+      <div className="widget-card">
+        <header className="widget-card-header"><div className="widget-card-title">Connector runs (last 10)</div></header>
+        <div className="overflow-x-auto">
+          <table className="w-full text-[11px]">
+            <thead><tr className="text-left text-[#6b7685] border-b border-[#dde4ec]">
+              <th className="px-3 py-1.5">Started</th>
+              <th className="px-3 py-1.5">Source</th>
+              <th className="px-3 py-1.5">Status</th>
+              <th className="px-3 py-1.5 text-right">Received</th>
+              <th className="px-3 py-1.5 text-right">Written</th>
+              <th className="px-3 py-1.5 text-right">Rejected</th>
+              <th className="px-3 py-1.5">Error</th>
+            </tr></thead>
+            <tbody>
+              {data.connector_runs.slice(0, 10).map((r) => (
+                <tr key={r.id} className="border-b border-[#eef2f7]">
+                  <td className="px-3 py-1.5 font-mono text-[10px]">{new Date(r.started_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}</td>
+                  <td className="px-3 py-1.5">{r.source || '—'}</td>
+                  <td className="px-3 py-1.5">
+                    <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
+                      r.status === 'ok' ? 'bg-[#e6f4ee] text-[#1a8a5b]' :
+                      r.status === 'partial' ? 'bg-[#fff4d6] text-[#a06200]' :
+                      r.status === 'failed' ? 'bg-[#fbe9e6] text-[#c0392b]' :
+                      'bg-[#eef2f7] text-[#0f1c2e]'
+                    }`}>{r.status}</span>
+                  </td>
+                  <td className="px-3 py-1.5 text-right font-mono">{r.rows_received ?? 0}</td>
+                  <td className="px-3 py-1.5 text-right font-mono">{r.rows_written ?? 0}</td>
+                  <td className="px-3 py-1.5 text-right font-mono text-[#c0392b]">{r.rows_rejected ?? 0}</td>
+                  <td className="px-3 py-1.5 text-[10px] text-[#c0392b] truncate max-w-[200px]" title={r.error_sample || ''}>{r.error_sample || ''}</td>
+                </tr>
+              ))}
+              {data.connector_runs.length === 0 && (
+                <tr><td colSpan={7} className="px-3 py-3 text-[12px] text-[#6b7685] italic text-center">No connector runs yet — push telemetry to POST /api/esums-ingest/telemetry with a site ingest key.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   );
