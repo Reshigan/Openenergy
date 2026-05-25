@@ -25,10 +25,19 @@ roles.use('*', authMiddleware);
 const rid = (p: string) => `${p}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 // Generic helper: GET list scoped to participant, ordered DESC by created_at.
-async function listFor(c: any, table: string, scopeCol = 'participant_id', extraSql = ''): Promise<any[]> {
+// Some tables (ipp_drawdown_requests/ipp_nominations/loan_workouts) use a
+// domain-specific timestamp column instead of a generic `created_at`; pass
+// the explicit `orderCol` for those.
+async function listFor(
+  c: any,
+  table: string,
+  scopeCol = 'participant_id',
+  extraSql = '',
+  orderCol = 'created_at',
+): Promise<any[]> {
   const user = getCurrentUser(c);
   const r = await c.env.DB.prepare(
-    `SELECT * FROM ${table} WHERE ${scopeCol} = ? ${extraSql} ORDER BY created_at DESC LIMIT 500`
+    `SELECT * FROM ${table} WHERE ${scopeCol} = ? ${extraSql} ORDER BY ${orderCol} DESC LIMIT 500`
   ).bind(user.id).all();
   return r.results || [];
 }
@@ -371,7 +380,7 @@ roles.post('/ipp/info-memorandums', async (c) => {
   return c.json({ success: true, data: { id, share_link_token: token, share_url: `/portal/im/${token}` } }, 201);
 });
 
-roles.get('/ipp/drawdowns', async (c) => c.json({ success: true, data: await listFor(c, 'ipp_drawdown_requests') }));
+roles.get('/ipp/drawdowns', async (c) => c.json({ success: true, data: await listFor(c, 'ipp_drawdown_requests', 'participant_id', '', 'requested_at') }));
 roles.post('/ipp/drawdowns', async (c) => {
   const user = getCurrentUser(c);
   const b = await c.req.json().catch(() => ({} as any));
@@ -435,7 +444,7 @@ roles.post('/ipp/commissioning', async (c) => {
   return c.json({ success: true, data: { id } }, 201);
 });
 
-roles.get('/ipp/nominations', async (c) => c.json({ success: true, data: await listFor(c, 'ipp_nominations') }));
+roles.get('/ipp/nominations', async (c) => c.json({ success: true, data: await listFor(c, 'ipp_nominations', 'participant_id', '', 'submitted_at') }));
 roles.post('/ipp/nominations', async (c) => {
   const user = getCurrentUser(c);
   const b = await c.req.json().catch(() => ({} as any));
@@ -721,7 +730,7 @@ roles.post('/lender/sll-kpis', async (c) => {
   return c.json({ success: true, data: { id, status } }, 201);
 });
 
-roles.get('/lender/workouts', async (c) => c.json({ success: true, data: await listFor(c, 'loan_workouts') }));
+roles.get('/lender/workouts', async (c) => c.json({ success: true, data: await listFor(c, 'loan_workouts', 'participant_id', '', 'opened_at') }));
 roles.post('/lender/workouts', async (c) => {
   const user = getCurrentUser(c);
   const b = await c.req.json().catch(() => ({} as any));

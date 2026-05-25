@@ -981,7 +981,7 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
           const dueBy = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
           await env.DB.prepare(
             `INSERT INTO margin_calls (id, participant_id, as_of, exposure_zar, initial_margin_zar, variation_margin_zar, posted_collateral_zar, shortfall_zar, due_by, status)
-             VALUES (?, ?, datetime('now'), ?, ?, 0, ?, ?, ?, 'issued')`,
+             VALUES (?, ?, datetime('now'), ?, ?, 0, ?, ?, ?, 'open')`,
           ).bind(
             `mc_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
             row.pid, row.exposure, im, posted, shortfall, dueBy,

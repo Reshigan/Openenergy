@@ -146,7 +146,7 @@ async function traderContext(env: HonoEnv['Bindings'], userId: string) {
     ).bind(userId).all(),
     env.DB.prepare(
       `SELECT id, exposure_zar, initial_margin_zar, posted_collateral_zar, shortfall_zar, due_by
-         FROM margin_calls WHERE participant_id = ? AND status IN ('issued','acknowledged')
+         FROM margin_calls WHERE participant_id = ? AND status IN ('open','escalated','breached')
         ORDER BY as_of DESC LIMIT 10`,
     ).bind(userId).all(),
     env.DB.prepare(

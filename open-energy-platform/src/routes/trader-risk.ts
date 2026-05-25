@@ -319,7 +319,7 @@ risk.post('/margin-calls/run', async (c) => {
           `INSERT INTO margin_calls
              (id, participant_id, as_of, exposure_zar, initial_margin_zar,
               variation_margin_zar, posted_collateral_zar, shortfall_zar, due_by, status)
-           VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, 'issued')`,
+           VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, 'open')`,
         ).bind(p.id, p.pid, now, p.exposure, p.im, p.posted, p.shortfall, dueBy),
       ));
     } catch (err) {
@@ -327,7 +327,7 @@ risk.post('/margin-calls/run', async (c) => {
       for (const p of pending) {
         await c.env.DB.prepare(
           `INSERT INTO margin_calls (id, participant_id, as_of, exposure_zar, initial_margin_zar, variation_margin_zar, posted_collateral_zar, shortfall_zar, due_by, status)
-           VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, 'issued')`,
+           VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, 'open')`,
         ).bind(p.id, p.pid, now, p.exposure, p.im, p.posted, p.shortfall, dueBy).run();
       }
     }

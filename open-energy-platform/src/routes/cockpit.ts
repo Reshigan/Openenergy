@@ -372,8 +372,8 @@ async function traderStats(env: HonoEnv['Bindings'], participantId: string): Pro
       (SELECT COUNT(*) FROM trader_positions WHERE participant_id = ?) AS positions,
       (SELECT COALESCE(SUM(net_volume_mwh), 0) FROM trader_positions WHERE participant_id = ?) AS net_exposure_mwh,
       (SELECT COALESCE(SUM(unrealised_pnl_zar), 0) FROM trader_positions WHERE participant_id = ?) AS unrealised_pnl_zar,
-      (SELECT COUNT(*) FROM margin_calls WHERE participant_id = ? AND status IN ('issued','acknowledged')) AS open_margin_calls,
-      (SELECT COALESCE(SUM(shortfall_zar), 0) FROM margin_calls WHERE participant_id = ? AND status IN ('issued','acknowledged')) AS margin_shortfall_zar,
+      (SELECT COUNT(*) FROM margin_calls WHERE participant_id = ? AND status IN ('open','escalated','breached')) AS open_margin_calls,
+      (SELECT COALESCE(SUM(shortfall_zar), 0) FROM margin_calls WHERE participant_id = ? AND status IN ('open','escalated','breached')) AS margin_shortfall_zar,
       (SELECT COALESCE(SUM(balance_zar), 0) FROM collateral_accounts WHERE participant_id = ? AND status = 'active') AS collateral_balance_zar
   `).bind(participantId, participantId, participantId, participantId, participantId, participantId).first<Record<string, number>>();
   return row || {};

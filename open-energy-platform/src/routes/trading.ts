@@ -1325,10 +1325,10 @@ trading.get('/risk-narrative', async (c) => {
     ).bind(user.id, user.id).first<{ open_exp: number; limit_zar: number | null }>(),
     c.env.DB.prepare(
       `SELECT COUNT(*) AS n, COALESCE(SUM(shortfall_zar), 0) AS short
-         FROM margin_calls WHERE participant_id = ? AND status IN ('issued','acknowledged')`,
+         FROM margin_calls WHERE participant_id = ? AND status IN ('open','escalated','breached')`,
     ).bind(user.id).first<{ n: number; short: number }>(),
     c.env.DB.prepare(
-      `SELECT COUNT(*) AS n, COALESCE(SUM(f.volume_mwh * f.price), 0) AS gross
+      `SELECT COUNT(*) AS n, COALESCE(SUM(f.matched_volume_mwh * f.matched_price), 0) AS gross
          FROM trade_fills f JOIN trade_orders o ON o.id = f.order_id
         WHERE o.participant_id = ? AND f.executed_at >= datetime('now', '-24 hours')`,
     ).bind(user.id).first<{ n: number; gross: number }>(),
