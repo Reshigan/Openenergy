@@ -664,11 +664,11 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         icon: 'timeline',
       },
       {
-        key: 'om',
-        title: 'O&M and generation',
+        key: 'esums',
+        title: 'Esums — operations and generation',
         description: 'Site telemetry, deterministic fault detection, work orders, OEM warranty register.',
-        href: '/om',
-        cta_label: 'Open O&M',
+        href: '/esums',
+        cta_label: 'Open Esums',
         icon: 'build',
       },
       {

@@ -311,7 +311,7 @@ projects.get('/:id/lifecycle', async (c) => {
         spares: sparesInventory,
         insurance: insurancePolicies,
       },
-      workflow: { label: 'Open O&M workbench', href: '/om' },
+      workflow: { label: 'Open Esums workbench', href: '/esums' },
       next_action:
         currentPhaseIdx < 5
           ? null
