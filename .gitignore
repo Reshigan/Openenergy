@@ -8,3 +8,12 @@ dist/
 .env.local
 *.log
 .DS_Store
+
+# Corporate-video production artefacts — diagnostic / heavy / regeneratable.
+# Committed deliverables: audit report (docs/video/*.md), script, scripts/video/*.
+# Per-scene shots/recordings/voiceover/output stay local.
+docs/video/audit-shots/
+docs/video/recordings/
+docs/video/voiceover/
+docs/video/captions/
+docs/video/output/
