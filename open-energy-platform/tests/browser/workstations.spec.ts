@@ -24,11 +24,15 @@ const PASSWORD = process.env.DEMO_PASSWORD || 'Demo@2024!';
 
 let SHARED_ADMIN_TOKEN: string | null = null;
 
+// 90s budget: the retry sleep below is 15s, plus we need headroom for two
+// HTTP round-trips against prod under any plausible latency. Default
+// beforeAll timeout is 30s — same as the *old* retry sleep, so a single
+// rate-limit retry would blow the budget and cascade-fail every test.
 test.beforeAll(async ({ request, baseURL }) => {
   // One API login. Retry once with backoff if the rate limiter trips —
   // a 429 here would force every workstation test to fail noisily.
   for (const attempt of [0, 1]) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 30_000));
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 15_000));
     const r = await request.post(`${baseURL}/api/auth/login`, {
       data: { email: 'admin@openenergy.co.za', password: PASSWORD },
       failOnStatusCode: false,
@@ -41,7 +45,7 @@ test.beforeAll(async ({ request, baseURL }) => {
       throw new Error(`admin login failed: HTTP ${r.status()} body=${(await r.text()).slice(0, 200)}`);
     }
   }
-});
+}, 90_000);
 
 async function seedToken(page: import('@playwright/test').Page) {
   if (!SHARED_ADMIN_TOKEN) throw new Error('shared admin token not initialised');

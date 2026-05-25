@@ -19,9 +19,12 @@ const PASSWORD = process.env.DEMO_PASSWORD || 'Demo@2024!';
 
 let SHARED_ADMIN_TOKEN: string | null = null;
 
+// 90s budget — see workstations.spec.ts for why: default 30s beforeAll
+// timeout collides with the retry sleep below, so a single rate-limit
+// retry cascade-fails every test in the file.
 test.beforeAll(async ({ request, baseURL }) => {
   for (const attempt of [0, 1]) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 30_000));
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 15_000));
     const r = await request.post(`${baseURL}/api/auth/login`, {
       data: { email: 'admin@openenergy.co.za', password: PASSWORD },
       failOnStatusCode: false,
@@ -34,7 +37,7 @@ test.beforeAll(async ({ request, baseURL }) => {
       throw new Error(`admin login failed: HTTP ${r.status()} body=${(await r.text()).slice(0, 200)}`);
     }
   }
-});
+}, 90_000);
 
 async function seedToken(page: import('@playwright/test').Page) {
   if (!SHARED_ADMIN_TOKEN) throw new Error('shared admin token not initialised');
