@@ -63,17 +63,17 @@ export function CookieConsentBanner() {
             <p className="text-[12px] text-[#3d4756] mt-1 leading-snug">
               We use necessary cookies for auth and session state, and optional
               cookies for analytics. POPIA gives you the right to refuse non-essential
-              cookies. See <a href="/legal/privacy" className="text-[#3b82c4] underline">privacy policy</a>.
+              cookies. See <a href="/legal/privacy" className="text-[#1a3a5c] underline font-semibold">privacy policy</a>.
             </p>
-            <div className="mt-2 space-y-1 text-[12px]">
-              <label className="flex items-center gap-2 text-[#3d4756]">
-                <input type="checkbox" checked disabled className="accent-[#1a3a5c]" /> Necessary
+            <div className="mt-2 space-y-2 text-[12px]">
+              <label className="flex items-center gap-2 text-[#3d4756] min-h-[24px]">
+                <input type="checkbox" checked disabled className="accent-[#1a3a5c] w-6 h-6" /> Necessary
               </label>
-              <label className="flex items-center gap-2 text-[#3d4756]">
-                <input type="checkbox" checked={analytics} onChange={(e) => setAnalytics(e.target.checked)} className="accent-[#1a3a5c]" /> Analytics
+              <label className="flex items-center gap-2 text-[#3d4756] min-h-[24px]">
+                <input type="checkbox" checked={analytics} onChange={(e) => setAnalytics(e.target.checked)} className="accent-[#1a3a5c] w-6 h-6" /> Analytics
               </label>
-              <label className="flex items-center gap-2 text-[#3d4756]">
-                <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} className="accent-[#1a3a5c]" /> Marketing
+              <label className="flex items-center gap-2 text-[#3d4756] min-h-[24px]">
+                <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} className="accent-[#1a3a5c] w-6 h-6" /> Marketing
               </label>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -85,8 +85,12 @@ export function CookieConsentBanner() {
                       className="h-8 px-3 rounded bg-white border border-[#dde4ec] text-[#3d4756] text-[12px] font-semibold">Necessary only</button>
             </div>
           </div>
-          <button onClick={() => setShow(false)} className="p-1 -mt-1 -mr-1 text-[#6b7685] hover:text-[#0f1c2e]">
-            <X size={16} />
+          <button
+            onClick={() => setShow(false)}
+            aria-label="Dismiss cookie banner"
+            className="p-2 -mt-1 -mr-1 text-[#6b7685] hover:text-[#0f1c2e] inline-flex items-center justify-center min-w-[24px] min-h-[24px]"
+          >
+            <X size={16} aria-hidden="true" />
           </button>
         </div>
       </div>
