@@ -54,7 +54,7 @@ export function CookieConsentBanner() {
 
   if (!show) return null;
   return (
-    <div className="fixed inset-x-3 bottom-3 z-[200] md:left-auto md:right-4 md:bottom-4 md:max-w-md">
+    <div className="fixed inset-x-3 bottom-3 z-[200] left-auto right-3 max-w-md md:right-4 md:bottom-4">
       <div className="rounded-xl bg-white border border-[#dde4ec] shadow-xl p-4">
         <div className="flex items-start gap-2">
           <Cookie size={18} className="text-[#b04e0f] mt-0.5 flex-shrink-0" />
@@ -86,8 +86,8 @@ export function CookieConsentBanner() {
             </div>
           </div>
           <button
-            onClick={() => setShow(false)}
-            aria-label="Dismiss cookie banner"
+            onClick={() => record({ analytics: false, marketing: false })}
+            aria-label="Dismiss cookie banner (necessary cookies only)"
             className="p-2 -mt-1 -mr-1 text-[#6b7685] hover:text-[#0f1c2e] inline-flex items-center justify-center min-w-[24px] min-h-[24px]"
           >
             <X size={16} aria-hidden="true" />

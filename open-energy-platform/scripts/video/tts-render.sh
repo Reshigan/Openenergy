@@ -2,8 +2,17 @@
 # ════════════════════════════════════════════════════════════════════════
 # Phase 4 — TTS render. Reads docs/video/script-2026-05-25.md, splits by
 # ## ACT N heading, and pipes each act's narrator copy (blockquote `>`
-# lines, with the leading "> " stripped) into edge-tts using the en-US
-# AriaNeural voice. Output: media/voiceover/act-{1..6}.wav.
+# lines, with the leading "> " stripped) into edge-tts.
+#
+# Voice history:
+#   - V1: en-US-AriaNeural   — user feedback: "too robotic"
+#   - V2: en-ZA-LeahNeural   — user feedback: "static, broken, mechanical"
+#   - V3: en-US-AvaMultilingualNeural — Microsoft's most natural conversational
+#         neural voice. Multilingual line carries noticeably more prosody +
+#         breath than the regional neurals. Override with EDGE_TTS_VOICE if
+#         a different voice should be tried.
+#
+# Output: media/voiceover/act-{1..6}.wav.
 #
 # Requires:
 #   - python 3.9+
@@ -18,11 +27,10 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 
 SCRIPT_PATH="../docs/video/script-2026-05-25.md"
-VOICE="en-US-AriaNeural"
-# +8% rate — Aria's neutral pace lands ~16:30 for this script's word count;
-# +8% compresses to ~15:00. Still professional, well below the point where
-# the cadence sounds rushed.
-RATE="${EDGE_TTS_RATE:-+8%}"
+VOICE="${EDGE_TTS_VOICE:-en-US-AvaMultilingualNeural}"
+# Ava-Multilingual's default cadence lands ~16:30 on this script's word
+# count; +6% trims to ~15:00 without losing the conversational delivery.
+RATE="${EDGE_TTS_RATE:-+6%}"
 OUT_DIR="media/voiceover"
 
 mkdir -p "$OUT_DIR"
@@ -72,9 +80,10 @@ for ACT in 1 2 3 4 5 6; do
     continue
   fi
   echo "▶ Rendering act $ACT with $VOICE rate=$RATE"
+  # edge-tts argparse treats `-3%` as a flag, not a value. Use `--rate=<v>` form.
   "${EDGE_TTS[@]}" \
     --voice "$VOICE" \
-    --rate "$RATE" \
+    --rate="$RATE" \
     --file "$IN" \
     --write-media "$OUT_MP3"
   # Normalise to 48 kHz mono WAV for ffmpeg composite step.

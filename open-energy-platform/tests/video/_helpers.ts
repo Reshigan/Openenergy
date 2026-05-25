@@ -76,6 +76,26 @@ export async function seedTokenAuth(page: Page, token: string): Promise<void> {
   await page.addInitScript((tok) => {
     try {
       localStorage.setItem('token', tok as string);
+      // Pre-record the privacy/cookies acknowledgement so the consent banner
+      // (CookieConsentBanner.tsx) never paints on top of a shot. The banner
+      // reads `oe.consent.v1` and `oe.session_id` on mount and only renders
+      // when they're missing or the policy version doesn't match.
+      const POLICY_VERSION = '2026-05-19';
+      localStorage.setItem(
+        'oe.consent.v1',
+        JSON.stringify({
+          version: POLICY_VERSION,
+          analytics: false,
+          marketing: false,
+          at: new Date().toISOString(),
+        }),
+      );
+      if (!localStorage.getItem('oe.session_id')) {
+        // Stable session id keeps the consent record idempotent across shots.
+        localStorage.setItem('oe.session_id', 'video-recording-session');
+      }
+      // Suppress any first-run onboarding overlays for the same reason.
+      localStorage.setItem('oe.onboarding.skipped', '1');
     } catch {
       /* private mode etc. — non-fatal */
     }

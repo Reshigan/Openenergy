@@ -1,7 +1,10 @@
 // Per-role design tokens. Drives <RoleShell> CSS variables.
 //
-// Every role gets the SAME shell + signature components — personality lives
-// here, in a single table. To add a role, add a row.
+// Every role gets the SAME shell + signature components. Per [[feedback_role_ux_depth]]
+// + 2026-05-25 user direction "each launchpad has a different colour they should all
+// match siphos" — colour (accent/haze/chrome) is now unified to the admin theme so
+// every persona launches into the same brand surface. Per-role personality lives in
+// `workstationDensity` (Bloomberg vs cinematic) and `heroMotif` (motif on hero).
 
 export type RoleKey =
   | 'admin'
@@ -31,16 +34,24 @@ export interface RoleTheme {
   heroMotif: string;
 }
 
+// Unified brand palette — the admin/Sipho colour. Every role inherits this.
+const BRAND_ACCENT = '#7e57c2';
+const BRAND_ACCENT_SECONDARY = '#5fa8e8';
+const BRAND_ACCENT_SOFT = 'rgba(126, 87, 194, 0.22)';
+const BRAND_HAZE =
+  'radial-gradient(120% 80% at 30% 0%, rgba(126,87,194,0.28) 0%, rgba(15,28,46,0) 65%), linear-gradient(180deg, #0f1c2e 0%, #1a3a5c 100%)';
+const BRAND_CHROME: Chrome = 'dark';
+
 export const roleThemes: Record<RoleKey, RoleTheme> = {
   trader: {
     key: 'trader',
     label: 'Trading desk',
     workstationDensity: 'bloomberg',
-    chrome: 'dark',
-    accent: '#f5b800',
-    accentSecondary: '#5fa8e8',
-    accentSoft: 'rgba(245, 184, 0, 0.18)',
-    haze: 'radial-gradient(120% 80% at 20% 0%, rgba(245,184,0,0.22) 0%, rgba(10,22,34,0) 60%), linear-gradient(180deg, #0a1622 0%, #0f2540 100%)',
+    chrome: BRAND_CHROME,
+    accent: BRAND_ACCENT,
+    accentSecondary: BRAND_ACCENT_SECONDARY,
+    accentSoft: BRAND_ACCENT_SOFT,
+    haze: BRAND_HAZE,
     displayFont: 'inter-tight',
     heroMotif: 'multi-tape-ticker',
   },
@@ -48,11 +59,11 @@ export const roleThemes: Record<RoleKey, RoleTheme> = {
     key: 'grid_operator',
     label: 'System operator',
     workstationDensity: 'bloomberg',
-    chrome: 'dark',
-    accent: '#5fa8e8',
-    accentSecondary: '#c0392b',
-    accentSoft: 'rgba(95, 168, 232, 0.18)',
-    haze: 'radial-gradient(120% 80% at 80% 0%, rgba(95,168,232,0.25) 0%, rgba(10,28,48,0) 60%), linear-gradient(180deg, #0a1c30 0%, #0f2540 100%)',
+    chrome: BRAND_CHROME,
+    accent: BRAND_ACCENT,
+    accentSecondary: BRAND_ACCENT_SECONDARY,
+    accentSoft: BRAND_ACCENT_SOFT,
+    haze: BRAND_HAZE,
     displayFont: 'inter-tight',
     heroMotif: 'sa-grid-map',
   },
@@ -60,11 +71,11 @@ export const roleThemes: Record<RoleKey, RoleTheme> = {
     key: 'regulator',
     label: 'Regulator',
     workstationDensity: 'bloomberg',
-    chrome: 'warm',
-    accent: '#b8a07a',
-    accentSecondary: '#1a3a5c',
-    accentSoft: 'rgba(184, 160, 122, 0.22)',
-    haze: 'radial-gradient(120% 80% at 50% 0%, rgba(184,160,122,0.28) 0%, rgba(247,243,236,0) 65%), linear-gradient(180deg, #f7f3ec 0%, #ede3d0 100%)',
+    chrome: BRAND_CHROME,
+    accent: BRAND_ACCENT,
+    accentSecondary: BRAND_ACCENT_SECONDARY,
+    accentSoft: BRAND_ACCENT_SOFT,
+    haze: BRAND_HAZE,
     displayFont: 'newsreader',
     heroMotif: 'gazette-ledger',
   },
@@ -72,11 +83,11 @@ export const roleThemes: Record<RoleKey, RoleTheme> = {
     key: 'support',
     label: 'Support desk',
     workstationDensity: 'bloomberg',
-    chrome: 'dark',
-    accent: '#5fa8e8',
-    accentSecondary: '#6b7685',
-    accentSoft: 'rgba(95, 168, 232, 0.18)',
-    haze: 'radial-gradient(120% 80% at 50% 0%, rgba(95,168,232,0.22) 0%, rgba(15,28,46,0) 60%), linear-gradient(180deg, #0f1c2e 0%, #1a2a3e 100%)',
+    chrome: BRAND_CHROME,
+    accent: BRAND_ACCENT,
+    accentSecondary: BRAND_ACCENT_SECONDARY,
+    accentSoft: BRAND_ACCENT_SOFT,
+    haze: BRAND_HAZE,
     displayFont: 'inter-tight',
     heroMotif: 'ticket-queue',
   },
@@ -84,11 +95,11 @@ export const roleThemes: Record<RoleKey, RoleTheme> = {
     key: 'admin',
     label: 'Platform admin',
     workstationDensity: 'cinematic',
-    chrome: 'dark',
-    accent: '#7e57c2',
-    accentSecondary: '#5fa8e8',
-    accentSoft: 'rgba(126, 87, 194, 0.22)',
-    haze: 'radial-gradient(120% 80% at 30% 0%, rgba(126,87,194,0.28) 0%, rgba(15,28,46,0) 65%), linear-gradient(180deg, #0f1c2e 0%, #1a3a5c 100%)',
+    chrome: BRAND_CHROME,
+    accent: BRAND_ACCENT,
+    accentSecondary: BRAND_ACCENT_SECONDARY,
+    accentSoft: BRAND_ACCENT_SOFT,
+    haze: BRAND_HAZE,
     displayFont: 'inter-tight',
     heroMotif: 'tenant-constellation',
   },
@@ -96,11 +107,11 @@ export const roleThemes: Record<RoleKey, RoleTheme> = {
     key: 'lender',
     label: 'Lender',
     workstationDensity: 'cinematic',
-    chrome: 'dark',
-    accent: '#c9a049',
-    accentSecondary: '#1a3a5c',
-    accentSoft: 'rgba(201, 160, 73, 0.22)',
-    haze: 'radial-gradient(120% 80% at 70% 0%, rgba(201,160,73,0.24) 0%, rgba(10,28,48,0) 60%), linear-gradient(180deg, #0f2540 0%, #0a1c30 100%)',
+    chrome: BRAND_CHROME,
+    accent: BRAND_ACCENT,
+    accentSecondary: BRAND_ACCENT_SECONDARY,
+    accentSoft: BRAND_ACCENT_SOFT,
+    haze: BRAND_HAZE,
     displayFont: 'newsreader',
     heroMotif: 'waterfall-ladder',
   },
@@ -108,11 +119,11 @@ export const roleThemes: Record<RoleKey, RoleTheme> = {
     key: 'ipp_developer',
     label: 'IPP developer',
     workstationDensity: 'cinematic',
-    chrome: 'warm',
-    accent: '#c97a14',
-    accentSecondary: '#6b7685',
-    accentSoft: 'rgba(201, 122, 20, 0.20)',
-    haze: 'radial-gradient(120% 80% at 30% 0%, rgba(201,122,20,0.24) 0%, rgba(252,247,238,0) 65%), linear-gradient(180deg, #fcf7ee 0%, #f5ebd6 100%)',
+    chrome: BRAND_CHROME,
+    accent: BRAND_ACCENT,
+    accentSecondary: BRAND_ACCENT_SECONDARY,
+    accentSoft: BRAND_ACCENT_SOFT,
+    haze: BRAND_HAZE,
     displayFont: 'inter-tight',
     heroMotif: 'milestone-road',
   },
@@ -120,11 +131,11 @@ export const roleThemes: Record<RoleKey, RoleTheme> = {
     key: 'wind_operator',
     label: 'Wind operator',
     workstationDensity: 'cinematic',
-    chrome: 'light',
-    accent: '#1f9b95',
-    accentSecondary: '#5fa8e8',
-    accentSoft: 'rgba(31, 155, 149, 0.20)',
-    haze: 'radial-gradient(120% 80% at 60% 0%, rgba(31,155,149,0.26) 0%, rgba(245,250,253,0) 65%), linear-gradient(180deg, #f5fafd 0%, #dfeef5 100%)',
+    chrome: BRAND_CHROME,
+    accent: BRAND_ACCENT,
+    accentSecondary: BRAND_ACCENT_SECONDARY,
+    accentSoft: BRAND_ACCENT_SOFT,
+    haze: BRAND_HAZE,
     displayFont: 'inter-tight',
     heroMotif: 'kinetic-wind-field',
   },
@@ -132,11 +143,11 @@ export const roleThemes: Record<RoleKey, RoleTheme> = {
     key: 'offtaker',
     label: 'Offtaker',
     workstationDensity: 'cinematic',
-    chrome: 'warm',
-    accent: '#f5b800',
-    accentSecondary: '#b8a07a',
-    accentSoft: 'rgba(245, 184, 0, 0.20)',
-    haze: 'radial-gradient(120% 80% at 50% 0%, rgba(245,184,0,0.22) 0%, rgba(253,249,242,0) 65%), linear-gradient(180deg, #fdf9f2 0%, #f5ecd5 100%)',
+    chrome: BRAND_CHROME,
+    accent: BRAND_ACCENT,
+    accentSecondary: BRAND_ACCENT_SECONDARY,
+    accentSoft: BRAND_ACCENT_SOFT,
+    haze: BRAND_HAZE,
     displayFont: 'inter-tight',
     heroMotif: 'site-heatmap',
   },
@@ -144,11 +155,11 @@ export const roleThemes: Record<RoleKey, RoleTheme> = {
     key: 'carbon_fund',
     label: 'Carbon fund',
     workstationDensity: 'cinematic',
-    chrome: 'light',
-    accent: '#1a8a5b',
-    accentSecondary: '#c9a049',
-    accentSoft: 'rgba(26, 138, 91, 0.20)',
-    haze: 'radial-gradient(120% 80% at 30% 0%, rgba(26,138,91,0.24) 0%, rgba(250,248,242,0) 65%), linear-gradient(180deg, #faf8f2 0%, #e8efe1 100%)',
+    chrome: BRAND_CHROME,
+    accent: BRAND_ACCENT,
+    accentSecondary: BRAND_ACCENT_SECONDARY,
+    accentSoft: BRAND_ACCENT_SOFT,
+    haze: BRAND_HAZE,
     displayFont: 'newsreader',
     heroMotif: 'vintage-stamp-wall',
   },
@@ -156,5 +167,5 @@ export const roleThemes: Record<RoleKey, RoleTheme> = {
 
 export function themeFor(role: string | undefined | null): RoleTheme {
   if (role && role in roleThemes) return roleThemes[role as RoleKey];
-  return roleThemes.trader;
+  return roleThemes.admin;
 }
