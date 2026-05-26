@@ -1,5 +1,7 @@
 # Wave 1 — IPP Project Management to P6-grade — Implementation Plan
 
+> **Status (2026-05-26): SHIPPED.** All 20 tasks complete. 23 schedule routes live, 647/647 unit tests pass, type-check clean, migrations 092 + 093 applied to prod (53 activities seeded for `ip_001`). Playwright spec landed at `tests/browser/ipp-schedule.spec.ts`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Lift the IPP project surface from L3 to P6/Primavera-grade: full WBS + CPM + baselines + resources + leveling, end-to-end functional in the UI.

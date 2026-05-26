@@ -3,6 +3,9 @@
 **Date:** 2026-05-26
 **Status:** Approved scope; per-wave specs follow
 
+**Wave progress (live):**
+- Wave 1 — IPP Project Management to P6-grade — **shipped 2026-05-26.** 23 schedule routes, CPM + leveling utilities, SVG Gantt + WBS + resource panel + baselines UI, AI assists (criticality + slip forecast), 53-activity seed for `ip_001`. 647/647 unit tests, type-check clean. Migrations 092 + 093 live on prod.
+
 ## Intent
 
 Every headline feature on the Open Energy Platform held to the gold-standard depth of its real-world discipline — "P6-grade for IPP project management" as the worked example, with the equivalent reference applied to every other workflow. Delivered in sequenced waves, one feature/discipline per wave, each wave with its own brainstorm → spec → plan → implementation cycle.
