@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
+import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
@@ -14,6 +15,20 @@ function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
 }
 
 export function GridOpsWorkstationPage() {
+  const kpis = useWorkstationKpis('grid_operator');
+  const curtailPanel = useWorkstationPanel('Active curtailment', '/grid-operator/curtailment', (r) => ({
+    id: r.id,
+    lead: <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-[#fff4d6] text-[#a06200]">{r.status || 'live'}</span>,
+    text: <span>{r.instruction_number || r.id} · {r.target_mw ? `${r.target_mw} MW` : ''}</span>,
+    meta: <span className="font-mono text-[10px] text-[#6b7685]">{r.effective_from ? new Date(r.effective_from).toLocaleTimeString('en-ZA') : ''}</span>,
+  }), 'No active curtailment.');
+  const outagePanel = useWorkstationPanel('Open outage responses', '/grid-operator/outages', (r) => ({
+    id: r.id,
+    lead: <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ${r.severity === 'critical' ? 'bg-[#fbe9e6] text-[#c0392b]' : 'bg-[#fff4d6] text-[#a06200]'}`}>{r.severity || r.status || '—'}</span>,
+    text: <span>{r.area || r.substation} · {r.affected_mw ? `${r.affected_mw} MW` : ''}</span>,
+    meta: <span className="font-mono text-[10px] text-[#6b7685]">{r.detected_at ? new Date(r.detected_at).toLocaleTimeString('en-ZA') : ''}</span>,
+  }), 'No outages.');
+  const panels = [curtailPanel, outagePanel].filter((p): p is NonNullable<typeof p> => !!p);
   return (
     <WorkstationShell
       role="grid_operator"
@@ -22,6 +37,8 @@ export function GridOpsWorkstationPage() {
       subtitle="Curtailment events · Outage responses · Ancillary award events. Single screen, all in-platform."
       backHref="/grid-operator"
       backLabel="Operator suite"
+      kpis={kpis}
+      panels={panels}
       tabs={[
         { key: 'curtailment', label: 'Curtailment events', body: ({ onRefresh }) => <CurtailmentTab onRefresh={onRefresh} /> },
         { key: 'outage', label: 'Outage responses', body: ({ onRefresh }) => <OutageTab onRefresh={onRefresh} /> },

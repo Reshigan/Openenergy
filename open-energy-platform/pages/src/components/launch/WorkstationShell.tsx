@@ -26,6 +26,20 @@ export type WorkstationTab = {
   body: (props: { onRefresh: () => void }) => ReactNode;
 };
 
+export type WorkstationKpi = {
+  label: string;
+  value: string | number;
+  caption?: string;
+  tone?: 'up' | 'down' | 'warn';
+};
+
+export type WorkstationPanel = {
+  title: string;
+  countLabel?: string;
+  rows: { id: string; lead?: ReactNode; text: ReactNode; meta?: ReactNode }[];
+  emptyLabel?: string;
+};
+
 export function WorkstationShell({
   eyebrow,
   title,
@@ -35,6 +49,8 @@ export function WorkstationShell({
   tabs,
   role,
   commands,
+  kpis,
+  panels,
 }: {
   eyebrow: string;
   title: string;
@@ -48,6 +64,10 @@ export function WorkstationShell({
   role?: RoleKey | string;
   /** Optional hotkey-driven command rail. Only rendered when role is given. */
   commands?: CommandItem[];
+  /** Top KPI row, Esums-detail style. Renders above the tabs on every tab. */
+  kpis?: WorkstationKpi[];
+  /** Optional summary panels (open items, exceptions). Render above tabs. */
+  panels?: WorkstationPanel[];
 }) {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
@@ -74,46 +94,28 @@ export function WorkstationShell({
   if (role) {
     const effectiveDensity = densityState.density;
     return (
-      <RoleShell role={role} density={effectiveDensity}>
+      <RoleShell role={role} density={effectiveDensity} chrome="light">
         {commands && commands.length > 0 ? <CommandRail items={commands} /> : null}
-        <div style={{ padding: 'var(--oe-pad-section)', display: 'flex', flexDirection: 'column', gap: 16, minHeight: '100%' }}>
-          <header style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div className="p-6 lg:p-10 space-y-5 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
+          <header className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  letterSpacing: '0.14em',
-                  textTransform: 'uppercase',
-                  color: 'var(--role-accent)',
-                  padding: '4px 10px',
-                  border: '1px solid var(--role-border)',
-                  borderRadius: 999,
-                  background: 'color-mix(in srgb, var(--role-accent-soft) 80%, transparent)',
-                }}
-              >
+              <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6b7685] bg-white border border-[#dde4ec] rounded-full px-3 py-1">
                 {eyebrow}
               </div>
               <h1
+                className="mt-2 font-display font-bold tracking-tight"
                 style={{
                   fontFamily: 'var(--oe-display-font)',
-                  fontSize: effectiveDensity === 'bloomberg' ? 22 : 28,
-                  fontWeight: 600,
+                  fontSize: 28,
                   letterSpacing: '-0.02em',
-                  marginTop: 8,
-                  color: 'var(--role-on-surface)',
+                  color: '#0f1c2e',
                 }}
               >
                 {title}
               </h1>
-              <p style={{ fontSize: 13, color: 'var(--role-on-surface-muted)', maxWidth: 720, margin: '4px 0 0' }}>
-                {subtitle}
-              </p>
+              <p className="text-[13px] text-[#3d4756] mt-1 max-w-3xl">{subtitle}</p>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div className="flex items-center gap-2 flex-wrap">
               {densityState.canToggle ? (
                 <DensityToggle
                   density={densityState.density}
@@ -123,75 +125,70 @@ export function WorkstationShell({
               {backHref && (
                 <button
                   onClick={() => navigate(backHref)}
-                  style={{
-                    height: 32,
-                    padding: '0 12px',
-                    border: '1px solid var(--role-border)',
-                    background: 'var(--role-surface-raised)',
-                    color: 'var(--role-on-surface)',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    borderRadius: 4,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    cursor: 'pointer',
-                  }}
+                  className="h-8 px-3 rounded border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-[#eef2f7]"
                 >
                   <ArrowLeft size={12} /> {backLabel || 'Back'}
                 </button>
               )}
               <button
                 onClick={refresh}
-                style={{
-                  height: 32,
-                  padding: '0 12px',
-                  border: '1px solid var(--role-border)',
-                  background: 'var(--role-surface-raised)',
-                  color: 'var(--role-on-surface)',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  borderRadius: 4,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  cursor: 'pointer',
-                }}
+                className="h-8 px-3 rounded border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-[#eef2f7]"
               >
                 <RefreshCw size={12} /> Refresh
               </button>
             </div>
           </header>
 
-          <nav
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 2,
-              padding: 4,
-              border: '1px solid var(--role-border)',
-              borderRadius: 'var(--oe-radius-card)',
-              background: 'var(--role-surface-raised)',
-            }}
-          >
+          {kpis && kpis.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {kpis.map((k, i) => {
+                const tone = k.tone === 'up' ? '#1a8a5b' : k.tone === 'down' ? '#c0392b' : k.tone === 'warn' ? '#c97a14' : '#0f1c2e';
+                return (
+                  <div key={i} className="rounded-xl border border-[#dde4ec] bg-white p-4">
+                    <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{k.label}</div>
+                    <div className="mt-1 text-[22px] font-semibold font-mono" style={{ color: tone }}>{k.value}</div>
+                    {k.caption && <div className="text-[11px] text-[#6b7685] mt-1">{k.caption}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {panels && panels.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {panels.map((panel, i) => (
+                <section key={i} className="rounded-xl border border-[#dde4ec] bg-white">
+                  <header className="px-4 py-2.5 border-b border-[#eef2f7]">
+                    <div className="font-display font-semibold text-[14px] text-[#0f1c2e]">
+                      {panel.title}{panel.countLabel ? ` (${panel.countLabel})` : ''}
+                    </div>
+                  </header>
+                  <ul className="divide-y divide-[#eef2f7] text-[12px]">
+                    {panel.rows.length === 0 ? (
+                      <li className="px-4 py-3 text-[12px] text-[#6b7685] italic">{panel.emptyLabel || 'Nothing open.'}</li>
+                    ) : panel.rows.slice(0, 6).map((row) => (
+                      <li key={row.id} className="px-4 py-2 flex items-center gap-3 text-[#0f1c2e]">
+                        {row.lead}
+                        <span className="flex-1 truncate">{row.text}</span>
+                        {row.meta}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          )}
+
+          <nav className="flex flex-wrap items-center gap-1 bg-white border border-[#dde4ec] rounded-lg p-1 w-fit">
             {tabs.map(t => {
               const isActive = activeTab === t.key;
               return (
                 <button
                   key={t.key}
                   onClick={() => setTab(t.key)}
-                  style={{
-                    height: 30,
-                    padding: '0 12px',
-                    borderRadius: 4,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: isActive ? '#0a1622' : 'var(--role-on-surface-muted)',
-                    background: isActive ? 'var(--role-accent)' : 'transparent',
-                    transition: 'background 120ms ease-out',
-                  }}
+                  className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-2 ${
+                    isActive ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'
+                  }`}
                 >
                   {t.label}
                 </button>

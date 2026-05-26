@@ -1,9 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
+import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
 
 export function IppWorkstationPage() {
+  const kpis = useWorkstationKpis('ipp_developer');
+  const projectsPanel = useWorkstationPanel('Active projects', '/projects', (r) => ({
+    id: r.id,
+    lead: <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-[#dbecfb] text-[#1a3a5c]">{r.project_type || r.energy_type || '—'}</span>,
+    text: <span>{r.project_name || r.name} · {r.capacity_mw != null ? `${Number(r.capacity_mw).toFixed(1)} MW` : ''}</span>,
+    meta: <span className="font-mono text-[10px] text-[#6b7685]">{(r.lifecycle_stage || r.status || '').replace(/_/g, ' ')}</span>,
+  }), 'No active projects.');
+  const panels = [projectsPanel].filter((p): p is NonNullable<typeof p> => !!p);
   return (
     <WorkstationShell
       role="ipp_developer"
@@ -12,6 +21,8 @@ export function IppWorkstationPage() {
       subtitle="Projects · Milestones · Insurance · Community. The site-to-COD pipeline a developer runs every day."
       backHref="/ipp-lifecycle"
       backLabel="IPP lifecycle"
+      kpis={kpis}
+      panels={panels}
       tabs={[
         { key: 'projects', label: 'My projects', body: () => <ProjectsTab /> },
         { key: 'milestones', label: 'Milestones', body: ({ onRefresh }) => <MilestonesTab onRefresh={onRefresh} /> },

@@ -1,9 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
+import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
 
 export function TraderWorkstationPage() {
+  const kpis = useWorkstationKpis('trader');
+  const openOrders = useWorkstationPanel('Open orders', '/trading/orders', (r) => ({
+    id: r.id,
+    lead: <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ${r.side === 'buy' ? 'bg-[#dbecfb] text-[#1a3a5c]' : 'bg-[#fbe9e6] text-[#c0392b]'}`}>{r.side}</span>,
+    text: <span>{r.energy_type} · {Number(r.volume_mwh || 0).toFixed(1)} MWh · R{Number(r.price || 0).toFixed(2)}</span>,
+    meta: <span className="font-mono text-[10px] text-[#6b7685]">{r.delivery_date}</span>,
+  }), 'No open orders.');
+  const rejections = useWorkstationPanel('Pre-trade rejections', '/trading/rejections', (r) => ({
+    id: r.id,
+    lead: <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-[#fbe9e6] text-[#c0392b]">{(r.reason_code || '—').slice(0, 16)}</span>,
+    text: <span>{r.energy_type} · {Number(r.volume_mwh || 0).toFixed(1)} MWh</span>,
+    meta: <span className="font-mono text-[10px] text-[#6b7685]">{r.attempted_at ? new Date(r.attempted_at).toLocaleTimeString() : '—'}</span>,
+  }), 'No rejections today.');
+  const panels = [openOrders, rejections].filter((p): p is NonNullable<typeof p> => !!p);
   return (
     <WorkstationShell
       role="trader"
@@ -12,6 +27,8 @@ export function TraderWorkstationPage() {
       subtitle="Open orders · Rejections · Exceptions · Margin calls · Audit. Every workflow a trader needs after the order is placed."
       backHref="/trader-risk"
       backLabel="Trader risk"
+      kpis={kpis}
+      panels={panels}
       tabs={[
         { key: 'orders', label: 'Open orders', body: ({ onRefresh }) => <OrdersTab onRefresh={onRefresh} /> },
         { key: 'rejections', label: 'Rejections', body: () => <RejectionsTab /> },

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
+import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
@@ -22,6 +23,20 @@ const LICENCE_TRANSITIONS = [
 ];
 
 export function RegulatorWorkstationPage() {
+  const kpis = useWorkstationKpis('regulator');
+  const alertsPanel = useWorkstationPanel('Surveillance alerts', '/regulator/surveillance', (r) => ({
+    id: r.id,
+    lead: <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ${r.severity === 'critical' ? 'bg-[#fbe9e6] text-[#c0392b]' : 'bg-[#fff4d6] text-[#a06200]'}`}>{r.severity || r.status || '—'}</span>,
+    text: <span>{r.rule_label || r.title || r.rule_name} · {r.market || r.scope || ''}</span>,
+    meta: <span className="font-mono text-[10px] text-[#6b7685]">{r.opened_at ? new Date(r.opened_at).toLocaleDateString('en-ZA') : ''}</span>,
+  }), 'No active surveillance alerts.');
+  const licencesPanel = useWorkstationPanel('Open licence actions', '/regulator/licences', (r) => ({
+    id: r.id,
+    lead: <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-[#dbecfb] text-[#1a3a5c]">{r.status || 'pending'}</span>,
+    text: <span>{r.licence_type} · {r.licensee_name || r.applicant}</span>,
+    meta: <span className="font-mono text-[10px] text-[#6b7685]">{r.due_date ? new Date(r.due_date).toLocaleDateString('en-ZA') : ''}</span>,
+  }), 'No open licence actions.');
+  const panels = [alertsPanel, licencesPanel].filter((p): p is NonNullable<typeof p> => !!p);
   return (
     <WorkstationShell
       role="regulator"
@@ -30,6 +45,8 @@ export function RegulatorWorkstationPage() {
       subtitle="Surveillance triage · Licence action workflow · Enforcement case events."
       backHref="/regulator-suite"
       backLabel="Regulator suite"
+      kpis={kpis}
+      panels={panels}
       tabs={[
         { key: 'surveillance', label: 'Surveillance triage', body: ({ onRefresh }) => <SurveillanceTab onRefresh={onRefresh} /> },
         { key: 'licences', label: 'Licence actions', body: ({ onRefresh }) => <LicencesTab onRefresh={onRefresh} /> },

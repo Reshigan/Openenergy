@@ -1,9 +1,24 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
+import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
 
 export function OfftakerWorkstationPage() {
+  const kpis = useWorkstationKpis('offtaker');
+  const sitesPanel = useWorkstationPanel('Delivery points', '/offtaker-suite/sites', (r) => ({
+    id: r.id,
+    lead: <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-[#dbecfb] text-[#1a3a5c]">{r.tariff_type || r.tariff || 'tariff'}</span>,
+    text: <span>{r.name || r.site_name} · {r.suburb || r.city || ''}</span>,
+    meta: <span className="font-mono text-[10px] text-[#6b7685]">{r.monthly_kwh ? `${Math.round(r.monthly_kwh).toLocaleString()} kWh/m` : ''}</span>,
+  }), 'No delivery points yet.');
+  const rfpPanel = useWorkstationPanel('Active RFPs', '/offtaker-suite/rfps', (r) => ({
+    id: r.id,
+    lead: <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-[#fff4d6] text-[#a06200]">{r.status || 'open'}</span>,
+    text: <span>{r.title || r.rfp_title} · {r.target_volume_gwh ? `${r.target_volume_gwh} GWh` : ''}</span>,
+    meta: <span className="font-mono text-[10px] text-[#6b7685]">{r.closing_date ? new Date(r.closing_date).toLocaleDateString('en-ZA') : ''}</span>,
+  }), 'No active RFPs.');
+  const panels = [sitesPanel, rfpPanel].filter((p): p is NonNullable<typeof p> => !!p);
   return (
     <WorkstationShell
       role="offtaker"
@@ -12,6 +27,8 @@ export function OfftakerWorkstationPage() {
       subtitle="Delivery points · Tariffs · Budgets · RECs · Scope 2. Day-to-day energy ops for a corporate consumer."
       backHref="/offtaker-suite"
       backLabel="Offtaker suite"
+      kpis={kpis}
+      panels={panels}
       tabs={[
         { key: 'sites', label: 'Sites & groups', body: ({ onRefresh }) => <SitesTab onRefresh={onRefresh} /> },
         { key: 'tariffs', label: 'Tariffs', body: () => <TariffsTab /> },

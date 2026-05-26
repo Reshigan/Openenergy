@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
+import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
@@ -31,6 +32,20 @@ const MRV_TRANSITIONS = [
 ];
 
 export function CarbonWorkstationPage() {
+  const kpis = useWorkstationKpis('carbon_fund');
+  const vintagesPanel = useWorkstationPanel('Active vintages', '/carbon-registry/vintages', (r) => ({
+    id: r.id,
+    lead: <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-[#dbecfb] text-[#1a3a5c]">{r.stage || r.status || '—'}</span>,
+    text: <span>{r.project_name || r.name || r.serial_number} · {r.tco2e ? `${Number(r.tco2e).toLocaleString()} tCO₂e` : ''}</span>,
+    meta: <span className="font-mono text-[10px] text-[#6b7685]">{r.vintage_year || ''}</span>,
+  }), 'No vintages yet.');
+  const mrvPanel = useWorkstationPanel('Open MRV submissions', '/carbon-registry/mrv', (r) => ({
+    id: r.id,
+    lead: <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-[#fff4d6] text-[#a06200]">{r.status || 'pending'}</span>,
+    text: <span>{r.project_name || r.title} · {r.tco2e_claimed ? `${Math.round(r.tco2e_claimed).toLocaleString()} tCO₂e` : ''}</span>,
+    meta: <span className="font-mono text-[10px] text-[#6b7685]">{r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-ZA') : ''}</span>,
+  }), 'No MRV submissions.');
+  const panels = [vintagesPanel, mrvPanel].filter((p): p is NonNullable<typeof p> => !!p);
   return (
     <WorkstationShell
       role="carbon_fund"
@@ -39,6 +54,8 @@ export function CarbonWorkstationPage() {
       subtitle="Vintage workflow · MRV submissions · Retirement certificates. All flows; no external tools needed."
       backHref="/carbon-registry"
       backLabel="Carbon registry"
+      kpis={kpis}
+      panels={panels}
       tabs={[
         {
           key: 'vintages',
