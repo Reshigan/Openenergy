@@ -244,7 +244,15 @@ export type EventType =
   // ─── Data-tier rollups & archives ──────────────────────────────────────
   | 'data_tier.metering_rolled' | 'data_tier.metering_archived'
   | 'data_tier.audit_archived' | 'data_tier.ona_rolled'
-  | 'data_tier.snapshot_taken' | 'data_tier.tenant_quota_set';
+  | 'data_tier.snapshot_taken' | 'data_tier.tenant_quota_set'
+  // ─── Wave 1: IPP project schedule (WBS + CPM + leveling + baselines) ──
+  | 'project.schedule.activity.created' | 'project.schedule.activity.updated'
+  | 'project.schedule.activity.deleted'
+  | 'project.schedule.dependency.created' | 'project.schedule.dependency.deleted'
+  | 'project.schedule.calendar.updated' | 'project.schedule.resource.updated'
+  | 'project.schedule.assignment.updated'
+  | 'project.schedule.recomputed' | 'project.schedule.leveled'
+  | 'project.schedule.baseline.saved' | 'project.schedule.critical_path.changed';
 
 interface CascadeContext {
   event: EventType;
@@ -279,6 +287,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   rec_market: 'offtaker',
   scope2: 'offtaker',
   ipp: 'ipp',
+  project: 'ipp',
   esg: 'esg',
   grid: 'grid',
   metering: 'grid',

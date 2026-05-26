@@ -13,7 +13,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import {
-  Calendar, addWorkingDays, workingDaysBetween, isWorkingDay,
+  Calendar, addWorkingDays, workingDaysBetween,
 } from './calendars';
 
 export type LinkType = 'FS' | 'SS' | 'FF' | 'SF';
