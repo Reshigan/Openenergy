@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle } from './_helpers';
+import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle, featureTour } from './_helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -87,6 +87,20 @@ test('lender-watchlist-alert', async ({ page }) => {
       await p.locator('[data-test="alert-row"], table tbody tr, .alert-card')
         .first().click().catch(() => undefined);
       await p.waitForTimeout(1_100);
+    },
+  });
+});
+
+// ─── End-of-role feature tour ─────────────────────────────────────────
+// Closes the lender arc by panning the launch board — the audience sees
+// every other surface (portfolio, drawdowns, covenants, watchlist,
+// dunning, ESG-linked KPIs, regulator bridge).
+test('lender-feature-tour', async ({ page }) => {
+  await shot(page, '/launch/lender', {
+    dwell: 14_000,
+    waitFor: '[data-test^="kpi"], a[href^="/"]',
+    interact: async (p) => {
+      await featureTour(p, 'lender');
     },
   });
 });

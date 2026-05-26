@@ -26,7 +26,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/../.."
 
-SCRIPT_PATH="../docs/video/script-2026-05-25.md"
+SCRIPT_PATH="../docs/video/script-2026-05-26.md"
 VOICE="${EDGE_TTS_VOICE:-en-US-AvaMultilingualNeural}"
 # Ava-Multilingual's default cadence lands ~16:30 on this script's word
 # count; +6% trims to ~15:00 without losing the conversational delivery.

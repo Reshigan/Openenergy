@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle } from './_helpers';
+import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle, featureTour } from './_helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -101,6 +101,20 @@ test('esums-portal-share-token', async ({ page }) => {
       await email.click().catch(() => undefined);
       await p.keyboard.type('auditor@deloitte.co.za', { delay: 70 });
       await p.waitForTimeout(900);
+    },
+  });
+});
+
+// ─── End-of-role feature tour ─────────────────────────────────────────
+// Closes the Esums O&M arc by panning the asset operator's launch
+// board — fleet KPIs, opportunity feed, water telemetry, work-orders,
+// portal shares, AI fault inference, warranty register, MTTR trends.
+test('esums-feature-tour', async ({ page }) => {
+  await shot(page, '/launch/asset_operator', {
+    dwell: 14_000,
+    waitFor: '[data-test^="kpi"], a[href^="/"]',
+    interact: async (p) => {
+      await featureTour(p, 'asset_operator');
     },
   });
 });

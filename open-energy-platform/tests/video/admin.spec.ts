@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle } from './_helpers';
+import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle, featureTour } from './_helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -74,6 +74,20 @@ test('audit-chain-summary', async ({ page }) => {
       await p.locator('[data-test="audit-block"], table tbody tr, .block')
         .first().hover().catch(() => undefined);
       await p.waitForTimeout(900);
+    },
+  });
+});
+
+// ─── End-of-role feature tour ─────────────────────────────────────────
+// Closes the admin arc by panning the launch board — every other
+// platform-ops surface (participants, KYC, fees, cron, MFA enrolment,
+// rate limits, feature flags, AI killswitch, billing).
+test('admin-feature-tour', async ({ page }) => {
+  await shot(page, '/launch/admin', {
+    dwell: 14_000,
+    waitFor: '[data-test^="kpi"], a[href^="/"]',
+    interact: async (p) => {
+      await featureTour(p, 'admin');
     },
   });
 });

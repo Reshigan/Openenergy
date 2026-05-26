@@ -206,3 +206,49 @@ export async function clickTabAndSettle(
 export async function moveCursor(p: Page, x: number, y: number): Promise<void> {
   await p.mouse.move(x, y, { steps: 25 });
 }
+
+/**
+ * Runs an end-of-role feature tour over the launch board. Highlights every
+ * other surface available to the role by panning through the nav rail and
+ * hovering each workflow tile in turn. Lands on `/launch/:role` so the
+ * Esums gradient hero + KPI strip provides the closing frame.
+ *
+ * Used as the FINAL shot of every role spec so the V/O can name-check the
+ * surfaces we did not deep-dive into ("…plus settlement, dispatch, audit,
+ * carbon registry, ESG, mobile field ops, regulator surveillance and more
+ * — all within the same login.").
+ */
+export async function featureTour(p: Page, role: string): Promise<void> {
+  // Launch board paints the canonical hero + KPI strip + workflow tile grid.
+  // The hero is the focal point so the audience reads the role label first.
+  await smoothScroll(p, 0, 600);
+  await p.waitForTimeout(800);
+
+  // Glide the cursor along the nav rail (left side) so each menu item gets a
+  // half-second hover/highlight beat. nav[aria-label="Primary"] is the
+  // FioriShell sidebar.
+  const navItems = await p.locator('nav[aria-label="Primary"] a, nav[aria-label="Primary"] button').all().catch(() => []);
+  for (let i = 0; i < Math.min(navItems.length, 7); i++) {
+    await navItems[i].hover().catch(() => undefined);
+    await p.waitForTimeout(420);
+  }
+
+  // Scroll past the KPI strip to expose the workflow tiles.
+  await smoothScroll(p, 360, 1100);
+  // Hover each visible workflow tile so the audience reads the labels.
+  const tiles = await p.locator('[data-test^="workflow-tile"], [data-test^="launch-card"], .launch-card, a[href^="/"][class*="card"]').all().catch(() => []);
+  for (let i = 0; i < Math.min(tiles.length, 6); i++) {
+    await tiles[i].hover().catch(() => undefined);
+    await p.waitForTimeout(380);
+  }
+
+  // Glide back to the top so the closing freeze-frame is the hero KPI strip
+  // (the V/O reads the headline metrics over the static frame).
+  await smoothScroll(p, 0, 900);
+  await moveCursor(p, 720, 280);
+  await p.waitForTimeout(600);
+
+  // The `role` parameter is logged in the test title only — kept here so
+  // call sites can be grep'd ("featureTour(p, 'trader')") for audit.
+  void role;
+}

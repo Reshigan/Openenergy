@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle } from './_helpers';
+import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle, featureTour } from './_helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -89,6 +89,20 @@ test('grid-curtailment-event', async ({ page }) => {
       await p.locator('[data-test="curtailment-row"], table tbody tr').first()
         .click().catch(() => undefined);
       await p.waitForTimeout(1_200);
+    },
+  });
+});
+
+// ─── End-of-role feature tour ─────────────────────────────────────────
+// Closes the grid-operator arc by panning the launch board — frequency,
+// congestion, curtailment, redispatch, reserve margin, ancillary
+// services, outage planning, system operator audit chain.
+test('grid-feature-tour', async ({ page }) => {
+  await shot(page, '/launch/grid_operator', {
+    dwell: 14_000,
+    waitFor: '[data-test^="kpi"], a[href^="/"]',
+    interact: async (p) => {
+      await featureTour(p, 'grid_operator');
     },
   });
 });

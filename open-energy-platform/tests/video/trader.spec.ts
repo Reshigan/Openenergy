@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle } from './_helpers';
+import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle, featureTour } from './_helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -94,6 +94,20 @@ test('trader-ai-suggestion-accept', async ({ page }) => {
       await p.getByRole('button', { name: /Accept|Apply|Submit/i }).first()
         .click().catch(() => undefined);
       await p.waitForTimeout(900);
+    },
+  });
+});
+
+// ─── End-of-role feature tour ─────────────────────────────────────────
+// Final beat for the trader arc: pan the launch board so the audience
+// sees every other surface available — risk, surveillance bridge, pre-
+// trade guards, settlement, audit chain — all from the same login.
+test('trader-feature-tour', async ({ page }) => {
+  await shot(page, '/launch/trader', {
+    dwell: 14_000,
+    waitFor: '[data-test^="kpi"], a[href^="/"]',
+    interact: async (p) => {
+      await featureTour(p, 'trader');
     },
   });
 });

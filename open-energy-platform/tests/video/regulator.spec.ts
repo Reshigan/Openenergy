@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle } from './_helpers';
+import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle, featureTour } from './_helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -85,6 +85,20 @@ test('regulator-decisions-list', async ({ page }) => {
       await p.locator('[data-test="decision-row"], table tbody tr').first()
         .hover().catch(() => undefined);
       await p.waitForTimeout(800);
+    },
+  });
+});
+
+// ─── End-of-role feature tour ─────────────────────────────────────────
+// Closes the regulator arc by panning the launch board — the audience
+// sees every other surface (surveillance, licences, tariff filings,
+// enforcement, NERSA exports, audit chain, market structure analysis).
+test('regulator-feature-tour', async ({ page }) => {
+  await shot(page, '/launch/regulator', {
+    dwell: 14_000,
+    waitFor: '[data-test^="kpi"], a[href^="/"]',
+    interact: async (p) => {
+      await featureTour(p, 'regulator');
     },
   });
 });

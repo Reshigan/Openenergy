@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle } from './_helpers';
+import { ensureToken, seedTokenAuth, shot, smoothScroll, moveCursor, clickTabAndSettle, featureTour } from './_helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -74,6 +74,20 @@ test('ipp-drawdown-request', async ({ page }) => {
       await amount.click().catch(() => undefined);
       await p.keyboard.type('12500000', { delay: 70 });
       await p.waitForTimeout(900);
+    },
+  });
+});
+
+// ─── End-of-role feature tour ─────────────────────────────────────────
+// Closes the IPP arc by panning the launch board — the audience sees
+// every other surface available (project pipeline, financial model,
+// drawdown queue, REC issuance, settlement, carbon registry, ESG).
+test('ipp-feature-tour', async ({ page }) => {
+  await shot(page, '/launch/ipp', {
+    dwell: 14_000,
+    waitFor: '[data-test^="kpi"], a[href^="/"]',
+    interact: async (p) => {
+      await featureTour(p, 'ipp');
     },
   });
 });
