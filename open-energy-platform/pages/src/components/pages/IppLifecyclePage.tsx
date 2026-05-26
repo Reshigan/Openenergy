@@ -341,9 +341,14 @@ export function IppLifecyclePage() {
   ];
   return (
     <SuitePage
+      eyebrow="IPP · Lifecycle"
       title="IPP project file"
       subtitle="EPC, environmental, land, insurance and community — the full project-finance evidence pack."
       tabs={tabs}
+      heroRole="ipp_developer"
+      heroEyebrow="IPP · project overview"
+      heroTitle="IPP project file"
+      heroSubtitle="EPC, environmental, land, insurance and community evidence pack."
       aiBriefRole="ipp_developer"
       aiBriefAccent={{ from: '#1f9b95', to: '#1a3a5c' }}
     />

@@ -27,6 +27,8 @@ type Covenant = {
   operator: string; // '>=' | '<='
   latest_value?: number;
   status?: 'pass' | 'warn' | 'breach';
+  covenant_code?: string;
+  covenant_name?: string;
 };
 
 type Waterfall = {

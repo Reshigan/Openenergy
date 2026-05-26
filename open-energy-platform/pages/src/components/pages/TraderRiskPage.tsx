@@ -226,9 +226,14 @@ export function TraderRiskPage() {
   ];
   return (
     <SuitePage
+      eyebrow="Trader · Risk"
       title="Trader risk console"
       subtitle="Positions, marks, credit, collateral, margin and clearing — Financial Markets Act 19/2012 aligned."
       tabs={tabs}
+      heroRole="trader"
+      heroEyebrow="Trader · risk overview"
+      heroTitle="Trader risk console"
+      heroSubtitle="Positions, marks, credit, collateral, margin and clearing."
       aiBriefRole="trader"
       aiBriefAccent={{ from: '#3b82c4', to: '#1f9b95' }}
     />

@@ -44,7 +44,7 @@ export function PublicStatusPage() {
   }, []);
 
   if (err && !data) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--oe-surface)' }}>
       <div className="widget-card widget-tone-bad p-6 max-w-md text-center">
         <AlertOctagon size={28} className="mx-auto" />
         <div className="mt-2 text-[16px] font-semibold">Status page unreachable</div>
@@ -59,28 +59,30 @@ export function PublicStatusPage() {
   const Icon = meta.icon;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
-      <header className={`px-6 py-6 ${meta.tone}`}>
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Icon size={28} />
-            <div>
-              <div className="text-[11px] uppercase tracking-wider opacity-80 inline-flex items-center gap-1">
-                <Activity size={11} /> Consolidated Energy Cockpit · platform status
-              </div>
-              <h1 className="font-display text-[22px] font-bold tracking-tight">{meta.label}</h1>
+    <div className="min-h-screen" style={{ background: 'var(--oe-surface)' }}>
+      <header className="p-6 lg:p-10 pb-4">
+        <div className="max-w-4xl mx-auto flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6b7685] bg-white border border-[#dde4ec] rounded-full px-3 py-1 mb-2">
+              <Activity size={12} /> Platform · status
             </div>
+            <h1 className="font-display text-[28px] font-bold tracking-tight leading-tight" style={{ color: 'var(--oe-on-surface)' }}>
+              Platform status
+            </h1>
+            <div className={`mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-[12px] font-semibold ${meta.tone}`}>
+              <Icon size={14} /> {meta.label}
+            </div>
+            <p className="text-[12px] text-[#6b7685] mt-2">
+              Updated {new Date(data.generated_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })} · DB round-trip {data.live_db_latency_ms} ms
+            </p>
           </div>
-          <button onClick={load} className="h-9 px-3 rounded bg-white/40 hover:bg-white/60 text-[12px] font-semibold inline-flex items-center gap-1">
+          <button onClick={load} className="h-9 px-3 rounded-md bg-white border border-[#dde4ec] hover:bg-[#eef2f7] text-[#0f1c2e] text-[12px] font-semibold inline-flex items-center gap-1">
             <RefreshCw size={13} /> Refresh
           </button>
         </div>
-        <div className="max-w-4xl mx-auto mt-2 text-[11px] opacity-80">
-          Updated {new Date(data.generated_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })} · DB round-trip {data.live_db_latency_ms} ms
-        </div>
       </header>
 
-      <main className="max-w-4xl mx-auto p-4 lg:p-6 space-y-4">
+      <main className="max-w-4xl mx-auto p-6 lg:p-10 pt-0 space-y-4">
         <section className="widget-card">
           <header className="widget-card-header"><div className="widget-card-title">Components</div></header>
           <ul className="divide-y divide-[#eef2f7]">

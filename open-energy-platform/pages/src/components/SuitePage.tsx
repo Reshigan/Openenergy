@@ -11,6 +11,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, AlertTriangle, RefreshCw, X, Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import { AiBriefPanel, BriefRole } from './AiBriefPanel';
+import { SuiteHero } from './SuiteHero';
 
 // ─── Field & form specs ────────────────────────────────────────────────────
 // `datetime-local` mirrors the native HTML input type; FormField renders
@@ -105,12 +106,22 @@ export interface TabSpec {
 export interface SuitePageProps {
   title: string;
   subtitle?: string;
+  /** Small uppercase chip rendered above the h1 (Esums-style canonical chrome). */
+  eyebrow?: string;
   tabs: TabSpec[];
   initialTab?: string;
   /** When set, renders the AI briefing panel at the top of the page. */
   aiBriefRole?: BriefRole;
   /** Optional colour overrides for the AI briefing panel gradient. */
   aiBriefAccent?: { from: string; to: string };
+  /** When set, renders the gradient KPI hero (Esums-style) above the tabs. */
+  heroRole?: string;
+  /** Eyebrow shown inside the gradient hero panel (defaults to `eyebrow`). */
+  heroEyebrow?: string;
+  /** Title shown inside the gradient hero panel (defaults to `title`). */
+  heroTitle?: string;
+  /** Subtitle shown inside the gradient hero panel (defaults to `subtitle`). */
+  heroSubtitle?: string;
 }
 
 export function SuitePage(props: SuitePageProps) {
@@ -121,11 +132,15 @@ export function SuitePage(props: SuitePageProps) {
   );
 
   return (
-    <div className="p-4 sm:p-6 w-full mx-auto space-y-4 sm:space-y-5">
-      <header>
-        <h1 className="text-[18px] sm:text-[22px] font-semibold text-[#0f1c2e] leading-tight">{props.title}</h1>
-        {props.subtitle && <p className="text-[12px] sm:text-[13px] text-[#6b7685] mt-1">{props.subtitle}</p>}
-      </header>
+    <div className="p-6 lg:p-10 space-y-6 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
+      <SuiteHero
+        role={props.heroRole}
+        eyebrow={props.heroEyebrow || props.eyebrow || props.title}
+        title={props.heroTitle || props.title}
+        subtitle={props.heroSubtitle || props.subtitle}
+        accentFrom={props.aiBriefAccent?.from}
+        accentTo={props.aiBriefAccent?.to}
+      />
 
       {props.aiBriefRole && (
         <AiBriefPanel

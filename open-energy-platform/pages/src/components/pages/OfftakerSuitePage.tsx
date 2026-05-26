@@ -221,9 +221,14 @@ export function OfftakerSuitePage() {
   ];
   return (
     <SuitePage
+      eyebrow="Offtaker · Suite"
       title="Offtaker workbench"
       subtitle="Multi-site groups, tariff comparison, consumption profiles, REC retirement and Scope 2 disclosures."
       tabs={tabs}
+      heroRole="offtaker"
+      heroEyebrow="Offtaker · portfolio overview"
+      heroTitle="Offtaker workbench"
+      heroSubtitle="Multi-site groups, tariff comparison, RECs and Scope 2 disclosures."
       aiBriefRole="offtaker"
       aiBriefAccent={{ from: '#1a8a5b', to: '#1f9b95' }}
     />

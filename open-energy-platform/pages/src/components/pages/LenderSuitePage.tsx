@@ -378,9 +378,14 @@ export function LenderSuitePage() {
   ];
   return (
     <SuitePage
+      eyebrow="Lender · Suite"
       title="Lender workbench"
       subtitle="Covenant testing, IE certs, waterfalls, reserve accounts and stress scenarios."
       tabs={tabs}
+      heroRole="lender"
+      heroEyebrow="Lender · portfolio overview"
+      heroTitle="Lender workbench"
+      heroSubtitle="Covenants, IE certs, waterfalls, reserves and stress scenarios."
       aiBriefRole="lender"
       aiBriefAccent={{ from: '#1a8a5b', to: '#3b82c4' }}
     />

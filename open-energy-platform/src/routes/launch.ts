@@ -1025,7 +1025,7 @@ async function buildGridOperatorBoard(c: any, user: any): Promise<LaunchPayload>
   ).first().catch(() => null as any);
   const outagesRow = await c.env.DB.prepare(
     `SELECT COUNT(*) AS c FROM grid_outages
-       WHERE COALESCE(restoration_at, '') = ''`,
+       WHERE COALESCE(restored_at, '') = ''`,
   ).first().catch(() => null as any);
   const dispatchAckRow = await c.env.DB.prepare(
     `SELECT COUNT(*) AS c FROM grid_dispatch_schedules WHERE status = 'published'`,

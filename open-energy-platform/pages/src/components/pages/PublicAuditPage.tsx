@@ -45,22 +45,23 @@ export function PublicAuditPage() {
   }, [roots, filter]);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
-      <header className="px-6 py-6 bg-[#0f1c2e] text-white">
-        <div className="max-w-5xl mx-auto flex items-center gap-3 flex-wrap">
-          <ShieldCheck size={28} />
-          <div>
-            <div className="text-[11px] uppercase tracking-wider opacity-80">Consolidated Energy Cockpit · transparency</div>
-            <h1 className="font-display text-[22px] font-bold tracking-tight">Public audit transparency</h1>
-            <div className="text-[11px] opacity-80 mt-0.5">
-              Hash-chained, Ed25519-signed, optionally co-signed by independent attestors.
-            </div>
+    <div className="min-h-screen" style={{ background: 'var(--oe-surface)' }}>
+      <header className="p-6 lg:p-10 pb-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6b7685] bg-white border border-[#dde4ec] rounded-full px-3 py-1 mb-2">
+            <ShieldCheck size={12} /> Transparency · public audit
           </div>
+          <h1 className="font-display text-[28px] font-bold tracking-tight leading-tight" style={{ color: 'var(--oe-on-surface)' }}>
+            Public audit transparency
+          </h1>
+          <p className="text-[13px] text-[#3d4756] mt-1 max-w-3xl">
+            Hash-chained, Ed25519-signed Merkle roots, optionally co-signed by independent attestors. Generate and verify inclusion proofs without trusting the platform.
+          </p>
         </div>
       </header>
 
       <nav className="bg-white border-b border-[#dde4ec]">
-        <div className="max-w-5xl mx-auto px-4 flex flex-wrap gap-1 py-2">
+        <div className="max-w-5xl mx-auto px-6 lg:px-10 flex flex-wrap gap-1 py-2">
           {([
             ['roots', 'Published roots', Hash],
             ['proof', 'Generate proof', FileSearch],
@@ -69,8 +70,8 @@ export function PublicAuditPage() {
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`h-9 px-3 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 ${
-                tab === key ? 'bg-[#0f1c2e] text-white' : 'text-[#0f1c2e] hover:bg-[#eef2f7]'
+              className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-1.5 ${
+                tab === key ? 'bg-[#1a3a5c] text-white' : 'text-[#0f1c2e] hover:bg-[#eef2f7]'
               }`}
             >
               <Icon size={13} /> {label}
@@ -79,7 +80,7 @@ export function PublicAuditPage() {
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto p-4 lg:p-6 space-y-4">
+      <main className="max-w-5xl mx-auto p-6 lg:p-10 space-y-4">
         {tab === 'roots' && <RootsTable rows={filtered} filter={filter} setFilter={setFilter} />}
         {tab === 'proof' && <ProofPanel />}
         {tab === 'verify' && <VerifyPanel />}

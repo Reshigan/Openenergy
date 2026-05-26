@@ -1,4 +1,5 @@
 import React from 'react';
+import { SuiteHero } from './SuiteHero';
 
 /* ════════════════════════════════════════════════════════════════════════
  * StitchPage — shared Stitch-style page chrome
@@ -45,6 +46,16 @@ export interface StitchPageProps<TId extends string = string> {
   tabs?: StitchTab<TId>[];
   activeTab?: TId;
   onTabChange?: (id: TId) => void;
+  /** When set, pulls /launch/:heroRole/kpis and renders the Esums gradient
+   *  hero panel with the role's top KPIs. */
+  heroRole?: string;
+  /** Override gradient endpoints (defaults to Esums steel-blue). */
+  heroAccentFrom?: string;
+  heroAccentTo?: string;
+  /** Opt out of the gradient hero (use the legacy plain header instead).
+   *  Default: false — every page shows the Esums-style summary hero so
+   *  the look-and-feel is consistent across the platform. */
+  noHero?: boolean;
   /** Page body content */
   children: React.ReactNode;
 }
@@ -59,63 +70,83 @@ export function StitchPage<TId extends string = string>({
   tabs,
   activeTab,
   onTabChange,
+  heroRole,
+  heroAccentFrom,
+  heroAccentTo,
+  noHero,
   children,
 }: StitchPageProps<TId>) {
+  const tabStrip = tabs && tabs.length > 0 ? (
+    <nav className="flex flex-wrap items-center gap-1 bg-white border border-[#dde4ec] rounded-lg p-1">
+      {tabs.map((t) => {
+        const TIcon = t.icon;
+        const active = t.id === activeTab;
+        return (
+          <button
+            key={t.id}
+            onClick={() => onTabChange?.(t.id)}
+            className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-2 ${
+              active ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'
+            }`}
+          >
+            {TIcon ? <TIcon size={14} /> : null} {t.label}
+            {t.badge && (
+              <span className={`ml-1 px-1.5 py-[1px] text-[10px] rounded ${active ? 'bg-white/20' : 'bg-[#dbecfb] text-[#3b82c4]'}`}>{t.badge}</span>
+            )}
+          </button>
+        );
+      })}
+    </nav>
+  ) : null;
+
   return (
     <div className="p-6 lg:p-10 space-y-6 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
-      <header className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
-        <div>
-          {eyebrowLabel && (
-            <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6b7685] bg-white border border-[#dde4ec] rounded-full px-3 py-1">
-              {Icon ? <Icon size={12} /> : null} {eyebrowLabel}
-            </div>
-          )}
-          <h1
-            className="mt-2 font-display text-[28px] font-bold tracking-tight"
-            style={
-              gradientHeading
-                ? {
-                    background: 'linear-gradient(90deg,#1a3a5c 0%,#3b82c4 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }
-                : { color: 'var(--oe-on-surface)' }
-            }
-          >
-            {title}
-          </h1>
-          {subtitle && (
-            <p className="text-[13px] text-[#3d4756] mt-1 max-w-3xl">{subtitle}</p>
-          )}
-        </div>
-
-        <div className="flex flex-col lg:flex-row lg:items-end gap-2">
-          {tabs && tabs.length > 0 && (
-            <nav className="flex flex-wrap items-center gap-1 bg-white border border-[#dde4ec] rounded-lg p-1">
-              {tabs.map((t) => {
-                const TIcon = t.icon;
-                const active = t.id === activeTab;
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => onTabChange?.(t.id)}
-                    className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-2 ${
-                      active ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'
-                    }`}
-                  >
-                    {TIcon ? <TIcon size={14} /> : null} {t.label}
-                    {t.badge && (
-                      <span className={`ml-1 px-1.5 py-[1px] text-[10px] rounded ${active ? 'bg-white/20' : 'bg-[#dbecfb] text-[#3b82c4]'}`}>{t.badge}</span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          )}
-          {actions && <div className="flex items-center gap-2">{actions}</div>}
-        </div>
-      </header>
+      {noHero ? (
+        <header className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
+          <div>
+            {eyebrowLabel && (
+              <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6b7685] bg-white border border-[#dde4ec] rounded-full px-3 py-1">
+                {Icon ? <Icon size={12} /> : null} {eyebrowLabel}
+              </div>
+            )}
+            <h1
+              className="mt-2 font-display text-[28px] font-bold tracking-tight"
+              style={
+                gradientHeading
+                  ? {
+                      background: 'linear-gradient(90deg,#1a3a5c 0%,#3b82c4 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                    }
+                  : { color: 'var(--oe-on-surface)' }
+              }
+            >
+              {title}
+            </h1>
+            {subtitle && (
+              <p className="text-[13px] text-[#3d4756] mt-1 max-w-3xl">{subtitle}</p>
+            )}
+          </div>
+          <div className="flex flex-col lg:flex-row lg:items-end gap-2">
+            {tabStrip}
+            {actions && <div className="flex items-center gap-2">{actions}</div>}
+          </div>
+        </header>
+      ) : (
+        <>
+          <SuiteHero
+            role={heroRole}
+            eyebrow={eyebrowLabel || ''}
+            title={title}
+            subtitle={subtitle}
+            accentFrom={heroAccentFrom}
+            accentTo={heroAccentTo}
+            actions={actions}
+          />
+          {tabStrip && <div className="flex justify-end">{tabStrip}</div>}
+        </>
+      )}
 
       {children}
     </div>

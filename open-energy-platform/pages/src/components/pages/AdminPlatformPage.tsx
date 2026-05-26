@@ -354,9 +354,14 @@ export function AdminPlatformPage() {
   ];
   return (
     <SuitePage
+      eyebrow="Admin · Platform"
       title="Platform administration"
       subtitle="Tenants, provisioning, subscriptions, platform invoicing, feature flags, data tier and quotas."
       tabs={tabs}
+      heroRole="admin"
+      heroEyebrow="Admin · platform overview"
+      heroTitle="Operations control"
+      heroSubtitle="Tenants, provisioning, billing health, feature flags and platform-wide quotas."
       aiBriefRole="admin"
       aiBriefAccent={{ from: '#3b82c4', to: '#1a3a5c' }}
     />

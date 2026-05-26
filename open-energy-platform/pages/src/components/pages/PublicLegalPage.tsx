@@ -35,24 +35,23 @@ export function PublicLegalPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
-      <header className="px-6 py-6 bg-[#1a3a5c] text-white">
-        <div className="max-w-5xl mx-auto flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <Scale size={28} />
-            <div>
-              <div className="text-[11px] uppercase tracking-wider opacity-80">Consolidated Energy Cockpit · legal</div>
-              <h1 className="font-display text-[22px] font-bold tracking-tight">Public legal information</h1>
-            </div>
+    <div className="min-h-screen" style={{ background: 'var(--oe-surface)' }}>
+      <header className="p-6 lg:p-10 pb-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6b7685] bg-white border border-[#dde4ec] rounded-full px-3 py-1 mb-2">
+            <Scale size={12} /> Legal · public information
           </div>
-          <div className="text-[11px] opacity-80">
-            Operated under POPIA, PAIA, ERA 2006, NERSA Grid Code
-          </div>
+          <h1 className="font-display text-[28px] font-bold tracking-tight leading-tight" style={{ color: 'var(--oe-on-surface)' }}>
+            Public legal information
+          </h1>
+          <p className="text-[13px] text-[#3d4756] mt-1 max-w-3xl">
+            Operated under POPIA, PAIA, ERA 2006, and the NERSA Grid Code. PAIA manual, retention register, tariff applications and published decisions.
+          </p>
         </div>
       </header>
 
       <nav className="bg-white border-b border-[#dde4ec]">
-        <div className="max-w-5xl mx-auto px-4 flex flex-wrap gap-1 py-2">
+        <div className="max-w-5xl mx-auto px-6 lg:px-10 flex flex-wrap gap-1 py-2">
           {([
             ['overview', 'Overview', FileText],
             ['paia', 'PAIA manual', ShieldCheck],
@@ -63,7 +62,7 @@ export function PublicLegalPage() {
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`h-9 px-3 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 ${
+              className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-1.5 ${
                 tab === key ? 'bg-[#1a3a5c] text-white' : 'text-[#0f1c2e] hover:bg-[#eef2f7]'
               }`}
             >
@@ -73,7 +72,7 @@ export function PublicLegalPage() {
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto p-4 lg:p-6 space-y-4">
+      <main className="max-w-5xl mx-auto p-6 lg:p-10 space-y-4">
         {tab === 'overview' && <Overview manual={manual} appCount={apps.length} decisionCount={decisions.length} />}
         {tab === 'paia' && <PaiaManual manual={manual} />}
         {tab === 'applications' && <Applications apps={apps} />}

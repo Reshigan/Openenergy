@@ -371,9 +371,14 @@ export function GridOperatorSuitePage() {
 
   return (
     <SuitePage
+      eyebrow="Grid operator · Suite"
       title="System operator workbench"
       subtitle="Dispatch, ancillary markets, outages, curtailment and connections — aligned to the SA Grid Code."
       tabs={tabs}
+      heroRole="grid_operator"
+      heroEyebrow="Grid operator · system overview"
+      heroTitle="System operator workbench"
+      heroSubtitle="Dispatch, ancillary markets, outages, curtailment and connections."
       aiBriefRole="grid_operator"
       aiBriefAccent={{ from: '#b04e0f', to: '#c0392b' }}
     />

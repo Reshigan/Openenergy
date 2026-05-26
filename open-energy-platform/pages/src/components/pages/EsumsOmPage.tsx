@@ -212,6 +212,7 @@ export function EsumsOmPage() {
 
   return (
     <SuitePage
+      eyebrow="Esums · Operations"
       title="Esums"
       subtitle="Asset Intelligence & Operations — the operational brain that connects physical assets to commercial outcomes."
       tabs={tabs}

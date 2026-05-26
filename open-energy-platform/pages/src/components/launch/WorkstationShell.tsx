@@ -97,62 +97,66 @@ export function WorkstationShell({
       <RoleShell role={role} density={effectiveDensity} chrome="light">
         {commands && commands.length > 0 ? <CommandRail items={commands} /> : null}
         <div className="p-6 lg:p-10 space-y-5 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
-          <header className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6b7685] bg-white border border-[#dde4ec] rounded-full px-3 py-1">
-                {eyebrow}
-              </div>
-              <h1
-                className="mt-2 font-display font-bold tracking-tight"
-                style={{
-                  fontFamily: 'var(--oe-display-font)',
-                  fontSize: 28,
-                  letterSpacing: '-0.02em',
-                  color: '#0f1c2e',
-                }}
-              >
-                {title}
-              </h1>
-              <p className="text-[13px] text-[#3d4756] mt-1 max-w-3xl">{subtitle}</p>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              {densityState.canToggle ? (
-                <DensityToggle
-                  density={densityState.density}
-                  onChange={densityState.setDensity}
-                />
-              ) : null}
-              {backHref && (
-                <button
-                  onClick={() => navigate(backHref)}
-                  className="h-8 px-3 rounded border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-[#eef2f7]"
+          <section
+            className="rounded-xl text-white p-5 shadow-md"
+            style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1a3a5c 60%, #0b1c30 100%)' }}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="text-[11px] uppercase tracking-wider text-white/70">{eyebrow}</div>
+                <h1
+                  className="font-display font-bold tracking-tight mt-1"
+                  style={{
+                    fontFamily: 'var(--oe-display-font)',
+                    fontSize: 24,
+                    letterSpacing: '-0.02em',
+                    color: '#ffffff',
+                  }}
                 >
-                  <ArrowLeft size={12} /> {backLabel || 'Back'}
+                  {title}
+                </h1>
+                <p className="text-[12px] text-white/70 mt-1 max-w-2xl">{subtitle}</p>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {densityState.canToggle ? (
+                  <DensityToggle
+                    density={densityState.density}
+                    onChange={densityState.setDensity}
+                  />
+                ) : null}
+                {backHref && (
+                  <button
+                    onClick={() => navigate(backHref)}
+                    className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20"
+                  >
+                    <ArrowLeft size={12} /> {backLabel || 'Back'}
+                  </button>
+                )}
+                <button
+                  onClick={refresh}
+                  className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20"
+                >
+                  <RefreshCw size={12} /> Refresh
                 </button>
-              )}
-              <button
-                onClick={refresh}
-                className="h-8 px-3 rounded border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-[#eef2f7]"
-              >
-                <RefreshCw size={12} /> Refresh
-              </button>
+              </div>
             </div>
-          </header>
-
-          {kpis && kpis.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {kpis.map((k, i) => {
-                const tone = k.tone === 'up' ? '#1a8a5b' : k.tone === 'down' ? '#c0392b' : k.tone === 'warn' ? '#c97a14' : '#0f1c2e';
-                return (
-                  <div key={i} className="rounded-xl border border-[#dde4ec] bg-white p-4">
-                    <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{k.label}</div>
-                    <div className="mt-1 text-[22px] font-semibold font-mono" style={{ color: tone }}>{k.value}</div>
-                    {k.caption && <div className="text-[11px] text-[#6b7685] mt-1">{k.caption}</div>}
+            {kpis && kpis.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4">
+                {kpis.map((k, i) => (
+                  <div key={i} className="rounded-lg bg-white/10 backdrop-blur p-3 border border-white/10">
+                    <div className="text-[10px] uppercase tracking-wider text-white/75">{k.label}</div>
+                    <div
+                      className="mt-1 font-mono text-[20px] font-bold leading-tight"
+                      style={{ fontVariantNumeric: 'tabular-nums', color: '#ffffff' }}
+                    >
+                      {k.value}
+                    </div>
+                    {k.caption && <div className="text-[10px] text-white/60 mt-0.5">{k.caption}</div>}
                   </div>
-                );
-              })}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </section>
 
           {panels && panels.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -204,25 +208,41 @@ export function WorkstationShell({
 
   return (
     <div className="p-6 lg:p-10 space-y-4 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6b7685] bg-white border border-[#dde4ec] rounded-full px-3 py-1">
-            {eyebrow}
+      <section
+        className="rounded-xl text-white p-5 shadow-md"
+        style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1a3a5c 60%, #0b1c30 100%)' }}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="text-[11px] uppercase tracking-wider text-white/70">{eyebrow}</div>
+            <h1 className="mt-1 font-display text-[24px] font-bold tracking-tight" style={{ color: '#ffffff' }}>{title}</h1>
+            <p className="text-[12px] text-white/70 mt-1 max-w-2xl">{subtitle}</p>
           </div>
-          <h1 className="mt-2 font-display text-[28px] font-bold tracking-tight" style={{ color: 'var(--oe-on-surface)' }}>{title}</h1>
-          <p className="text-[13px] text-[#3d4756]">{subtitle}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {backHref && (
-            <button onClick={() => navigate(backHref)} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
-              <ArrowLeft size={12} /> {backLabel || 'Back'}
+          <div className="flex flex-wrap gap-2">
+            {backHref && (
+              <button onClick={() => navigate(backHref)} className="h-9 px-3 rounded-md border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/20">
+                <ArrowLeft size={12} /> {backLabel || 'Back'}
+              </button>
+            )}
+            <button onClick={refresh} className="h-9 px-3 rounded-md border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/20">
+              <RefreshCw size={12} /> Refresh
             </button>
-          )}
-          <button onClick={refresh} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
-            <RefreshCw size={12} /> Refresh
-          </button>
+          </div>
         </div>
-      </header>
+        {kpis && kpis.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4">
+            {kpis.map((k, i) => (
+              <div key={i} className="rounded-lg bg-white/10 backdrop-blur p-3 border border-white/10">
+                <div className="text-[10px] uppercase tracking-wider text-white/75">{k.label}</div>
+                <div className="mt-1 font-mono text-[20px] font-bold leading-tight" style={{ fontVariantNumeric: 'tabular-nums', color: '#ffffff' }}>
+                  {k.value}
+                </div>
+                {k.caption && <div className="text-[10px] text-white/60 mt-0.5">{k.caption}</div>}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       <nav className="flex flex-wrap items-center gap-1 bg-white border border-[#dde4ec] rounded-lg p-1">
         {tabs.map(t => (

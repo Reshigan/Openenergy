@@ -186,9 +186,14 @@ export function CarbonRegistryPage() {
   ];
   return (
     <SuitePage
+      eyebrow="Carbon · Registry"
       title="Carbon registry console"
       subtitle="Registry sync, vintages with serial tracking, MRV workflow, and Carbon Tax Act offset claims."
       tabs={tabs}
+      heroRole="carbon_fund"
+      heroEyebrow="Carbon fund · registry overview"
+      heroTitle="Carbon registry"
+      heroSubtitle="Vintages, retirements, MRV workflow and offset claims under the Carbon Tax Act."
       aiBriefRole="carbon_fund"
       aiBriefAccent={{ from: '#1a8a5b', to: '#1f9b95' }}
     />

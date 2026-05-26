@@ -372,9 +372,14 @@ export function RegulatorSuitePage() {
 
   return (
     <SuitePage
+      eyebrow="Regulator · Suite"
       title="Regulator workbench"
       subtitle="Licensing, tariff determinations, enforcement and market surveillance for the national energy sector."
       tabs={tabs}
+      heroRole="regulator"
+      heroEyebrow="Regulator · oversight overview"
+      heroTitle="Regulator workbench"
+      heroSubtitle="Licensing, tariff determinations, enforcement and market surveillance."
       aiBriefRole="regulator"
       aiBriefAccent={{ from: '#1a8a5b', to: '#3b82c4' }}
     />
