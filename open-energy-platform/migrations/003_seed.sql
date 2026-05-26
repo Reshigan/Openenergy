@@ -89,7 +89,14 @@ INSERT OR IGNORE INTO emission_factors (id, energy_source, factor_value, unit, s
 -- ---- DEMO PARTICIPANTS ----
 -- All demo accounts share the password: Demo@2024!
 -- PBKDF2-SHA256 hash (100 000 iterations, salt = 'openenergy-demo-salt') for "Demo@2024!"
-INSERT OR REPLACE INTO participants (id, email, password_hash, name, company_name, role, status, kyc_status, bbbee_level, subscription_tier, email_verified, onboarding_completed) VALUES
+--
+-- Was INSERT OR REPLACE for years. Switched to INSERT OR IGNORE after migration
+-- 088 added child rows (rec_certificates, offtaker_delivery_points etc.) whose
+-- FK to participants is ON DELETE RESTRICT — REPLACE's implicit DELETE then
+-- fails on every re-run. The password hash hasn't changed and isn't tracked
+-- as an update target by any caller, so IGNORE has the same observable effect
+-- against an empty table and is replay-safe against a populated one.
+INSERT OR IGNORE INTO participants (id, email, password_hash, name, company_name, role, status, kyc_status, bbbee_level, subscription_tier, email_verified, onboarding_completed) VALUES
 ('demo_admin_001',      'admin@openenergy.co.za',       'pbkdf2$sha256$100000$b3BlbmVuZXJneS1kZW1vLXNhbHQ=$IOJml+OkT8C4tON6R1DA+HDLPXUGnOyqgPF6XBjyYkk=', 'System Admin',           'Open Energy Platform',             'admin',         'active', 'approved',  1, 'enterprise',   1, 1),
 ('demo_trader_001',     'trader@openenergy.co.za',      'pbkdf2$sha256$100000$b3BlbmVuZXJneS1kZW1vLXNhbHQ=$IOJml+OkT8C4tON6R1DA+HDLPXUGnOyqgPF6XBjyYkk=', 'Sipho Mkhize',           'Mkhize Energy Traders',            'trader',        'active', 'approved',  2, 'professional', 1, 1),
 ('demo_ipp_001',        'ipp@openenergy.co.za',         'pbkdf2$sha256$100000$b3BlbmVuZXJneS1kZW1vLXNhbHQ=$IOJml+OkT8C4tON6R1DA+HDLPXUGnOyqgPF6XBjyYkk=', 'Johan van der Berg',     'RenewCo Solar (Pty) Ltd',          'ipp_developer', 'active', 'approved',  3, 'enterprise',   1, 1),
