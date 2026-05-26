@@ -301,7 +301,7 @@ export function ListingTable({
     return <EmptyState title={empty?.title || 'No data'} description={empty?.description || ''} />;
   }
   return (
-    <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto">
+    <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto text-[#0f1c2e]">
       <table className="w-full text-[13px] min-w-[640px]">
         <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
           <tr>{columns.map(col => <th key={col.key} className="px-4 py-2">{col.label}</th>)}</tr>
