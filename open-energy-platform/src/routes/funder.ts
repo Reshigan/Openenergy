@@ -91,7 +91,16 @@ funder.get('/facilities', async (c) => {
   const user = getCurrentUser(c);
   const scope = scopeLenderWhere(user);
   const rs = await c.env.DB.prepare(`
-    SELECT lf.*, p.project_name, p.technology, p.capacity_mw, p.status AS project_status,
+    SELECT lf.*,
+           lf.committed_amount    AS commitment,
+           lf.drawn_amount        AS drawn,
+           lf.interest_rate_pct   AS rate_pct,
+           CASE WHEN lf.tenor_months IS NULL OR lf.created_at IS NULL THEN NULL
+                ELSE datetime(lf.created_at, '+' || lf.tenor_months || ' months') END AS maturity,
+           CASE WHEN lf.facility_type LIKE '%mezz%' THEN 'mezzanine'
+                WHEN lf.facility_type LIKE '%equity%' THEN 'equity'
+                ELSE 'senior' END AS tranche,
+           p.project_name, p.technology, p.capacity_mw, p.status AS project_status,
            (SELECT COUNT(*) FROM loan_covenants lc WHERE lc.facility_id = lf.id AND lc.status != 'clean') AS breached_covenants,
            (SELECT COUNT(*) FROM disbursement_requests dr WHERE dr.facility_id = lf.id AND dr.status = 'pending') AS pending_disbursements
     FROM loan_facilities lf
@@ -207,10 +216,11 @@ funder.get('/summary', async (c) => {
     SELECT COUNT(*) AS facility_count,
            COALESCE(SUM(committed_amount),0) AS committed_zar,
            COALESCE(SUM(drawn_amount),0) AS drawn_zar,
-           COALESCE(SUM(CASE WHEN status='active' THEN 1 ELSE 0 END),0) AS active_facilities
+           COALESCE(SUM(CASE WHEN status='active' THEN 1 ELSE 0 END),0) AS active_facilities,
+           COALESCE(AVG(interest_rate_pct), 0) AS avg_rate_pct
     FROM loan_facilities lf
     WHERE ${scope.where}
-  `).bind(...scope.params).first();
+  `).bind(...scope.params).first<{ facility_count: number; committed_zar: number; drawn_zar: number; active_facilities: number; avg_rate_pct: number }>();
   const covenants = await c.env.DB.prepare(`
     SELECT COALESCE(SUM(CASE WHEN lc.status = 'breached' THEN 1 ELSE 0 END),0) AS breached,
            COALESCE(SUM(CASE WHEN lc.status = 'watch' THEN 1 ELSE 0 END),0) AS watching
@@ -225,7 +235,23 @@ funder.get('/summary', async (c) => {
     JOIN loan_facilities lf ON lf.id = dr.facility_id
     WHERE ${scope.where}
   `).bind(...scope.params).first();
-  return c.json({ success: true, data: { ...row, ...covenants, ...disbursements } });
+  const committed = Number(row?.committed_zar || 0);
+  const drawn = Number(row?.drawn_zar || 0);
+  const rate = Number(row?.avg_rate_pct || 0);
+  return c.json({
+    success: true,
+    data: {
+      ...row,
+      ...covenants,
+      ...disbursements,
+      aum: committed,
+      deployed: drawn,
+      available: Math.max(committed - drawn, 0),
+      nav: drawn,
+      irr_pct: rate,
+      moic: drawn > 0 ? Math.max(1, 1 + rate / 100 * 1.4) : 1,
+    },
+  });
 });
 
 // ──────────────────────────────────────────────────────────────────────────
