@@ -110,16 +110,16 @@ async function loadDeps(env: any, projectId: string): Promise<any[]> {
 
 // ── Activities CRUD ─────────────────────────────────────────────────────
 
-projectSchedule.get('/:projectId/activities', async (c) => {
-  const projectId = c.req.param('projectId');
+projectSchedule.get('/activities', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const rows = await loadActivities(c.env, projectId);
   return c.json({ success: true, data: rows });
 });
 
-projectSchedule.post('/:projectId/activities', async (c) => {
-  const projectId = c.req.param('projectId');
+projectSchedule.post('/activities', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const user = getCurrentUser(c);
@@ -159,9 +159,9 @@ projectSchedule.post('/:projectId/activities', async (c) => {
   return c.json({ success: true, data: { id } });
 });
 
-projectSchedule.put('/:projectId/activities/:id', async (c) => {
-  const projectId = c.req.param('projectId');
-  const id = c.req.param('id');
+projectSchedule.put('/activities/:id', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
+  const id = (c.req.param('id') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const user = getCurrentUser(c);
@@ -210,9 +210,9 @@ projectSchedule.put('/:projectId/activities/:id', async (c) => {
   return c.json({ success: true });
 });
 
-projectSchedule.delete('/:projectId/activities/:id', async (c) => {
-  const projectId = c.req.param('projectId');
-  const id = c.req.param('id');
+projectSchedule.delete('/activities/:id', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
+  const id = (c.req.param('id') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const user = getCurrentUser(c);
@@ -237,16 +237,16 @@ projectSchedule.delete('/:projectId/activities/:id', async (c) => {
 
 // ── Dependencies CRUD ───────────────────────────────────────────────────
 
-projectSchedule.get('/:projectId/dependencies', async (c) => {
-  const projectId = c.req.param('projectId');
+projectSchedule.get('/dependencies', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const rows = await loadDeps(c.env, projectId);
   return c.json({ success: true, data: rows });
 });
 
-projectSchedule.post('/:projectId/dependencies', async (c) => {
-  const projectId = c.req.param('projectId');
+projectSchedule.post('/dependencies', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const user = getCurrentUser(c);
@@ -297,9 +297,9 @@ projectSchedule.post('/:projectId/dependencies', async (c) => {
   return c.json({ success: true, data: { id } });
 });
 
-projectSchedule.delete('/:projectId/dependencies/:id', async (c) => {
-  const projectId = c.req.param('projectId');
-  const id = c.req.param('id');
+projectSchedule.delete('/dependencies/:id', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
+  const id = (c.req.param('id') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const user = getCurrentUser(c);
@@ -316,8 +316,8 @@ projectSchedule.delete('/:projectId/dependencies/:id', async (c) => {
 
 // ── Calendars + exceptions ──────────────────────────────────────────────
 
-projectSchedule.get('/:projectId/calendars', async (c) => {
-  const projectId = c.req.param('projectId');
+projectSchedule.get('/calendars', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const cals = await c.env.DB.prepare(`SELECT * FROM project_calendars WHERE project_id = ?`).bind(projectId).all();
@@ -327,8 +327,8 @@ projectSchedule.get('/:projectId/calendars', async (c) => {
   return c.json({ success: true, data: { calendars: cals.results || [], exceptions: ex.results || [] } });
 });
 
-projectSchedule.post('/:projectId/calendars', async (c) => {
-  const projectId = c.req.param('projectId');
+projectSchedule.post('/calendars', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const user = getCurrentUser(c);
@@ -354,9 +354,9 @@ projectSchedule.post('/:projectId/calendars', async (c) => {
   return c.json({ success: true, data: { id } });
 });
 
-projectSchedule.post('/:projectId/calendars/:calendarId/exceptions', async (c) => {
-  const projectId = c.req.param('projectId');
-  const calendarId = c.req.param('calendarId');
+projectSchedule.post('/calendars/:calendarId/exceptions', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
+  const calendarId = (c.req.param('calendarId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const body = await c.req.json<any>();
@@ -374,8 +374,8 @@ projectSchedule.post('/:projectId/calendars/:calendarId/exceptions', async (c) =
 
 // ── Resources + assignments ─────────────────────────────────────────────
 
-projectSchedule.get('/:projectId/resources', async (c) => {
-  const projectId = c.req.param('projectId');
+projectSchedule.get('/resources', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const resources = await c.env.DB.prepare(`SELECT * FROM project_resources WHERE project_id = ?`).bind(projectId).all();
@@ -387,8 +387,8 @@ projectSchedule.get('/:projectId/resources', async (c) => {
   return c.json({ success: true, data: { resources: resources.results || [], assignments: assigns.results || [] } });
 });
 
-projectSchedule.post('/:projectId/resources', async (c) => {
-  const projectId = c.req.param('projectId');
+projectSchedule.post('/resources', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const user = getCurrentUser(c);
@@ -414,8 +414,8 @@ projectSchedule.post('/:projectId/resources', async (c) => {
   return c.json({ success: true, data: { id } });
 });
 
-projectSchedule.post('/:projectId/assignments', async (c) => {
-  const projectId = c.req.param('projectId');
+projectSchedule.post('/assignments', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const user = getCurrentUser(c);
@@ -437,9 +437,9 @@ projectSchedule.post('/:projectId/assignments', async (c) => {
   return c.json({ success: true, data: { id } });
 });
 
-projectSchedule.delete('/:projectId/assignments/:id', async (c) => {
-  const projectId = c.req.param('projectId');
-  const id = c.req.param('id');
+projectSchedule.delete('/assignments/:id', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
+  const id = (c.req.param('id') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   await c.env.DB.prepare(`DELETE FROM resource_assignments WHERE id = ?`).bind(id).run();
@@ -517,8 +517,8 @@ async function computeAndStore(env: any, projectId: string): Promise<any> {
   return run;
 }
 
-projectSchedule.post('/:projectId/recompute', async (c) => {
-  const projectId = c.req.param('projectId');
+projectSchedule.post('/recompute', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const user = getCurrentUser(c);
@@ -536,8 +536,8 @@ projectSchedule.post('/:projectId/recompute', async (c) => {
   return c.json({ success: true, data: result });
 });
 
-projectSchedule.get('/:projectId/critical-path', async (c) => {
-  const projectId = c.req.param('projectId');
+projectSchedule.get('/critical-path', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const bypass = shouldBypass(c.req.raw);
@@ -547,8 +547,8 @@ projectSchedule.get('/:projectId/critical-path', async (c) => {
   return c.json({ success: true, data: result });
 });
 
-projectSchedule.get('/:projectId/look-ahead', async (c) => {
-  const projectId = c.req.param('projectId');
+projectSchedule.get('/look-ahead', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const days = Math.min(Math.max(parseInt(c.req.query('days') || '21'), 1), 90);
@@ -566,8 +566,8 @@ projectSchedule.get('/:projectId/look-ahead', async (c) => {
   return c.json({ success: true, data: rows.results || [] });
 });
 
-projectSchedule.get('/:projectId/over-allocations', async (c) => {
-  const projectId = c.req.param('projectId');
+projectSchedule.get('/over-allocations', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
 
@@ -630,8 +630,8 @@ projectSchedule.get('/:projectId/over-allocations', async (c) => {
 
 // ── Leveling ────────────────────────────────────────────────────────────
 
-projectSchedule.post('/:projectId/level', async (c) => {
-  const projectId = c.req.param('projectId');
+projectSchedule.post('/level', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const user = getCurrentUser(c);
@@ -702,8 +702,8 @@ projectSchedule.post('/:projectId/level', async (c) => {
 
 // ── Baselines ───────────────────────────────────────────────────────────
 
-projectSchedule.get('/:projectId/baselines', async (c) => {
-  const projectId = c.req.param('projectId');
+projectSchedule.get('/baselines', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const rows = await c.env.DB.prepare(`
@@ -712,8 +712,8 @@ projectSchedule.get('/:projectId/baselines', async (c) => {
   return c.json({ success: true, data: rows.results || [] });
 });
 
-projectSchedule.post('/:projectId/baselines', async (c) => {
-  const projectId = c.req.param('projectId');
+projectSchedule.post('/baselines', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const user = getCurrentUser(c);
@@ -756,9 +756,9 @@ projectSchedule.post('/:projectId/baselines', async (c) => {
   return c.json({ success: true, data: { id: baselineId } });
 });
 
-projectSchedule.get('/:projectId/baselines/:id/variance', async (c) => {
-  const projectId = c.req.param('projectId');
-  const baselineId = c.req.param('id');
+projectSchedule.get('/baselines/:id/variance', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
+  const baselineId = (c.req.param('id') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
 
@@ -776,8 +776,8 @@ projectSchedule.get('/:projectId/baselines/:id/variance', async (c) => {
 
 // ── State endpoint ──────────────────────────────────────────────────────
 
-projectSchedule.get('/:projectId/state', async (c) => {
-  const projectId = c.req.param('projectId');
+projectSchedule.get('/state', async (c) => {
+  const projectId = (c.req.param('projectId') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const row = await c.env.DB.prepare(`SELECT * FROM project_schedule_state WHERE project_id = ?`).bind(projectId).first();

@@ -20,35 +20,35 @@ function has(app: Hono<any>, method: string, path: string): boolean {
 describe('Project schedule routes', () => {
   const expected: Array<[string, string]> = [
     // activities
-    ['GET',    '/:projectId/activities'],
-    ['POST',   '/:projectId/activities'],
-    ['PUT',    '/:projectId/activities/:id'],
-    ['DELETE', '/:projectId/activities/:id'],
+    ['GET',    '/activities'],
+    ['POST',   '/activities'],
+    ['PUT',    '/activities/:id'],
+    ['DELETE', '/activities/:id'],
     // dependencies
-    ['GET',    '/:projectId/dependencies'],
-    ['POST',   '/:projectId/dependencies'],
-    ['DELETE', '/:projectId/dependencies/:id'],
+    ['GET',    '/dependencies'],
+    ['POST',   '/dependencies'],
+    ['DELETE', '/dependencies/:id'],
     // calendars + exceptions
-    ['GET',    '/:projectId/calendars'],
-    ['POST',   '/:projectId/calendars'],
-    ['POST',   '/:projectId/calendars/:calendarId/exceptions'],
+    ['GET',    '/calendars'],
+    ['POST',   '/calendars'],
+    ['POST',   '/calendars/:calendarId/exceptions'],
     // resources + assignments
-    ['GET',    '/:projectId/resources'],
-    ['POST',   '/:projectId/resources'],
-    ['POST',   '/:projectId/assignments'],
-    ['DELETE', '/:projectId/assignments/:id'],
+    ['GET',    '/resources'],
+    ['POST',   '/resources'],
+    ['POST',   '/assignments'],
+    ['DELETE', '/assignments/:id'],
     // compute
-    ['POST',   '/:projectId/recompute'],
-    ['GET',    '/:projectId/critical-path'],
-    ['GET',    '/:projectId/look-ahead'],
-    ['GET',    '/:projectId/over-allocations'],
-    ['POST',   '/:projectId/level'],
+    ['POST',   '/recompute'],
+    ['GET',    '/critical-path'],
+    ['GET',    '/look-ahead'],
+    ['GET',    '/over-allocations'],
+    ['POST',   '/level'],
     // baselines
-    ['GET',    '/:projectId/baselines'],
-    ['POST',   '/:projectId/baselines'],
-    ['GET',    '/:projectId/baselines/:id/variance'],
+    ['GET',    '/baselines'],
+    ['POST',   '/baselines'],
+    ['GET',    '/baselines/:id/variance'],
     // state
-    ['GET',    '/:projectId/state'],
+    ['GET',    '/state'],
   ];
 
   for (const [method, path] of expected) {

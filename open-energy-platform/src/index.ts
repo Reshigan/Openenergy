@@ -223,7 +223,7 @@ app.route('/api/participants', participantsRoutes);
 app.route('/api/contracts', contractsRoutes);
 app.route('/api/invoices', invoicesRoutes);
 app.route('/api/projects', projectsRoutes);
-app.route('/api/projects', projectScheduleRoutes);
+app.route('/api/projects/:projectId/schedule', projectScheduleRoutes);
 app.route('/api/trading', tradingRoutes);
 app.route('/api/settlement', settlementRoutes);
 app.route('/api/carbon', carbonRoutes);

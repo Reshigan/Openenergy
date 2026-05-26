@@ -89,10 +89,10 @@ export function ScheduleTab({ projectId }: ScheduleTabProps) {
     setLoading(true);
     try {
       const [a, r, b, s] = await Promise.all([
-        api.get(`/projects/${projectId}/schedule/${projectId}/activities`),
-        api.get(`/projects/${projectId}/schedule/${projectId}/resources`),
-        api.get(`/projects/${projectId}/schedule/${projectId}/baselines`),
-        api.get(`/projects/${projectId}/schedule/${projectId}/state`),
+        api.get(`/projects/${projectId}/schedule/activities`),
+        api.get(`/projects/${projectId}/schedule/resources`),
+        api.get(`/projects/${projectId}/schedule/baselines`),
+        api.get(`/projects/${projectId}/schedule/state`),
       ]);
       setActivities(a.data?.data || []);
       setResources(r.data?.data?.resources || []);
@@ -110,7 +110,7 @@ export function ScheduleTab({ projectId }: ScheduleTabProps) {
   const recompute = async () => {
     setBusy('recompute');
     try {
-      await api.post(`/projects/${projectId}/schedule/${projectId}/recompute`, {});
+      await api.post(`/projects/${projectId}/schedule/recompute`, {});
       await loadAll();
     } catch (e: any) {
       setError(e?.response?.data?.error || e?.message || 'Recompute failed');
@@ -122,7 +122,7 @@ export function ScheduleTab({ projectId }: ScheduleTabProps) {
   const level = async () => {
     setBusy('level');
     try {
-      await api.post(`/projects/${projectId}/schedule/${projectId}/level`, { mode: 'resource-limited' });
+      await api.post(`/projects/${projectId}/schedule/level`, { mode: 'resource-limited' });
       await loadAll();
     } catch (e: any) {
       setError(e?.response?.data?.error || e?.message || 'Leveling failed');
@@ -135,7 +135,7 @@ export function ScheduleTab({ projectId }: ScheduleTabProps) {
     setBusy('baseline');
     const name = `Baseline ${new Date().toISOString().slice(0, 10)} ${baselines.length + 1}`;
     try {
-      await api.post(`/projects/${projectId}/schedule/${projectId}/baselines`, { name, is_current: true });
+      await api.post(`/projects/${projectId}/schedule/baselines`, { name, is_current: true });
       await loadAll();
     } catch (e: any) {
       setError(e?.response?.data?.error || e?.message || 'Baseline failed');

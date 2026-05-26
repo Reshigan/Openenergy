@@ -349,9 +349,9 @@ function SchedulePulseTab() {
       setLoading(true); setErr(null);
       try {
         const [la, acts, over] = await Promise.all([
-          api.get(`/projects/${pid}/schedule/${pid}/look-ahead?days=21`).then(r => r.data?.data || []).catch(() => []),
-          api.get(`/projects/${pid}/schedule/${pid}/activities`).then(r => r.data?.data || []).catch(() => []),
-          api.get(`/projects/${pid}/schedule/${pid}/over-allocations`).then(r => r.data?.data || []).catch(() => []),
+          api.get(`/projects/${pid}/schedule/look-ahead?days=21`).then(r => r.data?.data || []).catch(() => []),
+          api.get(`/projects/${pid}/schedule/activities`).then(r => r.data?.data || []).catch(() => []),
+          api.get(`/projects/${pid}/schedule/over-allocations`).then(r => r.data?.data || []).catch(() => []),
         ]);
         setLookAhead(la);
         setCritical(((acts as ScheduleRow[]).filter(a => a.is_critical && a.type !== 'summary')).length);
