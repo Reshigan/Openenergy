@@ -597,4 +597,112 @@ function periodToIso(period: string): string {
   return d.toISOString();
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// POST /ai/schedule/explain-criticality — Per-project: explain why each
+// critical-path activity drives the finish date. Inline assist for the
+// ScheduleTab. Returns a short paragraph + a per-activity reason hint.
+// Body: { project_id: string }
+// ──────────────────────────────────────────────────────────────────────────
+ai.post('/schedule/explain-criticality', async (c) => {
+  const body = await c.req.json<{ project_id?: string }>().catch(() => ({} as any));
+  if (!body?.project_id) return c.json({ success: false, error: 'project_id required' }, 400);
+  const user = getCurrentUser(c);
+
+  const rows = await c.env.DB.prepare(`
+    SELECT id, wbs_code, name, duration_days, early_start, early_finish, total_float, is_critical
+    FROM project_activities WHERE project_id = ? AND is_critical = 1 AND type != 'summary'
+    ORDER BY early_start ASC, sort_order ASC
+  `).bind(body.project_id).all();
+  const criticals = (rows.results || []) as any[];
+
+  if (!criticals.length) {
+    return c.json({ success: true, data: { summary: 'No critical activities found. Recompute the schedule first.', activities: [] } });
+  }
+
+  const longestDur = criticals.reduce((m, r) => r.duration_days > m ? r.duration_days : m, 0);
+  const summary = `${criticals.length} critical activities form the longest path. Slipping any of them slips commercial operation by the same number of working days. The longest single critical activity is ${longestDur} working days; compressing it is the highest-leverage move.`;
+
+  const reasoned = criticals.map((r) => ({
+    id: r.id,
+    wbs_code: r.wbs_code,
+    name: r.name,
+    reason:
+      r.duration_days >= longestDur * 0.7
+        ? 'Long-duration critical activity — compress or split this to shorten the schedule.'
+        : r.total_float === 0
+          ? 'Zero-float activity — any delay propagates directly to project finish.'
+          : 'On the longest path — guard predecessor handoffs.',
+    duration_days: r.duration_days,
+    early_start: r.early_start,
+    early_finish: r.early_finish,
+  }));
+
+  await fireCascade({
+    event: 'ai.classification_logged', actor_id: user.id,
+    entity_type: 'project', entity_id: body.project_id,
+    data: { intent: 'schedule.explain_criticality', n: criticals.length },
+    env: c.env,
+  }).catch(() => { /* non-fatal */ });
+
+  return c.json({ success: true, data: { summary, activities: reasoned } });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// POST /ai/schedule/forecast-slip — Heuristic slip forecast vs current
+// baseline. Reads percent_complete against the planned ratio at status
+// date. Returns expected slip in working days + the top-3 worst offenders.
+// Body: { project_id: string, status_date?: string }
+// ──────────────────────────────────────────────────────────────────────────
+ai.post('/schedule/forecast-slip', async (c) => {
+  const body = await c.req.json<{ project_id?: string; status_date?: string }>().catch(() => ({} as any));
+  if (!body?.project_id) return c.json({ success: false, error: 'project_id required' }, 400);
+
+  const rows = await c.env.DB.prepare(`
+    SELECT id, wbs_code, name, duration_days, planned_start, planned_finish,
+           early_start, early_finish, percent_complete, is_critical, total_float
+    FROM project_activities
+    WHERE project_id = ? AND type = 'task'
+  `).bind(body.project_id).all();
+  const acts = (rows.results || []) as any[];
+
+  const statusDate = body.status_date || new Date().toISOString().slice(0, 10);
+  const offenders: any[] = [];
+  let totalSlip = 0;
+
+  for (const a of acts) {
+    const start = a.planned_start || a.early_start;
+    const finish = a.planned_finish || a.early_finish;
+    if (!start || !finish) continue;
+    if (start > statusDate) continue; // not started yet
+    const totalDur = Math.max(1, Number(a.duration_days || 1));
+    const sToStatus = Math.max(0, daysBetweenIso(start, statusDate));
+    const eToStatus = Math.min(totalDur, sToStatus);
+    const expectedPct = eToStatus / totalDur;
+    const actualPct = Math.min(1, Math.max(0, Number(a.percent_complete || 0) / 100));
+    const gap = expectedPct - actualPct;
+    if (gap > 0.05) {
+      const slipDays = Math.round(gap * totalDur);
+      offenders.push({
+        id: a.id, wbs_code: a.wbs_code, name: a.name,
+        slip_days: slipDays, is_critical: !!a.is_critical, total_float: a.total_float,
+      });
+      if (a.is_critical) totalSlip += slipDays;
+    }
+  }
+  offenders.sort((a, b) => b.slip_days - a.slip_days);
+  const top3 = offenders.slice(0, 3);
+
+  const summary = totalSlip === 0
+    ? 'No critical-path slip detected at this status date.'
+    : `Forecast slip of ${totalSlip} working days to commercial operation, concentrated in ${top3.length} activity${top3.length === 1 ? '' : 'ies'}.`;
+
+  return c.json({ success: true, data: { status_date: statusDate, forecast_slip_days: totalSlip, top_offenders: top3, summary } });
+});
+
+function daysBetweenIso(a: string, b: string): number {
+  const dA = new Date(a + 'T00:00:00Z').getTime();
+  const dB = new Date(b + 'T00:00:00Z').getTime();
+  return Math.round((dB - dA) / 86400000);
+}
+
 export default ai;
