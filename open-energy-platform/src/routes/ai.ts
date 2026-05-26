@@ -42,6 +42,52 @@ ai.post('/ask', async (c) => {
 });
 
 // ──────────────────────────────────────────────────────────────────────────
+// GET /ai/offtaker/bills — List the offtaker's recent uploaded + analysed
+// bills so the Bill Upload tab can show history without a separate listing
+// endpoint. Returns the latest 20 with parsed ai_result_json.
+// ──────────────────────────────────────────────────────────────────────────
+ai.get('/offtaker/bills', async (c) => {
+  const user = getCurrentUser(c);
+  await c.env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS offtaker_bills (
+      id TEXT PRIMARY KEY,
+      offtaker_id TEXT NOT NULL,
+      source TEXT,
+      meta_json TEXT,
+      ai_result_json TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+  ).run();
+  const rows = await c.env.DB.prepare(
+    `SELECT id, source, meta_json, ai_result_json, created_at
+       FROM offtaker_bills
+      WHERE offtaker_id = ?
+      ORDER BY created_at DESC
+      LIMIT 20`,
+  ).bind(user.id).all<{
+    id: string;
+    source: string | null;
+    meta_json: string | null;
+    ai_result_json: string | null;
+    created_at: string;
+  }>();
+  const data = (rows.results || []).map((r) => {
+    let meta: Record<string, unknown> = {};
+    let result: Record<string, unknown> = {};
+    try { meta = r.meta_json ? JSON.parse(r.meta_json) : {}; } catch { /* ignore */ }
+    try { result = r.ai_result_json ? JSON.parse(r.ai_result_json) : {}; } catch { /* ignore */ }
+    return {
+      id: r.id,
+      source: r.source,
+      created_at: r.created_at,
+      meta,
+      profile: result,
+    };
+  });
+  return c.json({ success: true, data });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
 // POST /ai/offtaker/bills — Upload a utility bill, return AI-extracted tariff
 // profile. Body: { source: 'pdf'|'csv'|'text', content: string, meta?: {} }
 // We don't run a PDF parser in the Worker (too heavy) — the client sends

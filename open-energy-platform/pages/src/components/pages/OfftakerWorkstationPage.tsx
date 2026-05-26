@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
 import { api } from '../../lib/api';
@@ -16,6 +16,7 @@ export function OfftakerWorkstationPage() {
         { key: 'sites', label: 'Sites & groups', body: ({ onRefresh }) => <SitesTab onRefresh={onRefresh} /> },
         { key: 'tariffs', label: 'Tariffs', body: () => <TariffsTab /> },
         { key: 'budgets', label: 'Budget vs actual', body: ({ onRefresh }) => <BudgetsTab onRefresh={onRefresh} /> },
+        { key: 'bills', label: 'Bill upload & AI', body: ({ onRefresh }) => <BillUploadTab onRefresh={onRefresh} /> },
         { key: 'recs', label: 'RECs portfolio', body: ({ onRefresh }) => <RecsTab onRefresh={onRefresh} /> },
         { key: 'scope2', label: 'Scope 2', body: ({ onRefresh }) => <Scope2Tab onRefresh={onRefresh} /> },
         { key: 'audit', label: 'Audit & compliance',
@@ -316,4 +317,336 @@ function Card({ label, value, unit }: { label: string; value: number | null | un
       <div className="text-[20px] font-semibold text-[#0f1c2e] mt-1">{formatted}</div>
     </div>
   );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Bill upload & AI analytics tab
+//   - Paste raw bill text (or upload a .txt/.csv extract)
+//   - POST /ai/offtaker/bills → server-side AI extracts profile
+//   - Then POST /ai/offtaker/optimize → AI recommends a PPA mix
+//   - Last 20 bills + their parsed profile shown in a history table
+// ──────────────────────────────────────────────────────────────────────────
+type BillProfile = {
+  annual_kwh?: number;
+  peak_pct?: number;
+  standard_pct?: number;
+  offpeak_pct?: number;
+  avg_tariff_zar_per_kwh?: number;
+  demand_charge_zar_per_kva?: number;
+  tou_risk?: 'low' | 'medium' | 'high' | string;
+};
+
+type BillRow = {
+  id: string;
+  source: string | null;
+  created_at: string;
+  meta: { site?: string; period?: string } & Record<string, unknown>;
+  profile: BillProfile;
+};
+
+type MixItem = {
+  project_id: string;
+  project_name: string;
+  share_pct: number;
+  mwh_per_year: number;
+  blended_price: number;
+  rationale?: string;
+};
+
+type MixResult = {
+  mix: MixItem[];
+  savings_pct?: number;
+  carbon_tco2e?: number;
+  warnings?: string[];
+};
+
+function BillUploadTab({ onRefresh }: { onRefresh: () => void }) {
+  const [bills, setBills] = useState<BillRow[]>([]);
+  const [siteName, setSiteName] = useState<string>('Sandton head office');
+  const [period, setPeriod] = useState<string>(() => new Date().toISOString().slice(0, 7));
+  const [content, setContent] = useState<string>('');
+  const [uploading, setUploading] = useState(false);
+  const [latest, setLatest] = useState<{ id: string; profile: BillProfile } | null>(null);
+  const [optimizing, setOptimizing] = useState(false);
+  const [mix, setMix] = useState<MixResult | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const loadBills = useCallback(async () => {
+    try {
+      const r = await api.get('/ai/offtaker/bills');
+      const rows = (r.data?.data || []) as BillRow[];
+      setBills(rows);
+      if (!latest && rows.length > 0) {
+        setLatest({ id: rows[0].id, profile: rows[0].profile });
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'failed to load bills');
+    }
+  }, [latest]);
+
+  useEffect(() => { loadBills(); }, [loadBills]);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const text = await f.text();
+    setContent(text);
+  };
+
+  const upload = async () => {
+    setUploading(true);
+    setErr(null);
+    try {
+      const body = {
+        source: 'text',
+        content: content || sampleBillText(siteName, period),
+        meta: { site: siteName, period },
+      };
+      const r = await api.post('/ai/offtaker/bills', body);
+      const data = r.data?.data || {};
+      setLatest({ id: data.bill_id, profile: (data.structured || {}) as BillProfile });
+      setMix(null);
+      await loadBills();
+      onRefresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const optimize = async () => {
+    if (!latest) return;
+    setOptimizing(true);
+    setErr(null);
+    try {
+      const r = await api.post('/ai/offtaker/optimize', {
+        bill_id: latest.id,
+        horizon_years: 15,
+      });
+      const structured = (r.data?.data?.structured || {}) as MixResult;
+      setMix(structured);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'optimize failed');
+    } finally {
+      setOptimizing(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {err && <div className="text-[12px] text-red-700">{err}</div>}
+
+      {/* AI assist banner — "why" + 1-click */}
+      <div className="rounded-xl border border-[#cfe0d6] bg-[#f4faf6] p-4 flex items-start gap-3">
+        <div className="h-8 w-8 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold flex items-center justify-center">AI</div>
+        <div className="flex-1 text-[13px] text-[#0f1c2e]">
+          <div className="font-semibold mb-1">Bill analyser</div>
+          <div className="text-[#3d4756]">
+            Paste an Eskom or municipal utility bill below. The platform extracts your annual consumption,
+            TOU split, demand charges and tariff exposure — then recommends a fixed-price PPA mix
+            from operating + under-construction projects. Why this matters: every 1% improvement in
+            blended tariff translates to ZAR 24k/yr per GWh of consumption.
+          </div>
+        </div>
+      </div>
+
+      {/* Upload form */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <label className="block text-[13px]">
+          <span className="text-[#6b7685]">Site</span>
+          <input value={siteName} onChange={(e) => setSiteName(e.target.value)} className="mt-1 h-9 w-full px-3 border border-[#dde4ec] rounded-md text-[13px] bg-white" />
+        </label>
+        <label className="block text-[13px]">
+          <span className="text-[#6b7685]">Billing period (YYYY-MM)</span>
+          <input value={period} onChange={(e) => setPeriod(e.target.value)} className="mt-1 h-9 w-full px-3 border border-[#dde4ec] rounded-md text-[13px] bg-white" />
+        </label>
+        <label className="block text-[13px]">
+          <span className="text-[#6b7685]">Upload .txt / .csv extract</span>
+          <input type="file" accept=".txt,.csv,.json,text/plain,text/csv" onChange={handleFileChange} className="mt-1 h-9 w-full text-[12px]" />
+        </label>
+      </div>
+      <textarea
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder={`Paste extracted bill text here, e.g.:\n\nESKOM MEGAFLEX — period ${period}\nDemand charge       2,500 kVA   R 535,500\nEnergy (peak)     180,000 kWh   R 1,140,300\nEnergy (standard) 540,000 kWh   R 1,118,400\nEnergy (off-peak) 280,000 kWh   R   316,400\nTotal energy    1,000,000 kWh\n\nOr leave blank to use the sample profile for ${siteName}.`}
+        className="w-full h-32 px-3 py-2 border border-[#dde4ec] rounded-md text-[12px] font-mono bg-white text-[#0f1c2e]"
+      />
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={upload}
+          disabled={uploading}
+          className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-60"
+        >
+          {uploading ? 'Analysing…' : 'Analyse bill'}
+        </button>
+        <button
+          onClick={optimize}
+          disabled={!latest || optimizing}
+          className="h-9 px-4 rounded-md bg-[#0f7553] text-white text-[12px] font-semibold disabled:opacity-60"
+        >
+          {optimizing ? 'Optimising…' : 'Optimise PPA mix'}
+        </button>
+      </div>
+
+      {/* Latest profile */}
+      {latest && (
+        <div>
+          <h3 className="text-[13px] font-semibold text-[#3d4756] mb-2">Latest analysed profile</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Card label="Annual kWh" value={latest.profile.annual_kwh} unit="kWh" />
+            <Card label="Avg tariff" value={latest.profile.avg_tariff_zar_per_kwh} unit="R/kWh" />
+            <Card label="Demand charge" value={latest.profile.demand_charge_zar_per_kva} unit="R/kVA" />
+            <RiskCard risk={latest.profile.tou_risk} />
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            <BarRow label="Peak"     value={pct(latest.profile.peak_pct)} tone="bad" />
+            <BarRow label="Standard" value={pct(latest.profile.standard_pct)} tone="warn" />
+            <BarRow label="Off-peak" value={pct(latest.profile.offpeak_pct)} tone="good" />
+          </div>
+        </div>
+      )}
+
+      {/* AI mix recommendation */}
+      {mix && mix.mix && mix.mix.length > 0 && (
+        <div>
+          <h3 className="text-[13px] font-semibold text-[#3d4756] mb-2">Recommended PPA mix · 15 yr horizon</h3>
+          <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto text-[#0f1c2e]">
+            <table className="w-full text-[12px]">
+              <thead className="bg-[#f4f6f8] text-[#6b7685]">
+                <tr>
+                  <th className="text-left p-2">Project</th>
+                  <th className="text-right p-2">Share</th>
+                  <th className="text-right p-2">MWh / yr</th>
+                  <th className="text-right p-2">Blended R/MWh</th>
+                  <th className="text-left p-2">Rationale</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mix.mix.map((m, idx) => (
+                  <tr key={idx} className="border-t border-[#eef1f5]">
+                    <td className="p-2 font-semibold">{m.project_name}</td>
+                    <td className="p-2 text-right">{Number(m.share_pct || 0).toFixed(1)}%</td>
+                    <td className="p-2 text-right">{Number(m.mwh_per_year || 0).toLocaleString()}</td>
+                    <td className="p-2 text-right">R {Number(m.blended_price || 0).toLocaleString()}</td>
+                    <td className="p-2 text-[#3d4756]">{m.rationale || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
+            <Card label="Estimated savings" value={mix.savings_pct} unit="%" />
+            <Card label="Annual CO₂ avoided" value={mix.carbon_tco2e} unit="tCO₂e" />
+            <div className="rounded-xl border border-[#dde4ec] bg-white p-4">
+              <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Next step</div>
+              <div className="text-[13px] mt-1 text-[#0f1c2e]">Draft LOI from this mix — routes to each developer's action queue.</div>
+            </div>
+          </div>
+          {mix.warnings && mix.warnings.length > 0 && (
+            <ul className="mt-2 text-[12px] text-[#a16207] list-disc pl-5">
+              {mix.warnings.map((w, i) => <li key={i}>{w}</li>)}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {/* History */}
+      <div>
+        <h3 className="text-[13px] font-semibold text-[#3d4756] mb-2">Recent analyses</h3>
+        {bills.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-[#dde4ec] p-6 text-center text-[12px] text-[#6b7685]">
+            No bills analysed yet — paste one above to start.
+          </div>
+        ) : (
+          <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto text-[#0f1c2e]">
+            <table className="w-full text-[12px]">
+              <thead className="bg-[#f4f6f8] text-[#6b7685]">
+                <tr>
+                  <th className="text-left p-2">Uploaded</th>
+                  <th className="text-left p-2">Site</th>
+                  <th className="text-left p-2">Period</th>
+                  <th className="text-right p-2">Annual kWh</th>
+                  <th className="text-right p-2">R/kWh</th>
+                  <th className="text-left p-2">TOU risk</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bills.map((b) => (
+                  <tr
+                    key={b.id}
+                    className="border-t border-[#eef1f5] hover:bg-[#f9fbfd] cursor-pointer"
+                    onClick={() => setLatest({ id: b.id, profile: b.profile })}
+                  >
+                    <td className="p-2">{new Date(b.created_at).toLocaleDateString()}</td>
+                    <td className="p-2">{b.meta?.site || '—'}</td>
+                    <td className="p-2">{b.meta?.period || '—'}</td>
+                    <td className="p-2 text-right">{b.profile?.annual_kwh ? Number(b.profile.annual_kwh).toLocaleString() : '—'}</td>
+                    <td className="p-2 text-right">{b.profile?.avg_tariff_zar_per_kwh ? Number(b.profile.avg_tariff_zar_per_kwh).toFixed(2) : '—'}</td>
+                    <td className="p-2"><Pill tone={touTone(b.profile?.tou_risk)}>{b.profile?.tou_risk || 'unknown'}</Pill></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function pct(v: number | undefined): number {
+  if (v == null) return 0;
+  return v > 1 ? v : v * 100;
+}
+
+function touTone(risk: string | undefined): 'good' | 'warn' | 'bad' | 'neutral' {
+  if (!risk) return 'neutral';
+  const r = String(risk).toLowerCase();
+  if (r === 'high') return 'bad';
+  if (r === 'medium') return 'warn';
+  if (r === 'low') return 'good';
+  return 'neutral';
+}
+
+function RiskCard({ risk }: { risk: string | undefined }) {
+  const tone = touTone(risk);
+  const bg = tone === 'bad' ? '#fdecea' : tone === 'warn' ? '#fef6e7' : tone === 'good' ? '#eaf6ee' : '#f4f6f8';
+  const fg = tone === 'bad' ? '#a4161a' : tone === 'warn' ? '#7a5b00' : tone === 'good' ? '#0f7553' : '#0f1c2e';
+  return (
+    <div className="rounded-xl border border-[#dde4ec] p-4" style={{ background: bg }}>
+      <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">TOU exposure</div>
+      <div className="text-[20px] font-semibold mt-1" style={{ color: fg }}>{(risk || 'unknown').toUpperCase()}</div>
+    </div>
+  );
+}
+
+function BarRow({ label, value, tone }: { label: string; value: number; tone: 'good' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? '#a4161a' : tone === 'warn' ? '#c08a00' : '#0f7553';
+  return (
+    <div className="rounded-xl border border-[#dde4ec] bg-white p-3">
+      <div className="flex justify-between items-baseline">
+        <span className="text-[11px] uppercase tracking-wider text-[#6b7685]">{label}</span>
+        <span className="text-[13px] font-semibold text-[#0f1c2e]">{value.toFixed(1)}%</span>
+      </div>
+      <div className="mt-2 h-2 rounded-full bg-[#eef1f5] overflow-hidden">
+        <div className="h-full rounded-full" style={{ width: `${Math.min(100, value)}%`, background: color }} />
+      </div>
+    </div>
+  );
+}
+
+function sampleBillText(site: string, period: string): string {
+  return `ESKOM MEGAFLEX — ${site} — period ${period}
+Notified maximum demand      2,500 kVA   R 535,500.00
+Demand charge                              R 535,500.00
+Energy charge (peak)          180,000 kWh  R 1,140,300.00
+Energy charge (standard)      540,000 kWh  R 1,118,400.00
+Energy charge (off-peak)      280,000 kWh  R   316,400.00
+Total energy                1,000,000 kWh  R 2,575,100.00
+Network access charge                       R   125,000.00
+Service & administration                    R    18,500.00
+Environmental levy            1,000,000 kWh R   3,500.00
+Affordability subsidy charge  1,000,000 kWh R     950.00
+Total billed (excl VAT)                     R 3,258,550.00`;
 }
