@@ -356,6 +356,35 @@ export function regulatorInboxSpec(
       }
       return null;
 
+    // ─── Wave 20 — IPP construction → COD certification chain ──────────────
+    case 'cod.cod_certified':
+      // NERSA SCADA registration + DMRE generation registry mandatory at ≥100MW.
+      if (str('capacity_tier') === 'large') {
+        return {
+          severity: 'high',
+          title: `IPP COD CERTIFIED — ${str('cod_number') || entityId} (${str('project_name') || ''} / ${str('capacity_mw') || '?'}MW / IE: ${str('ie_certifier') || 'unknown'})`.trim(),
+        };
+      }
+      return null;
+    case 'cod.cancelled':
+      // Bid-window allocation surrender → DMRE bond claw-back + reissue visibility.
+      if (str('capacity_tier') === 'large') {
+        return {
+          severity: 'high',
+          title: `IPP construction CANCELLED — ${str('cod_number') || entityId} (${str('project_name') || ''} / ${str('capacity_mw') || '?'}MW / ${str('cancellation_reason') || 'no reason'})`.trim(),
+        };
+      }
+      return null;
+    case 'cod.sla_breached':
+      // Delivery risk to NERSA grid-planning for utility-scale.
+      if (str('capacity_tier') === 'large') {
+        return {
+          severity: 'high',
+          title: `Large-tier COD SLA breached — ${str('cod_number') || entityId} (${str('chain_status') || ''} / ${str('sla_window') || ''})`.trim(),
+        };
+      }
+      return null;
+
     default:
       return null;
   }

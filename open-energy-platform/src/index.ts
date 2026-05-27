@@ -73,6 +73,7 @@ import woChainRoutes, { woChainSlaSweep } from './routes/wo-chain';
 import carbonRetirementChainRoutes, { carbonRetirementSlaSweep } from './routes/carbon-retirement-chain';
 import plannedOutageChainRoutes, { plannedOutageSlaSweep } from './routes/planned-outage-chain';
 import procurementChainRoutes, { procurementSlaSweep } from './routes/procurement-chain';
+import codChainRoutes, { codSlaSweep } from './routes/cod-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -316,6 +317,7 @@ app.route('/api/esums/wo-chain', woChainRoutes);
 app.route('/api/carbon/retirement-chain', carbonRetirementChainRoutes);
 app.route('/api/grid/planned-outages', plannedOutageChainRoutes);
 app.route('/api/ipp/procurement-chain', procurementChainRoutes);
+app.route('/api/ipp/cod-chain', codChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -598,6 +600,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('procurement_sla_sweep', async () => {
         const result = await procurementSlaSweep(env as never);
         console.log('procurement_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 20 — IPP construction → COD certification chain SLA sweep.
+      // Large-tier breaches cross into regulator inbox (NERSA grid-planning).
+      await safe('cod_sla_sweep', async () => {
+        const result = await codSlaSweep(env as never);
+        console.log('cod_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

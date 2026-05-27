@@ -274,6 +274,11 @@ export type EventType =
   | 'procurement.awarded' | 'procurement.contracted' | 'procurement.delivered'
   | 'procurement.rejected' | 'procurement.cancelled'
   | 'procurement.disputed' | 'procurement.resolved' | 'procurement.sla_breached'
+  // Wave 20 — IPP construction → COD certification chain (NERSA §C-5 + DMRE registry)
+  | 'cod.epc_signed' | 'cod.ntp_issued' | 'cod.mobilized'
+  | 'cod.mechanical_complete' | 'cod.cold_commissioned'
+  | 'cod.grid_synchronized' | 'cod.reliability_started'
+  | 'cod.cod_certified' | 'cod.cancelled' | 'cod.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
