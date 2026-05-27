@@ -253,6 +253,11 @@ export type EventType =
   | 'warranty.claim_denied' | 'warranty.claim_disputed'
   | 'warranty.claim_fulfilled' | 'warranty.claim_closed'
   | 'warranty.claim_sla_breached'
+  // Wave 16 — Work-order dispatch chain (Esums O&M)
+  | 'wo.assigned' | 'wo.acknowledged' | 'wo.departed' | 'wo.arrived'
+  | 'wo.diagnosed' | 'wo.repair_started' | 'wo.tested' | 'wo.completed'
+  | 'wo.verified' | 'wo.closed' | 'wo.cancelled'
+  | 'wo.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

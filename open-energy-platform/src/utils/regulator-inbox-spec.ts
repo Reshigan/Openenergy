@@ -238,6 +238,24 @@ export function regulatorInboxSpec(
       }
       return null;
 
+    // ─── Wave 16 — Work order dispatch chain (Esums O&M) ──────────────────
+    case 'wo.cancelled':
+      if (str('priority') === 'critical') {
+        return {
+          severity: 'high',
+          title: `Critical work order CANCELLED — ${str('wo_number') || entityId} (${str('site_id') || ''})`.trim(),
+        };
+      }
+      return null;
+    case 'wo.sla_breached':
+      if (str('priority') === 'critical') {
+        return {
+          severity: 'high',
+          title: `Critical WO SLA breached — ${str('wo_number') || entityId} (${str('chain_status') || ''} / ${str('sla_window') || ''})`.trim(),
+        };
+      }
+      return null;
+
     default:
       return null;
   }

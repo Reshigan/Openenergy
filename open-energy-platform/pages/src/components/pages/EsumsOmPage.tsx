@@ -12,6 +12,7 @@ import { EsumsOmCockpit } from '../widgets/EsumsOmCockpit';
 import { EsumsOmOpportunities } from '../widgets/EsumsOmOpportunities';
 import { CommissioningTab } from '../esums/CommissioningTab';
 import { WarrantyClaimChainTab } from '../esums/WarrantyClaimChainTab';
+import { WoChainTab } from '../esums/WoChainTab';
 
 export function EsumsOmPage() {
   const tabs: TabSpec[] = [
@@ -46,6 +47,14 @@ export function EsumsOmPage() {
       description: 'OEM warranty / RMA claim chain — open → triage → submit → ack → review → approve|deny|dispute → fulfill → close. Severity-tiered SLAs (safety 4h / performance 24h / cosmetic 72h). Safety-tier denials and SLA breaches escalate into the regulator inbox.',
       columns: [],
       customContent: <WarrantyClaimChainTab />,
+    },
+    {
+      key: 'wo_chain',
+      label: 'WO dispatch chain',
+      endpoint: '',
+      description: '12-state P6 work order dispatch chain — created → assigned → acknowledged → en route → on site → diagnosing → repairing → testing → completed → verified → closed. Priority-tiered SLAs (critical 15m / 1h per stage). Critical-priority cancels and SLA breaches escalate into the regulator inbox.',
+      columns: [],
+      customContent: <WoChainTab />,
     },
     {
       key: 'sites',
