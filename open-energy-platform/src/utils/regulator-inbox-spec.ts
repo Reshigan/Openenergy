@@ -212,6 +212,32 @@ export function regulatorInboxSpec(
       }
       return null;
 
+    // ─── Wave 15 — OEM warranty / RMA claim chain ─────────────────────────
+    case 'warranty.claim_denied':
+      if (str('severity') === 'safety') {
+        return {
+          severity: 'high',
+          title: `Safety warranty claim DENIED — ${str('claim_number') || entityId} (${str('oem_name') || ''})`.trim(),
+        };
+      }
+      return null;
+    case 'warranty.claim_disputed':
+      if (str('severity') === 'safety') {
+        return {
+          severity: 'high',
+          title: `Safety warranty claim disputed — ${str('claim_number') || entityId} (${str('oem_name') || ''})`.trim(),
+        };
+      }
+      return null;
+    case 'warranty.claim_sla_breached':
+      if (str('severity') === 'safety') {
+        return {
+          severity: 'high',
+          title: `Safety warranty SLA breached — ${str('claim_number') || entityId} (${str('sla_window') || ''})`.trim(),
+        };
+      }
+      return null;
+
     default:
       return null;
   }

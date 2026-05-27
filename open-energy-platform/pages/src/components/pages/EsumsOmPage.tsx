@@ -11,6 +11,7 @@ import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
 import { EsumsOmCockpit } from '../widgets/EsumsOmCockpit';
 import { EsumsOmOpportunities } from '../widgets/EsumsOmOpportunities';
 import { CommissioningTab } from '../esums/CommissioningTab';
+import { WarrantyClaimChainTab } from '../esums/WarrantyClaimChainTab';
 
 export function EsumsOmPage() {
   const tabs: TabSpec[] = [
@@ -37,6 +38,14 @@ export function EsumsOmPage() {
       description: 'Site onboarding workflow — planned → registered → devices → ingestion → first telemetry → energised → in O&M. P6-grade audit chain with SLA gates per stage.',
       columns: [],
       customContent: <CommissioningTab />,
+    },
+    {
+      key: 'warranty_claims',
+      label: 'Warranty claims',
+      endpoint: '',
+      description: 'OEM warranty / RMA claim chain — open → triage → submit → ack → review → approve|deny|dispute → fulfill → close. Severity-tiered SLAs (safety 4h / performance 24h / cosmetic 72h). Safety-tier denials and SLA breaches escalate into the regulator inbox.',
+      columns: [],
+      customContent: <WarrantyClaimChainTab />,
     },
     {
       key: 'sites',

@@ -246,6 +246,13 @@ export type EventType =
   | 'support.ticket_resolved' | 'support.ticket_closed'
   | 'support.ticket_reopened' | 'support.ticket_escalated'
   | 'support.ticket_sla_breached'
+  // Wave 15 — OEM warranty / RMA claim chain (severity-tiered SLAs + safety crossings)
+  | 'warranty.claim_opened' | 'warranty.claim_triaged'
+  | 'warranty.claim_submitted' | 'warranty.claim_acknowledged'
+  | 'warranty.claim_review_started' | 'warranty.claim_approved'
+  | 'warranty.claim_denied' | 'warranty.claim_disputed'
+  | 'warranty.claim_fulfilled' | 'warranty.claim_closed'
+  | 'warranty.claim_sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
