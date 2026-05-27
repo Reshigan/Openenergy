@@ -65,6 +65,7 @@ import gridWheelingChargesRoutes from './routes/grid-wheeling-charges';
 import traderMmComplianceRoutes from './routes/trader-mm-compliance';
 import ippBondsRoutes, { bondExpirySweep } from './routes/ipp-bonds';
 import carbonMrvChainRoutes, { mrvChainSlaSweep } from './routes/carbon-mrv-chain';
+import esumsCommissioningRoutes, { siteCommissioningSlaSweep } from './routes/esums-commissioning';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -300,6 +301,7 @@ app.route('/api/grid/wheeling-charges', gridWheelingChargesRoutes);
 app.route('/api/trader/mm-compliance', traderMmComplianceRoutes);
 app.route('/api/ipp/bonds', ippBondsRoutes);
 app.route('/api/carbon/mrv-chain', carbonMrvChainRoutes);
+app.route('/api/esums/commissioning', esumsCommissioningRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1484,6 +1486,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('mrv_chain_sla_sweep', async () => {
         const result = await mrvChainSlaSweep(env as never);
         console.log('mrv_chain_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 12 — Esums site commissioning chain SLA breach sweep. Walks
+      // non-terminal sites in onboarding states, marks
+      // last_commissioning_sla_breach_at, writes sla_breached audit-chain
+      // events, and fires esums.commissioning_sla_breached cascades.
+      await safe('site_commissioning_sla_sweep', async () => {
+        const result = await siteCommissioningSlaSweep(env as never);
+        console.log('site_commissioning_sla_sweep', JSON.stringify(result));
       });
       break;
 

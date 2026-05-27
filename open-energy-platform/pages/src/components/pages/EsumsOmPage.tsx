@@ -10,6 +10,7 @@ import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
 import { EsumsOmCockpit } from '../widgets/EsumsOmCockpit';
 import { EsumsOmOpportunities } from '../widgets/EsumsOmOpportunities';
+import { CommissioningTab } from '../esums/CommissioningTab';
 
 export function EsumsOmPage() {
   const tabs: TabSpec[] = [
@@ -28,6 +29,14 @@ export function EsumsOmPage() {
       description: 'Deterministic rule-based scan of the fleet for monetisable performance improvements. Every card cites its evidence and quantifies annual R upside.',
       columns: [],
       customContent: <EsumsOmOpportunities />,
+    },
+    {
+      key: 'commissioning',
+      label: 'Commissioning chain',
+      endpoint: '',
+      description: 'Site onboarding workflow — planned → registered → devices → ingestion → first telemetry → energised → in O&M. P6-grade audit chain with SLA gates per stage.',
+      columns: [],
+      customContent: <CommissioningTab />,
     },
     {
       key: 'sites',

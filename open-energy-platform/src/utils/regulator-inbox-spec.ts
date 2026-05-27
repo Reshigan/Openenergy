@@ -163,6 +163,18 @@ export function regulatorInboxSpec(
         title: `MRV verification SLA breached — ${entityId} (${str('chain_status') || ''})`.trim(),
       };
 
+    // ─── Wave 12 — Esums site commissioning chain ────────────────────────
+    case 'esums.commissioning_failed':
+      return {
+        severity: 'high',
+        title: `Site commissioning failed — ${str('site_name') || entityId} (${str('failed_at_status') || ''})`.trim(),
+      };
+    case 'esums.commissioning_sla_breached':
+      return {
+        severity: 'high',
+        title: `Site commissioning SLA breached — ${str('site_name') || entityId} (${str('commissioning_status') || ''})`.trim(),
+      };
+
     default:
       return null;
   }

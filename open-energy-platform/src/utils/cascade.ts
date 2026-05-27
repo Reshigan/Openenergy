@@ -228,6 +228,12 @@ export type EventType =
   | 'carbon.mrv_cra_submitted' | 'carbon.mrv_cra_approved' | 'carbon.mrv_cra_rejected'
   | 'carbon.mrv_issuance_authorized' | 'carbon.mrv_issued'
   | 'carbon.mrv_sla_breached' | 'carbon.mrv_withdrawn'
+  // Wave 12 — Esums site commissioning chain
+  | 'esums.site_registered' | 'esums.devices_registered'
+  | 'esums.ingestion_wired' | 'esums.first_telemetry_ok'
+  | 'esums.site_energised' | 'esums.site_in_om'
+  | 'esums.commissioning_failed' | 'esums.site_decommissioned'
+  | 'esums.commissioning_sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
