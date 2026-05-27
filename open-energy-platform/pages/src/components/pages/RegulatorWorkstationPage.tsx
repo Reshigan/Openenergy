@@ -3,6 +3,8 @@ import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '..
 import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
+import { InboxTab } from '../regulator/InboxTab';
+import { NoticesTab } from '../regulator/NoticesTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -48,6 +50,8 @@ export function RegulatorWorkstationPage() {
       kpis={kpis}
       panels={panels}
       tabs={[
+        { key: 'inbox', label: 'Inbox', body: () => <InboxTab /> },
+        { key: 'notices', label: 'Compliance notices', body: () => <NoticesTab /> },
         { key: 'surveillance', label: 'Surveillance triage', body: ({ onRefresh }) => <SurveillanceTab onRefresh={onRefresh} /> },
         { key: 'licences', label: 'Licence actions', body: ({ onRefresh }) => <LicencesTab onRefresh={onRefresh} /> },
         { key: 'enforcement', label: 'Enforcement events', body: ({ onRefresh }) => <EnforcementTab onRefresh={onRefresh} /> },

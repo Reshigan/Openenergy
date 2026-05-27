@@ -58,6 +58,7 @@ import ippLifecycleRoutes from './routes/ipp-lifecycle';
 import offtakerSuiteRoutes from './routes/offtaker-suite';
 import carbonRegistryRoutes from './routes/carbon-registry';
 import carbonArticle6Routes from './routes/carbon-article-6';
+import regulatorInboxRoutes from './routes/regulator-inbox';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -286,6 +287,7 @@ app.route('/api/carbon-registry', carbonRegistryRoutes);
 // Wave 4 — UNFCCC Paris Agreement Article 6 ITMO corresponding-adjustment
 // ledger. Flat mount avoids the basePath param-collision lesson from Wave 1.
 app.route('/api/carbon/article-6', carbonArticle6Routes);
+app.route('/api/regulator/inbox', regulatorInboxRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -580,6 +582,89 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
             env,
           });
         }
+      });
+      // Wave 5 — regulator inbox SLA escalation sweep. Any pending row whose
+      // sla_due_at has passed is auto-escalated. Optionally opens an
+      // enforcement case if a matching escalation_rule with on_breach='open_case'
+      // applies. Rule matching is a simple substring match on source_event
+      // (e.g. 'carbon.article6.*' matches any article6 event) plus severity
+      // gate.
+      await safe('regulator_inbox_sla_sweep', async () => {
+        const overdue = await env.DB.prepare(`
+          SELECT id, source_event, severity, title, source_entity_id
+            FROM oe_regulator_inbox
+           WHERE ack_status = 'pending'
+             AND sla_due_at IS NOT NULL
+             AND sla_due_at <= datetime('now')
+           LIMIT 100
+        `).all<any>().catch(() => ({ results: [] as any[] }));
+        const rules = await env.DB.prepare(`
+          SELECT rule_code, event_pattern, severity_min, on_breach, enabled
+            FROM oe_regulator_escalation_rules
+           WHERE enabled = 1
+        `).all<any>().catch(() => ({ results: [] as any[] }));
+        const sevRank: Record<string, number> = { info: 0, low: 1, medium: 2, high: 3, critical: 4 };
+        const matches = (evt: string, pat: string) => {
+          if (pat === '*' || pat === evt) return true;
+          if (pat.endsWith('*')) return evt.startsWith(pat.slice(0, -1));
+          return false;
+        };
+        const ts = new Date().toISOString();
+        for (const r of (overdue.results || []) as any[]) {
+          let onBreach: 'escalate' | 'open_case' | 'notify_only' = 'escalate';
+          for (const rule of (rules.results || []) as any[]) {
+            if (!matches(r.source_event, rule.event_pattern)) continue;
+            if ((sevRank[r.severity] ?? 0) < (sevRank[rule.severity_min] ?? 0)) continue;
+            onBreach = rule.on_breach;
+            break;
+          }
+          if (onBreach === 'notify_only') {
+            await env.DB.prepare(`
+              UPDATE oe_regulator_inbox SET updated_at = ? WHERE id = ?
+            `).bind(ts, r.id).run().catch(() => null);
+            continue;
+          }
+          let caseId: string | null = null;
+          if (onBreach === 'open_case') {
+            caseId = `rec_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+            await env.DB.prepare(`
+              INSERT INTO regulator_enforcement_cases
+                (id, subject_user_id, case_type, severity, opened_by, opened_at,
+                 status, source_alert_id, summary, created_at, updated_at)
+              VALUES (?, '', 'sla_auto_escalation', ?, 'system', ?, 'open', ?, ?, ?, ?)
+            `).bind(caseId, r.severity, ts, r.source_entity_id, r.title, ts, ts)
+              .run().catch(() => { caseId = null; });
+          }
+          await env.DB.prepare(`
+            UPDATE oe_regulator_inbox
+               SET ack_status = 'escalated', escalated_at = ?,
+                   escalated_to_case = ?, ack_note = 'auto-escalation (SLA breach)',
+                   updated_at = ?
+             WHERE id = ?
+          `).bind(ts, caseId, ts, r.id).run().catch(() => null);
+          await fireCascade({
+            event: 'regulator.surveillance_escalated',
+            actor_id: 'system',
+            entity_type: 'oe_regulator_inbox',
+            entity_id: r.id,
+            data: { reason: 'sla_breach', case_id: caseId, severity: r.severity, source_event: r.source_event },
+            env,
+          });
+        }
+      });
+      // Wave 5 — compliance notices overdue flag. Notices whose remedy
+      // deadline has passed and which are not yet satisfied/withdrawn get
+      // flipped to 'overdue' so the licensee + regulator surface escalates.
+      await safe('compliance_notices_overdue', async () => {
+        await env.DB.prepare(`
+          UPDATE oe_compliance_notices
+             SET status = 'overdue',
+                 overdue_flagged_at = COALESCE(overdue_flagged_at, datetime('now')),
+                 updated_at = datetime('now')
+           WHERE status IN ('issued','acknowledged')
+             AND remedy_deadline_at IS NOT NULL
+             AND remedy_deadline_at <= datetime('now')
+        `).run().catch(() => null);
       });
       // Curtailment events — mark as 'completed' past their end_at.
       await safe('curtailment_complete', async () => {
