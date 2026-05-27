@@ -6,7 +6,7 @@
 // Roles (per [[feedback_role_ux_depth]]):
 //   • READ_ROLES: admin/support/offtaker/ipp_developer/lender/regulator/carbon_fund
 //   • OFFTAKER_WRITE: admin/support/offtaker (verify, reject, cure with evidence)
-//   • IPP_WRITE: admin/support/ipp_developer/wind_developer (submit readings)
+//   • IPP_WRITE: admin/support/ipp_developer (submit readings)
 //
 // Borrower-vs-lender style scoping: ipp_developer can only see obligations
 // where they are the counterparty; offtaker only where they are participant.
@@ -15,7 +15,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { Hono } from 'hono';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
 import {
@@ -30,9 +30,9 @@ import {
 } from '../utils/offtaker-obligation-spec';
 
 const OFFTAKER_WRITE = new Set(['admin', 'support', 'offtaker']);
-const IPP_WRITE = new Set(['admin', 'support', 'ipp_developer', 'wind_developer']);
+const IPP_WRITE = new Set(['admin', 'support', 'ipp_developer']);
 const READ_ROLES = new Set([
-  'admin', 'support', 'offtaker', 'ipp_developer', 'wind_developer',
+  'admin', 'support', 'offtaker', 'ipp_developer',
   'lender', 'regulator', 'carbon_fund', 'trader',
 ]);
 
@@ -86,7 +86,7 @@ function ok(c: any, data: unknown) {
 function isOfftakerRow(row: ObligationRow, user: { id: string; role: string }): boolean {
   if (user.role === 'admin' || user.role === 'support') return true;
   if (user.role === 'offtaker') return row.participant_id === user.id;
-  if (user.role === 'ipp_developer' || user.role === 'wind_developer') {
+  if (user.role === 'ipp_developer') {
     return row.counterparty_id === user.id;
   }
   return READ_ROLES.has(user.role); // lender/regulator/trader/carbon_fund — read-only any row
@@ -94,7 +94,7 @@ function isOfftakerRow(row: ObligationRow, user: { id: string; role: string }): 
 
 // ─── GET / — list obligations ────────────────────────────────────────────────
 app.get('/', async (c) => {
-  const user = (c.get as any)('user') as { id: string; role: string };
+  const user = getCurrentUser(c);
   if (!user || !READ_ROLES.has(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
 
   const status = c.req.query('status'); // pending|delivered|shortfall|cured|take_or_pay
@@ -108,7 +108,7 @@ app.get('/', async (c) => {
   if (period_month) { where.push('period_month = ?'); binds.push(period_month); }
 
   if (user.role === 'offtaker') { where.push('participant_id = ?'); binds.push(user.id); }
-  if (user.role === 'ipp_developer' || user.role === 'wind_developer') {
+  if (user.role === 'ipp_developer') {
     where.push('counterparty_id = ?'); binds.push(user.id);
   }
 
@@ -124,7 +124,7 @@ app.get('/', async (c) => {
 
 // ─── GET /:id — single obligation + its verifications ────────────────────────
 app.get('/:id', async (c) => {
-  const user = (c.get as any)('user') as { id: string; role: string };
+  const user = getCurrentUser(c);
   if (!user || !READ_ROLES.has(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
 
@@ -142,7 +142,7 @@ app.get('/:id', async (c) => {
 
 // ─── POST /readings — IPP submits a reading ──────────────────────────────────
 app.post('/readings', async (c) => {
-  const user = (c.get as any)('user') as { id: string; role: string };
+  const user = getCurrentUser(c);
   if (!user || !IPP_WRITE.has(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
 
   const body = await c.req.json().catch(() => ({})) as Partial<{
@@ -191,7 +191,7 @@ app.post('/readings', async (c) => {
 
 // ─── POST /readings/:id/verify — offtaker verifies the reading ───────────────
 app.post('/readings/:id/verify', async (c) => {
-  const user = (c.get as any)('user') as { id: string; role: string };
+  const user = getCurrentUser(c);
   if (!user || !OFFTAKER_WRITE.has(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
 
@@ -299,7 +299,7 @@ app.post('/readings/:id/verify', async (c) => {
 
 // ─── POST /readings/:id/reject — offtaker rejects the reading ────────────────
 app.post('/readings/:id/reject', async (c) => {
-  const user = (c.get as any)('user') as { id: string; role: string };
+  const user = getCurrentUser(c);
   if (!user || !OFFTAKER_WRITE.has(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
   const body = await c.req.json().catch(() => ({})) as Partial<{ reason: string }>;
@@ -330,7 +330,7 @@ app.post('/readings/:id/reject', async (c) => {
 
 // ─── POST /:id/cure — offtaker accepts a cure plan with evidence ─────────────
 app.post('/:id/cure', async (c) => {
-  const user = (c.get as any)('user') as { id: string; role: string };
+  const user = getCurrentUser(c);
   if (!user || !OFFTAKER_WRITE.has(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
   const body = await c.req.json().catch(() => ({})) as Partial<{ evidence_r2_key: string; notes: string }>;
