@@ -256,6 +256,45 @@ export function regulatorInboxSpec(
       }
       return null;
 
+    // ─── Wave 17 — Carbon credit retirement chain ─────────────────────────
+    case 'carbon.retirement.retired':
+      // Article 6 retirement = corresponding adjustment posted into national registry.
+      if (str('scope') === 'article6') {
+        return {
+          severity: 'high',
+          title: `Article 6 retirement finalized — ${str('certificate_number') || entityId} (${str('beneficiary_country') || ''} / ${str('quantity') || ''}t)`.trim(),
+        };
+      }
+      return null;
+    case 'carbon.retirement.rejected':
+      if (str('scope') === 'article6') {
+        return {
+          severity: 'critical',
+          title: `Article 6 retirement REJECTED — ${str('beneficiary_name') || entityId} (${str('rejection_reason') || 'no reason'})`.trim(),
+        };
+      }
+      if (str('scope') === 'compliance') {
+        return {
+          severity: 'high',
+          title: `Compliance retirement rejected — ${str('beneficiary_name') || entityId} (${str('rejection_reason') || 'no reason'})`.trim(),
+        };
+      }
+      return null;
+    case 'carbon.retirement.sla_breached':
+      if (str('scope') === 'article6') {
+        return {
+          severity: 'critical',
+          title: `Article 6 retirement SLA breached — ${str('beneficiary_name') || entityId} (${str('chain_status') || ''} / ${str('sla_window') || ''})`.trim(),
+        };
+      }
+      if (str('scope') === 'compliance') {
+        return {
+          severity: 'high',
+          title: `Compliance retirement SLA breached — ${str('beneficiary_name') || entityId} (${str('chain_status') || ''} / ${str('sla_window') || ''})`.trim(),
+        };
+      }
+      return null;
+
     default:
       return null;
   }

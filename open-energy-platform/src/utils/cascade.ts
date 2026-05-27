@@ -258,6 +258,11 @@ export type EventType =
   | 'wo.diagnosed' | 'wo.repair_started' | 'wo.tested' | 'wo.completed'
   | 'wo.verified' | 'wo.closed' | 'wo.cancelled'
   | 'wo.sla_breached'
+  // Wave 17 — Carbon credit retirement chain (Article 6 / compliance / voluntary)
+  | 'carbon.retirement.validation_started' | 'carbon.retirement.adjustment_pending'
+  | 'carbon.retirement.adjusted' | 'carbon.retirement.retired'
+  | 'carbon.retirement.rejected' | 'carbon.retirement.cancelled'
+  | 'carbon.retirement.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

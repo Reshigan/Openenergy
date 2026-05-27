@@ -5,6 +5,7 @@ import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstatio
 import { api } from '../../lib/api';
 import { Article6Tab } from '../carbon/Article6Tab';
 import { MrvChainTab } from '../carbon/MrvChainTab';
+import { RetirementChainTab } from '../carbon/RetirementChainTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -83,6 +84,11 @@ export function CarbonWorkstationPage() {
           key: 'mrv_chain',
           label: 'Verification chain',
           body: () => <MrvChainTab />,
+        },
+        {
+          key: 'retirement_chain',
+          label: 'Retirement chain',
+          body: () => <RetirementChainTab />,
         },
         {
           key: 'audit',

@@ -70,6 +70,7 @@ import gridDispatchNominationsRoutes, { dispatchNominationSlaSweep } from './rou
 import supportTicketChainRoutes, { supportTicketSlaSweep } from './routes/support-ticket-chain';
 import warrantyClaimChainRoutes, { warrantyClaimSlaSweep } from './routes/warranty-claim-chain';
 import woChainRoutes, { woChainSlaSweep } from './routes/wo-chain';
+import carbonRetirementChainRoutes, { carbonRetirementSlaSweep } from './routes/carbon-retirement-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -310,6 +311,7 @@ app.route('/api/grid/dispatch-nominations', gridDispatchNominationsRoutes);
 app.route('/api/support/ticket-chain', supportTicketChainRoutes);
 app.route('/api/esums/warranty-claims', warrantyClaimChainRoutes);
 app.route('/api/esums/wo-chain', woChainRoutes);
+app.route('/api/carbon/retirement-chain', carbonRetirementChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -573,6 +575,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('wo_chain_sla_sweep', async () => {
         const result = await woChainSlaSweep(env as never);
         console.log('wo_chain_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 17 — Carbon credit retirement chain SLA sweep. Article 6 and
+      // compliance breaches cross into regulator inbox; voluntary is
+      // operational only.
+      await safe('carbon_retirement_sla_sweep', async () => {
+        const result = await carbonRetirementSlaSweep(env as never);
+        console.log('carbon_retirement_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
