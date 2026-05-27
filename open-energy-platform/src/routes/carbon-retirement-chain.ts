@@ -33,8 +33,8 @@ import {
   type RetirementScope,
 } from '../utils/retirement-chain-spec';
 
-const READ_ROLES  = new Set(['admin', 'carbon', 'regulator', 'lender']);
-const WRITE_ROLES = new Set(['admin', 'carbon']);
+const READ_ROLES  = new Set(['admin', 'carbon', 'carbon_fund', 'regulator', 'lender', 'support']);
+const WRITE_ROLES = new Set(['admin', 'carbon', 'carbon_fund']);
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);

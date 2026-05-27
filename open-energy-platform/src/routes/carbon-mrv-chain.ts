@@ -41,8 +41,8 @@ import {
 } from '../utils/mrv-chain-spec';
 
 const REGULATOR_WRITE   = new Set(['admin', 'support', 'regulator']);
-const PARTICIPANT_WRITE = new Set(['admin', 'support', 'ipp', 'carbon']);
-const READ_ROLES        = new Set(['admin', 'support', 'carbon', 'regulator', 'ipp']);
+const PARTICIPANT_WRITE = new Set(['admin', 'support', 'ipp', 'carbon', 'carbon_fund']);
+const READ_ROLES        = new Set(['admin', 'support', 'carbon', 'carbon_fund', 'regulator', 'ipp']);
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
