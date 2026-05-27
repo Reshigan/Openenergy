@@ -60,6 +60,7 @@ import carbonRegistryRoutes from './routes/carbon-registry';
 import carbonArticle6Routes from './routes/carbon-article-6';
 import regulatorInboxRoutes from './routes/regulator-inbox';
 import lenderDunningRoutes from './routes/lender-dunning';
+import offtakerObligationsRoutes from './routes/offtaker-obligations';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -290,6 +291,7 @@ app.route('/api/carbon-registry', carbonRegistryRoutes);
 app.route('/api/carbon/article-6', carbonArticle6Routes);
 app.route('/api/regulator/inbox', regulatorInboxRoutes);
 app.route('/api/lender/dunning', lenderDunningRoutes);
+app.route('/api/offtaker/obligations', offtakerObligationsRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1206,6 +1208,65 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
               s.id, p.id, today, r.pnl, JSON.stringify(r.breakdown),
             ).run().catch(() => null);
           }
+        }
+      });
+
+      // Wave 7 — offtaker PPA obligations sweep. Walk shortfall rows whose
+      // cure_deadline_at has passed; flip to take_or_pay, compute liability,
+      // fire the cascade so regulator inbox materialises a high-severity
+      // entry (via regulator-inbox-spec). Daily granularity is enough — these
+      // are monthly periods, not intraday.
+      await safe('offtaker_obligation_sweep', async () => {
+        const expired = await env.DB.prepare(`
+          SELECT o.id, o.ppa_id, o.participant_id, o.counterparty_id, o.period_month,
+                 o.contracted_mwh, o.delivered_mwh, o.threshold_pct,
+                 COALESCE(p.price_zar_per_mwh, 0) AS price_zar_per_mwh,
+                 COALESCE(p.take_or_pay_pct, 95) AS take_or_pay_pct
+            FROM oe_offtaker_ppa_obligations o
+            LEFT JOIN off_ppa_portfolio p ON p.id = o.ppa_id
+           WHERE o.status = 'shortfall'
+             AND o.cure_deadline_at IS NOT NULL
+             AND o.cure_deadline_at <= datetime('now')
+           LIMIT 50
+        `).all<any>();
+
+        const { takeOrPayLiability } = await import('./utils/offtaker-obligation-spec');
+        const { fireCascade } = await import('./utils/cascade');
+
+        for (const row of (expired.results || []) as any[]) {
+          const liability = takeOrPayLiability({
+            contracted_mwh: Number(row.contracted_mwh || 0),
+            delivered_mwh: Number(row.delivered_mwh || 0),
+            price_zar_per_mwh: Number(row.price_zar_per_mwh || 0),
+            take_or_pay_pct: Number(row.take_or_pay_pct || 95),
+          });
+
+          await env.DB.prepare(`
+            UPDATE oe_offtaker_ppa_obligations
+               SET status = 'take_or_pay',
+                   take_or_pay_amount_zar = ?,
+                   escalated_at = datetime('now'),
+                   updated_at = datetime('now')
+             WHERE id = ?
+          `).bind(liability, row.id).run().catch(() => null);
+
+          await fireCascade({
+            event: 'offtaker.obligation_take_or_pay',
+            actor_id: 'system',
+            entity_type: 'offtaker_ppa_obligation',
+            entity_id: String(row.id),
+            data: {
+              obligation_id: row.id,
+              ppa_id: row.ppa_id,
+              participant_id: row.participant_id,
+              counterparty_id: row.counterparty_id,
+              period_month: row.period_month,
+              contracted_mwh: Number(row.contracted_mwh || 0),
+              delivered_mwh: Number(row.delivered_mwh || 0),
+              take_or_pay_amount_zar: liability,
+            },
+            env,
+          }).catch((e: unknown) => console.warn('offtaker_take_or_pay_cascade_failed', String(e)));
         }
       });
       break;

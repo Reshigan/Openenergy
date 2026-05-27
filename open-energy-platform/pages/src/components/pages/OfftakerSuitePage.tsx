@@ -3,9 +3,18 @@ import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
 import { platformTabs } from '../platformTabs';
 import { offtakerCompletionTabs } from '../roleCompletionTabs';
 import { OfftakerInsights } from '../widgets/OfftakerInsights';
+import { ObligationsTab } from '../offtaker/ObligationsTab';
 
 export function OfftakerSuitePage() {
   const tabs: TabSpec[] = [
+    {
+      key: 'obligations',
+      label: 'PPA obligations',
+      endpoint: '',
+      description: 'Monthly contracted-vs-delivered tracking with cure windows + take-or-pay automation.',
+      columns: [],
+      customContent: <ObligationsTab />,
+    },
     {
       key: 'insights',
       label: 'Insights',

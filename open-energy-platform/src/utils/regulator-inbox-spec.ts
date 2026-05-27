@@ -107,6 +107,13 @@ export function regulatorInboxSpec(
         title: `Lender watchlist critical — ${str('borrower_id') || entityId} (${str('trigger_signal') || 'breach'})`,
       };
 
+    // Wave 7 — PPA take-or-pay trigger is regulator-reportable.
+    case 'offtaker.obligation_take_or_pay':
+      return {
+        severity: 'high',
+        title: `PPA take-or-pay triggered — ${str('ppa_id') || entityId} ${str('period_month') || ''}`.trim(),
+      };
+
     default:
       return null;
   }

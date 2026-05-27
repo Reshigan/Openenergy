@@ -203,6 +203,11 @@ export type EventType =
   // ─── Offtaker delivery points CRUD ─────────────────────────────────────
   | 'offtaker.delivery_point_created' | 'offtaker.delivery_point_updated'
   | 'offtaker.delivery_point_deleted'
+  // Wave 7 — PPA delivery-obligation workflow
+  | 'offtaker.reading_submitted' | 'offtaker.reading_verified'
+  | 'offtaker.reading_rejected' | 'offtaker.reading_reversed'
+  | 'offtaker.obligation_shortfall' | 'offtaker.obligation_cured'
+  | 'offtaker.obligation_take_or_pay'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
