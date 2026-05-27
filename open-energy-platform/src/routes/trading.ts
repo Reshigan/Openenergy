@@ -31,7 +31,7 @@ async function loadRiskSnapshot(
   energyType: string,
   deliveryDate: string | null,
 ): Promise<RiskSnapshot> {
-  const [participant, limit, exposure, collateral, position, mark, halt, bookSides] = await Promise.all([
+  const [participant, limit, exposure, collateral, position, mark, halt, bookSides, marginGate] = await Promise.all([
     env.DB.prepare(`SELECT status, kyc_status FROM participants WHERE id = ?`)
       .bind(participantId).first<{ status: string; kyc_status: string }>(),
     env.DB.prepare(
@@ -105,6 +105,11 @@ async function loadRiskSnapshot(
       energyType, deliveryDate, deliveryDate,
       energyType, deliveryDate, deliveryDate,
     ).first<{ best_bid: number | null; best_ask: number | null; bid_liq: number; ask_liq: number }>(),
+    // ── Wave 3: clearing margin enforcement state ────────────────────────
+    // Read once here so evaluateOrder can run synchronously on the snapshot.
+    // Treat unknown / missing rows as 'clear'.
+    env.DB.prepare(`SELECT gate_status FROM margin_enforcement_state WHERE member_id = ?`)
+      .bind(participantId).first<{ gate_status: string }>().catch(() => null),
   ]);
 
   const status = participant?.status as string | undefined;
@@ -141,6 +146,7 @@ async function loadRiskSnapshot(
     best_ask_zar_mwh: bookSides?.best_ask != null ? Number(bookSides.best_ask) : null,
     bid_liquidity_mwh: Number(bookSides?.bid_liq || 0),
     ask_liquidity_mwh: Number(bookSides?.ask_liq || 0),
+    margin_gate_status: (marginGate?.gate_status as 'clear' | 'warning' | 'blocked' | undefined) || 'clear',
   };
 }
 

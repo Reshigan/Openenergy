@@ -19,6 +19,9 @@ import invoicesRoutes from './routes/invoices';
 import projectsRoutes from './routes/projects';
 import projectScheduleRoutes from './routes/project-schedule';
 import riskRoutes from './routes/risk';
+import clearingDisclosureRoutes from './routes/clearing-disclosure';
+import settlementDvpRoutes from './routes/settlement-dvp';
+import marginGateRoutes from './routes/margin-gate';
 import tradingRoutes from './routes/trading';
 import settlementRoutes from './routes/settlement';
 import carbonRoutes from './routes/carbon';
@@ -104,6 +107,8 @@ import businessDepthRoutes, { computeLatePaymentFees } from './routes/business-d
 import bulkOpsRoutes from './routes/bulk-ops';
 import uxStateRoutes from './routes/ux-state';
 import documentsRoutes from './routes/documents';
+import { fireCascade } from './utils/cascade';
+import { computeDisclosure, evaluateBreaches } from './utils/disclosure';
 import printPacksRoutes from './routes/print-packs';
 
 // Durable Object exports — required for Cloudflare to resolve the
@@ -226,6 +231,9 @@ app.route('/api/invoices', invoicesRoutes);
 app.route('/api/projects', projectsRoutes);
 app.route('/api/projects/:projectId/schedule', projectScheduleRoutes);
 app.route('/api/risk', riskRoutes);
+app.route('/api/clearing/disclosure', clearingDisclosureRoutes);
+app.route('/api/settlement/dvp', settlementDvpRoutes);
+app.route('/api/clearing/margin-gate', marginGateRoutes);
 app.route('/api/trading', tradingRoutes);
 app.route('/api/settlement', settlementRoutes);
 app.route('/api/carbon', carbonRoutes);
@@ -529,6 +537,45 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
           UPDATE oe_rfqs SET status = 'evaluating'
           WHERE status = 'open' AND close_at <= datetime('now')
         `).run().catch(() => null);
+      });
+      // Wave 3 — settlement-fail SLA escalation sweep.
+      // Tier 1: failed instruction >15 min old, no prior escalation → tier 1.
+      // Tier 2: failed instruction >2 hr old + at tier 1 → tier 2 (ops_call).
+      // Tier 3: failed instruction >4 hr old + at tier 2 → tier 3 (buy_in_initiated).
+      // Tier 4 (default_event) is operator-driven, not automatic.
+      await safe('settlement_fail_sla_sweep', async () => {
+        const inst = await env.DB.prepare(`
+          SELECT id, member_id,
+                 (julianday('now') - julianday(updated_at)) * 24 * 60 AS age_min
+            FROM oe_settlement_instructions
+           WHERE status = 'failed'
+             AND (julianday('now') - julianday(updated_at)) * 24 * 60 >= 15
+        `).all<any>().catch(() => ({ results: [] as any[] }));
+        for (const i of (inst.results || []) as any[]) {
+          const prior = await env.DB.prepare(`
+            SELECT MAX(escalation_tier) AS tier FROM settlement_fail_escalations
+             WHERE instruction_id = ? AND resolution_status = 'open'
+          `).bind(i.id).first<any>().catch(() => null);
+          const priorTier = Number(prior?.tier || 0);
+          let next = priorTier;
+          if (priorTier === 0 && i.age_min >= 15) next = 1;
+          else if (priorTier === 1 && i.age_min >= 120) next = 2;
+          else if (priorTier === 2 && i.age_min >= 240) next = 3;
+          if (next === priorTier) continue;
+          const id = `sfe_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+          await env.DB.prepare(`
+            INSERT INTO settlement_fail_escalations (id, instruction_id, escalation_tier, triggered_by)
+            VALUES (?,?,?,?)
+          `).bind(id, i.id, next, 'cron_sla_sweep').run().catch(() => null);
+          await fireCascade({
+            event: 'settlement.fail.escalated',
+            actor_id: 'system',
+            entity_type: 'settlement_instruction',
+            entity_id: i.id,
+            data: { escalation_tier: next, age_min: Math.round(i.age_min) },
+            env,
+          });
+        }
       });
       // Curtailment events — mark as 'completed' past their end_at.
       await safe('curtailment_complete', async () => {
@@ -1223,6 +1270,103 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
             s.amount_zar, vat, total,
           ).run();
         }
+      });
+      break;
+
+    case '0 6 1 * *':
+      // Wave 3 — 1st of month 08:00 SAST (06:00 UTC) CPMI-IOSCO PFMI
+      // monthly quantitative disclosure compute. Snapshot is computed but
+      // NOT auto-published — a regulator-role user must POST /publish.
+      await safe('clearing_disclosure_monthly', async () => {
+        const dt = new Date();
+        dt.setUTCDate(0); // last day of previous month
+        const asOf = dt.toISOString().slice(0, 10);
+        // Inline inputs gather — same shape as routes/clearing-disclosure.ts.
+        const safeRead = async <T>(q: () => Promise<T>, fb: T) => {
+          try { return await q(); } catch { return fb; }
+        };
+        const num = (r: any, k = 's') => Number(r?.[k] || 0);
+        const im = await safeRead(async () => num(await env.DB.prepare(
+          `SELECT COALESCE(SUM(initial_margin_zar),0) AS s FROM oe_margin_calls WHERE status IN ('open','posted')`,
+        ).first()), 0);
+        const vm = await safeRead(async () => num(await env.DB.prepare(
+          `SELECT COALESCE(SUM(variation_margin_zar),0) AS s FROM oe_margin_calls WHERE status IN ('open','posted')`,
+        ).first()), 0);
+        const var99 = await safeRead(async () => num(await env.DB.prepare(
+          `SELECT COALESCE(SUM(var_zar),0) AS s FROM risk_var_results
+            WHERE confidence = 0.99 AND as_of_date = (SELECT MAX(as_of_date) FROM risk_var_results)`,
+        ).first()), 0);
+        const qlr = await safeRead(async () => num(await env.DB.prepare(
+          `SELECT COALESCE(SUM(balance_zar),0) AS s FROM collateral_accounts WHERE asset_type IN ('cash','t_bill','bond')`,
+        ).first()), 0);
+        const largest = await safeRead(async () => num(await env.DB.prepare(
+          `SELECT COALESCE(MAX(exposure),0) AS s FROM (
+             SELECT counterparty_id, SUM(ABS(net_volume_mwh * last_mark_price)) AS exposure
+               FROM trader_positions GROUP BY counterparty_id
+           )`,
+        ).first()), 0);
+        const df_bal = await safeRead(async () => num(await env.DB.prepare(
+          `SELECT COALESCE(SUM(balance_zar),0) AS s FROM oe_clearing_fund`,
+        ).first()), 0);
+        const df_req = await safeRead(async () => num(await env.DB.prepare(
+          `SELECT COALESCE(SUM(required_zar),0) AS s FROM oe_clearing_fund`,
+        ).first()), 0);
+        const cap = await safeRead(async () => num(await env.DB.prepare(
+          `SELECT COALESCE(ccp_capital_zar,0) AS s FROM oe_clearing_fund ORDER BY id LIMIT 1`,
+        ).first()), 0);
+        const settled = await safeRead(async () => num(await env.DB.prepare(
+          `SELECT COUNT(*) AS s FROM oe_settlement_instructions WHERE status='confirmed'`,
+        ).first()), 0);
+        const failed = await safeRead(async () => num(await env.DB.prepare(
+          `SELECT COUNT(*) AS s FROM oe_settlement_instructions WHERE status='failed'`,
+        ).first()), 0);
+        const members = await safeRead(async () => num(await env.DB.prepare(
+          `SELECT COUNT(DISTINCT user_id) AS s FROM users WHERE active = 1`,
+        ).first()), 0);
+
+        const snap = computeDisclosure({
+          initial_margin_total_zar: im,
+          variation_margin_total_zar: vm,
+          margin_var99_lookback_zar: var99,
+          qualifying_liquid_resources_zar: qlr,
+          largest_member_exposure_zar: largest,
+          default_fund_balance_zar: df_bal,
+          default_fund_required_zar: df_req,
+          ccp_capital_zar: cap,
+          ccp_capital_sitg_pct: 0.25,
+          settled_instruction_count: settled,
+          failed_instruction_count: failed,
+          active_member_count: members,
+        }, asOf);
+
+        const id = `cds_${asOf.replace(/-/g, '')}`;
+        await env.DB.prepare(`
+          INSERT OR REPLACE INTO clearing_disclosure_snapshots (
+            id, as_of_date, initial_margin_total_zar, variation_margin_total_zar, margin_coverage_pct,
+            qualifying_liquid_resources_zar, largest_member_exposure_zar, liquidity_coverage_ratio,
+            default_fund_balance_zar, default_fund_required_zar, default_fund_coverage_ratio,
+            ccp_capital_zar, ccp_capital_skin_in_game_zar,
+            settlement_finality_pct, failed_instruction_count, active_member_count, computed_by
+          ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        `).bind(
+          id, asOf,
+          snap.initial_margin_total_zar, snap.variation_margin_total_zar, snap.margin_coverage_pct,
+          snap.qualifying_liquid_resources_zar, snap.largest_member_exposure_zar, snap.liquidity_coverage_ratio,
+          snap.default_fund_balance_zar, snap.default_fund_required_zar, snap.default_fund_coverage_ratio,
+          snap.ccp_capital_zar, snap.ccp_capital_skin_in_game_zar,
+          snap.settlement_finality_pct, snap.failed_instruction_count, snap.active_member_count,
+          'cron',
+        ).run();
+
+        const breaches = evaluateBreaches(snap);
+        await fireCascade({
+          event: 'clearing.disclosure.computed',
+          actor_id: 'system',
+          entity_type: 'clearing_disclosure_snapshot',
+          entity_id: id,
+          data: { as_of_date: asOf, breach_count: breaches.length },
+          env,
+        });
       });
       break;
 

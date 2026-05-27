@@ -860,4 +860,107 @@ ai.post('/risk/suggest-scenario', async (c) => {
   return c.json({ success: true, data: { summary, scenarios: picks } });
 });
 
+// ──────────────────────────────────────────────────────────────────────────
+// POST /ai/clearing/disclosure-summary — given the latest CPMI-IOSCO
+// snapshot, return a plain-English summary + Cover-1 breach rationale,
+// suitable for the regulator briefing. The math has already happened in
+// /api/clearing/disclosure/compute — this just narrates it.
+// Body: { snapshot_id?: string }   (defaults to most recent)
+// ──────────────────────────────────────────────────────────────────────────
+ai.post('/clearing/disclosure-summary', async (c) => {
+  const body = await c.req.json<{ snapshot_id?: string }>().catch(() => ({} as any));
+  const user = getCurrentUser(c);
+
+  const row = body.snapshot_id
+    ? await c.env.DB.prepare(`SELECT * FROM clearing_disclosure_snapshots WHERE id = ?`).bind(body.snapshot_id).first<any>()
+    : await c.env.DB.prepare(`SELECT * FROM clearing_disclosure_snapshots ORDER BY as_of_date DESC LIMIT 1`).first<any>();
+  if (!row) return c.json({ success: true, data: { summary: 'No disclosure snapshot computed yet — run /api/clearing/disclosure/compute first.', breaches: [] } });
+
+  // Re-evaluate breaches client-side using the same thresholds the route uses.
+  const { evaluateBreaches } = await import('../utils/disclosure');
+  const breaches = evaluateBreaches(row as any);
+
+  const fmt = (n: number) => `R${Math.round(Math.abs(Number(n) || 0)).toLocaleString('en-ZA')}`;
+  const pct = (n: number) => `${(Number(n) || 0).toFixed(1)}%`;
+  const ratio = (n: number) => (Number(n) || 0).toFixed(2);
+
+  const summary = `CPMI-IOSCO PFMI disclosure for ${row.as_of_date}: ` +
+    `margin coverage ${pct(row.margin_coverage_pct)} (target ≥100%), ` +
+    `default fund ${ratio(row.default_fund_coverage_ratio)}× required (target ≥1.0), ` +
+    `liquidity ${ratio(row.liquidity_coverage_ratio)}× largest exposure (target ≥1.0), ` +
+    `finality ${pct(row.settlement_finality_pct)} (target ≥99.5). ` +
+    `IM ${fmt(row.initial_margin_total_zar)}, VM ${fmt(row.variation_margin_total_zar)}, ` +
+    `CCP capital ${fmt(row.ccp_capital_zar)} (SITG ${fmt(row.ccp_capital_skin_in_game_zar)}), ` +
+    `${row.active_member_count} active members, ${row.failed_instruction_count} failed instructions.`;
+
+  const verdict = breaches.length === 0
+    ? 'Cover-1 PASS — all four headline thresholds met.'
+    : `Cover-1 BREACH on ${breaches.length} metric(s) — see breakdown.`;
+
+  await c.env.DB.prepare(`
+    INSERT INTO ai_decisions (id, user_id, intent, input_json, output_summary, model, created_at)
+    VALUES (?, ?, 'clearing.disclosure_summary', ?, ?, 'inline-heuristic', datetime('now'))
+  `).bind(
+    `aid_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    user.id, JSON.stringify({ snapshot_id: row.id }), (verdict + ' ' + summary).slice(0, 500),
+  ).run().catch(() => null);
+
+  return c.json({ success: true, data: { summary, verdict, breaches, snapshot_id: row.id, as_of_date: row.as_of_date } });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// POST /ai/settlement/fail-diagnose — given a failed settlement instruction
+// id, suggest a likely cause + a 1-click remediation. Heuristic: inspect
+// related cycle (DvP lock state) + margin gate of the member.
+// Body: { instruction_id: string }
+// ──────────────────────────────────────────────────────────────────────────
+ai.post('/settlement/fail-diagnose', async (c) => {
+  const body = await c.req.json<{ instruction_id: string }>().catch(() => ({} as any));
+  const user = getCurrentUser(c);
+  if (!body.instruction_id) return c.json({ error: 'instruction_id_required' }, 400);
+
+  const inst = await c.env.DB.prepare(
+    `SELECT * FROM oe_settlement_instructions WHERE id = ?`,
+  ).bind(body.instruction_id).first<any>().catch(() => null);
+  if (!inst) return c.json({ success: true, data: { cause: 'instruction_not_found', remediation: 'Check the instruction ID and retry.' } });
+
+  const cycle = inst.cycle_id ? await c.env.DB.prepare(
+    `SELECT * FROM settlement_dvp_locks WHERE cycle_id = ?`,
+  ).bind(inst.cycle_id).first<any>().catch(() => null) : null;
+
+  const memberGate = inst.member_id ? await c.env.DB.prepare(
+    `SELECT gate_status FROM margin_enforcement_state WHERE member_id = ?`,
+  ).bind(inst.member_id).first<any>().catch(() => null) : null;
+
+  // Diagnose: pick the strongest signal.
+  let cause = 'unknown';
+  let remediation = 'Investigate manually — no automated diagnosis available.';
+  if (memberGate?.gate_status === 'blocked') {
+    cause = 'member_margin_blocked';
+    remediation = `Member ${inst.member_id} has an overdue margin call. Resolve the margin call before re-submitting the instruction.`;
+  } else if (cycle && cycle.lock_status !== 'locked') {
+    cause = `dvp_${cycle.lock_status}`;
+    remediation = cycle.lock_status === 'open'
+      ? 'Neither cash nor energy leg confirmed. Confirm both legs to lock the cycle, then re-submit.'
+      : cycle.lock_status === 'cash_in'
+        ? 'Cash leg confirmed but energy delivery not. Confirm energy receipt at the meter to unlock the cycle.'
+        : cycle.lock_status === 'energy_in'
+          ? 'Energy leg confirmed but payment not received. Confirm cash payment to unlock the cycle.'
+          : `Cycle in ${cycle.lock_status} state — manual intervention required.`;
+  } else if (inst.status === 'failed') {
+    cause = 'bank_rail_failure';
+    remediation = 'Bank rail returned a failure. Check the failure_reason field; retry after the rail confirms the issue is cleared.';
+  }
+
+  await c.env.DB.prepare(`
+    INSERT INTO ai_decisions (id, user_id, intent, input_json, output_summary, model, created_at)
+    VALUES (?, ?, 'settlement.fail_diagnose', ?, ?, 'inline-heuristic', datetime('now'))
+  `).bind(
+    `aid_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    user.id, JSON.stringify(body), `${cause}: ${remediation}`.slice(0, 500),
+  ).run().catch(() => null);
+
+  return c.json({ success: true, data: { instruction_id: body.instruction_id, cause, remediation, dvp_lock: cycle, gate_status: memberGate?.gate_status || 'clear' } });
+});
+
 export default ai;

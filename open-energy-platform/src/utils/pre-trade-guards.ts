@@ -35,6 +35,8 @@ export const REJECTION_CODES = [
   'STOP_TRIGGER_REQUIRED',
   'FOK_INSUFFICIENT_LIQUIDITY',
   'INVALID_DISPLAY_SIZE',
+  // ─── Wave 3 — clearing margin enforcement gate ──────────────────────────
+  'MARGIN_GATE_BLOCKED',
 ] as const;
 
 export type RejectionCode = typeof REJECTION_CODES[number];
@@ -82,6 +84,13 @@ export interface RiskSnapshot {
   // Reference clock; tests pass an explicit instant so good_till logic is
   // deterministic. Production calls leave this undefined → Date.now().
   now_iso?: string;
+  // ─── Wave 3 — clearing margin enforcement gate ────────────────────────
+  // Read from margin_enforcement_state.gate_status:
+  //   'clear'   → no open margin call
+  //   'warning' → open within deadline (allowed; logged on the surface)
+  //   'blocked' → overdue margin call (reject)
+  // Undefined treated as 'clear' for back-compat with tests.
+  margin_gate_status?: 'clear' | 'warning' | 'blocked';
 }
 
 export type GuardResult =
@@ -141,6 +150,17 @@ export function evaluateOrder(order: ProposedOrder, snapshot: RiskSnapshot): Gua
       ok: false,
       reason_code: 'COUNTERPARTY_SUSPENDED',
       detail: 'This account is suspended from new trade placement.',
+    };
+  }
+
+  // 2a. Clearing margin gate — block if member has overdue margin call.
+  // Operationally upstream of credit/collateral checks because a margin
+  // breach is a stronger signal than transient headroom.
+  if (snapshot.margin_gate_status === 'blocked') {
+    return {
+      ok: false,
+      reason_code: 'MARGIN_GATE_BLOCKED',
+      detail: 'Account has an overdue margin call; resolve before placing new orders.',
     };
   }
 
