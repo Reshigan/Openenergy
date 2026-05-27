@@ -303,6 +303,13 @@ export type EventType =
   | 'pr_chain.verified' | 'pr_chain.closed'
   | 'pr_chain.escalated' | 'pr_chain.false_alarm'
   | 'pr_chain.sla_breached'
+  // Wave 25 — HSE/SHEQ incident chain (OHSA s24 + NEMA s30)
+  | 'hse_incident.triaged' | 'hse_incident.notified_authority'
+  | 'hse_incident.investigating'
+  | 'hse_incident.corrective_actions_planned' | 'hse_incident.corrective_actions_executing'
+  | 'hse_incident.verified' | 'hse_incident.closed'
+  | 'hse_incident.escalated' | 'hse_incident.false_alarm'
+  | 'hse_incident.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

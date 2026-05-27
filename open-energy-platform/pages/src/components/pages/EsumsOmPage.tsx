@@ -14,6 +14,7 @@ import { CommissioningTab } from '../esums/CommissioningTab';
 import { WarrantyClaimChainTab } from '../esums/WarrantyClaimChainTab';
 import { WoChainTab } from '../esums/WoChainTab';
 import { PrChainTab } from '../esums/PrChainTab';
+import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
 
 export function EsumsOmPage() {
   const tabs: TabSpec[] = [
@@ -64,6 +65,14 @@ export function EsumsOmPage() {
       description: '9-state P6 Performance-Ratio sustained-underperformance chain — monitoring → warning → investigating → RCA → intervention planned → executing → verified → closed (with escalation + false-alarm branches). Tier SLAs (utility 24h warning, 30d intervention). Utility-tier escalations and SLA breaches cross into the regulator inbox.',
       columns: [],
       customContent: <PrChainTab />,
+    },
+    {
+      key: 'hse_chain',
+      label: 'HSE incidents',
+      endpoint: '',
+      description: 'OHSA Section 24 + NEMA Section 30 workplace-safety + environmental incident lifecycle — reported → triaged → authority notified → investigating → CAPA planned/executing → verified → closed (with escalation + false-alarm branches). Tier SLAs (fatal 1h triage; major 4h; environmental 4h). Reportable-tier (fatal/major/environmental) authority notifications, escalations and SLA breaches cross into the regulator inbox.',
+      columns: [],
+      customContent: <HseIncidentChainTab />,
     },
     {
       key: 'sites',

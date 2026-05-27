@@ -8,6 +8,7 @@ import { PlannedOutageChainTab } from '../grid/PlannedOutageChainTab';
 import { ProcurementChainTab } from '../ipp/ProcurementChainTab';
 import { CodChainTab } from '../ipp/CodChainTab';
 import { InsuranceClaimChainTab } from '../ipp/InsuranceClaimChainTab';
+import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -38,6 +39,7 @@ export function IppWorkstationPage() {
         { key: 'planned_outages', label: 'Planned outages', body: () => <PlannedOutageChainTab /> },
         { key: 'procurement', label: 'Procurement / RFPs', body: () => <ProcurementChainTab /> },
         { key: 'cod', label: 'Construction / COD', body: () => <CodChainTab /> },
+        { key: 'hse_chain', label: 'HSE incidents', body: () => <HseIncidentChainTab /> },
         { key: 'community', label: 'Community', body: ({ onRefresh }) => <CommunityTab onRefresh={onRefresh} /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (

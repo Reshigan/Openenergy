@@ -485,6 +485,50 @@ export function regulatorInboxSpec(
       }
       return null;
 
+    // ─── Wave 25 — HSE/SHEQ incident chain (OHSA s24 + NEMA s30) ──────────────
+    // Reportable tiers: fatal | major | environmental cross into regulator inbox.
+    case 'hse_incident.notified_authority': {
+      const tier = str('incident_tier');
+      if (tier === 'fatal' || tier === 'major' || tier === 'environmental') {
+        const auth = str('authority') || (tier === 'environmental' ? 'DFFE' : 'DEL');
+        return {
+          severity: tier === 'fatal' ? 'high' : 'medium',
+          title: `${tier === 'environmental' ? 'NEMA s30' : 'OHSA s24'} authority notification — ${str('case_number') || entityId} (${auth} ref ${str('authority_ref') || 'pending'} / ${str('site_name') || ''})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'hse_incident.escalated': {
+      const tier = str('incident_tier');
+      if (tier === 'fatal' || tier === 'major' || tier === 'environmental') {
+        return {
+          severity: 'high',
+          title: `HSE incident escalated — ${str('case_number') || entityId} (${tier} / ${str('site_name') || ''} / ${str('persons_affected') || 0} affected)`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'hse_incident.closed': {
+      const tier = str('incident_tier');
+      if (tier === 'fatal' || tier === 'major' || tier === 'environmental') {
+        return {
+          severity: tier === 'fatal' ? 'high' : 'medium',
+          title: `HSE incident closed — ${str('case_number') || entityId} (${tier} / ${str('site_name') || ''} / authority ref ${str('authority_ref') || 'n/a'})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'hse_incident.sla_breached': {
+      const tier = str('incident_tier');
+      if (tier === 'fatal' || tier === 'major' || tier === 'environmental') {
+        return {
+          severity: tier === 'fatal' ? 'high' : 'medium',
+          title: `HSE chain SLA breached — ${str('case_number') || entityId} (${tier} / ${str('chain_status') || ''} / ${str('site_name') || ''})`.trim(),
+        };
+      }
+      return null;
+    }
+
     default:
       return null;
   }
