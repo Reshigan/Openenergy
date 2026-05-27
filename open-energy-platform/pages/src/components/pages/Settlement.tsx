@@ -8,8 +8,11 @@ import { EmptyState } from '../EmptyState';
 import { useAuth } from '../../lib/useAuth';
 import { StitchPage } from '../StitchPage';
 import { SettlementInsights } from '../widgets/SettlementInsights';
+import { DisclosureTab } from '../settlement/DisclosureTab';
+import { DvpPanel } from '../settlement/DvpPanel';
+import { MarginGateWidget } from '../clearing/MarginGateWidget';
 
-type Tab = 'insights' | 'invoices' | 'payments' | 'disputes' | 'breaks' | 'confirmations' | 'fees';
+type Tab = 'insights' | 'invoices' | 'payments' | 'disputes' | 'breaks' | 'confirmations' | 'fees' | 'disclosure' | 'dvp' | 'margin-gate';
 
 type SettlementFeeRow = {
   id: string;
@@ -181,6 +184,11 @@ export function Settlement() {
   }, []);
 
   const fetchData = useCallback(async () => {
+    // Wave 3 tabs manage their own data; skip the shared loader.
+    if (tab === 'disclosure' || tab === 'dvp' || tab === 'margin-gate') {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -279,8 +287,8 @@ export function Settlement() {
         <Tile label="Unreconciled payments" value={String(summary.unreconciled)} accent={summary.unreconciled ? 'text-amber-600' : undefined} />
       </div>
 
-      <div className="border-b border-ionex-border-100 flex gap-6">
-        {([
+      <div className="border-b border-ionex-border-100 flex gap-6 flex-wrap">
+        {(([
           { k: 'insights', label: 'Insights' },
           { k: 'invoices', label: 'Invoices' },
           { k: 'payments', label: 'Payments' },
@@ -288,7 +296,14 @@ export function Settlement() {
           { k: 'breaks', label: 'Breaks' },
           { k: 'confirmations', label: 'Confirmations' },
           { k: 'fees', label: 'Fees' },
-        ] as Array<{ k: Tab; label: string }>).map(t => (
+          // Wave 3 — CPMI/clearing surfaces, role-gated.
+          ...(user && ['admin', 'support', 'regulator', 'lender', 'trader', 'risk'].includes(user.role)
+            ? [{ k: 'disclosure' as Tab, label: 'Disclosure' }] : []),
+          ...(user && ['admin', 'support'].includes(user.role)
+            ? [{ k: 'dvp' as Tab, label: 'DvP' }] : []),
+          ...(user && ['admin', 'support'].includes(user.role)
+            ? [{ k: 'margin-gate' as Tab, label: 'Margin gate' }] : []),
+        ]) as Array<{ k: Tab; label: string }>).map(t => (
           <button
             key={t.k}
             onClick={() => { setTab(t.k); setStatusFilter('all'); }}
@@ -374,6 +389,10 @@ export function Settlement() {
           ? <EmptyState icon={<DollarSign className="w-8 h-8" />} title="No fees accrued" description="Late-payment / dunning / rebooking fees automatically accrue against unpaid invoices once the engine runs." />
           : <SettlementFeesTable rows={fees} />
       )}
+
+      {tab === 'disclosure' && <DisclosureTab />}
+      {tab === 'dvp' && <DvpPanel />}
+      {tab === 'margin-gate' && <MarginGateWidget />}
 
       {payInvoice && (
         <RecordPaymentModal invoice={payInvoice} onClose={() => setPayInvoice(null)} onDone={() => { setPayInvoice(null); void refreshAll(); }} />
