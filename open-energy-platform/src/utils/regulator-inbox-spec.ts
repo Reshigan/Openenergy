@@ -441,6 +441,32 @@ export function regulatorInboxSpec(
       }
       return null;
 
+    // ─── Wave 23 — Insurance claim chain (FSCA Section 38) ─────────────────
+    case 'insurance_claim.settled':
+      if (str('claim_value_tier') === 'catastrophic') {
+        return {
+          severity: 'high',
+          title: `Catastrophic insurance claim SETTLED — ${str('claim_number') || entityId} (${str('insurer_name') || ''} / R${str('settled_value_zar') || str('claim_value_zar') || '?'} / ${str('fsca_report_ref') || 'FSCA §38 pending'})`.trim(),
+        };
+      }
+      return null;
+    case 'insurance_claim.declined':
+      if (str('claim_value_tier') === 'catastrophic') {
+        return {
+          severity: 'high',
+          title: `Catastrophic insurance claim DECLINED — ${str('claim_number') || entityId} (${str('insurer_name') || ''} / ${str('decline_reason') || 'no reason'})`.trim(),
+        };
+      }
+      return null;
+    case 'insurance_claim.sla_breached':
+      if (str('claim_value_tier') === 'catastrophic') {
+        return {
+          severity: 'high',
+          title: `Catastrophic insurance claim SLA breached — ${str('claim_number') || entityId} (${str('chain_status') || ''})`.trim(),
+        };
+      }
+      return null;
+
     default:
       return null;
   }

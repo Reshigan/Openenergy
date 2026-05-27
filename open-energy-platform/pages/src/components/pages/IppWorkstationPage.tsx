@@ -7,6 +7,7 @@ import { BondRegistryTab } from '../ipp/BondRegistryTab';
 import { PlannedOutageChainTab } from '../grid/PlannedOutageChainTab';
 import { ProcurementChainTab } from '../ipp/ProcurementChainTab';
 import { CodChainTab } from '../ipp/CodChainTab';
+import { InsuranceClaimChainTab } from '../ipp/InsuranceClaimChainTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -32,6 +33,7 @@ export function IppWorkstationPage() {
         { key: 'milestones', label: 'Milestones', body: ({ onRefresh }) => <MilestonesTab onRefresh={onRefresh} /> },
         { key: 'schedule', label: 'Schedule pulse', body: () => <SchedulePulseTab /> },
         { key: 'insurance', label: 'Insurance', body: ({ onRefresh }) => <InsuranceTab onRefresh={onRefresh} /> },
+        { key: 'insurance_claims', label: 'Insurance claims', body: () => <InsuranceClaimChainTab /> },
         { key: 'bonds', label: 'Bonds', body: () => <BondRegistryTab /> },
         { key: 'planned_outages', label: 'Planned outages', body: () => <PlannedOutageChainTab /> },
         { key: 'procurement', label: 'Procurement / RFPs', body: () => <ProcurementChainTab /> },

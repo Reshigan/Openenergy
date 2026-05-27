@@ -290,6 +290,13 @@ export type EventType =
   | 'ppa_contract.commenced' | 'ppa_contract.disputed' | 'ppa_contract.resolved'
   | 'ppa_contract.terminated' | 'ppa_contract.expired' | 'ppa_contract.cancelled'
   | 'ppa_contract.sla_breached'
+  // Wave 23 — Insurance claim chain (FSCA Section 38)
+  | 'insurance_claim.notified' | 'insurance_claim.assessing'
+  | 'insurance_claim.adjuster_assigned' | 'insurance_claim.quantum_proposed'
+  | 'insurance_claim.quantum_agreed' | 'insurance_claim.disputed' | 'insurance_claim.dispute_resolved'
+  | 'insurance_claim.settled' | 'insurance_claim.declined'
+  | 'insurance_claim.closed' | 'insurance_claim.withdrawn'
+  | 'insurance_claim.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
