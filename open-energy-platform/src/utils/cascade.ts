@@ -326,6 +326,13 @@ export type EventType =
   | 'ed_commitment.penalty_issued'
   | 'ed_commitment.escalated' | 'ed_commitment.false_alarm'
   | 'ed_commitment.sla_breached'
+  // Wave 28 — Grid Connection Agreement (UNGCA) chain — NERSA Grid Code C-1
+  | 'gca.application_filed' | 'gca.studies_required' | 'gca.studies_executing'
+  | 'gca.cost_estimate_issued' | 'gca.cost_accepted'
+  | 'gca.connection_agreement_drafted' | 'gca.executed'
+  | 'gca.construction' | 'gca.energised' | 'gca.in_service'
+  | 'gca.rejected' | 'gca.withdrawn'
+  | 'gca.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

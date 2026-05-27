@@ -6,6 +6,7 @@ import { GridInsights } from '../widgets/GridInsights';
 import { WheelingChargesTab } from '../grid/WheelingChargesTab';
 import { DispatchNominationTab } from '../grid/DispatchNominationTab';
 import { PlannedOutageChainTab } from '../grid/PlannedOutageChainTab';
+import { GcaChainTab } from '../gca/GcaChainTab';
 
 const instructionTypes = [
   { value: 'curtail', label: 'Curtail' },
@@ -43,6 +44,14 @@ export function GridOperatorSuitePage() {
       description: 'NERSA Grid Code §C-1.3 — IPP outage submissions, severity-tiered SLAs, commence/restore/close audit chain.',
       columns: [],
       customContent: <PlannedOutageChainTab />,
+    },
+    {
+      key: 'gca_chain',
+      label: 'UNGCA chain',
+      endpoint: '',
+      description: 'NERSA Grid Code C-1 — IPP connection applications, studies, cost estimates, UNGCA execution, energisation. Inverted tier SLAs.',
+      columns: [],
+      customContent: <GcaChainTab />,
     },
     {
       key: 'insights',

@@ -630,6 +630,61 @@ export function regulatorInboxSpec(
       return null;
     }
 
+    // ─── Wave 28 — Grid Connection Agreement (UNGCA) chain — NERSA Grid Code C-1 ───
+    // Transmission tier (>132kV, ≥75MW utility) crosses on execute/energise/commission.
+    // Reject crosses for transmission + distribution (grid-stability denial = NERSA-reportable).
+    // Embedded SSEG (<33kV) never crosses. Withdrawal never crosses.
+    case 'gca.executed': {
+      const tier = str('connection_tier');
+      if (tier === 'transmission') {
+        return {
+          severity: 'medium',
+          title: `UNGCA executed — ${str('case_number') || entityId} (${str('project_name') || ''} / ${str('voltage_kv') || ''}kV @ ${str('poc_substation') || ''} / R${str('cost_accepted_zar') || 0} / ref ${str('ungca_ref') || 'pending'})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'gca.energised': {
+      const tier = str('connection_tier');
+      if (tier === 'transmission') {
+        return {
+          severity: 'medium',
+          title: `Transmission interconnection energised — ${str('case_number') || entityId} (${str('project_name') || ''} / ${str('capacity_mw') || ''}MW @ ${str('poc_substation') || ''})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'gca.in_service': {
+      const tier = str('connection_tier');
+      if (tier === 'transmission') {
+        return {
+          severity: 'medium',
+          title: `Transmission connection in commercial service — ${str('case_number') || entityId} (${str('project_name') || ''} / ${str('capacity_mw') || ''}MW)`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'gca.rejected': {
+      const tier = str('connection_tier');
+      if (tier === 'transmission' || tier === 'distribution') {
+        return {
+          severity: tier === 'transmission' ? 'high' : 'medium',
+          title: `GCA rejected — ${str('case_number') || entityId} (${tier} / ${str('project_name') || ''} / reason: ${str('rod_reason') || 'unspecified'})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'gca.sla_breached': {
+      const tier = str('connection_tier');
+      if (tier === 'transmission' || tier === 'distribution') {
+        return {
+          severity: tier === 'transmission' ? 'high' : 'medium',
+          title: `GCA chain SLA breached — ${str('case_number') || entityId} (${tier} / ${str('chain_status') || ''} / ${str('project_name') || ''})`.trim(),
+        };
+      }
+      return null;
+    }
+
     default:
       return null;
   }

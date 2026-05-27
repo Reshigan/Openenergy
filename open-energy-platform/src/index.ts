@@ -81,6 +81,7 @@ import prChainRoutes, { prSlaSweep } from './routes/pr-chain';
 import hseIncidentChainRoutes, { hseIncidentSlaSweep } from './routes/hse-incident-chain';
 import cyberIncidentChainRoutes, { cyberIncidentSlaSweep } from './routes/cyber-incident-chain';
 import edCommitmentChainRoutes, { edCommitmentSlaSweep } from './routes/ed-commitment-chain';
+import gcaChainRoutes, { gcaSlaSweep } from './routes/gca-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -332,6 +333,7 @@ app.route('/api/esums/pr-chain', prChainRoutes);
 app.route('/api/hse/incident-chain', hseIncidentChainRoutes);
 app.route('/api/cyber/incident-chain', cyberIncidentChainRoutes);
 app.route('/api/ed/commitment-chain', edCommitmentChainRoutes);
+app.route('/api/gca/connection-chain', gcaChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -663,6 +665,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ed_commitment_sla_sweep', async () => {
         const result = await edCommitmentSlaSweep(env as never);
         console.log('ed_commitment_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 28 — Grid Connection Agreement (UNGCA) chain SLA sweep.
+      // Transmission + distribution breaches cross to regulator inbox (NERSA
+      // Grid Code C-1); embedded SSEG breaches stay internal.
+      await safe('gca_sla_sweep', async () => {
+        const result = await gcaSlaSweep(env as never);
+        console.log('gca_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

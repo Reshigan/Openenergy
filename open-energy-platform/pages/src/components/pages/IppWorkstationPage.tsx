@@ -11,6 +11,7 @@ import { InsuranceClaimChainTab } from '../ipp/InsuranceClaimChainTab';
 import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
 import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
 import { EdCommitmentChainTab } from '../ed/EdCommitmentChainTab';
+import { GcaChainTab } from '../gca/GcaChainTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -44,6 +45,7 @@ export function IppWorkstationPage() {
         { key: 'hse_chain', label: 'HSE incidents', body: () => <HseIncidentChainTab /> },
         { key: 'cyber_chain', label: 'Cyber incidents', body: () => <CyberIncidentChainTab /> },
         { key: 'ed_chain', label: 'ED commitments', body: () => <EdCommitmentChainTab /> },
+        { key: 'gca_chain', label: 'UNGCA chain', body: () => <GcaChainTab /> },
         { key: 'community', label: 'Community', body: ({ onRefresh }) => <CommunityTab onRefresh={onRefresh} /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
