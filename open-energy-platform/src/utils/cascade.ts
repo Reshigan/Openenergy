@@ -240,6 +240,12 @@ export type EventType =
   | 'dispatch.nomination_rejected' | 'dispatch.dispute_raised'
   | 'dispatch.dispute_resolved' | 'dispatch.closed_disputed'
   | 'dispatch.sla_breached'
+  // Wave 14 — Support ticket P6 chain (priority-tiered SLAs + regulator crossings)
+  | 'support.ticket_triaged' | 'support.ticket_picked_up'
+  | 'support.ticket_awaiting_user' | 'support.ticket_user_responded'
+  | 'support.ticket_resolved' | 'support.ticket_closed'
+  | 'support.ticket_reopened' | 'support.ticket_escalated'
+  | 'support.ticket_sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

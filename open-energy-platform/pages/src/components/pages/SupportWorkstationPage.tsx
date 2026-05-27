@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
+import { SupportTicketChainTab } from '../support/SupportTicketChainTab';
 import { api } from '../../lib/api';
 import { X } from 'lucide-react';
 
@@ -90,6 +91,11 @@ export function SupportWorkstationPage() {
                 )}
               </div>
             ),
+          },
+          {
+            key: 'ticket_chain',
+            label: 'Ticket chain',
+            body: () => <SupportTicketChainTab />,
           },
           {
             key: 'escalations',

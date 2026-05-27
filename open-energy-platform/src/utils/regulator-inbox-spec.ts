@@ -192,6 +192,26 @@ export function regulatorInboxSpec(
         title: `Dispatch nomination SLA breached — ${entityId} (${str('nomination_status') || ''})`.trim(),
       };
 
+    // ─── Wave 14 — Support ticket P6 chain ─────────────────────────────────
+    case 'support.ticket_escalated':
+      // Only P1 escalations or compliance-category escalations cross to regulator.
+      if (str('priority') === 'urgent' || str('category') === 'compliance') {
+        return {
+          severity: 'high',
+          title: `Support ticket escalated — ${str('ticket_number') || entityId} (${str('priority') || ''}/${str('category') || ''})`.trim(),
+        };
+      }
+      return null;
+    case 'support.ticket_sla_breached':
+      // Crossings: P1 always; lower priority only when compliance-flagged.
+      if (str('priority') === 'urgent' || str('category') === 'compliance') {
+        return {
+          severity: 'high',
+          title: `Support SLA breached — ${str('ticket_number') || entityId} (${str('sla_window') || ''} ${str('priority') || ''})`.trim(),
+        };
+      }
+      return null;
+
     default:
       return null;
   }

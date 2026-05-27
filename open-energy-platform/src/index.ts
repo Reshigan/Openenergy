@@ -67,6 +67,7 @@ import ippBondsRoutes, { bondExpirySweep } from './routes/ipp-bonds';
 import carbonMrvChainRoutes, { mrvChainSlaSweep } from './routes/carbon-mrv-chain';
 import esumsCommissioningRoutes, { siteCommissioningSlaSweep } from './routes/esums-commissioning';
 import gridDispatchNominationsRoutes, { dispatchNominationSlaSweep } from './routes/grid-dispatch-nominations';
+import supportTicketChainRoutes, { supportTicketSlaSweep } from './routes/support-ticket-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -304,6 +305,7 @@ app.route('/api/ipp/bonds', ippBondsRoutes);
 app.route('/api/carbon/mrv-chain', carbonMrvChainRoutes);
 app.route('/api/esums/commissioning', esumsCommissioningRoutes);
 app.route('/api/grid/dispatch-nominations', gridDispatchNominationsRoutes);
+app.route('/api/support/ticket-chain', supportTicketChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -544,6 +546,15 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('dispatch_nomination_sla_sweep', async () => {
         const result = await dispatchNominationSlaSweep(env as never);
         console.log('dispatch_nomination_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 14 — Support ticket SLA breach sweep. Walks open/triaged/in_progress
+      // tickets with next_sla_due_at set, bumps sla_breach_count, writes the
+      // audit row, and fires support.ticket_sla_breached cascade (regulator-
+      // inbox crossing for P1 or compliance category). 15-min cadence matches
+      // the tightest SLA (P1 triage → 60m, breach detectable within one tick).
+      await safe('support_ticket_sla_sweep', async () => {
+        const result = await supportTicketSlaSweep(env as never);
+        console.log('support_ticket_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
