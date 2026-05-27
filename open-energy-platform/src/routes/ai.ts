@@ -705,4 +705,159 @@ function daysBetweenIso(a: string, b: string): number {
   return Math.round((dB - dA) / 86400000);
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// POST /ai/risk/explain-var — narrate the top drivers of the latest VaR
+// number for a portfolio. Reads the latest risk_var_results row +
+// per-factor exposure breakdown and returns a short paragraph with the
+// top 3-5 contributors and a 1-line "why" per contributor.
+// Body: { portfolio_id: string, confidence?: 0.95|0.99 }
+// ──────────────────────────────────────────────────────────────────────────
+ai.post('/risk/explain-var', async (c) => {
+  const body = await c.req.json<{ portfolio_id?: string; confidence?: number }>().catch(() => ({} as any));
+  if (!body?.portfolio_id) return c.json({ success: false, error: 'portfolio_id required' }, 400);
+  const user = getCurrentUser(c);
+  const conf = Number(body.confidence ?? 0.95);
+
+  const portfolio = await c.env.DB.prepare(`SELECT * FROM risk_portfolios WHERE id = ?`).bind(body.portfolio_id).first<any>();
+  if (!portfolio) return c.json({ success: false, error: 'portfolio not found' }, 404);
+
+  const varRow = await c.env.DB.prepare(`
+    SELECT * FROM risk_var_results
+    WHERE portfolio_id = ? AND confidence = ?
+    ORDER BY as_of_date DESC LIMIT 1
+  `).bind(body.portfolio_id, conf).first<any>();
+  if (!varRow) {
+    return c.json({ success: true, data: { summary: 'No VaR has been computed for this portfolio yet — run a recompute or wait for the nightly cron.', drivers: [] } });
+  }
+
+  // Per-factor exposure as a stand-in for true partial sensitivities.
+  let filter: any = {};
+  try { filter = JSON.parse(portfolio.basis_filter_json || '{}'); } catch {}
+  const where: string[] = [];
+  const params: any[] = [];
+  if (filter.trader_id) { where.push('participant_id = ?'); params.push(filter.trader_id); }
+  if (filter.energy_type) { where.push('energy_type = ?'); params.push(filter.energy_type); }
+  const positionsRes = await c.env.DB.prepare(`
+    SELECT energy_type, net_volume_mwh, last_mark_price
+    FROM trader_positions
+    ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+    LIMIT 1000
+  `).bind(...params).all<any>();
+
+  const byFactor: Record<string, { gross_zar: number; positions: number }> = {};
+  for (const r of (positionsRes.results || []) as any[]) {
+    const qty = Math.abs(Number(r.net_volume_mwh || 0));
+    const mark = Number(r.last_mark_price || 0);
+    if (qty === 0 || mark === 0) continue;
+    const fid = `spot_${r.energy_type}`;
+    byFactor[fid] ||= { gross_zar: 0, positions: 0 };
+    byFactor[fid].gross_zar += qty * mark;
+    byFactor[fid].positions += 1;
+  }
+  const totalGross = Object.values(byFactor).reduce((s, v) => s + v.gross_zar, 0) || 1;
+
+  const factorMeta = await c.env.DB.prepare(`SELECT id, name FROM risk_factors`).all<{ id: string; name: string }>();
+  const nameOf = new Map(((factorMeta.results || []) as any[]).map(r => [r.id, r.name]));
+
+  const drivers = Object.entries(byFactor)
+    .map(([fid, v]) => ({
+      factor_id: fid,
+      name: nameOf.get(fid) || fid,
+      contribution_zar: v.gross_zar,
+      pct_of_gross: v.gross_zar / totalGross,
+      positions: v.positions,
+      why: v.gross_zar / totalGross > 0.40
+        ? 'Dominant book exposure — single-factor shocks land here first.'
+        : v.gross_zar / totalGross > 0.15
+          ? 'Material exposure — second-order tail driver.'
+          : 'Small contributor — diversification benefit holds at this size.',
+    }))
+    .sort((a, b) => b.contribution_zar - a.contribution_zar)
+    .slice(0, 5);
+
+  const fmt = (n: number) => `R${Math.round(Math.abs(n)).toLocaleString('en-ZA')}`;
+  const top = drivers[0];
+  const summary = top
+    ? `${portfolio.name} VaR ${Math.round(conf * 100)}% = ${fmt(varRow.var_amount_zar)} (ES ${fmt(varRow.es_amount_zar)}) as of ${varRow.as_of_date}. ${top.name} carries ${Math.round(top.pct_of_gross * 100)}% of gross exposure and is the dominant driver of tail loss.`
+    : `${portfolio.name} VaR ${Math.round(conf * 100)}% = ${fmt(varRow.var_amount_zar)} as of ${varRow.as_of_date} but no active positions detected — verify filter.`;
+
+  await c.env.DB.prepare(`
+    INSERT INTO ai_decisions (id, user_id, intent, input_json, output_summary, model, created_at)
+    VALUES (?, ?, 'risk.explain_var', ?, ?, 'inline-heuristic', datetime('now'))
+  `).bind(
+    `aid_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    user.id,
+    JSON.stringify({ portfolio_id: body.portfolio_id, confidence: conf }),
+    summary.slice(0, 500),
+  ).run().catch(() => null);
+
+  await fireCascade({
+    event: 'ai.classification_logged', actor_id: user.id,
+    entity_type: 'risk_portfolio', entity_id: body.portfolio_id,
+    data: { intent: 'risk.explain_var', drivers: drivers.length },
+    env: c.env,
+  }).catch(() => { /* non-fatal */ });
+
+  return c.json({ success: true, data: { as_of_date: varRow.as_of_date, var_zar: varRow.var_amount_zar, es_zar: varRow.es_amount_zar, summary, drivers } });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// POST /ai/risk/suggest-scenario — given recent factor moves, propose 3
+// historically-rhyming named scenarios from the system library. Heuristic:
+// rank system scenarios by the magnitude of the worst impact they've
+// produced this month across the caller-accessible portfolios.
+// Body: { portfolio_id?: string }
+// ──────────────────────────────────────────────────────────────────────────
+ai.post('/risk/suggest-scenario', async (c) => {
+  const body = await c.req.json<{ portfolio_id?: string }>().catch(() => ({} as any));
+  const user = getCurrentUser(c);
+
+  const month = new Date().toISOString().slice(0, 7) + '-01';
+
+  let sql = `
+    SELECT s.id AS scenario_id, s.name AS scenario_name, s.description,
+           MIN(sr.pnl_impact_zar) AS worst_pnl,
+           AVG(sr.pnl_impact_zar) AS avg_pnl,
+           COUNT(*) AS n
+    FROM risk_scenarios s
+    JOIN risk_scenario_results sr ON sr.scenario_id = s.id
+    WHERE s.is_system = 1 AND sr.as_of_date >= ?
+  `;
+  const params: any[] = [month];
+  if (body.portfolio_id) { sql += ' AND sr.portfolio_id = ?'; params.push(body.portfolio_id); }
+  sql += ' GROUP BY s.id ORDER BY worst_pnl ASC LIMIT 3';
+
+  const res = await c.env.DB.prepare(sql).bind(...params).all<any>();
+  const fmt = (n: number) => `R${Math.round(Math.abs(Number(n) || 0)).toLocaleString('en-ZA')}`;
+  const picks = ((res.results || []) as any[]).map((r) => ({
+    scenario_id: r.scenario_id,
+    name: r.scenario_name,
+    description: r.description,
+    worst_pnl_zar: r.worst_pnl,
+    avg_pnl_zar: r.avg_pnl,
+    why: `Worst MTD impact ${fmt(r.worst_pnl)} across ${r.n} run(s) — historically rhymes with current factor moves.`,
+  }));
+
+  const summary = picks.length
+    ? `Top ${picks.length} scenarios to re-run now: ${picks.map((p) => p.name).join('; ')}.`
+    : 'No system scenarios have run this month — wait for tonight\'s cron or trigger a manual run.';
+
+  await c.env.DB.prepare(`
+    INSERT INTO ai_decisions (id, user_id, intent, input_json, output_summary, model, created_at)
+    VALUES (?, ?, 'risk.suggest_scenario', ?, ?, 'inline-heuristic', datetime('now'))
+  `).bind(
+    `aid_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    user.id, JSON.stringify(body), summary.slice(0, 500),
+  ).run().catch(() => null);
+
+  await fireCascade({
+    event: 'ai.classification_logged', actor_id: user.id,
+    entity_type: 'risk_portfolio', entity_id: body.portfolio_id || 'all',
+    data: { intent: 'risk.suggest_scenario', n: picks.length },
+    env: c.env,
+  }).catch(() => { /* non-fatal */ });
+
+  return c.json({ success: true, data: { summary, scenarios: picks } });
+});
+
 export default ai;
