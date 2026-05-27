@@ -79,6 +79,7 @@ import ppaContractChainRoutes, { ppaContractSlaSweep } from './routes/ppa-contra
 import insuranceClaimChainRoutes, { insuranceClaimSlaSweep } from './routes/insurance-claim-chain';
 import prChainRoutes, { prSlaSweep } from './routes/pr-chain';
 import hseIncidentChainRoutes, { hseIncidentSlaSweep } from './routes/hse-incident-chain';
+import cyberIncidentChainRoutes, { cyberIncidentSlaSweep } from './routes/cyber-incident-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -328,6 +329,7 @@ app.route('/api/offtaker/ppa-contract-chain', ppaContractChainRoutes);
 app.route('/api/insurance/claim-chain', insuranceClaimChainRoutes);
 app.route('/api/esums/pr-chain', prChainRoutes);
 app.route('/api/hse/incident-chain', hseIncidentChainRoutes);
+app.route('/api/cyber/incident-chain', cyberIncidentChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -646,6 +648,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('hse_incident_sla_sweep', async () => {
         const result = await hseIncidentSlaSweep(env as never);
         console.log('hse_incident_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 26 — Cybersecurity / POPIA s22 / Cybercrimes Act s54 SLA sweep.
+      // Reportable-tier (catastrophic/major/personal_data) breaches cross to regulator inbox.
+      await safe('cyber_incident_sla_sweep', async () => {
+        const result = await cyberIncidentSlaSweep(env as never);
+        console.log('cyber_incident_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

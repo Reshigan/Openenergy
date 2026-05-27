@@ -529,6 +529,51 @@ export function regulatorInboxSpec(
       return null;
     }
 
+    // ─── Wave 26 — Cybersecurity / POPIA s22 / Cybercrimes Act s54 chain ───────
+    // Reportable tiers: catastrophic | major | personal_data cross into regulator inbox.
+    case 'cyber_incident.notified_regulator': {
+      const tier = str('incident_tier');
+      if (tier === 'catastrophic' || tier === 'major' || tier === 'personal_data') {
+        const auth = str('regulator_authority') || 'IR';
+        const sapsTag = auth.includes('SAPS') ? ' + SAPS Cybercrime' : '';
+        return {
+          severity: tier === 'catastrophic' ? 'high' : 'medium',
+          title: `POPIA s22 notification — ${str('case_number') || entityId} (Information Regulator${sapsTag} ref ${str('regulator_ref') || 'pending'} / ${str('asset_scope') || ''} / ${str('records_affected') || 0} records)`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'cyber_incident.escalated': {
+      const tier = str('incident_tier');
+      if (tier === 'catastrophic' || tier === 'major' || tier === 'personal_data') {
+        return {
+          severity: 'high',
+          title: `Cyber incident escalated — ${str('case_number') || entityId} (${tier} / ${str('asset_scope') || ''} / ${str('records_affected') || 0} records)`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'cyber_incident.closed': {
+      const tier = str('incident_tier');
+      if (tier === 'catastrophic' || tier === 'major' || tier === 'personal_data') {
+        return {
+          severity: tier === 'catastrophic' ? 'high' : 'medium',
+          title: `Cyber incident closed — ${str('case_number') || entityId} (${tier} / ${str('asset_scope') || ''} / IR ref ${str('regulator_ref') || 'n/a'})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'cyber_incident.sla_breached': {
+      const tier = str('incident_tier');
+      if (tier === 'catastrophic' || tier === 'major' || tier === 'personal_data') {
+        return {
+          severity: tier === 'catastrophic' ? 'high' : 'medium',
+          title: `Cyber chain SLA breached — ${str('case_number') || entityId} (${tier} / ${str('chain_status') || ''} / ${str('asset_scope') || ''})`.trim(),
+        };
+      }
+      return null;
+    }
+
     default:
       return null;
   }

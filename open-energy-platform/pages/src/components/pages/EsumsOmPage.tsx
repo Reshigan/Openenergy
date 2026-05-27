@@ -15,6 +15,7 @@ import { WarrantyClaimChainTab } from '../esums/WarrantyClaimChainTab';
 import { WoChainTab } from '../esums/WoChainTab';
 import { PrChainTab } from '../esums/PrChainTab';
 import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
+import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
 
 export function EsumsOmPage() {
   const tabs: TabSpec[] = [
@@ -73,6 +74,14 @@ export function EsumsOmPage() {
       description: 'OHSA Section 24 + NEMA Section 30 workplace-safety + environmental incident lifecycle — reported → triaged → authority notified → investigating → CAPA planned/executing → verified → closed (with escalation + false-alarm branches). Tier SLAs (fatal 1h triage; major 4h; environmental 4h). Reportable-tier (fatal/major/environmental) authority notifications, escalations and SLA breaches cross into the regulator inbox.',
       columns: [],
       customContent: <HseIncidentChainTab />,
+    },
+    {
+      key: 'cyber_chain',
+      label: 'Cyber incidents',
+      endpoint: '',
+      description: 'POPIA Section 22 + Cybercrimes Act Section 54 digital-incident lifecycle — detected → triaged → contained → IR notified → subjects notified → investigating → remediation planned/executing → verified → closed (with escalation + false-alarm branches). Tier SLAs (catastrophic 30m triage; major/personal-data 72h IR notification). Reportable-tier (catastrophic/major/personal-data) regulator notifications, escalations and SLA breaches cross into the regulator inbox.',
+      columns: [],
+      customContent: <CyberIncidentChainTab />,
     },
     {
       key: 'sites',

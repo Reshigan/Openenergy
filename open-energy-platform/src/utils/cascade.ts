@@ -310,6 +310,14 @@ export type EventType =
   | 'hse_incident.verified' | 'hse_incident.closed'
   | 'hse_incident.escalated' | 'hse_incident.false_alarm'
   | 'hse_incident.sla_breached'
+  // Wave 26 — Cybersecurity / POPIA s22 / Cybercrimes Act s54 incident chain
+  | 'cyber_incident.triaged' | 'cyber_incident.contained'
+  | 'cyber_incident.notified_regulator' | 'cyber_incident.notified_subjects'
+  | 'cyber_incident.investigating'
+  | 'cyber_incident.remediation_planned' | 'cyber_incident.remediation_executing'
+  | 'cyber_incident.verified' | 'cyber_incident.closed'
+  | 'cyber_incident.escalated' | 'cyber_incident.false_alarm'
+  | 'cyber_incident.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
