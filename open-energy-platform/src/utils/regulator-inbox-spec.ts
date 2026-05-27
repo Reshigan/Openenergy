@@ -574,6 +574,62 @@ export function regulatorInboxSpec(
       return null;
     }
 
+    // ─── Wave 27 — REIPPPP Economic Development (ED) commitment chain ───────
+    // ownership + local_content are HIGH-scoring REIPPPP commitments — DTI Codes
+    // + IPPO + DMRE-level enforcement. jobs + skills are mid-scoring (DMRE).
+    // enterprise_dev / socio_economic / community_trust cross only on escalate.
+    case 'ed_commitment.cure_plan_required': {
+      const tier = str('commitment_type');
+      if (tier === 'ownership' || tier === 'local_content') {
+        return {
+          severity: 'medium',
+          title: `REIPPPP ED cure plan required — ${str('case_number') || entityId} (${tier} / ${str('project_name') || ''} / variance ${str('variance_pct') || '?'}%)`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'ed_commitment.penalty_issued': {
+      const tier = str('commitment_type');
+      if (tier === 'ownership' || tier === 'local_content' || tier === 'jobs' || tier === 'skills') {
+        return {
+          severity: tier === 'ownership' || tier === 'local_content' ? 'high' : 'medium',
+          title: `REIPPPP ED penalty — ${str('case_number') || entityId} (${tier} / ${str('project_name') || ''} / R${str('penalty_amount_zar') || 0} / ref ${str('penalty_ref') || 'pending'})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'ed_commitment.escalated': {
+      // Any escalation crosses — DTI Codes Council referral
+      return {
+        severity: 'high',
+        title: `REIPPPP ED escalated to DTI — ${str('case_number') || entityId} (${str('commitment_type') || ''} / ${str('project_name') || ''})`.trim(),
+      };
+    }
+    case 'ed_commitment.closed': {
+      const tier = str('commitment_type');
+      // Only high-scoring closed-with-penalty / closed-escalated crossings carry forward.
+      // Routine clean closures don't notify the regulator.
+      const hadPenalty = !!str('penalty_amount_zar');
+      const hadEscalation = !!str('escalated_at');
+      if ((hadPenalty || hadEscalation) && (tier === 'ownership' || tier === 'local_content')) {
+        return {
+          severity: 'medium',
+          title: `REIPPPP ED case closed — ${str('case_number') || entityId} (${tier} / ${str('project_name') || ''} / ${hadPenalty ? 'penalty' : 'escalated'})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'ed_commitment.sla_breached': {
+      const tier = str('commitment_type');
+      if (tier === 'ownership' || tier === 'local_content' || tier === 'jobs' || tier === 'skills') {
+        return {
+          severity: tier === 'ownership' || tier === 'local_content' ? 'high' : 'medium',
+          title: `REIPPPP ED chain SLA breached — ${str('case_number') || entityId} (${tier} / ${str('chain_status') || ''} / ${str('project_name') || ''})`.trim(),
+        };
+      }
+      return null;
+    }
+
     default:
       return null;
   }

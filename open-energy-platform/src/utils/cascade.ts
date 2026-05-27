@@ -318,6 +318,14 @@ export type EventType =
   | 'cyber_incident.verified' | 'cyber_incident.closed'
   | 'cyber_incident.escalated' | 'cyber_incident.false_alarm'
   | 'cyber_incident.sla_breached'
+  // Wave 27 — REIPPPP Economic Development (ED) commitment monitoring chain
+  | 'ed_commitment.monitoring' | 'ed_commitment.variance_flagged'
+  | 'ed_commitment.cure_plan_required' | 'ed_commitment.cure_plan_submitted'
+  | 'ed_commitment.cure_executing'
+  | 'ed_commitment.verified_compliant' | 'ed_commitment.closed'
+  | 'ed_commitment.penalty_issued'
+  | 'ed_commitment.escalated' | 'ed_commitment.false_alarm'
+  | 'ed_commitment.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

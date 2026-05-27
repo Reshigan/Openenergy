@@ -80,6 +80,7 @@ import insuranceClaimChainRoutes, { insuranceClaimSlaSweep } from './routes/insu
 import prChainRoutes, { prSlaSweep } from './routes/pr-chain';
 import hseIncidentChainRoutes, { hseIncidentSlaSweep } from './routes/hse-incident-chain';
 import cyberIncidentChainRoutes, { cyberIncidentSlaSweep } from './routes/cyber-incident-chain';
+import edCommitmentChainRoutes, { edCommitmentSlaSweep } from './routes/ed-commitment-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -330,6 +331,7 @@ app.route('/api/insurance/claim-chain', insuranceClaimChainRoutes);
 app.route('/api/esums/pr-chain', prChainRoutes);
 app.route('/api/hse/incident-chain', hseIncidentChainRoutes);
 app.route('/api/cyber/incident-chain', cyberIncidentChainRoutes);
+app.route('/api/ed/commitment-chain', edCommitmentChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -654,6 +656,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('cyber_incident_sla_sweep', async () => {
         const result = await cyberIncidentSlaSweep(env as never);
         console.log('cyber_incident_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 27 — REIPPPP Economic Development commitment monitoring SLA sweep.
+      // High-scoring (ownership/local_content) + mid (jobs/skills) breaches
+      // cross to regulator inbox; community/SED/enterprise breaches stay internal.
+      await safe('ed_commitment_sla_sweep', async () => {
+        const result = await edCommitmentSlaSweep(env as never);
+        console.log('ed_commitment_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
