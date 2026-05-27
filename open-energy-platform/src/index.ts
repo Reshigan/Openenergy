@@ -77,6 +77,7 @@ import codChainRoutes, { codSlaSweep } from './routes/cod-chain';
 import drawdownChainRoutes, { drawdownSlaSweep } from './routes/drawdown-chain';
 import ppaContractChainRoutes, { ppaContractSlaSweep } from './routes/ppa-contract-chain';
 import insuranceClaimChainRoutes, { insuranceClaimSlaSweep } from './routes/insurance-claim-chain';
+import prChainRoutes, { prSlaSweep } from './routes/pr-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -324,6 +325,7 @@ app.route('/api/ipp/cod-chain', codChainRoutes);
 app.route('/api/lender/drawdown-chain', drawdownChainRoutes);
 app.route('/api/offtaker/ppa-contract-chain', ppaContractChainRoutes);
 app.route('/api/insurance/claim-chain', insuranceClaimChainRoutes);
+app.route('/api/esums/pr-chain', prChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -630,6 +632,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('insurance_claim_sla_sweep', async () => {
         const result = await insuranceClaimSlaSweep(env as never);
         console.log('insurance_claim_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 24 — Esums PR sustained-underperformance chain SLA sweep.
+      // Utility-tier breaches cross into regulator inbox.
+      await safe('pr_sla_sweep', async () => {
+        const result = await prSlaSweep(env as never);
+        console.log('pr_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

@@ -13,6 +13,7 @@ import { EsumsOmOpportunities } from '../widgets/EsumsOmOpportunities';
 import { CommissioningTab } from '../esums/CommissioningTab';
 import { WarrantyClaimChainTab } from '../esums/WarrantyClaimChainTab';
 import { WoChainTab } from '../esums/WoChainTab';
+import { PrChainTab } from '../esums/PrChainTab';
 
 export function EsumsOmPage() {
   const tabs: TabSpec[] = [
@@ -55,6 +56,14 @@ export function EsumsOmPage() {
       description: '12-state P6 work order dispatch chain — created → assigned → acknowledged → en route → on site → diagnosing → repairing → testing → completed → verified → closed. Priority-tiered SLAs (critical 15m / 1h per stage). Critical-priority cancels and SLA breaches escalate into the regulator inbox.',
       columns: [],
       customContent: <WoChainTab />,
+    },
+    {
+      key: 'pr_chain',
+      label: 'PR chain',
+      endpoint: '',
+      description: '9-state P6 Performance-Ratio sustained-underperformance chain — monitoring → warning → investigating → RCA → intervention planned → executing → verified → closed (with escalation + false-alarm branches). Tier SLAs (utility 24h warning, 30d intervention). Utility-tier escalations and SLA breaches cross into the regulator inbox.',
+      columns: [],
+      customContent: <PrChainTab />,
     },
     {
       key: 'sites',

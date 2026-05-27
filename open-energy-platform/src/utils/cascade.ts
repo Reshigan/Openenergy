@@ -297,6 +297,12 @@ export type EventType =
   | 'insurance_claim.settled' | 'insurance_claim.declined'
   | 'insurance_claim.closed' | 'insurance_claim.withdrawn'
   | 'insurance_claim.sla_breached'
+  // Wave 24 — Esums PR sustained-underperformance chain
+  | 'pr_chain.warning' | 'pr_chain.investigating'
+  | 'pr_chain.intervention_planned' | 'pr_chain.intervention_executing'
+  | 'pr_chain.verified' | 'pr_chain.closed'
+  | 'pr_chain.escalated' | 'pr_chain.false_alarm'
+  | 'pr_chain.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

@@ -467,6 +467,24 @@ export function regulatorInboxSpec(
       }
       return null;
 
+    // ─── Wave 24 — Esums PR sustained-underperformance chain ───────────────
+    case 'pr_chain.escalated':
+      if (str('capacity_tier') === 'utility') {
+        return {
+          severity: 'high',
+          title: `Utility PR escalation — ${str('case_number') || entityId} (${str('site_name') || ''} / ${str('capacity_mw') || '?'}MW / baseline ${str('baseline_pr') || '?'} → observed ${str('observed_pr') || '?'} / cause: ${str('primary_cause') || 'TBD'})`.trim(),
+        };
+      }
+      return null;
+    case 'pr_chain.sla_breached':
+      if (str('capacity_tier') === 'utility') {
+        return {
+          severity: 'high',
+          title: `Utility PR-chain SLA breached — ${str('case_number') || entityId} (${str('site_name') || ''} / ${str('chain_status') || ''})`.trim(),
+        };
+      }
+      return null;
+
     default:
       return null;
   }
