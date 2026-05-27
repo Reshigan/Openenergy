@@ -128,6 +128,13 @@ export function regulatorInboxSpec(
         title: `MM obligation breach escalated — ${str('participant_id') || entityId} ${str('energy_type') || ''}`.trim(),
       };
 
+    // Wave 10 — IPP performance-bond expired without renewal/replacement.
+    case 'ipp.bond_expiry_escalated':
+      return {
+        severity: 'high',
+        title: `Performance bond expired — ${str('bond_number') || entityId} (${str('project_id') || ''})`.trim(),
+      };
+
     default:
       return null;
   }

@@ -217,6 +217,11 @@ export type EventType =
   | 'trader.mm_obligation_breach' | 'trader.mm_obligation_breach_escalated'
   | 'trader.mm_obligation_recovered' | 'trader.mm_obligation_acknowledged'
   | 'trader.mm_performance_excused'
+  // Wave 10 — IPP performance-bond + insurance expiry escalation
+  | 'ipp.bond_warning' | 'ipp.bond_cycle_1_notice'
+  | 'ipp.bond_cycle_2_notice' | 'ipp.bond_cycle_3_notice'
+  | 'ipp.bond_expiry_escalated' | 'ipp.bond_acknowledged'
+  | 'ipp.bond_released' | 'ipp.bond_replaced' | 'ipp.bond_forfeited'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

@@ -3,6 +3,7 @@ import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '..
 import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
+import { BondRegistryTab } from '../ipp/BondRegistryTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -28,6 +29,7 @@ export function IppWorkstationPage() {
         { key: 'milestones', label: 'Milestones', body: ({ onRefresh }) => <MilestonesTab onRefresh={onRefresh} /> },
         { key: 'schedule', label: 'Schedule pulse', body: () => <SchedulePulseTab /> },
         { key: 'insurance', label: 'Insurance', body: ({ onRefresh }) => <InsuranceTab onRefresh={onRefresh} /> },
+        { key: 'bonds', label: 'Bonds', body: () => <BondRegistryTab /> },
         { key: 'community', label: 'Community', body: ({ onRefresh }) => <CommunityTab onRefresh={onRefresh} /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (

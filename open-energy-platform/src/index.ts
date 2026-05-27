@@ -63,6 +63,7 @@ import lenderDunningRoutes from './routes/lender-dunning';
 import offtakerObligationsRoutes from './routes/offtaker-obligations';
 import gridWheelingChargesRoutes from './routes/grid-wheeling-charges';
 import traderMmComplianceRoutes from './routes/trader-mm-compliance';
+import ippBondsRoutes, { bondExpirySweep } from './routes/ipp-bonds';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -296,6 +297,7 @@ app.route('/api/lender/dunning', lenderDunningRoutes);
 app.route('/api/offtaker/obligations', offtakerObligationsRoutes);
 app.route('/api/grid/wheeling-charges', gridWheelingChargesRoutes);
 app.route('/api/trader/mm-compliance', traderMmComplianceRoutes);
+app.route('/api/ipp/bonds', ippBondsRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1461,6 +1463,16 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
             }).catch((e: unknown) => console.warn('mm_recovery_cascade_failed', String(e)));
           }
         }
+      });
+
+      // Wave 10 — IPP performance-bond + insurance expiry sweep. Walks every
+      // active bond and non-terminal insurance policy, advances expiry_status
+      // through warning → cycle_1 → cycle_2 → cycle_3 → escalated, writes a
+      // notice row per cycle entry, and fires fire-once cascades. Escalation
+      // crosses into the regulator inbox via regulator-inbox-spec.
+      await safe('ipp_bond_expiry_sweep', async () => {
+        const result = await bondExpirySweep(env as never);
+        console.log('ipp_bond_expiry_sweep', JSON.stringify(result));
       });
       break;
 
