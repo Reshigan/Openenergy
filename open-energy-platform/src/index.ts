@@ -71,6 +71,7 @@ import supportTicketChainRoutes, { supportTicketSlaSweep } from './routes/suppor
 import warrantyClaimChainRoutes, { warrantyClaimSlaSweep } from './routes/warranty-claim-chain';
 import woChainRoutes, { woChainSlaSweep } from './routes/wo-chain';
 import carbonRetirementChainRoutes, { carbonRetirementSlaSweep } from './routes/carbon-retirement-chain';
+import plannedOutageChainRoutes, { plannedOutageSlaSweep } from './routes/planned-outage-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -312,6 +313,7 @@ app.route('/api/support/ticket-chain', supportTicketChainRoutes);
 app.route('/api/esums/warranty-claims', warrantyClaimChainRoutes);
 app.route('/api/esums/wo-chain', woChainRoutes);
 app.route('/api/carbon/retirement-chain', carbonRetirementChainRoutes);
+app.route('/api/grid/planned-outages', plannedOutageChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -582,6 +584,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('carbon_retirement_sla_sweep', async () => {
         const result = await carbonRetirementSlaSweep(env as never);
         console.log('carbon_retirement_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 18 — Planned outage submission chain SLA sweep. critical/high
+      // breaches cross into regulator inbox per NERSA Grid Code §C-1.3.
+      await safe('planned_outage_sla_sweep', async () => {
+        const result = await plannedOutageSlaSweep(env as never);
+        console.log('planned_outage_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

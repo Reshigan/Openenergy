@@ -263,6 +263,11 @@ export type EventType =
   | 'carbon.retirement.adjusted' | 'carbon.retirement.retired'
   | 'carbon.retirement.rejected' | 'carbon.retirement.cancelled'
   | 'carbon.retirement.sla_breached'
+  // Wave 18 — Planned outage submission chain (NERSA Grid Code §C-1.3)
+  | 'outage.submitted' | 'outage.review_started' | 'outage.approved'
+  | 'outage.rejected' | 'outage.rescheduled' | 'outage.notified'
+  | 'outage.commenced' | 'outage.restore_started' | 'outage.restored'
+  | 'outage.closed' | 'outage.cancelled' | 'outage.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

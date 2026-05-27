@@ -5,6 +5,7 @@ import { gridCompletionTabs } from '../roleCompletionTabs';
 import { GridInsights } from '../widgets/GridInsights';
 import { WheelingChargesTab } from '../grid/WheelingChargesTab';
 import { DispatchNominationTab } from '../grid/DispatchNominationTab';
+import { PlannedOutageChainTab } from '../grid/PlannedOutageChainTab';
 
 const instructionTypes = [
   { value: 'curtail', label: 'Curtail' },
@@ -34,6 +35,14 @@ export function GridOperatorSuitePage() {
       description: 'BRP nomination → SO acceptance → activation → performance → settlement audit chain with per-stage SLA windows.',
       columns: [],
       customContent: <DispatchNominationTab />,
+    },
+    {
+      key: 'planned_outages',
+      label: 'Planned outages',
+      endpoint: '',
+      description: 'NERSA Grid Code §C-1.3 — IPP outage submissions, severity-tiered SLAs, commence/restore/close audit chain.',
+      columns: [],
+      customContent: <PlannedOutageChainTab />,
     },
     {
       key: 'insights',

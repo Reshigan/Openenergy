@@ -295,6 +295,39 @@ export function regulatorInboxSpec(
       }
       return null;
 
+    // ─── Wave 18 — Planned outage submission chain (NERSA Grid Code) ──────
+    case 'outage.commenced':
+      // NERSA Grid Code §C-1.3 — emergency outage visibility for critical/high.
+      if (str('severity') === 'critical' || str('severity') === 'high') {
+        return {
+          severity: str('severity') === 'critical' ? 'critical' : 'high',
+          title: `Planned outage COMMENCED — ${str('outage_number') || entityId} (${str('asset_name') || ''} / ${str('affected_mw') || ''}MW)`.trim(),
+        };
+      }
+      return null;
+    case 'outage.rejected':
+      if (str('severity') === 'critical' || str('severity') === 'high') {
+        return {
+          severity: 'high',
+          title: `Planned outage REJECTED — ${str('outage_number') || entityId} (${str('asset_name') || ''} / ${str('rejection_reason') || 'no reason'})`.trim(),
+        };
+      }
+      return null;
+    case 'outage.sla_breached':
+      if (str('severity') === 'critical') {
+        return {
+          severity: 'critical',
+          title: `Critical outage SLA breached — ${str('outage_number') || entityId} (${str('chain_status') || ''} / ${str('sla_window') || ''})`.trim(),
+        };
+      }
+      if (str('severity') === 'high') {
+        return {
+          severity: 'high',
+          title: `High-severity outage SLA breached — ${str('outage_number') || entityId} (${str('chain_status') || ''} / ${str('sla_window') || ''})`.trim(),
+        };
+      }
+      return null;
+
     default:
       return null;
   }

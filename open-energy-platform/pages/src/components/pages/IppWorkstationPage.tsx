@@ -4,6 +4,7 @@ import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
 import { BondRegistryTab } from '../ipp/BondRegistryTab';
+import { PlannedOutageChainTab } from '../grid/PlannedOutageChainTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -30,6 +31,7 @@ export function IppWorkstationPage() {
         { key: 'schedule', label: 'Schedule pulse', body: () => <SchedulePulseTab /> },
         { key: 'insurance', label: 'Insurance', body: ({ onRefresh }) => <InsuranceTab onRefresh={onRefresh} /> },
         { key: 'bonds', label: 'Bonds', body: () => <BondRegistryTab /> },
+        { key: 'planned_outages', label: 'Planned outages', body: () => <PlannedOutageChainTab /> },
         { key: 'community', label: 'Community', body: ({ onRefresh }) => <CommunityTab onRefresh={onRefresh} /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
