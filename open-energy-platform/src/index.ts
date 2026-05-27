@@ -64,6 +64,7 @@ import offtakerObligationsRoutes from './routes/offtaker-obligations';
 import gridWheelingChargesRoutes from './routes/grid-wheeling-charges';
 import traderMmComplianceRoutes from './routes/trader-mm-compliance';
 import ippBondsRoutes, { bondExpirySweep } from './routes/ipp-bonds';
+import carbonMrvChainRoutes, { mrvChainSlaSweep } from './routes/carbon-mrv-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -298,6 +299,7 @@ app.route('/api/offtaker/obligations', offtakerObligationsRoutes);
 app.route('/api/grid/wheeling-charges', gridWheelingChargesRoutes);
 app.route('/api/trader/mm-compliance', traderMmComplianceRoutes);
 app.route('/api/ipp/bonds', ippBondsRoutes);
+app.route('/api/carbon/mrv-chain', carbonMrvChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1473,6 +1475,15 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_bond_expiry_sweep', async () => {
         const result = await bondExpirySweep(env as never);
         console.log('ipp_bond_expiry_sweep', JSON.stringify(result));
+      });
+
+      // Wave 11 — Carbon MRV verification-chain SLA sweep. Walks all
+      // non-terminal submissions in DOE/CRA states, marks last_sla_breach_at,
+      // writes a sla_breached audit-chain event, and fires the
+      // carbon.mrv_sla_breached cascade (regulator inbox high).
+      await safe('mrv_chain_sla_sweep', async () => {
+        const result = await mrvChainSlaSweep(env as never);
+        console.log('mrv_chain_sla_sweep', JSON.stringify(result));
       });
       break;
 

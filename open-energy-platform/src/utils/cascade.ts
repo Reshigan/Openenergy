@@ -222,6 +222,12 @@ export type EventType =
   | 'ipp.bond_cycle_2_notice' | 'ipp.bond_cycle_3_notice'
   | 'ipp.bond_expiry_escalated' | 'ipp.bond_acknowledged'
   | 'ipp.bond_released' | 'ipp.bond_replaced' | 'ipp.bond_forfeited'
+  // Wave 11 — Carbon Article 6 / UNFCCC MRV verification chain
+  | 'carbon.mrv_chain_submitted' | 'carbon.mrv_doe_assigned'
+  | 'carbon.mrv_doe_review_started' | 'carbon.mrv_doe_opinion_recorded'
+  | 'carbon.mrv_cra_submitted' | 'carbon.mrv_cra_approved' | 'carbon.mrv_cra_rejected'
+  | 'carbon.mrv_issuance_authorized' | 'carbon.mrv_issued'
+  | 'carbon.mrv_sla_breached' | 'carbon.mrv_withdrawn'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

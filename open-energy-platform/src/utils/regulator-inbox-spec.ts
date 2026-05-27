@@ -135,6 +135,34 @@ export function regulatorInboxSpec(
         title: `Performance bond expired — ${str('bond_number') || entityId} (${str('project_id') || ''})`.trim(),
       };
 
+    // Wave 11 — Carbon Article 6 / UNFCCC MRV verification chain.
+    case 'carbon.mrv_doe_opinion_recorded': {
+      const op = (str('doe_opinion') || '').toLowerCase();
+      if (op === 'adverse') {
+        return {
+          severity: 'critical',
+          title: `DOE adverse opinion — submission ${entityId} (${str('project_id') || ''})`.trim(),
+        };
+      }
+      if (op === 'disclaimer') {
+        return {
+          severity: 'high',
+          title: `DOE disclaimer of opinion — submission ${entityId} (${str('project_id') || ''})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'carbon.mrv_cra_rejected':
+      return {
+        severity: 'high',
+        title: `CRA rejected submission — ${entityId} (${str('project_id') || ''})`.trim(),
+      };
+    case 'carbon.mrv_sla_breached':
+      return {
+        severity: 'high',
+        title: `MRV verification SLA breached — ${entityId} (${str('chain_status') || ''})`.trim(),
+      };
+
     default:
       return null;
   }

@@ -4,6 +4,7 @@ import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
 import { Article6Tab } from '../carbon/Article6Tab';
+import { MrvChainTab } from '../carbon/MrvChainTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -77,6 +78,11 @@ export function CarbonWorkstationPage() {
           key: 'article6',
           label: 'Article 6 ITMO',
           body: () => <Article6Tab />,
+        },
+        {
+          key: 'mrv_chain',
+          label: 'Verification chain',
+          body: () => <MrvChainTab />,
         },
         {
           key: 'audit',
