@@ -3,6 +3,7 @@ import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
 import { platformTabs } from '../platformTabs';
 import { gridCompletionTabs } from '../roleCompletionTabs';
 import { GridInsights } from '../widgets/GridInsights';
+import { WheelingChargesTab } from '../grid/WheelingChargesTab';
 
 const instructionTypes = [
   { value: 'curtail', label: 'Curtail' },
@@ -17,6 +18,14 @@ const instructionTypes = [
 
 export function GridOperatorSuitePage() {
   const tabs: TabSpec[] = [
+    {
+      key: 'wheeling_charges',
+      label: 'Wheeling charges',
+      endpoint: '',
+      description: 'Monthly transmission-charge reconciliation with dispute lifecycle + cure windows.',
+      columns: [],
+      customContent: <WheelingChargesTab />,
+    },
     {
       key: 'insights',
       label: 'Insights',

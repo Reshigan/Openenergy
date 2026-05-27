@@ -114,6 +114,13 @@ export function regulatorInboxSpec(
         title: `PPA take-or-pay triggered — ${str('ppa_id') || entityId} ${str('period_month') || ''}`.trim(),
       };
 
+    // Wave 8 — Wheeling charge escalation crosses into regulator scope.
+    case 'grid.wheeling_charge_escalated':
+      return {
+        severity: 'high',
+        title: `Wheeling charge escalated — ${str('agreement_id') || entityId} ${str('period_month') || ''}`.trim(),
+      };
+
     default:
       return null;
   }

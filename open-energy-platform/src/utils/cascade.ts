@@ -208,6 +208,10 @@ export type EventType =
   | 'offtaker.reading_rejected' | 'offtaker.reading_reversed'
   | 'offtaker.obligation_shortfall' | 'offtaker.obligation_cured'
   | 'offtaker.obligation_take_or_pay'
+  // Wave 8 — Grid wheeling charge reconciliation
+  | 'grid.wheeling_charge_issued' | 'grid.wheeling_charge_disputed'
+  | 'grid.wheeling_charge_paid' | 'grid.wheeling_dispute_resolved'
+  | 'grid.wheeling_charge_escalated'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

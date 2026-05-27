@@ -61,6 +61,7 @@ import carbonArticle6Routes from './routes/carbon-article-6';
 import regulatorInboxRoutes from './routes/regulator-inbox';
 import lenderDunningRoutes from './routes/lender-dunning';
 import offtakerObligationsRoutes from './routes/offtaker-obligations';
+import gridWheelingChargesRoutes from './routes/grid-wheeling-charges';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -292,6 +293,7 @@ app.route('/api/carbon/article-6', carbonArticle6Routes);
 app.route('/api/regulator/inbox', regulatorInboxRoutes);
 app.route('/api/lender/dunning', lenderDunningRoutes);
 app.route('/api/offtaker/obligations', offtakerObligationsRoutes);
+app.route('/api/grid/wheeling-charges', gridWheelingChargesRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1267,6 +1269,58 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
             },
             env,
           }).catch((e: unknown) => console.warn('offtaker_take_or_pay_cascade_failed', String(e)));
+        }
+      });
+
+      // Wave 8 — grid wheeling escalation sweep: any 'disputed' charge whose
+      // dispute_deadline_at has passed AND still has an open dispute row flips
+      // to 'escalated' and posts a regulator-inbox cascade.
+      await safe('grid_wheeling_escalation_sweep', async () => {
+        const expired = await env.DB.prepare(`
+          SELECT c.id, c.agreement_id, c.period_month, c.total_zar,
+                 c.dispute_deadline_at
+            FROM oe_grid_wheeling_charges c
+           WHERE c.status = 'disputed'
+             AND c.dispute_deadline_at IS NOT NULL
+             AND c.dispute_deadline_at <= datetime('now')
+             AND EXISTS (
+               SELECT 1 FROM oe_grid_wheeling_disputes d
+                WHERE d.charge_id = c.id AND d.status = 'open'
+             )
+           LIMIT 50
+        `).all<any>();
+
+        const { fireCascade } = await import('./utils/cascade');
+
+        for (const row of (expired.results || []) as any[]) {
+          await env.DB.prepare(`
+            UPDATE oe_grid_wheeling_charges
+               SET status = 'escalated',
+                   escalated_at = datetime('now'),
+                   escalated_to = 'regulator',
+                   updated_at = datetime('now')
+             WHERE id = ?
+          `).bind(row.id).run().catch(() => null);
+
+          await env.DB.prepare(`
+            UPDATE oe_grid_wheeling_disputes
+               SET status = 'escalated'
+             WHERE charge_id = ? AND status = 'open'
+          `).bind(row.id).run().catch(() => null);
+
+          await fireCascade({
+            event: 'grid.wheeling_charge_escalated',
+            actor_id: 'system',
+            entity_type: 'oe_grid_wheeling_charges',
+            entity_id: String(row.id),
+            data: {
+              agreement_id: row.agreement_id,
+              period_month: row.period_month,
+              total_zar: Number(row.total_zar || 0),
+              dispute_deadline_at: row.dispute_deadline_at,
+            },
+            env,
+          }).catch((e: unknown) => console.warn('grid_wheeling_escalation_cascade_failed', String(e)));
         }
       });
       break;
