@@ -279,6 +279,11 @@ export type EventType =
   | 'cod.mechanical_complete' | 'cod.cold_commissioned'
   | 'cod.grid_synchronized' | 'cod.reliability_started'
   | 'cod.cod_certified' | 'cod.cancelled' | 'cod.sla_breached'
+  // Wave 21 — Lender drawdown / disbursement certification chain (SARB + REIPPPP)
+  | 'drawdown.documents_submitted' | 'drawdown.ie_review_started'
+  | 'drawdown.cp_passed' | 'drawdown.queried' | 'drawdown.resumed'
+  | 'drawdown.approved' | 'drawdown.funded' | 'drawdown.closed'
+  | 'drawdown.rejected' | 'drawdown.cancelled' | 'drawdown.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

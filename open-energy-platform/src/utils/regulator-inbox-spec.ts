@@ -385,6 +385,34 @@ export function regulatorInboxSpec(
       }
       return null;
 
+    // ─── Wave 21 — Lender drawdown / disbursement chain ────────────────────
+    case 'drawdown.approved':
+      // SARB large-exposure disclosure mandate for senior-tier (≥R500m tranche).
+      if (str('tranche_tier') === 'senior') {
+        return {
+          severity: 'high',
+          title: `Senior drawdown APPROVED — ${str('drawdown_number') || entityId} (${str('project_name') || ''} / R${str('amount_zar') || '?'} / ${str('lender_id') || 'lender'})`.trim(),
+        };
+      }
+      return null;
+    case 'drawdown.rejected':
+      // IPP financing-failure visibility to DMRE (bid-window risk).
+      if (str('tranche_tier') === 'senior') {
+        return {
+          severity: 'high',
+          title: `Senior drawdown REJECTED — ${str('drawdown_number') || entityId} (${str('project_name') || ''} / ${str('rejection_reason') || 'no reason'})`.trim(),
+        };
+      }
+      return null;
+    case 'drawdown.sla_breached':
+      if (str('tranche_tier') === 'senior') {
+        return {
+          severity: 'high',
+          title: `Senior drawdown SLA breached — ${str('drawdown_number') || entityId} (${str('chain_status') || ''} / ${str('sla_window') || ''})`.trim(),
+        };
+      }
+      return null;
+
     default:
       return null;
   }

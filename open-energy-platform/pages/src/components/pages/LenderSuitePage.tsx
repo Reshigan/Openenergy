@@ -4,9 +4,18 @@ import { platformTabs } from '../platformTabs';
 import { lenderCompletionTabs } from '../roleCompletionTabs';
 import { LenderInsights } from '../widgets/LenderInsights';
 import { DunningTab } from '../lender/DunningTab';
+import { DrawdownChainTab } from '../lender/DrawdownChainTab';
 
 export function LenderSuitePage() {
   const tabs: TabSpec[] = [
+    {
+      key: 'drawdowns',
+      label: 'Drawdowns',
+      endpoint: '',
+      description: 'Disbursement certification chain · IE + CP gate, SARB large-exposure on senior approvals, regulator inbox on senior breaches.',
+      columns: [],
+      customContent: <DrawdownChainTab />,
+    },
     {
       key: 'dunning',
       label: 'Dunning queue',
