@@ -160,8 +160,8 @@ function fmtMw(n: number | null | undefined): string {
 export function PlannedOutageChainTab() {
   const { user } = useAuth();
   const role = user?.role || '';
-  const isGrid = role === 'admin' || role === 'grid';
-  const isIpp  = role === 'ipp' || role === 'wind' || role === 'admin' || role === 'grid';
+  const isGrid = role === 'admin' || role === 'grid' || role === 'grid_operator';
+  const isIpp  = role === 'ipp' || role === 'ipp_developer' || role === 'wind' || role === 'admin' || role === 'grid' || role === 'grid_operator';
 
   const [rows, setRows] = useState<OutageRow[]>([]);
   const [loading, setLoading] = useState(true);

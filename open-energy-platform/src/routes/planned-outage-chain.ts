@@ -46,9 +46,9 @@ import {
   type OutageSeverity,
 } from '../utils/planned-outage-chain-spec';
 
-const READ_ROLES      = new Set(['admin', 'grid', 'ipp', 'wind', 'regulator', 'support', 'lender']);
-const IPP_WRITE_ROLES = new Set(['admin', 'grid', 'ipp', 'wind']);
-const GRID_WRITE_ROLES = new Set(['admin', 'grid']);
+const READ_ROLES      = new Set(['admin', 'grid', 'grid_operator', 'ipp', 'ipp_developer', 'wind', 'regulator', 'support', 'lender']);
+const IPP_WRITE_ROLES = new Set(['admin', 'grid', 'grid_operator', 'ipp', 'ipp_developer', 'wind']);
+const GRID_WRITE_ROLES = new Set(['admin', 'grid', 'grid_operator']);
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
