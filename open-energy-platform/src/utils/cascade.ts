@@ -284,6 +284,12 @@ export type EventType =
   | 'drawdown.cp_passed' | 'drawdown.queried' | 'drawdown.resumed'
   | 'drawdown.approved' | 'drawdown.funded' | 'drawdown.closed'
   | 'drawdown.rejected' | 'drawdown.cancelled' | 'drawdown.sla_breached'
+  // Wave 22 — Offtaker PPA contract execution lifecycle (NERSA Section 34)
+  | 'ppa_contract.negotiation_started' | 'ppa_contract.terms_locked'
+  | 'ppa_contract.legal_signed' | 'ppa_contract.executed'
+  | 'ppa_contract.commenced' | 'ppa_contract.disputed' | 'ppa_contract.resolved'
+  | 'ppa_contract.terminated' | 'ppa_contract.expired' | 'ppa_contract.cancelled'
+  | 'ppa_contract.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

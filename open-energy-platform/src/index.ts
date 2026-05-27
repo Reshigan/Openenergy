@@ -75,6 +75,7 @@ import plannedOutageChainRoutes, { plannedOutageSlaSweep } from './routes/planne
 import procurementChainRoutes, { procurementSlaSweep } from './routes/procurement-chain';
 import codChainRoutes, { codSlaSweep } from './routes/cod-chain';
 import drawdownChainRoutes, { drawdownSlaSweep } from './routes/drawdown-chain';
+import ppaContractChainRoutes, { ppaContractSlaSweep } from './routes/ppa-contract-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -320,6 +321,7 @@ app.route('/api/grid/planned-outages', plannedOutageChainRoutes);
 app.route('/api/ipp/procurement-chain', procurementChainRoutes);
 app.route('/api/ipp/cod-chain', codChainRoutes);
 app.route('/api/lender/drawdown-chain', drawdownChainRoutes);
+app.route('/api/offtaker/ppa-contract-chain', ppaContractChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -614,6 +616,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('drawdown_sla_sweep', async () => {
         const result = await drawdownSlaSweep(env as never);
         console.log('drawdown_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 22 — Offtaker PPA contract execution lifecycle SLA sweep + auto-expire.
+      // Strategic-tier breaches cross into regulator inbox (NERSA Section 34).
+      await safe('ppa_contract_sla_sweep', async () => {
+        const result = await ppaContractSlaSweep(env as never);
+        console.log('ppa_contract_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

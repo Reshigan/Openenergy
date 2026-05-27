@@ -4,9 +4,18 @@ import { platformTabs } from '../platformTabs';
 import { offtakerCompletionTabs } from '../roleCompletionTabs';
 import { OfftakerInsights } from '../widgets/OfftakerInsights';
 import { ObligationsTab } from '../offtaker/ObligationsTab';
+import { PpaContractChainTab } from '../offtaker/PpaContractChainTab';
 
 export function OfftakerSuitePage() {
   const tabs: TabSpec[] = [
+    {
+      key: 'ppa-contracts',
+      label: 'PPA contracts',
+      endpoint: '',
+      description: 'PPA contract execution lifecycle · NERSA Section 34 on strategic execute, dispute branch, termination + auto-expire.',
+      columns: [],
+      customContent: <PpaContractChainTab />,
+    },
     {
       key: 'obligations',
       label: 'PPA obligations',

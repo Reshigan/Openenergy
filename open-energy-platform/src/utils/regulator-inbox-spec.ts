@@ -413,6 +413,34 @@ export function regulatorInboxSpec(
       }
       return null;
 
+    // ─── Wave 22 — Offtaker PPA contract lifecycle ─────────────────────────
+    case 'ppa_contract.executed':
+      // NERSA Section 34 determination visibility for strategic-tier (≥100MW).
+      if (str('capacity_tier') === 'strategic') {
+        return {
+          severity: 'high',
+          title: `Strategic PPA EXECUTED — ${str('ppa_number') || entityId} (${str('project_name') || ''} / ${str('capacity_mw') || '?'}MW / ${str('offtaker_name') || ''} / ${str('nersa_section34_ref') || 'S34 pending'})`.trim(),
+        };
+      }
+      return null;
+    case 'ppa_contract.terminated':
+      // Strategic-tier termination — market-stability visibility.
+      if (str('capacity_tier') === 'strategic') {
+        return {
+          severity: 'high',
+          title: `Strategic PPA TERMINATED — ${str('ppa_number') || entityId} (${str('project_name') || ''} / ${str('termination_reason') || 'no reason'})`.trim(),
+        };
+      }
+      return null;
+    case 'ppa_contract.sla_breached':
+      if (str('capacity_tier') === 'strategic') {
+        return {
+          severity: 'high',
+          title: `Strategic PPA SLA breached — ${str('ppa_number') || entityId} (${str('chain_status') || ''} / ${str('sla_window') || ''})`.trim(),
+        };
+      }
+      return null;
+
     default:
       return null;
   }
