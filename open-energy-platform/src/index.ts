@@ -888,6 +888,84 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
           ).run();
         }
       });
+      // Wave 2 — historical-simulation VaR + scenario engine. Iterates every
+      // portfolio (system + user), computes 95% and 99% VaR + ES against the
+      // last 250 days of factor history, then re-runs every system scenario
+      // against every portfolio. Pure-function math via src/utils/var.ts —
+      // all I/O is the D1 reads of positions and factor history, plus the
+      // INSERT of the result rows. Well within the Worker 30s budget.
+      await safe('var_compute', async () => {
+        const portfolios = await env.DB.prepare(`SELECT * FROM risk_portfolios`).all<any>();
+        const scenarios = await env.DB.prepare(`SELECT * FROM risk_scenarios WHERE is_system = 1`).all<any>();
+        const allFactors = await env.DB.prepare(`SELECT id FROM risk_factors`).all<{ id: string }>();
+        const factorIds = ((allFactors.results || []) as any[]).map(r => r.id);
+        const fhRows = await env.DB.prepare(`
+          SELECT factor_id, as_of_date, value FROM risk_factor_history
+          ORDER BY factor_id ASC, as_of_date ASC
+        `).all<{ factor_id: string; as_of_date: string; value: number }>();
+        const history: Record<string, Array<{ as_of_date: string; value: number }>> = {};
+        for (const r of (fhRows.results || []) as any[]) {
+          (history[r.factor_id] ||= []).push({ as_of_date: r.as_of_date, value: Number(r.value) });
+        }
+        const { simulateHistoricalPnL, varAtConfidence, expectedShortfall, runScenario } = await import('./utils/var');
+        for (const p of (portfolios.results || []) as any[]) {
+          let filter: any = {};
+          try { filter = JSON.parse(p.basis_filter_json || '{}'); } catch {}
+          const where: string[] = [];
+          const params: any[] = [];
+          if (filter.trader_id) { where.push('participant_id = ?'); params.push(filter.trader_id); }
+          if (filter.energy_type) { where.push('energy_type = ?'); params.push(filter.energy_type); }
+          const positionsRes = await env.DB.prepare(`
+            SELECT id, participant_id, energy_type, net_volume_mwh, last_mark_price
+            FROM trader_positions
+            ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+            LIMIT 1000
+          `).bind(...params).all<any>();
+          const positions: any[] = [];
+          for (const r of (positionsRes.results || []) as any[]) {
+            const qty = Number(r.net_volume_mwh || 0);
+            const mark = Number(r.last_mark_price || 0);
+            if (qty === 0 || mark === 0) continue;
+            positions.push({
+              id: r.id,
+              factor_id: `spot_${r.energy_type}`,
+              side: qty > 0 ? 'long' : 'short',
+              quantity: Math.abs(qty),
+              mark_price: mark,
+            });
+          }
+          const pnls = simulateHistoricalPnL(positions, history, 250);
+          for (const conf of [0.95, 0.99]) {
+            const v = varAtConfidence(pnls, conf);
+            const es = expectedShortfall(pnls, conf);
+            await env.DB.prepare(`
+              INSERT INTO risk_var_results (
+                id, portfolio_id, as_of_date, methodology, confidence, horizon_days,
+                var_amount_zar, es_amount_zar, components_json, created_at
+              ) VALUES (?, ?, ?, 'historical_simulation', ?, 1, ?, ?, ?, datetime('now'))
+            `).bind(
+              `vr_${today.replace(/-/g, '')}_${p.id}_${Math.round(conf * 100)}`,
+              p.id, today, conf, v, es,
+              JSON.stringify({ factors: factorIds, positions: positions.length }),
+            ).run().catch(() => null);
+          }
+          // Scenarios — only system library on the nightly run; user-defined
+          // are run on-demand via POST /api/risk/scenarios/:id/run.
+          for (const s of (scenarios.results || []) as any[]) {
+            let shocks: any[] = [];
+            try { shocks = JSON.parse(s.factor_shocks_json || '[]'); } catch {}
+            const r = runScenario(positions, shocks);
+            await env.DB.prepare(`
+              INSERT INTO risk_scenario_results (
+                id, scenario_id, portfolio_id, as_of_date, pnl_impact_zar, breakdown_json, created_at
+              ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+            `).bind(
+              `sr_${today.replace(/-/g, '')}_${p.id}_${s.id}`,
+              s.id, p.id, today, r.pnl, JSON.stringify(r.breakdown),
+            ).run().catch(() => null);
+          }
+        }
+      });
       break;
 
     case '10 0 * * *':
@@ -1144,6 +1222,71 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
             JSON.stringify([{ description: 'Platform subscription', amount_zar: s.amount_zar }]),
             s.amount_zar, vat, total,
           ).run();
+        }
+      });
+      break;
+
+    case '0 15 * * 5':
+      // Wave 2 — Friday 17:00 SAST (15:00 UTC) MTD trading-risk digest.
+      // One subscription only — antoinette@gonxt.tech — per the 2026-05-27
+      // executive decision to drop every other recurring email and keep
+      // exactly one weekly oversight cadence. Body summarises this month's
+      // worst VaR + scenario losses across all portfolios.
+      await safe('risk_mtd_digest', async () => {
+        const monthStart = month + '-01';
+        const subs = await env.DB.prepare(`
+          SELECT * FROM oe_digest_subscriptions
+          WHERE enabled = 1 AND digest_type = 'risk_mtd_weekly'
+        `).all<any>();
+        if (!(subs.results || []).length) return;
+
+        const peakVar = await env.DB.prepare(`
+          SELECT v.portfolio_id, p.name AS portfolio_name, v.confidence,
+                 MAX(v.var_amount_zar) AS peak_var, MAX(v.es_amount_zar) AS peak_es
+          FROM risk_var_results v
+          JOIN risk_portfolios p ON p.id = v.portfolio_id
+          WHERE v.as_of_date >= ?
+          GROUP BY v.portfolio_id, v.confidence
+          ORDER BY peak_var DESC LIMIT 10
+        `).bind(monthStart).all<any>();
+
+        const worstScenarios = await env.DB.prepare(`
+          SELECT sr.scenario_id, s.name AS scenario_name, sr.portfolio_id,
+                 p.name AS portfolio_name, MIN(sr.pnl_impact_zar) AS worst_pnl
+          FROM risk_scenario_results sr
+          JOIN risk_scenarios s ON s.id = sr.scenario_id
+          JOIN risk_portfolios p ON p.id = sr.portfolio_id
+          WHERE sr.as_of_date >= ?
+          GROUP BY sr.scenario_id, sr.portfolio_id
+          ORDER BY worst_pnl ASC LIMIT 10
+        `).bind(monthStart).all<any>();
+
+        const fmt = (n: number) => `R${Math.round(Math.abs(Number(n) || 0)).toLocaleString('en-ZA')}`;
+        const varLines = ((peakVar.results || []) as any[]).map(r =>
+          `  • ${r.portfolio_name} (VaR ${Math.round(r.confidence * 100)}%): peak ${fmt(r.peak_var)} / ES ${fmt(r.peak_es)}`,
+        ).join('\n') || '  (no VaR rows this month)';
+        const scnLines = ((worstScenarios.results || []) as any[]).map(r =>
+          `  • ${r.scenario_name} on ${r.portfolio_name}: ${fmt(r.worst_pnl)} loss`,
+        ).join('\n') || '  (no scenario rows this month)';
+
+        const body = `Open Energy — Trading Risk MTD digest\n` +
+          `Month: ${month}\n\n` +
+          `Top 10 peak VaR by portfolio × confidence:\n${varLines}\n\n` +
+          `Top 10 worst scenario impacts:\n${scnLines}\n\n` +
+          `— Open Energy Platform`;
+
+        const status = (env as any).EMAIL_API_KEY ? 'sent' : 'would_send';
+        for (const s of (subs.results || []) as any[]) {
+          await env.DB.prepare(`
+            INSERT INTO oe_digest_deliveries
+              (id, subscription_id, channel, destination, status, body_preview, sent_at)
+            VALUES (?,?,?,?,?,?,?)
+          `).bind(
+            `oedd_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`,
+            s.id, s.channel, s.destination, status, body.slice(0, 2000),
+            status === 'sent' ? new Date().toISOString() : null,
+          ).run();
+          await env.DB.prepare(`UPDATE oe_digest_subscriptions SET last_sent_at = datetime('now') WHERE id = ?`).bind(s.id).run();
         }
       });
       break;
