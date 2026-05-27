@@ -52,7 +52,8 @@ VALUES
     NULL, 1320.00, 'construction',
     'ingestion_wired', datetime('now','-40 days'), datetime('now','-3 days'),
     datetime('now','-30 days'), datetime('now','-10 days'), NULL, NULL, NULL,
-    NULL, NULL, datetime('now','-2 days')),
+    NULL, NULL, datetime('now','-2 days'),
+    datetime('now','-40 days')),
 
   ('site_comm_005', 'Loeriesfontein PV (telemetry OK)', 'solar', 100.0, 120000, 'Northern Cape', -30.95, 19.45,
     NULL, 1150.00, 'construction',
@@ -79,7 +80,8 @@ VALUES
     NULL, 1230.00, 'construction',
     'commissioning_failed', datetime('now','-60 days'), datetime('now','-15 days'),
     datetime('now','-50 days'), datetime('now','-40 days'), NULL, NULL, NULL,
-    datetime('now','-25 days'), 'Inverter OEM did not deliver Modbus/TCP adapter — site cannot ingest telemetry.', datetime('now','-30 days')),
+    datetime('now','-25 days'), 'Inverter OEM did not deliver Modbus/TCP adapter — site cannot ingest telemetry.', datetime('now','-30 days'),
+    datetime('now','-60 days')),
 
   ('site_comm_009', 'Klipheuwel Wind (decommissioned)', 'wind', 27.0, NULL, 'Western Cape', -33.7, 18.7,
     date('now','-5 years'), 950.00, 'decommissioned',
