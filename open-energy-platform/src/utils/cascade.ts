@@ -252,7 +252,12 @@ export type EventType =
   | 'project.schedule.calendar.updated' | 'project.schedule.resource.updated'
   | 'project.schedule.assignment.updated'
   | 'project.schedule.recomputed' | 'project.schedule.leveled'
-  | 'project.schedule.baseline.saved' | 'project.schedule.critical_path.changed';
+  | 'project.schedule.baseline.saved' | 'project.schedule.critical_path.changed'
+  // ─── Wave 2: trading risk (daily VaR + scenario engine) ─────────────────
+  | 'risk.portfolio.created' | 'risk.portfolio.updated' | 'risk.portfolio.deleted'
+  | 'risk.var.recomputed'
+  | 'risk.scenario.created' | 'risk.scenario.updated' | 'risk.scenario.deleted'
+  | 'risk.scenario.run';
 
 interface CascadeContext {
   event: EventType;
