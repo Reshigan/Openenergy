@@ -257,7 +257,13 @@ export type EventType =
   | 'risk.portfolio.created' | 'risk.portfolio.updated' | 'risk.portfolio.deleted'
   | 'risk.var.recomputed'
   | 'risk.scenario.created' | 'risk.scenario.updated' | 'risk.scenario.deleted'
-  | 'risk.scenario.run';
+  | 'risk.scenario.run'
+  // ─── Wave 3: settlement & clearing CPMI-IOSCO PFMI grade ─────────────────
+  | 'clearing.disclosure.computed' | 'clearing.disclosure.published'
+  | 'settlement.dvp.cash_confirmed' | 'settlement.dvp.energy_confirmed'
+  | 'settlement.dvp.locked' | 'settlement.dvp.released'
+  | 'clearing.margin.gate_changed' | 'clearing.margin.override_set'
+  | 'settlement.fail.escalated' | 'settlement.fail.resolved';
 
 interface CascadeContext {
   event: EventType;
