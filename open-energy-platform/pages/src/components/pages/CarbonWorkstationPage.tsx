@@ -3,6 +3,7 @@ import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '..
 import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
+import { Article6Tab } from '../carbon/Article6Tab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -71,6 +72,11 @@ export function CarbonWorkstationPage() {
           key: 'certificates',
           label: 'Retirement certificates',
           body: ({ onRefresh }) => <CertificatesTab onRefresh={onRefresh} />,
+        },
+        {
+          key: 'article6',
+          label: 'Article 6 ITMO',
+          body: () => <Article6Tab />,
         },
         {
           key: 'audit',

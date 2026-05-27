@@ -263,7 +263,13 @@ export type EventType =
   | 'settlement.dvp.cash_confirmed' | 'settlement.dvp.energy_confirmed'
   | 'settlement.dvp.locked' | 'settlement.dvp.released'
   | 'clearing.margin.gate_changed' | 'clearing.margin.override_set'
-  | 'settlement.fail.escalated' | 'settlement.fail.resolved';
+  | 'settlement.fail.escalated' | 'settlement.fail.resolved'
+  // ─── Wave 4: Article 6 ITMO corresponding-adjustment ledger ──────────────
+  | 'carbon.article6.adjustment_created'
+  | 'carbon.article6.dffe_submitted' | 'carbon.article6.dffe_cleared'
+  | 'carbon.article6.unfccc_posted' | 'carbon.article6.blocked'
+  | 'carbon.country_routing.updated'
+  | 'carbon.serial_uri.resolved';
 
 interface CascadeContext {
   event: EventType;

@@ -963,4 +963,68 @@ ai.post('/settlement/fail-diagnose', async (c) => {
   return c.json({ success: true, data: { instruction_id: body.instruction_id, cause, remediation, dvp_lock: cycle, gate_status: memberGate?.gate_status || 'clear' } });
 });
 
+// ──────────────────────────────────────────────────────────────────────────
+// POST /ai/carbon/article-6-explain — given an Article 6 adjustment id,
+// narrate the double-counting risk in plain English + suggest the next
+// authority action. Inputs come from oe_article6_adjustments +
+// oe_country_routing; the risk math itself runs in src/utils/article6.ts so
+// this endpoint is purely the explainer surface.
+// Body: { adjustment_id: string }
+// ──────────────────────────────────────────────────────────────────────────
+ai.post('/carbon/article-6-explain', async (c) => {
+  const body = await c.req.json<{ adjustment_id: string }>().catch(() => ({} as any));
+  const user = getCurrentUser(c);
+  if (!body.adjustment_id) return c.json({ error: 'adjustment_id_required' }, 400);
+
+  const row = await c.env.DB.prepare(
+    `SELECT * FROM oe_article6_adjustments WHERE id = ?`,
+  ).bind(body.adjustment_id).first<any>().catch(() => null);
+  if (!row) return c.json({ error: 'not_found' }, 404);
+
+  const { assessDoubleCountingRisk } = await import('../utils/article6');
+  const risk = assessDoubleCountingRisk({
+    host_iso: row.host_country_iso,
+    beneficiary_iso: row.beneficiary_country_iso,
+    article_6_track: row.article_6_track,
+    ca_status: row.ca_status,
+  });
+
+  // Next-action heuristic — wire status to the recommended next call.
+  const nextAction: Record<string, { action: string; route: string | null }> = {
+    draft: { action: 'Submit corresponding-adjustment record to host NDC authority (DFFE for SA).', route: `/api/carbon/article-6/${row.id}/submit-dffe` },
+    dffe_pending: { action: 'Awaiting DFFE clearance — no operator action required.', route: null },
+    dffe_cleared: { action: 'Post adjustment to UNFCCC central ledger.', route: `/api/carbon/article-6/${row.id}/post-unfccc` },
+    unfccc_ledger: { action: 'Adjustment is final — no further action.', route: null },
+    blocked: { action: 'Resolve block reason or unblock to restart lifecycle.', route: `/api/carbon/article-6/${row.id}/unblock` },
+  };
+  const recommended = nextAction[row.ca_status] || { action: 'Review status manually.', route: null };
+
+  const summary = `Adjustment for ${Number(row.tco2e || 0).toLocaleString('en-ZA')} tCO₂e ` +
+    `from ${row.host_country_iso} to ${row.beneficiary_country_iso} ` +
+    `(track ${row.article_6_track}, status ${row.ca_status}). ` +
+    `Double-counting risk: ${risk.risk.toUpperCase()}. ${risk.reasons.join(' ')}`;
+
+  await c.env.DB.prepare(`
+    INSERT INTO ai_decisions (id, user_id, intent, input_json, output_summary, model, created_at)
+    VALUES (?, ?, 'carbon.article6_explain', ?, ?, 'inline-heuristic', datetime('now'))
+  `).bind(
+    `aid_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    user.id, JSON.stringify({ adjustment_id: row.id }), summary.slice(0, 500),
+  ).run().catch(() => null);
+
+  return c.json({
+    success: true,
+    data: {
+      adjustment_id: row.id,
+      summary,
+      risk: risk.risk,
+      reasons: risk.reasons,
+      ca_status: row.ca_status,
+      article_6_track: row.article_6_track,
+      next_action: recommended.action,
+      next_route: recommended.route,
+    },
+  });
+});
+
 export default ai;

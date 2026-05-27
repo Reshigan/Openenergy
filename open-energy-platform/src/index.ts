@@ -57,6 +57,7 @@ import lenderSuiteRoutes from './routes/lender-suite';
 import ippLifecycleRoutes from './routes/ipp-lifecycle';
 import offtakerSuiteRoutes from './routes/offtaker-suite';
 import carbonRegistryRoutes from './routes/carbon-registry';
+import carbonArticle6Routes from './routes/carbon-article-6';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -282,6 +283,9 @@ app.route('/api/lender', lenderSuiteRoutes);
 app.route('/api/ipp', ippLifecycleRoutes);
 app.route('/api/offtaker-suite', offtakerSuiteRoutes);
 app.route('/api/carbon-registry', carbonRegistryRoutes);
+// Wave 4 — UNFCCC Paris Agreement Article 6 ITMO corresponding-adjustment
+// ledger. Flat mount avoids the basePath param-collision lesson from Wave 1.
+app.route('/api/carbon/article-6', carbonArticle6Routes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
