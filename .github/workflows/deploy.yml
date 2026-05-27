@@ -244,6 +244,10 @@ jobs:
 
       - name: Deploy Pages (legacy — frontend mirror)
         working-directory: open-energy-platform
+        # Worker on oe.vantax.co.za is the source of truth; this mirror is
+        # best-effort and has been failing on CF Pages API "Invalid commit
+        # message" UTF-8 validation. Don't fail the job on mirror errors.
+        continue-on-error: true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
