@@ -3,6 +3,7 @@ import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '..
 import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { RiskTab } from '../risk/RiskTab';
+import { MmComplianceTab } from '../trader/MmComplianceTab';
 import { api } from '../../lib/api';
 
 export function TraderWorkstationPage() {
@@ -36,6 +37,7 @@ export function TraderWorkstationPage() {
         { key: 'exceptions', label: 'Post-trade exceptions', body: ({ onRefresh }) => <ExceptionsTab onRefresh={onRefresh} /> },
         { key: 'margin', label: 'Margin calls', body: ({ onRefresh }) => <MarginTab onRefresh={onRefresh} /> },
         { key: 'risk', label: 'Risk', body: () => <RiskTab /> },
+        { key: 'mm-compliance', label: 'MM compliance', body: () => <MmComplianceTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

@@ -62,6 +62,7 @@ import regulatorInboxRoutes from './routes/regulator-inbox';
 import lenderDunningRoutes from './routes/lender-dunning';
 import offtakerObligationsRoutes from './routes/offtaker-obligations';
 import gridWheelingChargesRoutes from './routes/grid-wheeling-charges';
+import traderMmComplianceRoutes from './routes/trader-mm-compliance';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -294,6 +295,7 @@ app.route('/api/regulator/inbox', regulatorInboxRoutes);
 app.route('/api/lender/dunning', lenderDunningRoutes);
 app.route('/api/offtaker/obligations', offtakerObligationsRoutes);
 app.route('/api/grid/wheeling-charges', gridWheelingChargesRoutes);
+app.route('/api/trader/mm-compliance', traderMmComplianceRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1321,6 +1323,143 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
             },
             env,
           }).catch((e: unknown) => console.warn('grid_wheeling_escalation_cascade_failed', String(e)));
+        }
+      });
+
+      // Wave 9 — trader market-maker compliance sweep: walk yesterday's
+      // performance row per active obligation and advance the breach state
+      // machine. If an obligation has no perf row for yesterday we treat it
+      // as a 'miss' day (silent absence == not quoting). Fire-once
+      // transitions emit warning/breach/escalation cascades; escalation
+      // crosses into the regulator inbox via regulator-inbox-spec.
+      await safe('trader_mm_compliance_sweep', async () => {
+        const oblsRes = await env.DB.prepare(`
+          SELECT id, participant_id, energy_type,
+                 two_sided_minutes_per_day, max_spread_bps, uptime_target_pct,
+                 min_quote_volume_mwh, monthly_fee_zar,
+                 COALESCE(consecutive_misses,0) AS consecutive_misses,
+                 COALESCE(breach_status,'none') AS breach_status,
+                 warning_threshold, breach_threshold, escalation_threshold
+            FROM oe_mm_obligations
+           WHERE status = 'active'
+           LIMIT 500
+        `).all<any>();
+
+        const { evaluateCompliance, applyDailyOutcome,
+          isWarningTransition, isBreachTransition,
+          isEscalationTransition, isRecoveryTransition } = await import('./utils/mm-compliance-spec');
+        const { fireCascade } = await import('./utils/cascade');
+
+        for (const obl of (oblsRes.results || []) as any[]) {
+          const existing = await env.DB.prepare(`
+            SELECT id, compliance_status FROM oe_mm_performance
+             WHERE obligation_id = ? AND day = ?
+          `).bind(obl.id, yesterday).first<any>().catch(() => null);
+
+          let todayStatus: 'compliant' | 'miss' | 'excused';
+          let perfId: string;
+          if (existing) {
+            todayStatus = (existing.compliance_status as 'compliant' | 'miss' | 'excused') || 'miss';
+            perfId = existing.id;
+          } else {
+            const verdict = evaluateCompliance(
+              {
+                two_sided_minutes_per_day: obl.two_sided_minutes_per_day,
+                max_spread_bps: obl.max_spread_bps,
+                uptime_target_pct: obl.uptime_target_pct,
+                min_quote_volume_mwh: obl.min_quote_volume_mwh,
+                monthly_fee_zar: obl.monthly_fee_zar,
+              },
+              { two_sided_minutes: 0, avg_spread_bps: 0, uptime_pct: 0, total_volume_mwh: 0 },
+            );
+            todayStatus = verdict.compliance_status;
+            perfId = `mmp_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+            await env.DB.prepare(`
+              INSERT INTO oe_mm_performance (
+                id, obligation_id, day, two_sided_minutes, avg_spread_bps,
+                uptime_pct, total_volume_mwh, compliant, fee_earned_zar,
+                penalty_zar, compliance_status
+              ) VALUES (?, ?, ?, 0, 0, 0, 0, 0, ?, ?, ?)
+            `).bind(
+              perfId, obl.id, yesterday,
+              verdict.fee_earned_zar, verdict.penalty_zar, verdict.compliance_status,
+            ).run().catch(() => null);
+          }
+
+          const previousBreach = obl.breach_status as 'none' | 'warning' | 'breach' | 'escalated';
+          const next = applyDailyOutcome({
+            previousMisses: Number(obl.consecutive_misses || 0),
+            previousBreach,
+            todayStatus,
+            thresholds: {
+              warning_threshold: obl.warning_threshold,
+              breach_threshold: obl.breach_threshold,
+              escalation_threshold: obl.escalation_threshold,
+            },
+          });
+
+          if (next.consecutive_misses === Number(obl.consecutive_misses || 0)
+              && next.breach_status === previousBreach) {
+            continue;
+          }
+
+          const sets: string[] = ['consecutive_misses = ?', 'breach_status = ?'];
+          const params: unknown[] = [next.consecutive_misses, next.breach_status];
+          if (isBreachTransition(previousBreach, next.breach_status)) {
+            sets.push("last_breach_at = datetime('now')");
+          }
+          if (isEscalationTransition(previousBreach, next.breach_status)) {
+            sets.push("last_escalated_at = datetime('now')");
+          }
+          params.push(obl.id);
+          await env.DB.prepare(
+            `UPDATE oe_mm_obligations SET ${sets.join(', ')} WHERE id = ?`,
+          ).bind(...params).run().catch(() => null);
+
+          if (isWarningTransition(previousBreach, next.breach_status)) {
+            await fireCascade({
+              event: 'trader.mm_obligation_warning',
+              actor_id: 'system',
+              entity_type: 'oe_mm_obligations',
+              entity_id: obl.id,
+              data: { participant_id: obl.participant_id, energy_type: obl.energy_type },
+              env,
+            }).catch((e: unknown) => console.warn('mm_warning_cascade_failed', String(e)));
+          }
+          if (isBreachTransition(previousBreach, next.breach_status)) {
+            await fireCascade({
+              event: 'trader.mm_obligation_breach',
+              actor_id: 'system',
+              entity_type: 'oe_mm_obligations',
+              entity_id: obl.id,
+              data: { participant_id: obl.participant_id, energy_type: obl.energy_type },
+              env,
+            }).catch((e: unknown) => console.warn('mm_breach_cascade_failed', String(e)));
+          }
+          if (isEscalationTransition(previousBreach, next.breach_status)) {
+            await fireCascade({
+              event: 'trader.mm_obligation_breach_escalated',
+              actor_id: 'system',
+              entity_type: 'oe_mm_obligations',
+              entity_id: obl.id,
+              data: {
+                participant_id: obl.participant_id,
+                energy_type: obl.energy_type,
+                consecutive_misses: next.consecutive_misses,
+              },
+              env,
+            }).catch((e: unknown) => console.warn('mm_escalation_cascade_failed', String(e)));
+          }
+          if (isRecoveryTransition(previousBreach, next.breach_status)) {
+            await fireCascade({
+              event: 'trader.mm_obligation_recovered',
+              actor_id: 'system',
+              entity_type: 'oe_mm_obligations',
+              entity_id: obl.id,
+              data: { participant_id: obl.participant_id, energy_type: obl.energy_type },
+              env,
+            }).catch((e: unknown) => console.warn('mm_recovery_cascade_failed', String(e)));
+          }
         }
       });
       break;

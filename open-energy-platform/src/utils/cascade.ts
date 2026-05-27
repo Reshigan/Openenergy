@@ -212,6 +212,11 @@ export type EventType =
   | 'grid.wheeling_charge_issued' | 'grid.wheeling_charge_disputed'
   | 'grid.wheeling_charge_paid' | 'grid.wheeling_dispute_resolved'
   | 'grid.wheeling_charge_escalated'
+  // Wave 9 — Trader MM breach lifecycle
+  | 'trader.mm_compliance_recorded' | 'trader.mm_obligation_warning'
+  | 'trader.mm_obligation_breach' | 'trader.mm_obligation_breach_escalated'
+  | 'trader.mm_obligation_recovered' | 'trader.mm_obligation_acknowledged'
+  | 'trader.mm_performance_excused'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

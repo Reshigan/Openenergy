@@ -121,6 +121,13 @@ export function regulatorInboxSpec(
         title: `Wheeling charge escalated — ${str('agreement_id') || entityId} ${str('period_month') || ''}`.trim(),
       };
 
+    // Wave 9 — MM obligation breach escalated to regulator after N misses.
+    case 'trader.mm_obligation_breach_escalated':
+      return {
+        severity: 'high',
+        title: `MM obligation breach escalated — ${str('participant_id') || entityId} ${str('energy_type') || ''}`.trim(),
+      };
+
     default:
       return null;
   }
