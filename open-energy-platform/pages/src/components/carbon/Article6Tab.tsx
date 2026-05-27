@@ -78,7 +78,7 @@ export function Article6Tab() {
     setLoading(true); setError(null);
     try {
       const [adjRes, rtRes] = await Promise.all([
-        api.get<{ data: Adjustment[] }>('/carbon/article-6/'),
+        api.get<{ data: Adjustment[] }>('/carbon/article-6'),
         api.get<{ data: CountryRouting[] }>('/carbon/article-6/country-routing'),
       ]);
       setAdjustments(adjRes.data?.data || []);
