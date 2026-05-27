@@ -685,6 +685,43 @@ export function regulatorInboxSpec(
       return null;
     }
 
+    // ─── Wave 29 — Trader Position Limit Compliance chain — FSCA Section 41 ───
+    // prop + market_maker tiers cross on hard_breach + margin_call_issued.
+    // ALL tiers cross on escalated (forced liquidation) — FSCA Section 41 hard line.
+    // SLA breach crosses for all tiers (precursor to escalation).
+    case 'poslimit.hard_breach': {
+      const tier = str('trader_tier');
+      if (tier === 'prop' || tier === 'market_maker') {
+        return {
+          severity: 'high',
+          title: `Position limit hard breach — ${str('case_number') || entityId} (${tier} / ${str('trader_party') || ''} / ${str('instrument') || ''} ${str('utilisation_pct') || '?'}% / FSCA ref ${str('fsca_ref') || 'pending'})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'poslimit.margin_call_issued': {
+      const tier = str('trader_tier');
+      if (tier === 'prop' || tier === 'market_maker') {
+        return {
+          severity: 'high',
+          title: `Margin call issued — ${str('case_number') || entityId} (${tier} / ${str('trader_party') || ''} / R${str('margin_called_zar') || 0} on ${str('instrument') || ''})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'poslimit.escalated': {
+      return {
+        severity: 'critical',
+        title: `Forced liquidation triggered — ${str('case_number') || entityId} (${str('trader_tier') || ''} / ${str('trader_party') || ''} / ${str('instrument') || ''} / order ${str('liquidation_order_ref') || 'pending'})`.trim(),
+      };
+    }
+    case 'poslimit.sla_breached': {
+      return {
+        severity: 'high',
+        title: `Position limit cure SLA breached — ${str('case_number') || entityId} (${str('trader_tier') || ''} / ${str('chain_status') || ''} / ${str('trader_party') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

@@ -333,6 +333,12 @@ export type EventType =
   | 'gca.construction' | 'gca.energised' | 'gca.in_service'
   | 'gca.rejected' | 'gca.withdrawn'
   | 'gca.sla_breached'
+  // Wave 29 — Trader Position Limit Compliance chain — FSCA Section 41
+  | 'poslimit.warning' | 'poslimit.soft_breach' | 'poslimit.hard_breach'
+  | 'poslimit.margin_call_issued' | 'poslimit.reduction_required'
+  | 'poslimit.reduction_executing' | 'poslimit.cured'
+  | 'poslimit.escalated' | 'poslimit.false_alarm'
+  | 'poslimit.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

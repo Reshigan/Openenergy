@@ -82,6 +82,7 @@ import hseIncidentChainRoutes, { hseIncidentSlaSweep } from './routes/hse-incide
 import cyberIncidentChainRoutes, { cyberIncidentSlaSweep } from './routes/cyber-incident-chain';
 import edCommitmentChainRoutes, { edCommitmentSlaSweep } from './routes/ed-commitment-chain';
 import gcaChainRoutes, { gcaSlaSweep } from './routes/gca-chain';
+import poslimitChainRoutes, { poslimitSlaSweep } from './routes/poslimit-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -334,6 +335,7 @@ app.route('/api/hse/incident-chain', hseIncidentChainRoutes);
 app.route('/api/cyber/incident-chain', cyberIncidentChainRoutes);
 app.route('/api/ed/commitment-chain', edCommitmentChainRoutes);
 app.route('/api/gca/connection-chain', gcaChainRoutes);
+app.route('/api/poslimit/chain', poslimitChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -672,6 +674,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('gca_sla_sweep', async () => {
         const result = await gcaSlaSweep(env as never);
         console.log('gca_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 29 — Trader Position Limit Compliance chain SLA sweep.
+      // Cure-window expiry crosses to regulator inbox for ALL tiers (FSCA
+      // Section 41 — forced-liquidation precursor).
+      await safe('poslimit_sla_sweep', async () => {
+        const result = await poslimitSlaSweep(env as never);
+        console.log('poslimit_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

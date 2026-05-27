@@ -4,6 +4,7 @@ import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { RiskTab } from '../risk/RiskTab';
 import { MmComplianceTab } from '../trader/MmComplianceTab';
+import { PoslimitChainTab } from '../poslimit/PoslimitChainTab';
 import { api } from '../../lib/api';
 
 export function TraderWorkstationPage() {
@@ -38,6 +39,7 @@ export function TraderWorkstationPage() {
         { key: 'margin', label: 'Margin calls', body: ({ onRefresh }) => <MarginTab onRefresh={onRefresh} /> },
         { key: 'risk', label: 'Risk', body: () => <RiskTab /> },
         { key: 'mm-compliance', label: 'MM compliance', body: () => <MmComplianceTab /> },
+        { key: 'poslimit', label: 'Position limits', body: () => <PoslimitChainTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel
