@@ -59,6 +59,7 @@ import offtakerSuiteRoutes from './routes/offtaker-suite';
 import carbonRegistryRoutes from './routes/carbon-registry';
 import carbonArticle6Routes from './routes/carbon-article-6';
 import regulatorInboxRoutes from './routes/regulator-inbox';
+import lenderDunningRoutes from './routes/lender-dunning';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -288,6 +289,7 @@ app.route('/api/carbon-registry', carbonRegistryRoutes);
 // ledger. Flat mount avoids the basePath param-collision lesson from Wave 1.
 app.route('/api/carbon/article-6', carbonArticle6Routes);
 app.route('/api/regulator/inbox', regulatorInboxRoutes);
+app.route('/api/lender/dunning', lenderDunningRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -665,6 +667,110 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
              AND remedy_deadline_at IS NOT NULL
              AND remedy_deadline_at <= datetime('now')
         `).run().catch(() => null);
+      });
+      // Wave 6 — lender dunning escalation sweep.
+      //
+      // Two passes:
+      //   1. Flag pending dunning notices past their cure_deadline_at
+      //      as 'overdue' (audit-friendly state change).
+      //   2. For each overdue notice, either issue the next cycle
+      //      (1→2 or 2→3) or — when cycle 3 expires — fire
+      //      `lender.watchlist_critical_escalation` so the row crosses
+      //      into the Wave 5 regulator inbox.
+      await safe('lender_dunning_overdue_sweep', async () => {
+        // Mark anything past deadline as overdue.
+        await env.DB.prepare(`
+          UPDATE oe_lender_dunning_notices
+             SET status = 'overdue',
+                 overdue_flagged_at = COALESCE(overdue_flagged_at, datetime('now')),
+                 updated_at = datetime('now')
+           WHERE status = 'issued'
+             AND cure_deadline_at <= datetime('now')
+        `).run().catch(() => null);
+
+        // Process overdue notices whose `escalated_at` has not been set yet.
+        const overdueRows = await env.DB.prepare(`
+          SELECT id, watchlist_id, facility_id, borrower_id, cycle, trigger_signal, title
+            FROM oe_lender_dunning_notices
+           WHERE status = 'overdue' AND escalated_at IS NULL
+           LIMIT 50
+        `).all<any>();
+
+        const { nextDunningCycle } = await import('./utils/lender-escalation-spec');
+        const { fireCascade } = await import('./utils/cascade');
+        const now = new Date();
+        for (const row of overdueRows.results || []) {
+          const next = nextDunningCycle(Number(row.cycle), now);
+          await env.DB.prepare(`
+            UPDATE oe_lender_dunning_notices
+               SET escalated_at = datetime('now'), updated_at = datetime('now')
+             WHERE id = ?
+          `).bind(row.id).run().catch(() => null);
+
+          if (next.terminal) {
+            // Cycle 3 expired → escalate to regulator inbox.
+            await env.DB.prepare(`
+              INSERT INTO oe_lender_watchlist_events
+                (id, watchlist_id, event_type, from_tier, to_tier, actor_id, notes, occurred_at)
+              VALUES (?, ?, 'tier_escalated', ?, ?, 'system', ?, datetime('now'))
+            `).bind(
+              'we_' + Math.random().toString(36).slice(2, 10),
+              row.watchlist_id, 3, 3,
+              `Cycle 3 expired — regulator escalation`,
+            ).run().catch(() => null);
+            await fireCascade({
+              event: 'lender.watchlist_critical_escalation',
+              actor_id: 'system',
+              entity_type: 'lender_watchlist',
+              entity_id: String(row.watchlist_id || row.id),
+              data: {
+                watchlist_id: row.watchlist_id,
+                facility_id: row.facility_id,
+                borrower_id: row.borrower_id,
+                trigger_signal: row.trigger_signal,
+                last_notice_id: row.id,
+                last_notice_title: row.title,
+              },
+              env,
+            }).catch((e: unknown) => console.warn('lender_critical_escalation_failed', String(e)));
+          } else {
+            // Issue next cycle notice + bump watchlist tier.
+            const newNoticeId = 'dun_' + Math.random().toString(36).slice(2, 10);
+            await env.DB.prepare(`
+              INSERT INTO oe_lender_dunning_notices
+                (id, watchlist_id, facility_id, borrower_id, cycle, trigger_signal,
+                 title, body_json, status, issued_at, issued_by, cure_deadline_at,
+                 parent_notice_id)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'issued', datetime('now'), 'system', ?, ?)
+            `).bind(
+              newNoticeId, row.watchlist_id, row.facility_id, row.borrower_id,
+              next.cycle, row.trigger_signal,
+              `Cycle ${next.cycle} notice — prior cycle ${row.cycle} overdue`,
+              JSON.stringify({ parent: row.id, cure_days: next.cure_days }),
+              next.cure_deadline_at, row.id,
+            ).run().catch(() => null);
+
+            await env.DB.prepare(`
+              UPDATE oe_lender_watchlist
+                 SET watchlist_tier = MAX(watchlist_tier, ?),
+                     dunning_cycle = ?,
+                     auto_escalated_at = datetime('now'),
+                     cure_deadline_at = ?
+               WHERE id = ?
+            `).bind(next.tier, next.cycle, next.cure_deadline_at, row.watchlist_id)
+              .run().catch(() => null);
+
+            await env.DB.prepare(`
+              INSERT INTO oe_lender_watchlist_events
+                (id, watchlist_id, event_type, from_tier, to_tier, actor_id, notes, occurred_at)
+              VALUES (?, ?, 'dunning_issued', ?, ?, 'system', ?, datetime('now'))
+            `).bind(
+              'we_' + Math.random().toString(36).slice(2, 10),
+              row.watchlist_id, next.tier, next.tier,
+              `Cycle ${next.cycle} notice ${newNoticeId} issued automatically`,
+            ).run().catch(() => null);
+          }
+        }
       });
       // Curtailment events — mark as 'completed' past their end_at.
       await safe('curtailment_complete', async () => {

@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { regulatorInboxSpec, computeSlaDueAt } from './regulator-inbox-spec';
+import { initialDunningCycle } from './lender-escalation-spec';
 
 export type EventType =
   // Auth
@@ -192,6 +193,10 @@ export type EventType =
   // ─── Lender deep (IFRS 9 + watchlist + intercreditor) ──────────────────
   | 'lender.ecl_computed' | 'lender.watchlist_added'
   | 'lender.watchlist_cleared' | 'lender.intercreditor_agreed'
+  // Wave 6 — dunning workflow
+  | 'lender.dunning_issued' | 'lender.dunning_acked' | 'lender.dunning_cured'
+  | 'lender.dunning_overdue' | 'lender.dunning_cycle_escalated'
+  | 'lender.watchlist_tier_escalated' | 'lender.watchlist_critical_escalation'
   // ─── Carbon deep (PDD + monitoring + verification) ─────────────────────
   | 'carbon.pdd_registered' | 'carbon.credits_issued'
   | 'carbon.verification_transitioned'
@@ -1796,6 +1801,14 @@ async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
     }
   }
 
+  // Wave 6: auto-add to lender watchlist + issue cycle-1 dunning notice
+  // on covenant breach. Non-fatal — primary cascade work already done.
+  try {
+    await materializeLenderWatchlist(ctx);
+  } catch (err) {
+    console.error('lender-watchlist materializer failed', err);
+  }
+
   // Wave 5: regulator-inbox materializer. Any event in the curated allowlist
   // below lands a row in oe_regulator_inbox so the regulator can ack /
   // escalate / dismiss it with an SLA. Failures here are non-fatal — the
@@ -1843,6 +1856,107 @@ async function materializeRegulatorInbox(ctx: CascadeContext): Promise<void> {
     now.toISOString(),
     now.toISOString(),
   ).run();
+}
+
+/**
+ * Wave 6 — lender dunning materialiser.
+ *
+ * On covenant_breach / covenant_warn events we auto-add the affected
+ * facility/borrower to the lender watchlist (if not already present)
+ * and issue a cycle-1 dunning notice with a 14-day cure deadline.
+ *
+ * Subsequent cycle escalation happens via the
+ * `lender_dunning_overdue_sweep` cron in src/index.ts.
+ */
+async function materializeLenderWatchlist(ctx: CascadeContext): Promise<void> {
+  if (ctx.event !== 'lender.covenant_breach' && ctx.event !== 'lender.covenant_warn') return;
+  const data = ctx.data || {};
+  const facilityId = (data as any).facility_id as string | undefined;
+  const borrowerId =
+    (data as any).borrower_id as string | undefined ||
+    (data as any).borrower_participant_id as string | undefined ||
+    (data as any).participant_id as string | undefined;
+  if (!facilityId || !borrowerId) return;
+
+  // Avoid duplicate dunning if an open watchlist row already exists for
+  // this facility + borrower.
+  const existing = await ctx.env.DB
+    .prepare(`SELECT id FROM oe_lender_watchlist WHERE facility_id = ? AND participant_id = ? AND cleared_at IS NULL LIMIT 1`)
+    .bind(facilityId, borrowerId)
+    .first() as { id: string } | null;
+
+  const now = new Date();
+  const init = initialDunningCycle(now);
+  const triggerSignal = ctx.event === 'lender.covenant_breach' ? 'covenant_breach' : 'covenant_warn';
+  const triggerValue = Number((data as any).measured_value ?? (data as any).threshold ?? 0) || null;
+
+  let watchlistId: string;
+  if (existing?.id) {
+    watchlistId = existing.id;
+  } else {
+    watchlistId = generateId();
+    await ctx.env.DB.prepare(`
+      INSERT INTO oe_lender_watchlist
+        (id, facility_id, participant_id, watchlist_tier, trigger_signal, trigger_value,
+         action_plan, added_at, next_review_at, added_by,
+         cure_deadline_at, dunning_cycle, auto_escalated_at, borrower_acked_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)
+    `).bind(
+      watchlistId,
+      facilityId,
+      borrowerId,
+      init.tier,
+      triggerSignal,
+      triggerValue,
+      `Auto-added from ${ctx.event} cascade.`,
+      now.toISOString(),
+      init.cure_deadline_at,
+      ctx.actor_id || 'system',
+      init.cure_deadline_at,
+      init.cycle,
+    ).run();
+    await ctx.env.DB.prepare(`
+      INSERT INTO oe_lender_watchlist_events
+        (id, watchlist_id, event_type, from_tier, to_tier, actor_id, notes, occurred_at)
+      VALUES (?, ?, 'added', NULL, ?, ?, ?, ?)
+    `).bind(generateId(), watchlistId, init.tier, ctx.actor_id || 'system',
+            `Initial entry from ${ctx.event}`, now.toISOString()).run();
+  }
+
+  // Issue the cycle-1 dunning notice.
+  const noticeId = generateId();
+  const body = {
+    covenant: (data as any).covenant_code || null,
+    threshold: (data as any).threshold ?? null,
+    measured: (data as any).measured_value ?? null,
+    period: (data as any).test_period || null,
+    source_event: ctx.event,
+  };
+  await ctx.env.DB.prepare(`
+    INSERT INTO oe_lender_dunning_notices
+      (id, watchlist_id, facility_id, borrower_id, cycle, trigger_signal,
+       title, body_json, status, issued_at, issued_by, cure_deadline_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'issued', ?, ?, ?)
+  `).bind(
+    noticeId,
+    watchlistId,
+    facilityId,
+    borrowerId,
+    init.cycle,
+    triggerSignal,
+    `Covenant ${triggerSignal.replace('_', ' ')} — cycle 1 notice`,
+    JSON.stringify(body),
+    now.toISOString(),
+    ctx.actor_id || 'system',
+    init.cure_deadline_at,
+  ).run();
+
+  await ctx.env.DB.prepare(`
+    INSERT INTO oe_lender_watchlist_events
+      (id, watchlist_id, event_type, from_tier, to_tier, actor_id, notes, occurred_at)
+    VALUES (?, ?, 'dunning_issued', ?, ?, ?, ?, ?)
+  `).bind(generateId(), watchlistId, init.tier, init.tier, ctx.actor_id || 'system',
+          `Cycle ${init.cycle} notice ${noticeId} issued`, now.toISOString()).run();
 }
 
 /** Days-from-now helper for action_queue.due_date (YYYY-MM-DD). */

@@ -3,9 +3,18 @@ import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
 import { platformTabs } from '../platformTabs';
 import { lenderCompletionTabs } from '../roleCompletionTabs';
 import { LenderInsights } from '../widgets/LenderInsights';
+import { DunningTab } from '../lender/DunningTab';
 
 export function LenderSuitePage() {
   const tabs: TabSpec[] = [
+    {
+      key: 'dunning',
+      label: 'Dunning queue',
+      endpoint: '',
+      description: 'Cycle 1/2/3 covenant dunning notices, watchlist tier escalation, regulator hand-off on cycle-3 expiry.',
+      columns: [],
+      customContent: <DunningTab />,
+    },
     {
       key: 'insights',
       label: 'Insights',

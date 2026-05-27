@@ -100,6 +100,13 @@ export function regulatorInboxSpec(
         title: `Licence REVOKED — ${str('licence_number') || entityId}`,
       };
 
+    // Wave 6 — lender dunning cycle 3 expiry crosses into regulator scope.
+    case 'lender.watchlist_critical_escalation':
+      return {
+        severity: 'high',
+        title: `Lender watchlist critical — ${str('borrower_id') || entityId} (${str('trigger_signal') || 'breach'})`,
+      };
+
     default:
       return null;
   }
