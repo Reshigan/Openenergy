@@ -328,6 +328,34 @@ export function regulatorInboxSpec(
       }
       return null;
 
+    // ─── Wave 19 — IPP procurement / RFP chain (REIPPPP transparency) ──────
+    case 'procurement.awarded':
+      // REIPPPP / DMRE requires public bid award transparency for high-tier (≥R500m).
+      if (str('capex_tier') === 'high') {
+        return {
+          severity: 'high',
+          title: `IPP procurement AWARDED — ${str('rfp_number') || entityId} (${str('award_name') || 'vendor'} / R${str('award_amount_zar') || '?'})`.trim(),
+        };
+      }
+      return null;
+    case 'procurement.disputed':
+      // Bid-protest visibility for high-tier RFPs only — keeps regulator inbox useful.
+      if (str('capex_tier') === 'high') {
+        return {
+          severity: 'high',
+          title: `IPP procurement DISPUTED — ${str('rfp_number') || entityId} (${str('title') || ''} / ${str('dispute_notes') || 'no notes'})`.trim(),
+        };
+      }
+      return null;
+    case 'procurement.sla_breached':
+      if (str('capex_tier') === 'high') {
+        return {
+          severity: 'high',
+          title: `High-tier procurement SLA breached — ${str('rfp_number') || entityId} (${str('chain_status') || ''} / ${str('sla_window') || ''})`.trim(),
+        };
+      }
+      return null;
+
     default:
       return null;
   }

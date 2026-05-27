@@ -72,6 +72,7 @@ import warrantyClaimChainRoutes, { warrantyClaimSlaSweep } from './routes/warran
 import woChainRoutes, { woChainSlaSweep } from './routes/wo-chain';
 import carbonRetirementChainRoutes, { carbonRetirementSlaSweep } from './routes/carbon-retirement-chain';
 import plannedOutageChainRoutes, { plannedOutageSlaSweep } from './routes/planned-outage-chain';
+import procurementChainRoutes, { procurementSlaSweep } from './routes/procurement-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -314,6 +315,7 @@ app.route('/api/esums/warranty-claims', warrantyClaimChainRoutes);
 app.route('/api/esums/wo-chain', woChainRoutes);
 app.route('/api/carbon/retirement-chain', carbonRetirementChainRoutes);
 app.route('/api/grid/planned-outages', plannedOutageChainRoutes);
+app.route('/api/ipp/procurement-chain', procurementChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -590,6 +592,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('planned_outage_sla_sweep', async () => {
         const result = await plannedOutageSlaSweep(env as never);
         console.log('planned_outage_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 19 — IPP procurement / RFP chain SLA sweep. high-tier breaches
+      // cross into regulator inbox per REIPPPP transparency mandate.
+      await safe('procurement_sla_sweep', async () => {
+        const result = await procurementSlaSweep(env as never);
+        console.log('procurement_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

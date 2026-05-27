@@ -5,6 +5,7 @@ import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstatio
 import { api } from '../../lib/api';
 import { BondRegistryTab } from '../ipp/BondRegistryTab';
 import { PlannedOutageChainTab } from '../grid/PlannedOutageChainTab';
+import { ProcurementChainTab } from '../ipp/ProcurementChainTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -32,6 +33,7 @@ export function IppWorkstationPage() {
         { key: 'insurance', label: 'Insurance', body: ({ onRefresh }) => <InsuranceTab onRefresh={onRefresh} /> },
         { key: 'bonds', label: 'Bonds', body: () => <BondRegistryTab /> },
         { key: 'planned_outages', label: 'Planned outages', body: () => <PlannedOutageChainTab /> },
+        { key: 'procurement', label: 'Procurement / RFPs', body: () => <ProcurementChainTab /> },
         { key: 'community', label: 'Community', body: ({ onRefresh }) => <CommunityTab onRefresh={onRefresh} /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (

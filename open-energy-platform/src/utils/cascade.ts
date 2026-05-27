@@ -268,6 +268,12 @@ export type EventType =
   | 'outage.rejected' | 'outage.rescheduled' | 'outage.notified'
   | 'outage.commenced' | 'outage.restore_started' | 'outage.restored'
   | 'outage.closed' | 'outage.cancelled' | 'outage.sla_breached'
+  // Wave 19 — IPP procurement / RFP chain (REIPPPP-aligned transparency)
+  | 'procurement.published' | 'procurement.bid_opened' | 'procurement.bid_closed'
+  | 'procurement.evaluation_started' | 'procurement.shortlisted'
+  | 'procurement.awarded' | 'procurement.contracted' | 'procurement.delivered'
+  | 'procurement.rejected' | 'procurement.cancelled'
+  | 'procurement.disputed' | 'procurement.resolved' | 'procurement.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
