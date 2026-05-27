@@ -4,6 +4,7 @@ import { platformTabs } from '../platformTabs';
 import { gridCompletionTabs } from '../roleCompletionTabs';
 import { GridInsights } from '../widgets/GridInsights';
 import { WheelingChargesTab } from '../grid/WheelingChargesTab';
+import { DispatchNominationTab } from '../grid/DispatchNominationTab';
 
 const instructionTypes = [
   { value: 'curtail', label: 'Curtail' },
@@ -25,6 +26,14 @@ export function GridOperatorSuitePage() {
       description: 'Monthly transmission-charge reconciliation with dispute lifecycle + cure windows.',
       columns: [],
       customContent: <WheelingChargesTab />,
+    },
+    {
+      key: 'dispatch_nominations',
+      label: 'Dispatch nominations',
+      endpoint: '',
+      description: 'BRP nomination → SO acceptance → activation → performance → settlement audit chain with per-stage SLA windows.',
+      columns: [],
+      customContent: <DispatchNominationTab />,
     },
     {
       key: 'insights',

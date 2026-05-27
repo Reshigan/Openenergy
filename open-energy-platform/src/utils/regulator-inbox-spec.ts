@@ -175,6 +175,23 @@ export function regulatorInboxSpec(
         title: `Site commissioning SLA breached — ${str('site_name') || entityId} (${str('commissioning_status') || ''})`.trim(),
       };
 
+    // ─── Wave 13 — Grid operator dispatch nomination chain ────────────────
+    case 'dispatch.nomination_rejected':
+      return {
+        severity: 'high',
+        title: `SO rejected dispatch nomination — ${entityId} (${str('rejection_reason') || ''})`.trim(),
+      };
+    case 'dispatch.dispute_raised':
+      return {
+        severity: 'high',
+        title: `Dispatch nomination disputed — ${entityId} (${str('dispute_reason') || ''})`.trim(),
+      };
+    case 'dispatch.sla_breached':
+      return {
+        severity: 'high',
+        title: `Dispatch nomination SLA breached — ${entityId} (${str('nomination_status') || ''})`.trim(),
+      };
+
     default:
       return null;
   }

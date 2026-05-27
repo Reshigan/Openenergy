@@ -234,6 +234,12 @@ export type EventType =
   | 'esums.site_energised' | 'esums.site_in_om'
   | 'esums.commissioning_failed' | 'esums.site_decommissioned'
   | 'esums.commissioning_sla_breached'
+  // Wave 13 — Grid operator dispatch nomination chain (P6)
+  | 'dispatch.nominated' | 'dispatch.accepted' | 'dispatch.activated'
+  | 'dispatch.performance_recorded' | 'dispatch.settled' | 'dispatch.closed'
+  | 'dispatch.nomination_rejected' | 'dispatch.dispute_raised'
+  | 'dispatch.dispute_resolved' | 'dispatch.closed_disputed'
+  | 'dispatch.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
