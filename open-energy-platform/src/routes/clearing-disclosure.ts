@@ -75,20 +75,25 @@ async function gatherInputs(c: any, _asOfDate: string): Promise<DisclosureInputs
     return Number(r?.s || 0);
   }, 0);
 
-  // §4 Credit — default fund.
+  // §4 Credit — default fund. oe_clearing_fund tracks total_size_zar as
+  // the target size; actual member contributions live in
+  // oe_clearing_contributions.amount_zar.
   const df_bal = await safe(async () => {
-    const r = await db.prepare(`SELECT COALESCE(SUM(balance_zar),0) AS s FROM oe_clearing_fund`).first<any>();
+    const r = await db.prepare(`
+      SELECT COALESCE(SUM(amount_zar - COALESCE(refund_amount_zar,0)),0) AS s
+        FROM oe_clearing_contributions WHERE status = 'active'
+    `).first<any>();
     return Number(r?.s || 0);
   }, 0);
   const df_req = await safe(async () => {
-    const r = await db.prepare(`SELECT COALESCE(SUM(required_zar),0) AS s FROM oe_clearing_fund`).first<any>();
+    const r = await db.prepare(`SELECT COALESCE(SUM(total_size_zar),0) AS s FROM oe_clearing_fund WHERE status='active'`).first<any>();
     return Number(r?.s || 0);
   }, 0);
 
-  // §15 CCP capital — single config row.
+  // §15 CCP capital — held in a KV config key; defaults to 0 if not set.
   const cap = await safe(async () => {
-    const r = await db.prepare(`SELECT COALESCE(ccp_capital_zar,0) AS s FROM oe_clearing_fund ORDER BY id LIMIT 1`).first<any>();
-    return Number(r?.s || 0);
+    const raw = await (c.env.KV?.get?.('ccp:capital_zar') ?? Promise.resolve(null));
+    return raw ? Number(raw) : 0;
   }, 0);
 
   // §17 Operational — settlement instruction outcomes.

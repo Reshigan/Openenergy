@@ -1306,14 +1306,16 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
            )`,
         ).first()), 0);
         const df_bal = await safeRead(async () => num(await env.DB.prepare(
-          `SELECT COALESCE(SUM(balance_zar),0) AS s FROM oe_clearing_fund`,
+          `SELECT COALESCE(SUM(amount_zar - COALESCE(refund_amount_zar,0)),0) AS s
+             FROM oe_clearing_contributions WHERE status='active'`,
         ).first()), 0);
         const df_req = await safeRead(async () => num(await env.DB.prepare(
-          `SELECT COALESCE(SUM(required_zar),0) AS s FROM oe_clearing_fund`,
+          `SELECT COALESCE(SUM(total_size_zar),0) AS s FROM oe_clearing_fund WHERE status='active'`,
         ).first()), 0);
-        const cap = await safeRead(async () => num(await env.DB.prepare(
-          `SELECT COALESCE(ccp_capital_zar,0) AS s FROM oe_clearing_fund ORDER BY id LIMIT 1`,
-        ).first()), 0);
+        const cap = await safeRead(async () => {
+          const raw = await (env.KV?.get?.('ccp:capital_zar') ?? Promise.resolve(null));
+          return raw ? Number(raw) : 0;
+        }, 0);
         const settled = await safeRead(async () => num(await env.DB.prepare(
           `SELECT COUNT(*) AS s FROM oe_settlement_instructions WHERE status='confirmed'`,
         ).first()), 0);
