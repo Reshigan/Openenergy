@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
+import { RiskTab } from '../risk/RiskTab';
 import { api } from '../../lib/api';
 
 export function TraderWorkstationPage() {
@@ -34,6 +35,7 @@ export function TraderWorkstationPage() {
         { key: 'rejections', label: 'Rejections', body: () => <RejectionsTab /> },
         { key: 'exceptions', label: 'Post-trade exceptions', body: ({ onRefresh }) => <ExceptionsTab onRefresh={onRefresh} /> },
         { key: 'margin', label: 'Margin calls', body: ({ onRefresh }) => <MarginTab onRefresh={onRefresh} /> },
+        { key: 'risk', label: 'Risk', body: () => <RiskTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel
