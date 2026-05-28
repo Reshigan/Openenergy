@@ -523,10 +523,21 @@ function Drawer({
   const canLapse = row.chain_status === 'additional_info_requested';
   const canWithdraw = WITHDRAWABLE_STATES.includes(row.chain_status);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
+    <div className="oe-overlay-in fixed inset-0 z-30 bg-black/40" onClick={onClose}>
       <div
-        className="absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
+        className="oe-drawer-in absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
