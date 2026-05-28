@@ -722,6 +722,27 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 30 — Lender Disbursement UoP Reconciliation chain — SARB + Equator Principles ───
+    // Clawback is universal hard line: ALL tiers cross to SARB Exchange Control + Equator Principles
+    // secretariat. SLA breach crosses for senior_a + senior_b only (bridges/mezz aggregated in
+    // monthly Banking Sector Conduct Standards returns).
+    case 'disbursement.clawback_executed': {
+      return {
+        severity: 'critical',
+        title: `Disbursement clawback executed — ${str('case_number') || entityId} (${str('tranche_tier') || ''} / ${str('lender_party') || ''} ↔ ${str('borrower_party') || ''} / R${str('clawback_amount_zar') || 0} on facility ${str('facility_ref') || ''} / SARB ${str('sarb_exchange_control_ref') || 'pending'} / EP ${str('equator_principles_ref') || 'pending'})`.trim(),
+      };
+    }
+    case 'disbursement.sla_breached': {
+      const tier = str('tranche_tier');
+      if (tier === 'senior_a' || tier === 'senior_b') {
+        return {
+          severity: 'high',
+          title: `Disbursement UoP SLA breached — ${str('case_number') || entityId} (${tier} / ${str('chain_status') || ''} / ${str('lender_party') || ''} ↔ ${str('borrower_party') || ''} / facility ${str('facility_ref') || ''})`.trim(),
+        };
+      }
+      return null;
+    }
+
     default:
       return null;
   }

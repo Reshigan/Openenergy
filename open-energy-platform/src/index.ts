@@ -83,6 +83,7 @@ import cyberIncidentChainRoutes, { cyberIncidentSlaSweep } from './routes/cyber-
 import edCommitmentChainRoutes, { edCommitmentSlaSweep } from './routes/ed-commitment-chain';
 import gcaChainRoutes, { gcaSlaSweep } from './routes/gca-chain';
 import poslimitChainRoutes, { poslimitSlaSweep } from './routes/poslimit-chain';
+import disbursementChainRoutes, { disbursementSlaSweep } from './routes/disbursement-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -336,6 +337,7 @@ app.route('/api/cyber/incident-chain', cyberIncidentChainRoutes);
 app.route('/api/ed/commitment-chain', edCommitmentChainRoutes);
 app.route('/api/gca/connection-chain', gcaChainRoutes);
 app.route('/api/poslimit/chain', poslimitChainRoutes);
+app.route('/api/disbursement/chain', disbursementChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -681,6 +683,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('poslimit_sla_sweep', async () => {
         const result = await poslimitSlaSweep(env as never);
         console.log('poslimit_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 30 — Lender disbursement UoP reconciliation SLA sweep.
+      // Per-stage deadlines (60d invoices senior_a → 7d IE bridge); breach crosses
+      // regulator inbox for senior_a + senior_b only (small bridges aggregated
+      // monthly in Banking Sector Conduct Standards returns).
+      await safe('disbursement_sla_sweep', async () => {
+        const result = await disbursementSlaSweep(env as never);
+        console.log('disbursement_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

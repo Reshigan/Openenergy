@@ -339,6 +339,12 @@ export type EventType =
   | 'poslimit.reduction_executing' | 'poslimit.cured'
   | 'poslimit.escalated' | 'poslimit.false_alarm'
   | 'poslimit.sla_breached'
+  // Wave 30 — Lender Disbursement UoP Reconciliation chain — SARB + Equator Principles
+  | 'disbursement.invoices_pending' | 'disbursement.invoices_submitted'
+  | 'disbursement.bank_validating' | 'disbursement.ie_certifying'
+  | 'disbursement.uop_certified' | 'disbursement.reconciled'
+  | 'disbursement.clawback_executed' | 'disbursement.waived'
+  | 'disbursement.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

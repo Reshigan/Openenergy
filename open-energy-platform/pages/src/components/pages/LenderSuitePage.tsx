@@ -5,6 +5,7 @@ import { lenderCompletionTabs } from '../roleCompletionTabs';
 import { LenderInsights } from '../widgets/LenderInsights';
 import { DunningTab } from '../lender/DunningTab';
 import { DrawdownChainTab } from '../lender/DrawdownChainTab';
+import { DisbursementChainTab } from '../disbursement/DisbursementChainTab';
 
 export function LenderSuitePage() {
   const tabs: TabSpec[] = [
@@ -15,6 +16,14 @@ export function LenderSuitePage() {
       description: 'Disbursement certification chain · IE + CP gate, SARB large-exposure on senior approvals, regulator inbox on senior breaches.',
       columns: [],
       customContent: <DrawdownChainTab />,
+    },
+    {
+      key: 'disbursements',
+      label: 'Disbursements',
+      endpoint: '',
+      description: 'UoP reconciliation chain · SARB Exchange Control + Equator Principles + IE certification; clawback for ALL tiers, SLA breach senior_a/b only.',
+      columns: [],
+      customContent: <DisbursementChainTab />,
     },
     {
       key: 'dunning',
