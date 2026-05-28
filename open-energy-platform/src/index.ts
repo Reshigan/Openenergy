@@ -113,6 +113,7 @@ import creditingRenewalChainRoutes, { creditingRenewalSlaSweep } from './routes/
 import ssegRegistrationChainRoutes, { ssegRegistrationSlaSweep } from './routes/sseg-registration-chain';
 import gridCapacityAllocationChainRoutes, { gridCapacitySlaSweep } from './routes/grid-capacity-allocation-chain';
 import pmComplianceChainRoutes, { pmComplianceSlaSweep } from './routes/pm-compliance-chain';
+import algoCertChainRoutes, { algoCertSlaSweep } from './routes/algo-cert-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -396,6 +397,7 @@ app.route('/api/crediting-renewal/chain', creditingRenewalChainRoutes);
 app.route('/api/sseg-registration/chain', ssegRegistrationChainRoutes);
 app.route('/api/grid-capacity/chain', gridCapacityAllocationChainRoutes);
 app.route('/api/pm-compliance/chain', pmComplianceChainRoutes);
+app.route('/api/algo-cert/chain', algoCertChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -960,6 +962,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('pm_compliance_sla_sweep', async () => {
         const result = await pmComplianceSlaSweep(env as never);
         console.log('pm_compliance_sla_sweep', JSON.stringify(result));
+      });
+      // W60 — Trader algo/DEA trading-system certification SLA sweep. INVERTED
+      // (larger authorised footprint = LONGER window — deeper conformance + risk-
+      // control testing); deployed + terminals carry no deadline; records breaches
+      // and crosses the regulator inbox on high_impact + systemic tiers.
+      await safe('algo_cert_sla_sweep', async () => {
+        const result = await algoCertSlaSweep(env as never);
+        console.log('algo_cert_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

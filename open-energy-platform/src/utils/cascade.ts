@@ -551,6 +551,13 @@ export type EventType =
   | 'pm_compliance.closed' | 'pm_compliance.deferral_requested'
   | 'pm_compliance.deferred' | 'pm_compliance.skipped'
   | 'pm_compliance.cancelled' | 'pm_compliance.sla_breached'
+  // Wave 60 — Trader Algorithmic / DEA Trading-System Certification & Kill-Switch chain (FMA 2012 + FSCA automated-trading + JSE algo/DEA + MiFID II RTS 6; INVERTED SLA; invoke_kill_switch (→ suspended) crosses for EVERY tier = the W60 signature; reject_certification + sla_breached cross for high tiers; deploy/complete_recertification/reinstate share .deployed; begin_review/resubmit share .documentation_review)
+  | 'algo_certification.documentation_review' | 'algo_certification.conformance_testing'
+  | 'algo_certification.risk_controls_validation' | 'algo_certification.certification_review'
+  | 'algo_certification.certified' | 'algo_certification.deployed'
+  | 'algo_certification.recertification_review' | 'algo_certification.suspended'
+  | 'algo_certification.remediation_required' | 'algo_certification.rejected'
+  | 'algo_certification.decommissioned' | 'algo_certification.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

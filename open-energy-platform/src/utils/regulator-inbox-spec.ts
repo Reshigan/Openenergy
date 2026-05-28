@@ -1730,6 +1730,37 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ── Wave 60 — Trader Algorithmic / DEA Trading-System Certification ──────
+    //   suspended (invoke_kill_switch) — an emergency halt of a live automated
+    //             trading system is a notifiable market event for EVERY tier
+    //             (the W60 signature, a universal hard line).
+    //   rejected (reject_certification) — a refused certification of a large /
+    //             systemic automated system is reportable. High tiers only.
+    //   sla_breached — a missed certification/review deadline on a large /
+    //             systemic system is itself a supervisory concern. High tiers.
+    case 'algo_certification.suspended': {
+      return {
+        severity: 'high',
+        title: `Algo trading-system KILL-SWITCH invoked — ${str('case_number') || entityId} (${str('system_name') || ''} / ${str('algo_tier') || ''} / ${str('firm_party_name') || ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'algo_certification.rejected': {
+      const tier = str('algo_tier');
+      if (tier !== 'high_impact' && tier !== 'systemic') return null;
+      return {
+        severity: tier === 'systemic' ? 'high' : 'medium',
+        title: `Algo certification REFUSED — ${str('case_number') || entityId} (${str('system_name') || ''} / ${tier} / ${str('firm_party_name') || ''})`.trim(),
+      };
+    }
+    case 'algo_certification.sla_breached': {
+      const tier = str('algo_tier');
+      if (tier !== 'high_impact' && tier !== 'systemic') return null;
+      return {
+        severity: 'high',
+        title: `Algo certification SLA breached — ${str('case_number') || entityId} (${str('chain_status') || ''} / ${tier} / ${str('system_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
