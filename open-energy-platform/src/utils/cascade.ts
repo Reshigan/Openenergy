@@ -481,6 +481,13 @@ export type EventType =
   | 'licence_application.licence_granted' | 'licence_application.licence_issued'
   | 'licence_application.refused' | 'licence_application.withdrawn'
   | 'licence_application.lapsed' | 'licence_application.sla_breached'
+  // Wave 50 — Grid Ancillary Services Reserve Activation & Settlement chain (NERSA Grid Code + System Operation Code; settle + settle_penalty share .settled)
+  | 'reserve_activation.acknowledged' | 'reserve_activation.ramping'
+  | 'reserve_activation.sustaining' | 'reserve_activation.released'
+  | 'reserve_activation.performance_review' | 'reserve_activation.verified'
+  | 'reserve_activation.settled' | 'reserve_activation.non_performance'
+  | 'reserve_activation.disputed' | 'reserve_activation.dispute_resolved'
+  | 'reserve_activation.withdrawn' | 'reserve_activation.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

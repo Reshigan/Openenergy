@@ -8,6 +8,7 @@ import { DispatchNominationTab } from '../grid/DispatchNominationTab';
 import { PlannedOutageChainTab } from '../grid/PlannedOutageChainTab';
 import { GcaChainTab } from '../gca/GcaChainTab';
 import { LoadCurtailmentChainTab } from '../load-curtailment/LoadCurtailmentChainTab';
+import { ReserveActivationChainTab } from '../reserve-activation/ReserveActivationChainTab';
 
 const instructionTypes = [
   { value: 'curtail', label: 'Curtail' },
@@ -61,6 +62,14 @@ export function GridOperatorSuitePage() {
       description: 'NERSA Grid Code §CSC-1 — emergency load-curtailment instructions during Stage 1-8 load-shedding. URGENT SLA (higher stage = tighter), split-write SO↔customer, refuse/partial/withdraw branches.',
       columns: [],
       customContent: <LoadCurtailmentChainTab />,
+    },
+    {
+      key: 'reserve_activation',
+      label: 'Reserve activation',
+      endpoint: '',
+      description: 'NERSA Grid Code + System Operation Code — ancillary-services reserve activation & settlement. The SO instructs a contracted reserve provider during a frequency / contingency event; the provider responds; the SO measures delivered response and settles availability + utilisation, or a non-performance penalty. URGENT SLA (faster product = tighter window), two-party SO↔provider write, non-performance / dispute / withdraw branches.',
+      columns: [],
+      customContent: <ReserveActivationChainTab />,
     },
     {
       key: 'insights',

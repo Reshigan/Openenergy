@@ -1402,6 +1402,38 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 50 — Grid Ancillary Services Reserve Activation & Settlement ───
+    // A reserve that fails to respond during a frequency event is a reportable
+    // system-security incident; the tier sets the crossing line.
+    case 'reserve_activation.non_performance': {
+      const tier = str('reserve_tier');
+      const SECURITY = ['instantaneous_reserve', 'regulating_reserve', 'ten_minute_reserve'];
+      if (!SECURITY.includes(tier)) return null;
+      const CRITICAL = ['instantaneous_reserve', 'regulating_reserve'];
+      return {
+        severity: CRITICAL.includes(tier) ? 'high' : 'medium',
+        title: `Reserve non-performance — ${str('activation_number') || entityId} (${str('provider_party_name') || ''}${tier ? ' / ' + tier : ''}${num('instructed_mw') ? ' / ' + num('instructed_mw').toLocaleString() + ' MW' : ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'reserve_activation.dispute_resolved': {
+      const tier = str('reserve_tier');
+      const CRITICAL = ['instantaneous_reserve', 'regulating_reserve'];
+      if (!CRITICAL.includes(tier)) return null;
+      return {
+        severity: 'medium',
+        title: `Reserve settlement dispute resolved — ${str('activation_number') || entityId} (${str('provider_party_name') || ''}${tier ? ' / ' + tier : ''})`.trim(),
+      };
+    }
+    case 'reserve_activation.sla_breached': {
+      const tier = str('reserve_tier');
+      const CRITICAL = ['instantaneous_reserve', 'regulating_reserve'];
+      if (!CRITICAL.includes(tier)) return null;
+      return {
+        severity: 'high',
+        title: `Reserve response SLA breached — ${str('activation_number') || entityId} (${str('chain_status') || ''} / ${tier} / ${str('provider_party_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
