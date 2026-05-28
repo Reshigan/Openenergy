@@ -523,6 +523,13 @@ export type EventType =
   | 'security_remediation.verification' | 'security_remediation.resolved'
   | 'security_remediation.not_affected' | 'security_remediation.risk_accepted'
   | 'security_remediation.rolled_back' | 'security_remediation.sla_breached'
+  // Wave 56 — Carbon Crediting-Period Renewal & Baseline Reassessment chain (Verra VCS v4 + Gold Standard + Article 6.4 + CDM + DFFE DNA)
+  | 'crediting_renewal.application_submitted' | 'crediting_renewal.completeness_check'
+  | 'crediting_renewal.revision_requested' | 'crediting_renewal.baseline_reassessment'
+  | 'crediting_renewal.additionality_retest' | 'crediting_renewal.vvb_validation'
+  | 'crediting_renewal.standard_review' | 'crediting_renewal.renewed'
+  | 'crediting_renewal.refused' | 'crediting_renewal.withdrawn'
+  | 'crediting_renewal.lapsed' | 'crediting_renewal.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

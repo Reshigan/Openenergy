@@ -9,6 +9,7 @@ import { MrvChainTab } from '../carbon/MrvChainTab';
 import { RetirementChainTab } from '../carbon/RetirementChainTab';
 import { CarbonReversalChainTab } from '../carbon/CarbonReversalChainTab';
 import { CarbonOffsetClaimChainTab } from '../carbon/CarbonOffsetClaimChainTab';
+import { CreditingRenewalChainTab } from '../carbon/CreditingRenewalChainTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -107,6 +108,11 @@ export function CarbonWorkstationPage() {
           key: 'offset_claim_chain',
           label: 'Tax offset claims',
           body: () => <CarbonOffsetClaimChainTab />,
+        },
+        {
+          key: 'crediting_renewal_chain',
+          label: 'Crediting renewal',
+          body: () => <CreditingRenewalChainTab />,
         },
         {
           key: 'audit',

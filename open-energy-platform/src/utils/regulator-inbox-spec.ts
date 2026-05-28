@@ -1597,6 +1597,41 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 56 — Carbon Crediting-Period Renewal & Baseline Reassessment ───
+    // The PERIODIC re-validation of a registered carbon project (Verra VCS v4 /
+    // Gold Standard / Article 6.4 / CDM) reported to the DFFE DNA / Art-6.4
+    // Supervisory Body.
+    //   renewed — the W56 SIGNATURE: an APPROVAL is itself reportable when the
+    //             reassessed baseline is cut by ≥30% (a material baseline
+    //             downgrade is an environmental-integrity event — over-crediting
+    //             was being corrected). Crosses for EVERY tier.
+    //   refused — a refused renewal strands material issuance; crosses for the
+    //             large tiers (major + mega).
+    //   sla_breached — crosses for the large tiers (major + mega).
+    case 'crediting_renewal.renewed': {
+      if (num('baseline_reduction_pct') < 30) return null;
+      return {
+        severity: 'medium',
+        title: `Carbon baseline materially downgraded on renewal — ${str('renewal_number') || entityId} (${str('project_name') || ''}${str('registry_standard') ? ' / ' + str('registry_standard') : ''} / baseline cut ${Math.round(num('baseline_reduction_pct'))}%${str('issuance_tier') ? ' / ' + str('issuance_tier') : ''})`.trim(),
+      };
+    }
+    case 'crediting_renewal.refused': {
+      const tier = str('issuance_tier');
+      if (tier !== 'major' && tier !== 'mega') return null;
+      return {
+        severity: tier === 'mega' ? 'high' : 'medium',
+        title: `Carbon crediting-period renewal REFUSED — ${str('renewal_number') || entityId} (${str('project_name') || ''}${str('registry_standard') ? ' / ' + str('registry_standard') : ''}${num('annual_issuance_tco2e') ? ' / ' + num('annual_issuance_tco2e').toLocaleString() + ' tCO2e/yr' : ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'crediting_renewal.sla_breached': {
+      const tier = str('issuance_tier');
+      if (tier !== 'major' && tier !== 'mega') return null;
+      return {
+        severity: 'medium',
+        title: `Carbon renewal SLA breached — ${str('renewal_number') || entityId} (${str('chain_status') || ''} / ${str('project_name') || ''}${str('registry_standard') ? ' / ' + str('registry_standard') : ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
