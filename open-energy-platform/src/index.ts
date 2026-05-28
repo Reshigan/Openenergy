@@ -106,6 +106,7 @@ import licenceApplicationChainRoutes, { licenceApplicationSlaSweep } from './rou
 import reserveActivationChainRoutes, { reserveActivationSlaSweep } from './routes/reserve-activation-chain';
 import availabilityGuaranteeChainRoutes, { availabilityGuaranteeSlaSweep } from './routes/availability-guarantee-chain';
 import marketAbuseChainRoutes, { marketAbuseSlaSweep } from './routes/market-abuse-chain';
+import creditOriginationChainRoutes, { creditOriginationSlaSweep } from './routes/credit-origination-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -382,6 +383,7 @@ app.route('/api/licence-application/chain', licenceApplicationChainRoutes);
 app.route('/api/reserve-activation/chain', reserveActivationChainRoutes);
 app.route('/api/availability-guarantee/chain', availabilityGuaranteeChainRoutes);
 app.route('/api/market-abuse/chain', marketAbuseChainRoutes);
+app.route('/api/credit-origination/chain', creditOriginationChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -896,6 +898,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('market_abuse_sla_sweep', async () => {
         const result = await marketAbuseSlaSweep(env as never);
         console.log('market_abuse_sla_sweep', JSON.stringify(result));
+      });
+      // W53 — Lender credit-facility origination SLA sweep. INVERTED (bigger
+      // facility = MORE time); large-exposure-tier (major + systemic) breaches
+      // cross the SARB large-exposure / prudential inbox.
+      await safe('credit_origination_sla_sweep', async () => {
+        const result = await creditOriginationSlaSweep(env as never);
+        console.log('credit_origination_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

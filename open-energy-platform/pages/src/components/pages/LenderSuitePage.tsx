@@ -8,9 +8,18 @@ import { DrawdownChainTab } from '../lender/DrawdownChainTab';
 import { DisbursementChainTab } from '../disbursement/DisbursementChainTab';
 import { CovenantCertificateTab } from '../lender/CovenantCertificateTab';
 import { LoanDefaultChainTab } from '../lender/LoanDefaultChainTab';
+import { CreditOriginationChainTab } from '../lender/CreditOriginationChainTab';
 
 export function LenderSuitePage() {
   const tabs: TabSpec[] = [
+    {
+      key: 'credit-origination',
+      label: 'Credit origination',
+      endpoint: '',
+      description: 'Credit facility origination & credit-approval chain · NCA + Banks Act + Basel III + SARB large-exposure + LMA. The front-end of project finance — screening, credit assessment, committee decision, agreement, CPs, activation. INVERTED tier SLA; activate crosses regulator for major/systemic, decline for systemic only.',
+      columns: [],
+      customContent: <CreditOriginationChainTab />,
+    },
     {
       key: 'drawdowns',
       label: 'Drawdowns',

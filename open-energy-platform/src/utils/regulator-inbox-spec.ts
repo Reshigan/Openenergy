@@ -1492,6 +1492,37 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ── Wave 53 — Lender Credit Facility Origination & Credit Approval ──────
+    case 'credit_origination.facility_available': {
+      // The W53 signature — activating a large-exposure facility puts a large
+      // exposure on the book (SARB large-exposure / prudential). Major + systemic.
+      const tier = str('facility_tier');
+      const LARGE_EXPOSURE = ['major', 'systemic'];
+      if (!LARGE_EXPOSURE.includes(tier)) return null;
+      return {
+        severity: tier === 'systemic' ? 'high' : 'medium',
+        title: `Large-exposure facility activated — ${str('application_number') || entityId} (${str('facility_name') || ''} / ${tier}${str('applicant_party_name') ? ' / ' + str('applicant_party_name') : ''})`.trim(),
+      };
+    }
+    case 'credit_origination.declined': {
+      // Declining a national-scale facility is itself a material market signal.
+      const tier = str('facility_tier');
+      if (tier !== 'systemic') return null;
+      return {
+        severity: 'medium',
+        title: `Systemic facility declined — ${str('application_number') || entityId} (${str('facility_name') || ''}${str('applicant_party_name') ? ' / ' + str('applicant_party_name') : ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'credit_origination.sla_breached': {
+      const tier = str('facility_tier');
+      const LARGE_EXPOSURE = ['major', 'systemic'];
+      if (!LARGE_EXPOSURE.includes(tier)) return null;
+      return {
+        severity: 'high',
+        title: `Credit origination SLA breached — ${str('application_number') || entityId} (${str('chain_status') || ''} / ${tier} / ${str('facility_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

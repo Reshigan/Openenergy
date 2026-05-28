@@ -502,6 +502,13 @@ export type EventType =
   | 'market_abuse.regulator_referred' | 'market_abuse.enforcement_action'
   | 'market_abuse.sanctioned' | 'market_abuse.disputed'
   | 'market_abuse.dispute_resolved' | 'market_abuse.sla_breached'
+  // Wave 53 — Lender Credit Facility Origination & Credit Approval chain (NCA 34/2005 + Banks Act + Basel III + SARB large-exposure + LMA; activate crosses for major/systemic = the W53 signature; satisfy_conditions shares .approved)
+  | 'credit_origination.screening' | 'credit_origination.credit_assessment'
+  | 'credit_origination.committee_review' | 'credit_origination.referred_back'
+  | 'credit_origination.conditions_pending' | 'credit_origination.approved'
+  | 'credit_origination.agreement_issued' | 'credit_origination.cp_satisfied'
+  | 'credit_origination.facility_available' | 'credit_origination.declined'
+  | 'credit_origination.withdrawn' | 'credit_origination.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
