@@ -7,6 +7,7 @@ import { MmComplianceTab } from '../trader/MmComplianceTab';
 import { PoslimitChainTab } from '../poslimit/PoslimitChainTab';
 import { BestExecutionTab } from '../trader/BestExecutionTab';
 import { TradeReportingChainTab } from '../trader/TradeReportingChainTab';
+import { MarketAbuseChainTab } from '../trader/MarketAbuseChainTab';
 import { api } from '../../lib/api';
 
 export function TraderWorkstationPage() {
@@ -44,6 +45,7 @@ export function TraderWorkstationPage() {
         { key: 'poslimit', label: 'Position limits', body: () => <PoslimitChainTab /> },
         { key: 'best-ex', label: 'Best execution', body: () => <BestExecutionTab /> },
         { key: 'trade-reporting', label: 'Trade reporting', body: () => <TradeReportingChainTab /> },
+        { key: 'market-abuse', label: 'Market surveillance', body: () => <MarketAbuseChainTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

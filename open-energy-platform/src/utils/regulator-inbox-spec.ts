@@ -1463,6 +1463,35 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ── Wave 52 — Trader Market Abuse Surveillance & STOR ──────────────────
+    case 'market_abuse.stor_filed': {
+      // A STOR is by definition a filing to the FSCA — crosses for every tier.
+      const tier = str('abuse_tier');
+      const SERIOUS = ['high_risk', 'critical_abuse'];
+      return {
+        severity: SERIOUS.includes(tier) ? 'high' : 'medium',
+        title: `STOR filed — ${str('case_number') || entityId} (${str('typology') || ''}${tier ? ' / ' + tier : ''}${str('subject_party_name') ? ' / ' + str('subject_party_name') : ''})`.trim(),
+      };
+    }
+    case 'market_abuse.sanctioned': {
+      const tier = str('abuse_tier');
+      const CRITICAL = ['high_risk', 'critical_abuse'];
+      if (!CRITICAL.includes(tier)) return null;
+      return {
+        severity: 'high',
+        title: `Market abuse sanction imposed — ${str('case_number') || entityId} (${str('typology') || ''} / ${tier}${str('subject_party_name') ? ' / ' + str('subject_party_name') : ''})`.trim(),
+      };
+    }
+    case 'market_abuse.sla_breached': {
+      const tier = str('abuse_tier');
+      const CRITICAL = ['high_risk', 'critical_abuse'];
+      if (!CRITICAL.includes(tier)) return null;
+      return {
+        severity: 'high',
+        title: `Market abuse surveillance SLA breached — ${str('case_number') || entityId} (${str('chain_status') || ''} / ${tier} / ${str('typology') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

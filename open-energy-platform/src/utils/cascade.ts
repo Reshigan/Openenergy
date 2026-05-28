@@ -495,6 +495,13 @@ export type EventType =
   | 'availability_guarantee.cure_period' | 'availability_guarantee.settled'
   | 'availability_guarantee.disputed' | 'availability_guarantee.dispute_resolved'
   | 'availability_guarantee.withdrawn' | 'availability_guarantee.sla_breached'
+  // Wave 52 — Trader Market Abuse Surveillance & STOR chain (FMA 2012 Ch X + FSCA market-abuse; clear + dismiss share .cleared; file_stor crosses for every tier)
+  | 'market_abuse.triaged' | 'market_abuse.under_investigation'
+  | 'market_abuse.evidence_review' | 'market_abuse.analysis_complete'
+  | 'market_abuse.cleared' | 'market_abuse.stor_filed'
+  | 'market_abuse.regulator_referred' | 'market_abuse.enforcement_action'
+  | 'market_abuse.sanctioned' | 'market_abuse.disputed'
+  | 'market_abuse.dispute_resolved' | 'market_abuse.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
