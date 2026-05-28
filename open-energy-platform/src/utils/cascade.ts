@@ -411,6 +411,13 @@ export type EventType =
   | 'tariff_indexation.disputed' | 'tariff_indexation.recalculated'
   | 'tariff_indexation.arbitrated' | 'tariff_indexation.withdrawn'
   | 'tariff_indexation.sla_breached'
+  // Wave 40 — Regulator Compliance Inspection & Enforcement chain (NERSA ERA §10 + §34/§35)
+  | 'compliance_inspection.inspection_in_progress' | 'compliance_inspection.findings_drafted'
+  | 'compliance_inspection.findings_issued' | 'compliance_inspection.directive_issued'
+  | 'compliance_inspection.remediation_underway' | 'compliance_inspection.remediation_verified'
+  | 'compliance_inspection.penalty_imposed' | 'compliance_inspection.appealed'
+  | 'compliance_inspection.compliant_closed' | 'compliance_inspection.enforcement_closed'
+  | 'compliance_inspection.withdrawn' | 'compliance_inspection.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

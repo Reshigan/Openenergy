@@ -5,6 +5,7 @@ import { regulatorCompletionTabs } from '../roleCompletionTabs';
 import { RegulatorInsights } from '../widgets/RegulatorInsights';
 import { DispositionChainTab } from '../disposition/DispositionChainTab';
 import { LicenceRenewalChainTab } from '../licence-renewal/LicenceRenewalChainTab';
+import { ComplianceInspectionChainTab } from '../compliance-inspection/ComplianceInspectionChainTab';
 
 export function RegulatorSuitePage() {
   const tabs: TabSpec[] = [
@@ -31,6 +32,14 @@ export function RegulatorSuitePage() {
       description: 'NERSA s.14-s.16 licence renewal / amendment chain · 11-state P6 with s10 public consultation + Council vote + Tribunal appeals. INVERTED class SLA: utility 180-day evaluation; trading + SSEG compressed. Council crossings: refused for all classes; granted/amended for utility-scale only; SLA breach for all (statutory hard line).',
       columns: [],
       customContent: <LicenceRenewalChainTab />,
+    },
+    {
+      key: 'compliance-inspection',
+      label: 'Inspections',
+      endpoint: '',
+      description: 'Proactive compliance inspection + enforcement chain (NERSA ERA §10 monitoring + §34/§35 enforcement) · 12-state P6: scheduled → in progress → findings → directive → remediation → compliant closed, with a penalty + Tribunal-appeal enforcement branch. The active, own-initiative complement to reactive Disposition. URGENT SLA: more severe contravention = tighter windows. Appeals cross to the regulator inbox for every tier; penalties + SLA breaches cross for critical + serious. Officer drives the machinery; respondent licensee remediates + appeals.',
+      columns: [],
+      customContent: <ComplianceInspectionChainTab />,
     },
     // ─── Licences ────────────────────────────────────────────────────────
     {

@@ -1060,6 +1060,36 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 40 — Regulator Compliance Inspection & Enforcement (NERSA ERA §10 + §34/§35) ──
+    // A regulator-native chain that still surfaces its significant enforcement
+    // decisions onto the Council oversight queue / Tribunal docket. lodge_appeal
+    // crosses for EVERY tier (any appeal lands on the Tribunal docket). penalty
+    // impositions + SLA breaches cross for critical + serious only (minor
+    // administrative penalties are handled at officer level).
+    case 'compliance_inspection.appealed': {
+      const tier = str('contravention_tier');
+      return {
+        severity: tier === 'critical' ? 'critical' : 'high',
+        title: `Compliance penalty appealed to Tribunal — ${str('inspection_number') || entityId} (${tier} / ${str('facility_name') || ''} / respondent ${str('respondent_party_name') || ''} / penalty R${str('penalty_amount_zar') || '—'}${str('appeal_ref') ? ' / ' + str('appeal_ref') : ''})`.trim(),
+      };
+    }
+    case 'compliance_inspection.penalty_imposed': {
+      const tier = str('contravention_tier');
+      if (tier !== 'critical' && tier !== 'serious') return null;
+      return {
+        severity: tier === 'critical' ? 'critical' : 'high',
+        title: `Compliance penalty imposed — ${str('inspection_number') || entityId} (${tier} / ${str('facility_name') || ''} / respondent ${str('respondent_party_name') || ''} / R${str('penalty_amount_zar') || '—'}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'compliance_inspection.sla_breached': {
+      const tier = str('contravention_tier');
+      if (tier !== 'critical' && tier !== 'serious') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Compliance inspection SLA breached — ${str('inspection_number') || entityId} (${tier} / ${str('chain_status') || ''} / ${str('facility_name') || ''} / respondent ${str('respondent_party_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
