@@ -98,6 +98,7 @@ import problemManagementChainRoutes, { problemManagementSlaSweep } from './route
 import carbonReversalChainRoutes, { carbonReversalSlaSweep } from './routes/carbon-reversal-chain';
 import tariffDeterminationChainRoutes, { tariffDeterminationSlaSweep } from './routes/tariff-determination-chain';
 import tradeReportingChainRoutes, { tradeReportingSlaSweep } from './routes/trade-reporting-chain';
+import loanDefaultChainRoutes, { loanDefaultSlaSweep } from './routes/loan-default-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -366,6 +367,7 @@ app.route('/api/problem-management/chain', problemManagementChainRoutes);
 app.route('/api/carbon-reversal/chain', carbonReversalChainRoutes);
 app.route('/api/tariff-determination/chain', tariffDeterminationChainRoutes);
 app.route('/api/trade-reporting/chain', tradeReportingChainRoutes);
+app.route('/api/loan-default/chain', loanDefaultChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -821,6 +823,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('trade_reporting_sla_sweep', async () => {
         const result = await tradeReportingSlaSweep(env as never);
         console.log('trade_reporting_sla_sweep', JSON.stringify(result));
+      });
+      // W45 Loan Default & Enforcement / Step-in SLA sweep — URGENT (senior
+      // secured tightest). write_off crosses ALL tiers (SARB impairment hard
+      // line); accelerate + commence_enforcement + SLA breaches cross for
+      // senior_secured + mezzanine only.
+      await safe('loan_default_sla_sweep', async () => {
+        const result = await loanDefaultSlaSweep(env as never);
+        console.log('loan_default_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

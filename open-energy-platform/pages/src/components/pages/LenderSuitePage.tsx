@@ -7,6 +7,7 @@ import { DunningTab } from '../lender/DunningTab';
 import { DrawdownChainTab } from '../lender/DrawdownChainTab';
 import { DisbursementChainTab } from '../disbursement/DisbursementChainTab';
 import { CovenantCertificateTab } from '../lender/CovenantCertificateTab';
+import { LoanDefaultChainTab } from '../lender/LoanDefaultChainTab';
 
 export function LenderSuitePage() {
   const tabs: TabSpec[] = [
@@ -33,6 +34,14 @@ export function LenderSuitePage() {
       description: 'Periodic LMA compliance certificate chain · DSCR/LLCR/gearing evidence, agent review, breach → waiver/cure/acceleration. URGENT tier SLA; acceleration crosses regulator for ALL tiers, breach + SLA breach senior/mezz only.',
       columns: [],
       customContent: <CovenantCertificateTab />,
+    },
+    {
+      key: 'loan-defaults',
+      label: 'Loan defaults',
+      endpoint: '',
+      description: 'LMA event-of-default → enforcement / step-in / restructure / write-off chain · picks up where covenant acceleration ends. URGENT tier SLA; write-off crosses regulator for ALL tiers, acceleration + enforcement + SLA breach senior/mezz only.',
+      columns: [],
+      customContent: <LoanDefaultChainTab />,
     },
     {
       key: 'dunning',

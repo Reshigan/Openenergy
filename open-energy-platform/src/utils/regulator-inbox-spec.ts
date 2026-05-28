@@ -1219,6 +1219,44 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 45 — Lender Loan Default & Enforcement / Step-in (LMA EoD + SARB impairment + Insolvency/Companies Act business-rescue) ──
+    // write_off (loss crystallised → SARB impairment) crosses for EVERY tier —
+    // a realised credit loss is always notifiable (the universal hard line).
+    // accelerate (event of default) + commence_enforcement (security enforcement
+    // / step-in) + SLA breaches cross for senior_secured + mezzanine only
+    // (subordinated workouts sit between junior lenders, less systemic).
+    case 'loan_default.written_off': {
+      const tier = str('facility_tier');
+      return {
+        severity: tier === 'subordinated' ? 'high' : 'critical',
+        title: `Loan write-off (loss crystallised) — ${str('default_number') || entityId} (${tier} / ${str('facility_name') || ''} / borrower ${str('borrower_party_name') || ''} / loss R${str('write_off_amount') || '—'}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'loan_default.accelerated': {
+      const tier = str('facility_tier');
+      if (tier !== 'senior_secured' && tier !== 'mezzanine') return null;
+      return {
+        severity: tier === 'senior_secured' ? 'critical' : 'high',
+        title: `Loan acceleration (event of default) — ${str('default_number') || entityId} (${tier} / ${str('facility_name') || ''} / borrower ${str('borrower_party_name') || ''} / ${str('default_type') || ''} / called R${str('accelerated_amount') || '—'})`.trim(),
+      };
+    }
+    case 'loan_default.enforcement_commenced': {
+      const tier = str('facility_tier');
+      if (tier !== 'senior_secured' && tier !== 'mezzanine') return null;
+      return {
+        severity: tier === 'senior_secured' ? 'high' : 'medium',
+        title: `Security enforcement / step-in commenced — ${str('default_number') || entityId} (${tier} / ${str('facility_name') || ''} / borrower ${str('borrower_party_name') || ''}${str('enforcement_ref') ? ' / ' + str('enforcement_ref') : ''})`.trim(),
+      };
+    }
+    case 'loan_default.sla_breached': {
+      const tier = str('facility_tier');
+      if (tier !== 'senior_secured' && tier !== 'mezzanine') return null;
+      return {
+        severity: tier === 'senior_secured' ? 'high' : 'medium',
+        title: `Loan default SLA breached — ${str('default_number') || entityId} (${tier} / ${str('chain_status') || ''} / ${str('facility_name') || ''} / borrower ${str('borrower_party_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

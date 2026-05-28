@@ -446,6 +446,13 @@ export type EventType =
   | 'trade_report.confirmed_complete' | 'trade_report.tr_rejected'
   | 'trade_report.corrected' | 'trade_report.exempted'
   | 'trade_report.cancelled' | 'trade_report.sla_breached'
+  // Wave 45 — Lender Loan Default & Enforcement / Step-in chain (LMA EoD + SARB impairment + Insolvency/Companies Act business-rescue)
+  | 'loan_default.under_review' | 'loan_default.reservation_of_rights'
+  | 'loan_default.default_notice_issued' | 'loan_default.cure_period'
+  | 'loan_default.cured' | 'loan_default.accelerated'
+  | 'loan_default.standstill' | 'loan_default.enforcement_commenced'
+  | 'loan_default.restructured' | 'loan_default.enforced_closed'
+  | 'loan_default.written_off' | 'loan_default.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
