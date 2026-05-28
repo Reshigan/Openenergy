@@ -1257,6 +1257,44 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 46 — Offtaker PPA Curtailment / Deemed-Energy Compensation (REIPPPP/PPA deemed-energy + NERSA Grid Code economic-dispatch curtailment) ──
+    // refer_arbitration → arbitrated crosses for EVERY tier — a formal arbitration
+    // referral is always notifiable (the universal hard line). reject_non_compensable
+    // (denied claim → dispute risk) + settle_compensation (material system-cost
+    // settlement) + SLA breaches cross for utility_scale + commercial only
+    // (embedded / SSEG deemed-energy sits below the NERSA materiality threshold).
+    case 'curtailment_claim.arbitrated': {
+      const tier = str('facility_tier');
+      return {
+        severity: tier === 'utility_scale' ? 'critical' : 'high',
+        title: `Curtailment claim referred to arbitration — ${str('claim_number') || entityId} (${tier} / ${str('facility_name') || ''} / seller ${str('seller_party_name') || ''}${str('arbiter_name') ? ' / ' + str('arbiter_name') : ''} / claimed R${str('claimed_amount') || '—'})`.trim(),
+      };
+    }
+    case 'curtailment_claim.compensation_settled': {
+      const tier = str('facility_tier');
+      if (tier !== 'utility_scale' && tier !== 'commercial') return null;
+      return {
+        severity: tier === 'utility_scale' ? 'high' : 'medium',
+        title: `Curtailment compensation settled (deemed energy) — ${str('claim_number') || entityId} (${tier} / ${str('facility_name') || ''} / seller ${str('seller_party_name') || ''} / paid R${str('settled_amount') || '—'})`.trim(),
+      };
+    }
+    case 'curtailment_claim.non_compensable': {
+      const tier = str('facility_tier');
+      if (tier !== 'utility_scale' && tier !== 'commercial') return null;
+      return {
+        severity: tier === 'utility_scale' ? 'high' : 'medium',
+        title: `Curtailment claim denied (non-compensable) — ${str('claim_number') || entityId} (${tier} / ${str('facility_name') || ''} / seller ${str('seller_party_name') || ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'curtailment_claim.sla_breached': {
+      const tier = str('facility_tier');
+      if (tier !== 'utility_scale' && tier !== 'commercial') return null;
+      return {
+        severity: tier === 'utility_scale' ? 'high' : 'medium',
+        title: `Curtailment claim SLA breached — ${str('claim_number') || entityId} (${tier} / ${str('chain_status') || ''} / ${str('facility_name') || ''} / seller ${str('seller_party_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

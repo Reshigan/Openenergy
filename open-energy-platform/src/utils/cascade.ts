@@ -453,6 +453,13 @@ export type EventType =
   | 'loan_default.standstill' | 'loan_default.enforcement_commenced'
   | 'loan_default.restructured' | 'loan_default.enforced_closed'
   | 'loan_default.written_off' | 'loan_default.sla_breached'
+  // Wave 46 — Offtaker PPA Curtailment / Deemed-Energy Compensation chain (REIPPPP/PPA deemed-energy + NERSA Grid Code economic-dispatch curtailment)
+  | 'curtailment_claim.classification_review' | 'curtailment_claim.claim_prepared'
+  | 'curtailment_claim.claim_submitted' | 'curtailment_claim.validation_underway'
+  | 'curtailment_claim.quantum_proposed' | 'curtailment_claim.quantum_agreed'
+  | 'curtailment_claim.compensation_settled' | 'curtailment_claim.disputed'
+  | 'curtailment_claim.arbitrated' | 'curtailment_claim.non_compensable'
+  | 'curtailment_claim.withdrawn' | 'curtailment_claim.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

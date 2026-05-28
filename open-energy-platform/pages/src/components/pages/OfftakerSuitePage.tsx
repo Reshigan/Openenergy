@@ -7,6 +7,7 @@ import { ObligationsTab } from '../offtaker/ObligationsTab';
 import { PpaContractChainTab } from '../offtaker/PpaContractChainTab';
 import { TakeOrPayChainTab } from '../take-or-pay/TakeOrPayChainTab';
 import { TariffIndexationTab } from '../offtaker/TariffIndexationTab';
+import { CurtailmentClaimTab } from '../offtaker/CurtailmentClaimTab';
 
 export function OfftakerSuitePage() {
   const tabs: TabSpec[] = [
@@ -33,6 +34,14 @@ export function OfftakerSuitePage() {
       description: 'Annual PPA tariff repricing chain (NERSA ERA §4 + IFRS 16) · 11-state P6 CPI/PPI escalation: publish index → calculate → notice → review → agree → apply, with dispute / recalculation / arbitration branches. Seller-vs-offtaker split write; arbitration crosses to the regulator inbox.',
       columns: [],
       customContent: <TariffIndexationTab />,
+    },
+    {
+      key: 'curtailment-claims',
+      label: 'Curtailment claims',
+      endpoint: '',
+      description: 'Deemed-energy compensation chain (REIPPPP PPA curtailment + NERSA Grid Code) · 12-state P6 supply-side mirror of take-or-pay: when the buyer/SO curtails an available plant, the PPA compensates the seller for the MWh it would have generated. Classification gate → validation → quantum → settlement, with non-compensable / dispute / recalculation / arbitration branches. URGENT SLA (utility-scale tightest); arbitration crosses to the regulator inbox for every tier.',
+      columns: [],
+      customContent: <CurtailmentClaimTab />,
     },
     {
       key: 'obligations',
