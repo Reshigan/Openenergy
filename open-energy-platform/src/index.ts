@@ -97,6 +97,7 @@ import complianceInspectionChainRoutes, { complianceInspectionSlaSweep } from '.
 import problemManagementChainRoutes, { problemManagementSlaSweep } from './routes/problem-management-chain';
 import carbonReversalChainRoutes, { carbonReversalSlaSweep } from './routes/carbon-reversal-chain';
 import tariffDeterminationChainRoutes, { tariffDeterminationSlaSweep } from './routes/tariff-determination-chain';
+import tradeReportingChainRoutes, { tradeReportingSlaSweep } from './routes/trade-reporting-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -364,6 +365,7 @@ app.route('/api/compliance-inspection/chain', complianceInspectionChainRoutes);
 app.route('/api/problem-management/chain', problemManagementChainRoutes);
 app.route('/api/carbon-reversal/chain', carbonReversalChainRoutes);
 app.route('/api/tariff-determination/chain', tariffDeterminationChainRoutes);
+app.route('/api/trade-reporting/chain', tradeReportingChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -811,6 +813,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('tariff_determination_sla_sweep', async () => {
         const result = await tariffDeterminationSlaSweep(env as never);
         console.log('tariff_determination_sla_sweep', JSON.stringify(result));
+      });
+      // W44 Trade-Repository Reporting & Reconciliation SLA sweep — MIXED
+      // (regulatory submission windows uniform T+1; recon/break windows graded,
+      // otc tightest). THEMATIC INVERSION: a late / missing transaction report
+      // IS the FMA violation, so every breach crosses to the FSCA supervisor.
+      await safe('trade_reporting_sla_sweep', async () => {
+        const result = await tradeReportingSlaSweep(env as never);
+        console.log('trade_reporting_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

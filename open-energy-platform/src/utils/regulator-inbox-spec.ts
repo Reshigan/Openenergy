@@ -1190,6 +1190,35 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 44 — Trade-Repository Reporting & Reconciliation ───────────
+    // The desk's post-trade FMA / FSCA OTC reporting obligation. THEMATIC
+    // INVERSION: for a reporting chain the SLA breach IS the violation, so
+    // sla_breached crosses for EVERY class (a late / missing transaction
+    // report is directly sanctionable under the FMA). tr_rejected crosses
+    // for material classes (otc_derivative + physical_forward); break_identified
+    // crosses for otc_derivative only (the systemic-risk product).
+    case 'trade_report.sla_breached': {
+      return {
+        severity: 'high',
+        title: `Transaction report SLA breached — ${str('report_number') || entityId} (${str('chain_status') || ''} / ${str('report_class') || ''} / ${str('product') || ''}${str('counterparty_name') ? ' vs ' + str('counterparty_name') : ''})`.trim(),
+      };
+    }
+    case 'trade_report.tr_rejected': {
+      const klass = str('report_class');
+      if (klass !== 'otc_derivative' && klass !== 'physical_forward') return null;
+      return {
+        severity: 'medium',
+        title: `Trade Repository rejected report — ${str('report_number') || entityId} (${klass} / ${str('product') || ''}${str('rejection_ref') ? ' / ' + str('rejection_ref') : ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'trade_report.break_identified': {
+      if (str('report_class') !== 'otc_derivative') return null;
+      return {
+        severity: 'medium',
+        title: `OTC reconciliation break — ${str('report_number') || entityId} (${str('product') || ''}${str('counterparty_name') ? ' vs ' + str('counterparty_name') : ''}${str('break_ref') ? ' / ' + str('break_ref') : ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

@@ -439,6 +439,13 @@ export type EventType =
   | 'tariff_determination.reconsideration_requested' | 'tariff_determination.implemented'
   | 'tariff_determination.remitted' | 'tariff_determination.rejected'
   | 'tariff_determination.withdrawn' | 'tariff_determination.sla_breached'
+  // Wave 44 — Trader OTC Transaction / Trade-Repository Reporting & Reconciliation chain (FMA + FSCA OTC reporting)
+  | 'trade_report.report_generated' | 'trade_report.submitted_to_tr'
+  | 'trade_report.tr_acknowledged' | 'trade_report.reconciled'
+  | 'trade_report.break_identified' | 'trade_report.break_resolved'
+  | 'trade_report.confirmed_complete' | 'trade_report.tr_rejected'
+  | 'trade_report.corrected' | 'trade_report.exempted'
+  | 'trade_report.cancelled' | 'trade_report.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
