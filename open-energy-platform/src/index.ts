@@ -84,6 +84,7 @@ import edCommitmentChainRoutes, { edCommitmentSlaSweep } from './routes/ed-commi
 import gcaChainRoutes, { gcaSlaSweep } from './routes/gca-chain';
 import poslimitChainRoutes, { poslimitSlaSweep } from './routes/poslimit-chain';
 import disbursementChainRoutes, { disbursementSlaSweep } from './routes/disbursement-chain';
+import dispositionChainRoutes, { dispositionSlaSweep } from './routes/disposition-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -338,6 +339,7 @@ app.route('/api/ed/commitment-chain', edCommitmentChainRoutes);
 app.route('/api/gca/connection-chain', gcaChainRoutes);
 app.route('/api/poslimit/chain', poslimitChainRoutes);
 app.route('/api/disbursement/chain', disbursementChainRoutes);
+app.route('/api/disposition/chain', dispositionChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -691,6 +693,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('disbursement_sla_sweep', async () => {
         const result = await disbursementSlaSweep(env as never);
         console.log('disbursement_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 31 — Regulator compliance-notice disposition SLA sweep.
+      // NERSA Act §10 90-day disposition rule; INVERTED tier SLA (critical 4h
+      // triage, low 7d); breach crosses Council for ALL tiers (Section 10 hard
+      // line, DG-level reporting).
+      await safe('disposition_sla_sweep', async () => {
+        const result = await dispositionSlaSweep(env as never);
+        console.log('disposition_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

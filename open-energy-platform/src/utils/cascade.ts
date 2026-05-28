@@ -345,6 +345,13 @@ export type EventType =
   | 'disbursement.uop_certified' | 'disbursement.reconciled'
   | 'disbursement.clawback_executed' | 'disbursement.waived'
   | 'disbursement.sla_breached'
+  // Wave 31 — Regulator Compliance Notice Disposition chain — NERSA Act §10
+  | 'disposition.triaged' | 'disposition.assigned'
+  | 'disposition.investigating' | 'disposition.action_required'
+  | 'disposition.action_in_progress' | 'disposition.action_completed'
+  | 'disposition.closed' | 'disposition.escalated'
+  | 'disposition.dismissed' | 'disposition.referred'
+  | 'disposition.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

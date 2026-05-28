@@ -743,6 +743,37 @@ export function regulatorInboxSpec(
       return null;
     }
 
+    // ─── Wave 31 — Regulator Compliance Notice Disposition chain — NERSA Act §10 ───
+    // close + escalate cross Council for critical + high only (systemic / safety / financial);
+    // sla_breached crosses for ALL tiers (Section 10 hard line — DG-level reporting).
+    // dismiss / refer are audit-only.
+    case 'disposition.closed': {
+      const tier = str('severity_tier');
+      if (tier === 'critical' || tier === 'high') {
+        return {
+          severity: tier === 'critical' ? 'critical' : 'high',
+          title: `Disposition closed — ${str('case_number') || entityId} (${tier} / ${str('source_wave') || ''} / ${str('source_party') || ''} / Council ${str('council_panel_ref') || 'pending'} / §10 ${str('section10_report_ref') || 'pending'})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'disposition.escalated': {
+      const tier = str('severity_tier');
+      if (tier === 'critical' || tier === 'high') {
+        return {
+          severity: 'critical',
+          title: `Disposition escalated to Council — ${str('case_number') || entityId} (${tier} / ${str('source_wave') || ''} / ${str('source_party') || ''} / Council ${str('council_panel_ref') || 'pending'} / §10 ${str('section10_report_ref') || 'pending'})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'disposition.sla_breached': {
+      return {
+        severity: 'critical',
+        title: `Disposition SLA breached (§10) — ${str('case_number') || entityId} (${str('severity_tier') || ''} / ${str('chain_status') || ''} / ${str('source_wave') || ''} / ${str('source_party') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

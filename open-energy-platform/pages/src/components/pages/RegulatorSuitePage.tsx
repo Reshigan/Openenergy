@@ -3,6 +3,7 @@ import { SuitePage, StatusPill, Column, TabSpec } from '../SuitePage';
 import { platformTabs } from '../platformTabs';
 import { regulatorCompletionTabs } from '../roleCompletionTabs';
 import { RegulatorInsights } from '../widgets/RegulatorInsights';
+import { DispositionChainTab } from '../disposition/DispositionChainTab';
 
 export function RegulatorSuitePage() {
   const tabs: TabSpec[] = [
@@ -13,6 +14,14 @@ export function RegulatorSuitePage() {
       description: 'NERSA MYPD allowed-revenue calculator, cost-of-service breakout, affordability gauge.',
       columns: [],
       customContent: <RegulatorInsights />,
+    },
+    {
+      key: 'disposition',
+      label: 'Disposition',
+      endpoint: '',
+      description: 'Compliance-notice disposition chain (NERSA Act §10) · 11-state P6 across every inbox notice from W18+; Council escalation, SAPS/DMRE/FSCA referral, §10 monthly reporting.',
+      columns: [],
+      customContent: <DispositionChainTab />,
     },
     // ─── Licences ────────────────────────────────────────────────────────
     {
