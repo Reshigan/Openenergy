@@ -110,6 +110,7 @@ import creditOriginationChainRoutes, { creditOriginationSlaSweep } from './route
 import paymentSecurityChainRoutes, { paymentSecuritySlaSweep } from './routes/payment-security-chain';
 import securityRemediationChainRoutes, { securityRemediationSlaSweep } from './routes/security-remediation-chain';
 import creditingRenewalChainRoutes, { creditingRenewalSlaSweep } from './routes/crediting-renewal-chain';
+import ssegRegistrationChainRoutes, { ssegRegistrationSlaSweep } from './routes/sseg-registration-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -390,6 +391,7 @@ app.route('/api/credit-origination/chain', creditOriginationChainRoutes);
 app.route('/api/payment-security/chain', paymentSecurityChainRoutes);
 app.route('/api/security-remediation/chain', securityRemediationChainRoutes);
 app.route('/api/crediting-renewal/chain', creditingRenewalChainRoutes);
+app.route('/api/sseg-registration/chain', ssegRegistrationChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -931,6 +933,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('crediting_renewal_sla_sweep', async () => {
         const result = await creditingRenewalSlaSweep(env as never);
         console.log('crediting_renewal_sla_sweep', JSON.stringify(result));
+      });
+      // W57 — Embedded-generation registration (Schedule 2 exemption) SLA sweep.
+      // INVERTED (bigger embedded generator = LONGER window); records breaches and
+      // crosses the regulator inbox on large + utility tiers.
+      await safe('sseg_registration_sla_sweep', async () => {
+        const result = await ssegRegistrationSlaSweep(env as never);
+        console.log('sseg_registration_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

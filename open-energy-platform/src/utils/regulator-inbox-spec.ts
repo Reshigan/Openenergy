@@ -1632,6 +1632,38 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ── Wave 57 — Embedded-Generation Registration & Schedule 2 Exemption ──
+    //   refer_to_licensing — kicking an embedded-generation facility into the
+    //             full-licensing pipeline (generation for sale / outside
+    //             Schedule 2) is always a material regulatory event. Crosses for
+    //             EVERY tier — the W57 signature, mirroring W49 universal refuse.
+    //   refused — refusing a large / utility embedded generator is material;
+    //             refusing a rooftop is administrative. Crosses large + utility.
+    //   sla_breached — crosses for large + utility (material capacity).
+    case 'sseg_registration.referred_to_licensing': {
+      const tier = str('capacity_tier');
+      return {
+        severity: tier === 'utility' || tier === 'large' ? 'high' : 'medium',
+        title: `Embedded-generation registration REFERRED to full licensing — ${str('registration_number') || entityId} (${str('facility_name') || ''}${tier ? ' / ' + tier : ''}${str('generation_purpose') ? ' / ' + str('generation_purpose') : ''}${num('capacity_kw') ? ' / ' + num('capacity_kw').toLocaleString() + ' kW' : ''})`.trim(),
+      };
+    }
+    case 'sseg_registration.refused': {
+      const tier = str('capacity_tier');
+      if (tier !== 'large' && tier !== 'utility') return null;
+      return {
+        severity: tier === 'utility' ? 'high' : 'medium',
+        title: `Embedded-generation registration REFUSED — ${str('registration_number') || entityId} (${str('facility_name') || ''} / ${tier}${num('capacity_kw') ? ' / ' + num('capacity_kw').toLocaleString() + ' kW' : ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'sseg_registration.sla_breached': {
+      const tier = str('capacity_tier');
+      if (tier !== 'large' && tier !== 'utility') return null;
+      return {
+        severity: 'medium',
+        title: `Embedded-generation registration SLA breached — ${str('registration_number') || entityId} (${str('chain_status') || ''} / ${str('facility_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

@@ -8,6 +8,7 @@ import { LicenceRenewalChainTab } from '../licence-renewal/LicenceRenewalChainTa
 import { ComplianceInspectionChainTab } from '../compliance-inspection/ComplianceInspectionChainTab';
 import { TariffDeterminationChainTab } from '../tariff-determination/TariffDeterminationChainTab';
 import { LicenceApplicationChainTab } from '../licence-application/LicenceApplicationChainTab';
+import { SsegRegistrationChainTab } from '../sseg-registration/SsegRegistrationChainTab';
 
 export function RegulatorSuitePage() {
   const tabs: TabSpec[] = [
@@ -58,6 +59,14 @@ export function RegulatorSuitePage() {
       description: 'Initial licence application & adjudication chain (Electricity Regulation Act 4 of 2006 §§8–11 + NERSA §9 completeness + §10 public participation) · 12-state P6: received → completeness review → accepted → public participation → technical evaluation → Council decision → granted → issued, with an additional-information loop, refusal, applicant withdrawal and lapse. The ENTRY gate to the regulated market — grants the FIRST licence, distinct from W33 renewal which presumes a holder. INVERTED class SLA: major (transmission / large generation / import-export) get the longest §10 windows; minor (small-scale generation) compressed. Council crossings: refusals for EVERY class (denying market entry); major-licence grants (Gazette); SLA breaches for major + standard. Registry/evaluator/Council drive the machinery; the applicant supplies information + withdraws.',
       columns: [],
       customContent: <LicenceApplicationChainTab />,
+    },
+    {
+      key: 'sseg-registration',
+      label: 'SSEG registration',
+      endpoint: '',
+      description: 'Embedded-generation registration & Schedule 2 exemption chain (Electricity Regulation Act 4 of 2006 Schedule 2, as amended 2021/2023) · 12-state P6: received → eligibility screening → technical verification → exemption determination → approved → registered, with an information-gap loop, a conditional-approval loop, refusal, applicant withdrawal and lapse. The LIGHT-TOUCH front-end sibling of W49 full licensing — no public-participation step. Its signature terminal REFERS a facility that falls outside Schedule 2 (generation for sale / trading / export) UP to the §§8–11 licensing pipeline. INVERTED tier SLA: utility-scale embedded gets the longest grid-impact windows; micro rooftop is quick. Council crossings: a referral for EVERY tier (kicking into full licensing); large + utility refusals and SLA breaches. Registry/verifier/committee drive the machinery; the applicant supplies information, satisfies conditions + withdraws.',
+      columns: [],
+      customContent: <SsegRegistrationChainTab />,
     },
     // ─── Licences ────────────────────────────────────────────────────────
     {

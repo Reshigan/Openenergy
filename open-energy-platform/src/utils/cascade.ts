@@ -530,6 +530,13 @@ export type EventType =
   | 'crediting_renewal.standard_review' | 'crediting_renewal.renewed'
   | 'crediting_renewal.refused' | 'crediting_renewal.withdrawn'
   | 'crediting_renewal.lapsed' | 'crediting_renewal.sla_breached'
+  // Wave 57 — Regulator Embedded-Generation Registration & Schedule 2 Exemption chain (NERSA ERA 2006 Schedule 2)
+  | 'sseg_registration.eligibility_screening' | 'sseg_registration.information_requested'
+  | 'sseg_registration.technical_verification' | 'sseg_registration.exemption_determination'
+  | 'sseg_registration.conditions_pending' | 'sseg_registration.registration_approved'
+  | 'sseg_registration.registered' | 'sseg_registration.referred_to_licensing'
+  | 'sseg_registration.refused' | 'sseg_registration.withdrawn'
+  | 'sseg_registration.lapsed' | 'sseg_registration.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
