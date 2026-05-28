@@ -899,6 +899,51 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 35 — Esums O&M Warranty Vendor-Side Escalation (CPA §56/§61 + NRCS) ──
+    // recall_issued crosses for ALL classes (NRCS recall always notifiable).
+    // oem_decision crosses for safety_recall only (CPA §61 product-liability).
+    // arbitration + closed cross for safety_recall + fleet_systemic.
+    // sla_breached crosses for safety_recall + fleet_systemic.
+    case 'vendor_escalation.recall_issued': {
+      const cls = str('defect_class');
+      return {
+        severity: cls === 'safety_recall' ? 'critical' : 'high',
+        title: `Component RECALL issued — ${str('case_number') || entityId} (${cls} / ${str('component_type') || ''} ${str('component_model') || ''} / ${num('fleet_units_affected')} units / OEM ${str('oem_party_name') || str('vendor_party_name') || ''} / recall ${str('recall_ref') || '—'})`.trim(),
+      };
+    }
+    case 'vendor_escalation.oem_decision': {
+      const cls = str('defect_class');
+      if (cls !== 'safety_recall') return null;
+      return {
+        severity: 'high',
+        title: `Safety-defect OEM determination — ${str('case_number') || entityId} (${str('component_type') || ''} ${str('component_model') || ''} / ${num('fleet_units_affected')} units / liability ${str('liability_accepted') === '1' ? 'accepted' : 'disputed'} / OEM ${str('oem_party_name') || ''})`.trim(),
+      };
+    }
+    case 'vendor_escalation.arbitration': {
+      const cls = str('defect_class');
+      if (cls !== 'safety_recall' && cls !== 'fleet_systemic') return null;
+      return {
+        severity: cls === 'safety_recall' ? 'critical' : 'high',
+        title: `Vendor warranty dispute → arbitration — ${str('case_number') || entityId} (${cls} / ${str('component_type') || ''} / R${num('claim_value_zar')} / case ${str('arbitration_case_ref') || '—'})`.trim(),
+      };
+    }
+    case 'vendor_escalation.closed': {
+      const cls = str('defect_class');
+      if (cls !== 'safety_recall' && cls !== 'fleet_systemic') return null;
+      return {
+        severity: cls === 'safety_recall' ? 'high' : 'medium',
+        title: `Reportable vendor-defect closed — ${str('case_number') || entityId} (${cls} / ${str('component_type') || ''} / remedy ${str('remedy_type') || ''} R${num('remedy_cost_zar')})`.trim(),
+      };
+    }
+    case 'vendor_escalation.sla_breached': {
+      const cls = str('defect_class');
+      if (cls !== 'safety_recall' && cls !== 'fleet_systemic') return null;
+      return {
+        severity: 'critical',
+        title: `Vendor escalation SLA breached — ${str('case_number') || entityId} (${cls} / ${str('chain_status') || ''} / ${str('component_type') || ''} / ${str('vendor_party_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

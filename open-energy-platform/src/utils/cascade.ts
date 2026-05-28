@@ -375,6 +375,14 @@ export type EventType =
   | 'load_curtailment.refused' | 'load_curtailment.partial_compliance'
   | 'load_curtailment.withdrawn'
   | 'load_curtailment.sla_breached'
+  // Wave 35 — Esums O&M Warranty Vendor-Side Escalation chain (CPA §56/§61 + NRCS)
+  | 'vendor_escalation.filed' | 'vendor_escalation.vendor_triage'
+  | 'vendor_escalation.vendor_decision' | 'vendor_escalation.escalated_to_oem'
+  | 'vendor_escalation.oem_field_investigation' | 'vendor_escalation.oem_decision'
+  | 'vendor_escalation.remediation' | 'vendor_escalation.closed'
+  | 'vendor_escalation.recall_issued' | 'vendor_escalation.arbitration'
+  | 'vendor_escalation.withdrawn'
+  | 'vendor_escalation.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

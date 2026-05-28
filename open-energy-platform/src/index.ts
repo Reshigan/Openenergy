@@ -88,6 +88,7 @@ import dispositionChainRoutes, { dispositionSlaSweep } from './routes/dispositio
 import takeOrPayChainRoutes, { topSlaSweep } from './routes/take-or-pay-chain';
 import licenceRenewalChainRoutes, { licenceRenewalSlaSweep } from './routes/licence-renewal-chain';
 import loadCurtailmentChainRoutes, { loadCurtailmentSlaSweep } from './routes/load-curtailment-chain';
+import vendorEscalationChainRoutes, { vendorEscalationSlaSweep } from './routes/vendor-escalation-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -346,6 +347,7 @@ app.route('/api/disposition/chain', dispositionChainRoutes);
 app.route('/api/take-or-pay/chain', takeOrPayChainRoutes);
 app.route('/api/licence/renewal/chain', licenceRenewalChainRoutes);
 app.route('/api/load-curtailment/chain', loadCurtailmentChainRoutes);
+app.route('/api/esums/vendor-escalation/chain', vendorEscalationChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -728,6 +730,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('load_curtailment_sla_sweep', async () => {
         const result = await loadCurtailmentSlaSweep(env as never);
         console.log('load_curtailment_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 35 — Esums O&M Warranty Vendor-Side Escalation SLA sweep. URGENT
+      // matrix (safety_recall 4h triage; single_unit 7d). safety_recall +
+      // fleet_systemic breaches cross regulator (CPA §61 / NRCS).
+      await safe('vendor_escalation_sla_sweep', async () => {
+        const result = await vendorEscalationSlaSweep(env as never);
+        console.log('vendor_escalation_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
