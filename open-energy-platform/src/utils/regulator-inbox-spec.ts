@@ -1664,6 +1664,39 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 58 — Grid Connection Capacity Allocation & Queue Management ──
+    // NERSA Grid Code + NTCSA Interim Capacity Allocation Rules (2024).
+    //   rejected — denying scarce grid capacity is ALWAYS material in a
+    //              capacity-constrained network; crosses for EVERY tier (the
+    //              W58 signature).
+    //   relinquished — handing back firm capacity frees a queue slot; only
+    //                  material when the surrendered block is large; crosses
+    //                  large + strategic.
+    //   sla_breached — crosses for large + strategic (transmission-level).
+    case 'grid_capacity.rejected': {
+      const tier = str('capacity_tier');
+      return {
+        severity: tier === 'strategic' || tier === 'large' ? 'high' : 'medium',
+        title: `Grid capacity application REJECTED — ${str('allocation_number') || entityId} (${str('project_name') || ''}${tier ? ' / ' + tier : ''}${num('requested_capacity_mw') ? ' / ' + num('requested_capacity_mw').toLocaleString() + ' MW' : ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'grid_capacity.relinquished': {
+      const tier = str('capacity_tier');
+      if (tier !== 'large' && tier !== 'strategic') return null;
+      return {
+        severity: tier === 'strategic' ? 'high' : 'medium',
+        title: `Grid capacity RELINQUISHED — ${str('allocation_number') || entityId} (${str('project_name') || ''} / ${tier}${num('requested_capacity_mw') ? ' / ' + num('requested_capacity_mw').toLocaleString() + ' MW' : ''})`.trim(),
+      };
+    }
+    case 'grid_capacity.sla_breached': {
+      const tier = str('capacity_tier');
+      if (tier !== 'large' && tier !== 'strategic') return null;
+      return {
+        severity: 'medium',
+        title: `Grid capacity allocation SLA breached — ${str('allocation_number') || entityId} (${str('chain_status') || ''} / ${str('project_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

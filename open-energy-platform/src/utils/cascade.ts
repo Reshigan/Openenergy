@@ -537,6 +537,13 @@ export type EventType =
   | 'sseg_registration.registered' | 'sseg_registration.referred_to_licensing'
   | 'sseg_registration.refused' | 'sseg_registration.withdrawn'
   | 'sseg_registration.lapsed' | 'sseg_registration.sla_breached'
+  // Wave 58 — Grid Connection Capacity Allocation & Queue Management chain (NERSA Grid Code + NTCSA Interim Capacity Allocation Rules 2024)
+  | 'grid_capacity.completeness_screening' | 'grid_capacity.information_requested'
+  | 'grid_capacity.capacity_assessment' | 'grid_capacity.queue_positioned'
+  | 'grid_capacity.offer_issued' | 'grid_capacity.capacity_reserved'
+  | 'grid_capacity.capacity_allocated' | 'grid_capacity.rejected'
+  | 'grid_capacity.lapsed' | 'grid_capacity.relinquished'
+  | 'grid_capacity.withdrawn' | 'grid_capacity.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

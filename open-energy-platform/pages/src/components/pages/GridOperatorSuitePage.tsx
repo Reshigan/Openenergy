@@ -9,6 +9,7 @@ import { PlannedOutageChainTab } from '../grid/PlannedOutageChainTab';
 import { GcaChainTab } from '../gca/GcaChainTab';
 import { LoadCurtailmentChainTab } from '../load-curtailment/LoadCurtailmentChainTab';
 import { ReserveActivationChainTab } from '../reserve-activation/ReserveActivationChainTab';
+import { GridCapacityChainTab } from '../grid-capacity/GridCapacityChainTab';
 
 const instructionTypes = [
   { value: 'curtail', label: 'Curtail' },
@@ -46,6 +47,14 @@ export function GridOperatorSuitePage() {
       description: 'NERSA Grid Code §C-1.3 — IPP outage submissions, severity-tiered SLAs, commence/restore/close audit chain.',
       columns: [],
       customContent: <PlannedOutageChainTab />,
+    },
+    {
+      key: 'capacity_allocation',
+      label: 'Capacity allocation',
+      endpoint: '',
+      description: 'NERSA Grid Code + NTCSA Interim Capacity Allocation Rules (2024) — the scarce-capacity QUEUE upstream of the GCA. Application → completeness screening → capacity assessment (load-flow / fault-level / headroom) → queue position → allocation offer → reservation → firm allocation. INVERTED tier SLA (bigger connection = longer window), two-party applicant↔network/committee write, reject / lapse / relinquish / withdraw branches.',
+      columns: [],
+      customContent: <GridCapacityChainTab />,
     },
     {
       key: 'gca_chain',
