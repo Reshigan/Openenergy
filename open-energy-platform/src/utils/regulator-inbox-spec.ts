@@ -1337,6 +1337,45 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 48 — Carbon Tax Offset Claim & Allowance lifecycle ─────────
+    // The monetisation end of the carbon-credit lifecycle (Carbon Tax Act §13
+    // offset allowance, claimed via SARS eFiling against retired COAS credits).
+    //   claw_back       — an allowance recovered post-grant is an understatement
+    //                     / penalty-exposure event; crosses for EVERY tier.
+    //   reject_claim    — crosses for material tiers (major + standard).
+    //   grant_allowance — a material offset utilisation is notifiable to DFFE
+    //                     COAS / SARS; crosses for major_claim only.
+    //   sla_breached    — crosses for material tiers (major + standard).
+    case 'carbon_offset_claim.clawed_back': {
+      return {
+        severity: 'high',
+        title: `Carbon offset allowance clawed back — ${str('claim_number') || entityId} (${str('taxpayer_party_name') || ''}${num('offset_value_zar') ? ' / R' + num('offset_value_zar').toLocaleString() : ''}${str('reason_code') ? ' / ' + str('reason_code') : ''}${str('reversal_ref') ? ' / ' + str('reversal_ref') : ''})`.trim(),
+      };
+    }
+    case 'carbon_offset_claim.rejected': {
+      const tier = str('offset_tier');
+      if (tier !== 'major_claim' && tier !== 'standard_claim') return null;
+      return {
+        severity: tier === 'major_claim' ? 'high' : 'medium',
+        title: `Carbon offset claim rejected — ${str('claim_number') || entityId} (${str('taxpayer_party_name') || ''}${num('credits_claimed_tco2e') ? ' / ' + num('credits_claimed_tco2e').toLocaleString() + ' tCO2e' : ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'carbon_offset_claim.allowance_granted': {
+      if (str('offset_tier') !== 'major_claim') return null;
+      return {
+        severity: 'medium',
+        title: `Material carbon offset allowance granted — ${str('claim_number') || entityId} (${str('taxpayer_party_name') || ''}${num('offset_value_zar') ? ' / R' + num('offset_value_zar').toLocaleString() : ''}${str('allowance_ref') ? ' / ' + str('allowance_ref') : ''})`.trim(),
+      };
+    }
+    case 'carbon_offset_claim.sla_breached': {
+      const tier = str('offset_tier');
+      if (tier !== 'major_claim' && tier !== 'standard_claim') return null;
+      return {
+        severity: 'medium',
+        title: `Carbon offset claim SLA breached — ${str('claim_number') || entityId} (${str('chain_status') || ''} / ${str('taxpayer_party_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

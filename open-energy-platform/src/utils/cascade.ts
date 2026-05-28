@@ -467,6 +467,13 @@ export type EventType =
   | 'change_enablement.pir' | 'change_enablement.closed'
   | 'change_enablement.rejected' | 'change_enablement.rolled_back'
   | 'change_enablement.cancelled' | 'change_enablement.sla_breached'
+  // Wave 48 — Carbon Tax Offset Claim & Allowance lifecycle chain (Carbon Tax Act §13 + GNR 1556 + DFFE COAS + SARS eFiling)
+  | 'carbon_offset_claim.eligibility_screening' | 'carbon_offset_claim.credits_earmarked'
+  | 'carbon_offset_claim.claim_submitted' | 'carbon_offset_claim.sars_review'
+  | 'carbon_offset_claim.sars_query' | 'carbon_offset_claim.allowance_granted'
+  | 'carbon_offset_claim.applied_to_return' | 'carbon_offset_claim.reconciled'
+  | 'carbon_offset_claim.rejected' | 'carbon_offset_claim.clawed_back'
+  | 'carbon_offset_claim.withdrawn' | 'carbon_offset_claim.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

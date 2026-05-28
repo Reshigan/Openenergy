@@ -101,6 +101,7 @@ import tradeReportingChainRoutes, { tradeReportingSlaSweep } from './routes/trad
 import loanDefaultChainRoutes, { loanDefaultSlaSweep } from './routes/loan-default-chain';
 import curtailmentClaimChainRoutes, { curtailmentClaimSlaSweep } from './routes/curtailment-claim-chain';
 import changeEnablementChainRoutes, { changeEnablementSlaSweep } from './routes/change-enablement-chain';
+import carbonOffsetClaimChainRoutes, { carbonOffsetClaimSlaSweep } from './routes/carbon-offset-claim-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -372,6 +373,7 @@ app.route('/api/trade-reporting/chain', tradeReportingChainRoutes);
 app.route('/api/loan-default/chain', loanDefaultChainRoutes);
 app.route('/api/curtailment-claim/chain', curtailmentClaimChainRoutes);
 app.route('/api/change-enablement/chain', changeEnablementChainRoutes);
+app.route('/api/carbon-offset-claim/chain', carbonOffsetClaimChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -851,6 +853,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('change_enablement_sla_sweep', async () => {
         const result = await changeEnablementSlaSweep(env as never);
         console.log('change_enablement_sla_sweep', JSON.stringify(result));
+      });
+      // W48 — Carbon Tax Offset Claim & Allowance SLA sweep (INVERTED; the
+      // larger the claim, the longer every window). Material-tier (major +
+      // standard) breaches cross the regulator inbox (SARS / DFFE COAS).
+      await safe('carbon_offset_claim_sla_sweep', async () => {
+        const result = await carbonOffsetClaimSlaSweep(env as never);
+        console.log('carbon_offset_claim_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
