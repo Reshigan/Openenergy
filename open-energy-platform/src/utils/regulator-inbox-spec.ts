@@ -1881,6 +1881,43 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ── Wave 64 — Esums Permit-to-Work (PTW) / LOTO Authorisation ────────────
+    //   issued (issue_permit) — issuing a permit for LIVE (energised) work or a
+    //             confined-space entry is notifiable to the DoL for EVERY hazard
+    //             tier (the W64 LIVE-WORK / ISOLATION-INTEGRITY signature). A
+    //             non-live, non-confined permit crosses only for the top tiers
+    //             {critical, catastrophic}.
+    //   revoked (revoke_permit) — an emergency revocation / isolation breach is
+    //             ALWAYS reportable, regardless of tier / live / class.
+    //   sla_breached — a missed deadline on a critical / catastrophic permit is
+    //             itself reportable. Top tiers only.
+    case 'permit_to_work.issued': {
+      const tier = str('hazard_tier');
+      const live = d['live_work'] === 1 || d['live_work'] === true || d['live_work'] === '1';
+      const confined = str('work_class') === 'confined_space';
+      const topTier = tier === 'critical' || tier === 'catastrophic';
+      if (!live && !confined && !topTier) return null;
+      return {
+        severity: live || confined || tier === 'catastrophic' ? 'high' : 'medium',
+        title: `Permit-to-work ISSUED — ${str('permit_number') || entityId} (${str('work_class') || ''}${live ? ' / LIVE' : ''} / ${tier} / ${str('asset_name') || ''}${str('equipment_tag') ? ' / ' + str('equipment_tag') : ''})`.trim(),
+      };
+    }
+    case 'permit_to_work.revoked': {
+      const tier = str('hazard_tier');
+      return {
+        severity: tier === 'catastrophic' || tier === 'critical' ? 'high' : 'medium',
+        title: `Permit-to-work REVOKED — ${str('permit_number') || entityId} (${str('work_class') || ''} / ${tier} / ${str('asset_name') || ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'permit_to_work.sla_breached': {
+      const tier = str('hazard_tier');
+      if (tier !== 'critical' && tier !== 'catastrophic') return null;
+      return {
+        severity: 'high',
+        title: `Permit-to-work SLA breached — ${str('permit_number') || entityId} (${str('chain_status') || ''} / ${tier} / ${str('asset_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

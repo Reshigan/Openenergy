@@ -580,6 +580,14 @@ export type EventType =
   | 'warranty_recovery.recovery_pending' | 'warranty_recovery.recovered'
   | 'warranty_recovery.rejected' | 'warranty_recovery.withdrawn'
   | 'warranty_recovery.written_off' | 'warranty_recovery.sla_breached'
+  // Wave 64 — Esums Permit-to-Work (PTW) / LOTO Authorisation & Isolation Control chain (OHSA 85/1993 s8 + Construction Regulations 2014 + Electrical/General Machinery Regulations + REIPPPP O&M safe-system-of-work; URGENT SLA; LIVE-WORK / ISOLATION-INTEGRITY signature: issue_permit crosses for EVERY tier when live or confined-space (else top tiers only); revoke_permit ALWAYS crosses; sla_breached crosses for top tiers; single-party write, actor_party issuing_authority/permit_holder derived from action)
+  | 'permit_to_work.assessment_started' | 'permit_to_work.isolation_planned'
+  | 'permit_to_work.isolation_verified' | 'permit_to_work.issued'
+  | 'permit_to_work.work_started' | 'permit_to_work.suspended'
+  | 'permit_to_work.resumed' | 'permit_to_work.work_completed'
+  | 'permit_to_work.closed' | 'permit_to_work.rejected'
+  | 'permit_to_work.revoked' | 'permit_to_work.withdrawn'
+  | 'permit_to_work.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

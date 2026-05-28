@@ -17,6 +17,7 @@ import { WoChainTab } from '../esums/WoChainTab';
 import { PrChainTab } from '../esums/PrChainTab';
 import { AvailabilityGuaranteeChainTab } from '../esums/AvailabilityGuaranteeChainTab';
 import { PmComplianceChainTab } from '../esums/PmComplianceChainTab';
+import { PermitToWorkChainTab } from '../esums/PermitToWorkChainTab';
 import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
 import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
 
@@ -93,6 +94,14 @@ export function EsumsOmPage() {
       description: '12-state P6 Preventive-Maintenance Schedule Compliance & Deferral chain (IEC 62446/61724 + REIPPPP O&M service-agreement PM-program discipline) — pm scheduled → work assigned → in progress → completed → verification pending → closed (happy path), with a rework loop (require rework → in progress), an on-hold loop (parts/access pending), a deferral branch (request deferral → deferred on approval, or back to work assigned on rejection), a skip terminal (the window lapsed unexecuted — a compliance failure), and a cancel terminal. The PROACTIVE maintenance-program counterpart UPSTREAM of the availability guarantee and PR chains — keeping PMs on schedule is what keeps availability and PR within guarantee. URGENT criticality-tier SLAs (more critical PM = tighter response window). Single-party write: each event is tagged with the contractual party (asset owner / O&M contractor). Skipping a critical / safety-critical PM, deferring a safety-critical PM, and critical-tier SLA breaches cross into the regulator inbox as a maintenance-compliance failure.',
       columns: [],
       customContent: <PmComplianceChainTab />,
+    },
+    {
+      key: 'permit_to_work',
+      label: 'Permit to work',
+      endpoint: '',
+      description: '12-state P6 Permit-to-Work / Lock-Out-Tag-Out chain (OHSA + SANS 10142 + REIPPPP O&M safe-work-permit discipline) — permit requested → hazard assessment → isolation pending → isolation confirmed → permit issued → work in progress → work complete → permit closed (happy path), with a suspend/resume loop, a reject terminal (permit refused at assessment), a revoke terminal (permit cancelled mid-work — always reportable), and a withdraw terminal. The CONTROL-OF-WORK gate that authorises every hazardous O&M intervention before a technician touches an isolated or energised asset — upstream of the WO dispatch and PM compliance chains. URGENT hazard-tier SLAs (more hazardous work = tighter window). Single-party write: each event is tagged with the contractual party (issuing authority / permit holder). Issuing a permit for live-electrical or confined-space work (or any critical/catastrophic hazard tier), every permit revocation, and critical-tier SLA breaches cross into the regulator inbox as a control-of-work safety concern.',
+      columns: [],
+      customContent: <PermitToWorkChainTab />,
     },
     {
       key: 'hse_chain',

@@ -117,6 +117,7 @@ import algoCertChainRoutes, { algoCertSlaSweep } from './routes/algo-cert-chain'
 import loanTransferChainRoutes, { loanTransferSlaSweep } from './routes/loan-transfer-chain';
 import ppaTerminationChainRoutes, { ppaTerminationSlaSweep } from './routes/ppa-termination-chain';
 import warrantyRecoveryChainRoutes, { warrantyRecoverySlaSweep } from './routes/warranty-recovery-chain';
+import permitToWorkChainRoutes, { permitToWorkSlaSweep } from './routes/permit-to-work-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -404,6 +405,7 @@ app.route('/api/algo-cert/chain', algoCertChainRoutes);
 app.route('/api/loan-transfer/chain', loanTransferChainRoutes);
 app.route('/api/ppa-termination/chain', ppaTerminationChainRoutes);
 app.route('/api/warranty-recovery/chain', warrantyRecoveryChainRoutes);
+app.route('/api/permit-to-work/chain', permitToWorkChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1000,6 +1002,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('warranty_recovery_sla_sweep', async () => {
         const result = await warrantyRecoverySlaSweep(env as never);
         console.log('warranty_recovery_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 64 — Permit-to-Work (PTW) / LOTO SLA sweep (URGENT: the more
+      // hazardous the permit, the tighter the window; terminals carry no
+      // deadline); records breaches and crosses the regulator inbox on the top
+      // hazard tiers (critical + catastrophic).
+      await safe('permit_to_work_sla_sweep', async () => {
+        const result = await permitToWorkSlaSweep(env as never);
+        console.log('permit_to_work_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
