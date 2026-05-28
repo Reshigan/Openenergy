@@ -425,6 +425,13 @@ export type EventType =
   | 'problem_management.fix_deployed' | 'problem_management.resolution_verified'
   | 'problem_management.closed' | 'problem_management.escalated'
   | 'problem_management.cancelled' | 'problem_management.sla_breached'
+  // Wave 42 — Carbon Reversal / Buffer-Pool & Permanence Management chain (Verra VCS / Gold Standard / Article 6.4)
+  | 'carbon_reversal.under_assessment' | 'carbon_reversal.loss_quantified'
+  | 'carbon_reversal.buffer_cancellation_proposed' | 'carbon_reversal.buffer_cancelled'
+  | 'carbon_reversal.remediation_verified' | 'carbon_reversal.replacement_required'
+  | 'carbon_reversal.replacement_submitted' | 'carbon_reversal.replacement_verified'
+  | 'carbon_reversal.closed' | 'carbon_reversal.escalated'
+  | 'carbon_reversal.false_alarm' | 'carbon_reversal.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

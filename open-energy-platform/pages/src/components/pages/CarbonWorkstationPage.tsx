@@ -7,6 +7,7 @@ import { Article6Tab } from '../carbon/Article6Tab';
 import { RegistrationChainTab } from '../carbon/RegistrationChainTab';
 import { MrvChainTab } from '../carbon/MrvChainTab';
 import { RetirementChainTab } from '../carbon/RetirementChainTab';
+import { CarbonReversalChainTab } from '../carbon/CarbonReversalChainTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -95,6 +96,11 @@ export function CarbonWorkstationPage() {
           key: 'retirement_chain',
           label: 'Retirement chain',
           body: () => <RetirementChainTab />,
+        },
+        {
+          key: 'reversal_chain',
+          label: 'Reversals',
+          body: () => <CarbonReversalChainTab />,
         },
         {
           key: 'audit',

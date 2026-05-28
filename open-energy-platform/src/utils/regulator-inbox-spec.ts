@@ -1117,6 +1117,42 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 42 — Carbon Reversal / Buffer-Pool & Permanence Management ──
+    // Integrity safeguard of the carbon-credit lifecycle. escalate (total
+    // reversal / fraud / termination) AND require_replacement (intentional /
+    // proponent-at-fault reversal) cross for EVERY tier — both are market-
+    // integrity events regardless of size. close + sla_breached cross for
+    // material tiers (catastrophic + significant); minor unintentional
+    // reversals are routine buffer accounting and stay internal.
+    case 'carbon_reversal.escalated': {
+      return {
+        severity: 'high',
+        title: `Carbon reversal escalated — ${str('reversal_number') || entityId} (${str('project_name') || ''}${str('reversal_cause') ? ' / ' + str('reversal_cause') : ''}${num('reversed_tco2e') ? ' / ' + num('reversed_tco2e').toLocaleString() + ' tCO2e' : ''}${str('regulator_ref') ? ' / ' + str('regulator_ref') : ''})`.trim(),
+      };
+    }
+    case 'carbon_reversal.replacement_required': {
+      return {
+        severity: 'high',
+        title: `Intentional carbon reversal — replacement required — ${str('reversal_number') || entityId} (${str('project_name') || ''}${str('reversal_cause') ? ' / ' + str('reversal_cause') : ''}${num('reversed_tco2e') ? ' / ' + num('reversed_tco2e').toLocaleString() + ' tCO2e' : ''})`.trim(),
+      };
+    }
+    case 'carbon_reversal.closed': {
+      const tier = str('reversal_tier');
+      if (tier !== 'catastrophic' && tier !== 'significant') return null;
+      return {
+        severity: 'medium',
+        title: `Material carbon reversal resolved — ${str('reversal_number') || entityId} (${str('project_name') || ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'carbon_reversal.sla_breached': {
+      const tier = str('reversal_tier');
+      if (tier !== 'catastrophic' && tier !== 'significant') return null;
+      return {
+        severity: 'medium',
+        title: `Carbon reversal SLA breached — ${str('reversal_number') || entityId} (${str('chain_status') || ''} / ${str('project_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
