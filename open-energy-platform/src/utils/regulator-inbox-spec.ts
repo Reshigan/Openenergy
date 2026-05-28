@@ -973,6 +973,35 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 37 — Carbon Project Registration / PDD Validation (Gold Standard + Verra VCS + Article 6.4 + SA DFFE DNA) ──
+    // rejected crosses for EVERY tier (stopping a non-additional / fraudulent
+    // mitigation project is always a market-integrity event).
+    // registered crosses for high-integrity tiers (afolu_redd + large_scale) only.
+    // sla_breached crosses for high-integrity tiers only.
+    case 'carbon_registration.rejected': {
+      const tier = str('project_tier');
+      return {
+        severity: tier === 'afolu_redd' ? 'critical' : 'high',
+        title: `Carbon project rejected — ${str('project_number') || entityId} (${tier} / ${str('standard') || ''} / ${str('methodology') || ''} / ${str('project_name') || ''} / developer ${str('developer_party_name') || ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'carbon_registration.registered': {
+      const tier = str('project_tier');
+      if (tier !== 'afolu_redd' && tier !== 'large_scale') return null;
+      return {
+        severity: tier === 'afolu_redd' ? 'high' : 'medium',
+        title: `Carbon project registered — ${str('project_number') || entityId} (${tier} / ${str('standard') || ''} / ${num('estimated_total_tco2e')} tCO₂e / serial ${str('registered_serial_block') || '—'} / ${str('project_name') || ''})`.trim(),
+      };
+    }
+    case 'carbon_registration.sla_breached': {
+      const tier = str('project_tier');
+      if (tier !== 'afolu_redd' && tier !== 'large_scale') return null;
+      return {
+        severity: tier === 'afolu_redd' ? 'high' : 'medium',
+        title: `Carbon registration SLA breached — ${str('project_number') || entityId} (${tier} / ${str('chain_status') || ''} / ${str('standard') || ''} / developer ${str('developer_party_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

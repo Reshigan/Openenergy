@@ -390,6 +390,13 @@ export type EventType =
   | 'best_execution.tca_reviewed' | 'best_execution.closed'
   | 'best_execution.exception_escalated' | 'best_execution.rfq_expired'
   | 'best_execution.sla_breached'
+  // Wave 37 — Carbon Project Registration / PDD Validation chain (Gold Standard + Verra VCS + Article 6.4 + SA DFFE DNA)
+  | 'carbon_registration.pdd_drafted' | 'carbon_registration.validation_underway'
+  | 'carbon_registration.corrections_required' | 'carbon_registration.public_consultation'
+  | 'carbon_registration.dna_authorization' | 'carbon_registration.registration_requested'
+  | 'carbon_registration.registered' | 'carbon_registration.crediting_active'
+  | 'carbon_registration.rejected' | 'carbon_registration.withdrawn'
+  | 'carbon_registration.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

@@ -90,6 +90,7 @@ import licenceRenewalChainRoutes, { licenceRenewalSlaSweep } from './routes/lice
 import loadCurtailmentChainRoutes, { loadCurtailmentSlaSweep } from './routes/load-curtailment-chain';
 import vendorEscalationChainRoutes, { vendorEscalationSlaSweep } from './routes/vendor-escalation-chain';
 import bestExecutionChainRoutes, { bestExecutionSlaSweep } from './routes/best-execution-chain';
+import carbonRegistrationChainRoutes, { carbonRegistrationSlaSweep } from './routes/carbon-registration-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -350,6 +351,7 @@ app.route('/api/licence/renewal/chain', licenceRenewalChainRoutes);
 app.route('/api/load-curtailment/chain', loadCurtailmentChainRoutes);
 app.route('/api/esums/vendor-escalation/chain', vendorEscalationChainRoutes);
 app.route('/api/best-execution/chain', bestExecutionChainRoutes);
+app.route('/api/carbon-registration/chain', carbonRegistrationChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -747,6 +749,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('best_execution_sla_sweep', async () => {
         const result = await bestExecutionSlaSweep(env as never);
         console.log('best_execution_sla_sweep', JSON.stringify(result));
+      });
+      // W37 — Carbon project registration / PDD validation. INVERTED SLA
+      // (higher-integrity tier gets more diligence time). afolu_redd +
+      // large_scale breaches cross the regulator inbox.
+      await safe('carbon_registration_sla_sweep', async () => {
+        const result = await carbonRegistrationSlaSweep(env as never);
+        console.log('carbon_registration_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

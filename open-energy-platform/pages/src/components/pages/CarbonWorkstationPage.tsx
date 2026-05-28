@@ -4,6 +4,7 @@ import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
 import { Article6Tab } from '../carbon/Article6Tab';
+import { RegistrationChainTab } from '../carbon/RegistrationChainTab';
 import { MrvChainTab } from '../carbon/MrvChainTab';
 import { RetirementChainTab } from '../carbon/RetirementChainTab';
 
@@ -79,6 +80,11 @@ export function CarbonWorkstationPage() {
           key: 'article6',
           label: 'Article 6 ITMO',
           body: () => <Article6Tab />,
+        },
+        {
+          key: 'registration_chain',
+          label: 'Project registration',
+          body: () => <RegistrationChainTab />,
         },
         {
           key: 'mrv_chain',
