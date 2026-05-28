@@ -383,6 +383,13 @@ export type EventType =
   | 'vendor_escalation.recall_issued' | 'vendor_escalation.arbitration'
   | 'vendor_escalation.withdrawn'
   | 'vendor_escalation.sla_breached'
+  // Wave 36 — Trader Best-Execution / RFQ Compliance chain (FSCA Conduct Standard 1 of 2020 + FAIS)
+  | 'best_execution.quotes_solicited' | 'best_execution.quotes_received'
+  | 'best_execution.best_ex_evaluated' | 'best_execution.execution_approved'
+  | 'best_execution.executed' | 'best_execution.override_executed'
+  | 'best_execution.tca_reviewed' | 'best_execution.closed'
+  | 'best_execution.exception_escalated' | 'best_execution.rfq_expired'
+  | 'best_execution.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

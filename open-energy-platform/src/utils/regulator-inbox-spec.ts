@@ -944,6 +944,35 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 36 — Trader Best-Execution / RFQ Compliance (FSCA Conduct Standard 1 of 2020 + FAIS) ──
+    // exception_escalated crosses for EVERY tier (a deliberate best-ex breach
+    // escalation is always notifiable, even for an ECP).
+    // override_executed crosses for retail + professional only (ECP waived best-ex).
+    // sla_breached crosses for retail + professional only.
+    case 'best_execution.exception_escalated': {
+      const tier = str('client_tier');
+      return {
+        severity: tier === 'retail' ? 'critical' : 'high',
+        title: `Best-execution exception escalated — ${str('rfq_number') || entityId} (${tier} / ${str('instrument') || ''} / R${num('notional_zar')} notional / slippage ${str('slippage_bps') || '—'}bps / desk ${str('desk_party_name') || ''})`.trim(),
+      };
+    }
+    case 'best_execution.override_executed': {
+      const tier = str('client_tier');
+      if (tier !== 'retail' && tier !== 'professional') return null;
+      return {
+        severity: tier === 'retail' ? 'high' : 'medium',
+        title: `Best-ex override — executed away from best quote — ${str('rfq_number') || entityId} (${tier} / ${str('instrument') || ''} / best CP ${str('best_quote_counterparty') || ''} → exec CP ${str('executed_counterparty') || ''} / R${num('notional_zar')})`.trim(),
+      };
+    }
+    case 'best_execution.sla_breached': {
+      const tier = str('client_tier');
+      if (tier !== 'retail' && tier !== 'professional') return null;
+      return {
+        severity: tier === 'retail' ? 'high' : 'medium',
+        title: `Best-execution SLA breached — ${str('rfq_number') || entityId} (${tier} / ${str('chain_status') || ''} / ${str('instrument') || ''} / client ${str('client_party_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

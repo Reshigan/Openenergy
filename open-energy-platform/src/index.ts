@@ -89,6 +89,7 @@ import takeOrPayChainRoutes, { topSlaSweep } from './routes/take-or-pay-chain';
 import licenceRenewalChainRoutes, { licenceRenewalSlaSweep } from './routes/licence-renewal-chain';
 import loadCurtailmentChainRoutes, { loadCurtailmentSlaSweep } from './routes/load-curtailment-chain';
 import vendorEscalationChainRoutes, { vendorEscalationSlaSweep } from './routes/vendor-escalation-chain';
+import bestExecutionChainRoutes, { bestExecutionSlaSweep } from './routes/best-execution-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -348,6 +349,7 @@ app.route('/api/take-or-pay/chain', takeOrPayChainRoutes);
 app.route('/api/licence/renewal/chain', licenceRenewalChainRoutes);
 app.route('/api/load-curtailment/chain', loadCurtailmentChainRoutes);
 app.route('/api/esums/vendor-escalation/chain', vendorEscalationChainRoutes);
+app.route('/api/best-execution/chain', bestExecutionChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -737,6 +739,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('vendor_escalation_sla_sweep', async () => {
         const result = await vendorEscalationSlaSweep(env as never);
         console.log('vendor_escalation_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 36 — Trader Best-Execution / RFQ Compliance SLA sweep. MIXED
+      // matrix (hard market windows on quote/approval/execution; protection-
+      // graded TCA). retail + professional breaches cross FSCA (Conduct
+      // Standard 1 of 2020); ECP best-ex waived.
+      await safe('best_execution_sla_sweep', async () => {
+        const result = await bestExecutionSlaSweep(env as never);
+        console.log('best_execution_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
