@@ -558,6 +558,14 @@ export type EventType =
   | 'algo_certification.recertification_review' | 'algo_certification.suspended'
   | 'algo_certification.remediation_required' | 'algo_certification.rejected'
   | 'algo_certification.decommissioned' | 'algo_certification.sla_breached'
+  // Wave 61 — Lender Loan Transfer / Secondary Participation & Syndication chain (LMA Transfer Certificate + SARB Exchange Control + FIC Act 38/2001 KYC/AML + Banks Act large-exposure + Equator Principles; INVERTED SLA; approve_transfer to a NON-RESIDENT transferee crosses for EVERY tier = the W61 RESIDENCY-driven signature; fail_screening crosses for EVERY tier; complete crosses for large tiers; sla_breached crosses for large tiers; begin_screening/resubmit_screening share .kyc_screening)
+  | 'loan_transfer.transfer_requested' | 'loan_transfer.kyc_screening'
+  | 'loan_transfer.screening_remediation' | 'loan_transfer.consent_solicitation'
+  | 'loan_transfer.regulatory_review' | 'loan_transfer.transfer_approved'
+  | 'loan_transfer.certificate_executed' | 'loan_transfer.settled'
+  | 'loan_transfer.completed' | 'loan_transfer.declined'
+  | 'loan_transfer.rejected' | 'loan_transfer.withdrawn'
+  | 'loan_transfer.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

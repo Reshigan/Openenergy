@@ -1761,6 +1761,46 @@ export function regulatorInboxSpec(
       };
     }
 
+    // Wave 61 — Lender Loan Transfer / Secondary Participation crossings.
+    //   transfer_approved — SARB Exchange Control approval of a transfer to a
+    //             NON-RESIDENT transferee is always notifiable; the crossing is
+    //             RESIDENCY-driven, EVERY tier (the W61 signature).
+    //   rejected (fail_screening) — a KYC / sanctions hit on an incoming lender
+    //             is mandatorily FIC-reportable regardless of size. Every tier.
+    //   completed (complete) — a completed LARGE transfer re-aggregates a single-
+    //             counterparty exposure (Banks Act large-exposure). Large tiers.
+    //   sla_breached — an overdue screening/consent/regulatory/settlement window
+    //             on a large/systemic transfer is a supervisory concern. Large.
+    case 'loan_transfer.transfer_approved': {
+      if (str('transferee_residency') !== 'non_resident') return null;
+      return {
+        severity: 'high',
+        title: `SARB exchange-control transfer approval — ${str('case_number') || entityId} (${str('facility_name') || ''} / ${str('transfer_tier') || ''} / to ${str('transferee_party_name') || 'non-resident lender'})`.trim(),
+      };
+    }
+    case 'loan_transfer.rejected': {
+      return {
+        severity: 'high',
+        title: `Loan-transfer screening FAILED (FIC) — ${str('case_number') || entityId} (${str('facility_name') || ''} / ${str('transfer_tier') || ''} / ${str('transferee_party_name') || ''})`.trim(),
+      };
+    }
+    case 'loan_transfer.completed': {
+      const tier = str('transfer_tier');
+      if (tier !== 'major' && tier !== 'systemic') return null;
+      return {
+        severity: tier === 'systemic' ? 'high' : 'medium',
+        title: `Large loan transfer completed (Banks Act large-exposure) — ${str('case_number') || entityId} (${str('facility_name') || ''} / ${tier} / ${str('transfer_zar_m') || ''} ZARm)`.trim(),
+      };
+    }
+    case 'loan_transfer.sla_breached': {
+      const tier = str('transfer_tier');
+      if (tier !== 'major' && tier !== 'systemic') return null;
+      return {
+        severity: 'high',
+        title: `Loan-transfer SLA breached — ${str('case_number') || entityId} (${str('chain_status') || ''} / ${tier} / ${str('facility_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

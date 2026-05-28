@@ -9,6 +9,7 @@ import { DisbursementChainTab } from '../disbursement/DisbursementChainTab';
 import { CovenantCertificateTab } from '../lender/CovenantCertificateTab';
 import { LoanDefaultChainTab } from '../lender/LoanDefaultChainTab';
 import { CreditOriginationChainTab } from '../lender/CreditOriginationChainTab';
+import { LoanTransferChainTab } from '../lender/LoanTransferChainTab';
 
 export function LenderSuitePage() {
   const tabs: TabSpec[] = [
@@ -43,6 +44,14 @@ export function LenderSuitePage() {
       description: 'Periodic LMA compliance certificate chain · DSCR/LLCR/gearing evidence, agent review, breach → waiver/cure/acceleration. URGENT tier SLA; acceleration crosses regulator for ALL tiers, breach + SLA breach senior/mezz only.',
       columns: [],
       customContent: <CovenantCertificateTab />,
+    },
+    {
+      key: 'loan-transfers',
+      label: 'Loan transfers',
+      endpoint: '',
+      description: 'Secondary loan transfer / participation chain · LMA + Banks Act large-exposure + SARB Exchange Control + FIC. A lender of record sells down part of a facility — KYC/sanctions screening, obligor consent, SARB review (non-resident), certificate execution, settlement, register update. INVERTED tier SLA; approving a non-resident transfer crosses SARB at every tier, screening failure always crosses (FIC), completing a major/systemic transfer crosses Banks Act large-exposure.',
+      columns: [],
+      customContent: <LoanTransferChainTab />,
     },
     {
       key: 'loan-defaults',

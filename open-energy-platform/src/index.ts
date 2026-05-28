@@ -114,6 +114,7 @@ import ssegRegistrationChainRoutes, { ssegRegistrationSlaSweep } from './routes/
 import gridCapacityAllocationChainRoutes, { gridCapacitySlaSweep } from './routes/grid-capacity-allocation-chain';
 import pmComplianceChainRoutes, { pmComplianceSlaSweep } from './routes/pm-compliance-chain';
 import algoCertChainRoutes, { algoCertSlaSweep } from './routes/algo-cert-chain';
+import loanTransferChainRoutes, { loanTransferSlaSweep } from './routes/loan-transfer-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -398,6 +399,7 @@ app.route('/api/sseg-registration/chain', ssegRegistrationChainRoutes);
 app.route('/api/grid-capacity/chain', gridCapacityAllocationChainRoutes);
 app.route('/api/pm-compliance/chain', pmComplianceChainRoutes);
 app.route('/api/algo-cert/chain', algoCertChainRoutes);
+app.route('/api/loan-transfer/chain', loanTransferChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -970,6 +972,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('algo_cert_sla_sweep', async () => {
         const result = await algoCertSlaSweep(env as never);
         console.log('algo_cert_sla_sweep', JSON.stringify(result));
+      });
+      // W61 loan-transfer / secondary-participation SLA sweep — INVERTED windows
+      // (bigger transfer = more screening/consent/regulatory/settlement time);
+      // terminals carry no deadline; records breaches and crosses the regulator
+      // inbox on large (major + systemic) tiers.
+      await safe('loan_transfer_sla_sweep', async () => {
+        const result = await loanTransferSlaSweep(env as never);
+        console.log('loan_transfer_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
