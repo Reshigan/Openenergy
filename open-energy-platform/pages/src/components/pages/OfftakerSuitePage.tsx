@@ -6,6 +6,7 @@ import { OfftakerInsights } from '../widgets/OfftakerInsights';
 import { ObligationsTab } from '../offtaker/ObligationsTab';
 import { PpaContractChainTab } from '../offtaker/PpaContractChainTab';
 import { TakeOrPayChainTab } from '../take-or-pay/TakeOrPayChainTab';
+import { TariffIndexationTab } from '../offtaker/TariffIndexationTab';
 
 export function OfftakerSuitePage() {
   const tabs: TabSpec[] = [
@@ -24,6 +25,14 @@ export function OfftakerSuitePage() {
       description: 'Take-or-Pay annual reconciliation chain (IFRS 16 / NERSA Section 34) · 10-state P6 calendar-year roll-up of monthly delivery shortfalls; quantum agreement → settlement / Section 34 dispute / board waiver.',
       columns: [],
       customContent: <TakeOrPayChainTab />,
+    },
+    {
+      key: 'tariff-indexation',
+      label: 'Tariff indexation',
+      endpoint: '',
+      description: 'Annual PPA tariff repricing chain (NERSA ERA §4 + IFRS 16) · 11-state P6 CPI/PPI escalation: publish index → calculate → notice → review → agree → apply, with dispute / recalculation / arbitration branches. Seller-vs-offtaker split write; arbitration crosses to the regulator inbox.',
+      columns: [],
+      customContent: <TariffIndexationTab />,
     },
     {
       key: 'obligations',

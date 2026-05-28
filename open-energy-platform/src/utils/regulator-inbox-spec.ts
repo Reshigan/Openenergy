@@ -1031,6 +1031,35 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 39 — Offtaker PPA Tariff Indexation / CPI Escalation (NERSA ERA §4 tariff oversight) ──
+    // refer_arbitration crosses for EVERY tier (referring a tariff dispute to
+    // NERSA / arbitration is always notifiable). dispute declarations + SLA
+    // breaches cross for utility_scale + commercial only (embedded disputes sit
+    // between two private parties, less systemic).
+    case 'tariff_indexation.arbitrated': {
+      const tier = str('contract_tier');
+      return {
+        severity: tier === 'utility_scale' ? 'critical' : 'high',
+        title: `Tariff indexation referred to arbitration — ${str('indexation_number') || entityId} (${tier} / ${str('project_name') || ''} / offtaker ${str('offtaker_party_name') || ''} / disputed R${str('disputed_amount_zar') || '—'}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'tariff_indexation.disputed': {
+      const tier = str('contract_tier');
+      if (tier !== 'utility_scale' && tier !== 'commercial') return null;
+      return {
+        severity: tier === 'utility_scale' ? 'high' : 'medium',
+        title: `Tariff indexation disputed — ${str('indexation_number') || entityId} (${tier} / ${str('project_name') || ''} / ${str('index_type') || ''} / offtaker ${str('offtaker_party_name') || ''} / disputed R${str('disputed_amount_zar') || '—'})`.trim(),
+      };
+    }
+    case 'tariff_indexation.sla_breached': {
+      const tier = str('contract_tier');
+      if (tier !== 'utility_scale' && tier !== 'commercial') return null;
+      return {
+        severity: tier === 'utility_scale' ? 'high' : 'medium',
+        title: `Tariff indexation SLA breached — ${str('indexation_number') || entityId} (${tier} / ${str('chain_status') || ''} / ${str('project_name') || ''} / offtaker ${str('offtaker_party_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

@@ -404,6 +404,13 @@ export type EventType =
   | 'covenant_certificate.waiver_granted' | 'covenant_certificate.cure_period'
   | 'covenant_certificate.cured' | 'covenant_certificate.accelerated'
   | 'covenant_certificate.sla_breached'
+  // Wave 39 — Offtaker PPA Tariff Indexation / CPI Escalation chain (NERSA ERA §4 + IFRS 16)
+  | 'tariff_indexation.index_published' | 'tariff_indexation.escalation_calculated'
+  | 'tariff_indexation.notice_issued' | 'tariff_indexation.under_review'
+  | 'tariff_indexation.tariff_agreed' | 'tariff_indexation.applied'
+  | 'tariff_indexation.disputed' | 'tariff_indexation.recalculated'
+  | 'tariff_indexation.arbitrated' | 'tariff_indexation.withdrawn'
+  | 'tariff_indexation.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
