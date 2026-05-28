@@ -852,6 +852,53 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 34 — Grid CSC-1 Load Curtailment (NERSA Grid Code §CSC-1 + §C-3) ──
+    // refused crosses for ALL stages (§C-3 mandatory disclosure).
+    // partial_compliance crosses for stage_3_4+.
+    // target_achieved + post_mortem_closed cross for stage_5_6+ (national reporting).
+    // sla_breached crosses for stage_5_6+ only.
+    case 'load_curtailment.refused': {
+      const stage = str('load_shed_stage');
+      const severity: InboxSeverity = (stage === 'stage_5_6' || stage === 'stage_7_8') ? 'critical' : 'high';
+      return {
+        severity,
+        title: `Load curtailment REFUSED — ${str('case_number') || entityId} (${stage} / ${str('customer_party_name') || ''} / ${str('target_mw') || ''}MW / tribunal ${str('tribunal_case_ref') || '—'})`.trim(),
+      };
+    }
+    case 'load_curtailment.partial_compliance': {
+      const stage = str('load_shed_stage');
+      if (stage === 'stage_1_2') return null;
+      const severity: InboxSeverity = stage === 'stage_7_8' ? 'critical' : 'high';
+      return {
+        severity,
+        title: `Load curtailment PARTIAL — ${str('case_number') || entityId} (${stage} / ${str('customer_party_name') || ''} / ${num('actual_shed_mw')}MW of ${num('target_mw')}MW / penalty R${num('penalty_zar')})`.trim(),
+      };
+    }
+    case 'load_curtailment.target_achieved': {
+      const stage = str('load_shed_stage');
+      if (stage !== 'stage_5_6' && stage !== 'stage_7_8') return null;
+      return {
+        severity: stage === 'stage_7_8' ? 'high' : 'medium',
+        title: `Load curtailment target achieved — ${str('case_number') || entityId} (${stage} / ${str('customer_party_name') || ''} / ${num('actual_shed_mw') || num('target_mw')}MW)`.trim(),
+      };
+    }
+    case 'load_curtailment.post_mortem_closed': {
+      const stage = str('load_shed_stage');
+      if (stage !== 'stage_5_6' && stage !== 'stage_7_8') return null;
+      return {
+        severity: stage === 'stage_7_8' ? 'high' : 'medium',
+        title: `Load curtailment post-mortem closed — ${str('case_number') || entityId} (${stage} / ${str('customer_party_name') || ''} / ${str('post_mortem_ref') || ''})`.trim(),
+      };
+    }
+    case 'load_curtailment.sla_breached': {
+      const stage = str('load_shed_stage');
+      if (stage !== 'stage_5_6' && stage !== 'stage_7_8') return null;
+      return {
+        severity: 'critical',
+        title: `Load curtailment SLA breached — ${str('case_number') || entityId} (${stage} / ${str('chain_status') || ''} / ${str('customer_party_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

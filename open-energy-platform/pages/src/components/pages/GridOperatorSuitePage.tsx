@@ -7,6 +7,7 @@ import { WheelingChargesTab } from '../grid/WheelingChargesTab';
 import { DispatchNominationTab } from '../grid/DispatchNominationTab';
 import { PlannedOutageChainTab } from '../grid/PlannedOutageChainTab';
 import { GcaChainTab } from '../gca/GcaChainTab';
+import { LoadCurtailmentChainTab } from '../load-curtailment/LoadCurtailmentChainTab';
 
 const instructionTypes = [
   { value: 'curtail', label: 'Curtail' },
@@ -52,6 +53,14 @@ export function GridOperatorSuitePage() {
       description: 'NERSA Grid Code C-1 — IPP connection applications, studies, cost estimates, UNGCA execution, energisation. Inverted tier SLAs.',
       columns: [],
       customContent: <GcaChainTab />,
+    },
+    {
+      key: 'load_curtailment',
+      label: 'Load curtailment',
+      endpoint: '',
+      description: 'NERSA Grid Code §CSC-1 — emergency load-curtailment instructions during Stage 1-8 load-shedding. URGENT SLA (higher stage = tighter), split-write SO↔customer, refuse/partial/withdraw branches.',
+      columns: [],
+      customContent: <LoadCurtailmentChainTab />,
     },
     {
       key: 'insights',

@@ -366,6 +366,15 @@ export type EventType =
   | 'licence_renewal.granted' | 'licence_renewal.amended' | 'licence_renewal.refused'
   | 'licence_renewal.withdrawn'
   | 'licence_renewal.sla_breached'
+  // Wave 34 — Grid CSC-1 Load Curtailment / Emergency Load Reduction chain
+  | 'load_curtailment.instruction_issued' | 'load_curtailment.acknowledged'
+  | 'load_curtailment.curtailment_started' | 'load_curtailment.target_achieved'
+  | 'load_curtailment.instruction_lifted' | 'load_curtailment.reconciled'
+  | 'load_curtailment.post_mortem_opened' | 'load_curtailment.post_mortem_closed'
+  | 'load_curtailment.closed'
+  | 'load_curtailment.refused' | 'load_curtailment.partial_compliance'
+  | 'load_curtailment.withdrawn'
+  | 'load_curtailment.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

@@ -87,6 +87,7 @@ import disbursementChainRoutes, { disbursementSlaSweep } from './routes/disburse
 import dispositionChainRoutes, { dispositionSlaSweep } from './routes/disposition-chain';
 import takeOrPayChainRoutes, { topSlaSweep } from './routes/take-or-pay-chain';
 import licenceRenewalChainRoutes, { licenceRenewalSlaSweep } from './routes/licence-renewal-chain';
+import loadCurtailmentChainRoutes, { loadCurtailmentSlaSweep } from './routes/load-curtailment-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -344,6 +345,7 @@ app.route('/api/disbursement/chain', disbursementChainRoutes);
 app.route('/api/disposition/chain', dispositionChainRoutes);
 app.route('/api/take-or-pay/chain', takeOrPayChainRoutes);
 app.route('/api/licence/renewal/chain', licenceRenewalChainRoutes);
+app.route('/api/load-curtailment/chain', loadCurtailmentChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -719,6 +721,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('licence_renewal_sla_sweep', async () => {
         const result = await licenceRenewalSlaSweep(env as never);
         console.log('licence_renewal_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 34 — Grid CSC-1 Load Curtailment SLA sweep. URGENT matrix (higher
+      // stage = TIGHTER deadline; stage_7_8 ack 5m, reconcile 24h). 15-min
+      // cadence is the tightest available; stage_5_6+ breaches cross regulator.
+      await safe('load_curtailment_sla_sweep', async () => {
+        const result = await loadCurtailmentSlaSweep(env as never);
+        console.log('load_curtailment_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
