@@ -85,6 +85,7 @@ import gcaChainRoutes, { gcaSlaSweep } from './routes/gca-chain';
 import poslimitChainRoutes, { poslimitSlaSweep } from './routes/poslimit-chain';
 import disbursementChainRoutes, { disbursementSlaSweep } from './routes/disbursement-chain';
 import dispositionChainRoutes, { dispositionSlaSweep } from './routes/disposition-chain';
+import takeOrPayChainRoutes, { topSlaSweep } from './routes/take-or-pay-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -340,6 +341,7 @@ app.route('/api/gca/connection-chain', gcaChainRoutes);
 app.route('/api/poslimit/chain', poslimitChainRoutes);
 app.route('/api/disbursement/chain', disbursementChainRoutes);
 app.route('/api/disposition/chain', dispositionChainRoutes);
+app.route('/api/take-or-pay/chain', takeOrPayChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -701,6 +703,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('disposition_sla_sweep', async () => {
         const result = await dispositionSlaSweep(env as never);
         console.log('disposition_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 32 — Offtaker Take-or-Pay annual reconciliation SLA sweep.
+      // INVERTED tier SLA (catastrophic 30d quantum, minor 180d); breach
+      // crosses regulator for ALL tiers (NERSA TOP annual return hard line).
+      await safe('top_sla_sweep', async () => {
+        const result = await topSlaSweep(env as never);
+        console.log('top_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

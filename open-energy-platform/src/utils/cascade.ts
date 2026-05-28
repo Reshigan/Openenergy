@@ -352,6 +352,12 @@ export type EventType =
   | 'disposition.closed' | 'disposition.escalated'
   | 'disposition.dismissed' | 'disposition.referred'
   | 'disposition.sla_breached'
+  // Wave 32 — Offtaker Take-or-Pay Annual Reconciliation chain
+  | 'top.year_end' | 'top.statement_issued'
+  | 'top.evidence_required' | 'top.evidence_submitted'
+  | 'top.quantum_proposed' | 'top.quantum_agreed'
+  | 'top.settled' | 'top.disputed' | 'top.waived'
+  | 'top.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

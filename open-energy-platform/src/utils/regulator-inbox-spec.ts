@@ -39,6 +39,7 @@ export function regulatorInboxSpec(
 ): InboxSpec | null {
   const d = data || {};
   const str = (k: string) => (typeof d[k] === 'string' ? (d[k] as string) : '');
+  const num = (k: string) => (typeof d[k] === 'number' ? (d[k] as number) : 0);
 
   switch (event) {
     case 'clearing.disclosure.published':
@@ -771,6 +772,46 @@ export function regulatorInboxSpec(
       return {
         severity: 'critical',
         title: `Disposition SLA breached (§10) — ${str('case_number') || entityId} (${str('severity_tier') || ''} / ${str('chain_status') || ''} / ${str('source_wave') || ''} / ${str('source_party') || ''})`.trim(),
+      };
+    }
+
+    // ─── Wave 32 — Offtaker Take-or-Pay Annual Reconciliation ─────────────
+    // settle + dispute + waive cross for catastrophic + major tiers.
+    // sla_breached crosses for ALL tiers (annual TOP return hard line).
+    case 'top.settled': {
+      const tier = str('severity_tier');
+      if (tier === 'catastrophic' || tier === 'major') {
+        return {
+          severity: tier === 'catastrophic' ? 'critical' : 'high',
+          title: `TOP settled — ${str('case_number') || entityId} (Y${num('reconciliation_year')} / ${tier} / ${num('shortfall_pct').toFixed(1)}% / R${(num('top_amount_settled') / 1_000_000).toFixed(1)}m / ${str('settlement_ref') || ''})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'top.disputed': {
+      const tier = str('severity_tier');
+      if (tier === 'catastrophic' || tier === 'major') {
+        return {
+          severity: 'critical',
+          title: `TOP disputed (Section 34) — ${str('case_number') || entityId} (Y${num('reconciliation_year')} / ${tier} / ${num('shortfall_pct').toFixed(1)}% / panel ${str('dispute_panel_ref') || 'pending'} / filing ${str('section34_filing_ref') || 'pending'})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'top.waived': {
+      const tier = str('severity_tier');
+      if (tier === 'catastrophic' || tier === 'major') {
+        return {
+          severity: tier === 'catastrophic' ? 'critical' : 'high',
+          title: `TOP waived — ${str('case_number') || entityId} (Y${num('reconciliation_year')} / ${tier} / ${num('shortfall_pct').toFixed(1)}% / ${str('waiver_minute_ref') || ''})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'top.sla_breached': {
+      return {
+        severity: 'critical',
+        title: `TOP SLA breached — ${str('case_number') || entityId} (Y${num('reconciliation_year')} / ${str('severity_tier') || ''} / ${str('chain_status') || ''} / ${num('shortfall_pct').toFixed(1)}%)`.trim(),
       };
     }
 

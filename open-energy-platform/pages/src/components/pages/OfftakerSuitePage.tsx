@@ -5,6 +5,7 @@ import { offtakerCompletionTabs } from '../roleCompletionTabs';
 import { OfftakerInsights } from '../widgets/OfftakerInsights';
 import { ObligationsTab } from '../offtaker/ObligationsTab';
 import { PpaContractChainTab } from '../offtaker/PpaContractChainTab';
+import { TakeOrPayChainTab } from '../take-or-pay/TakeOrPayChainTab';
 
 export function OfftakerSuitePage() {
   const tabs: TabSpec[] = [
@@ -15,6 +16,14 @@ export function OfftakerSuitePage() {
       description: 'PPA contract execution lifecycle · NERSA Section 34 on strategic execute, dispute branch, termination + auto-expire.',
       columns: [],
       customContent: <PpaContractChainTab />,
+    },
+    {
+      key: 'take-or-pay',
+      label: 'Take-or-pay',
+      endpoint: '',
+      description: 'Take-or-Pay annual reconciliation chain (IFRS 16 / NERSA Section 34) · 10-state P6 calendar-year roll-up of monthly delivery shortfalls; quantum agreement → settlement / Section 34 dispute / board waiver.',
+      columns: [],
+      customContent: <TakeOrPayChainTab />,
     },
     {
       key: 'obligations',
