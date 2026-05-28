@@ -566,6 +566,13 @@ export type EventType =
   | 'loan_transfer.completed' | 'loan_transfer.declined'
   | 'loan_transfer.rejected' | 'loan_transfer.withdrawn'
   | 'loan_transfer.sla_breached'
+  // Wave 62 — Offtaker PPA Termination & Early-Termination Amount (Buy-Out) chain (NERSA ERA 4/2006 s34 + PPA event-of-default/cure/long-stop-FM/change-in-law + IFRS 9/16 debt-and-lease ETA treatment; MIXED SLA — cure/eta_assessment/dispute INVERTED, settlement_pending URGENT; CAUSE-driven signature: confirm_termination crosses for EVERY tier when the cause is involuntary (seller_default/buyer_default/change_in_law/prolonged_force_majeure), no_fault crosses for large tiers only; confirm_settlement + sla_breached cross for large tiers; resolve_dispute & agree_eta share .eta_agreed)
+  | 'ppa_termination.notice_served' | 'ppa_termination.cure_period'
+  | 'ppa_termination.reinstated' | 'ppa_termination.termination_review'
+  | 'ppa_termination.termination_confirmed' | 'ppa_termination.eta_assessment'
+  | 'ppa_termination.eta_agreed' | 'ppa_termination.disputed'
+  | 'ppa_termination.settlement_pending' | 'ppa_termination.closed'
+  | 'ppa_termination.withdrawn' | 'ppa_termination.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

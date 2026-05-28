@@ -115,6 +115,7 @@ import gridCapacityAllocationChainRoutes, { gridCapacitySlaSweep } from './route
 import pmComplianceChainRoutes, { pmComplianceSlaSweep } from './routes/pm-compliance-chain';
 import algoCertChainRoutes, { algoCertSlaSweep } from './routes/algo-cert-chain';
 import loanTransferChainRoutes, { loanTransferSlaSweep } from './routes/loan-transfer-chain';
+import ppaTerminationChainRoutes, { ppaTerminationSlaSweep } from './routes/ppa-termination-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -400,6 +401,7 @@ app.route('/api/grid-capacity/chain', gridCapacityAllocationChainRoutes);
 app.route('/api/pm-compliance/chain', pmComplianceChainRoutes);
 app.route('/api/algo-cert/chain', algoCertChainRoutes);
 app.route('/api/loan-transfer/chain', loanTransferChainRoutes);
+app.route('/api/ppa-termination/chain', ppaTerminationChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -980,6 +982,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('loan_transfer_sla_sweep', async () => {
         const result = await loanTransferSlaSweep(env as never);
         console.log('loan_transfer_sla_sweep', JSON.stringify(result));
+      });
+      // W62 PPA termination & buy-out SLA sweep — MIXED windows (cure / eta_assessment
+      // / dispute INVERTED, settlement_pending URGENT); terminals carry no deadline;
+      // records breaches and crosses the regulator inbox on large (major + critical)
+      // tiers.
+      await safe('ppa_termination_sla_sweep', async () => {
+        const result = await ppaTerminationSlaSweep(env as never);
+        console.log('ppa_termination_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

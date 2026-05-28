@@ -1801,6 +1801,47 @@ export function regulatorInboxSpec(
       };
     }
 
+    // Wave 62 — Offtaker PPA Termination & Early-Termination Amount (Buy-Out) crossings.
+    //   The W62 signature is CAUSE-driven, not size-driven.
+    //   termination_confirmed (confirm_termination) — terminating a licensed
+    //             generator offtake for fault, illegality or prolonged FM is always
+    //             a NERSA security-of-supply event: crosses for EVERY tier when the
+    //             cause is INVOLUNTARY (seller_default / buyer_default / change_in_law
+    //             / prolonged_force_majeure). A no_fault MUTUAL termination crosses
+    //             only for the large tiers (major + critical).
+    //   closed (confirm_settlement) — a settled LARGE buy-out is a material
+    //             ring-fenced-debt / single-buyer obligation event. Large tiers only.
+    //   sla_breached — an overdue cure / assessment / dispute / settlement window on
+    //             a large termination is a supervisory concern. Large tiers only.
+    case 'ppa_termination.termination_confirmed': {
+      const tier = str('termination_tier');
+      const cause = str('termination_cause');
+      const involuntary = cause === 'seller_default' || cause === 'buyer_default'
+        || cause === 'change_in_law' || cause === 'prolonged_force_majeure';
+      const largeTier = tier === 'major' || tier === 'critical';
+      if (!involuntary && !largeTier) return null;
+      return {
+        severity: largeTier ? 'high' : 'medium',
+        title: `PPA termination confirmed — ${str('case_number') || entityId} (${cause || ''} / ${tier} / ${str('ppa_name') || ''} / ${str('buyout_zar_m') || ''} ZARm)`.trim(),
+      };
+    }
+    case 'ppa_termination.closed': {
+      const tier = str('termination_tier');
+      if (tier !== 'major' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `PPA buy-out settled — ${str('case_number') || entityId} (${tier} / ${str('ppa_name') || ''} / ${str('settlement_zar_m') || str('buyout_zar_m') || ''} ZARm)`.trim(),
+      };
+    }
+    case 'ppa_termination.sla_breached': {
+      const tier = str('termination_tier');
+      if (tier !== 'major' && tier !== 'critical') return null;
+      return {
+        severity: 'high',
+        title: `PPA termination SLA breached — ${str('case_number') || entityId} (${str('chain_status') || ''} / ${tier} / ${str('ppa_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

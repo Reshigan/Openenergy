@@ -9,6 +9,7 @@ import { TakeOrPayChainTab } from '../take-or-pay/TakeOrPayChainTab';
 import { TariffIndexationTab } from '../offtaker/TariffIndexationTab';
 import { CurtailmentClaimTab } from '../offtaker/CurtailmentClaimTab';
 import { PaymentSecurityChainTab } from '../offtaker/PaymentSecurityChainTab';
+import { PpaTerminationChainTab } from '../offtaker/PpaTerminationChainTab';
 
 export function OfftakerSuitePage() {
   const tabs: TabSpec[] = [
@@ -51,6 +52,14 @@ export function OfftakerSuitePage() {
       description: 'PPA payment-security / credit-support instrument chain (NERSA Section 34 bankability + LMA credit-support) · 12-state P6 lifecycle of the offtaker credit support that backstops the PPA: instrument submission → verification → active cover, with adequacy review, drawdown, replenishment, expiry, substitution branches and release / forfeiture / rejection terminals. URGENT SLA (larger required cover tightest); offtaker submits, seller administers; forfeiture crosses to the regulator inbox for every tier, drawdown / rejection / SLA breach cross for large exposures.',
       columns: [],
       customContent: <PaymentSecurityChainTab />,
+    },
+    {
+      key: 'ppa-termination',
+      label: 'PPA termination',
+      endpoint: '',
+      description: 'PPA termination & early-termination amount (buy-out) chain (NERSA ERA s34 security-of-supply + PPA event-of-default / cure / long-stop FM / change-in-law + IFRS 9/16 ETA treatment) · 12-state P6 exit of the offtake relationship: a termination event arises, notice is served, a cure window runs, and — if uncured — the PPA terminates and an early-termination amount (the buy-out) is calculated, agreed and settled. The buy-out basis turns on the CAUSE (seller default / prolonged FM = debt only; buyer default / change in law = debt + equity make-whole; no-fault = negotiated). MIXED SLA (cure / assessment / dispute INVERTED, settlement URGENT); offtaker drives, seller (IPP) disputes the calculated buy-out, an independent expert resolves. Confirming a termination for an involuntary cause crosses to the regulator inbox for every tier; no-fault + settlement + SLA breaches cross for major + critical.',
+      columns: [],
+      customContent: <PpaTerminationChainTab />,
     },
     {
       key: 'obligations',
