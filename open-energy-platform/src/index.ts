@@ -107,6 +107,7 @@ import reserveActivationChainRoutes, { reserveActivationSlaSweep } from './route
 import availabilityGuaranteeChainRoutes, { availabilityGuaranteeSlaSweep } from './routes/availability-guarantee-chain';
 import marketAbuseChainRoutes, { marketAbuseSlaSweep } from './routes/market-abuse-chain';
 import creditOriginationChainRoutes, { creditOriginationSlaSweep } from './routes/credit-origination-chain';
+import paymentSecurityChainRoutes, { paymentSecuritySlaSweep } from './routes/payment-security-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -384,6 +385,7 @@ app.route('/api/reserve-activation/chain', reserveActivationChainRoutes);
 app.route('/api/availability-guarantee/chain', availabilityGuaranteeChainRoutes);
 app.route('/api/market-abuse/chain', marketAbuseChainRoutes);
 app.route('/api/credit-origination/chain', creditOriginationChainRoutes);
+app.route('/api/payment-security/chain', paymentSecurityChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -905,6 +907,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('credit_origination_sla_sweep', async () => {
         const result = await creditOriginationSlaSweep(env as never);
         console.log('credit_origination_sla_sweep', JSON.stringify(result));
+      });
+      // W54 — Offtaker PPA payment-security SLA sweep. URGENT (bigger secured
+      // exposure = TIGHTER); major + critical breaches cross the NERSA inbox.
+      await safe('payment_security_sla_sweep', async () => {
+        const result = await paymentSecuritySlaSweep(env as never);
+        console.log('payment_security_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

@@ -8,6 +8,7 @@ import { PpaContractChainTab } from '../offtaker/PpaContractChainTab';
 import { TakeOrPayChainTab } from '../take-or-pay/TakeOrPayChainTab';
 import { TariffIndexationTab } from '../offtaker/TariffIndexationTab';
 import { CurtailmentClaimTab } from '../offtaker/CurtailmentClaimTab';
+import { PaymentSecurityChainTab } from '../offtaker/PaymentSecurityChainTab';
 
 export function OfftakerSuitePage() {
   const tabs: TabSpec[] = [
@@ -42,6 +43,14 @@ export function OfftakerSuitePage() {
       description: 'Deemed-energy compensation chain (REIPPPP PPA curtailment + NERSA Grid Code) · 12-state P6 supply-side mirror of take-or-pay: when the buyer/SO curtails an available plant, the PPA compensates the seller for the MWh it would have generated. Classification gate → validation → quantum → settlement, with non-compensable / dispute / recalculation / arbitration branches. URGENT SLA (utility-scale tightest); arbitration crosses to the regulator inbox for every tier.',
       columns: [],
       customContent: <CurtailmentClaimTab />,
+    },
+    {
+      key: 'payment-security',
+      label: 'Payment security',
+      endpoint: '',
+      description: 'PPA payment-security / credit-support instrument chain (NERSA Section 34 bankability + LMA credit-support) · 12-state P6 lifecycle of the offtaker credit support that backstops the PPA: instrument submission → verification → active cover, with adequacy review, drawdown, replenishment, expiry, substitution branches and release / forfeiture / rejection terminals. URGENT SLA (larger required cover tightest); offtaker submits, seller administers; forfeiture crosses to the regulator inbox for every tier, drawdown / rejection / SLA breach cross for large exposures.',
+      columns: [],
+      customContent: <PaymentSecurityChainTab />,
     },
     {
       key: 'obligations',

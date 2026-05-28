@@ -509,6 +509,13 @@ export type EventType =
   | 'credit_origination.agreement_issued' | 'credit_origination.cp_satisfied'
   | 'credit_origination.facility_available' | 'credit_origination.declined'
   | 'credit_origination.withdrawn' | 'credit_origination.sla_breached'
+  // Wave 54 — Offtaker PPA Payment Security / Credit Support Instrument chain (REIPPPP/bilateral PPA payment-security + NERSA s34 bankability + LMA credit-support; URGENT SLA; forfeit crosses EVERY tier = the W54 signature; confirm_adequate shares .active)
+  | 'payment_security.instrument_submitted' | 'payment_security.under_verification'
+  | 'payment_security.active' | 'payment_security.rejected'
+  | 'payment_security.adequacy_review' | 'payment_security.substitution_pending'
+  | 'payment_security.drawdown_initiated' | 'payment_security.replenishment_pending'
+  | 'payment_security.expiry_pending' | 'payment_security.released'
+  | 'payment_security.forfeited' | 'payment_security.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

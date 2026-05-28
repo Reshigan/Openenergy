@@ -1523,6 +1523,47 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ── Wave 54 — Offtaker PPA Payment Security / Credit Support Instrument ──
+    case 'payment_security.forfeited': {
+      // The W54 signature — a forfeited PPA payment security is a security-of-
+      // supply red flag at ANY scale (the buyer can no longer assure payment,
+      // threatening the project bankability). Crosses for EVERY tier.
+      const tier = str('security_tier');
+      return {
+        severity: tier === 'critical' || tier === 'major' ? 'high' : 'medium',
+        title: `PPA payment security forfeited — ${str('security_number') || entityId} (${str('instrument_name') || ''} / ${tier}${str('offtaker_party_name') ? ' / ' + str('offtaker_party_name') : ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'payment_security.drawdown_initiated': {
+      // A call on the security = a material buyer payment default. Major + critical.
+      const tier = str('security_tier');
+      const LARGE = ['major', 'critical'];
+      if (!LARGE.includes(tier)) return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `PPA payment-security drawdown — ${str('security_number') || entityId} (${str('instrument_name') || ''} / ${tier}${num('drawn_amount_zar_m') > 0 ? ' / R' + num('drawn_amount_zar_m') + 'm drawn' : ''}${str('offtaker_party_name') ? ' / ' + str('offtaker_party_name') : ''})`.trim(),
+      };
+    }
+    case 'payment_security.rejected': {
+      // A critical PPA left unsecured after a failed verification. Major + critical.
+      const tier = str('security_tier');
+      const LARGE = ['major', 'critical'];
+      if (!LARGE.includes(tier)) return null;
+      return {
+        severity: 'medium',
+        title: `PPA payment security rejected — ${str('security_number') || entityId} (${str('instrument_name') || ''} / ${tier}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'payment_security.sla_breached': {
+      const tier = str('security_tier');
+      const LARGE = ['major', 'critical'];
+      if (!LARGE.includes(tier)) return null;
+      return {
+        severity: 'high',
+        title: `PPA payment-security SLA breached — ${str('security_number') || entityId} (${str('chain_status') || ''} / ${tier} / ${str('instrument_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
