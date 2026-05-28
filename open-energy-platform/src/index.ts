@@ -86,6 +86,7 @@ import poslimitChainRoutes, { poslimitSlaSweep } from './routes/poslimit-chain';
 import disbursementChainRoutes, { disbursementSlaSweep } from './routes/disbursement-chain';
 import dispositionChainRoutes, { dispositionSlaSweep } from './routes/disposition-chain';
 import takeOrPayChainRoutes, { topSlaSweep } from './routes/take-or-pay-chain';
+import licenceRenewalChainRoutes, { licenceRenewalSlaSweep } from './routes/licence-renewal-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -342,6 +343,7 @@ app.route('/api/poslimit/chain', poslimitChainRoutes);
 app.route('/api/disbursement/chain', disbursementChainRoutes);
 app.route('/api/disposition/chain', dispositionChainRoutes);
 app.route('/api/take-or-pay/chain', takeOrPayChainRoutes);
+app.route('/api/licence/renewal/chain', licenceRenewalChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -710,6 +712,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('top_sla_sweep', async () => {
         const result = await topSlaSweep(env as never);
         console.log('top_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 33 — NERSA Licence Renewal SLA sweep (s14-s16).
+      // INVERTED class SLA (utility 180d evaluation, trading 30d); breach
+      // crosses regulator for ALL classes (s14(2)(b) statutory hard line).
+      await safe('licence_renewal_sla_sweep', async () => {
+        const result = await licenceRenewalSlaSweep(env as never);
+        console.log('licence_renewal_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

@@ -815,6 +815,43 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 33 — Regulator Licence Renewal (NERSA s14-s16) ──────────────
+    // refused crosses for ALL tiers; granted + amended cross for generation_utility only.
+    // sla_breached crosses for ALL tiers (s14(2)(b) statutory hard line).
+    case 'licence_renewal.refused': {
+      const klass = str('licence_class');
+      return {
+        severity: klass === 'generation_utility' ? 'critical' : 'high',
+        title: `Licence renewal REFUSED — ${str('case_number') || entityId} (${klass || ''} / ${str('applicant_party_name') || ''} / ${str('facility_name') || ''} / appeal ${str('appeal_filing_ref') || '—'})`.trim(),
+      };
+    }
+    case 'licence_renewal.granted': {
+      const klass = str('licence_class');
+      if (klass === 'generation_utility') {
+        return {
+          severity: 'high',
+          title: `Utility licence GRANTED — ${str('case_number') || entityId} (${str('applicant_party_name') || ''} / ${str('facility_name') || ''} → ${str('granted_expiry_date') || ''})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'licence_renewal.amended': {
+      const klass = str('licence_class');
+      if (klass === 'generation_utility') {
+        return {
+          severity: 'high',
+          title: `Utility licence AMENDED — ${str('case_number') || entityId} (${str('applicant_party_name') || ''} / ${str('facility_name') || ''} / conditions attached → ${str('granted_expiry_date') || ''})`.trim(),
+        };
+      }
+      return null;
+    }
+    case 'licence_renewal.sla_breached': {
+      return {
+        severity: 'critical',
+        title: `Licence renewal SLA breached — ${str('case_number') || entityId} (${str('licence_class') || ''} / ${str('chain_status') || ''} / ${str('applicant_party_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

@@ -358,6 +358,14 @@ export type EventType =
   | 'top.quantum_proposed' | 'top.quantum_agreed'
   | 'top.settled' | 'top.disputed' | 'top.waived'
   | 'top.sla_breached'
+  // Wave 33 — Regulator Licence Renewal / Amendment chain (NERSA s14-s16)
+  | 'licence_renewal.initiated' | 'licence_renewal.application_filed'
+  | 'licence_renewal.completeness_checked' | 'licence_renewal.consultation_opened'
+  | 'licence_renewal.evaluation_started' | 'licence_renewal.decision_drafted'
+  | 'licence_renewal.council_voted'
+  | 'licence_renewal.granted' | 'licence_renewal.amended' | 'licence_renewal.refused'
+  | 'licence_renewal.withdrawn'
+  | 'licence_renewal.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

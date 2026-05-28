@@ -4,6 +4,7 @@ import { platformTabs } from '../platformTabs';
 import { regulatorCompletionTabs } from '../roleCompletionTabs';
 import { RegulatorInsights } from '../widgets/RegulatorInsights';
 import { DispositionChainTab } from '../disposition/DispositionChainTab';
+import { LicenceRenewalChainTab } from '../licence-renewal/LicenceRenewalChainTab';
 
 export function RegulatorSuitePage() {
   const tabs: TabSpec[] = [
@@ -22,6 +23,14 @@ export function RegulatorSuitePage() {
       description: 'Compliance-notice disposition chain (NERSA Act §10) · 11-state P6 across every inbox notice from W18+; Council escalation, SAPS/DMRE/FSCA referral, §10 monthly reporting.',
       columns: [],
       customContent: <DispositionChainTab />,
+    },
+    {
+      key: 'licence-renewal',
+      label: 'Licence renewal',
+      endpoint: '',
+      description: 'NERSA s.14-s.16 licence renewal / amendment chain · 11-state P6 with s10 public consultation + Council vote + Tribunal appeals. INVERTED class SLA: utility 180-day evaluation; trading + SSEG compressed. Council crossings: refused for all classes; granted/amended for utility-scale only; SLA breach for all (statutory hard line).',
+      columns: [],
+      customContent: <LicenceRenewalChainTab />,
     },
     // ─── Licences ────────────────────────────────────────────────────────
     {
