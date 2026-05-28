@@ -1376,6 +1376,32 @@ export function regulatorInboxSpec(
       };
     }
 
+    // Wave 49 — Initial Licence Application & Adjudication. Refusal denies market
+    // entry and crosses for EVERY class (the W49 signature). A major-licence grant
+    // surfaces to Council oversight + the Gazette. Material-class SLA breaches
+    // (the §10 statutory timeline) are themselves reportable.
+    case 'licence_application.refused': {
+      return {
+        severity: str('licence_class') === 'major_licence' ? 'high' : 'medium',
+        title: `Licence application REFUSED — ${str('application_number') || entityId} (${str('applicant_party_name') || ''}${str('licence_type') ? ' / ' + str('licence_type') : ''}${num('capacity_mw') ? ' / ' + num('capacity_mw').toLocaleString() + ' MW' : ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'licence_application.licence_granted': {
+      if (str('licence_class') !== 'major_licence') return null;
+      return {
+        severity: 'medium',
+        title: `Major licence granted — ${str('application_number') || entityId} (${str('applicant_party_name') || ''}${str('licence_type') ? ' / ' + str('licence_type') : ''}${num('capacity_mw') ? ' / ' + num('capacity_mw').toLocaleString() + ' MW' : ''})`.trim(),
+      };
+    }
+    case 'licence_application.sla_breached': {
+      const klass = str('licence_class');
+      if (klass !== 'major_licence' && klass !== 'standard_licence') return null;
+      return {
+        severity: 'medium',
+        title: `Licence application SLA breached — ${str('application_number') || entityId} (${str('chain_status') || ''} / ${str('applicant_party_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

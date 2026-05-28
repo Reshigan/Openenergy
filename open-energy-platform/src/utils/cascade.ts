@@ -474,6 +474,13 @@ export type EventType =
   | 'carbon_offset_claim.applied_to_return' | 'carbon_offset_claim.reconciled'
   | 'carbon_offset_claim.rejected' | 'carbon_offset_claim.clawed_back'
   | 'carbon_offset_claim.withdrawn' | 'carbon_offset_claim.sla_breached'
+  // Wave 49 — Regulator Initial Licence Application & Adjudication chain (ERA 2006 §§8–11 + NERSA §9/§10 + Government Gazette)
+  | 'licence_application.completeness_review' | 'licence_application.additional_info_requested'
+  | 'licence_application.accepted' | 'licence_application.public_participation'
+  | 'licence_application.technical_evaluation' | 'licence_application.council_decision'
+  | 'licence_application.licence_granted' | 'licence_application.licence_issued'
+  | 'licence_application.refused' | 'licence_application.withdrawn'
+  | 'licence_application.lapsed' | 'licence_application.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

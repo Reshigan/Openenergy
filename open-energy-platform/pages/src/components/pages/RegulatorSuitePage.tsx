@@ -7,6 +7,7 @@ import { DispositionChainTab } from '../disposition/DispositionChainTab';
 import { LicenceRenewalChainTab } from '../licence-renewal/LicenceRenewalChainTab';
 import { ComplianceInspectionChainTab } from '../compliance-inspection/ComplianceInspectionChainTab';
 import { TariffDeterminationChainTab } from '../tariff-determination/TariffDeterminationChainTab';
+import { LicenceApplicationChainTab } from '../licence-application/LicenceApplicationChainTab';
 
 export function RegulatorSuitePage() {
   const tabs: TabSpec[] = [
@@ -49,6 +50,14 @@ export function RegulatorSuitePage() {
       description: 'Tariff / revenue (MYPD price-control) determination chain (ERA §15–§16 + MYPD methodology + RCA) · 12-state P6: application received → completeness → public consultation → revenue analysis → draft → Council deliberation → determination issued → implemented, with reconsideration + High Court remittal branches. The formal price-control engine downstream of the static MYPD calculator. INVERTED class SLA: multi-year price determinations get the longest windows (deepest scrutiny); SSEG feed-in tariffs compressed. Council crossings: court remittals for every class; issued determinations + rejections for multi-year + annual only; SLA breaches material-gated. Registry/analyst/Council drive the machinery; applicant requests reconsideration; the court remits.',
       columns: [],
       customContent: <TariffDeterminationChainTab />,
+    },
+    {
+      key: 'licence-application',
+      label: 'Licence applications',
+      endpoint: '',
+      description: 'Initial licence application & adjudication chain (Electricity Regulation Act 4 of 2006 §§8–11 + NERSA §9 completeness + §10 public participation) · 12-state P6: received → completeness review → accepted → public participation → technical evaluation → Council decision → granted → issued, with an additional-information loop, refusal, applicant withdrawal and lapse. The ENTRY gate to the regulated market — grants the FIRST licence, distinct from W33 renewal which presumes a holder. INVERTED class SLA: major (transmission / large generation / import-export) get the longest §10 windows; minor (small-scale generation) compressed. Council crossings: refusals for EVERY class (denying market entry); major-licence grants (Gazette); SLA breaches for major + standard. Registry/evaluator/Council drive the machinery; the applicant supplies information + withdraws.',
+      columns: [],
+      customContent: <LicenceApplicationChainTab />,
     },
     // ─── Licences ────────────────────────────────────────────────────────
     {
