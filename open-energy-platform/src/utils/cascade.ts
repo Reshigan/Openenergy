@@ -460,6 +460,13 @@ export type EventType =
   | 'curtailment_claim.compensation_settled' | 'curtailment_claim.disputed'
   | 'curtailment_claim.arbitrated' | 'curtailment_claim.non_compensable'
   | 'curtailment_claim.withdrawn' | 'curtailment_claim.sla_breached'
+  // Wave 47 — OEM-Support ITIL Change Enablement chain (RFC lifecycle; ITIL 4 Change Enablement + ISO/IEC 20000-1 §8.5.1)
+  | 'change_enablement.assessment' | 'change_enablement.cab_review'
+  | 'change_enablement.approved' | 'change_enablement.scheduled'
+  | 'change_enablement.implementing' | 'change_enablement.implemented'
+  | 'change_enablement.pir' | 'change_enablement.closed'
+  | 'change_enablement.rejected' | 'change_enablement.rolled_back'
+  | 'change_enablement.cancelled' | 'change_enablement.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

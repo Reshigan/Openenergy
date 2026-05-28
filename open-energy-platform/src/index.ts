@@ -100,6 +100,7 @@ import tariffDeterminationChainRoutes, { tariffDeterminationSlaSweep } from './r
 import tradeReportingChainRoutes, { tradeReportingSlaSweep } from './routes/trade-reporting-chain';
 import loanDefaultChainRoutes, { loanDefaultSlaSweep } from './routes/loan-default-chain';
 import curtailmentClaimChainRoutes, { curtailmentClaimSlaSweep } from './routes/curtailment-claim-chain';
+import changeEnablementChainRoutes, { changeEnablementSlaSweep } from './routes/change-enablement-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -370,6 +371,7 @@ app.route('/api/tariff-determination/chain', tariffDeterminationChainRoutes);
 app.route('/api/trade-reporting/chain', tradeReportingChainRoutes);
 app.route('/api/loan-default/chain', loanDefaultChainRoutes);
 app.route('/api/curtailment-claim/chain', curtailmentClaimChainRoutes);
+app.route('/api/change-enablement/chain', changeEnablementChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -842,6 +844,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('curtailment_claim_sla_sweep', async () => {
         const result = await curtailmentClaimSlaSweep(env as never);
         console.log('curtailment_claim_sla_sweep', JSON.stringify(result));
+      });
+      // W47 — ITIL change-enablement RFC SLA sweep (URGENT; emergency_change
+      // tightest). Breach events cross into the regulator inbox for
+      // emergency_change only.
+      await safe('change_enablement_sla_sweep', async () => {
+        const result = await changeEnablementSlaSweep(env as never);
+        console.log('change_enablement_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

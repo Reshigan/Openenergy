@@ -1295,6 +1295,48 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 47 — OEM-Support ITIL Change Enablement (RFC lifecycle; ITIL 4 + ISO/IEC 20000-1 §8.5.1) ──
+    // Change management is internal IT/OT operations; only the highest-impact
+    // events touching a regulated platform service are notifiable.
+    //   roll_back         — a backed-out change is a change-induced failure:
+    //                       crosses for emergency_change + normal_change.
+    //   emergency_approve — the ECAB fast-path BYPASSES normal CAB governance:
+    //                       a control exception; crosses for emergency_change.
+    //                       (gated on action, since approve and emergency_approve
+    //                       share the change_enablement.approved event.)
+    //   close             — post-implementation closure of an emergency change
+    //                       is a post-change report; crosses for emergency_change.
+    //   sla_breached      — crosses for emergency_change only.
+    case 'change_enablement.rolled_back': {
+      const tier = str('change_class');
+      if (tier !== 'emergency_change' && tier !== 'normal_change') return null;
+      return {
+        severity: tier === 'emergency_change' ? 'critical' : 'high',
+        title: `Change backed out (change-induced failure) — ${str('change_number') || entityId} (${tier} / ${str('service_name') || ''}${str('rollback_ref') ? ' / ' + str('rollback_ref') : ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'change_enablement.approved': {
+      if (str('action') !== 'emergency_approve' || str('change_class') !== 'emergency_change') return null;
+      return {
+        severity: 'high',
+        title: `Emergency change authorised out-of-band (ECAB / CAB bypass) — ${str('change_number') || entityId} (${str('service_name') || ''}${str('cab_ref') ? ' / ' + str('cab_ref') : ''})`.trim(),
+      };
+    }
+    case 'change_enablement.closed': {
+      if (str('change_class') !== 'emergency_change') return null;
+      return {
+        severity: 'medium',
+        title: `Emergency change closed (post-change report) — ${str('change_number') || entityId} (${str('service_name') || ''}${str('release_ref') ? ' / ' + str('release_ref') : ''})`.trim(),
+      };
+    }
+    case 'change_enablement.sla_breached': {
+      if (str('change_class') !== 'emergency_change') return null;
+      return {
+        severity: 'high',
+        title: `Emergency change SLA breached — ${str('change_number') || entityId} (${str('chain_status') || ''} / ${str('service_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

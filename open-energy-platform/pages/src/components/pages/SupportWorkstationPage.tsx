@@ -3,6 +3,7 @@ import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '..
 import { AuditPanel } from '../launch/AuditPanel';
 import { SupportTicketChainTab } from '../support/SupportTicketChainTab';
 import { ProblemManagementChainTab } from '../problem-management/ProblemManagementChainTab';
+import { ChangeEnablementChainTab } from '../change-enablement/ChangeEnablementChainTab';
 import { api } from '../../lib/api';
 import { X } from 'lucide-react';
 
@@ -102,6 +103,11 @@ export function SupportWorkstationPage() {
             key: 'problem_chain',
             label: 'Problems',
             body: () => <ProblemManagementChainTab />,
+          },
+          {
+            key: 'change_chain',
+            label: 'Changes',
+            body: () => <ChangeEnablementChainTab />,
           },
           {
             key: 'escalations',
