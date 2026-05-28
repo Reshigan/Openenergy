@@ -15,6 +15,7 @@ import { WarrantyClaimChainTab } from '../esums/WarrantyClaimChainTab';
 import { VendorEscalationChainTab } from '../esums/VendorEscalationChainTab';
 import { WoChainTab } from '../esums/WoChainTab';
 import { PrChainTab } from '../esums/PrChainTab';
+import { AvailabilityGuaranteeChainTab } from '../esums/AvailabilityGuaranteeChainTab';
 import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
 import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
 
@@ -75,6 +76,14 @@ export function EsumsOmPage() {
       description: '9-state P6 Performance-Ratio sustained-underperformance chain — monitoring → warning → investigating → RCA → intervention planned → executing → verified → closed (with escalation + false-alarm branches). Tier SLAs (utility 24h warning, 30d intervention). Utility-tier escalations and SLA breaches cross into the regulator inbox.',
       columns: [],
       customContent: <PrChainTab />,
+    },
+    {
+      key: 'availability_guarantee',
+      label: 'Availability guarantee',
+      endpoint: '',
+      description: '12-state P6 O&M Availability Guarantee & Liquidated Damages chain (IEC 61724/62446 + REIPPPP O&M service agreement) — period open → measurement submitted → adjustment review → reconciled → meets guarantee → settled (happy path), with a shortfall branch (shortfall flagged → LD assessed → settled), an optional cure period, and a dispute branch. The availability counterpart to the PR chain — availability is time-based uptime, PR is energy-based yield. URGENT shortfall-tier SLAs (larger shortfall = tighter window). Single-party write: each event is tagged with the contractual party (asset owner / O&M contractor). Critical-tier (severe/critical) shortfalls, dispute resolutions and SLA breaches cross into the regulator inbox as a security-of-supply concern.',
+      columns: [],
+      customContent: <AvailabilityGuaranteeChainTab />,
     },
     {
       key: 'hse_chain',

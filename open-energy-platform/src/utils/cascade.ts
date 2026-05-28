@@ -488,6 +488,13 @@ export type EventType =
   | 'reserve_activation.settled' | 'reserve_activation.non_performance'
   | 'reserve_activation.disputed' | 'reserve_activation.dispute_resolved'
   | 'reserve_activation.withdrawn' | 'reserve_activation.sla_breached'
+  // Wave 51 — Esums O&M Availability Guarantee & Liquidated Damages chain (IEC 61724/62446 + REIPPPP O&M agreement; settle + waive_ld share .settled)
+  | 'availability_guarantee.measurement_submitted' | 'availability_guarantee.adjustment_review'
+  | 'availability_guarantee.reconciled' | 'availability_guarantee.meets_guarantee'
+  | 'availability_guarantee.shortfall_flagged' | 'availability_guarantee.ld_assessed'
+  | 'availability_guarantee.cure_period' | 'availability_guarantee.settled'
+  | 'availability_guarantee.disputed' | 'availability_guarantee.dispute_resolved'
+  | 'availability_guarantee.withdrawn' | 'availability_guarantee.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

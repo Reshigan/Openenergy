@@ -1434,6 +1434,35 @@ export function regulatorInboxSpec(
       };
     }
 
+    // Wave 51 — Esums O&M Availability Guarantee & Liquidated Damages (security-of-supply: critical-tier shortfalls only)
+    case 'availability_guarantee.shortfall_flagged': {
+      const tier = str('shortfall_tier');
+      const CRITICAL = ['severe_shortfall', 'critical_shortfall'];
+      if (!CRITICAL.includes(tier)) return null;
+      return {
+        severity: tier === 'critical_shortfall' ? 'high' : 'medium',
+        title: `Availability guarantee shortfall — ${str('case_number') || entityId} (${str('site_name') || ''}${tier ? ' / ' + tier : ''}${num('shortfall_pp') ? ' / ' + num('shortfall_pp').toLocaleString() + ' pp' : ''}${str('contractor_party_name') ? ' / ' + str('contractor_party_name') : ''})`.trim(),
+      };
+    }
+    case 'availability_guarantee.dispute_resolved': {
+      const tier = str('shortfall_tier');
+      const CRITICAL = ['severe_shortfall', 'critical_shortfall'];
+      if (!CRITICAL.includes(tier)) return null;
+      return {
+        severity: 'medium',
+        title: `Availability guarantee dispute resolved — ${str('case_number') || entityId} (${str('site_name') || ''}${tier ? ' / ' + tier : ''}${str('contractor_party_name') ? ' / ' + str('contractor_party_name') : ''})`.trim(),
+      };
+    }
+    case 'availability_guarantee.sla_breached': {
+      const tier = str('shortfall_tier');
+      const CRITICAL = ['severe_shortfall', 'critical_shortfall'];
+      if (!CRITICAL.includes(tier)) return null;
+      return {
+        severity: 'high',
+        title: `Availability guarantee SLA breached — ${str('case_number') || entityId} (${str('chain_status') || ''} / ${tier} / ${str('site_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
