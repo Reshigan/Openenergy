@@ -418,6 +418,13 @@ export type EventType =
   | 'compliance_inspection.penalty_imposed' | 'compliance_inspection.appealed'
   | 'compliance_inspection.compliant_closed' | 'compliance_inspection.enforcement_closed'
   | 'compliance_inspection.withdrawn' | 'compliance_inspection.sla_breached'
+  // Wave 41 — OEM-Support ITIL Problem Management chain (ITIL 4 + ISO/IEC 20000-1 §8.6.3)
+  | 'problem_management.categorized' | 'problem_management.investigating'
+  | 'problem_management.rca_identified' | 'problem_management.known_error'
+  | 'problem_management.fix_proposed' | 'problem_management.change_raised'
+  | 'problem_management.fix_deployed' | 'problem_management.resolution_verified'
+  | 'problem_management.closed' | 'problem_management.escalated'
+  | 'problem_management.cancelled' | 'problem_management.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

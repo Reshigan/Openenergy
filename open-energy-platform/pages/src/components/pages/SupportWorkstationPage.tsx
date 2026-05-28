@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
 import { SupportTicketChainTab } from '../support/SupportTicketChainTab';
+import { ProblemManagementChainTab } from '../problem-management/ProblemManagementChainTab';
 import { api } from '../../lib/api';
 import { X } from 'lucide-react';
 
@@ -96,6 +97,11 @@ export function SupportWorkstationPage() {
             key: 'ticket_chain',
             label: 'Ticket chain',
             body: () => <SupportTicketChainTab />,
+          },
+          {
+            key: 'problem_chain',
+            label: 'Problems',
+            body: () => <ProblemManagementChainTab />,
           },
           {
             key: 'escalations',

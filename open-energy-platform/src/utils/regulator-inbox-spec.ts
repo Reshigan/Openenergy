@@ -1090,6 +1090,33 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 41 — OEM-Support ITIL Problem Management (ITIL 4 + ISO/IEC 20000-1) ──
+    // Internal IT/OT problem management; MAJOR PROBLEMS ONLY surface to the
+    // regulator — a major problem touching a regulated platform service is a
+    // market-availability / integrity matter. escalate + close + sla_breached
+    // cross for major_problem; everything else is internal.
+    case 'problem_management.escalated': {
+      if (str('problem_priority') !== 'major_problem') return null;
+      return {
+        severity: 'high',
+        title: `Major problem escalated — ${str('problem_number') || entityId} (${str('service_name') || ''}${str('affected_tenant') ? ' / ' + str('affected_tenant') : ''}${str('reason_code') ? ' / ' + str('reason_code') : ''}${str('major_problem_ref') ? ' / ' + str('major_problem_ref') : ''})`.trim(),
+      };
+    }
+    case 'problem_management.closed': {
+      if (str('problem_priority') !== 'major_problem') return null;
+      return {
+        severity: 'medium',
+        title: `Major problem closed — ${str('problem_number') || entityId} (${str('service_name') || ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'problem_management.sla_breached': {
+      if (str('problem_priority') !== 'major_problem') return null;
+      return {
+        severity: 'medium',
+        title: `Major problem SLA breached — ${str('problem_number') || entityId} (${str('chain_status') || ''} / ${str('service_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
