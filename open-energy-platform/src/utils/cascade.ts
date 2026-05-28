@@ -573,6 +573,13 @@ export type EventType =
   | 'ppa_termination.eta_agreed' | 'ppa_termination.disputed'
   | 'ppa_termination.settlement_pending' | 'ppa_termination.closed'
   | 'ppa_termination.withdrawn' | 'ppa_termination.sla_breached'
+  // Wave 63 — OEM-Support Warranty-Recovery / Supplier-Recovery Claim chain (OEM supply-agreement warranty + serial-defect/epidemic-failure + NRCS safety-recall + CPA s55/s56/s61 + NERSA Grid Code reliability; MIXED SLA — claim_drafted/under_assessment/disputed INVERTED, recovery_pending URGENT; DEFECT-CLASS-driven signature: complete_assessment crosses for EVERY tier when defect is systemic (serial/safety), non-systemic crosses for large tiers only; write_off + sla_breached cross for large tiers; single-party write, resolve_dispute & approve_recovery share .approved)
+  | 'warranty_recovery.submitted_to_oem' | 'warranty_recovery.oem_acknowledged'
+  | 'warranty_recovery.under_assessment' | 'warranty_recovery.assessment_complete'
+  | 'warranty_recovery.approved' | 'warranty_recovery.disputed'
+  | 'warranty_recovery.recovery_pending' | 'warranty_recovery.recovered'
+  | 'warranty_recovery.rejected' | 'warranty_recovery.withdrawn'
+  | 'warranty_recovery.written_off' | 'warranty_recovery.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

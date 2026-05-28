@@ -5,6 +5,7 @@ import { SupportTicketChainTab } from '../support/SupportTicketChainTab';
 import { ProblemManagementChainTab } from '../problem-management/ProblemManagementChainTab';
 import { ChangeEnablementChainTab } from '../change-enablement/ChangeEnablementChainTab';
 import { SecurityRemediationChainTab } from '../security-remediation/SecurityRemediationChainTab';
+import { WarrantyRecoveryChainTab } from '../warranty-recovery/WarrantyRecoveryChainTab';
 import { api } from '../../lib/api';
 import { X } from 'lucide-react';
 
@@ -114,6 +115,11 @@ export function SupportWorkstationPage() {
             key: 'security_remediation',
             label: 'Vuln remediation',
             body: () => <SecurityRemediationChainTab />,
+          },
+          {
+            key: 'warranty_recovery',
+            label: 'Warranty recovery',
+            body: () => <WarrantyRecoveryChainTab />,
           },
           {
             key: 'escalations',

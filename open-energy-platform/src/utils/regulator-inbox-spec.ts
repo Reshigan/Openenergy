@@ -1842,6 +1842,45 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 63 — OEM-Support Warranty-Recovery / Supplier-Recovery Claim ───
+    // The W63 signature is DEFECT-CLASS-driven, not size-driven:
+    //   assessment_complete — crosses for EVERY tier when the classified defect
+    //             is SYSTEMIC (serial / safety): a serial/epidemic defect derating
+    //             a fleet of grid-connected generation, or a safety-hazard defect
+    //             under the NRCS recall regime, is notifiable regardless of the
+    //             recovery value. A non-systemic defect (isolated/batch/wear_out)
+    //             crosses only for the large tiers (major + critical).
+    //   written_off — a material unrecovered warranty loss. Large tiers only.
+    //   sla_breached — an overdue claim / assessment / dispute / recovery window on
+    //             a large recovery is a supervisory concern. Large tiers only.
+    case 'warranty_recovery.assessment_complete': {
+      const tier = str('recovery_tier');
+      const defectClass = str('defect_class');
+      const systemic = defectClass === 'serial' || defectClass === 'safety';
+      const largeTier = tier === 'major' || tier === 'critical';
+      if (!systemic && !largeTier) return null;
+      return {
+        severity: systemic || tier === 'critical' ? 'high' : 'medium',
+        title: `Warranty recovery assessment complete — ${str('case_number') || entityId} (${defectClass || ''} / ${tier} / ${str('component_type') || ''} / ${str('oem_name') || ''} / ${str('recovery_zar_m') || ''} ZARm)`.trim(),
+      };
+    }
+    case 'warranty_recovery.written_off': {
+      const tier = str('recovery_tier');
+      if (tier !== 'major' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Warranty recovery written off — ${str('case_number') || entityId} (${tier} / ${str('component_type') || ''} / ${str('oem_name') || ''} / ${str('recovery_zar_m') || ''} ZARm)`.trim(),
+      };
+    }
+    case 'warranty_recovery.sla_breached': {
+      const tier = str('recovery_tier');
+      if (tier !== 'major' && tier !== 'critical') return null;
+      return {
+        severity: 'high',
+        title: `Warranty recovery SLA breached — ${str('case_number') || entityId} (${str('chain_status') || ''} / ${tier} / ${str('oem_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
