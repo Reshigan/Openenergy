@@ -6,6 +6,7 @@ import { LenderInsights } from '../widgets/LenderInsights';
 import { DunningTab } from '../lender/DunningTab';
 import { DrawdownChainTab } from '../lender/DrawdownChainTab';
 import { DisbursementChainTab } from '../disbursement/DisbursementChainTab';
+import { CovenantCertificateTab } from '../lender/CovenantCertificateTab';
 
 export function LenderSuitePage() {
   const tabs: TabSpec[] = [
@@ -24,6 +25,14 @@ export function LenderSuitePage() {
       description: 'UoP reconciliation chain · SARB Exchange Control + Equator Principles + IE certification; clawback for ALL tiers, SLA breach senior_a/b only.',
       columns: [],
       customContent: <DisbursementChainTab />,
+    },
+    {
+      key: 'covenant-certificates',
+      label: 'Covenant certificates',
+      endpoint: '',
+      description: 'Periodic LMA compliance certificate chain · DSCR/LLCR/gearing evidence, agent review, breach → waiver/cure/acceleration. URGENT tier SLA; acceleration crosses regulator for ALL tiers, breach + SLA breach senior/mezz only.',
+      columns: [],
+      customContent: <CovenantCertificateTab />,
     },
     {
       key: 'dunning',

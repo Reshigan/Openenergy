@@ -397,6 +397,13 @@ export type EventType =
   | 'carbon_registration.registered' | 'carbon_registration.crediting_active'
   | 'carbon_registration.rejected' | 'carbon_registration.withdrawn'
   | 'carbon_registration.sla_breached'
+  // Wave 38 — Lender Covenant Compliance Certificate chain (LMA + Equator Principles + SARB large-exposure)
+  | 'covenant_certificate.certificate_submitted' | 'covenant_certificate.under_review'
+  | 'covenant_certificate.ratios_verified' | 'covenant_certificate.compliant'
+  | 'covenant_certificate.breach_identified' | 'covenant_certificate.waiver_requested'
+  | 'covenant_certificate.waiver_granted' | 'covenant_certificate.cure_period'
+  | 'covenant_certificate.cured' | 'covenant_certificate.accelerated'
+  | 'covenant_certificate.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

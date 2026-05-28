@@ -1002,6 +1002,35 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 38 — Lender Covenant Compliance Certificate (LMA + Equator Principles + SARB large-exposure) ──
+    // accelerate (event of default) crosses for EVERY tier (declaring an EoD is
+    // always notifiable — SARB large-exposure hard line). breach declarations +
+    // SLA breaches cross for senior_secured + mezzanine only (subordinated
+    // breaches sit between junior lenders, less systemic).
+    case 'covenant_certificate.accelerated': {
+      const tier = str('facility_tier');
+      return {
+        severity: tier === 'senior_secured' ? 'critical' : 'high',
+        title: `Covenant acceleration (event of default) — ${str('certificate_number') || entityId} (${tier} / ${str('facility_name') || ''} / borrower ${str('borrower_party_name') || ''} / breached ${str('breached_covenants') || '—'}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'covenant_certificate.breach_identified': {
+      const tier = str('facility_tier');
+      if (tier !== 'senior_secured' && tier !== 'mezzanine') return null;
+      return {
+        severity: tier === 'senior_secured' ? 'high' : 'medium',
+        title: `Covenant breach declared — ${str('certificate_number') || entityId} (${tier} / ${str('facility_name') || ''} / ${str('test_period') || ''} / breached ${str('breached_covenants') || '—'} / borrower ${str('borrower_party_name') || ''})`.trim(),
+      };
+    }
+    case 'covenant_certificate.sla_breached': {
+      const tier = str('facility_tier');
+      if (tier !== 'senior_secured' && tier !== 'mezzanine') return null;
+      return {
+        severity: tier === 'senior_secured' ? 'high' : 'medium',
+        title: `Covenant certificate SLA breached — ${str('certificate_number') || entityId} (${tier} / ${str('chain_status') || ''} / ${str('facility_name') || ''} / borrower ${str('borrower_party_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
