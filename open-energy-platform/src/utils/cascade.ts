@@ -544,6 +544,13 @@ export type EventType =
   | 'grid_capacity.capacity_allocated' | 'grid_capacity.rejected'
   | 'grid_capacity.lapsed' | 'grid_capacity.relinquished'
   | 'grid_capacity.withdrawn' | 'grid_capacity.sla_breached'
+  // Wave 59 — Esums Preventive-Maintenance Schedule Compliance & Deferral chain (IEC 62446/61724 + REIPPPP O&M PM program; URGENT SLA; skip_pm crosses for critical tiers + approve_deferral crosses for safety_critical = the W59 signature; reject_deferral shares .work_assigned)
+  | 'pm_compliance.work_assigned' | 'pm_compliance.in_progress'
+  | 'pm_compliance.on_hold' | 'pm_compliance.completed'
+  | 'pm_compliance.verification_pending' | 'pm_compliance.rework_required'
+  | 'pm_compliance.closed' | 'pm_compliance.deferral_requested'
+  | 'pm_compliance.deferred' | 'pm_compliance.skipped'
+  | 'pm_compliance.cancelled' | 'pm_compliance.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

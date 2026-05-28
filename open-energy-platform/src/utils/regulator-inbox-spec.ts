@@ -1697,6 +1697,39 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ── Wave 59 — Esums Preventive-Maintenance Schedule Compliance & Deferral ─
+    //   skip_pm — skipping a critical / safety-critical PM is a reportable
+    //             maintenance-compliance failure (the W59 signature). Crosses
+    //             for {critical, safety_critical}.
+    //   approve_deferral (→ deferred) — deferring a safety-critical PM is
+    //             materially reportable even when granted. Safety-critical only.
+    //   sla_breached — a missed response deadline on a critical / safety PM is
+    //             itself reportable. Crosses for {critical, safety_critical}.
+    case 'pm_compliance.skipped': {
+      const tier = str('criticality_tier');
+      if (tier !== 'critical' && tier !== 'safety_critical') return null;
+      return {
+        severity: tier === 'safety_critical' ? 'high' : 'medium',
+        title: `Critical PM SKIPPED — ${str('case_number') || entityId} (${str('pm_title') || ''} / ${tier} / ${str('site_name') || ''}${str('contractor_party_name') ? ' / ' + str('contractor_party_name') : ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'pm_compliance.deferred': {
+      const tier = str('criticality_tier');
+      if (tier !== 'safety_critical') return null;
+      return {
+        severity: 'medium',
+        title: `Safety-critical PM DEFERRED — ${str('case_number') || entityId} (${str('pm_title') || ''} / ${str('site_name') || ''}${str('contractor_party_name') ? ' / ' + str('contractor_party_name') : ''})`.trim(),
+      };
+    }
+    case 'pm_compliance.sla_breached': {
+      const tier = str('criticality_tier');
+      if (tier !== 'critical' && tier !== 'safety_critical') return null;
+      return {
+        severity: 'high',
+        title: `PM compliance SLA breached — ${str('case_number') || entityId} (${str('chain_status') || ''} / ${tier} / ${str('site_name') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
