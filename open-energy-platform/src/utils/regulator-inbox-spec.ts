@@ -1564,6 +1564,39 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ── Wave 55 — OEM-Support Firmware / Security-Patch & Vulnerability Remediation ──
+    // Vulnerability management is internal security ops; only the highest-impact
+    // security-posture exceptions on the regulated OT estate are notifiable.
+    //   risk_accepted — the W55 signature: formally accepting an UNPATCHED serious
+    //                   vulnerability on the regulated OT fleet is a reportable
+    //                   security-posture exception; crosses for critical + high.
+    //   rolled_back   — a backed-out patch is a remediation-induced failure on
+    //                   regulated equipment; crosses for critical + high.
+    //   sla_breached  — crosses for critical only.
+    case 'security_remediation.risk_accepted': {
+      const tier = str('severity_tier');
+      if (tier !== 'critical' && tier !== 'high') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Unpatched vulnerability risk formally accepted — ${str('remediation_number') || entityId} (${tier}${str('cve_id') ? ' / ' + str('cve_id') : ''}${str('oem_vendor') ? ' / ' + str('oem_vendor') : ''}${num('affected_ci_count') > 0 ? ' / ' + num('affected_ci_count') + ' CIs' : ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'security_remediation.rolled_back': {
+      const tier = str('severity_tier');
+      if (tier !== 'critical' && tier !== 'high') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Security patch backed out (remediation-induced failure) — ${str('remediation_number') || entityId} (${tier}${str('cve_id') ? ' / ' + str('cve_id') : ''}${str('product_family') ? ' / ' + str('product_family') : ''}${str('backout_ref') ? ' / ' + str('backout_ref') : ''})`.trim(),
+      };
+    }
+    case 'security_remediation.sla_breached': {
+      if (str('severity_tier') !== 'critical') return null;
+      return {
+        severity: 'high',
+        title: `Critical vulnerability remediation SLA breached — ${str('remediation_number') || entityId} (${str('chain_status') || ''}${str('cve_id') ? ' / ' + str('cve_id') : ''}${str('oem_vendor') ? ' / ' + str('oem_vendor') : ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

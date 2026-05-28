@@ -108,6 +108,7 @@ import availabilityGuaranteeChainRoutes, { availabilityGuaranteeSlaSweep } from 
 import marketAbuseChainRoutes, { marketAbuseSlaSweep } from './routes/market-abuse-chain';
 import creditOriginationChainRoutes, { creditOriginationSlaSweep } from './routes/credit-origination-chain';
 import paymentSecurityChainRoutes, { paymentSecuritySlaSweep } from './routes/payment-security-chain';
+import securityRemediationChainRoutes, { securityRemediationSlaSweep } from './routes/security-remediation-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -386,6 +387,7 @@ app.route('/api/availability-guarantee/chain', availabilityGuaranteeChainRoutes)
 app.route('/api/market-abuse/chain', marketAbuseChainRoutes);
 app.route('/api/credit-origination/chain', creditOriginationChainRoutes);
 app.route('/api/payment-security/chain', paymentSecurityChainRoutes);
+app.route('/api/security-remediation/chain', securityRemediationChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -913,6 +915,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('payment_security_sla_sweep', async () => {
         const result = await paymentSecuritySlaSweep(env as never);
         console.log('payment_security_sla_sweep', JSON.stringify(result));
+      });
+      // W55 — OEM-Support firmware / vulnerability-remediation SLA sweep. URGENT
+      // (higher CVSS severity = TIGHTER); critical breaches cross the regulator inbox.
+      await safe('security_remediation_sla_sweep', async () => {
+        const result = await securityRemediationSlaSweep(env as never);
+        console.log('security_remediation_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

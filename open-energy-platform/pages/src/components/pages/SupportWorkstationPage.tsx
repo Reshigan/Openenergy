@@ -4,6 +4,7 @@ import { AuditPanel } from '../launch/AuditPanel';
 import { SupportTicketChainTab } from '../support/SupportTicketChainTab';
 import { ProblemManagementChainTab } from '../problem-management/ProblemManagementChainTab';
 import { ChangeEnablementChainTab } from '../change-enablement/ChangeEnablementChainTab';
+import { SecurityRemediationChainTab } from '../security-remediation/SecurityRemediationChainTab';
 import { api } from '../../lib/api';
 import { X } from 'lucide-react';
 
@@ -108,6 +109,11 @@ export function SupportWorkstationPage() {
             key: 'change_chain',
             label: 'Changes',
             body: () => <ChangeEnablementChainTab />,
+          },
+          {
+            key: 'security_remediation',
+            label: 'Vuln remediation',
+            body: () => <SecurityRemediationChainTab />,
           },
           {
             key: 'escalations',

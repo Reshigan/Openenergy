@@ -516,6 +516,13 @@ export type EventType =
   | 'payment_security.drawdown_initiated' | 'payment_security.replenishment_pending'
   | 'payment_security.expiry_pending' | 'payment_security.released'
   | 'payment_security.forfeited' | 'payment_security.sla_breached'
+  // Wave 55 — OEM-Support Firmware / Security-Patch & Vulnerability Remediation chain (IEC 62443-2-3 patch mgmt + ISO/IEC 27001 A.8.8 + ITIL 4 Information Security Mgmt)
+  | 'security_remediation.triaged' | 'security_remediation.impact_assessment'
+  | 'security_remediation.mitigation_applied' | 'security_remediation.fleet_scoped'
+  | 'security_remediation.remediation_approved' | 'security_remediation.rollout_in_progress'
+  | 'security_remediation.verification' | 'security_remediation.resolved'
+  | 'security_remediation.not_affected' | 'security_remediation.risk_accepted'
+  | 'security_remediation.rolled_back' | 'security_remediation.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
