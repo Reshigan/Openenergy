@@ -1153,6 +1153,43 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 43 — Tariff / Revenue (MYPD Price-Control) Determination ────
+    // NERSA's economic-regulation core (ERA §15–§16 + MYPD + RCA). remit
+    // (court set-aside) crosses for EVERY class — a judicial review is a
+    // universal Council oversight event. issue_determination + reject +
+    // sla_breached cross for material classes (multi_year + annual_tariff);
+    // SSEG feed-in schedules are administrative and stay internal.
+    case 'tariff_determination.remitted': {
+      return {
+        severity: 'high',
+        title: `Tariff determination set aside (court remit) — ${str('determination_number') || entityId} (${str('determination_class') || ''} / ${str('tariff_entity') || ''}${str('court_ref') ? ' / ' + str('court_ref') : ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'tariff_determination.determination_issued': {
+      const klass = str('determination_class');
+      if (klass !== 'multi_year' && klass !== 'annual_tariff') return null;
+      return {
+        severity: 'medium',
+        title: `Tariff determination issued — ${str('determination_number') || entityId} (${klass} / ${str('tariff_entity') || ''}${str('allowed_revenue_zar_m') ? ' / allowed R' + str('allowed_revenue_zar_m') + 'm' : ''}${str('tariff_increase_pct') ? ' / ' + str('tariff_increase_pct') + '%' : ''}${str('gazette_ref') ? ' / ' + str('gazette_ref') : ''})`.trim(),
+      };
+    }
+    case 'tariff_determination.rejected': {
+      const klass = str('determination_class');
+      if (klass !== 'multi_year' && klass !== 'annual_tariff') return null;
+      return {
+        severity: 'medium',
+        title: `Tariff revenue application rejected — ${str('determination_number') || entityId} (${klass} / ${str('tariff_entity') || ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'tariff_determination.sla_breached': {
+      const klass = str('determination_class');
+      if (klass !== 'multi_year' && klass !== 'annual_tariff') return null;
+      return {
+        severity: 'medium',
+        title: `Tariff determination SLA breached — ${str('determination_number') || entityId} (${str('chain_status') || ''} / ${klass} / ${str('tariff_entity') || ''})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

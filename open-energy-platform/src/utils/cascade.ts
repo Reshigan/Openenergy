@@ -432,6 +432,13 @@ export type EventType =
   | 'carbon_reversal.replacement_submitted' | 'carbon_reversal.replacement_verified'
   | 'carbon_reversal.closed' | 'carbon_reversal.escalated'
   | 'carbon_reversal.false_alarm' | 'carbon_reversal.sla_breached'
+  // Wave 43 — Regulator Tariff / Revenue (MYPD Price-Control) Determination chain (ERA §15–§16 + MYPD + RCA)
+  | 'tariff_determination.completeness_review' | 'tariff_determination.public_consultation'
+  | 'tariff_determination.revenue_analysis' | 'tariff_determination.draft_determination'
+  | 'tariff_determination.council_deliberation' | 'tariff_determination.determination_issued'
+  | 'tariff_determination.reconsideration_requested' | 'tariff_determination.implemented'
+  | 'tariff_determination.remitted' | 'tariff_determination.rejected'
+  | 'tariff_determination.withdrawn' | 'tariff_determination.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

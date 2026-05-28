@@ -6,6 +6,7 @@ import { RegulatorInsights } from '../widgets/RegulatorInsights';
 import { DispositionChainTab } from '../disposition/DispositionChainTab';
 import { LicenceRenewalChainTab } from '../licence-renewal/LicenceRenewalChainTab';
 import { ComplianceInspectionChainTab } from '../compliance-inspection/ComplianceInspectionChainTab';
+import { TariffDeterminationChainTab } from '../tariff-determination/TariffDeterminationChainTab';
 
 export function RegulatorSuitePage() {
   const tabs: TabSpec[] = [
@@ -40,6 +41,14 @@ export function RegulatorSuitePage() {
       description: 'Proactive compliance inspection + enforcement chain (NERSA ERA §10 monitoring + §34/§35 enforcement) · 12-state P6: scheduled → in progress → findings → directive → remediation → compliant closed, with a penalty + Tribunal-appeal enforcement branch. The active, own-initiative complement to reactive Disposition. URGENT SLA: more severe contravention = tighter windows. Appeals cross to the regulator inbox for every tier; penalties + SLA breaches cross for critical + serious. Officer drives the machinery; respondent licensee remediates + appeals.',
       columns: [],
       customContent: <ComplianceInspectionChainTab />,
+    },
+    {
+      key: 'tariff-determination',
+      label: 'MYPD determinations',
+      endpoint: '',
+      description: 'Tariff / revenue (MYPD price-control) determination chain (ERA §15–§16 + MYPD methodology + RCA) · 12-state P6: application received → completeness → public consultation → revenue analysis → draft → Council deliberation → determination issued → implemented, with reconsideration + High Court remittal branches. The formal price-control engine downstream of the static MYPD calculator. INVERTED class SLA: multi-year price determinations get the longest windows (deepest scrutiny); SSEG feed-in tariffs compressed. Council crossings: court remittals for every class; issued determinations + rejections for multi-year + annual only; SLA breaches material-gated. Registry/analyst/Council drive the machinery; applicant requests reconsideration; the court remits.',
+      columns: [],
+      customContent: <TariffDeterminationChainTab />,
     },
     // ─── Licences ────────────────────────────────────────────────────────
     {

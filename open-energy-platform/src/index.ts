@@ -96,6 +96,7 @@ import tariffIndexationChainRoutes, { tariffIndexationSlaSweep } from './routes/
 import complianceInspectionChainRoutes, { complianceInspectionSlaSweep } from './routes/compliance-inspection-chain';
 import problemManagementChainRoutes, { problemManagementSlaSweep } from './routes/problem-management-chain';
 import carbonReversalChainRoutes, { carbonReversalSlaSweep } from './routes/carbon-reversal-chain';
+import tariffDeterminationChainRoutes, { tariffDeterminationSlaSweep } from './routes/tariff-determination-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -362,6 +363,7 @@ app.route('/api/tariff-indexation/chain', tariffIndexationChainRoutes);
 app.route('/api/compliance-inspection/chain', complianceInspectionChainRoutes);
 app.route('/api/problem-management/chain', problemManagementChainRoutes);
 app.route('/api/carbon-reversal/chain', carbonReversalChainRoutes);
+app.route('/api/tariff-determination/chain', tariffDeterminationChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -801,6 +803,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('carbon_reversal_sla_sweep', async () => {
         const result = await carbonReversalSlaSweep(env as never);
         console.log('carbon_reversal_sla_sweep', JSON.stringify(result));
+      });
+      // W43 Tariff / Revenue (MYPD Price-Control) Determination SLA sweep —
+      // INVERTED (the bigger the determination, the more time every window
+      // allows). Material-class (multi_year + annual_tariff) breaches cross the
+      // regulator inbox (Council oversight / public tariff register).
+      await safe('tariff_determination_sla_sweep', async () => {
+        const result = await tariffDeterminationSlaSweep(env as never);
+        console.log('tariff_determination_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
