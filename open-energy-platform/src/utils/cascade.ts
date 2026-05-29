@@ -603,6 +603,13 @@ export type EventType =
   | 'consultation_notice.adopted' | 'consultation_notice.on_hold'
   | 'consultation_notice.withdrawn' | 'consultation_notice.cancelled'
   | 'consultation_notice.sla_breached'
+  // ─── Wave 84: Grid Black-Start Capability Contracting & System-Restoration Drill ──
+  | 'black_start.solicitation_issued' | 'black_start.bid_evaluation'
+  | 'black_start.contract_awarded' | 'black_start.contract_executed'
+  | 'black_start.drill_scheduled' | 'black_start.drill_in_progress'
+  | 'black_start.drill_completed' | 'black_start.recertified'
+  | 'black_start.drill_failed' | 'black_start.remediation_required'
+  | 'black_start.contract_terminated' | 'black_start.sla_breached'
   // Wave 66 — Regulator Complaints & Dispute Resolution chain (NERSA as the quasi-judicial dispute forum under ERA 4/2006 s30 + NER Act 40/2004 + NERSA Complaints Procedures; REACTIVE external-party grievance adjudication, distinct from W31 internal-intake disposition and W40 proactive inspection; lodged→admissibility→referred_to_licensee→[settle | investigation→mediation→hearing→ruling→remedy_monitoring→resolved] + dismiss/appeal/withdraw; URGENT SLA (larger affected population = tighter); single regulator-owned write {admin,regulator}, actor_party complainant/respondent/adjudicator from action; SIGNATURE lodge_appeal crosses for EVERY tier (judicial review always material), issue_ruling crosses major+systemic, dismiss crosses systemic only, sla_breached crosses major+systemic; settle_at_licensee & confirm_compliance share .resolved)
   | 'regulator_complaint.admissibility_review' | 'regulator_complaint.referred'
   | 'regulator_complaint.escalated' | 'regulator_complaint.mediating'
@@ -846,6 +853,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   regulator: 'regulator',
   regulator_levy: 'regulator',
   consultation_notice: 'regulator',
+  black_start: 'grid',
   connection_energization: 'grid',
   trade_allocation: 'trading',
   popia: 'admin',

@@ -2332,6 +2332,52 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 84 — Grid Black-Start Capability Contracting & Restoration Drill (RELIABILITY) ─
+    // RELIABILITY-driven signature: fail_drill (drill_failed) and terminate_contract
+    // (contract_terminated) ALWAYS cross — loss of demonstrated black-start readiness or
+    // outright loss of a contracted BSC unit is notifiable for EVERY tier (NRS 048-2 +
+    // System Defence & Restoration Plan). recertify and remediation_required cross for
+    // material + island_critical only (system-significant). sla_breached crosses
+    // material + island_critical only.
+    case 'black_start.drill_failed': {
+      const tier = str('capability_tier');
+      return {
+        severity: tier === 'island_critical' || tier === 'material' ? 'high' : 'medium',
+        title: `Black-start drill FAILED — ${str('capability_number') || entityId} (${str('facility_name') || ''} / ${str('cranking_source') || ''} / ${num('black_start_capacity_mw') ? num('black_start_capacity_mw') + ' MW' : ''} / ${tier}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'black_start.contract_terminated': {
+      const tier = str('capability_tier');
+      return {
+        severity: tier === 'island_critical' || tier === 'material' ? 'high' : 'medium',
+        title: `Black-start contract TERMINATED — ${str('capability_number') || entityId} (${str('facility_name') || ''} / ${num('black_start_capacity_mw') ? num('black_start_capacity_mw') + ' MW' : ''} / ${tier}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'black_start.recertified': {
+      const tier = str('capability_tier');
+      if (tier !== 'material' && tier !== 'island_critical') return null;
+      return {
+        severity: tier === 'island_critical' ? 'medium' : 'low',
+        title: `Black-start unit RECERTIFIED — ${str('capability_number') || entityId} (${str('facility_name') || ''} / ${num('black_start_capacity_mw') ? num('black_start_capacity_mw') + ' MW' : ''} / ${tier})`.trim(),
+      };
+    }
+    case 'black_start.remediation_required': {
+      const tier = str('capability_tier');
+      if (tier !== 'material' && tier !== 'island_critical') return null;
+      return {
+        severity: 'high',
+        title: `Black-start REMEDIATION required — ${str('capability_number') || entityId} (${str('facility_name') || ''} / ${num('consecutive_failures') ? num('consecutive_failures') + ' consec failures' : ''} / ${tier})`.trim(),
+      };
+    }
+    case 'black_start.sla_breached': {
+      const tier = str('capability_tier');
+      if (tier !== 'material' && tier !== 'island_critical') return null;
+      return {
+        severity: 'high',
+        title: `Black-start chain SLA breached — ${str('capability_number') || entityId} (${str('chain_status') || ''} / ${str('facility_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     // ─── Wave 75 — Grid Connection Energization & Commissioning Hold-Point Gate ───
     // COD-driven POSITIVE signature: a Commercial Operation Date is notifiable for
     // EVERY tier (new generation registered to the national balance); energization,

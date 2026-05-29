@@ -12,6 +12,7 @@ import { ReserveActivationChainTab } from '../reserve-activation/ReserveActivati
 import { GridCapacityChainTab } from '../grid-capacity/GridCapacityChainTab';
 import { GridCodeComplianceChainTab } from '../grid-code-compliance/GridCodeComplianceChainTab';
 import { ConnectionEnergizationChainTab } from '../connection-energization/ConnectionEnergizationChainTab';
+import { BlackStartChainTab } from '../black-start/BlackStartChainTab';
 
 const instructionTypes = [
   { value: 'curtail', label: 'Curtail' },
@@ -73,6 +74,14 @@ export function GridOperatorSuitePage() {
       description: 'SA Grid Code / NTCSA commissioning hold-point gate — the physical go-live of a new generator after capacity allocation (W58) and the GCA (W28). connection ready → programme review → approved → pre-energization inspection → energization authorized → cold commissioning → synchronized → trial operation → compliance testing → commercial operation, with suspend-on-failed-hold-point (→ resume) and withdraw-before-COD branches. INVERTED tier SLA (larger connection = longer window), split-write facility (IPP) ↔ operator (SO). Issuing the COD crosses to the regulator for every tier; energization authorization, suspension + SLA breaches cross for transmission + bulk.',
       columns: [],
       customContent: <ConnectionEnergizationChainTab />,
+    },
+    {
+      key: 'black_start',
+      label: 'Black-start capability',
+      endpoint: '',
+      description: 'SA Grid Code OC-1/OC-12 + NTCSA Black-Start Annex + NERSA System Defence & Restoration Plan + NRS 048-2 — Black-Start Capability (BSC) contracting & annual restoration drill. needs assessed → solicitation → bid evaluation → award → execute → schedule drill → drill in progress → drill completed → recertified, with drill_failed → remediation_required → drill_scheduled (failure loop) and contract_terminated terminal. URGENT SLA (larger unit = tighter window). Live restoration-readiness battery: contracted vs target MW, coverage, geographic + fuel + voltage-class diversity, drill pass rate, restoration-path validity gate, criticality score. RELIABILITY SIGNATURE: fail_drill + terminate_contract cross regulator for EVERY tier; recertify + require_remediation + sla_breached cross material + island_critical.',
+      columns: [],
+      customContent: <BlackStartChainTab />,
     },
     {
       key: 'load_curtailment',

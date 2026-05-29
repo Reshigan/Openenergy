@@ -137,6 +137,7 @@ import serviceContractChainRoutes, { serviceContractSlaSweep } from './routes/se
 import projectChangeOrderChainRoutes, { projectChangeOrderSlaSweep } from './routes/project-change-order-chain';
 import carbonIssuanceChainRoutes, { carbonIssuanceSlaSweep } from './routes/carbon-issuance-chain';
 import consultationNoticeChainRoutes, { consultationNoticeSlaSweep } from './routes/consultation-notice-chain';
+import blackStartChainRoutes, { blackStartSlaSweep } from './routes/black-start-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -444,6 +445,7 @@ app.route('/api/service-contract/chain', serviceContractChainRoutes);
 app.route('/api/ipp/change-order/chain', projectChangeOrderChainRoutes);
 app.route('/api/carbon-issuance/chain', carbonIssuanceChainRoutes);
 app.route('/api/consultation-notice/chain', consultationNoticeChainRoutes);
+app.route('/api/black-start/chain', blackStartChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1188,6 +1190,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('consultation_notice_sla_sweep', async () => {
         const result = await consultationNoticeSlaSweep(env as never);
         console.log('consultation_notice_sla_sweep', JSON.stringify(result));
+      });
+      // W84 Grid Black-Start Capability Contracting & System-Restoration Drill: flag
+      // BSC chains that overrun their URGENT SLA (larger unit/island_critical = tighter
+      // window); SLA breaches cross the regulator inbox on material + island_critical
+      // tiers only (smaller minor/standard breach internally).
+      await safe('black_start_sla_sweep', async () => {
+        const result = await blackStartSlaSweep(env as never);
+        console.log('black_start_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
