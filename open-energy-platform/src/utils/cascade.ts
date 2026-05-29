@@ -632,6 +632,14 @@ export type EventType =
   | 'ppa_nomination.dispute_raised' | 'ppa_nomination.deviation_settled'
   | 'ppa_nomination.excused' | 'ppa_nomination.cancelled'
   | 'ppa_nomination.sla_breached'
+  // ─── Wave 88: Esums BESS State-of-Health Monitoring & Capacity-Augmentation (P6); contractual capacity guarantee lifecycle — baseline → monitoring → drift → assessment → augmentation_required → planned → in_progress → complete → recommissioned, with disputed branch + decommissioned terminal. Beats Powin Stack OS / Tesla Megapack OS / Fluence BMS / AES Advancion / Wärtsilä GEMS / Honeywell Experion BESS via LIVE health + augmentation-economics battery (SOH headroom, annualised fade rate, EFC, cycle-vs-calendar attribution, capacity shortfall MWh, augmentation CapEx ZAR, capacity-payment-at-risk ZAR, augmentation NPV ZAR, warranty recovery eligible, predicted decommission years, SLA days remaining, urgency band) + tier RE-DERIVED on every transition from current SOH vs floor (nominal>=floor+10 / watch>=floor+5 / material>=floor / critical<floor). URGENT SLA. SECURITY-OF-SUPPLY SIGNATURE: require_augmentation crosses regulator EVERY tier when capacity>=50 MW (NERSA Grid Code threshold), heavy tiers (material+critical) otherwise; decommission crosses EVERY tier (loss of grid capacity always reportable); raise_dispute + sla_breached cross heavy tiers. Single Esums-desk write {admin,support}; actor_party operator/oem/owner/regulator from action. ───
+  | 'bess_soh.monitoring_activated' | 'bess_soh.drift_detected'
+  | 'bess_soh.assessment_pending' | 'bess_soh.augmentation_required'
+  | 'bess_soh.augmentation_planned' | 'bess_soh.works_started'
+  | 'bess_soh.works_completed' | 'bess_soh.recommissioned'
+  | 'bess_soh.dispute_raised' | 'bess_soh.dispute_resolved'
+  | 'bess_soh.decommissioned' | 'bess_soh.cancelled'
+  | 'bess_soh.sla_breached'
   // Wave 66 — Regulator Complaints & Dispute Resolution chain (NERSA as the quasi-judicial dispute forum under ERA 4/2006 s30 + NER Act 40/2004 + NERSA Complaints Procedures; REACTIVE external-party grievance adjudication, distinct from W31 internal-intake disposition and W40 proactive inspection; lodged→admissibility→referred_to_licensee→[settle | investigation→mediation→hearing→ruling→remedy_monitoring→resolved] + dismiss/appeal/withdraw; URGENT SLA (larger affected population = tighter); single regulator-owned write {admin,regulator}, actor_party complainant/respondent/adjudicator from action; SIGNATURE lodge_appeal crosses for EVERY tier (judicial review always material), issue_ruling crosses major+systemic, dismiss crosses systemic only, sla_breached crosses major+systemic; settle_at_licensee & confirm_compliance share .resolved)
   | 'regulator_complaint.admissibility_review' | 'regulator_complaint.referred'
   | 'regulator_complaint.escalated' | 'regulator_complaint.mediating'
@@ -880,6 +888,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   settlement_fail: 'trader',
   dscr_monitoring: 'lender',
   ppa_nomination: 'offtaker',
+  bess_soh: 'support',
   trade_allocation: 'trading',
   popia: 'admin',
   auth: 'auth',

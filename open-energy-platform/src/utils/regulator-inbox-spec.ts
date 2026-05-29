@@ -2493,6 +2493,52 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 88 — Esums BESS State-of-Health Monitoring & Capacity-Augmentation Programme ───
+    // SECURITY-OF-SUPPLY signature (NERSA Grid Code hard line on grid-connected BESS):
+    //   require_augmentation crosses EVERY tier when installed_capacity_mw >= 50 MW
+    //                        (heavy tiers otherwise) — the capacity-floor breach
+    //                        of a system-significant battery is always notifiable.
+    //   decommission         crosses EVERY tier — loss of grid capacity is always
+    //                        reportable, irrespective of size.
+    //   raise_dispute        crosses heavy tiers (material + critical) only.
+    //   sla_breached         crosses heavy tiers (material + critical).
+    case 'bess_soh.augmentation_required': {
+      const tier = str('soh_tier');
+      const capacityMw = num('installed_capacity_mw') || 0;
+      const heavy = tier === 'material' || tier === 'critical';
+      if (!heavy && capacityMw < 50) return null;
+      const sev = tier === 'critical' ? 'high' : tier === 'material' ? 'high' : capacityMw >= 100 ? 'medium' : 'low';
+      return {
+        severity: sev,
+        title: `BESS augmentation REQUIRED (NERSA Grid Code security-of-supply) — ${str('programme_number') || entityId} (${str('site_name') || ''} / ${capacityMw} MW / SOH ${num('current_soh_pct') || 0}% vs floor ${num('contractual_floor_pct') || 0}% / shortfall ${num('capacity_shortfall_mwh') || 0} MWh / ${tier})`.trim(),
+      };
+    }
+    case 'bess_soh.decommissioned': {
+      const tier = str('soh_tier');
+      const capacityMw = num('installed_capacity_mw') || 0;
+      const sev = capacityMw >= 100 || tier === 'critical' ? 'high' : capacityMw >= 50 ? 'medium' : 'low';
+      return {
+        severity: sev,
+        title: `BESS DECOMMISSIONED (grid capacity loss) — ${str('programme_number') || entityId} (${str('site_name') || ''} / ${capacityMw} MW / ${num('nameplate_energy_mwh') || 0} MWh nameplate / SOH ${num('current_soh_pct') || 0}% / ${tier})`.trim(),
+      };
+    }
+    case 'bess_soh.dispute_raised': {
+      const tier = str('soh_tier');
+      if (tier !== 'material' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `BESS SOH dispute raised (capacity guarantee methodology) — ${str('programme_number') || entityId} (${str('site_name') || ''} / SOH ${num('current_soh_pct') || 0}% / ${str('dispute_ground') || 'methodology'} / ${tier})`.trim(),
+      };
+    }
+    case 'bess_soh.sla_breached': {
+      const tier = str('soh_tier');
+      if (tier !== 'material' && tier !== 'critical') return null;
+      return {
+        severity: 'high',
+        title: `BESS SOH programme SLA breached — ${str('programme_number') || entityId} (${str('chain_status') || ''} / ${str('site_name') || ''} / SOH ${num('current_soh_pct') || 0}% / ${tier})`.trim(),
+      };
+    }
+
     // ─── Wave 75 — Grid Connection Energization & Commissioning Hold-Point Gate ───
     // COD-driven POSITIVE signature: a Commercial Operation Date is notifiable for
     // EVERY tier (new generation registered to the national balance); energization,

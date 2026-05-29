@@ -20,6 +20,7 @@ import { AvailabilityGuaranteeChainTab } from '../esums/AvailabilityGuaranteeCha
 import { PmComplianceChainTab } from '../esums/PmComplianceChainTab';
 import { PermitToWorkChainTab } from '../esums/PermitToWorkChainTab';
 import { GenerationRevenueAssuranceChainTab } from '../esums/GenerationRevenueAssuranceChainTab';
+import { BessSohChainTab } from '../esums/BessSohChainTab';
 import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
 import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
 
@@ -120,6 +121,14 @@ export function EsumsOmPage() {
       description: '12-state P6 Generation Revenue Assurance & Meter Reconciliation chain (NERSA metering code + REIPPPP PPA settlement discipline) — period open → data ingested → reconciled → variance flagged → investigating → classified → recovery pending → recovered (recovery path), with a within-tolerance close-clean terminal, a settlement-dispute branch (recovery pending → in dispute → recovered | written off), a write-off terminal (unrecoverable), and a cancel terminal. Reconciles the FOUR numbers that should agree but rarely do — EXPECTED generation (W71 prognostics / W24 PR baseline), the REVENUE METER reading, the SETTLEMENT statement and the PPA INVOICE — and where they diverge, classifies the leakage signature (meter drift / comms gap / settlement error / curtailment shortfall / clipping loss / meter tampering), then closes the loop to an SLA-driven recovery with a quantified recovered-ZAR ledger. Beats reactive meter-vs-settlement tools by using the expected-generation model as the recon baseline. URGENT variance-tier SLAs (larger revenue variance chased harder). Single-party write: each event is tagged with the contractual party (analyst / counterparty / reviewer). Every settlement dispute (all tiers), any meter-tampering finding (all tiers), material+ write-offs and major/critical SLA breaches cross into the regulator inbox as a metering-code matter.',
       columns: [],
       customContent: <GenerationRevenueAssuranceChainTab />,
+    },
+    {
+      key: 'bess_soh',
+      label: 'BESS SOH',
+      endpoint: '',
+      description: '12-state P6 BESS State-of-Health Monitoring & Capacity-Augmentation Programme chain (NERSA Grid Code + REIPPPP BESS PPA capacity-floor warranty) — baseline set → monitoring active → drift detected → assessment pending → augmentation required → augmentation planned → augmentation in progress → augmentation complete → recommissioned (happy path), with a dispute branch (drift detected / assessment pending / augmentation required → disputed → resolved), a decommission terminal (asset retired before recovery), and a cancel terminal. The BESS counterpart to W24 PR (PV PR) and W51 availability (uptime) — measures CAPACITY FADE against the contractual SOH floor and triggers warranty-backed augmentation programmes before security-of-supply is compromised. Beats Powin Stack OS / Tesla Megapack OS / Fluence BMS / AES Advancion / Wärtsilä GEMS / Honeywell Experion BESS by re-deriving fade trajectory, RUL and augmentation NPV on every transition with a live battery (annualised fade rate, equivalent full cycles, cycle attribution %, capacity shortfall MWh, augmentation CapEx, capacity payment at risk, augmentation NPV, warranty recovery eligibility, predicted decommission years). URGENT SOH-tier SLAs RE-DERIVED on every transition (lower SOH vs contractual floor = tighter window; critical < floor / material 0–5pp above / watch 5–10pp / nominal ≥10pp). Single-party write (asset / O&M support team). SECURITY-OF-SUPPLY SIGNATURE — require_augmentation crosses the regulator EVERY tier when installed capacity ≥ 50 MW (NERSA Grid Code grid-significant threshold) or material/critical tier otherwise; decommission ALWAYS crosses (asset retirement is reportable); raise_dispute and SLA breaches cross on material/critical.',
+      columns: [],
+      customContent: <BessSohChainTab />,
     },
     {
       key: 'hse_chain',
