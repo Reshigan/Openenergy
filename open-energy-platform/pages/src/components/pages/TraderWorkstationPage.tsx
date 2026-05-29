@@ -9,6 +9,7 @@ import { BestExecutionTab } from '../trader/BestExecutionTab';
 import { TradeReportingChainTab } from '../trader/TradeReportingChainTab';
 import { MarketAbuseChainTab } from '../trader/MarketAbuseChainTab';
 import { AlgoCertChainTab } from '../trader/AlgoCertChainTab';
+import { CounterpartyMarginChainTab } from '../counterparty-margin/CounterpartyMarginChainTab';
 import { api } from '../../lib/api';
 
 export function TraderWorkstationPage() {
@@ -48,6 +49,7 @@ export function TraderWorkstationPage() {
         { key: 'trade-reporting', label: 'Trade reporting', body: () => <TradeReportingChainTab /> },
         { key: 'market-abuse', label: 'Market surveillance', body: () => <MarketAbuseChainTab /> },
         { key: 'algo-cert', label: 'Algo certification', body: () => <AlgoCertChainTab /> },
+        { key: 'counterparty-margin', label: 'Counterparty default', body: () => <CounterpartyMarginChainTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

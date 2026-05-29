@@ -609,6 +609,14 @@ export type EventType =
   | 'grid_code_compliance.compliance_retest' | 'grid_code_compliance.compliant_closed'
   | 'grid_code_compliance.operating_restriction' | 'grid_code_compliance.disconnection_issued'
   | 'grid_code_compliance.withdrawn' | 'grid_code_compliance.sla_breached'
+  // Wave 68 — Counterparty Margin Call & Default Management chain (the clearing/risk desk manages each participant's counterparty-credit & collateral relationship per FMA 2012 + FSCA Conduct Standards + CPMI-IOSCO PFMI Principles 4/5/6/13: limit_active→exposure_warning→margin_call_issued→collateral_received with a cure_breach loop back to limit_active, an escalation branch via position_restriction/cure_period, and a default waterfall {cure_period,position_restriction}→default_declared→close_out→default_fund_draw→recovered|written_off; 5 tiers by exposure-at-risk ZAR with a SIFI floor at major; URGENT SLA (larger exposure = tighter); SIGNATURE declare_default crosses for EVERY tier (declaring a participant default is always notifiable to the FSCA/Prudential Authority), draw_default_fund + write_off + sla_breached cross for high tiers (major+systemic); single clearing-desk write, partyForAction tags clearing_house vs member for the audit trail)
+  | 'counterparty_margin.exposure_warning' | 'counterparty_margin.margin_call_issued'
+  | 'counterparty_margin.collateral_received' | 'counterparty_margin.limit_active'
+  | 'counterparty_margin.position_restriction' | 'counterparty_margin.cure_period'
+  | 'counterparty_margin.default_declared' | 'counterparty_margin.close_out'
+  | 'counterparty_margin.default_fund_draw' | 'counterparty_margin.recovered'
+  | 'counterparty_margin.written_off' | 'counterparty_margin.withdrawn'
+  | 'counterparty_margin.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

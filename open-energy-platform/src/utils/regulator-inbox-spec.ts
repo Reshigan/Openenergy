@@ -2030,6 +2030,43 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 68 — Counterparty Margin Call & Default Management ────────────
+    // Declaring a participant default is always notifiable to the FSCA /
+    // Prudential Authority (the W68 signature) — it crosses for EVERY tier.
+    // Drawing the mutualised default fund, writing off a residual loss and an
+    // SLA breach cross only for the high tiers (major/systemic).
+    case 'counterparty_margin.default_declared': {
+      const tier = str('severity_tier');
+      return {
+        severity: tier === 'systemic' ? 'critical' : 'high',
+        title: `Counterparty DEFAULT declared — ${str('case_number') || entityId} (${str('counterparty_name') || ''} / ${tier}${num('exposure_zar') ? ' / R' + Math.round(num('exposure_zar')) : ''})`.trim(),
+      };
+    }
+    case 'counterparty_margin.default_fund_draw': {
+      const tier = str('severity_tier');
+      if (tier !== 'major' && tier !== 'systemic') return null;
+      return {
+        severity: tier === 'systemic' ? 'critical' : 'high',
+        title: `Default-fund DRAW — ${str('case_number') || entityId} (${str('counterparty_name') || ''} / ${tier}${num('default_fund_draw_zar') ? ' / R' + Math.round(num('default_fund_draw_zar')) : ''})`.trim(),
+      };
+    }
+    case 'counterparty_margin.written_off': {
+      const tier = str('severity_tier');
+      if (tier !== 'major' && tier !== 'systemic') return null;
+      return {
+        severity: tier === 'systemic' ? 'high' : 'medium',
+        title: `Counterparty loss WRITTEN OFF — ${str('case_number') || entityId} (${str('counterparty_name') || ''} / ${tier}${num('write_off_zar') ? ' / R' + Math.round(num('write_off_zar')) : ''})`.trim(),
+      };
+    }
+    case 'counterparty_margin.sla_breached': {
+      const tier = str('severity_tier');
+      if (tier !== 'major' && tier !== 'systemic') return null;
+      return {
+        severity: tier === 'systemic' ? 'high' : 'medium',
+        title: `Counterparty margin SLA breached — ${str('case_number') || entityId} (${str('chain_status') || ''} / ${str('counterparty_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
