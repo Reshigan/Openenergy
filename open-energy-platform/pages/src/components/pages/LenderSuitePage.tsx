@@ -10,6 +10,7 @@ import { CovenantCertificateTab } from '../lender/CovenantCertificateTab';
 import { LoanDefaultChainTab } from '../lender/LoanDefaultChainTab';
 import { CreditOriginationChainTab } from '../lender/CreditOriginationChainTab';
 import { LoanTransferChainTab } from '../lender/LoanTransferChainTab';
+import { SecurityPerfectionChainTab } from '../lender/SecurityPerfectionChainTab';
 
 export function LenderSuitePage() {
   const tabs: TabSpec[] = [
@@ -52,6 +53,14 @@ export function LenderSuitePage() {
       description: 'Secondary loan transfer / participation chain · LMA + Banks Act large-exposure + SARB Exchange Control + FIC. A lender of record sells down part of a facility — KYC/sanctions screening, obligor consent, SARB review (non-resident), certificate execution, settlement, register update. INVERTED tier SLA; approving a non-resident transfer crosses SARB at every tier, screening failure always crosses (FIC), completing a major/systemic transfer crosses Banks Act large-exposure.',
       columns: [],
       customContent: <LoanTransferChainTab />,
+    },
+    {
+      key: 'security-perfection',
+      label: 'Security perfection',
+      endpoint: '',
+      description: 'Collateral perfection & registration chain · Deeds Registries Act + Movable Property Security Act + Companies Act s126 share pledges + FMA/STRATE dematerialised securities + cession in securitatem debiti + SARB Exchange Control. Tracks every security instrument from identification → documentation → execution → registry lodgement → registration → perfection. URGENT tier SLA (larger/CP-critical = tighter); lapse crosses regulator at every tier, perfection-overdue crosses for major/critical, defective-registration for critical only.',
+      columns: [],
+      customContent: <SecurityPerfectionChainTab />,
     },
     {
       key: 'loan-defaults',

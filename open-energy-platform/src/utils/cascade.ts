@@ -617,6 +617,13 @@ export type EventType =
   | 'counterparty_margin.default_fund_draw' | 'counterparty_margin.recovered'
   | 'counterparty_margin.written_off' | 'counterparty_margin.withdrawn'
   | 'counterparty_margin.sla_breached'
+  // ─── Wave 69 — Security / Collateral Perfection & Registration chain ───
+  | 'security_perfection.documentation_pending' | 'security_perfection.executed'
+  | 'security_perfection.lodged_for_registration' | 'security_perfection.registered'
+  | 'security_perfection.perfection_review' | 'security_perfection.perfected'
+  | 'security_perfection.defective' | 'security_perfection.perfection_overdue'
+  | 'security_perfection.released' | 'security_perfection.lapsed'
+  | 'security_perfection.withdrawn' | 'security_perfection.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

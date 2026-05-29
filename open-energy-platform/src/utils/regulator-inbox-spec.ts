@@ -2067,6 +2067,44 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 69 — Security / Collateral Perfection & Registration ─────────
+    // A security item that LAPSES (never perfected, deadline blown) is always a
+    // material credit / impairment event for the lender — it crosses for EVERY
+    // tier (the W69 signature). A high-tier item going overdue and a high-tier
+    // SLA breach cross for major/critical; the registry rejecting a critical CP
+    // deed crosses for the critical tier only.
+    case 'security_perfection.lapsed': {
+      const tier = str('severity_tier');
+      return {
+        severity: tier === 'critical' ? 'critical' : 'high',
+        title: `Security item LAPSED — ${str('case_number') || entityId} (${str('borrower_name') || ''} / ${str('security_type') || ''} / ${tier}${num('secured_value_zar') ? ' / R' + Math.round(num('secured_value_zar')) : ''})`.trim(),
+      };
+    }
+    case 'security_perfection.perfection_overdue': {
+      const tier = str('severity_tier');
+      if (tier !== 'major' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Security perfection OVERDUE — ${str('case_number') || entityId} (${str('borrower_name') || ''} / ${str('security_type') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'security_perfection.defective': {
+      const tier = str('severity_tier');
+      if (tier !== 'critical') return null;
+      return {
+        severity: 'high',
+        title: `Critical security DEFECTIVE — registration rejected — ${str('case_number') || entityId} (${str('borrower_name') || ''} / ${str('security_type') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'security_perfection.sla_breached': {
+      const tier = str('severity_tier');
+      if (tier !== 'major' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Security perfection SLA breached — ${str('case_number') || entityId} (${str('chain_status') || ''} / ${str('borrower_name') || ''} / ${str('security_type') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
