@@ -1918,6 +1918,47 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 65 — Carbon ERPA Forward Delivery & Make-Good ──────────────────
+    // The commercial forward-sale on top of the carbon-credit lifecycle,
+    // reported to the DFFE DNA / Art-6.4 Supervisory Body.
+    //   delivery_verified — the W65 SIGNATURE is CORRESPONDING-ADJUSTMENT driven:
+    //             a verified delivery of an Article 6 transfer (an ITMO needing
+    //             an NDC corresponding adjustment) is itself reportable for EVERY
+    //             tier — the host-country NDC accounting must be corrected at the
+    //             point of delivery. A voluntary / compliance delivery crosses
+    //             only for the large tiers (major + mega).
+    //   terminated — an aborted high-volume forward sale strands material
+    //             contracted issuance; crosses for the large tiers.
+    //   sla_breached — crosses for the large tiers (major + mega).
+    case 'carbon_erpa.delivery_verified': {
+      const tier = str('volume_tier');
+      const ca = str('transfer_type') === 'article6'
+        || d['corresponding_adjustment_required'] === 1
+        || d['corresponding_adjustment_required'] === '1';
+      const largeTier = tier === 'major' || tier === 'mega';
+      if (!ca && !largeTier) return null;
+      return {
+        severity: ca && largeTier ? 'high' : 'medium',
+        title: `Carbon ERPA delivery VERIFIED — ${str('erpa_number') || entityId} (${str('project_name') || ''}${ca ? ' / Article 6 corresponding-adjustment' : ''}${str('host_country') ? ' / ' + str('host_country') : ''} / ${tier}${num('delivered_volume_tco2e') ? ' / ' + num('delivered_volume_tco2e').toLocaleString() + ' tCO2e' : ''})`.trim(),
+      };
+    }
+    case 'carbon_erpa.terminated': {
+      const tier = str('volume_tier');
+      if (tier !== 'major' && tier !== 'mega') return null;
+      return {
+        severity: tier === 'mega' ? 'high' : 'medium',
+        title: `Carbon ERPA TERMINATED — ${str('erpa_number') || entityId} (${str('project_name') || ''}${num('contracted_volume_tco2e') ? ' / ' + num('contracted_volume_tco2e').toLocaleString() + ' tCO2e' : ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'carbon_erpa.sla_breached': {
+      const tier = str('volume_tier');
+      if (tier !== 'major' && tier !== 'mega') return null;
+      return {
+        severity: 'medium',
+        title: `Carbon ERPA SLA breached — ${str('erpa_number') || entityId} (${str('chain_status') || ''} / ${str('project_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

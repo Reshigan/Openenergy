@@ -588,6 +588,13 @@ export type EventType =
   | 'permit_to_work.closed' | 'permit_to_work.rejected'
   | 'permit_to_work.revoked' | 'permit_to_work.withdrawn'
   | 'permit_to_work.sla_breached'
+  // Wave 65 — Carbon ERPA (Emission Reduction Purchase Agreement) Forward Delivery & Make-Good chain (the commercial forward-sale on top of the carbon-credit lifecycle: buyer contracts a project's future reductions, seller delivers against a schedule, short delivery triggers make-good; INVERTED SLA; CORRESPONDING-ADJUSTMENT signature: verify_delivery crosses for EVERY tier when transfer is Article 6 (ITMO needing an NDC correction), else large tiers only; terminate + sla_breached cross for large tiers; single carbon-fund desk write, actor_party seller/buyer/registry from action, resolve_dispute & settle share .settled)
+  | 'carbon_erpa.executed' | 'carbon_erpa.delivery_scheduled'
+  | 'carbon_erpa.delivery_initiated' | 'carbon_erpa.delivery_verified'
+  | 'carbon_erpa.shortfall_flagged' | 'carbon_erpa.make_good_pending'
+  | 'carbon_erpa.settled' | 'carbon_erpa.completed'
+  | 'carbon_erpa.disputed' | 'carbon_erpa.terminated'
+  | 'carbon_erpa.withdrawn' | 'carbon_erpa.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

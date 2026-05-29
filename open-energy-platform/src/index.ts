@@ -118,6 +118,7 @@ import loanTransferChainRoutes, { loanTransferSlaSweep } from './routes/loan-tra
 import ppaTerminationChainRoutes, { ppaTerminationSlaSweep } from './routes/ppa-termination-chain';
 import warrantyRecoveryChainRoutes, { warrantyRecoverySlaSweep } from './routes/warranty-recovery-chain';
 import permitToWorkChainRoutes, { permitToWorkSlaSweep } from './routes/permit-to-work-chain';
+import carbonErpaChainRoutes, { carbonErpaSlaSweep } from './routes/carbon-erpa-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -406,6 +407,7 @@ app.route('/api/loan-transfer/chain', loanTransferChainRoutes);
 app.route('/api/ppa-termination/chain', ppaTerminationChainRoutes);
 app.route('/api/warranty-recovery/chain', warrantyRecoveryChainRoutes);
 app.route('/api/permit-to-work/chain', permitToWorkChainRoutes);
+app.route('/api/carbon-erpa/chain', carbonErpaChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1010,6 +1012,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('permit_to_work_sla_sweep', async () => {
         const result = await permitToWorkSlaSweep(env as never);
         console.log('permit_to_work_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 65 — Carbon ERPA Forward Delivery & Make-Good SLA sweep (INVERTED:
+      // bigger forward sale gets the longer window; terminals carry no deadline);
+      // records breaches and crosses the regulator inbox on the large tiers
+      // (major + mega).
+      await safe('carbon_erpa_sla_sweep', async () => {
+        const result = await carbonErpaSlaSweep(env as never);
+        console.log('carbon_erpa_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
