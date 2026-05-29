@@ -136,6 +136,7 @@ import generationRevenueAssuranceChainRoutes, { generationRevenueAssuranceSlaSwe
 import serviceContractChainRoutes, { serviceContractSlaSweep } from './routes/service-contract-chain';
 import projectChangeOrderChainRoutes, { projectChangeOrderSlaSweep } from './routes/project-change-order-chain';
 import carbonIssuanceChainRoutes, { carbonIssuanceSlaSweep } from './routes/carbon-issuance-chain';
+import consultationNoticeChainRoutes, { consultationNoticeSlaSweep } from './routes/consultation-notice-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -442,6 +443,7 @@ app.route('/api/generation-revenue-assurance/chain', generationRevenueAssuranceC
 app.route('/api/service-contract/chain', serviceContractChainRoutes);
 app.route('/api/ipp/change-order/chain', projectChangeOrderChainRoutes);
 app.route('/api/carbon-issuance/chain', carbonIssuanceChainRoutes);
+app.route('/api/consultation-notice/chain', consultationNoticeChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1178,6 +1180,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('carbon_issuance_sla_sweep', async () => {
         const result = await carbonIssuanceSlaSweep(env as never);
         console.log('carbon_issuance_sla_sweep', JSON.stringify(result));
+      });
+      // W83 NERSA consultation notices: flag consultations that overrun their
+      // INVERTED public-participation SLA (landmark gets the longest window);
+      // SLA breaches cross the regulator inbox on the LARGE tiers (material +
+      // landmark) only — small/standard consultations breach internally.
+      await safe('consultation_notice_sla_sweep', async () => {
+        const result = await consultationNoticeSlaSweep(env as never);
+        console.log('consultation_notice_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

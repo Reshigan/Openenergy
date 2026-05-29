@@ -2290,6 +2290,48 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 83 — NERSA Consultation Notice & Public-Comment Period (TRANSPARENCY) ───
+    // TRANSPARENCY-driven signature: withdraw_notice ALWAYS crosses (every tier — pulling a
+    // published consultation is always notifiable to PAJA / Council oversight). adopt_decision
+    // crosses EVERY tier when binding-class; else material+landmark only. extend_comment_period
+    // and sla_breached cross for material+landmark only.
+    case 'consultation_notice.withdrawn': {
+      const tier = str('consultation_tier');
+      return {
+        severity: tier === 'landmark' || tier === 'material' ? 'high' : 'medium',
+        title: `Consultation notice WITHDRAWN — ${str('notice_number') || entityId} (${str('notice_title') || ''} / ${str('consultation_kind') || ''} / ${tier}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'consultation_notice.adopted': {
+      const tier = str('consultation_tier');
+      const binding = num('is_binding_class') === 1 || str('consultation_class') === 'binding';
+      const large = tier === 'material' || tier === 'landmark';
+      if (!binding && !large) return null;
+      return {
+        severity: binding && tier === 'landmark' ? 'high' : binding || large ? 'medium' : 'low',
+        title: `Consultation ADOPTED${binding ? ' (binding determination)' : ''} — ${str('notice_number') || entityId} (${str('notice_title') || ''} / ${str('consultation_kind') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'consultation_notice.open_for_comment': {
+      // Only an EXTENSION of an already-open consultation crosses (large tiers only).
+      // The first open is procedural and not separately notifiable.
+      if (str('action') !== 'extend_comment_period') return null;
+      const tier = str('consultation_tier');
+      if (tier !== 'material' && tier !== 'landmark') return null;
+      return {
+        severity: 'medium',
+        title: `Consultation comment period EXTENDED — ${str('notice_number') || entityId} (${str('notice_title') || ''} / ${str('consultation_kind') || ''} / ${tier}${num('extension_count') ? ' / ext#' + num('extension_count') : ''})`.trim(),
+      };
+    }
+    case 'consultation_notice.sla_breached': {
+      const tier = str('consultation_tier');
+      if (tier !== 'material' && tier !== 'landmark') return null;
+      return {
+        severity: 'high',
+        title: `Consultation notice SLA breached — ${str('notice_number') || entityId} (${str('chain_status') || ''} / ${str('notice_title') || ''} / ${tier})`.trim(),
+      };
+    }
+
     // ─── Wave 75 — Grid Connection Energization & Commissioning Hold-Point Gate ───
     // COD-driven POSITIVE signature: a Commercial Operation Date is notifiable for
     // EVERY tier (new generation registered to the national balance); energization,

@@ -11,6 +11,7 @@ import { LicenceApplicationChainTab } from '../licence-application/LicenceApplic
 import { SsegRegistrationChainTab } from '../sseg-registration/SsegRegistrationChainTab';
 import { ComplaintResolutionChainTab } from '../complaint-resolution/ComplaintResolutionChainTab';
 import { LevyAssessmentChainTab } from '../levy-assessment/LevyAssessmentChainTab';
+import { ConsultationNoticeChainTab } from '../consultation-notice/ConsultationNoticeChainTab';
 
 export function RegulatorSuitePage() {
   const tabs: TabSpec[] = [
@@ -87,6 +88,15 @@ export function RegulatorSuitePage() {
         'Regulatory levy assessment & collection chain (NERSA levies under the National Energy Regulator Act 40 of 2004 §5B + ERA / Gas Act / Petroleum Pipelines Act levy schedules) · 12-state P6: assessed → assessment review → invoiced → payment pending → partially paid → in arrears → final demand → enforcement → settled, with an objection-review short-circuit, a write-off branch and an assessment-withdrawal escape. The FINANCIAL counterpart to licensing — what licensees OWE the regulator (turnover-based, volume-based or fixed) — distinct from W43 MYPD which sets what licensees CHARGE customers. Auto-assesses from the declared base, ages arrears into 30/60/90/120+ buckets and drives a dunning cycle (invoice → final demand → enforcement) with automatic licence-good-standing linkage, beating NERSA manual billing / Ofgem licence-fee runs / FERC annual charges. URGENT SLA: a larger levy means tighter collection windows (major ≥ R50m is fastest). Council crossings: enforcement escalation + write-offs for EVERY tier (signature — every enforcement step and every write-off is reportable), final demands + SLA breaches for large + major only. The assessor drives the machinery; the licensee objects + pays.',
       columns: [],
       customContent: <LevyAssessmentChainTab />,
+    },
+    {
+      key: 'consultation-notice',
+      label: 'Consultation notices',
+      endpoint: '',
+      description:
+        'NERSA Consultation Notice & Public-Comment Period chain (Electricity Regulation Act 4 of 2006 §10 + Promotion of Administrative Justice Act 3 of 2000 §4 + NERSA Rules of Procedure) · 12-state P6: drafted → published → open for comment → comment period closed → analysis → response drafted → adopted, with an optional hearing branch (closed → hearing scheduled → hearing held → analysis), an on-hold pause for legal review (resume → analysis), and withdraw / cancel terminals. The DUE-PROCESS engine that PRECEDES every NERSA disposition (W31) and every tariff determination (W43) — distinct from W43 which sets what a licensee CHARGES (subject of the consultation) and W31 which records the OUTCOME (after this chain closes). Live consultation-health battery on every record (stakeholder-balance index across industry/consumer/civil-society/IPP/government, representativeness across provinces + sectors, coverage of questions answered, statutory-period validity flag and judicial-review risk score 0-100) — beats ACER consultation portal / FERC eFiling / Ofgem consultation hub / AER consultation register / BEREC public-consultation system, all of which run essentially linear publish-comment-respond workflows. INVERTED SLA: a larger consultation gets longer windows (a landmark structural-policy reform warrants extended notice + 60-day comment period + extended analysis; a minor procedural rule runs the shortest). Council crossings: withdraw_notice for EVERY tier (signature — pulling a published consultation is always notifiable to PAJA / Council oversight), adopt_decision for EVERY tier when binding-class (else material + landmark only — binding determinations carry downstream legal effect), extend_comment_period for material + landmark only, SLA breaches for material + landmark only. The secretariat drafts, publishes, opens, closes, runs analysis and drafts the response; the presiding member schedules + holds the hearing; the Council adopts; the regulator withdraws when warranted.',
+      columns: [],
+      customContent: <ConsultationNoticeChainTab />,
     },
     // ─── Licences ────────────────────────────────────────────────────────
     {
