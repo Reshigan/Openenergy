@@ -2328,6 +2328,34 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ---- W76 Trader trade allocation / give-up / confirmation-affirmation chain ----
+    // Under settlement-discipline every BREAK / settlement fail is notifiable, so
+    // flag_break crosses for EVERY notional tier (the W76 signature — the mirror of
+    // W68 declare_default). cancel + SLA breach cross for the large tiers only.
+    case 'trade_allocation.break_review': {
+      const tier = str('notional_tier');
+      return {
+        severity: tier === 'large' || tier === 'block' ? 'high' : 'medium',
+        title: `Trade-processing BREAK flagged (settlement discipline) — ${str('allocation_number') || entityId} (${str('counterparty_name') || ''} / ${str('instrument') || ''} / ${tier}${str('break_reason_code') ? ' / ' + str('break_reason_code') : ''})`.trim(),
+      };
+    }
+    case 'trade_allocation.cancelled': {
+      const tier = str('notional_tier');
+      if (tier !== 'large' && tier !== 'block') return null;
+      return {
+        severity: 'medium',
+        title: `Block trade CANCELLED before lock-in — ${str('allocation_number') || entityId} (${str('counterparty_name') || ''} / ${str('instrument') || ''} / ${tier}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'trade_allocation.sla_breached': {
+      const tier = str('notional_tier');
+      if (tier !== 'large' && tier !== 'block') return null;
+      return {
+        severity: 'high',
+        title: `Trade allocation SLA breached — ${str('allocation_number') || entityId} (${str('chain_status') || ''} / ${str('counterparty_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

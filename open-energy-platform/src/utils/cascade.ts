@@ -666,6 +666,13 @@ export type EventType =
   | 'connection_energization.trial_operation' | 'connection_energization.compliance_testing'
   | 'connection_energization.commercial_operation' | 'connection_energization.commissioning_suspended'
   | 'connection_energization.connection_withdrawn' | 'connection_energization.sla_breached'
+  // ─── Wave 76 — Trade Allocation, Give-Up & Confirmation/Affirmation (the post-execution institutional trade-processing leg: an executed block trade is ALLOCATED across client sub-accounts, optionally GIVEN UP to a clearing broker who ACCEPTS it, a CONFIRMATION is issued, the counterparty AFFIRMS it, central matching reconciles both sides DTCC/Omgeo-CTM-style, settlement is instructed against standing settlement instructions (SSI) and the trade SETTLES at the CSD; any discrepancy is a BREAK flagged with a structured reason code and resolved; 12-state P6 executed→allocation_pending→allocated→give_up_pending→give_up_accepted→confirmation_issued→affirmed→matched→settlement_instructed→settled + break_review (resolve→confirmation_issued) + cancelled, self-cleared trades skip give-up via allocated→confirmation_issued; tiers by trade notional ZAR micro<1m/small<10m/medium<50m/large<250m/block>=250m; URGENT SLA (larger notional = tighter same-day-affirmation windows); SIGNATURE BREAK-driven — flag_break crosses for EVERY tier (under CSDR-style settlement discipline every break/fail is notifiable — the mirror of W68 declare_default / W67 escalate_disconnection), cancel_trade + sla_breached cross for large+block; single write {admin,trader} with party-from-action front_office/middle_office/counterparty; DISTINCT from W44 trade-reporting / W3 venue-settlement / W68 counterparty-margin; resolve_break shares .confirmation_issued) ───
+  | 'trade_allocation.allocation_pending' | 'trade_allocation.allocated'
+  | 'trade_allocation.give_up_pending' | 'trade_allocation.give_up_accepted'
+  | 'trade_allocation.confirmation_issued' | 'trade_allocation.affirmed'
+  | 'trade_allocation.matched' | 'trade_allocation.settlement_instructed'
+  | 'trade_allocation.settled' | 'trade_allocation.break_review'
+  | 'trade_allocation.cancelled' | 'trade_allocation.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
@@ -788,6 +795,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   regulator: 'regulator',
   regulator_levy: 'regulator',
   connection_energization: 'grid',
+  trade_allocation: 'trading',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

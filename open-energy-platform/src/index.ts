@@ -129,6 +129,7 @@ import sparePartsProvisioningChainRoutes, { sparePartsProvisioningSlaSweep } fro
 import poaCpaInclusionChainRoutes, { poaCpaInclusionSlaSweep } from './routes/poa-cpa-inclusion-chain';
 import levyAssessmentChainRoutes, { levyAssessmentSlaSweep } from './routes/levy-assessment-chain';
 import connectionEnergizationChainRoutes, { connectionEnergizationSlaSweep } from './routes/connection-energization-chain';
+import tradeAllocationChainRoutes, { tradeAllocationSlaSweep } from './routes/trade-allocation-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -428,6 +429,7 @@ app.route('/api/spare-parts-provisioning/chain', sparePartsProvisioningChainRout
 app.route('/api/poa-inclusion/chain', poaCpaInclusionChainRoutes);
 app.route('/api/levy-assessment/chain', levyAssessmentChainRoutes);
 app.route('/api/connection-energization/chain', connectionEnergizationChainRoutes);
+app.route('/api/trade-allocation/chain', tradeAllocationChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1114,6 +1116,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('connection_energization_sla_sweep', async () => {
         const result = await connectionEnergizationSlaSweep(env as never);
         console.log('connection_energization_sla_sweep', JSON.stringify(result));
+      });
+      // W76 trade-allocation: flag post-execution processing steps (allocate ->
+      // confirm -> affirm -> match -> settle) that overrun their URGENT window and
+      // cross the regulator inbox on the large tiers (large + block) under CSDR-style
+      // settlement discipline.
+      await safe('trade_allocation_sla_sweep', async () => {
+        const result = await tradeAllocationSlaSweep(env as never);
+        console.log('trade_allocation_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
