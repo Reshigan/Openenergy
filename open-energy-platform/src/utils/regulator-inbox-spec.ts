@@ -2356,6 +2356,35 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 77 — Lender reserve-account (DSRA/MRA). Signature: a reserve breach
+    // is always an event of default → crosses for EVERY tier. Waiver + SLA breach
+    // cross for the LARGE tiers (major + systemic) only.
+    case 'reserve_account.breached': {
+      const tier = str('reserve_tier');
+      return {
+        severity: 'high',
+        title: `Reserve-account BREACH (event of default) — ${str('reserve_number') || entityId} (${str('reserve_type') || ''} / ${str('borrower_name') || ''} / ${tier}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'reserve_account.funded': {
+      // Only a WAIVER on a large reserve is reportable; routine confirm/replenish are not.
+      if (str('action') !== 'waive_requirement') return null;
+      const tier = str('reserve_tier');
+      if (tier !== 'major' && tier !== 'systemic') return null;
+      return {
+        severity: 'medium',
+        title: `Reserve-account requirement WAIVED — ${str('reserve_number') || entityId} (${str('reserve_type') || ''} / ${str('borrower_name') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'reserve_account.sla_breached': {
+      const tier = str('reserve_tier');
+      if (tier !== 'major' && tier !== 'systemic') return null;
+      return {
+        severity: 'high',
+        title: `Reserve-account SLA breached — ${str('reserve_number') || entityId} (${str('chain_status') || ''} / ${str('borrower_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

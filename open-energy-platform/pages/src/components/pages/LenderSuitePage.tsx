@@ -11,6 +11,7 @@ import { LoanDefaultChainTab } from '../lender/LoanDefaultChainTab';
 import { CreditOriginationChainTab } from '../lender/CreditOriginationChainTab';
 import { LoanTransferChainTab } from '../lender/LoanTransferChainTab';
 import { SecurityPerfectionChainTab } from '../lender/SecurityPerfectionChainTab';
+import { ReserveAccountChainTab } from '../lender/ReserveAccountChainTab';
 
 export function LenderSuitePage() {
   const tabs: TabSpec[] = [
@@ -61,6 +62,14 @@ export function LenderSuitePage() {
       description: 'Collateral perfection & registration chain · Deeds Registries Act + Movable Property Security Act + Companies Act s126 share pledges + FMA/STRATE dematerialised securities + cession in securitatem debiti + SARB Exchange Control. Tracks every security instrument from identification → documentation → execution → registry lodgement → registration → perfection. URGENT tier SLA (larger/CP-critical = tighter); lapse crosses regulator at every tier, perfection-overdue crosses for major/critical, defective-registration for critical only.',
       columns: [],
       customContent: <SecurityPerfectionChainTab />,
+    },
+    {
+      key: 'reserve-accounts',
+      label: 'Reserve accounts',
+      endpoint: '',
+      description: 'Debt-service / maintenance reserve account (DSRA/MRA/O&M/tax) funding, cure & release chain · LMA reserve covenants + project-finance cash waterfall + SARB. Tracks each reserve from required → funding scheduled → in progress → funded; shortfall → cure → replenish/waive/breach; drawdown authorize/execute; release request/release. URGENT tier SLA (larger reserve target = tighter cure/funding windows); breach (event of default) crosses regulator at every tier, requirement-waiver crosses for major/systemic, SLA breach major/systemic only.',
+      columns: [],
+      customContent: <ReserveAccountChainTab />,
     },
     {
       key: 'loan-defaults',

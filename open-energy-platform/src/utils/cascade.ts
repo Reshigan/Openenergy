@@ -673,6 +673,13 @@ export type EventType =
   | 'trade_allocation.matched' | 'trade_allocation.settlement_instructed'
   | 'trade_allocation.settled' | 'trade_allocation.break_review'
   | 'trade_allocation.cancelled' | 'trade_allocation.sla_breached'
+  // ─── Wave 77 — Lender reserve-account (DSRA/MRA) funding/cure/release ───
+  | 'reserve_account.funding_scheduled' | 'reserve_account.funding_in_progress'
+  | 'reserve_account.funded' | 'reserve_account.shortfall_flagged'
+  | 'reserve_account.cure_pending' | 'reserve_account.drawdown_authorized'
+  | 'reserve_account.drawn' | 'reserve_account.release_requested'
+  | 'reserve_account.released' | 'reserve_account.breached'
+  | 'reserve_account.cancelled' | 'reserve_account.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
