@@ -624,6 +624,13 @@ export type EventType =
   | 'security_perfection.defective' | 'security_perfection.perfection_overdue'
   | 'security_perfection.released' | 'security_perfection.lapsed'
   | 'security_perfection.withdrawn' | 'security_perfection.sla_breached'
+  // ─── Wave 70 — REC / Guarantee-of-Origin Certificate Lifecycle chain ───
+  | 'rec_lifecycle.eligibility_review' | 'rec_lifecycle.issued'
+  | 'rec_lifecycle.listed_for_transfer' | 'rec_lifecycle.transferred'
+  | 'rec_lifecycle.allocated' | 'rec_lifecycle.retired'
+  | 'rec_lifecycle.cancelled' | 'rec_lifecycle.rejected'
+  | 'rec_lifecycle.disputed' | 'rec_lifecycle.clawed_back'
+  | 'rec_lifecycle.expired' | 'rec_lifecycle.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

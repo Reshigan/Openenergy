@@ -10,6 +10,7 @@ import { TariffIndexationTab } from '../offtaker/TariffIndexationTab';
 import { CurtailmentClaimTab } from '../offtaker/CurtailmentClaimTab';
 import { PaymentSecurityChainTab } from '../offtaker/PaymentSecurityChainTab';
 import { PpaTerminationChainTab } from '../offtaker/PpaTerminationChainTab';
+import { RecLifecycleChainTab } from '../offtaker/RecLifecycleChainTab';
 
 export function OfftakerSuitePage() {
   const tabs: TabSpec[] = [
@@ -60,6 +61,14 @@ export function OfftakerSuitePage() {
       description: 'PPA termination & early-termination amount (buy-out) chain (NERSA ERA s34 security-of-supply + PPA event-of-default / cure / long-stop FM / change-in-law + IFRS 9/16 ETA treatment) · 12-state P6 exit of the offtake relationship: a termination event arises, notice is served, a cure window runs, and — if uncured — the PPA terminates and an early-termination amount (the buy-out) is calculated, agreed and settled. The buy-out basis turns on the CAUSE (seller default / prolonged FM = debt only; buyer default / change in law = debt + equity make-whole; no-fault = negotiated). MIXED SLA (cure / assessment / dispute INVERTED, settlement URGENT); offtaker drives, seller (IPP) disputes the calculated buy-out, an independent expert resolves. Confirming a termination for an involuntary cause crosses to the regulator inbox for every tier; no-fault + settlement + SLA breaches cross for major + critical.',
       columns: [],
       customContent: <PpaTerminationChainTab />,
+    },
+    {
+      key: 'rec-lifecycle',
+      label: 'REC lifecycle',
+      endpoint: '',
+      description: 'REC / Guarantee-of-Origin certificate lifecycle (I-REC Standard · SAREC / AReP · EU Guarantee-of-Origin · GHG Protocol Scope 2 market-based method) · 12-state P6 renewable-attribute chain: requested → eligibility → issued → listed → transferred → allocated → retired, with eligibility-fail rejection, an integrity-dispute branch (restore / claw-back) and cancel / vintage-expiry terminals. The offtaker retires the certificate to substantiate a renewable-consumption claim (RE100 / CDP / carbon-tax offset); the lifecycle prevents DOUBLE COUNTING — one MWh attribute issued once, owned by one party at a time, retired once. INVERTED SLA (larger volume / compliance claim = more verification time); tier by MWh with a compliance floor at major. Two-party write — issuer / registry drives issuance, listing, transfer, dispute resolution, claw-back, cancel and expiry; the holder (offtaker) allocates consumption, retires and raises integrity disputes. A clawed-back certificate crosses to the regulator inbox for every tier; rejected issuance and SLA breaches cross for major + critical.',
+      columns: [],
+      customContent: <RecLifecycleChainTab />,
     },
     {
       key: 'obligations',

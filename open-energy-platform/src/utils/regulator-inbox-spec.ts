@@ -2105,6 +2105,35 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 70 — REC / Guarantee-of-Origin Certificate Lifecycle ─────────
+    // A CLAWED-BACK certificate is a double-counting / integrity event for the
+    // registry and is always notifiable — it crosses for EVERY tier (the W70
+    // signature). A high-tier issuance REJECTED on eligibility and a high-tier
+    // SLA breach cross for major/critical only.
+    case 'rec_lifecycle.clawed_back': {
+      const tier = str('severity_tier');
+      return {
+        severity: tier === 'critical' ? 'critical' : 'high',
+        title: `REC CLAWED BACK — double counting — ${str('case_number') || entityId} (${str('offtaker_name') || ''} / ${str('certificate_standard') || ''} / ${tier}${num('mwh_represented') ? ' / ' + Math.round(num('mwh_represented')) + ' MWh' : ''})`.trim(),
+      };
+    }
+    case 'rec_lifecycle.rejected': {
+      const tier = str('severity_tier');
+      if (tier !== 'major' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `REC issuance REJECTED — ${str('case_number') || entityId} (${str('offtaker_name') || ''} / ${str('certificate_standard') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'rec_lifecycle.sla_breached': {
+      const tier = str('severity_tier');
+      if (tier !== 'major' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `REC lifecycle SLA breached — ${str('case_number') || entityId} (${str('chain_status') || ''} / ${str('offtaker_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
