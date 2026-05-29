@@ -11,6 +11,7 @@ import { CarbonReversalChainTab } from '../carbon/CarbonReversalChainTab';
 import { CarbonOffsetClaimChainTab } from '../carbon/CarbonOffsetClaimChainTab';
 import { CreditingRenewalChainTab } from '../carbon/CreditingRenewalChainTab';
 import { CarbonErpaChainTab } from '../carbon/CarbonErpaChainTab';
+import { PoaCpaInclusionChainTab } from '../carbon/PoaCpaInclusionChainTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -119,6 +120,11 @@ export function CarbonWorkstationPage() {
           key: 'erpa_chain',
           label: 'Forward ERPA delivery',
           body: () => <CarbonErpaChainTab />,
+        },
+        {
+          key: 'poa_cpa_inclusion_chain',
+          label: 'PoA / CPA inclusion',
+          body: () => <PoaCpaInclusionChainTab />,
         },
         {
           key: 'audit',

@@ -645,6 +645,13 @@ export type EventType =
   | 'spare_parts_provisioning.stocked' | 'spare_parts_provisioning.reserved'
   | 'spare_parts_provisioning.issued' | 'spare_parts_provisioning.returned'
   | 'spare_parts_provisioning.cancelled' | 'spare_parts_provisioning.sla_breached'
+  // ─── Wave 73 — Carbon PoA / Programme-of-Activities Sub-Project (CPA) Inclusion & Conformance chain (the ONE-TO-MANY operational layer of the carbon portfolio: a registered Programme of Activities screens individual Component Project Activities (CPAs) in over its lifetime, gated on a host-country Letter of Approval, monitored/verified for ongoing conformance with DELISTING if they stop conforming; beats CDM PoA / GS4GG / Verra grouped projects via automated eligibility scoring, real-time double-counting/geo-overlap guard, programme-cap headroom, host-country LoA gating, SLA-driven inclusion turnaround; 12-state P6 cpa_proposed→eligibility_screening→methodology_check→loa_pending→inclusion_review→included→monitoring→verified with a verified↔monitoring loop + rejected/excluded/withdrawn/completed terminals; INVERTED SLA (larger CPA = longer window); DELISTING signature: exclude_cpa crosses for EVERY tier, approve_inclusion crosses when corresponding-adjustment required else large+mega, reject_cpa + sla_breached cross large+mega; single carbon-fund desk write {admin,carbon_fund}, actor_party proponent/coordinating_entity/dna/vvb from action; begin_monitoring + continue_monitoring share .monitoring) ───
+  | 'carbon_poa.eligibility_screening' | 'carbon_poa.methodology_check'
+  | 'carbon_poa.loa_pending' | 'carbon_poa.inclusion_review'
+  | 'carbon_poa.included' | 'carbon_poa.monitoring'
+  | 'carbon_poa.verified' | 'carbon_poa.rejected'
+  | 'carbon_poa.excluded' | 'carbon_poa.withdrawn'
+  | 'carbon_poa.completed' | 'carbon_poa.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
@@ -749,6 +756,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   settlement: 'settlement',
   escrow: 'settlement',
   carbon: 'carbon',
+  carbon_poa: 'carbon',
   rec: 'offtaker',
   rec_market: 'offtaker',
   scope2: 'offtaker',

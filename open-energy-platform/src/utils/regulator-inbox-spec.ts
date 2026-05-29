@@ -2200,6 +2200,54 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 73 — Carbon PoA / CPA Inclusion & Conformance ──────────────────
+    // A registered Programme of Activities screens individual Component Project
+    // Activities (CPAs) in over time and DELISTS them when they stop conforming.
+    // Only the integrity-bearing transitions surface onto the regulator queue.
+    //   excluded — the W73 SIGNATURE: a DELISTING (post-inclusion exclusion for
+    //             non-conformance) strands credited reductions and is always a
+    //             material event — reportable for EVERY tier.
+    //   included — approving a CPA into the programme crosses when a corresponding
+    //             adjustment is required (Article 6 ITMO, NDC accounting) OR for
+    //             the large tiers (large + mega).
+    //   rejected — a failed inclusion of a large CPA (large + mega) crosses.
+    //   sla_breached — crosses for the large tiers (large + mega).
+    case 'carbon_poa.excluded': {
+      const tier = str('cpa_tier');
+      return {
+        severity: tier === 'large' || tier === 'mega' ? 'critical' : 'high',
+        title: `Carbon CPA DELISTED (excluded) — ${str('cpa_number') || entityId} (${str('programme_name') || ''}${str('cpa_name') ? ' / ' + str('cpa_name') : ''}${str('host_country') ? ' / ' + str('host_country') : ''} / ${tier}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'carbon_poa.included': {
+      const tier = str('cpa_tier');
+      const ca = num('requires_corresponding_adjustment') === 1
+        || d['requires_corresponding_adjustment'] === '1'
+        || str('transfer_type') === 'article6';
+      const largeTier = tier === 'large' || tier === 'mega';
+      if (!ca && !largeTier) return null;
+      return {
+        severity: ca && largeTier ? 'high' : 'medium',
+        title: `Carbon CPA INCLUDED in programme — ${str('cpa_number') || entityId} (${str('programme_name') || ''}${ca ? ' / Article 6 corresponding-adjustment' : ''}${str('host_country') ? ' / ' + str('host_country') : ''} / ${tier}${num('annual_er_tco2e') ? ' / ' + num('annual_er_tco2e').toLocaleString() + ' tCO2e/yr' : ''})`.trim(),
+      };
+    }
+    case 'carbon_poa.rejected': {
+      const tier = str('cpa_tier');
+      if (tier !== 'large' && tier !== 'mega') return null;
+      return {
+        severity: tier === 'mega' ? 'high' : 'medium',
+        title: `Carbon CPA inclusion REJECTED — ${str('cpa_number') || entityId} (${str('programme_name') || ''}${str('reason_code') ? ' / ' + str('reason_code') : ''} / ${tier})`.trim(),
+      };
+    }
+    case 'carbon_poa.sla_breached': {
+      const tier = str('cpa_tier');
+      if (tier !== 'large' && tier !== 'mega') return null;
+      return {
+        severity: 'medium',
+        title: `Carbon CPA inclusion SLA breached — ${str('cpa_number') || entityId} (${str('chain_status') || ''} / ${str('programme_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
