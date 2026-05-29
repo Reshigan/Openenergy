@@ -652,6 +652,13 @@ export type EventType =
   | 'carbon_poa.verified' | 'carbon_poa.rejected'
   | 'carbon_poa.excluded' | 'carbon_poa.withdrawn'
   | 'carbon_poa.completed' | 'carbon_poa.sla_breached'
+  // ─── Wave 74 — Regulator NERSA Levy Assessment & Collection chain (NERSA recovering its own running costs from the industries it regulates: an annual levy under s5B of the National Energy Regulator Act 40/2004 + fees under ERA 4/2006 s10, assessed on a declared base (turnover / throughput volume / fixed schedule) across electricity/piped-gas/petroleum-pipeline; DISTINCT from W43 tariff-determination by SUBJECT — W43 sets what a licensee CHARGES its customers, W74 sets what it OWES the regulator; the financial counterpart to the licensing chains W33/W49/W57; 12-state P6 levy_assessed→assessment_review→invoiced→payment_pending→(partially_paid…)→settled, objection branch invoiced→objection_review→payment_pending, arrears/dunning branch payment_pending|partially_paid→in_arrears→final_demand→enforcement→settled|written_off, withdraw before payment; URGENT SLA (larger assessed levy = tighter window); SIGNATURE escalate_enforcement crosses for EVERY tier (licence good-standing at risk) + write_off crosses for EVERY tier (fiscal write-off of public revenue), issue_final_demand + sla_breached cross for large+major; single regulator-owned write {admin,regulator}, actor_party regulator/licensee from action; resolve_objection + confirm_payable share .payment_pending) ───
+  | 'regulator_levy.assessment_review' | 'regulator_levy.invoiced'
+  | 'regulator_levy.objection_review' | 'regulator_levy.payment_pending'
+  | 'regulator_levy.partially_paid' | 'regulator_levy.in_arrears'
+  | 'regulator_levy.final_demand' | 'regulator_levy.enforcement'
+  | 'regulator_levy.settled' | 'regulator_levy.written_off'
+  | 'regulator_levy.withdrawn' | 'regulator_levy.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
@@ -772,6 +779,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   contract: 'contracts',
   marketplace: 'marketplace',
   regulator: 'regulator',
+  regulator_levy: 'regulator',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

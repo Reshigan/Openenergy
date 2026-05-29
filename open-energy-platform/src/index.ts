@@ -127,6 +127,7 @@ import recLifecycleChainRoutes, { recLifecycleSlaSweep } from './routes/rec-life
 import assetPrognosticsChainRoutes, { assetPrognosticsSlaSweep } from './routes/asset-prognostics-chain';
 import sparePartsProvisioningChainRoutes, { sparePartsProvisioningSlaSweep } from './routes/spare-parts-provisioning-chain';
 import poaCpaInclusionChainRoutes, { poaCpaInclusionSlaSweep } from './routes/poa-cpa-inclusion-chain';
+import levyAssessmentChainRoutes, { levyAssessmentSlaSweep } from './routes/levy-assessment-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -424,6 +425,7 @@ app.route('/api/rec-lifecycle/chain', recLifecycleChainRoutes);
 app.route('/api/asset-prognostics/chain', assetPrognosticsChainRoutes);
 app.route('/api/spare-parts-provisioning/chain', sparePartsProvisioningChainRoutes);
 app.route('/api/poa-inclusion/chain', poaCpaInclusionChainRoutes);
+app.route('/api/levy-assessment/chain', levyAssessmentChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1096,6 +1098,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('poa_cpa_inclusion_sla_sweep', async () => {
         const result = await poaCpaInclusionSlaSweep(env as never);
         console.log('poa_cpa_inclusion_sla_sweep', JSON.stringify(result));
+      });
+      // W74 — Regulator NERSA levy assessment & collection: breach any open levy
+      // past its (URGENT) window and cross the regulator inbox on the large +
+      // major tiers as a collection / good-standing risk.
+      await safe('levy_assessment_sla_sweep', async () => {
+        const result = await levyAssessmentSlaSweep(env as never);
+        console.log('levy_assessment_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

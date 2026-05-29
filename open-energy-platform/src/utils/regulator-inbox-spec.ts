@@ -2248,6 +2248,48 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 74 — Regulator NERSA Levy Assessment & Collection ────────────
+    // NERSA recovers its running costs by levying the industries it regulates;
+    // the material collection events surface onto the Council oversight queue.
+    //   enforcement — the W74 SIGNATURE: escalating an uncollected levy into
+    //             enforcement puts the licensee good-standing at risk and is
+    //             always material — reportable for EVERY tier.
+    //   written_off — a fiscal write-off of public-body revenue (with Council
+    //             approval) is always material — reportable for EVERY tier.
+    //   final_demand — issuing a final demand on a large debt crosses for the
+    //             large + major tiers (routine for smaller debts).
+    //   sla_breached — crosses for the large + major tiers.
+    case 'regulator_levy.enforcement': {
+      const tier = str('levy_tier');
+      return {
+        severity: tier === 'major' || tier === 'large' ? 'critical' : 'high',
+        title: `Levy ENFORCEMENT escalated — ${str('levy_number') || entityId} (${str('licensee_name') || ''} / ${str('sector') || ''} / ${tier}${num('outstanding_amount') ? ' / R' + num('outstanding_amount').toLocaleString() + ' outstanding' : ''})`.trim(),
+      };
+    }
+    case 'regulator_levy.written_off': {
+      const tier = str('levy_tier');
+      return {
+        severity: tier === 'major' || tier === 'large' ? 'high' : 'medium',
+        title: `Levy WRITTEN OFF — ${str('levy_number') || entityId} (${str('licensee_name') || ''} / ${str('sector') || ''} / ${tier}${str('reason_code') ? ' / ' + str('reason_code') : ''}${num('outstanding_amount') ? ' / R' + num('outstanding_amount').toLocaleString() : ''})`.trim(),
+      };
+    }
+    case 'regulator_levy.final_demand': {
+      const tier = str('levy_tier');
+      if (tier !== 'large' && tier !== 'major') return null;
+      return {
+        severity: tier === 'major' ? 'high' : 'medium',
+        title: `Levy FINAL DEMAND issued — ${str('levy_number') || entityId} (${str('licensee_name') || ''} / ${str('sector') || ''} / ${tier}${num('outstanding_amount') ? ' / R' + num('outstanding_amount').toLocaleString() + ' outstanding' : ''})`.trim(),
+      };
+    }
+    case 'regulator_levy.sla_breached': {
+      const tier = str('levy_tier');
+      if (tier !== 'large' && tier !== 'major') return null;
+      return {
+        severity: 'medium',
+        title: `Levy SLA breached — ${str('levy_number') || entityId} (${str('chain_status') || ''} / ${str('licensee_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

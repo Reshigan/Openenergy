@@ -10,6 +10,7 @@ import { TariffDeterminationChainTab } from '../tariff-determination/TariffDeter
 import { LicenceApplicationChainTab } from '../licence-application/LicenceApplicationChainTab';
 import { SsegRegistrationChainTab } from '../sseg-registration/SsegRegistrationChainTab';
 import { ComplaintResolutionChainTab } from '../complaint-resolution/ComplaintResolutionChainTab';
+import { LevyAssessmentChainTab } from '../levy-assessment/LevyAssessmentChainTab';
 
 export function RegulatorSuitePage() {
   const tabs: TabSpec[] = [
@@ -77,6 +78,15 @@ export function RegulatorSuitePage() {
         'Complaints & dispute resolution chain (Electricity Regulation Act 4 of 2006 §30 + National Energy Regulator Act 40 of 2004 + NERSA Complaints Procedures) · 12-state P6: lodged → admissibility review → referred to licensee → under investigation → mediation → adjudication hearing → ruling issued → remedy monitoring → resolved, with a first-level licensee-settlement short-circuit, an investigation fast-track to hearing, plus dismiss, appeal and withdraw branches. The REACTIVE external-party complaint engine — distinct from W31 internally cross-referred Disposition and W40 own-initiative Inspection. URGENT SLA: a larger affected population means tighter windows (systemic ≥10,000 customers is fastest). Council crossings: appeals for EVERY tier (signature — every appeal is reportable), rulings + SLA breaches for major + systemic, dismissals for systemic only. The adjudicator drives the machinery; the respondent licensee settles; the complainant appeals + withdraws.',
       columns: [],
       customContent: <ComplaintResolutionChainTab />,
+    },
+    {
+      key: 'levy-assessment',
+      label: 'Levy & collection',
+      endpoint: '',
+      description:
+        'Regulatory levy assessment & collection chain (NERSA levies under the National Energy Regulator Act 40 of 2004 §5B + ERA / Gas Act / Petroleum Pipelines Act levy schedules) · 12-state P6: assessed → assessment review → invoiced → payment pending → partially paid → in arrears → final demand → enforcement → settled, with an objection-review short-circuit, a write-off branch and an assessment-withdrawal escape. The FINANCIAL counterpart to licensing — what licensees OWE the regulator (turnover-based, volume-based or fixed) — distinct from W43 MYPD which sets what licensees CHARGE customers. Auto-assesses from the declared base, ages arrears into 30/60/90/120+ buckets and drives a dunning cycle (invoice → final demand → enforcement) with automatic licence-good-standing linkage, beating NERSA manual billing / Ofgem licence-fee runs / FERC annual charges. URGENT SLA: a larger levy means tighter collection windows (major ≥ R50m is fastest). Council crossings: enforcement escalation + write-offs for EVERY tier (signature — every enforcement step and every write-off is reportable), final demands + SLA breaches for large + major only. The assessor drives the machinery; the licensee objects + pays.',
+      columns: [],
+      customContent: <LevyAssessmentChainTab />,
     },
     // ─── Licences ────────────────────────────────────────────────────────
     {
