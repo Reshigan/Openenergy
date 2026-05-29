@@ -11,6 +11,7 @@ import { LoadCurtailmentChainTab } from '../load-curtailment/LoadCurtailmentChai
 import { ReserveActivationChainTab } from '../reserve-activation/ReserveActivationChainTab';
 import { GridCapacityChainTab } from '../grid-capacity/GridCapacityChainTab';
 import { GridCodeComplianceChainTab } from '../grid-code-compliance/GridCodeComplianceChainTab';
+import { ConnectionEnergizationChainTab } from '../connection-energization/ConnectionEnergizationChainTab';
 
 const instructionTypes = [
   { value: 'curtail', label: 'Curtail' },
@@ -64,6 +65,14 @@ export function GridOperatorSuitePage() {
       description: 'NERSA Grid Code C-1 — IPP connection applications, studies, cost estimates, UNGCA execution, energisation. Inverted tier SLAs.',
       columns: [],
       customContent: <GcaChainTab />,
+    },
+    {
+      key: 'connection_energization',
+      label: 'Connection energization',
+      endpoint: '',
+      description: 'SA Grid Code / NTCSA commissioning hold-point gate — the physical go-live of a new generator after capacity allocation (W58) and the GCA (W28). connection ready → programme review → approved → pre-energization inspection → energization authorized → cold commissioning → synchronized → trial operation → compliance testing → commercial operation, with suspend-on-failed-hold-point (→ resume) and withdraw-before-COD branches. INVERTED tier SLA (larger connection = longer window), split-write facility (IPP) ↔ operator (SO). Issuing the COD crosses to the regulator for every tier; energization authorization, suspension + SLA breaches cross for transmission + bulk.',
+      columns: [],
+      customContent: <ConnectionEnergizationChainTab />,
     },
     {
       key: 'load_curtailment',

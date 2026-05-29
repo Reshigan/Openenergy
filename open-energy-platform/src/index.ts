@@ -128,6 +128,7 @@ import assetPrognosticsChainRoutes, { assetPrognosticsSlaSweep } from './routes/
 import sparePartsProvisioningChainRoutes, { sparePartsProvisioningSlaSweep } from './routes/spare-parts-provisioning-chain';
 import poaCpaInclusionChainRoutes, { poaCpaInclusionSlaSweep } from './routes/poa-cpa-inclusion-chain';
 import levyAssessmentChainRoutes, { levyAssessmentSlaSweep } from './routes/levy-assessment-chain';
+import connectionEnergizationChainRoutes, { connectionEnergizationSlaSweep } from './routes/connection-energization-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -426,6 +427,7 @@ app.route('/api/asset-prognostics/chain', assetPrognosticsChainRoutes);
 app.route('/api/spare-parts-provisioning/chain', sparePartsProvisioningChainRoutes);
 app.route('/api/poa-inclusion/chain', poaCpaInclusionChainRoutes);
 app.route('/api/levy-assessment/chain', levyAssessmentChainRoutes);
+app.route('/api/connection-energization/chain', connectionEnergizationChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1105,6 +1107,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('levy_assessment_sla_sweep', async () => {
         const result = await levyAssessmentSlaSweep(env as never);
         console.log('levy_assessment_sla_sweep', JSON.stringify(result));
+      });
+      // W75 connection-energization: flag commissioning hold-points that overrun
+      // their (INVERTED) window and cross the regulator inbox on the large tiers
+      // (transmission + bulk) as a connection-programme delivery risk.
+      await safe('connection_energization_sla_sweep', async () => {
+        const result = await connectionEnergizationSlaSweep(env as never);
+        console.log('connection_energization_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

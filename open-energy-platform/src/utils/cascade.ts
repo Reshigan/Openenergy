@@ -659,6 +659,13 @@ export type EventType =
   | 'regulator_levy.final_demand' | 'regulator_levy.enforcement'
   | 'regulator_levy.settled' | 'regulator_levy.written_off'
   | 'regulator_levy.withdrawn' | 'regulator_levy.sla_breached'
+  // ─── Wave 75 — Grid Connection Energization & Commissioning Hold-Point Gate (the PHYSICAL go-live gate for a new generator: after winning scarce capacity (W58) and signing its Grid Connection Agreement (W28), a plant must be COMMISSIONED and ENERGIZED through a sequence of witnessed SA-Grid-Code / NTCSA hold-points before it can sell a MWh — programme agreed → pre-energization safety inspection → connection assets energized → cold commissioning (protection/SCADA/telemetry) → first synchronization → trial-operation run under load → grid-code compliance tests (FRT/reactive/frequency) → COD certificate; a failed hold-point SUSPENDS until remediated, an abandoned project withdraws; 12-state P6 connection_ready→program_review→program_approved→pre_energization_inspection→energization_authorized→cold_commissioning→synchronized→trial_operation→compliance_testing→commercial_operation + commissioning_suspended (resume→program_approved) + connection_withdrawn; tiers by connection capacity MW embedded<1/distribution<10/sub_transmission<50/transmission<200/bulk>=200; INVERTED SLA (larger connection = longer windows); SIGNATURE COD-driven + POSITIVE — issue_cod crosses for EVERY tier (new generation to commercial operation is always notifiable — the mirror of W67 disconnection where the FAILURE terminal always reports), authorize_energization + suspend_commissioning + sla_breached cross for large tiers transmission+bulk; split write operator(SO){admin,support,grid_operator}↔facility(IPP){admin,ipp_developer}; DISTINCT from W58 capacity-queue / W28 GCA-agreement / W67 ongoing-compliance; resume_commissioning shares .program_approved) ───
+  | 'connection_energization.program_review' | 'connection_energization.program_approved'
+  | 'connection_energization.pre_energization_inspection' | 'connection_energization.energization_authorized'
+  | 'connection_energization.cold_commissioning' | 'connection_energization.synchronized'
+  | 'connection_energization.trial_operation' | 'connection_energization.compliance_testing'
+  | 'connection_energization.commercial_operation' | 'connection_energization.commissioning_suspended'
+  | 'connection_energization.connection_withdrawn' | 'connection_energization.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
@@ -780,6 +787,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   marketplace: 'marketplace',
   regulator: 'regulator',
   regulator_levy: 'regulator',
+  connection_energization: 'grid',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

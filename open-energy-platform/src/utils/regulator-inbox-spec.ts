@@ -2290,6 +2290,44 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 75 — Grid Connection Energization & Commissioning Hold-Point Gate ───
+    // COD-driven POSITIVE signature: a Commercial Operation Date is notifiable for
+    // EVERY tier (new generation registered to the national balance); energization,
+    // suspension and SLA breaches of a system-significant connection cross for the
+    // large tiers (transmission + bulk) only.
+    case 'connection_energization.commercial_operation': {
+      const tier = str('connection_tier');
+      const large = tier === 'transmission' || tier === 'bulk';
+      return {
+        severity: large ? 'medium' : 'low',
+        title: `Connection ENERGIZED to commercial operation — ${str('energization_number') || entityId} (${str('facility_name') || ''} / ${str('technology') || ''} / ${num('connection_capacity_mw') ? num('connection_capacity_mw') + ' MW' : ''} / ${tier})`.trim(),
+      };
+    }
+    case 'connection_energization.energization_authorized': {
+      const tier = str('connection_tier');
+      if (tier !== 'transmission' && tier !== 'bulk') return null;
+      return {
+        severity: 'medium',
+        title: `Connection first ENERGIZED onto live grid — ${str('energization_number') || entityId} (${str('facility_name') || ''} / ${num('connection_capacity_mw') ? num('connection_capacity_mw') + ' MW' : ''} / ${tier})`.trim(),
+      };
+    }
+    case 'connection_energization.commissioning_suspended': {
+      const tier = str('connection_tier');
+      if (tier !== 'transmission' && tier !== 'bulk') return null;
+      return {
+        severity: 'high',
+        title: `Commissioning SUSPENDED on hold-point failure — ${str('energization_number') || entityId} (${str('facility_name') || ''} / ${num('connection_capacity_mw') ? num('connection_capacity_mw') + ' MW' : ''} / ${tier}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'connection_energization.sla_breached': {
+      const tier = str('connection_tier');
+      if (tier !== 'transmission' && tier !== 'bulk') return null;
+      return {
+        severity: 'high',
+        title: `Energization SLA breached — ${str('energization_number') || entityId} (${str('chain_status') || ''} / ${str('facility_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
