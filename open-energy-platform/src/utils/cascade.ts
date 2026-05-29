@@ -624,6 +624,14 @@ export type EventType =
   | 'dscr_monitoring.cure_in_progress' | 'dscr_monitoring.cure_validated'
   | 'dscr_monitoring.lock_up' | 'dscr_monitoring.accelerated'
   | 'dscr_monitoring.waived' | 'dscr_monitoring.sla_breached'
+  // ─── Wave 87: Offtaker PPA Scheduled-Energy Nomination & Deviation Settlement (P6); the daily/monthly operational pulse of any PPA. Day-ahead nomination → confirmation → optional intra-day revision → gate closure → delivery → meter ingestion → reconciliation → SETTLEMENT at the deviation tariff. Excused branches catch force-majeure / curtailment; dispute branch crosses into NERSA s30. Beats Mott MacDonald PPA Manager / KPMG PPA Operations / Power Advocate PPA Monitor / Open Energi VPP / Schneider EcoStruxure Energy / SAP IS-U / Oracle Utilities CC&B via LIVE nomination-integrity battery (abs MWh deviation, abs %, signed, deviation value ZAR, predicted penalty ZAR with ×1.0/1.2/1.5/2.0 band ladder, capacity factor realized, forecast accuracy, weather-normalised residual, 3-period trend, SLA days remaining, urgency band) re-computed every fetch + tier RE-DERIVED on every transition from |deviation|% (minor<5%/standard<10%/material<20%/major≥20%). URGENT SLA (larger deviation = tighter window). SIGNATURE NOMINATION-INTEGRITY: raise_dispute crosses regulator EVERY tier (NERSA s30 — PPA disputes always reportable, sister of W66 lodge_appeal); excuse_period + settle_deviation + sla_breached cross material+major. Single offtaker-desk write {admin,offtaker}; actor_party offtaker/seller/system_operator/independent_meter from action. ───
+  | 'ppa_nomination.da_nominated' | 'ppa_nomination.da_confirmed'
+  | 'ppa_nomination.da_rejected' | 'ppa_nomination.id_revised'
+  | 'ppa_nomination.delivery_in_progress' | 'ppa_nomination.delivery_complete'
+  | 'ppa_nomination.meter_data_received' | 'ppa_nomination.reconciled'
+  | 'ppa_nomination.dispute_raised' | 'ppa_nomination.deviation_settled'
+  | 'ppa_nomination.excused' | 'ppa_nomination.cancelled'
+  | 'ppa_nomination.sla_breached'
   // Wave 66 — Regulator Complaints & Dispute Resolution chain (NERSA as the quasi-judicial dispute forum under ERA 4/2006 s30 + NER Act 40/2004 + NERSA Complaints Procedures; REACTIVE external-party grievance adjudication, distinct from W31 internal-intake disposition and W40 proactive inspection; lodged→admissibility→referred_to_licensee→[settle | investigation→mediation→hearing→ruling→remedy_monitoring→resolved] + dismiss/appeal/withdraw; URGENT SLA (larger affected population = tighter); single regulator-owned write {admin,regulator}, actor_party complainant/respondent/adjudicator from action; SIGNATURE lodge_appeal crosses for EVERY tier (judicial review always material), issue_ruling crosses major+systemic, dismiss crosses systemic only, sla_breached crosses major+systemic; settle_at_licensee & confirm_compliance share .resolved)
   | 'regulator_complaint.admissibility_review' | 'regulator_complaint.referred'
   | 'regulator_complaint.escalated' | 'regulator_complaint.mediating'
@@ -871,6 +879,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   connection_energization: 'grid',
   settlement_fail: 'trader',
   dscr_monitoring: 'lender',
+  ppa_nomination: 'offtaker',
   trade_allocation: 'trading',
   popia: 'admin',
   auth: 'auth',

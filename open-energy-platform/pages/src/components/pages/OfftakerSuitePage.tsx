@@ -12,6 +12,7 @@ import { PaymentSecurityChainTab } from '../offtaker/PaymentSecurityChainTab';
 import { PpaTerminationChainTab } from '../offtaker/PpaTerminationChainTab';
 import { RecLifecycleChainTab } from '../offtaker/RecLifecycleChainTab';
 import { PpaChangeInLawChainTab } from '../offtaker/PpaChangeInLawChainTab';
+import { PpaNominationChainTab } from '../offtaker/PpaNominationChainTab';
 
 export function OfftakerSuitePage() {
   const tabs: TabSpec[] = [
@@ -70,6 +71,14 @@ export function OfftakerSuitePage() {
       description: 'PPA change-in-law relief chain (NERSA ERA s4 regulated-tariff pass-through + PPA change-in-law / tax-change clauses + IFRS treatment) · 12-state P6 lifecycle of a relief claim arising from a tax, regulatory, statutory or discriminatory change in law: an event is logged, eligibility is reviewed, the financial impact is assessed, the seller submits a relief claim, the counterparty reviews and negotiates, and — failing agreement — the matter goes to arbitration or determination, ending in relief granted + implemented or rejected. INVERTED SLA (larger claim quantum = more analysis time); offtaker drives, the claimant / counterparty / arbitrator party is derived from the action. Referring a claim to arbitration crosses to the regulator inbox for every tier (the change-in-law hard line); a governmental relief grant crosses for material + major + critical, and SLA breaches cross for major + critical.',
       columns: [],
       customContent: <PpaChangeInLawChainTab />,
+    },
+    {
+      key: 'ppa-nominations',
+      label: 'PPA nominations',
+      endpoint: '',
+      description: 'PPA scheduled-energy nomination & deviation settlement chain (NERSA Metering Code + NTCSA System Operator + PPA forecast / nomination / deviation clauses + IFRS 15 variable-consideration revenue recognition) · 12-state P6 daily lifecycle of a scheduled-energy nomination: window opens, day-ahead nomination is submitted and confirmed, intraday revisions are accepted up to gate closure, delivery runs, the meter delivers settled volumes, reconciliation classifies any deviation, optionally a dispute is raised, and the deviation is settled (compensation seller↔offtaker per the deviation ladder) or excused (force majeure / curtailment / grid outage). Tier is RE-DERIVED on every transition from absolute deviation %: minor < 5% / standard 5–10% / material 10–20% / major ≥ 20%. URGENT SLA (larger deviation = tighter window); offtaker drives, the seller / system operator / independent meter party is derived from the action. Raising a dispute crosses to the regulator inbox for every tier (the nomination-integrity hard line — sister of W66 complaints); excusing a period, settling a major / material deviation and SLA breaches cross for material + major.',
+      columns: [],
+      customContent: <PpaNominationChainTab />,
     },
     {
       key: 'rec-lifecycle',

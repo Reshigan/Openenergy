@@ -2455,6 +2455,44 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 87 — Offtaker PPA Scheduled-Energy Nomination & Deviation Settlement (P6) ──
+    // NOMINATION-INTEGRITY signature: raise_dispute ALWAYS crosses (PPA disputes
+    // under ERA s30 — NERSA balance-settlement oversight — are always notifiable,
+    // sister of W66 lodge_appeal). excuse_period (large excused volumes) and
+    // settle_deviation (large penalty disclosures) cross material + major.
+    // sla_breached crosses material + major.
+    case 'ppa_nomination.dispute_raised': {
+      const tier = str('deviation_tier');
+      return {
+        severity: tier === 'major' ? 'high' : tier === 'material' ? 'high' : 'medium',
+        title: `PPA nomination DISPUTE raised (NERSA s30) — ${str('nomination_number') || entityId} (${str('facility_name') || ''} / ${str('offtaker_name') || ''} / ${num('absolute_deviation_pct') || 0}% dev / ${tier})`.trim(),
+      };
+    }
+    case 'ppa_nomination.excused': {
+      const tier = str('deviation_tier');
+      if (tier !== 'material' && tier !== 'major') return null;
+      return {
+        severity: tier === 'major' ? 'high' : 'medium',
+        title: `PPA nomination EXCUSED (force-majeure/curtailment) — ${str('nomination_number') || entityId} (${str('facility_name') || ''} / ${str('excuse_reason') || 'force_majeure'} / ${num('absolute_deviation_mwh') || 0} MWh / ${tier})`.trim(),
+      };
+    }
+    case 'ppa_nomination.deviation_settled': {
+      const tier = str('deviation_tier');
+      if (tier !== 'material' && tier !== 'major') return null;
+      return {
+        severity: tier === 'major' ? 'high' : 'medium',
+        title: `PPA deviation SETTLED — ${str('nomination_number') || entityId} (${str('facility_name') || ''} / ${num('absolute_deviation_mwh') || 0} MWh / R${(num('settled_amount_zar') || 0).toLocaleString('en-ZA')} / ${tier})`.trim(),
+      };
+    }
+    case 'ppa_nomination.sla_breached': {
+      const tier = str('deviation_tier');
+      if (tier !== 'material' && tier !== 'major') return null;
+      return {
+        severity: 'high',
+        title: `PPA nomination chain SLA breached — ${str('nomination_number') || entityId} (${str('chain_status') || ''} / ${str('facility_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     // ─── Wave 75 — Grid Connection Energization & Commissioning Hold-Point Gate ───
     // COD-driven POSITIVE signature: a Commercial Operation Date is notifiable for
     // EVERY tier (new generation registered to the national balance); energization,

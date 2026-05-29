@@ -140,6 +140,7 @@ import consultationNoticeChainRoutes, { consultationNoticeSlaSweep } from './rou
 import blackStartChainRoutes, { blackStartSlaSweep } from './routes/black-start-chain';
 import settlementFailChainRoutes, { settlementFailSlaSweep } from './routes/settlement-fail-chain';
 import dscrMonitoringChainRoutes, { dscrMonitoringSlaSweep } from './routes/dscr-monitoring-chain';
+import ppaNominationChainRoutes, { ppaNominationSlaSweep } from './routes/ppa-nomination-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -450,6 +451,7 @@ app.route('/api/consultation-notice/chain', consultationNoticeChainRoutes);
 app.route('/api/black-start/chain', blackStartChainRoutes);
 app.route('/api/settlement-fail/chain', settlementFailChainRoutes);
 app.route('/api/dscr-monitoring/chain', dscrMonitoringChainRoutes);
+app.route('/api/ppa-nomination/chain', ppaNominationChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1217,6 +1219,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('dscr_monitoring_sla_sweep', async () => {
         const result = await dscrMonitoringSlaSweep(env as never);
         console.log('dscr_monitoring_sla_sweep', JSON.stringify(result));
+      });
+      // W87 Offtaker PPA Scheduled-Energy Nomination & Deviation Settlement: flag
+      // nomination periods that overrun their URGENT SLA (larger deviation = tighter
+      // window); SLA breaches cross the regulator inbox on material + major tiers
+      // (minor/standard breach internally).
+      await safe('ppa_nomination_sla_sweep', async () => {
+        const result = await ppaNominationSlaSweep(env as never);
+        console.log('ppa_nomination_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
