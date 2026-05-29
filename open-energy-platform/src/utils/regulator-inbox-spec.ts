@@ -2168,6 +2168,38 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 72 — Spare-Parts Provisioning (AVAILABILITY-RISK signature) ──
+    case 'spare_parts_provisioning.backordered': {
+      const tier = str('provisioning_tier');
+      const vital = str('criticality') === 'vital';
+      const high = tier === 'critical' || tier === 'catastrophic';
+      // flag_backorder crosses when (vital AND HIGH) OR catastrophic.
+      if (tier !== 'catastrophic' && !(vital && high)) return null;
+      return {
+        severity: tier === 'catastrophic' ? 'critical' : 'high',
+        title: `Spare-part BACKORDER — security-of-supply risk — ${str('part_number') || entityId} (${str('criticality') || ''} / ${str('asset_name') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'spare_parts_provisioning.cancelled': {
+      const tier = str('provisioning_tier');
+      const vital = str('criticality') === 'vital';
+      const high = tier === 'critical' || tier === 'catastrophic';
+      // cancel_provisioning crosses when (vital AND HIGH).
+      if (!(vital && high)) return null;
+      return {
+        severity: tier === 'catastrophic' ? 'critical' : 'high',
+        title: `Vital spare-part provisioning CANCELLED — ${str('part_number') || entityId} (${str('asset_name') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'spare_parts_provisioning.sla_breached': {
+      const tier = str('provisioning_tier');
+      if (tier !== 'critical' && tier !== 'catastrophic') return null;
+      return {
+        severity: tier === 'catastrophic' ? 'high' : 'medium',
+        title: `Spare-part provisioning SLA breached — ${str('part_number') || entityId} (${str('criticality') || ''} / ${str('chain_status') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

@@ -6,6 +6,7 @@ import { ProblemManagementChainTab } from '../problem-management/ProblemManageme
 import { ChangeEnablementChainTab } from '../change-enablement/ChangeEnablementChainTab';
 import { SecurityRemediationChainTab } from '../security-remediation/SecurityRemediationChainTab';
 import { WarrantyRecoveryChainTab } from '../warranty-recovery/WarrantyRecoveryChainTab';
+import { SparePartsProvisioningChainTab } from '../spare-parts-provisioning/SparePartsProvisioningChainTab';
 import { api } from '../../lib/api';
 import { X } from 'lucide-react';
 
@@ -120,6 +121,11 @@ export function SupportWorkstationPage() {
             key: 'warranty_recovery',
             label: 'Warranty recovery',
             body: () => <WarrantyRecoveryChainTab />,
+          },
+          {
+            key: 'spare_parts',
+            label: 'Spare parts',
+            body: () => <SparePartsProvisioningChainTab />,
           },
           {
             key: 'escalations',

@@ -638,6 +638,13 @@ export type EventType =
   | 'asset_prognostic.monitoring' | 'asset_prognostic.resolved'
   | 'asset_prognostic.escalated' | 'asset_prognostic.confirmed_failure'
   | 'asset_prognostic.expired' | 'asset_prognostic.sla_breached'
+  // ─── Wave 72 — OEM-Support Spare-Parts Provisioning & Replenishment chain (service-parts-planning: predictive (W71 RUL) demand → requisition → PO → receive → incoming-QA → stock → reserve → issue; URGENT SLA; AVAILABILITY-RISK signature: flag_backorder crosses when (vital AND HIGH) OR catastrophic, cancel_provisioning crosses when (vital AND HIGH), sla_breached crosses HIGH tiers; single-party {admin,support} write, actor_party planner/buyer/warehouse/supplier from action; confirm_shipment & expedite_backorder share .in_transit) ───
+  | 'spare_parts_provisioning.requisition_raised' | 'spare_parts_provisioning.requisition_approved'
+  | 'spare_parts_provisioning.po_issued' | 'spare_parts_provisioning.backordered'
+  | 'spare_parts_provisioning.in_transit' | 'spare_parts_provisioning.received'
+  | 'spare_parts_provisioning.stocked' | 'spare_parts_provisioning.reserved'
+  | 'spare_parts_provisioning.issued' | 'spare_parts_provisioning.returned'
+  | 'spare_parts_provisioning.cancelled' | 'spare_parts_provisioning.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
