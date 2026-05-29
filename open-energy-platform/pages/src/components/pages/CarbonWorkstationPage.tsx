@@ -12,6 +12,7 @@ import { CarbonOffsetClaimChainTab } from '../carbon/CarbonOffsetClaimChainTab';
 import { CreditingRenewalChainTab } from '../carbon/CreditingRenewalChainTab';
 import { CarbonErpaChainTab } from '../carbon/CarbonErpaChainTab';
 import { PoaCpaInclusionChainTab } from '../carbon/PoaCpaInclusionChainTab';
+import { CarbonIssuanceChainTab } from '../carbon/CarbonIssuanceChainTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -125,6 +126,11 @@ export function CarbonWorkstationPage() {
           key: 'poa_cpa_inclusion_chain',
           label: 'PoA / CPA inclusion',
           body: () => <PoaCpaInclusionChainTab />,
+        },
+        {
+          key: 'carbon_issuance_chain',
+          label: 'Credit issuance',
+          body: () => <CarbonIssuanceChainTab />,
         },
         {
           key: 'audit',

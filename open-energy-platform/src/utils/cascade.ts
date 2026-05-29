@@ -708,6 +708,13 @@ export type EventType =
   | 'project_change_order.deferred' | 'project_change_order.disputed'
   | 'project_change_order.rejected' | 'project_change_order.withdrawn'
   | 'project_change_order.cancelled' | 'project_change_order.sla_breached'
+  // ─── Wave 82 — Carbon Credit Issuance & Serialization chain (the MINTING step of the carbon-credit lifecycle: after a monitoring period has been verified (W11) and the project is in good standing (W37/W56), the registry SERIALIZES the verified reductions into a unique serial-number block and credits the proponent's holding account; beats Verra Registry on APX / Gold Standard Impact Registry / S&P Global Environmental Registry / Cercarbono / Puro.earth — all linear manual-integrity-check workflows — via live calculated integrity guards on every record: serial-block transparency, buffer-pool maths, project+vintage cumulative headroom, double-issuance/over-issuance flags, Article-6 corresponding-adjustment binding; 12-state P6 requested→screening→verification_check→serialization→pending_registry→issued (clean path) with on_hold (resume→screening), returned (resubmit→screening), disputed (resolve→serialization), rejected/withdrawn/cancelled terminals; tiers by REQUESTED tCO2e minor<10k/moderate<100k/major<500k/mega>=500k with Article-6 floor at major; INVERTED SLA (larger volume = longer windows = deeper diligence); INTEGRITY signature: raise_dispute crosses regulator for EVERY tier (a serial/quantum dispute is always reportable), confirm_issuance crosses EVERY tier when CA-required else major+mega only, reject + sla_breached cross major+mega only; single carbon-fund desk write {admin,carbon_fund}, actor_party proponent/registry/vvb/dna from action; resume + resubmit both share .screening, resolve_dispute shares .serialization) ───
+  | 'carbon_issuance.screening' | 'carbon_issuance.verification_check'
+  | 'carbon_issuance.serialization' | 'carbon_issuance.pending_registry'
+  | 'carbon_issuance.issued' | 'carbon_issuance.on_hold'
+  | 'carbon_issuance.returned' | 'carbon_issuance.disputed'
+  | 'carbon_issuance.rejected' | 'carbon_issuance.withdrawn'
+  | 'carbon_issuance.cancelled' | 'carbon_issuance.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
@@ -813,6 +820,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   escrow: 'settlement',
   carbon: 'carbon',
   carbon_poa: 'carbon',
+  carbon_issuance: 'carbon',
   rec: 'offtaker',
   rec_market: 'offtaker',
   scope2: 'offtaker',

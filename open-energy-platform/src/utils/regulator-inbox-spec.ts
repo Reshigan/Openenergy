@@ -2540,6 +2540,50 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 82 — Carbon Credit Issuance & Serialization (INTEGRITY signature) ─
+    // The serial-number ledger is the single hard market-integrity line of any
+    // carbon registry. A dispute on it is always notifiable; an Article-6
+    // mint that counts against a host-country NDC is always notifiable; large
+    // volumes get extra scrutiny.
+    case 'carbon_issuance.disputed': {
+      // raise_dispute crosses for EVERY tier — the W82 signature crossing.
+      const tier = str('issuance_tier');
+      return {
+        severity: tier === 'mega' || tier === 'major' ? 'critical' : 'high',
+        title: `Carbon issuance DISPUTED — ${str('issuance_number') || entityId} (${str('project_name') || ''} / ${tier} / ${num('requested_tco2e')} tCO2e${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'carbon_issuance.issued': {
+      // confirm_issuance crosses for EVERY tier when CA-required (Article 6);
+      // else for the large tiers (major + mega) only.
+      const tier = str('issuance_tier');
+      const requiresCA = num('requires_corresponding_adjustment') === 1;
+      if (!requiresCA && tier !== 'major' && tier !== 'mega') return null;
+      const caTag = requiresCA ? ' / Article 6 CA-bound' : '';
+      return {
+        severity: requiresCA ? 'high' : tier === 'mega' ? 'high' : 'medium',
+        title: `Carbon credits ISSUED — ${str('issuance_number') || entityId} (${str('project_name') || ''} / ${tier} / ${num('requested_tco2e')} tCO2e${caTag})`.trim(),
+      };
+    }
+    case 'carbon_issuance.rejected': {
+      // reject crosses for major + mega only.
+      const tier = str('issuance_tier');
+      if (tier !== 'major' && tier !== 'mega') return null;
+      return {
+        severity: tier === 'mega' ? 'high' : 'medium',
+        title: `Carbon issuance REJECTED — ${str('issuance_number') || entityId} (${str('project_name') || ''} / ${tier}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'carbon_issuance.sla_breached': {
+      // sla_breached crosses for major + mega only.
+      const tier = str('issuance_tier');
+      if (tier !== 'major' && tier !== 'mega') return null;
+      return {
+        severity: tier === 'mega' ? 'high' : 'medium',
+        title: `Carbon issuance SLA breached — ${str('issuance_number') || entityId} (${str('chain_status') || ''} / ${str('project_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
