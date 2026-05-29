@@ -631,6 +631,13 @@ export type EventType =
   | 'rec_lifecycle.cancelled' | 'rec_lifecycle.rejected'
   | 'rec_lifecycle.disputed' | 'rec_lifecycle.clawed_back'
   | 'rec_lifecycle.expired' | 'rec_lifecycle.sla_breached'
+  // ─── Wave 71 — Esums Predictive Asset Health & Prognostics chain ───────
+  | 'asset_prognostic.triaged' | 'asset_prognostic.dismissed'
+  | 'asset_prognostic.auto_suppressed' | 'asset_prognostic.diagnosed'
+  | 'asset_prognostic.action_planned' | 'asset_prognostic.wo_raised'
+  | 'asset_prognostic.monitoring' | 'asset_prognostic.resolved'
+  | 'asset_prognostic.escalated' | 'asset_prognostic.confirmed_failure'
+  | 'asset_prognostic.expired' | 'asset_prognostic.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

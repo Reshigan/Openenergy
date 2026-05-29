@@ -124,6 +124,7 @@ import gridCodeComplianceChainRoutes, { gridCodeComplianceSlaSweep } from './rou
 import counterpartyMarginChainRoutes, { counterpartyMarginSlaSweep } from './routes/counterparty-margin-chain';
 import securityPerfectionChainRoutes, { securityPerfectionSlaSweep } from './routes/security-perfection-chain';
 import recLifecycleChainRoutes, { recLifecycleSlaSweep } from './routes/rec-lifecycle-chain';
+import assetPrognosticsChainRoutes, { assetPrognosticsSlaSweep } from './routes/asset-prognostics-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -418,6 +419,7 @@ app.route('/api/grid-code-compliance/chain', gridCodeComplianceChainRoutes);
 app.route('/api/counterparty-margin/chain', counterpartyMarginChainRoutes);
 app.route('/api/security-perfection/chain', securityPerfectionChainRoutes);
 app.route('/api/rec-lifecycle/chain', recLifecycleChainRoutes);
+app.route('/api/asset-prognostics/chain', assetPrognosticsChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1069,6 +1071,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('rec_lifecycle_sla_sweep', async () => {
         const result = await recLifecycleSlaSweep(env as never);
         console.log('rec_lifecycle_sla_sweep', JSON.stringify(result));
+      });
+      // W71 — Esums predictive asset-health prognostics: breach any open
+      // prognostic past its (URGENT) window and cross the regulator inbox on the
+      // high tiers (major + critical).
+      await safe('asset_prognostics_sla_sweep', async () => {
+        const result = await assetPrognosticsSlaSweep(env as never);
+        console.log('asset_prognostics_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

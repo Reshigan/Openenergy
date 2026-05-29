@@ -2134,6 +2134,40 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 71 — Esums Predictive Asset Health & Prognostics ─────────────
+    // A MATERIALISED failure is an OHSA / NRCS matter whenever the fault mode is
+    // safety-implicated (arc / thermal-runaway / hotspot / transformer-thermal) —
+    // it crosses for EVERY tier in that case (the W71 signature); otherwise it
+    // crosses for the high tiers. Escalations cross only when a high-tier case is
+    // safety-implicated, and SLA breaches cross for major/critical.
+    case 'asset_prognostic.confirmed_failure': {
+      const tier = str('tier');
+      const safety = !!d['safety_implicated'];
+      const high = tier === 'major' || tier === 'critical';
+      if (!safety && !high) return null;
+      return {
+        severity: safety ? 'critical' : tier === 'critical' ? 'critical' : 'high',
+        title: `Asset FAILURE confirmed${safety ? ' — SAFETY' : ''} — ${str('asset_label') || entityId} (${str('technology') || ''} / ${str('fault_mode') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'asset_prognostic.escalated': {
+      const tier = str('tier');
+      const safety = !!d['safety_implicated'];
+      if (!safety || (tier !== 'major' && tier !== 'critical')) return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Safety-implicated prognostic ESCALATED — ${str('asset_label') || entityId} (${str('technology') || ''} / ${str('fault_mode') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'asset_prognostic.sla_breached': {
+      const tier = str('tier');
+      if (tier !== 'major' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Asset prognostic SLA breached — ${str('asset_label') || entityId} (${str('status') || ''} / ${str('fault_mode') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

@@ -10,6 +10,7 @@ import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
 import { EsumsOmCockpit } from '../widgets/EsumsOmCockpit';
 import { EsumsOmOpportunities } from '../widgets/EsumsOmOpportunities';
+import { PredictiveAssetHealthChainTab } from '../esums/PredictiveAssetHealthChainTab';
 import { CommissioningTab } from '../esums/CommissioningTab';
 import { WarrantyClaimChainTab } from '../esums/WarrantyClaimChainTab';
 import { VendorEscalationChainTab } from '../esums/VendorEscalationChainTab';
@@ -38,6 +39,14 @@ export function EsumsOmPage() {
       description: 'Deterministic rule-based scan of the fleet for monetisable performance improvements. Every card cites its evidence and quantifies annual R upside.',
       columns: [],
       customContent: <EsumsOmOpportunities />,
+    },
+    {
+      key: 'prognostics',
+      label: 'Predictive health',
+      endpoint: '',
+      description: '12-state P6 Predictive Asset Health & Prognostics chain — the NTT-beating predictive O&M brain. Six-method anomaly ensemble (EWMA SPC control chart, z-score, Tukey IQR, rate-of-change, persistence, fleet percentile), OLS degradation trend with R², remaining-useful-life projection and explainable physics-based fault fingerprinting (12 fault modes; safety modes auto-flagged). predicted → triaged → diagnosed → action planned → WO raised → monitoring → resolved (with auto-suppress, dismiss, escalate, record-failure, expire and recurrence branches). URGENT revenue/safety-tier SLAs (higher revenue-at-risk or safety-implicated = tighter window). Every prediction quantifies revenue-at-risk in ZAR and an O&M savings ledger benchmarked to beat NTT Data by 30%. Single-party write (asset team). Confirmed safety/high-tier failures, safety+high escalations and major/critical SLA breaches cross into the regulator inbox.',
+      columns: [],
+      customContent: <PredictiveAssetHealthChainTab />,
     },
     {
       key: 'commissioning',
