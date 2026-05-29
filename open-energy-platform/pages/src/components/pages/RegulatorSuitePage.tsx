@@ -9,6 +9,7 @@ import { ComplianceInspectionChainTab } from '../compliance-inspection/Complianc
 import { TariffDeterminationChainTab } from '../tariff-determination/TariffDeterminationChainTab';
 import { LicenceApplicationChainTab } from '../licence-application/LicenceApplicationChainTab';
 import { SsegRegistrationChainTab } from '../sseg-registration/SsegRegistrationChainTab';
+import { ComplaintResolutionChainTab } from '../complaint-resolution/ComplaintResolutionChainTab';
 
 export function RegulatorSuitePage() {
   const tabs: TabSpec[] = [
@@ -67,6 +68,15 @@ export function RegulatorSuitePage() {
       description: 'Embedded-generation registration & Schedule 2 exemption chain (Electricity Regulation Act 4 of 2006 Schedule 2, as amended 2021/2023) · 12-state P6: received → eligibility screening → technical verification → exemption determination → approved → registered, with an information-gap loop, a conditional-approval loop, refusal, applicant withdrawal and lapse. The LIGHT-TOUCH front-end sibling of W49 full licensing — no public-participation step. Its signature terminal REFERS a facility that falls outside Schedule 2 (generation for sale / trading / export) UP to the §§8–11 licensing pipeline. INVERTED tier SLA: utility-scale embedded gets the longest grid-impact windows; micro rooftop is quick. Council crossings: a referral for EVERY tier (kicking into full licensing); large + utility refusals and SLA breaches. Registry/verifier/committee drive the machinery; the applicant supplies information, satisfies conditions + withdraws.',
       columns: [],
       customContent: <SsegRegistrationChainTab />,
+    },
+    {
+      key: 'complaints',
+      label: 'Complaints & disputes',
+      endpoint: '',
+      description:
+        'Complaints & dispute resolution chain (Electricity Regulation Act 4 of 2006 §30 + National Energy Regulator Act 40 of 2004 + NERSA Complaints Procedures) · 12-state P6: lodged → admissibility review → referred to licensee → under investigation → mediation → adjudication hearing → ruling issued → remedy monitoring → resolved, with a first-level licensee-settlement short-circuit, an investigation fast-track to hearing, plus dismiss, appeal and withdraw branches. The REACTIVE external-party complaint engine — distinct from W31 internally cross-referred Disposition and W40 own-initiative Inspection. URGENT SLA: a larger affected population means tighter windows (systemic ≥10,000 customers is fastest). Council crossings: appeals for EVERY tier (signature — every appeal is reportable), rulings + SLA breaches for major + systemic, dismissals for systemic only. The adjudicator drives the machinery; the respondent licensee settles; the complainant appeals + withdraws.',
+      columns: [],
+      customContent: <ComplaintResolutionChainTab />,
     },
     // ─── Licences ────────────────────────────────────────────────────────
     {

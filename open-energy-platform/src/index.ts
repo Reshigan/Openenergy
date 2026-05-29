@@ -119,6 +119,7 @@ import ppaTerminationChainRoutes, { ppaTerminationSlaSweep } from './routes/ppa-
 import warrantyRecoveryChainRoutes, { warrantyRecoverySlaSweep } from './routes/warranty-recovery-chain';
 import permitToWorkChainRoutes, { permitToWorkSlaSweep } from './routes/permit-to-work-chain';
 import carbonErpaChainRoutes, { carbonErpaSlaSweep } from './routes/carbon-erpa-chain';
+import complaintResolutionChainRoutes, { complaintResolutionSlaSweep } from './routes/complaint-resolution-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -408,6 +409,7 @@ app.route('/api/ppa-termination/chain', ppaTerminationChainRoutes);
 app.route('/api/warranty-recovery/chain', warrantyRecoveryChainRoutes);
 app.route('/api/permit-to-work/chain', permitToWorkChainRoutes);
 app.route('/api/carbon-erpa/chain', carbonErpaChainRoutes);
+app.route('/api/complaints/chain', complaintResolutionChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1020,6 +1022,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('carbon_erpa_sla_sweep', async () => {
         const result = await carbonErpaSlaSweep(env as never);
         console.log('carbon_erpa_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 66 — Regulator Complaints & Dispute Resolution SLA sweep (URGENT:
+      // larger affected population = tighter window; terminals carry no
+      // deadline); records breaches and crosses the regulator inbox on the
+      // large tiers (major + systemic).
+      await safe('complaint_resolution_sla_sweep', async () => {
+        const result = await complaintResolutionSlaSweep(env as never);
+        console.log('complaint_resolution_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

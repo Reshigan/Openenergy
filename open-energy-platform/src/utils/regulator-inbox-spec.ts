@@ -1959,6 +1959,49 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 66 — Regulator Complaints & Dispute Resolution ─────────────────
+    // NERSA as the quasi-judicial dispute forum (ERA 4/2006 s30). A regulator-
+    // native chain that still surfaces its material determinations onto the NERSA
+    // Council oversight queue.
+    //   appealed — the W66 SIGNATURE: a judicial review of a NERSA ruling is
+    //             always a material regulatory event, reportable for EVERY tier.
+    //   ruling_issued — a binding ruling on a large-population dispute crosses for
+    //             the major + systemic tiers (an individual ruling is routine).
+    //   dismissed — dismissing a national-scale class complaint crosses for the
+    //             systemic tier only.
+    //   sla_breached — crosses for the major + systemic tiers.
+    case 'regulator_complaint.appealed': {
+      const tier = str('complaint_tier');
+      return {
+        severity: tier === 'systemic' || tier === 'major' ? 'high' : 'medium',
+        title: `Complaint ruling APPEALED — ${str('complaint_number') || entityId} (${str('respondent_name') || ''} / ${str('complaint_category') || ''} / ${tier}${num('affected_customers') ? ' / ' + num('affected_customers').toLocaleString() + ' affected' : ''})`.trim(),
+      };
+    }
+    case 'regulator_complaint.ruling_issued': {
+      const tier = str('complaint_tier');
+      if (tier !== 'major' && tier !== 'systemic') return null;
+      return {
+        severity: tier === 'systemic' ? 'high' : 'medium',
+        title: `Complaint RULING issued — ${str('complaint_number') || entityId} (${str('respondent_name') || ''} / ${str('complaint_category') || ''} / ${tier}${num('affected_customers') ? ' / ' + num('affected_customers').toLocaleString() + ' affected' : ''})`.trim(),
+      };
+    }
+    case 'regulator_complaint.dismissed': {
+      const tier = str('complaint_tier');
+      if (tier !== 'systemic') return null;
+      return {
+        severity: 'medium',
+        title: `National-scale complaint DISMISSED — ${str('complaint_number') || entityId} (${str('respondent_name') || ''} / ${str('complaint_category') || ''}${str('reason_code') ? ' / ' + str('reason_code') : ''} / ${num('affected_customers').toLocaleString()} affected)`.trim(),
+      };
+    }
+    case 'regulator_complaint.sla_breached': {
+      const tier = str('complaint_tier');
+      if (tier !== 'major' && tier !== 'systemic') return null;
+      return {
+        severity: 'medium',
+        title: `Complaint SLA breached — ${str('complaint_number') || entityId} (${str('chain_status') || ''} / ${str('respondent_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
