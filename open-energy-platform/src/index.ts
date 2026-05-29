@@ -138,6 +138,7 @@ import projectChangeOrderChainRoutes, { projectChangeOrderSlaSweep } from './rou
 import carbonIssuanceChainRoutes, { carbonIssuanceSlaSweep } from './routes/carbon-issuance-chain';
 import consultationNoticeChainRoutes, { consultationNoticeSlaSweep } from './routes/consultation-notice-chain';
 import blackStartChainRoutes, { blackStartSlaSweep } from './routes/black-start-chain';
+import settlementFailChainRoutes, { settlementFailSlaSweep } from './routes/settlement-fail-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -446,6 +447,7 @@ app.route('/api/ipp/change-order/chain', projectChangeOrderChainRoutes);
 app.route('/api/carbon-issuance/chain', carbonIssuanceChainRoutes);
 app.route('/api/consultation-notice/chain', consultationNoticeChainRoutes);
 app.route('/api/black-start/chain', blackStartChainRoutes);
+app.route('/api/settlement-fail/chain', settlementFailChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1198,6 +1200,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('black_start_sla_sweep', async () => {
         const result = await blackStartSlaSweep(env as never);
         console.log('black_start_sla_sweep', JSON.stringify(result));
+      });
+      // W85 Trader Settlement Fails Management & CSDR-style Buy-In/Sell-Out: flag
+      // settlement-fail chains that overrun their URGENT SLA (larger fail = tighter
+      // window); SLA breaches cross the regulator inbox on material + systemic tiers
+      // only (smaller minor/standard breach internally).
+      await safe('settlement_fail_sla_sweep', async () => {
+        const result = await settlementFailSlaSweep(env as never);
+        console.log('settlement_fail_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

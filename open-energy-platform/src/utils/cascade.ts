@@ -610,6 +610,13 @@ export type EventType =
   | 'black_start.drill_completed' | 'black_start.recertified'
   | 'black_start.drill_failed' | 'black_start.remediation_required'
   | 'black_start.contract_terminated' | 'black_start.sla_breached'
+  // ─── Wave 85: Trader Settlement Fails Management & CSDR-style Buy-In/Sell-Out ──
+  | 'settlement_fail.fail_recorded' | 'settlement_fail.extension_granted'
+  | 'settlement_fail.penalty_accruing' | 'settlement_fail.buy_in_initiated'
+  | 'settlement_fail.buy_in_executing' | 'settlement_fail.buy_in_settled'
+  | 'settlement_fail.cash_compensation' | 'settlement_fail.closed_resolved'
+  | 'settlement_fail.dispute_raised' | 'settlement_fail.force_majeure_suspended'
+  | 'settlement_fail.written_off' | 'settlement_fail.sla_breached'
   // Wave 66 — Regulator Complaints & Dispute Resolution chain (NERSA as the quasi-judicial dispute forum under ERA 4/2006 s30 + NER Act 40/2004 + NERSA Complaints Procedures; REACTIVE external-party grievance adjudication, distinct from W31 internal-intake disposition and W40 proactive inspection; lodged→admissibility→referred_to_licensee→[settle | investigation→mediation→hearing→ruling→remedy_monitoring→resolved] + dismiss/appeal/withdraw; URGENT SLA (larger affected population = tighter); single regulator-owned write {admin,regulator}, actor_party complainant/respondent/adjudicator from action; SIGNATURE lodge_appeal crosses for EVERY tier (judicial review always material), issue_ruling crosses major+systemic, dismiss crosses systemic only, sla_breached crosses major+systemic; settle_at_licensee & confirm_compliance share .resolved)
   | 'regulator_complaint.admissibility_review' | 'regulator_complaint.referred'
   | 'regulator_complaint.escalated' | 'regulator_complaint.mediating'
@@ -855,6 +862,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   consultation_notice: 'regulator',
   black_start: 'grid',
   connection_energization: 'grid',
+  settlement_fail: 'trader',
   trade_allocation: 'trading',
   popia: 'admin',
   auth: 'auth',

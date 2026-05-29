@@ -11,6 +11,7 @@ import { MarketAbuseChainTab } from '../trader/MarketAbuseChainTab';
 import { AlgoCertChainTab } from '../trader/AlgoCertChainTab';
 import { CounterpartyMarginChainTab } from '../counterparty-margin/CounterpartyMarginChainTab';
 import { TradeAllocationChainTab } from '../trade-allocation/TradeAllocationChainTab';
+import { SettlementFailChainTab } from '../settlement-fail/SettlementFailChainTab';
 import { api } from '../../lib/api';
 
 export function TraderWorkstationPage() {
@@ -52,6 +53,7 @@ export function TraderWorkstationPage() {
         { key: 'algo-cert', label: 'Algo certification', body: () => <AlgoCertChainTab /> },
         { key: 'counterparty-margin', label: 'Counterparty default', body: () => <CounterpartyMarginChainTab /> },
         { key: 'trade-allocation', label: 'Trade allocation', body: () => <TradeAllocationChainTab /> },
+        { key: 'settlement-fail', label: 'Settlement fails', body: () => <SettlementFailChainTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

@@ -2378,6 +2378,45 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 85 — Trader Settlement Fails Management & CSDR-style Buy-In/Sell-Out ──
+    // DELIVERY-INTEGRITY signature: write_off ALWAYS crosses (uncollectable loss is a
+    // FMA/FSCA reportable event regardless of tier — W85 hard line). close_cash (basis-
+    // risk cash settlement) and initiate_buy_in (formal market intervention) cross
+    // material + systemic only. sla_breached crosses material + systemic.
+    case 'settlement_fail.written_off': {
+      const tier = str('fail_tier');
+      return {
+        severity: tier === 'systemic' || tier === 'material' ? 'high' : 'medium',
+        title: `Settlement fail WRITTEN OFF — ${str('fail_number') || entityId} (${str('counterparty_name') || ''} / ${str('instrument_name') || str('isin') || ''} / R${(num('fail_value_zar') || 0).toLocaleString('en-ZA')} / ${tier}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'settlement_fail.closed_resolved': {
+      const tier = str('fail_tier');
+      const cashFlag = num('cash_compensation_flag');
+      if (cashFlag !== 1) return null;
+      if (tier !== 'material' && tier !== 'systemic') return null;
+      return {
+        severity: tier === 'systemic' ? 'high' : 'medium',
+        title: `Settlement fail closed by CASH COMPENSATION — ${str('fail_number') || entityId} (${str('counterparty_name') || ''} / ${str('instrument_name') || str('isin') || ''} / R${(num('cash_compensation_value_zar') || 0).toLocaleString('en-ZA')} / ${tier})`.trim(),
+      };
+    }
+    case 'settlement_fail.buy_in_initiated': {
+      const tier = str('fail_tier');
+      if (tier !== 'material' && tier !== 'systemic') return null;
+      return {
+        severity: tier === 'systemic' ? 'high' : 'medium',
+        title: `Settlement BUY-IN initiated — ${str('fail_number') || entityId} (${str('counterparty_name') || ''} / ${str('instrument_name') || str('isin') || ''} / ${str('buy_in_agent_name') || 'agent TBD'} / ${tier})`.trim(),
+      };
+    }
+    case 'settlement_fail.sla_breached': {
+      const tier = str('fail_tier');
+      if (tier !== 'material' && tier !== 'systemic') return null;
+      return {
+        severity: 'high',
+        title: `Settlement fail chain SLA breached — ${str('fail_number') || entityId} (${str('chain_status') || ''} / ${str('counterparty_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     // ─── Wave 75 — Grid Connection Energization & Commissioning Hold-Point Gate ───
     // COD-driven POSITIVE signature: a Commercial Operation Date is notifiable for
     // EVERY tier (new generation registered to the national balance); energization,
