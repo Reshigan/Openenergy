@@ -7,6 +7,7 @@ import { ChangeEnablementChainTab } from '../change-enablement/ChangeEnablementC
 import { SecurityRemediationChainTab } from '../security-remediation/SecurityRemediationChainTab';
 import { WarrantyRecoveryChainTab } from '../warranty-recovery/WarrantyRecoveryChainTab';
 import { SparePartsProvisioningChainTab } from '../spare-parts-provisioning/SparePartsProvisioningChainTab';
+import { ServiceContractChainTab } from '../service-contract/ServiceContractChainTab';
 import { api } from '../../lib/api';
 import { X } from 'lucide-react';
 
@@ -126,6 +127,11 @@ export function SupportWorkstationPage() {
             key: 'spare_parts',
             label: 'Spare parts',
             body: () => <SparePartsProvisioningChainTab />,
+          },
+          {
+            key: 'service_contracts',
+            label: 'Service contracts',
+            body: () => <ServiceContractChainTab />,
           },
           {
             key: 'escalations',

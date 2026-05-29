@@ -694,6 +694,13 @@ export type EventType =
   | 'generation_revenue_assurance.in_dispute' | 'generation_revenue_assurance.recovered'
   | 'generation_revenue_assurance.closed_clean' | 'generation_revenue_assurance.written_off'
   | 'generation_revenue_assurance.cancelled' | 'generation_revenue_assurance.sla_breached'
+  // ─── Wave 80 — OEM-Support Service-Contract / AMC Renewal, Entitlement & Coverage chain (the COMMERCIAL GATE under every other OEM-Support chain: the contract that decides whether a deployed asset gets manufacturer support at all, at what response-time SLA entitlement, within what parts/visit allowances; quote → activate → annual renewal loop → suspension/grace/expiry; beats ServiceMax / SAP Service Cloud / Salesforce FS entitlements / IFS by live-wiring the entitlement as a real coverage gate, making renewal urgency COVERAGE-GAP-aware, and crossing a lapse on important coverage to the regulator as security-of-supply; 12-state P6 draft→quoted→pending_activation→active→renewal_due→renewal_quoted→negotiating→renewed with grace (→in_grace→expired) + suspension (active→suspended→active|expired|cancelled) branches; coverage tier basic/standard/premium/mission_critical drives the response-SLA entitlement + renewal-window urgency + reportability; URGENT SLA (higher tier = tighter renewal windows, strictly decreasing); COVERAGE-GAP signature: expire_coverage crosses for HIGH tiers, suspend_coverage + cancel_contract cross for mission_critical only, sla_breached crosses HIGH; single-party {admin,support} write, actor_party account_manager/service_desk/finance from action; activate_coverage + reinstate_coverage share .active) ───
+  | 'service_contract.quoted' | 'service_contract.pending_activation'
+  | 'service_contract.active' | 'service_contract.renewal_due'
+  | 'service_contract.renewal_quoted' | 'service_contract.negotiating'
+  | 'service_contract.in_grace' | 'service_contract.renewed'
+  | 'service_contract.suspended' | 'service_contract.expired'
+  | 'service_contract.cancelled' | 'service_contract.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

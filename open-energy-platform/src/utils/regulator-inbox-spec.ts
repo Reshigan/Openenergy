@@ -2457,6 +2457,48 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 80 — Service-Contract / AMC (COVERAGE-GAP signature) ────────────
+    // A coverage gap on premium / mission-critical OEM support for grid-connected
+    // generation is a security-of-supply concern. Only the gap-opening transitions
+    // surface onto the regulator queue.
+    case 'service_contract.expired': {
+      // expire_coverage crosses for HIGH tiers (premium / mission_critical) — the
+      // coverage gap on important OEM-supported assets is the W80 hard line.
+      const tier = str('coverage_tier');
+      if (tier !== 'premium' && tier !== 'mission_critical') return null;
+      return {
+        severity: tier === 'mission_critical' ? 'critical' : 'high',
+        title: `OEM support coverage LAPSED — security-of-supply gap — ${str('contract_number') || entityId} (${str('customer_name') || ''} / ${str('site_name') || ''} / ${str('product_line') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'service_contract.suspended': {
+      // suspend_coverage crosses for mission_critical only — even a temporary
+      // suspension of mission-critical coverage is notifiable.
+      if (str('coverage_tier') !== 'mission_critical') return null;
+      return {
+        severity: 'high',
+        title: `Mission-critical OEM coverage SUSPENDED — ${str('contract_number') || entityId} (${str('customer_name') || ''} / ${str('site_name') || ''}${str('suspend_reason') ? ' / ' + str('suspend_reason') : ''})`.trim(),
+      };
+    }
+    case 'service_contract.cancelled': {
+      // cancel_contract crosses for mission_critical only — abandoning mission-
+      // critical coverage is notifiable.
+      if (str('coverage_tier') !== 'mission_critical') return null;
+      return {
+        severity: 'high',
+        title: `Mission-critical OEM coverage CANCELLED — ${str('contract_number') || entityId} (${str('customer_name') || ''} / ${str('site_name') || ''}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'service_contract.sla_breached': {
+      // sla_breached crosses for HIGH tiers only.
+      const tier = str('coverage_tier');
+      if (tier !== 'premium' && tier !== 'mission_critical') return null;
+      return {
+        severity: tier === 'mission_critical' ? 'high' : 'medium',
+        title: `OEM service-contract renewal SLA breached — ${str('contract_number') || entityId} (${str('chain_status') || ''} / ${str('customer_name') || ''} / ${str('site_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
