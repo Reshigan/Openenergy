@@ -134,6 +134,7 @@ import reserveAccountChainRoutes, { reserveAccountSlaSweep } from './routes/rese
 import ppaChangeInLawChainRoutes, { ppaChangeInLawSlaSweep } from './routes/ppa-change-in-law-chain';
 import generationRevenueAssuranceChainRoutes, { generationRevenueAssuranceSlaSweep } from './routes/generation-revenue-assurance-chain';
 import serviceContractChainRoutes, { serviceContractSlaSweep } from './routes/service-contract-chain';
+import projectChangeOrderChainRoutes, { projectChangeOrderSlaSweep } from './routes/project-change-order-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -438,6 +439,7 @@ app.route('/api/reserve-account/chain', reserveAccountChainRoutes);
 app.route('/api/ppa-change-in-law/chain', ppaChangeInLawChainRoutes);
 app.route('/api/generation-revenue-assurance/chain', generationRevenueAssuranceChainRoutes);
 app.route('/api/service-contract/chain', serviceContractChainRoutes);
+app.route('/api/ipp/change-order/chain', projectChangeOrderChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1160,6 +1162,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('service_contract_sla_sweep', async () => {
         const result = await serviceContractSlaSweep(env as never);
         console.log('service_contract_sla_sweep', JSON.stringify(result));
+      });
+      // W81 project change-orders: flag variations that overrun their INVERTED
+      // variation-control SLA (larger variation = more time); SLA breaches cross
+      // the regulator inbox on the HIGH tiers (major + critical).
+      await safe('project_change_order_sla_sweep', async () => {
+        const result = await projectChangeOrderSlaSweep(env as never);
+        console.log('project_change_order_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

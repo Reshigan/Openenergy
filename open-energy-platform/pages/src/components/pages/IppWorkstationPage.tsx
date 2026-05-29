@@ -7,6 +7,7 @@ import { BondRegistryTab } from '../ipp/BondRegistryTab';
 import { PlannedOutageChainTab } from '../grid/PlannedOutageChainTab';
 import { ProcurementChainTab } from '../ipp/ProcurementChainTab';
 import { CodChainTab } from '../ipp/CodChainTab';
+import { ProjectChangeOrderChainTab } from '../ipp/ProjectChangeOrderChainTab';
 import { InsuranceClaimChainTab } from '../ipp/InsuranceClaimChainTab';
 import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
 import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
@@ -42,6 +43,7 @@ export function IppWorkstationPage() {
         { key: 'planned_outages', label: 'Planned outages', body: () => <PlannedOutageChainTab /> },
         { key: 'procurement', label: 'Procurement / RFPs', body: () => <ProcurementChainTab /> },
         { key: 'cod', label: 'Construction / COD', body: () => <CodChainTab /> },
+        { key: 'change_orders', label: 'Change orders / EVM', body: () => <ProjectChangeOrderChainTab /> },
         { key: 'hse_chain', label: 'HSE incidents', body: () => <HseIncidentChainTab /> },
         { key: 'cyber_chain', label: 'Cyber incidents', body: () => <CyberIncidentChainTab /> },
         { key: 'ed_chain', label: 'ED commitments', body: () => <EdCommitmentChainTab /> },

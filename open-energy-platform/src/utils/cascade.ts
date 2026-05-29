@@ -701,6 +701,13 @@ export type EventType =
   | 'service_contract.in_grace' | 'service_contract.renewed'
   | 'service_contract.suspended' | 'service_contract.expired'
   | 'service_contract.cancelled' | 'service_contract.sla_breached'
+  // ─── Wave 81 — IPP Project Change-Order / Variation Control & EVM ──────
+  | 'project_change_order.submitted' | 'project_change_order.screening'
+  | 'project_change_order.impact_assessment' | 'project_change_order.pending_approval'
+  | 'project_change_order.approved' | 'project_change_order.incorporated'
+  | 'project_change_order.deferred' | 'project_change_order.disputed'
+  | 'project_change_order.rejected' | 'project_change_order.withdrawn'
+  | 'project_change_order.cancelled' | 'project_change_order.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

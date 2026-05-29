@@ -2499,6 +2499,47 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 81 — IPP Project Change-Order / Variation (RE-BASELINE signature) ─
+    // A material variation that re-baselines an IPP project against its REIPPPP
+    // bid commitment is a project-viability signal for the DMRE / IPP Office.
+    // Only the re-baseline / critical-decision transitions surface here.
+    case 'project_change_order.incorporated': {
+      // incorporate crosses for HIGH tiers (major / critical) — re-issuing the
+      // project baseline for a material variation is the notifiable act.
+      const tier = str('variation_tier');
+      if (tier !== 'major' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'critical' : 'high',
+        title: `Project baseline RE-ISSUED for ${tier} variation — ${str('co_number') || entityId} (${str('project_name') || ''} / ${str('change_type') || ''} / R${num('cost_impact_zar')} / ${num('schedule_impact_days')}d)`.trim(),
+      };
+    }
+    case 'project_change_order.approved': {
+      // approve crosses for critical only.
+      if (str('variation_tier') !== 'critical') return null;
+      return {
+        severity: 'high',
+        title: `Critical project variation APPROVED — ${str('co_number') || entityId} (${str('project_name') || ''} / ${str('change_type') || ''} / R${num('cost_impact_zar')})`.trim(),
+      };
+    }
+    case 'project_change_order.rejected': {
+      // reject crosses for critical only — a rejected critical variation can
+      // signal project distress / unrecoverable schedule risk.
+      if (str('variation_tier') !== 'critical') return null;
+      return {
+        severity: 'high',
+        title: `Critical project variation REJECTED — ${str('co_number') || entityId} (${str('project_name') || ''}${str('rejection_reason') ? ' / ' + str('rejection_reason') : ''})`.trim(),
+      };
+    }
+    case 'project_change_order.sla_breached': {
+      // sla_breached crosses for HIGH tiers only.
+      const tier = str('variation_tier');
+      if (tier !== 'major' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Project variation control SLA breached — ${str('co_number') || entityId} (${str('chain_status') || ''} / ${str('project_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
