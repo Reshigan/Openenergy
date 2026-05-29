@@ -680,6 +680,13 @@ export type EventType =
   | 'reserve_account.drawn' | 'reserve_account.release_requested'
   | 'reserve_account.released' | 'reserve_account.breached'
   | 'reserve_account.cancelled' | 'reserve_account.sla_breached'
+  // ─── W78 PPA Change-in-Law / Qualifying-Change relief chain ────────────
+  | 'ppa_change_in_law.eligibility_review' | 'ppa_change_in_law.impact_assessment'
+  | 'ppa_change_in_law.claim_submitted' | 'ppa_change_in_law.counterparty_review'
+  | 'ppa_change_in_law.negotiation' | 'ppa_change_in_law.determination_pending'
+  | 'ppa_change_in_law.in_arbitration' | 'ppa_change_in_law.relief_granted'
+  | 'ppa_change_in_law.implemented' | 'ppa_change_in_law.rejected'
+  | 'ppa_change_in_law.withdrawn' | 'ppa_change_in_law.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

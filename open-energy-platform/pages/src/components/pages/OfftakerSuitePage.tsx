@@ -11,6 +11,7 @@ import { CurtailmentClaimTab } from '../offtaker/CurtailmentClaimTab';
 import { PaymentSecurityChainTab } from '../offtaker/PaymentSecurityChainTab';
 import { PpaTerminationChainTab } from '../offtaker/PpaTerminationChainTab';
 import { RecLifecycleChainTab } from '../offtaker/RecLifecycleChainTab';
+import { PpaChangeInLawChainTab } from '../offtaker/PpaChangeInLawChainTab';
 
 export function OfftakerSuitePage() {
   const tabs: TabSpec[] = [
@@ -61,6 +62,14 @@ export function OfftakerSuitePage() {
       description: 'PPA termination & early-termination amount (buy-out) chain (NERSA ERA s34 security-of-supply + PPA event-of-default / cure / long-stop FM / change-in-law + IFRS 9/16 ETA treatment) · 12-state P6 exit of the offtake relationship: a termination event arises, notice is served, a cure window runs, and — if uncured — the PPA terminates and an early-termination amount (the buy-out) is calculated, agreed and settled. The buy-out basis turns on the CAUSE (seller default / prolonged FM = debt only; buyer default / change in law = debt + equity make-whole; no-fault = negotiated). MIXED SLA (cure / assessment / dispute INVERTED, settlement URGENT); offtaker drives, seller (IPP) disputes the calculated buy-out, an independent expert resolves. Confirming a termination for an involuntary cause crosses to the regulator inbox for every tier; no-fault + settlement + SLA breaches cross for major + critical.',
       columns: [],
       customContent: <PpaTerminationChainTab />,
+    },
+    {
+      key: 'change-in-law',
+      label: 'Change in law',
+      endpoint: '',
+      description: 'PPA change-in-law relief chain (NERSA ERA s4 regulated-tariff pass-through + PPA change-in-law / tax-change clauses + IFRS treatment) · 12-state P6 lifecycle of a relief claim arising from a tax, regulatory, statutory or discriminatory change in law: an event is logged, eligibility is reviewed, the financial impact is assessed, the seller submits a relief claim, the counterparty reviews and negotiates, and — failing agreement — the matter goes to arbitration or determination, ending in relief granted + implemented or rejected. INVERTED SLA (larger claim quantum = more analysis time); offtaker drives, the claimant / counterparty / arbitrator party is derived from the action. Referring a claim to arbitration crosses to the regulator inbox for every tier (the change-in-law hard line); a governmental relief grant crosses for material + major + critical, and SLA breaches cross for major + critical.',
+      columns: [],
+      customContent: <PpaChangeInLawChainTab />,
     },
     {
       key: 'rec-lifecycle',

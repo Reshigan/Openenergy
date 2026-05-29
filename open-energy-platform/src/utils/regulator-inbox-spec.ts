@@ -2385,6 +2385,39 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── W78 PPA Change-in-Law / Qualifying-Change relief ──────────────────
+    case 'ppa_change_in_law.in_arbitration': {
+      // refer_to_arbitration crosses for EVERY tier — a contested change-in-law
+      // claim heading to arbitration is always reportable (the W78 hard line).
+      const tier = str('change_in_law_tier');
+      return {
+        severity: 'high',
+        title: `PPA change-in-law referred to arbitration — ${str('cil_number') || entityId} (${str('change_type') || ''} / ${str('generator_name') || ''} v ${str('offtaker_name') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'ppa_change_in_law.relief_granted': {
+      // A granted/awarded determination crosses only when the change is
+      // GOVERNMENTAL in origin and of material+ quantum (NERSA price-visibility).
+      const tier = str('change_in_law_tier');
+      const changeType = str('change_type');
+      const governmental = changeType === 'tax_change' || changeType === 'regulatory_change'
+        || changeType === 'statutory_change' || changeType === 'discriminatory_change';
+      const materialPlus = tier === 'material' || tier === 'major' || tier === 'critical';
+      if (!governmental || !materialPlus) return null;
+      return {
+        severity: tier === 'critical' || tier === 'major' ? 'high' : 'medium',
+        title: `PPA change-in-law relief granted — ${str('cil_number') || entityId} (${changeType} / ${str('relief_mechanism') || ''} / ${str('offtaker_name') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'ppa_change_in_law.sla_breached': {
+      const tier = str('change_in_law_tier');
+      if (tier !== 'major' && tier !== 'critical') return null;
+      return {
+        severity: 'high',
+        title: `PPA change-in-law SLA breached — ${str('cil_number') || entityId} (${str('chain_status') || ''} / ${str('offtaker_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
