@@ -120,6 +120,7 @@ import warrantyRecoveryChainRoutes, { warrantyRecoverySlaSweep } from './routes/
 import permitToWorkChainRoutes, { permitToWorkSlaSweep } from './routes/permit-to-work-chain';
 import carbonErpaChainRoutes, { carbonErpaSlaSweep } from './routes/carbon-erpa-chain';
 import complaintResolutionChainRoutes, { complaintResolutionSlaSweep } from './routes/complaint-resolution-chain';
+import gridCodeComplianceChainRoutes, { gridCodeComplianceSlaSweep } from './routes/grid-code-compliance-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -410,6 +411,7 @@ app.route('/api/warranty-recovery/chain', warrantyRecoveryChainRoutes);
 app.route('/api/permit-to-work/chain', permitToWorkChainRoutes);
 app.route('/api/carbon-erpa/chain', carbonErpaChainRoutes);
 app.route('/api/complaints/chain', complaintResolutionChainRoutes);
+app.route('/api/grid-code-compliance/chain', gridCodeComplianceChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1030,6 +1032,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('complaint_resolution_sla_sweep', async () => {
         const result = await complaintResolutionSlaSweep(env as never);
         console.log('complaint_resolution_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 67 — Grid Code Compliance Monitoring & Non-Conformance SLA sweep
+      // (URGENT: more severe non-conformance = tighter window; terminals carry no
+      // deadline); records breaches and crosses the regulator inbox on the large
+      // tiers (serious + critical).
+      await safe('grid_code_compliance_sla_sweep', async () => {
+        const result = await gridCodeComplianceSlaSweep(env as never);
+        console.log('grid_code_compliance_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

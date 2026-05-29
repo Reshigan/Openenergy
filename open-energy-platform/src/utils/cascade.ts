@@ -602,6 +602,13 @@ export type EventType =
   | 'regulator_complaint.remedy_monitoring' | 'regulator_complaint.resolved'
   | 'regulator_complaint.dismissed' | 'regulator_complaint.appealed'
   | 'regulator_complaint.withdrawn' | 'regulator_complaint.sla_breached'
+  // Wave 67 — Grid Code Compliance Monitoring & Non-Conformance chain (the SO/TSO (NTCSA) monitors each connected facility's ongoing TECHNICAL conformance with the SA Grid Code + the Grid Connection Code for RPPs + NRS 048-2/4, and manages a non-conformance through a formal remediation lifecycle: monitoring→non_conformance_raised→under_assessment→corrective_action_required→cap_submitted→cap_approved→remediation_in_progress→compliance_retest→compliant_closed, with a CAP-revise loop (reject_cap), an interim operating_restriction branch and a disconnection_issued terminal; URGENT SLA (more severe tier = tighter); 5 tiers by non-compliant capacity MW with a breach-class floor (fault_ride_through/frequency_response/protection_coordination→serious, reactive_power/voltage_regulation→material); SIGNATURE escalate_disconnection crosses for EVERY tier (disconnecting a connected licensed facility is always notifiable), impose_restriction + sla_breached cross for large tiers (serious+critical); split write SO/TSO operator drives the machinery, facility submits the CAP & performs remediation, actor_party tags the side; reject_cap reuses .corrective_action_required event)
+  | 'grid_code_compliance.non_conformance_raised' | 'grid_code_compliance.under_assessment'
+  | 'grid_code_compliance.corrective_action_required' | 'grid_code_compliance.cap_submitted'
+  | 'grid_code_compliance.cap_approved' | 'grid_code_compliance.remediation_in_progress'
+  | 'grid_code_compliance.compliance_retest' | 'grid_code_compliance.compliant_closed'
+  | 'grid_code_compliance.operating_restriction' | 'grid_code_compliance.disconnection_issued'
+  | 'grid_code_compliance.withdrawn' | 'grid_code_compliance.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────

@@ -1,0 +1,186 @@
+-- Wave 67 seed — 10 grid-code compliance cases spanning the 12-state lifecycle
+-- and the 5 severity tiers. Exactly 3 are reportable: both operating_restriction
+-- (serious/critical via impose_restriction) and both disconnection_issued (any
+-- tier via escalate_disconnection — the W67 signature: disconnecting a connected,
+-- licensed facility is always notifiable).
+--
+-- INSERT OR IGNORE keeps this replay-safe; explicit column lists guard against
+-- column drift. Timestamps are illustrative ISO-8601 (UTC).
+
+INSERT OR IGNORE INTO oe_grid_code_compliance (
+  id, case_number,
+  facility_id, facility_name, connection_point, network_area, licence_ref, technology, capacity_mw,
+  breach_class, code_reference, parameter, measured_value, limit_value, severity_tier,
+  operator_party_id, operator_party_name, facility_party_id, facility_party_name,
+  nc_ref, assessment_ref, cap_ref, retest_ref, restriction_ref, disconnection_ref,
+  raise_basis, assessment_basis, corrective_action_basis, cap_basis, approval_basis,
+  remediation_basis, retest_basis, restriction_basis, disconnection_basis, reason_code, compliance_summary,
+  chain_status,
+  monitoring_started_at, non_conformance_raised_at, under_assessment_at, corrective_action_required_at,
+  cap_submitted_at, cap_approved_at, remediation_started_at, compliance_retest_at,
+  operating_restriction_at, compliant_closed_at, disconnection_issued_at, withdrawn_at,
+  remediation_round, sla_deadline_at, last_sla_breach_at, is_reportable, escalation_level,
+  created_by, created_at, updated_at
+) VALUES
+-- 1. monitoring / minor — ongoing power-quality watch, no non-conformance yet
+('gcc_001','GCC-2026-0001',
+ 'fac_aurora_pv','Aurora Solar PV','Aurora MTS 132kV','transmission','GEN-LIC-2019-0412','solar_pv',0.8,
+ 'power_quality','NRS 048-2 clause 4','voltage flicker Pst',0.62,1.0,'minor',
+ 'party_ntcsa','NTCSA System Operator','party_aurora','Aurora Renewables Pty',
+ NULL,NULL,NULL,NULL,NULL,NULL,
+ NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'Continuous NRS 048 monitoring within limits',
+ 'monitoring',
+ '2026-05-01T06:00:00Z',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+ 0,'2026-10-28T06:00:00Z',NULL,0,0,
+ 'grid','2026-05-01T06:00:00Z','2026-05-01T06:00:00Z'),
+
+-- 2. non_conformance_raised / moderate — telemetry dropout flagged
+('gcc_002','GCC-2026-0002',
+ 'fac_kuyasa_wind','Kuyasa Wind Farm','Kuyasa MTS 132kV','transmission','GEN-LIC-2020-0188','wind',6.0,
+ 'telemetry','Grid Connection Code for RPPs 5.2','SCADA availability pct',91.4,99.0,'moderate',
+ 'party_ntcsa','NTCSA System Operator','party_kuyasa','Kuyasa Power Pty',
+ 'NC-2026-0002',NULL,NULL,NULL,NULL,NULL,
+ 'SCADA telemetry availability below 99 pct over rolling 30 days',NULL,NULL,NULL,NULL,
+ NULL,NULL,NULL,NULL,NULL,'Telemetry non-conformance raised pending assessment',
+ 'non_conformance_raised',
+ '2026-04-10T06:00:00Z','2026-05-20T09:00:00Z',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+ 0,'2026-06-03T09:00:00Z',NULL,0,0,
+ 'grid','2026-05-20T09:00:00Z','2026-05-20T09:00:00Z'),
+
+-- 3. under_assessment / material — reactive-power capability shortfall under review
+('gcc_003','GCC-2026-0003',
+ 'fac_zonnehoek_pv','Zonnehoek PV','Zonnehoek MTS 132kV','transmission','GEN-LIC-2021-0233','solar_pv',25.0,
+ 'reactive_power','Grid Connection Code for RPPs 4.1.3','reactive capability Q at Pmax MVAr',9.1,12.3,'material',
+ 'party_ntcsa','NTCSA System Operator','party_zonnehoek','Zonnehoek Energy Pty',
+ 'NC-2026-0003','ASMT-2026-0003',NULL,NULL,NULL,NULL,
+ 'Reactive capability below required Q range at rated output',
+ 'SO technical assessment of reactive-power capability shortfall in progress',NULL,NULL,NULL,
+ NULL,NULL,NULL,NULL,NULL,'Reactive-power capability under SO assessment',
+ 'under_assessment',
+ '2026-03-15T06:00:00Z','2026-05-12T08:00:00Z','2026-05-22T10:00:00Z',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+ 0,'2026-06-01T10:00:00Z',NULL,0,0,
+ 'grid','2026-05-22T10:00:00Z','2026-05-22T10:00:00Z'),
+
+-- 4. corrective_action_required / serious — fault-ride-through breach awaiting CAP
+('gcc_004','GCC-2026-0004',
+ 'fac_drakensig_wind','Drakensig Wind','Drakensig MTS 275kV','transmission','GEN-LIC-2019-0507','wind',80.0,
+ 'fault_ride_through','Grid Connection Code for RPPs 4.2','LVRT trip threshold pu',0.78,0.90,'serious',
+ 'party_ntcsa','NTCSA System Operator','party_drakensig','Drakensig Wind Pty',
+ 'NC-2026-0004','ASMT-2026-0004',NULL,NULL,NULL,NULL,
+ 'Plant tripped below the required low-voltage ride-through envelope during a network fault',
+ 'Assessment confirms LVRT setting non-compliant with RPP code',
+ 'Facility directed to submit a corrective-action plan for LVRT reconfiguration',NULL,NULL,
+ NULL,NULL,NULL,NULL,NULL,'Corrective action required for fault-ride-through breach',
+ 'corrective_action_required',
+ '2026-02-20T06:00:00Z','2026-05-05T07:00:00Z','2026-05-09T09:00:00Z','2026-05-18T11:00:00Z',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+ 0,'2026-05-30T11:00:00Z',NULL,0,0,
+ 'grid','2026-05-18T11:00:00Z','2026-05-18T11:00:00Z'),
+
+-- 5. cap_submitted / material — voltage-regulation CAP under SO review
+('gcc_005','GCC-2026-0005',
+ 'fac_kareeboom_pv','Kareeboom PV','Kareeboom MTS 132kV','transmission','GEN-LIC-2020-0341','solar_pv',35.0,
+ 'voltage_regulation','Grid Connection Code for RPPs 4.1.2','voltage setpoint deviation pct',3.8,2.0,'material',
+ 'party_ntcsa','NTCSA System Operator','party_kareeboom','Kareeboom Solar Pty',
+ 'NC-2026-0005','ASMT-2026-0005','CAP-2026-0005',NULL,NULL,NULL,
+ 'Voltage-regulation deviation exceeded the allowed band at the point of connection',
+ 'Assessment attributes deviation to AVR droop misconfiguration',
+ 'Facility directed to recommission AVR droop control',
+ 'CAP proposes AVR droop retune plus controller firmware update over 6 weeks',NULL,
+ NULL,NULL,NULL,NULL,NULL,'CAP submitted for voltage-regulation breach awaiting approval',
+ 'cap_submitted',
+ '2026-03-01T06:00:00Z','2026-04-28T07:00:00Z','2026-05-02T09:00:00Z','2026-05-10T11:00:00Z','2026-05-21T14:00:00Z',NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+ 0,'2026-06-04T14:00:00Z',NULL,0,0,
+ 'grid','2026-05-21T14:00:00Z','2026-05-21T14:00:00Z'),
+
+-- 6. cap_approved / critical — large frequency-response plant CAP approved
+('gcc_006','GCC-2026-0006',
+ 'fac_grootvlei_pv','Grootvlei PV Cluster','Grootvlei MTS 400kV','transmission','GEN-LIC-2018-0099','solar_pv',260.0,
+ 'frequency_response','Grid Connection Code for RPPs 4.3','frequency response deadband mHz',420.0,150.0,'critical',
+ 'party_ntcsa','NTCSA System Operator','party_grootvlei','Grootvlei Generation Pty',
+ 'NC-2026-0006','ASMT-2026-0006','CAP-2026-0006',NULL,NULL,NULL,
+ 'Frequency-response deadband exceeded code limit reducing primary frequency support',
+ 'Assessment confirms controller deadband mis-set across the cluster',
+ 'Facility directed to retune frequency-response controllers cluster-wide',
+ 'CAP proposes phased controller deadband retune across all blocks',
+ 'CAP approved by SO with milestone schedule',
+ NULL,NULL,NULL,NULL,NULL,'Frequency-response CAP approved remediation pending',
+ 'cap_approved',
+ '2026-01-15T06:00:00Z','2026-04-12T07:00:00Z','2026-04-18T09:00:00Z','2026-04-25T11:00:00Z','2026-05-08T14:00:00Z','2026-05-19T10:00:00Z',NULL,NULL,NULL,NULL,NULL,NULL,
+ 0,'2026-05-31T10:00:00Z',NULL,0,0,
+ 'grid','2026-05-19T10:00:00Z','2026-05-19T10:00:00Z'),
+
+-- 7. remediation_in_progress / moderate — metering remediation underway
+('gcc_007','GCC-2026-0007',
+ 'fac_silwerstroom_bess','Silwerstroom BESS','Silwerstroom MTS 132kV','transmission','GEN-LIC-2022-0612','bess',8.0,
+ 'metering','Grid Connection Code for RPPs 6.1','revenue meter error pct',1.4,0.5,'moderate',
+ 'party_ntcsa','NTCSA System Operator','party_silwerstroom','Silwerstroom Storage Pty',
+ 'NC-2026-0007','ASMT-2026-0007','CAP-2026-0007',NULL,NULL,NULL,
+ 'Revenue metering error exceeded the permitted class accuracy',
+ 'Assessment confirms CT ratio mis-scaling at the metering point',
+ 'Facility directed to replace metering CTs and recalibrate',
+ 'CAP proposes CT replacement and SANAS recalibration',
+ 'CAP approved by SO',
+ 'CT replacement and recalibration in progress with metering operator',NULL,NULL,NULL,NULL,'Metering remediation underway',
+ 'remediation_in_progress',
+ '2026-02-01T06:00:00Z','2026-04-01T07:00:00Z','2026-04-06T09:00:00Z','2026-04-14T11:00:00Z','2026-04-22T14:00:00Z','2026-04-30T10:00:00Z','2026-05-15T08:00:00Z',NULL,NULL,NULL,NULL,NULL,
+ 0,'2026-06-14T08:00:00Z',NULL,0,0,
+ 'grid','2026-05-15T08:00:00Z','2026-05-15T08:00:00Z'),
+
+-- 8. operating_restriction / serious — protection-coordination breach, plant restricted [REPORTABLE]
+('gcc_008','GCC-2026-0008',
+ 'fac_morester_wind','Morester Wind','Morester MTS 275kV','transmission','GEN-LIC-2019-0455','wind',150.0,
+ 'protection_coordination','Grid Connection Code for RPPs 7.2','protection grading margin ms',120.0,300.0,'serious',
+ 'party_ntcsa','NTCSA System Operator','party_morester','Morester Wind Pty',
+ 'NC-2026-0008','ASMT-2026-0008',NULL,NULL,'RES-2026-0008',NULL,
+ 'Protection grading margin below the coordinated minimum risking maloperation',
+ 'Assessment confirms relay grading non-compliant with network protection scheme',
+ NULL,NULL,NULL,
+ NULL,NULL,'Output restricted pending protection re-coordination to limit fault exposure',NULL,'protection_risk','Operating restriction imposed for protection-coordination breach',
+ 'operating_restriction',
+ '2026-01-20T06:00:00Z','2026-04-15T07:00:00Z','2026-04-20T09:00:00Z',NULL,NULL,NULL,NULL,NULL,'2026-05-24T13:00:00Z',NULL,NULL,NULL,
+ 0,'2026-05-31T13:00:00Z',NULL,1,1,
+ 'grid','2026-05-24T13:00:00Z','2026-05-24T13:00:00Z'),
+
+-- 9. disconnection_issued / critical — fault-ride-through breach escalated to disconnection [REPORTABLE]
+('gcc_009','GCC-2026-0009',
+ 'fac_hoeveld_pv','Hoeveld PV','Hoeveld MTS 400kV','transmission','GEN-LIC-2018-0071','solar_pv',300.0,
+ 'fault_ride_through','Grid Connection Code for RPPs 4.2','LVRT trip threshold pu',0.71,0.90,'critical',
+ 'party_ntcsa','NTCSA System Operator','party_hoeveld','Hoeveld Generation Pty',
+ 'NC-2026-0009','ASMT-2026-0009',NULL,NULL,NULL,'DISC-2026-0009',
+ 'Repeated fault-ride-through trips during network faults threatening system stability',
+ 'Assessment confirms persistent LVRT non-compliance after prior directives',
+ 'Facility directed to remediate but no compliant plan delivered within window',NULL,NULL,
+ NULL,NULL,NULL,'Connection disconnected after sustained stability-threatening non-conformance','stability_risk','Disconnection issued for sustained fault-ride-through breach',
+ 'disconnection_issued',
+ '2026-01-05T06:00:00Z','2026-03-20T07:00:00Z','2026-03-26T09:00:00Z','2026-04-05T11:00:00Z',NULL,NULL,NULL,NULL,NULL,NULL,'2026-05-25T15:00:00Z',NULL,
+ 0,NULL,'2026-04-30T11:00:00Z',1,2,
+ 'grid','2026-05-25T15:00:00Z','2026-05-25T15:00:00Z'),
+
+-- 10. disconnection_issued / moderate — telemetry non-conformance escalated [REPORTABLE: disconnection crosses EVERY tier]
+('gcc_010','GCC-2026-0010',
+ 'fac_brakfontein_bess','Brakfontein BESS','Brakfontein MTS 132kV','transmission','GEN-LIC-2022-0701','bess',7.0,
+ 'telemetry','Grid Connection Code for RPPs 5.2','SCADA availability pct',62.0,99.0,'moderate',
+ 'party_ntcsa','NTCSA System Operator','party_brakfontein','Brakfontein Storage Pty',
+ 'NC-2026-0010','ASMT-2026-0010',NULL,NULL,NULL,'DISC-2026-0010',
+ 'Prolonged loss of SCADA telemetry leaving the plant unobservable to the SO',
+ 'Assessment confirms telemetry link unrecoverable and facility unresponsive to directives',
+ 'Facility directed to restore telemetry but failed to respond within the window',NULL,NULL,
+ NULL,NULL,NULL,'Connection disconnected as an unobservable plant cannot be safely dispatched','observability_loss','Disconnection issued for unresolved telemetry loss',
+ 'disconnection_issued',
+ '2026-02-10T06:00:00Z','2026-04-02T07:00:00Z','2026-04-08T09:00:00Z','2026-04-16T11:00:00Z',NULL,NULL,NULL,NULL,NULL,NULL,'2026-05-26T09:00:00Z',NULL,
+ 0,NULL,NULL,1,1,
+ 'grid','2026-05-26T09:00:00Z','2026-05-26T09:00:00Z');
+
+INSERT OR IGNORE INTO oe_grid_code_compliance_events (
+  id, compliance_id, event_type, from_status, to_status, actor_id, actor_party, notes, payload, created_at
+) VALUES
+('gcc_evt_001','gcc_002','grid_code_compliance.non_conformance_raised','monitoring','non_conformance_raised','party_ntcsa','operator','Telemetry availability below 99 pct',NULL,'2026-05-20T09:00:00Z'),
+('gcc_evt_002','gcc_003','grid_code_compliance.under_assessment','non_conformance_raised','under_assessment','party_ntcsa','operator','SO assessing reactive-power shortfall',NULL,'2026-05-22T10:00:00Z'),
+('gcc_evt_003','gcc_004','grid_code_compliance.corrective_action_required','under_assessment','corrective_action_required','party_ntcsa','operator','LVRT corrective action directed',NULL,'2026-05-18T11:00:00Z'),
+('gcc_evt_004','gcc_005','grid_code_compliance.cap_submitted','corrective_action_required','cap_submitted','party_kareeboom','facility','AVR droop retune CAP submitted',NULL,'2026-05-21T14:00:00Z'),
+('gcc_evt_005','gcc_006','grid_code_compliance.cap_approved','cap_submitted','cap_approved','party_ntcsa','operator','Frequency-response CAP approved',NULL,'2026-05-19T10:00:00Z'),
+('gcc_evt_006','gcc_007','grid_code_compliance.remediation_in_progress','cap_approved','remediation_in_progress','party_silwerstroom','facility','CT replacement underway',NULL,'2026-05-15T08:00:00Z'),
+('gcc_evt_007','gcc_008','grid_code_compliance.operating_restriction','under_assessment','operating_restriction','party_ntcsa','operator','Output restricted pending protection re-coordination',NULL,'2026-05-24T13:00:00Z'),
+('gcc_evt_008','gcc_009','grid_code_compliance.corrective_action_required','under_assessment','corrective_action_required','party_ntcsa','operator','LVRT remediation directed',NULL,'2026-04-05T11:00:00Z'),
+('gcc_evt_009','gcc_009','grid_code_compliance.disconnection_issued','corrective_action_required','disconnection_issued','party_ntcsa','operator','Disconnected for sustained LVRT breach',NULL,'2026-05-25T15:00:00Z'),
+('gcc_evt_010','gcc_010','grid_code_compliance.disconnection_issued','corrective_action_required','disconnection_issued','party_ntcsa','operator','Disconnected for unresolved telemetry loss',NULL,'2026-05-26T09:00:00Z');

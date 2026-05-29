@@ -10,6 +10,7 @@ import { GcaChainTab } from '../gca/GcaChainTab';
 import { LoadCurtailmentChainTab } from '../load-curtailment/LoadCurtailmentChainTab';
 import { ReserveActivationChainTab } from '../reserve-activation/ReserveActivationChainTab';
 import { GridCapacityChainTab } from '../grid-capacity/GridCapacityChainTab';
+import { GridCodeComplianceChainTab } from '../grid-code-compliance/GridCodeComplianceChainTab';
 
 const instructionTypes = [
   { value: 'curtail', label: 'Curtail' },
@@ -79,6 +80,14 @@ export function GridOperatorSuitePage() {
       description: 'NERSA Grid Code + System Operation Code — ancillary-services reserve activation & settlement. The SO instructs a contracted reserve provider during a frequency / contingency event; the provider responds; the SO measures delivered response and settles availability + utilisation, or a non-performance penalty. URGENT SLA (faster product = tighter window), two-party SO↔provider write, non-performance / dispute / withdraw branches.',
       columns: [],
       customContent: <ReserveActivationChainTab />,
+    },
+    {
+      key: 'grid_code_compliance',
+      label: 'Grid Code compliance',
+      endpoint: '',
+      description: 'NERSA Grid Code (NRS 097 / network codes) — the SO’s technical conformance monitoring of an already-connected plant. Non-conformance raised → assessment → corrective-action plan (with revise loop) → remediation → compliance retest → closed, with an operating-restriction branch and a disconnection terminal. URGENT tier SLA (more severe breach = tighter window), split-write operator (SO) ↔ facility (IPP), restriction / disconnection / withdraw branches. Disconnection always crosses to the regulator; restriction + SLA breach cross at serious / critical tiers.',
+      columns: [],
+      customContent: <GridCodeComplianceChainTab />,
     },
     {
       key: 'insights',

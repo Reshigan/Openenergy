@@ -2002,6 +2002,34 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 67 — Grid Code Compliance Monitoring & Non-Conformance ───────
+    // Disconnecting a connected, licensed facility is always notifiable (the W67
+    // signature) — it crosses for EVERY tier. A restriction on a system-significant
+    // plant and an SLA breach on one cross only for the large tiers (serious/critical).
+    case 'grid_code_compliance.disconnection_issued': {
+      const tier = str('severity_tier');
+      return {
+        severity: tier === 'critical' ? 'critical' : 'high',
+        title: `Grid Code DISCONNECTION issued — ${str('case_number') || entityId} (${str('facility_name') || ''} / ${str('breach_class') || ''} / ${tier}${num('capacity_mw') ? ' / ' + num('capacity_mw') + 'MW' : ''})`.trim(),
+      };
+    }
+    case 'grid_code_compliance.operating_restriction': {
+      const tier = str('severity_tier');
+      if (tier !== 'serious' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Grid Code operating RESTRICTION imposed — ${str('case_number') || entityId} (${str('facility_name') || ''} / ${str('breach_class') || ''} / ${tier}${num('capacity_mw') ? ' / ' + num('capacity_mw') + 'MW' : ''})`.trim(),
+      };
+    }
+    case 'grid_code_compliance.sla_breached': {
+      const tier = str('severity_tier');
+      if (tier !== 'serious' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Grid Code compliance SLA breached — ${str('case_number') || entityId} (${str('chain_status') || ''} / ${str('facility_name') || ''} / ${str('breach_class') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
