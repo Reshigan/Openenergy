@@ -617,6 +617,13 @@ export type EventType =
   | 'settlement_fail.cash_compensation' | 'settlement_fail.closed_resolved'
   | 'settlement_fail.dispute_raised' | 'settlement_fail.force_majeure_suspended'
   | 'settlement_fail.written_off' | 'settlement_fail.sla_breached'
+  // ─── Wave 86: Lender DSCR Monitoring & Cure (P6); LMA covenant test + SARB IFRS9 Stage2/3 trigger + Basel III. The COVERAGE-DEFENSE engine of the project-finance loan book: ratio computation → certify_clean OR watch OR breach → cure proposal/execute/validate → recovery OR lock_up OR acceleration to W45 OR waiver. Beats Mott MacDonald PFlex / Riverbed-PF / Modelware / FIS Sungard Reflect / Excel-based bank PF monitoring / KPMG-PwC SLL trackers via LIVE coverage battery (severity index, headroom-to-lockup months, cure runway days, equity-cure coverage ratio, DSRA coverage ratio with W77 hookup, forward DSCR, LLCR, PLCR, cross-default flag, urgency band) on every record and tier RE-DERIVED on every transition from the current DSCR. Tier RE-DERIVED: minor>=1.30 / standard>=1.20 / material>=1.00 / severe<1.00. URGENT SLA (lower DSCR = tighter every window). SIGNATURE COVERAGE-DEFENSE: declare_acceleration crosses regulator EVERY tier (sister of W45 write_off / W77 declare_breach / W68 declare_default — IFRS 9 Stage 3 trigger); waive_breach + enter_lock_up + sla_breached cross material+severe. Single lender-desk write {admin,lender}; actor_party lender/borrower/independent_engineer from action. ───
+  | 'dscr_monitoring.data_collected' | 'dscr_monitoring.computed'
+  | 'dscr_monitoring.certified_clean' | 'dscr_monitoring.watch'
+  | 'dscr_monitoring.breach_recorded' | 'dscr_monitoring.cure_proposed'
+  | 'dscr_monitoring.cure_in_progress' | 'dscr_monitoring.cure_validated'
+  | 'dscr_monitoring.lock_up' | 'dscr_monitoring.accelerated'
+  | 'dscr_monitoring.waived' | 'dscr_monitoring.sla_breached'
   // Wave 66 — Regulator Complaints & Dispute Resolution chain (NERSA as the quasi-judicial dispute forum under ERA 4/2006 s30 + NER Act 40/2004 + NERSA Complaints Procedures; REACTIVE external-party grievance adjudication, distinct from W31 internal-intake disposition and W40 proactive inspection; lodged→admissibility→referred_to_licensee→[settle | investigation→mediation→hearing→ruling→remedy_monitoring→resolved] + dismiss/appeal/withdraw; URGENT SLA (larger affected population = tighter); single regulator-owned write {admin,regulator}, actor_party complainant/respondent/adjudicator from action; SIGNATURE lodge_appeal crosses for EVERY tier (judicial review always material), issue_ruling crosses major+systemic, dismiss crosses systemic only, sla_breached crosses major+systemic; settle_at_licensee & confirm_compliance share .resolved)
   | 'regulator_complaint.admissibility_review' | 'regulator_complaint.referred'
   | 'regulator_complaint.escalated' | 'regulator_complaint.mediating'
@@ -863,6 +870,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   black_start: 'grid',
   connection_energization: 'grid',
   settlement_fail: 'trader',
+  dscr_monitoring: 'lender',
   trade_allocation: 'trading',
   popia: 'admin',
   auth: 'auth',

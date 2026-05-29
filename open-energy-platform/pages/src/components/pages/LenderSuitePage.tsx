@@ -12,6 +12,7 @@ import { CreditOriginationChainTab } from '../lender/CreditOriginationChainTab';
 import { LoanTransferChainTab } from '../lender/LoanTransferChainTab';
 import { SecurityPerfectionChainTab } from '../lender/SecurityPerfectionChainTab';
 import { ReserveAccountChainTab } from '../lender/ReserveAccountChainTab';
+import { DscrMonitoringChainTab } from '../lender/DscrMonitoringChainTab';
 
 export function LenderSuitePage() {
   const tabs: TabSpec[] = [
@@ -70,6 +71,14 @@ export function LenderSuitePage() {
       description: 'Debt-service / maintenance reserve account (DSRA/MRA/O&M/tax) funding, cure & release chain · LMA reserve covenants + project-finance cash waterfall + SARB. Tracks each reserve from required → funding scheduled → in progress → funded; shortfall → cure → replenish/waive/breach; drawdown authorize/execute; release request/release. URGENT tier SLA (larger reserve target = tighter cure/funding windows); breach (event of default) crosses regulator at every tier, requirement-waiver crosses for major/systemic, SLA breach major/systemic only.',
       columns: [],
       customContent: <ReserveAccountChainTab />,
+    },
+    {
+      key: 'dscr-monitoring',
+      label: 'DSCR monitoring',
+      endpoint: '',
+      description: 'DSCR monitoring & cure chain · LMA covenant schedule + SARB IFRS 9 Stage 2/3 trigger + Basel III. The rolling MONITOR counterpart to the periodic covenant CERTIFICATE (W38). Tests DSCR/LLCR/PLCR each test date and routes the loan through clean → watch → breach → lock-up → cure (propose/execute/validate) → acceleration (W45 pickup) or waiver. URGENT tier SLA — the LOWER the current DSCR the TIGHTER every window; tier is RE-DERIVED on every transition. Live coverage-defense battery on every record (severity index, headroom to lock-up, cure runway, equity-cure/DSRA coverage, forward DSCR, LLCR, PLCR, cross-default flag, urgency). declare_acceleration crosses regulator at every tier (IFRS 9 Stage 3 trigger), waive_breach + enter_lock_up + SLA breach for material+severe only.',
+      columns: [],
+      customContent: <DscrMonitoringChainTab />,
     },
     {
       key: 'loan-defaults',

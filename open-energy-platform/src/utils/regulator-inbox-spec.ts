@@ -2417,6 +2417,44 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 86 — Lender DSCR Monitoring & Cure (P6) ──
+    // COVERAGE-DEFENSE signature: declare_acceleration ALWAYS crosses (acceleration of a
+    // project-finance loan is a categorical SARB IFRS 9 Stage 3 trigger — sister of
+    // W45 write_off / W77 declare_breach / W68 declare_default). waive_breach (forbearance
+    // disclosure) and enter_lock_up (distribution-lockup notice) cross material + severe.
+    // sla_breached crosses material + severe.
+    case 'dscr_monitoring.accelerated': {
+      const tier = str('dscr_tier');
+      return {
+        severity: 'high',
+        title: `DSCR ACCELERATED — ${str('monitoring_number') || entityId} (${str('facility_name') || ''} / ${str('borrower_name') || ''} / DSCR ${num('current_dscr') || '—'} / outstanding R${(num('outstanding_debt_zar') || 0).toLocaleString('en-ZA')} / ${tier})`.trim(),
+      };
+    }
+    case 'dscr_monitoring.waived': {
+      const tier = str('dscr_tier');
+      if (tier !== 'material' && tier !== 'severe') return null;
+      return {
+        severity: tier === 'severe' ? 'high' : 'medium',
+        title: `DSCR breach WAIVED (forbearance) — ${str('monitoring_number') || entityId} (${str('facility_name') || ''} / ${str('borrower_name') || ''} / DSCR ${num('current_dscr') || '—'} / ${tier})`.trim(),
+      };
+    }
+    case 'dscr_monitoring.lock_up': {
+      const tier = str('dscr_tier');
+      if (tier !== 'material' && tier !== 'severe') return null;
+      return {
+        severity: tier === 'severe' ? 'high' : 'medium',
+        title: `DSCR distribution LOCK-UP — ${str('monitoring_number') || entityId} (${str('facility_name') || ''} / ${str('borrower_name') || ''} / DSCR ${num('current_dscr') || '—'} / ${tier})`.trim(),
+      };
+    }
+    case 'dscr_monitoring.sla_breached': {
+      const tier = str('dscr_tier');
+      if (tier !== 'material' && tier !== 'severe') return null;
+      return {
+        severity: 'high',
+        title: `DSCR monitoring chain SLA breached — ${str('monitoring_number') || entityId} (${str('chain_status') || ''} / ${str('facility_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     // ─── Wave 75 — Grid Connection Energization & Commissioning Hold-Point Gate ───
     // COD-driven POSITIVE signature: a Commercial Operation Date is notifiable for
     // EVERY tier (new generation registered to the national balance); energization,
