@@ -19,6 +19,7 @@ import { PrChainTab } from '../esums/PrChainTab';
 import { AvailabilityGuaranteeChainTab } from '../esums/AvailabilityGuaranteeChainTab';
 import { PmComplianceChainTab } from '../esums/PmComplianceChainTab';
 import { PermitToWorkChainTab } from '../esums/PermitToWorkChainTab';
+import { GenerationRevenueAssuranceChainTab } from '../esums/GenerationRevenueAssuranceChainTab';
 import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
 import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
 
@@ -111,6 +112,14 @@ export function EsumsOmPage() {
       description: '12-state P6 Permit-to-Work / Lock-Out-Tag-Out chain (OHSA + SANS 10142 + REIPPPP O&M safe-work-permit discipline) — permit requested → hazard assessment → isolation pending → isolation confirmed → permit issued → work in progress → work complete → permit closed (happy path), with a suspend/resume loop, a reject terminal (permit refused at assessment), a revoke terminal (permit cancelled mid-work — always reportable), and a withdraw terminal. The CONTROL-OF-WORK gate that authorises every hazardous O&M intervention before a technician touches an isolated or energised asset — upstream of the WO dispatch and PM compliance chains. URGENT hazard-tier SLAs (more hazardous work = tighter window). Single-party write: each event is tagged with the contractual party (issuing authority / permit holder). Issuing a permit for live-electrical or confined-space work (or any critical/catastrophic hazard tier), every permit revocation, and critical-tier SLA breaches cross into the regulator inbox as a control-of-work safety concern.',
       columns: [],
       customContent: <PermitToWorkChainTab />,
+    },
+    {
+      key: 'revenue_assurance',
+      label: 'Revenue assurance',
+      endpoint: '',
+      description: '12-state P6 Generation Revenue Assurance & Meter Reconciliation chain (NERSA metering code + REIPPPP PPA settlement discipline) — period open → data ingested → reconciled → variance flagged → investigating → classified → recovery pending → recovered (recovery path), with a within-tolerance close-clean terminal, a settlement-dispute branch (recovery pending → in dispute → recovered | written off), a write-off terminal (unrecoverable), and a cancel terminal. Reconciles the FOUR numbers that should agree but rarely do — EXPECTED generation (W71 prognostics / W24 PR baseline), the REVENUE METER reading, the SETTLEMENT statement and the PPA INVOICE — and where they diverge, classifies the leakage signature (meter drift / comms gap / settlement error / curtailment shortfall / clipping loss / meter tampering), then closes the loop to an SLA-driven recovery with a quantified recovered-ZAR ledger. Beats reactive meter-vs-settlement tools by using the expected-generation model as the recon baseline. URGENT variance-tier SLAs (larger revenue variance chased harder). Single-party write: each event is tagged with the contractual party (analyst / counterparty / reviewer). Every settlement dispute (all tiers), any meter-tampering finding (all tiers), material+ write-offs and major/critical SLA breaches cross into the regulator inbox as a metering-code matter.',
+      columns: [],
+      customContent: <GenerationRevenueAssuranceChainTab />,
     },
     {
       key: 'hse_chain',

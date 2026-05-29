@@ -2418,6 +2418,45 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── W79 Esums Generation Revenue Assurance & Meter Reconciliation ─────
+    case 'generation_revenue_assurance.in_dispute': {
+      // raise_dispute crosses for EVERY tier — a settlement / metering dispute
+      // is a NERSA metering-code matter, always reportable (the W79 hard line).
+      const tier = str('revenue_assurance_tier');
+      return {
+        severity: 'high',
+        title: `Generation revenue settlement dispute raised — ${str('gra_number') || entityId} (${str('site_name') || ''} / ${str('reconciliation_period') || ''} / R${Math.abs(num('variance_zar')).toFixed(0)} / ${tier})`.trim(),
+      };
+    }
+    case 'generation_revenue_assurance.classified': {
+      // classify_leakage crosses for EVERY tier only when meter_tampering —
+      // a tamper finding is a metering-code offence regardless of quantum.
+      if (str('leakage_category') !== 'meter_tampering') return null;
+      const tier = str('revenue_assurance_tier');
+      return {
+        severity: 'high',
+        title: `Revenue meter tampering finding — ${str('gra_number') || entityId} (${str('site_name') || ''} / ${str('reconciliation_period') || ''} / R${Math.abs(num('variance_zar')).toFixed(0)} / ${tier})`.trim(),
+      };
+    }
+    case 'generation_revenue_assurance.written_off': {
+      // Write-offs cross for material+ tiers — an unrecovered revenue leak of
+      // material size is a metering / settlement integrity matter.
+      const tier = str('revenue_assurance_tier');
+      if (tier !== 'material' && tier !== 'major' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'major' || tier === 'critical' ? 'high' : 'medium',
+        title: `Generation revenue leakage written off — ${str('gra_number') || entityId} (${str('site_name') || ''} / ${str('leakage_category') || ''} / R${Math.abs(num('variance_zar')).toFixed(0)} / ${tier})`.trim(),
+      };
+    }
+    case 'generation_revenue_assurance.sla_breached': {
+      const tier = str('revenue_assurance_tier');
+      if (tier !== 'major' && tier !== 'critical') return null;
+      return {
+        severity: 'high',
+        title: `Generation revenue assurance SLA breached — ${str('gra_number') || entityId} (${str('chain_status') || ''} / ${str('site_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

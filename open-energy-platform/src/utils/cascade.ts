@@ -687,6 +687,13 @@ export type EventType =
   | 'ppa_change_in_law.in_arbitration' | 'ppa_change_in_law.relief_granted'
   | 'ppa_change_in_law.implemented' | 'ppa_change_in_law.rejected'
   | 'ppa_change_in_law.withdrawn' | 'ppa_change_in_law.sla_breached'
+  // ─── W79 Esums Generation Revenue Assurance & Meter Reconciliation chain ─
+  | 'generation_revenue_assurance.data_ingested' | 'generation_revenue_assurance.reconciled'
+  | 'generation_revenue_assurance.variance_flagged' | 'generation_revenue_assurance.investigating'
+  | 'generation_revenue_assurance.classified' | 'generation_revenue_assurance.recovery_pending'
+  | 'generation_revenue_assurance.in_dispute' | 'generation_revenue_assurance.recovered'
+  | 'generation_revenue_assurance.closed_clean' | 'generation_revenue_assurance.written_off'
+  | 'generation_revenue_assurance.cancelled' | 'generation_revenue_assurance.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
