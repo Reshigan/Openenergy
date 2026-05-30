@@ -8,6 +8,7 @@ import { SecurityRemediationChainTab } from '../security-remediation/SecurityRem
 import { WarrantyRecoveryChainTab } from '../warranty-recovery/WarrantyRecoveryChainTab';
 import { SparePartsProvisioningChainTab } from '../spare-parts-provisioning/SparePartsProvisioningChainTab';
 import { ServiceContractChainTab } from '../service-contract/ServiceContractChainTab';
+import { ServiceRequestChainTab } from '../support/ServiceRequestChainTab';
 import { OemFcoChainTab } from '../oem-fco/OemFcoChainTab';
 import { api } from '../../lib/api';
 import { X } from 'lucide-react';
@@ -133,6 +134,11 @@ export function SupportWorkstationPage() {
             key: 'service_contracts',
             label: 'Service contracts',
             body: () => <ServiceContractChainTab />,
+          },
+          {
+            key: 'service-request',
+            label: 'Service requests',
+            body: () => <ServiceRequestChainTab />,
           },
           {
             key: 'oem_fco',

@@ -957,7 +957,18 @@ export type EventType =
   | 'esg_disclosure.published' | 'esg_disclosure.filed'
   | 'esg_disclosure.archived' | 'esg_disclosure.dispute_raised'
   | 'esg_disclosure.dispute_resolved' | 'esg_disclosure.restated'
-  | 'esg_disclosure.cancelled' | 'esg_disclosure.sla_breached';
+  | 'esg_disclosure.cancelled' | 'esg_disclosure.sla_breached'
+
+  // ─── Wave 104: Support ITIL Service Request Fulfilment chain (P6). 11th OEM-Support chain — the catalog + entitlement + fulfilment workflow, distinct from W14 reactive triage, W41 root-cause analysis, W47 RFC/CAB, W55 vulnerability remediation. Service requests are catalog-driven, pre-approved, low-risk requests like rotate API key, provision substation read access, request a spare meter swap, request a site-visit window, audit-evidence pull. They flow off the W80 service-contract entitlement gate, route through approval (low-risk autonomic, configuration-change CAB-mandated), assign to a fulfiller, run to fulfilled/verified/closed, and feed first-time-fix and reopened metrics back into the service desk. Beats ServiceNow ITSM Service Catalog + BMC Helix Request + Jira SM Request + Atlassian Assist + Freshservice Request Catalog + Ivanti Neurons Service Request + SolarWinds Service Desk Request + ManageEngine ServiceDesk Plus Request + Cherwell SRC + TOPdesk by making service requests a 12-state P6 chain with live entitlement score from W80, CAB bridge to W47, first-time-fix telemetry, and signature regulator crossings. Tier RE-DERIVED on every transition from severity_zar (minor<50k / standard<500k / material<5m / critical>=5m), FLOOR-AT-MATERIAL on data_export_popia/grid_significant/sla_premium_contract, FLOOR-AT-CRITICAL on access_to_critical_system/oem_break_glass. URGENT SLA polarity (higher tier = TIGHTER, critical 4h / minor 14d on submitted). SIGNATURE: reject crosses regulator EVERY tier when regulator_relevant (catalog-rejection always reportable); mark_fulfilled crosses regulator on critical when grid_significant (security-of-supply signature); cancel_request crosses regulator EVERY tier when entitled AND regulator_relevant; sla_breached crosses on material+critical. Write {admin,support}; READ all 9 personas; actor_party functional requester/approver/fulfiller/verifier/archiver from action. ───
+  | 'service_request.submitted' | 'service_request.entitlement_checked'
+  | 'service_request.approval_pending' | 'service_request.approved'
+  | 'service_request.rejected' | 'service_request.assigned'
+  | 'service_request.fulfilment_started' | 'service_request.awaiting_user'
+  | 'service_request.user_responded' | 'service_request.fulfilled'
+  | 'service_request.verified' | 'service_request.closed'
+  | 'service_request.archived' | 'service_request.cancelled'
+  | 'service_request.reopened' | 'service_request.regulator_crossed'
+  | 'service_request.sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1029,6 +1040,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ppa_annual_recon: 'offtaker',
   soiling_audit: 'esums',
   esg_disclosure: 'carbon',
+  service_request: 'support',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

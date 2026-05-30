@@ -157,6 +157,7 @@ import handoverDossierChainRoutes, { handoverDossierSlaSweep } from './routes/ha
 import ppaAnnualReconChainRoutes, { ppaAnnualReconSlaSweep } from './routes/ppa-annual-recon-chain';
 import soilingAuditChainRoutes, { soilingAuditSlaSweep } from './routes/soiling-audit-chain';
 import esgDisclosureChainRoutes, { esgDisclosureSlaSweep } from './routes/esg-disclosure-chain';
+import serviceRequestChainRoutes, { serviceRequestSlaSweep, serviceRequestEntitlementWindowSweep } from './routes/service-request-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -484,6 +485,7 @@ app.route('/api/ipp/handover-dossier/chain', handoverDossierChainRoutes);
 app.route('/api/offtaker/ppa-annual-recon/chain', ppaAnnualReconChainRoutes);
 app.route('/api/esums/soiling-audit/chain', soilingAuditChainRoutes);
 app.route('/api/carbon/esg-disclosure/chain', esgDisclosureChainRoutes);
+app.route('/api/support/service-request/chain', serviceRequestChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1387,6 +1389,17 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('esg_disclosure_sla_sweep', async () => {
         const result = await esgDisclosureSlaSweep(env as never);
         console.log('esg_disclosure_sla_sweep', JSON.stringify(result));
+      });
+      // W104 Support ITIL Service Request Fulfilment chain: flag requests
+      // that overrun their URGENT SLA window (higher tier = TIGHTER, so a
+      // critical service request has 4h on submitted and a minor has 14d).
+      // SLA breaches cross the regulator inbox on material + critical tiers
+      // (signature alongside reject-everywhere-when-regulator-relevant,
+      // mark_fulfilled-on-critical-when-grid-significant, and
+      // cancel-everywhere-when-entitled-and-regulator-relevant).
+      await safe('service_request_sla_sweep', async () => {
+        const result = await serviceRequestSlaSweep(env as never);
+        console.log('service_request_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -2348,6 +2361,16 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('site_commissioning_sla_sweep', async () => {
         const result = await siteCommissioningSlaSweep(env as never);
         console.log('site_commissioning_sla_sweep', JSON.stringify(result));
+      });
+      // W104 Support ITIL Service Request — nightly entitlement window
+      // sweep. Joins service-request rows against the W80 service-contract
+      // chain and flips entitlement_status to 'contract_expired' when the
+      // upstream service contract has expired or gone suspended. Keeps the
+      // catalog gate honest day over day so a stale "entitled" flag does
+      // not silently authorise fulfilment.
+      await safe('service_request_entitlement_window_sweep', async () => {
+        const result = await serviceRequestEntitlementWindowSweep(env as never);
+        console.log('service_request_entitlement_window_sweep', JSON.stringify(result));
       });
       break;
 
