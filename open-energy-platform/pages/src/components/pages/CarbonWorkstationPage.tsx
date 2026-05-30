@@ -13,6 +13,7 @@ import { CreditingRenewalChainTab } from '../carbon/CreditingRenewalChainTab';
 import { CarbonErpaChainTab } from '../carbon/CarbonErpaChainTab';
 import { PoaCpaInclusionChainTab } from '../carbon/PoaCpaInclusionChainTab';
 import { CarbonIssuanceChainTab } from '../carbon/CarbonIssuanceChainTab';
+import { CcpAssessmentChainTab } from '../carbon/CcpAssessmentChainTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -131,6 +132,11 @@ export function CarbonWorkstationPage() {
           key: 'carbon_issuance_chain',
           label: 'Credit issuance',
           body: () => <CarbonIssuanceChainTab />,
+        },
+        {
+          key: 'ccp_assessment_chain',
+          label: 'CCP-eligibility assessment',
+          body: () => <CcpAssessmentChainTab />,
         },
         {
           key: 'audit',

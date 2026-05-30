@@ -2949,6 +2949,52 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 91 — ICVCM CCP-eligibility Assessment & Label Lifecycle (INTEGRITY-MARK signature) ─
+    // The CCP-eligible label is the single public market-rating signal that
+    // separates "investment-grade" credits from generic ones. A DENIAL is
+    // always notifiable (it's the public rejection); a CONDITIONAL grant is
+    // notifiable for every tier (caveats are signal). Disputes & SLA breaches
+    // on the rating workflow are notifiable for the largest tiers only.
+    case 'ccp_assessment.ccp_label_denied': {
+      // deny_ccp_label crosses for EVERY tier — the W91 signature crossing.
+      const tier = str('assessment_tier');
+      return {
+        severity: tier === 'mega' || tier === 'major' ? 'critical' : 'high',
+        title: `CCP label DENIED — ${str('assessment_number') || entityId} (${str('project_name') || ''} / ${tier} / ${num('assessed_annual_tco2e')} tCO2e/yr${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'ccp_assessment.ccp_label_granted': {
+      // grant_ccp_label crosses for EVERY tier when CONDITIONAL; else for
+      // the large tiers (major + mega) only.
+      const tier = str('assessment_tier');
+      const isConditional = num('conditional_grant_flag') === 1;
+      if (!isConditional && tier !== 'major' && tier !== 'mega') return null;
+      const condTag = isConditional ? ' / CONDITIONAL grant' : '';
+      const corsiaTag = num('corsia_phase2_eligible_flag') === 1 ? ' / CORSIA Phase-2 eligible' : '';
+      return {
+        severity: isConditional ? 'high' : tier === 'mega' ? 'high' : 'medium',
+        title: `CCP label GRANTED — ${str('assessment_number') || entityId} (${str('project_name') || ''} / ${tier} / ${num('assessed_annual_tco2e')} tCO2e/yr${condTag}${corsiaTag})`.trim(),
+      };
+    }
+    case 'ccp_assessment.disputed': {
+      // raise_dispute crosses for major + mega only (concentration).
+      const tier = str('assessment_tier');
+      if (tier !== 'major' && tier !== 'mega') return null;
+      return {
+        severity: tier === 'mega' ? 'high' : 'medium',
+        title: `CCP assessment DISPUTED — ${str('assessment_number') || entityId} (${str('project_name') || ''} / ${tier}${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'ccp_assessment.sla_breached': {
+      // sla_breached crosses for major + mega only.
+      const tier = str('assessment_tier');
+      if (tier !== 'major' && tier !== 'mega') return null;
+      return {
+        severity: tier === 'mega' ? 'high' : 'medium',
+        title: `CCP assessment SLA breached — ${str('assessment_number') || entityId} (${str('chain_status') || ''} / ${str('project_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

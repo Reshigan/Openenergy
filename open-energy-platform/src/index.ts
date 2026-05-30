@@ -144,6 +144,7 @@ import ppaNominationChainRoutes, { ppaNominationSlaSweep } from './routes/ppa-no
 import bessSohChainRoutes, { bessSohSlaSweep } from './routes/bess-soh-chain';
 import oemFcoChainRoutes, { oemFcoSlaSweep } from './routes/oem-fco-chain';
 import benchmarkTransitionChainRoutes, { benchmarkTransitionSlaSweep } from './routes/benchmark-transition-chain';
+import ccpAssessmentChainRoutes, { ccpAssessmentSlaSweep } from './routes/ccp-assessment-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -458,6 +459,7 @@ app.route('/api/ppa-nomination/chain', ppaNominationChainRoutes);
 app.route('/api/bess-soh/chain', bessSohChainRoutes);
 app.route('/api/oem-fco/chain', oemFcoChainRoutes);
 app.route('/api/benchmark-transition/chain', benchmarkTransitionChainRoutes);
+app.route('/api/ccp-assessment/chain', ccpAssessmentChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1255,6 +1257,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('benchmark_transition_sla_sweep', async () => {
         const result = await benchmarkTransitionSlaSweep(env as never);
         console.log('benchmark_transition_sla_sweep', JSON.stringify(result));
+      });
+      // W91 Carbon ICVCM CCP-eligibility Assessment & Label Lifecycle: flag
+      // assessments past their INVERTED SLA window (larger assessed volume =
+      // longer windows, deeper rating diligence). SLA breaches on major+mega
+      // tiers cross the regulator inbox as integrity-mark workflow slippage.
+      await safe('ccp_assessment_sla_sweep', async () => {
+        const result = await ccpAssessmentSlaSweep(env as never);
+        console.log('ccp_assessment_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

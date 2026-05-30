@@ -777,6 +777,13 @@ export type EventType =
   | 'carbon_issuance.returned' | 'carbon_issuance.disputed'
   | 'carbon_issuance.rejected' | 'carbon_issuance.withdrawn'
   | 'carbon_issuance.cancelled' | 'carbon_issuance.sla_breached'
+  // ─── Wave 91 — ICVCM CCP-eligibility Assessment & Label Lifecycle chain (the QUALITY-LABEL "rating" layer of the carbon-credit market: independent integrity assessment that awards the CCP-eligible (Core Carbon Principles) label — the market's "investment-grade" mark that unlocks premium pricing AND CORSIA Phase-2 eligibility (mandatory for airline retirements from 2027); entirely orthogonal to issuance (W82) / retirement (W17) / MRV (W11); beats Sylvera / BeZero Carbon / Calyx Global / Renoster / Pachama — all opaque proprietary rating systems that lag the market — via LIVE calculated CCP-criteria scoring on every record: 10-criterion aggregate, weakest-criterion identification, CORSIA Phase-2 eligibility derivation, market premium-pricing uplift, equivalent grade mapping to major rating agencies; 12-state P6 requested→screening→eligibility_check→assessment_in_progress→vvb_review→ccp_decision_pending→ccp_label_granted (clean path) with on_hold (resume→screening), returned (resubmit→screening), disputed (resolve→vvb_review), ccp_label_denied/withdrawn terminals; tiers by ASSESSED ANNUAL tCO2e minor<100k/moderate<500k/major<2M/mega>=2M with high-integrity-risk-sector floor at major (REDD+/jurisdictional/avoidance); INVERTED SLA (larger volume = longer windows = deeper rating diligence); INTEGRITY-MARK signature: deny_ccp_label crosses regulator for EVERY tier (public market-rejection signal), grant_ccp_label crosses EVERY tier when CONDITIONAL else major+mega only, raise_dispute + sla_breached cross major+mega only; single carbon-fund desk write {admin,carbon_fund}, actor_party proponent/icvcm/vvb/quality_assessor from action; resume + resubmit both share .screening, resolve_dispute shares .vvb_review) ───
+  | 'ccp_assessment.screening' | 'ccp_assessment.eligibility_check'
+  | 'ccp_assessment.assessment_in_progress' | 'ccp_assessment.vvb_review'
+  | 'ccp_assessment.ccp_decision_pending' | 'ccp_assessment.ccp_label_granted'
+  | 'ccp_assessment.ccp_label_denied' | 'ccp_assessment.on_hold'
+  | 'ccp_assessment.returned' | 'ccp_assessment.disputed'
+  | 'ccp_assessment.withdrawn' | 'ccp_assessment.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
@@ -883,6 +890,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   carbon: 'carbon',
   carbon_poa: 'carbon',
   carbon_issuance: 'carbon',
+  ccp_assessment: 'carbon',
   rec: 'offtaker',
   rec_market: 'offtaker',
   scope2: 'offtaker',
