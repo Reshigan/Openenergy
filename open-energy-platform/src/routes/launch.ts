@@ -689,6 +689,14 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         cta_label: 'Open workstation',
         icon: 'desktop_windows',
       },
+      {
+        key: 'wbs_schedule',
+        title: 'WBS & Gantt schedule',
+        description: 'AACE 27R-03 + PMBOK 7 P6 schedule chain: baseline → execution → variance → rebaseline → recovery, with CPI/SPI/SV/CV live, critical-path float, and tier-aware regulator crossings on late finish.',
+        href: '/ipp-lifecycle/workstation?tab=wbs_schedule',
+        cta_label: 'Open WBS schedule',
+        icon: 'view_timeline',
+      },
     ],
     ai_suggestions: await buildIppDeveloperAiSuggestions(c, user, { milestones, envSoon, invoicesOut }),
   };

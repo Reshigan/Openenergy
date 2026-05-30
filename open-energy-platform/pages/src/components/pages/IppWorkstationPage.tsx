@@ -19,6 +19,7 @@ import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
 import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
 import { EdCommitmentChainTab } from '../ed/EdCommitmentChainTab';
 import { GcaChainTab } from '../gca/GcaChainTab';
+import { IppScheduleChainTab } from '../ipp/IppScheduleChainTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -43,6 +44,7 @@ export function IppWorkstationPage() {
         { key: 'projects', label: 'My projects', body: () => <ProjectsTab /> },
         { key: 'milestones', label: 'Milestones', body: ({ onRefresh }) => <MilestonesTab onRefresh={onRefresh} /> },
         { key: 'schedule', label: 'Schedule pulse', body: () => <SchedulePulseTab /> },
+        { key: 'wbs_schedule', label: 'WBS & Gantt schedule', body: () => <IppScheduleChainTab /> },
         { key: 'insurance', label: 'Insurance', body: ({ onRefresh }) => <InsuranceTab onRefresh={onRefresh} /> },
         { key: 'insurance_claims', label: 'Insurance claims', body: () => <InsuranceClaimChainTab /> },
         { key: 'bonds', label: 'Bonds', body: () => <BondRegistryTab /> },

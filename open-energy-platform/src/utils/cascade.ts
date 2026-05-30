@@ -1042,7 +1042,17 @@ export type EventType =
   | 'pnl_attribution_hold_overridden' | 'pnl_attribution_published'
   | 'pnl_attribution_reconciled' | 'pnl_attribution_archived'
   | 'pnl_attribution_variance_flagged' | 'pnl_attribution_restated'
-  | 'pnl_attribution_sla_breached';
+  | 'pnl_attribution_sla_breached'
+  // Wave 112 — IPP WBS & Gantt Schedule Management (12-state P6)
+  | 'ipp_schedule_wbs_drafted' | 'ipp_schedule_baseline_set'
+  | 'ipp_schedule_execution_started' | 'ipp_schedule_progress_updated'
+  | 'ipp_schedule_variance_detected' | 'ipp_schedule_impact_assessed'
+  | 'ipp_schedule_rebaselined' | 'ipp_schedule_recovery_proposed'
+  | 'ipp_schedule_recovered' | 'ipp_schedule_completed'
+  | 'ipp_schedule_late_finish_marked' | 'ipp_schedule_suspended'
+  | 'ipp_schedule_resumed' | 'ipp_schedule_cancelled'
+  | 'ipp_schedule_rebaseline_approved' | 'ipp_schedule_rebaseline_rejected'
+  | 'ipp_schedule_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1121,6 +1131,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   carbon_rating: 'carbon',
   transmission_outage: 'grid',
   pnl_attribution: 'trader',
+  ipp_schedule: 'ipp',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

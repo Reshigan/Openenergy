@@ -93,6 +93,7 @@ new_sqlite_classes = ["OrderBook"]
 crons = [
   "*/15 * * * *",   # 15-min: surveillance scan, order-book depth snapshot
   "0 * * * *",      # hourly: mark-price VWAP run
+  "15 0 * * *",     # 00:15 daily: W112 IPP WBS & Gantt schedule-health recompute (CPI/SPI/SV/CV + health band)
   "5 0 * * *",      # 00:05 daily: metering rollup, ONA rollup, audit archive prep
   "10 0 * * *",     # 00:10 daily: settlement run for previous day
   "30 0 * * *",     # 00:30 daily: usage snapshot, margin call run
