@@ -8,6 +8,7 @@ import { SecurityRemediationChainTab } from '../security-remediation/SecurityRem
 import { WarrantyRecoveryChainTab } from '../warranty-recovery/WarrantyRecoveryChainTab';
 import { SparePartsProvisioningChainTab } from '../spare-parts-provisioning/SparePartsProvisioningChainTab';
 import { ServiceContractChainTab } from '../service-contract/ServiceContractChainTab';
+import { OemFcoChainTab } from '../oem-fco/OemFcoChainTab';
 import { api } from '../../lib/api';
 import { X } from 'lucide-react';
 
@@ -132,6 +133,11 @@ export function SupportWorkstationPage() {
             key: 'service_contracts',
             label: 'Service contracts',
             body: () => <ServiceContractChainTab />,
+          },
+          {
+            key: 'oem_fco',
+            label: 'OEM FCO/ECN',
+            body: () => <OemFcoChainTab />,
           },
           {
             key: 'escalations',

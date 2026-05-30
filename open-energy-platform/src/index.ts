@@ -142,6 +142,7 @@ import settlementFailChainRoutes, { settlementFailSlaSweep } from './routes/sett
 import dscrMonitoringChainRoutes, { dscrMonitoringSlaSweep } from './routes/dscr-monitoring-chain';
 import ppaNominationChainRoutes, { ppaNominationSlaSweep } from './routes/ppa-nomination-chain';
 import bessSohChainRoutes, { bessSohSlaSweep } from './routes/bess-soh-chain';
+import oemFcoChainRoutes, { oemFcoSlaSweep } from './routes/oem-fco-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -454,6 +455,7 @@ app.route('/api/settlement-fail/chain', settlementFailChainRoutes);
 app.route('/api/dscr-monitoring/chain', dscrMonitoringChainRoutes);
 app.route('/api/ppa-nomination/chain', ppaNominationChainRoutes);
 app.route('/api/bess-soh/chain', bessSohChainRoutes);
+app.route('/api/oem-fco/chain', oemFcoChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1236,6 +1238,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('bess_soh_sla_sweep', async () => {
         const result = await bessSohSlaSweep(env as never);
         console.log('bess_soh_sla_sweep', JSON.stringify(result));
+      });
+      // W89 OEM-Support Field Change Order / ECN Campaign Management: flag
+      // campaigns that overrun their URGENT SLA (mandatory_safety = tightest);
+      // SLA breaches cross the regulator inbox on mandatory tiers only.
+      await safe('oem_fco_sla_sweep', async () => {
+        const result = await oemFcoSlaSweep(env as never);
+        console.log('oem_fco_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

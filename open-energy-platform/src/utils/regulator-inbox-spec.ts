@@ -2539,6 +2539,81 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 89 — OEM-Support Field Change Order / ECN Campaign Management ───
+    // FLEET-PROPAGATION signature (NRCS + SANS + NERSA Grid Code hard lines):
+    //   approve_campaign  crosses EVERY tier when mandatory_safety (safety
+    //                     lodgement always required at approval).
+    //   notification_sent crosses EVERY tier when affected_capacity_mw>=50MW
+    //                     (NERSA Grid Code grid-significant rollout); mandatory
+    //                     tiers otherwise.
+    //   complete_campaign crosses EVERY tier when mandatory_safety (closure of
+    //                     a safety campaign is always reportable).
+    //   suspend_campaign  crosses EVERY tier when mandatory_safety.
+    //   cancel_campaign   crosses EVERY tier ALWAYS (post-approval cancellation
+    //                     hard line, irrespective of class).
+    //   withdraw_campaign crosses EVERY tier when mandatory_safety.
+    //   sla_breached      crosses mandatory tiers (safety + performance) only.
+    case 'oem_fco.approved': {
+      const cls = str('campaign_tier') || str('change_class');
+      if (cls !== 'mandatory_safety') return null;
+      return {
+        severity: 'high',
+        title: `OEM safety campaign APPROVED (NRCS+SANS lodgement) — ${str('campaign_number') || entityId} (${str('oem_name') || ''} / ${str('product_family') || ''} ${str('product_model') || ''} / ${num('affected_units') || 0} units / ${num('affected_capacity_mw') || 0} MW)`.trim(),
+      };
+    }
+    case 'oem_fco.notification_sent': {
+      const cls = str('campaign_tier') || str('change_class');
+      const capacityMw = num('affected_capacity_mw') || 0;
+      const mandatory = cls === 'mandatory_safety' || cls === 'mandatory_performance';
+      if (capacityMw < 50 && !mandatory) return null;
+      const sev = cls === 'mandatory_safety' ? 'high' : capacityMw >= 100 ? 'high' : 'medium';
+      return {
+        severity: sev,
+        title: `OEM campaign notification dispatched to fleet — ${str('campaign_number') || entityId} (${str('oem_name') || ''} / ${str('product_family') || ''} ${str('product_model') || ''} / ${num('affected_units') || 0} units / ${capacityMw} MW / ${cls})`.trim(),
+      };
+    }
+    case 'oem_fco.completed': {
+      const cls = str('campaign_tier') || str('change_class');
+      if (cls !== 'mandatory_safety') return null;
+      return {
+        severity: 'medium',
+        title: `OEM safety campaign COMPLETED (fleet retrofitted) — ${str('campaign_number') || entityId} (${str('oem_name') || ''} / ${str('product_family') || ''} ${str('product_model') || ''} / ${num('completed_units') || 0}/${num('affected_units') || 0} units)`.trim(),
+      };
+    }
+    case 'oem_fco.suspended': {
+      const cls = str('campaign_tier') || str('change_class');
+      if (cls !== 'mandatory_safety') return null;
+      return {
+        severity: 'high',
+        title: `OEM safety campaign SUSPENDED (rollout halted) — ${str('campaign_number') || entityId} (${str('oem_name') || ''} / ${str('product_family') || ''} ${str('product_model') || ''} / ${num('completed_units') || 0}/${num('affected_units') || 0} units${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'oem_fco.cancelled': {
+      const cls = str('campaign_tier') || str('change_class');
+      const capacityMw = num('affected_capacity_mw') || 0;
+      const sev = cls === 'mandatory_safety' ? 'high' : capacityMw >= 50 ? 'medium' : 'low';
+      return {
+        severity: sev,
+        title: `OEM campaign CANCELLED post-approval — ${str('campaign_number') || entityId} (${str('oem_name') || ''} / ${str('product_family') || ''} ${str('product_model') || ''} / ${num('affected_units') || 0} units / ${cls})`.trim(),
+      };
+    }
+    case 'oem_fco.withdrawn': {
+      const cls = str('campaign_tier') || str('change_class');
+      if (cls !== 'mandatory_safety') return null;
+      return {
+        severity: 'medium',
+        title: `OEM safety campaign WITHDRAWN pre-approval (NRCS notice) — ${str('campaign_number') || entityId} (${str('oem_name') || ''} / ${str('product_family') || ''} ${str('product_model') || ''})`.trim(),
+      };
+    }
+    case 'oem_fco.sla_breached': {
+      const cls = str('campaign_tier') || str('change_class');
+      if (cls !== 'mandatory_safety' && cls !== 'mandatory_performance') return null;
+      return {
+        severity: cls === 'mandatory_safety' ? 'high' : 'medium',
+        title: `OEM campaign SLA breached — ${str('campaign_number') || entityId} (${str('chain_status') || ''} / ${str('oem_name') || ''} / ${str('product_family') || ''} ${str('product_model') || ''} / ${cls})`.trim(),
+      };
+    }
+
     // ─── Wave 75 — Grid Connection Energization & Commissioning Hold-Point Gate ───
     // COD-driven POSITIVE signature: a Commercial Operation Date is notifiable for
     // EVERY tier (new generation registered to the national balance); energization,

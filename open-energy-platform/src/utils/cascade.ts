@@ -640,6 +640,14 @@ export type EventType =
   | 'bess_soh.dispute_raised' | 'bess_soh.dispute_resolved'
   | 'bess_soh.decommissioned' | 'bess_soh.cancelled'
   | 'bess_soh.sla_breached'
+  // ─── Wave 89: OEM-Support Field Change Order / ECN Campaign Management (P6); OEM-pushed fleet-wide retrofit campaigns — draft → under_review → approved → population_identified → notification_sent → acknowledged → scheduling → in_progress → completed, with suspended↔in_progress loop, post-approval cancel, and pre-approval withdraw. Beats PTC Windchill ECM / Siemens Teamcenter Change Manager / Oracle Agile PLM / Arena PLM / Aras Innovator / Dassault Enovia / SAP PLM field-action / Tesla Megapack service campaigns / Vestas Online Service Bulletins / GE Vernova fleet upgrade campaigns via LIVE fleet-coverage + retrofit-economics battery (completion %, mean time to retrofit, predicted full coverage days, total campaign CapEx ZAR, warranty coverage %, fleet energy at risk MW, acknowledgement %, judicial-review-risk score, SLA days remaining, urgency band) + tier RE-DERIVED on every transition from change_class (mandatory_safety / mandatory_performance / recommended / optional). URGENT SLA. FLEET-PROPAGATION SIGNATURE: approve_campaign crosses regulator EVERY tier when mandatory_safety (NRCS+SANS); send_notification crosses EVERY tier when affected_capacity_mw>=50 MW (NERSA Grid Code) or mandatory tiers otherwise; complete_campaign crosses EVERY tier when mandatory_safety; suspend_campaign crosses EVERY tier when mandatory_safety; cancel_campaign crosses EVERY tier ALWAYS (post-approval cancellation hard line); withdraw_campaign crosses EVERY tier when mandatory_safety; sla_breached mandatory tiers only. Single OEM-Support desk write {admin,support}; actor_party oem/operator/owner/regulator from action. ───
+  | 'oem_fco.submitted' | 'oem_fco.approved'
+  | 'oem_fco.population_identified' | 'oem_fco.notification_sent'
+  | 'oem_fco.acknowledged' | 'oem_fco.scheduling_opened'
+  | 'oem_fco.rollout_started' | 'oem_fco.completed'
+  | 'oem_fco.suspended' | 'oem_fco.resumed'
+  | 'oem_fco.cancelled' | 'oem_fco.withdrawn'
+  | 'oem_fco.sla_breached'
   // Wave 66 — Regulator Complaints & Dispute Resolution chain (NERSA as the quasi-judicial dispute forum under ERA 4/2006 s30 + NER Act 40/2004 + NERSA Complaints Procedures; REACTIVE external-party grievance adjudication, distinct from W31 internal-intake disposition and W40 proactive inspection; lodged→admissibility→referred_to_licensee→[settle | investigation→mediation→hearing→ruling→remedy_monitoring→resolved] + dismiss/appeal/withdraw; URGENT SLA (larger affected population = tighter); single regulator-owned write {admin,regulator}, actor_party complainant/respondent/adjudicator from action; SIGNATURE lodge_appeal crosses for EVERY tier (judicial review always material), issue_ruling crosses major+systemic, dismiss crosses systemic only, sla_breached crosses major+systemic; settle_at_licensee & confirm_compliance share .resolved)
   | 'regulator_complaint.admissibility_review' | 'regulator_complaint.referred'
   | 'regulator_complaint.escalated' | 'regulator_complaint.mediating'
@@ -889,6 +897,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   dscr_monitoring: 'lender',
   ppa_nomination: 'offtaker',
   bess_soh: 'support',
+  oem_fco: 'support',
   trade_allocation: 'trading',
   popia: 'admin',
   auth: 'auth',
