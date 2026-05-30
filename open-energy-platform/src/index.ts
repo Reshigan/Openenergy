@@ -149,6 +149,7 @@ import projectRiskChainRoutes, { projectRiskSlaSweep } from './routes/project-ri
 import enforcementActionChainRoutes, { enforcementActionSlaSweep } from './routes/enforcement-action-chain';
 import rezCapacityChainRoutes, { rezCapacitySlaSweep } from './routes/rez-capacity-chain';
 import sllKpiChainRoutes, { sllKpiSlaSweep } from './routes/sll-kpi-chain';
+import submittalRfiChainRoutes, { submittalRfiSlaSweep } from './routes/submittal-rfi-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -468,6 +469,7 @@ app.route('/api/ipp/project-risk/chain', projectRiskChainRoutes);
 app.route('/api/regulator/enforcement-action/chain', enforcementActionChainRoutes);
 app.route('/api/grid/rez-capacity/chain', rezCapacityChainRoutes);
 app.route('/api/lender/sll-kpi/chain', sllKpiChainRoutes);
+app.route('/api/ipp/submittal-rfi/chain', submittalRfiChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1303,6 +1305,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('sll_kpi_sla_sweep', async () => {
         const result = await sllKpiSlaSweep(env as never);
         console.log('sll_kpi_sla_sweep', JSON.stringify(result));
+      });
+      // IPP Submittal & RFI Register SLA sweep — Wave 96. URGENT-polarity
+      // construction-document SLAs (critical/high beat tighter). Breaches on
+      // chains carrying affects_grid_code OR holds_construction cross the
+      // regulator inbox (NERSA Grid Code C-1/C-3 + REIPPPP bid-envelope).
+      await safe('submittal_rfi_sla_sweep', async () => {
+        const result = await submittalRfiSlaSweep(env as never);
+        console.log('submittal_rfi_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

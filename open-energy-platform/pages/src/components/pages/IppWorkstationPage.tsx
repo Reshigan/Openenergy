@@ -8,6 +8,7 @@ import { PlannedOutageChainTab } from '../grid/PlannedOutageChainTab';
 import { ProcurementChainTab } from '../ipp/ProcurementChainTab';
 import { CodChainTab } from '../ipp/CodChainTab';
 import { ProjectChangeOrderChainTab } from '../ipp/ProjectChangeOrderChainTab';
+import { SubmittalRfiChainTab } from '../ipp/SubmittalRfiChainTab';
 import { ProjectRiskChainTab } from '../ipp/ProjectRiskChainTab';
 import { InsuranceClaimChainTab } from '../ipp/InsuranceClaimChainTab';
 import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
@@ -45,6 +46,7 @@ export function IppWorkstationPage() {
         { key: 'procurement', label: 'Procurement / RFPs', body: () => <ProcurementChainTab /> },
         { key: 'cod', label: 'Construction / COD', body: () => <CodChainTab /> },
         { key: 'change_orders', label: 'Change orders / EVM', body: () => <ProjectChangeOrderChainTab /> },
+        { key: 'submittal_rfi', label: 'Submittals & RFIs', body: () => <SubmittalRfiChainTab /> },
         { key: 'project_risk', label: 'Project risk register / SRA', body: () => <ProjectRiskChainTab /> },
         { key: 'hse_chain', label: 'HSE incidents', body: () => <HseIncidentChainTab /> },
         { key: 'cyber_chain', label: 'Cyber incidents', body: () => <CyberIncidentChainTab /> },

@@ -889,7 +889,16 @@ export type EventType =
   | 'carbon.article6.dffe_submitted' | 'carbon.article6.dffe_cleared'
   | 'carbon.article6.unfccc_posted' | 'carbon.article6.blocked'
   | 'carbon.country_routing.updated'
-  | 'carbon.serial_uri.resolved';
+  | 'carbon.serial_uri.resolved'
+  // ─── Wave 96: IPP submittal & RFI register P6 chain ─────────────────
+  | 'submittal_rfi.drafted' | 'submittal_rfi.submitted'
+  | 'submittal_rfi.distributed' | 'submittal_rfi.under_review'
+  | 'submittal_rfi.clarification_requested' | 'submittal_rfi.responded'
+  | 'submittal_rfi.approved' | 'submittal_rfi.returned_for_revision'
+  | 'submittal_rfi.revised' | 'submittal_rfi.distributed_for_construction'
+  | 'submittal_rfi.incorporated' | 'submittal_rfi.closed_clean'
+  | 'submittal_rfi.voided' | 'submittal_rfi.withdrawn'
+  | 'submittal_rfi.sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -953,6 +962,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   oem_fco: 'support',
   benchmark_transition: 'trader',
   trade_allocation: 'trading',
+  submittal_rfi: 'ipp',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

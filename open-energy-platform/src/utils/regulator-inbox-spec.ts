@@ -3268,6 +3268,76 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 96 — IPP Submittal & RFI chain ────────────────────────────
+    case 'submittal_rfi.approved': {
+      // Approval crosses regulator EVERY tier when affects_grid_code OR
+      // affects_bid_envelope (NERSA C-1/C-3 or REIPPPP bid envelope).
+      const gc = num('affects_grid_code') === 1;
+      const be = num('affects_bid_envelope') === 1;
+      if (!gc && !be) return null;
+      const tier = str('current_tier');
+      const severity: InboxSeverity =
+        tier === 'critical' ? 'high' :
+        tier === 'high' ? 'medium' : 'low';
+      const flags = [gc ? 'grid_code' : '', be ? 'bid_envelope' : ''].filter(Boolean).join('|');
+      return {
+        severity,
+        title: `Submittal/RFI approved — ${str('submittal_rfi_number') || entityId} (${str('project_name') || ''} / ${str('workflow_class') || ''} / ${tier} / ${flags})`.trim(),
+      };
+    }
+    case 'submittal_rfi.voided': {
+      // Void crosses regulator EVERY tier when grid_code OR life_safety.
+      const gc = num('affects_grid_code') === 1;
+      const ls = num('affects_life_safety') === 1;
+      if (!gc && !ls) return null;
+      const tier = str('current_tier');
+      const severity: InboxSeverity =
+        tier === 'critical' ? 'high' :
+        tier === 'high' ? 'medium' : 'low';
+      const flags = [gc ? 'grid_code' : '', ls ? 'life_safety' : ''].filter(Boolean).join('|');
+      return {
+        severity,
+        title: `Submittal/RFI voided — ${str('submittal_rfi_number') || entityId} (${str('project_name') || ''} / ${tier} / ${flags} / ${str('voided_reason') || ''})`.trim(),
+      };
+    }
+    case 'submittal_rfi.distributed_for_construction': {
+      // High+critical only when grid_code (construction release with
+      // grid-code impact = NERSA notification).
+      const gc = num('affects_grid_code') === 1;
+      if (!gc) return null;
+      const tier = str('current_tier');
+      if (tier !== 'high' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Submittal released for construction (grid-code) — ${str('submittal_rfi_number') || entityId} (${str('project_name') || ''} / ${str('workflow_class') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'submittal_rfi.returned_for_revision': {
+      // Returned high+critical when grid_code (signals rework on
+      // safety-impacting design).
+      const gc = num('affects_grid_code') === 1;
+      if (!gc) return null;
+      const tier = str('current_tier');
+      if (tier !== 'high' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Submittal returned for revision (grid-code) — ${str('submittal_rfi_number') || entityId} (${str('project_name') || ''} / rev ${num('revision_count')} / ${tier})`.trim(),
+      };
+    }
+    case 'submittal_rfi.sla_breached': {
+      // SLA breach high+critical when grid_code OR holds_construction.
+      const gc = num('affects_grid_code') === 1;
+      const hc = num('holds_construction') === 1;
+      if (!gc && !hc) return null;
+      const tier = str('current_tier');
+      if (tier !== 'high' && tier !== 'critical') return null;
+      const flags = [gc ? 'grid_code' : '', hc ? 'holds_construction' : ''].filter(Boolean).join('|');
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Submittal/RFI SLA breached — ${str('submittal_rfi_number') || entityId} (${str('chain_status') || ''} / ${tier} / ${flags})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
