@@ -13,6 +13,7 @@ import { LoanTransferChainTab } from '../lender/LoanTransferChainTab';
 import { SecurityPerfectionChainTab } from '../lender/SecurityPerfectionChainTab';
 import { ReserveAccountChainTab } from '../lender/ReserveAccountChainTab';
 import { DscrMonitoringChainTab } from '../lender/DscrMonitoringChainTab';
+import { SllKpiChainTab } from '../lender/SllKpiChainTab';
 
 export function LenderSuitePage() {
   const tabs: TabSpec[] = [
@@ -79,6 +80,14 @@ export function LenderSuitePage() {
       description: 'DSCR monitoring & cure chain · LMA covenant schedule + SARB IFRS 9 Stage 2/3 trigger + Basel III. The rolling MONITOR counterpart to the periodic covenant CERTIFICATE (W38). Tests DSCR/LLCR/PLCR each test date and routes the loan through clean → watch → breach → lock-up → cure (propose/execute/validate) → acceleration (W45 pickup) or waiver. URGENT tier SLA — the LOWER the current DSCR the TIGHTER every window; tier is RE-DERIVED on every transition. Live coverage-defense battery on every record (severity index, headroom to lock-up, cure runway, equity-cure/DSRA coverage, forward DSCR, LLCR, PLCR, cross-default flag, urgency). declare_acceleration crosses regulator at every tier (IFRS 9 Stage 3 trigger), waive_breach + enter_lock_up + SLA breach for material+severe only.',
       columns: [],
       customContent: <DscrMonitoringChainTab />,
+    },
+    {
+      key: 'sll-kpi',
+      label: 'SLL KPI',
+      endpoint: '',
+      description: 'Sustainability-linked loan KPI compliance & margin ratchet chain · LMA SLL Principles + ICMA SLBP + SA Green Finance Taxonomy 2025 + SARB Climate-Risk Practice Standard 2024. Tests each climate / safety / disclosure KPI against pre-agreed targets and routes the loan through period_open → data_collected → kpi_measured → verifying → kpi_verified → attested → margin_amended → reported (clean) or breach_recorded → cure_period → cure_validated → restated. Tier RE-DERIVED on every transition from kpi_variance_pct × materiality_class; INVERTED tier SLA — severe gets LONGEST cure window per LMA SLL governance. FLOOR-AT-MATERIAL for climate_kpi / safety_kpi / mandatory_disclosure_kpi. Live ESG margin-pricing battery on every record: effective margin bps, cumulative ratchet bps + ZAR, TCFD completeness %, attestation completeness %, SBTi pathway, taxonomy alignment %, verifier provenance band, predicted amendment date, days-to-KPI-due, urgency band. SIGNATURE regulator-inbox crossings: record_breach + execute_amendment + fail_cure cross regulator at EVERY tier (SARB CPS 2024 + Green Finance Taxonomy 2025 sustainable-finance integrity hard-line); waive + sla_breached for material+severe only.',
+      columns: [],
+      customContent: <SllKpiChainTab />,
     },
     {
       key: 'loan-defaults',

@@ -3194,6 +3194,80 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 95 — SLL KPI compliance & margin ratchet ─────────────────────
+    // SIGNATURE: record_breach + fail_cure cross regulator EVERY tier
+    // (SARB Climate Prudential Standards 2024 + SA Green Finance Taxonomy
+    // 2025 mandatory-disclosure). restatement crosses material+severe,
+    // amend_margin severe-only (material price change), attest_kpi on
+    // floor-at-material classes (climate/safety/disclosure) always or
+    // severe variance, sla_breached material+severe.
+    case 'sll_kpi.breach_recorded': {
+      // SIGNATURE: every SLL KPI breach is mandatorily reportable.
+      const tier = str('compliance_tier');
+      const severity =
+        tier === 'severe' ? 'critical' :
+        tier === 'material' ? 'high' :
+        tier === 'standard' ? 'medium' : 'low';
+      return {
+        severity: severity as InboxSeverity,
+        title: `SLL KPI breach — ${str('compliance_number') || entityId} (${str('borrower_party_name') || ''} / ${str('materiality_class') || ''}:${str('kpi_code') || ''} / ${num('effective_variance_pct').toFixed(1)}pp / ${tier})`.trim(),
+      };
+    }
+    case 'sll_kpi.cure_failed': {
+      // SIGNATURE: cure-failure = mandatory disclosure (SA Green Taxonomy).
+      const tier = str('compliance_tier');
+      const severity =
+        tier === 'severe' ? 'critical' :
+        tier === 'material' ? 'high' :
+        tier === 'standard' ? 'medium' : 'low';
+      return {
+        severity: severity as InboxSeverity,
+        title: `SLL cure failed — ${str('compliance_number') || entityId} (${str('borrower_party_name') || ''} / ${str('materiality_class') || ''}:${str('kpi_code') || ''} / step-up ${num('ratchet_bps_this_period').toFixed(1)}bps / ${tier})`.trim(),
+      };
+    }
+    case 'sll_kpi.restatement': {
+      // Material+severe only (SARB CPS 2024 restatement disclosure).
+      const tier = str('compliance_tier');
+      if (tier !== 'severe' && tier !== 'material') return null;
+      return {
+        severity: tier === 'severe' ? 'high' : 'medium',
+        title: `SLL KPI restatement — ${str('compliance_number') || entityId} (${str('borrower_party_name') || ''} / ${str('materiality_class') || ''} / ${tier} / ${str('reason_code') || ''})`.trim(),
+      };
+    }
+    case 'sll_kpi.margin_amended': {
+      // Severe only — material price change is a market event.
+      const tier = str('compliance_tier');
+      if (tier !== 'severe') return null;
+      return {
+        severity: 'high',
+        title: `SLL margin amended (severe) — ${str('compliance_number') || entityId} (${str('borrower_party_name') || ''} / cumulative ${num('cumulative_ratchet_bps').toFixed(1)}bps / effective ${num('effective_margin_bps').toFixed(1)}bps)`.trim(),
+      };
+    }
+    case 'sll_kpi.kpi_attested': {
+      // Floor-at-material classes (climate/safety/disclosure) always cross,
+      // severe variance regardless of class also crosses.
+      const tier = str('compliance_tier');
+      const cls = str('materiality_class');
+      const floorClass = cls === 'climate_kpi' || cls === 'safety_kpi' || cls === 'mandatory_disclosure_kpi';
+      if (!floorClass && tier !== 'severe') return null;
+      const severity =
+        tier === 'severe' ? 'high' :
+        tier === 'material' ? 'medium' : 'low';
+      return {
+        severity: severity as InboxSeverity,
+        title: `SLL KPI attested — ${str('compliance_number') || entityId} (${str('borrower_party_name') || ''} / ${cls}:${str('kpi_code') || ''} / ${num('effective_variance_pct').toFixed(1)}pp / ${tier})`.trim(),
+      };
+    }
+    case 'sll_kpi.sla_breached': {
+      // Procedural-window miss — material+severe only.
+      const tier = str('compliance_tier');
+      if (tier !== 'severe' && tier !== 'material') return null;
+      return {
+        severity: tier === 'severe' ? 'high' : 'medium',
+        title: `SLL procedural SLA breached — ${str('compliance_number') || entityId} (${str('chain_status') || ''} / ${str('borrower_party_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

@@ -808,6 +808,14 @@ export type EventType =
   | 'rez_capacity.construction_in_progress' | 'rez_capacity.in_operation'
   | 'rez_capacity.rejected' | 'rez_capacity.forfeit'
   | 'rez_capacity.withdrawn' | 'rez_capacity.sla_breached'
+  // ─── Wave 95 — Sustainability-Linked Loan (SLL) KPI Compliance & Margin Ratchet (the ESG-DRIVEN MARGIN-PRICING layer of a best-in-class lender stack; W38 covenant_certificate handles point-in-time FINANCIAL KPI, W77 reserve_account cash-balance covenants, W86 dscr_monitoring rolling FINANCIAL coverage, W45 loan_default catches what crystallises after cure_failed — W95 fills the gap with NON-FINANCIAL ESG KPIs measured annually, INDEPENDENTLY VERIFIED, driving contractual margin step-up/step-down per LMA SLL Principles + SA Green Finance Taxonomy 2025; beats Sustainalytics / ISS-ESG / MSCI ESG / S&P RobecoSAM CSA / Bloomberg ESG / Refinitiv ESG / LMA SLL Portal / ICMA SLBP / JSE Sustainability Index — all surface ESG SCORES but none drive a LIVE contractual margin ratchet against an independent attestation — via LIVE-scored TCFD-completeness battery (4 pillars: governance/strategy/risk-mgmt/metrics), SBTi alignment pathway (1.5°C / well-below-2°C / 2°C / not-aligned), SA Green Finance Taxonomy 2025 alignment %, verification-provenance band (big4/iso14065_accredited/industry/inadequate), effective margin bps live (base + cumulative ratchet), cumulative-ratchet ZAR over remaining tenor, PREDICTED-AMENDMENT-DATE rolling forward; 13-state P6 kpi_period_open→baseline_set→measurement_collected→independent_verification→kpi_attested→ratchet_computed→margin_amended (terminal — clean period close) with breach_recorded→cure_period→{validate_cure→kpi_attested OR fail_cure→cure_failed (terminal)} branch, restatement→re_verify→independent_verification rejoin loop, cancelled + sustainability_event terminals; tier KPI-VARIANCE-DERIVED on every transition from |kpi_variance_pct| × materiality_class — minor<5pp / standard 5-15pp / material 15-30pp / severe ≥30pp with FLOOR-AT-MATERIAL for climate_kpi/safety_kpi/mandatory_disclosure_kpi; INVERTED SLA — ESG-material breaches need structural remediation (training/capex/supply-chain redesign), severe cure window 180d vs minor 21d; BREACH/CURE-FAILED-driven SIGNATURE: record_breach crosses regulator EVERY tier (W95 SIGNATURE — SARB CPS 2024 mandatory disclosure; sister of W94 award_capacity / W93 impose_penalty / W92 realize_risk / W86 declare_acceleration / W77 declare_breach), fail_cure crosses regulator EVERY tier (SA Green Finance Taxonomy 2025 + JSE SRL mandatory disclosure), raise_restatement crosses material+severe, amend_margin severe-only, attest_kpi on floor-at-material classes always or severe variance, sla_breached material+severe; single lender-side write {admin,lender}, actor_party sustainability_officer/verifier/credit_committee/borrower from action — borrower reads own case via tenant scoping but cannot write ───
+  | 'sll_kpi.kpi_period_open' | 'sll_kpi.baseline_set'
+  | 'sll_kpi.measurement_collected' | 'sll_kpi.independent_verification'
+  | 'sll_kpi.kpi_attested' | 'sll_kpi.ratchet_computed'
+  | 'sll_kpi.margin_amended' | 'sll_kpi.breach_recorded'
+  | 'sll_kpi.cure_period' | 'sll_kpi.cure_failed'
+  | 'sll_kpi.restatement' | 'sll_kpi.cancelled'
+  | 'sll_kpi.sustainability_event' | 'sll_kpi.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
@@ -937,6 +945,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   black_start: 'grid',
   connection_energization: 'grid',
   rez_capacity: 'grid',
+  sll_kpi: 'lender',
   settlement_fail: 'trader',
   dscr_monitoring: 'lender',
   ppa_nomination: 'offtaker',
