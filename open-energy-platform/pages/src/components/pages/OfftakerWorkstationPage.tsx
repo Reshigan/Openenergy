@@ -8,6 +8,7 @@ import { ObligationsTab } from '../offtaker/ObligationsTab';
 import { PaymentSecurityChainTab } from '../offtaker/PaymentSecurityChainTab';
 import { PpaChangeInLawChainTab } from '../offtaker/PpaChangeInLawChainTab';
 import { PpaContractChainTab } from '../offtaker/PpaContractChainTab';
+import { PpaAnnualReconChainTab } from '../offtaker/PpaAnnualReconChainTab';
 import { PpaNominationChainTab } from '../offtaker/PpaNominationChainTab';
 import { PpaTerminationChainTab } from '../offtaker/PpaTerminationChainTab';
 import { RecLifecycleChainTab } from '../offtaker/RecLifecycleChainTab';
@@ -47,6 +48,7 @@ export function OfftakerWorkstationPage() {
         { key: 'scope2', label: 'Scope 2', body: ({ onRefresh }) => <Scope2Tab onRefresh={onRefresh} /> },
         { key: 'ppa_contract', label: 'PPA contracts', body: () => <PpaContractChainTab /> },
         { key: 'ppa_nomination', label: 'PPA nominations', body: () => <PpaNominationChainTab /> },
+        { key: 'ppa_annual_recon', label: 'PPA annual reconciliation', body: () => <PpaAnnualReconChainTab /> },
         { key: 'payment_security', label: 'Payment security', body: () => <PaymentSecurityChainTab /> },
         { key: 'tariff_indexation', label: 'Tariff indexation', body: () => <TariffIndexationTab /> },
         { key: 'curtailment_claim', label: 'Curtailment claims', body: () => <CurtailmentClaimTab /> },

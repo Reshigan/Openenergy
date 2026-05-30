@@ -154,6 +154,7 @@ import dfrChainRoutes, { dfrSlaSweep } from './routes/dfr-chain';
 import punchListChainRoutes, { punchListSlaSweep } from './routes/punch-list-chain';
 import itpChainRoutes, { itpSlaSweep } from './routes/itp-chain';
 import handoverDossierChainRoutes, { handoverDossierSlaSweep } from './routes/handover-dossier-chain';
+import ppaAnnualReconChainRoutes, { ppaAnnualReconSlaSweep } from './routes/ppa-annual-recon-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -478,6 +479,7 @@ app.route('/api/ipp/dfr/chain', dfrChainRoutes);
 app.route('/api/ipp/punch-list/chain', punchListChainRoutes);
 app.route('/api/ipp/itp/chain', itpChainRoutes);
 app.route('/api/ipp/handover-dossier/chain', handoverDossierChainRoutes);
+app.route('/api/offtaker/ppa-annual-recon/chain', ppaAnnualReconChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1353,6 +1355,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('handover_dossier_sla_sweep', async () => {
         const result = await handoverDossierSlaSweep(env as never);
         console.log('handover_dossier_sla_sweep', JSON.stringify(result));
+      });
+      // W101 Offtaker PPA Annual Reconciliation & True-Up: flag closed years
+      // that overrun their INVERTED SLA (larger variance = MORE time for
+      // forensic reconciliation, audit walkthroughs, counterparty signoff).
+      // SLA breaches cross the regulator inbox on material + major tiers.
+      await safe('ppa_annual_recon_sla_sweep', async () => {
+        const result = await ppaAnnualReconSlaSweep(env as never);
+        console.log('ppa_annual_recon_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

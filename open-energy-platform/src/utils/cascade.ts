@@ -932,7 +932,15 @@ export type EventType =
   | 'handover_dossier.archived'
   | 'handover_dossier.rejected' | 'handover_dossier.withdrawn'
   | 'handover_dossier.voided'
-  | 'handover_dossier.sla_breached';
+  | 'handover_dossier.sla_breached'
+  // ─── Wave 101: Offtaker PPA Annual Reconciliation & True-Up (P6); the annual financial-close gate of a PPA. Aggregates 12 months of W87 nominations + deviations + settlements, the W32 annual take-or-pay residual, the W39 CPI tariff indexation true-up, the W46 deemed-energy curtailment credits, the W54 payment-security release/redraw, and the capacity payment annual roll into ONE closed-year ledger with auditor + counterparty signoff, a restate-after-settlement door, and a regulator hard line on year re-opens. Beats EnPowered PPA Settlement + DNV Synergi PPA + Schneider PPA Manager + Open Energi Reconciliation + KPMG PPA Recon + Power Advocate Annual + Aurora Energy Research PPA Annual + Wood Mackenzie PPA Annual via LIVE annual-close battery (reconciliation_completeness_index 0-130 baseline 100, top_residual_zar, cpi_true_up_zar, capacity_payment_year_zar, deemed_energy_credit_zar, net_cash_position_zar, mwh_contracted_pct_delivered, days_to_signoff, urgency_band, predicted_year_close_date, authority_required) re-computed every fetch + tier RE-DERIVED on every transition from MAX(|variance|% band, top_residual_zar band) with FLOOR-AT-MATERIAL on top_residual>R100m / cpi_true_up>R50m / offtake_shortfall>20% / contract_year_end_strict. INVERTED SLA (larger variance + residual = MORE time for forensic reconciliation + audit + counterparty signoff). FINANCIAL-CLOSE SIGNATURE (IFRS 15 + NERSA s34): restate_year crosses regulator EVERY tier (post-signoff restatement always reportable, sister of W77 declare_breach + W45 write_off); raise_dispute crosses EVERY tier (PPA disputes to NERSA s30, sister of W87 raise_dispute + W66 lodge_appeal); sign_off crosses material+major (large signoff disclosable); cancel_year crosses EVERY tier when year had any delivery; sla_breached crosses material+major. Single offtaker-desk write {admin,offtaker}; actor_party settlement_analyst/counterparty/finance_controller/auditor/regulator_observer from action. ───
+  | 'ppa_annual_recon.data_collected' | 'ppa_annual_recon.variance_classified'
+  | 'ppa_annual_recon.top_residual_computed' | 'ppa_annual_recon.cpi_capacity_applied'
+  | 'ppa_annual_recon.reconciled' | 'ppa_annual_recon.disputed'
+  | 'ppa_annual_recon.dispute_resolved' | 'ppa_annual_recon.signed_off'
+  | 'ppa_annual_recon.invoiced' | 'ppa_annual_recon.settled'
+  | 'ppa_annual_recon.restated' | 'ppa_annual_recon.cancelled'
+  | 'ppa_annual_recon.sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1001,6 +1009,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   punch_list: 'ipp',
   itp: 'ipp',
   handover_dossier: 'ipp',
+  ppa_annual_recon: 'offtaker',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',
