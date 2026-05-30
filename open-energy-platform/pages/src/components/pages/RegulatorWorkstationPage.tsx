@@ -5,6 +5,7 @@ import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstatio
 import { api } from '../../lib/api';
 import { InboxTab } from '../regulator/InboxTab';
 import { NoticesTab } from '../regulator/NoticesTab';
+import { EnforcementActionChainTab } from '../regulator/EnforcementActionChainTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -55,6 +56,7 @@ export function RegulatorWorkstationPage() {
         { key: 'surveillance', label: 'Surveillance triage', body: ({ onRefresh }) => <SurveillanceTab onRefresh={onRefresh} /> },
         { key: 'licences', label: 'Licence actions', body: ({ onRefresh }) => <LicencesTab onRefresh={onRefresh} /> },
         { key: 'enforcement', label: 'Enforcement events', body: ({ onRefresh }) => <EnforcementTab onRefresh={onRefresh} /> },
+        { key: 'enforcement-action', label: 'Enforcement actions (ERA s35)', body: () => <EnforcementActionChainTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

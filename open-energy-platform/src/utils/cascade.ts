@@ -792,6 +792,14 @@ export type EventType =
   | 'project_risk.accepted' | 'project_risk.escalated'
   | 'project_risk.withdrawn' | 'project_risk.cancelled'
   | 'project_risk.sla_breached'
+  // ─── Wave 93 — NERSA ERA s35 Enforcement Actions & Administrative Penalties (the ENFORCEMENT-TEETH layer of a best-in-class regulator stack; downstream of W5 inbox + W31 disposition + W40 compliance-inspection findings: formal administrative-penalty proceedings under ERA s35 — charge sheet → audi alteram partem (representations) → optional oral hearing → Council determination → penalty notice → recovery; beats FERC Office of Enforcement / Ofgem provisional+final penalty notice / Bundesnetzagentur Bußgeldverfahren / CRE CoRDiS / AER civil-penalty undertaking / ACER / SEC ALJ / SARS TAA Ch15 — most run on spreadsheets and miss procedural windows — via LIVE AUDI-WINDOW COMPLIANCE battery (PAJA s4 + ERA s35(3) 21-day minimum), PROCEDURAL-IRREGULARITY flag on under-21-day windows or denied hearing without reasoned refusal, ERA s35 R1m/offence cap auto-enforced with offence-count stacking, prescribed-rate interest (15.5% Prescribed Rate of Interest Act 55/1975) accruing from due date, REPEAT-OFFENDER score raising floor-at-severe; 12-state P6 case_opened→allegations_drafted→allegations_served→representations_period→(hearing_held optional)→determination→penalty_imposed→paid (clean) with dismissed (no contravention), appealed (Tribunal track), enforced_via_court (writ/sheriff/garnishee/contempt), withdrawn terminals; tier RE-DERIVED on every transition from proposed_penalty_total minor<R100k/standard R100k-500k/material R500k-1m/severe≥R1m with floor-at-severe for safety_violation / repeat_offender / systemic_market_abuse classes; INVERTED SLA — audi alteram partem strengthens with magnitude (21d minor / 60d severe per s35(3) + PAJA s4); DETERMINATION-driven signature: impose_penalty crosses regulator EVERY tier (W93 SIGNATURE — public-register transparency obligation), initiate_enforcement crosses EVERY tier (court-system signal), lodge_appeal crosses EVERY tier (Tribunal signal), make_determination crosses every tier on severe + material+ otherwise when liable, serve_allegations crosses EVERY tier on floor-at-severe class, dismiss + withdraw cross material+severe (governance), sla_breached crosses material+severe (judicial-review risk); single regulator-side write {admin,regulator}, actor_party enforcement_officer/panel_chair/council/sheriff from action — read platform-wide so respondent can see own case ───
+  | 'enforcement_action.case_opened' | 'enforcement_action.allegations_drafted'
+  | 'enforcement_action.allegations_served' | 'enforcement_action.representations_period'
+  | 'enforcement_action.hearing_held' | 'enforcement_action.determination'
+  | 'enforcement_action.penalty_imposed' | 'enforcement_action.paid'
+  | 'enforcement_action.appealed' | 'enforcement_action.enforced_via_court'
+  | 'enforcement_action.dismissed' | 'enforcement_action.withdrawn'
+  | 'enforcement_action.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
@@ -917,6 +925,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   regulator: 'regulator',
   regulator_levy: 'regulator',
   consultation_notice: 'regulator',
+  enforcement_action: 'regulator',
   black_start: 'grid',
   connection_energization: 'grid',
   settlement_fail: 'trader',

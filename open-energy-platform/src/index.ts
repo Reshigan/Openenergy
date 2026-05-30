@@ -146,6 +146,7 @@ import oemFcoChainRoutes, { oemFcoSlaSweep } from './routes/oem-fco-chain';
 import benchmarkTransitionChainRoutes, { benchmarkTransitionSlaSweep } from './routes/benchmark-transition-chain';
 import ccpAssessmentChainRoutes, { ccpAssessmentSlaSweep } from './routes/ccp-assessment-chain';
 import projectRiskChainRoutes, { projectRiskSlaSweep } from './routes/project-risk-chain';
+import enforcementActionChainRoutes, { enforcementActionSlaSweep } from './routes/enforcement-action-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -462,6 +463,7 @@ app.route('/api/oem-fco/chain', oemFcoChainRoutes);
 app.route('/api/benchmark-transition/chain', benchmarkTransitionChainRoutes);
 app.route('/api/ccp-assessment/chain', ccpAssessmentChainRoutes);
 app.route('/api/ipp/project-risk/chain', projectRiskChainRoutes);
+app.route('/api/regulator/enforcement-action/chain', enforcementActionChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1275,6 +1277,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('project_risk_sla_sweep', async () => {
         const result = await projectRiskSlaSweep(env as never);
         console.log('project_risk_sla_sweep', JSON.stringify(result));
+      });
+      // ERA s35 enforcement-action SLA sweep — Wave 93. Procedural-window
+      // misses cross the regulator inbox for material+severe tiers (judicial-
+      // review risk under PAJA s4 + ERA s35(3)).
+      await safe('enforcement_action_sla_sweep', async () => {
+        const result = await enforcementActionSlaSweep(env as never);
+        console.log('enforcement_action_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

@@ -3050,6 +3050,88 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 93 — NERSA ERA s35 Enforcement Actions & Administrative Penalties ─
+    // The W93 SIGNATURE is DETERMINATION-driven: a penalty notice at any tier is
+    // itself the reportable signal (public-register / ERA s35 transparency
+    // obligation). Initiating court enforcement and lodging Tribunal appeals
+    // also cross every tier. Determinations cross when liable. Withdrawals,
+    // dismissals, serve-on-floor-class, and SLA breaches surface on governance
+    // hard lines.
+    case 'enforcement_action.penalty_imposed': {
+      // SIGNATURE: every penalty notice crosses regulator (public register).
+      const tier = str('penalty_tier');
+      return {
+        severity: tier === 'severe' ? 'critical' : tier === 'material' ? 'high' : 'medium',
+        title: `Administrative penalty imposed — ${str('case_number') || entityId} (${str('respondent_party_name') || ''} / ${str('allegation_class') || ''} / ${tier} / R${num('imposed_penalty_zar')})`.trim(),
+      };
+    }
+    case 'enforcement_action.enforced_via_court': {
+      // Court-system signal — every tier crosses.
+      const tier = str('penalty_tier');
+      return {
+        severity: tier === 'severe' ? 'critical' : tier === 'material' ? 'high' : 'medium',
+        title: `Enforcement-via-court initiated — ${str('case_number') || entityId} (${str('respondent_party_name') || ''} / ${str('enforcement_step') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'enforcement_action.appealed': {
+      // Tribunal track signal — every tier crosses.
+      const tier = str('penalty_tier');
+      return {
+        severity: tier === 'severe' ? 'high' : 'medium',
+        title: `Tribunal appeal lodged — ${str('case_number') || entityId} (${str('respondent_party_name') || ''} / ${str('appeal_forum') || 'Electricity Regulator Tribunal'} / ${tier})`.trim(),
+      };
+    }
+    case 'enforcement_action.determination': {
+      // make_determination crosses every tier on severe, material+ otherwise
+      // when liable; not liable = no inbox crossing (dismiss handles that).
+      const tier = str('penalty_tier');
+      const liable = num('determination_liable_flag') === 1;
+      if (!liable) return null;
+      if (tier !== 'severe' && tier !== 'material') return null;
+      return {
+        severity: tier === 'severe' ? 'high' : 'medium',
+        title: `Council determination — liable — ${str('case_number') || entityId} (${str('respondent_party_name') || ''} / ${str('allegation_class') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'enforcement_action.allegations_served': {
+      // Floor-at-severe classes (safety_violation / repeat_offender /
+      // systemic_market_abuse) cross on service — early public-interest signal.
+      const cls = str('allegation_class');
+      const floor = cls === 'safety_violation' || cls === 'repeat_offender' || cls === 'systemic_market_abuse';
+      if (!floor) return null;
+      return {
+        severity: 'high',
+        title: `Allegations served (${cls}) — ${str('case_number') || entityId} (${str('respondent_party_name') || ''} / ${str('penalty_tier') || ''})`.trim(),
+      };
+    }
+    case 'enforcement_action.dismissed': {
+      // Governance signal — material+severe only.
+      const tier = str('penalty_tier');
+      if (tier !== 'severe' && tier !== 'material') return null;
+      return {
+        severity: tier === 'severe' ? 'high' : 'medium',
+        title: `Enforcement case dismissed — ${str('case_number') || entityId} (${str('respondent_party_name') || ''} / ${tier} / ${str('reason_code') || ''})`.trim(),
+      };
+    }
+    case 'enforcement_action.withdrawn': {
+      // Governance signal — material+severe only.
+      const tier = str('penalty_tier');
+      if (tier !== 'severe' && tier !== 'material') return null;
+      return {
+        severity: 'medium',
+        title: `Enforcement case withdrawn — ${str('case_number') || entityId} (${str('respondent_party_name') || ''} / ${tier} / ${str('reason_code') || ''})`.trim(),
+      };
+    }
+    case 'enforcement_action.sla_breached': {
+      // Procedural-window miss is itself a judicial-review risk on material+.
+      const tier = str('penalty_tier');
+      if (tier !== 'severe' && tier !== 'material') return null;
+      return {
+        severity: tier === 'severe' ? 'high' : 'medium',
+        title: `Enforcement procedural SLA breached — ${str('case_number') || entityId} (${str('chain_status') || ''} / ${str('respondent_party_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
