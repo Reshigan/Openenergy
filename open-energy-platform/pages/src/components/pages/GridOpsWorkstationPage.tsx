@@ -3,6 +3,10 @@ import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '..
 import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
+import { DispatchNominationTab } from '../grid/DispatchNominationTab';
+import { PlannedOutageChainTab } from '../grid/PlannedOutageChainTab';
+import { RezCapacityChainTab } from '../grid/RezCapacityChainTab';
+import { WheelingChargesTab } from '../grid/WheelingChargesTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -43,6 +47,10 @@ export function GridOpsWorkstationPage() {
         { key: 'curtailment', label: 'Curtailment events', body: ({ onRefresh }) => <CurtailmentTab onRefresh={onRefresh} /> },
         { key: 'outage', label: 'Outage responses', body: ({ onRefresh }) => <OutageTab onRefresh={onRefresh} /> },
         { key: 'ancillary', label: 'Ancillary award events', body: ({ onRefresh }) => <AncillaryTab onRefresh={onRefresh} /> },
+        { key: 'dispatch_nomination', label: 'Dispatch nominations', body: () => <DispatchNominationTab /> },
+        { key: 'planned_outage', label: 'Planned outages', body: () => <PlannedOutageChainTab /> },
+        { key: 'rez_capacity', label: 'REZ capacity allocation', body: () => <RezCapacityChainTab /> },
+        { key: 'wheeling_charges', label: 'Wheeling charges', body: () => <WheelingChargesTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

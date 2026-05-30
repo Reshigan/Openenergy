@@ -1048,7 +1048,7 @@ async function buildGridOperatorBoard(c: any, user: any): Promise<LaunchPayload>
       eyebrow: `Grid operations · ${todayStr()}`,
       title: `${greeting()}, ${firstName(user.name)}`,
       subtitle: `${plants} operating plant${plants === 1 ? '' : 's'} · ${connections} application${connections === 1 ? '' : 's'} in queue · ${curtailments} active curtailment${curtailments === 1 ? '' : 's'} · ${outages} ongoing outage${outages === 1 ? '' : 's'}.`,
-      primary_cta: { label: 'Open grid operations', href: '/grid-operator' },
+      primary_cta: { label: 'Open grid operations workstation', href: '/grid-operator/workstation' },
     },
     kpis: [
       { key: 'connection_queue', label: 'Connection queue', value: connections, tone: connections > 5 ? 'warn' : connections > 0 ? 'neutral' : 'good', href: '/grid-operator' },
