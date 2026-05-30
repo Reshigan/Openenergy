@@ -159,6 +159,7 @@ import soilingAuditChainRoutes, { soilingAuditSlaSweep } from './routes/soiling-
 import esgDisclosureChainRoutes, { esgDisclosureSlaSweep } from './routes/esg-disclosure-chain';
 import serviceRequestChainRoutes, { serviceRequestSlaSweep, serviceRequestEntitlementWindowSweep } from './routes/service-request-chain';
 import imbalanceSettlementChainRoutes, { imbalanceSettlementSlaSweep, imbalanceSettlementArrearsSweep } from './routes/imbalance-settlement-chain';
+import enforcementActionS35ChainRoutes, { enforcementActionS35SlaSweep, enforcementActionS35AppealWindowSweep } from './routes/enforcement-action-s35-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -488,6 +489,7 @@ app.route('/api/esums/soiling-audit/chain', soilingAuditChainRoutes);
 app.route('/api/carbon/esg-disclosure/chain', esgDisclosureChainRoutes);
 app.route('/api/support/service-request/chain', serviceRequestChainRoutes);
 app.route('/api/grid/imbalance-settlement/chain', imbalanceSettlementChainRoutes);
+app.route('/api/regulator/enforcement-action-s35/chain', enforcementActionS35ChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1413,6 +1415,18 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('imbalance_settlement_sla_sweep', async () => {
         const result = await imbalanceSettlementSlaSweep(env as never);
         console.log('imbalance_settlement_sla_sweep', JSON.stringify(result));
+      });
+      // W106 Regulator NERSA s35 Enforcement Action chain: flag enforcement
+      // cases past their INVERTED SLA window (strategic gets longest — PAJA
+      // s5 procedural fairness needs more time at higher tiers; strategic
+      // 180d on triggered vs minor 30d). SLA breaches cross the regulator
+      // inbox on material + strategic tiers (PAJA fairness review exposure)
+      // alongside impose_sanction-when-licence_revocation, commence_enforcement
+      // -on-strategic-or-criminal_intelligence, mark_settled-on-significant-
+      // sanctions.
+      await safe('enforcement_action_s35_sla_sweep', async () => {
+        const result = await enforcementActionS35SlaSweep(env as never);
+        console.log('enforcement_action_s35_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -2396,6 +2410,16 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('imbalance_settlement_arrears_sweep', async () => {
         const result = await imbalanceSettlementArrearsSweep(env as never);
         console.log('imbalance_settlement_arrears_sweep', JSON.stringify(result));
+      });
+      // W106 Regulator NERSA s35 Enforcement Action — nightly appeal-window
+      // sweep. Walks appeal_window_open rows past appeal_window_close_at
+      // with no appeal_lodged_at, transitions to enforcement_in_progress
+      // (deemed upheld by inaction). Strategic + licence-revocation rows
+      // cross regulator inbox (Gazette publication required per Companies
+      // Act s38).
+      await safe('enforcement_action_s35_appeal_window_sweep', async () => {
+        const result = await enforcementActionS35AppealWindowSweep(env as never);
+        console.log('enforcement_action_s35_appeal_window_sweep', JSON.stringify(result));
       });
       break;
 
