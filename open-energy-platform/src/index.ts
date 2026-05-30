@@ -167,6 +167,7 @@ import transmissionOutageChainRoutes, { transmissionOutageSlaSweep, transmission
 import pnlAttributionChainRoutes, { pnlAttributionSlaSweep, pnlAttributionT1EodOpener } from './routes/pnl-attribution-chain';
 import ippScheduleChainRoutes, { ippScheduleSlaSweep, ippScheduleHealthRecompute } from './routes/ipp-schedule-chain';
 import ippEvmChainRoutes, { ippEvmSlaSweep, ippEvmHealthRecompute } from './routes/ipp-evm-chain';
+import ippDocumentControlChainRoutes, { ippDocControlSlaSweep, ippDocControlIdcMatrixRecompute } from './routes/ipp-document-control-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -504,6 +505,7 @@ app.route('/api/grid/transmission-outage/chain', transmissionOutageChainRoutes);
 app.route('/api/trader/pnl-attribution/chain', pnlAttributionChainRoutes);
 app.route('/api/ipp/wbs-schedule/chain', ippScheduleChainRoutes);
 app.route('/api/ipp/cost-evm/chain', ippEvmChainRoutes);
+app.route('/api/ipp/document-control/chain', ippDocumentControlChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1542,6 +1544,20 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
         const result = await ippEvmSlaSweep(env as never);
         console.log('ipp_evm_sla_sweep', JSON.stringify(result));
       });
+      // W114 — IPP Document Control & Drawing Register SLA sweep.
+      // Walks every active oe_ipp_document_control row whose
+      // sla_deadline_at has elapsed (URGENT polarity: safety_critical
+      // 24h / electrical 72h / mechanical 120h / civil 168h on
+      // transmitted anchor), flips sla_breached=1, bumps
+      // escalation_level, fires ipp_doc_control_sla_breached event.
+      // SLA breach crosses regulator on safety_critical + electrical
+      // (heavy tiers). Distinct from W112 (schedule), W113 (cost-book).
+      // W114 is the drawing-register + IDC + transmittal + reviewed +
+      // commented + revised + approved + IFC + as-built + archive engine.
+      await safe('ipp_doc_control_sla_sweep', async () => {
+        const result = await ippDocControlSlaSweep(env as never);
+        console.log('ipp_doc_control_sla_sweep', JSON.stringify(result));
+      });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
       await safe('block_trade_publish', async () => {
@@ -2005,6 +2021,25 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_evm_health_recompute', async () => {
         const result = await ippEvmHealthRecompute(env as never);
         console.log('ipp_evm_health_recompute', JSON.stringify(result));
+      });
+      break;
+
+    case '25 0 * * *':
+      // Wave 114 — nightly IPP Document Control IDC matrix recompute.
+      // Walks every active oe_ipp_document_control row, refreshes the
+      // idc_status (open/review/approved/closed) from current
+      // chain_status, recomputes the completeness index from the 12
+      // forward timestamp markers + clean-archive bonus, and re-derives
+      // the doc_health_band (green/amber/red/critical) — WITHOUT a state
+      // transition. Document decisions are never moved by cron — only
+      // the LIVE IDC matrix + completeness + health are refreshed so
+      // dashboards, KPI strips and AI suggestions all reflect today's
+      // truth at 00:25 UTC = 02:25 SAST every morning. Distinct from
+      // the 15-min SLA sweep (which only flips sla_breached) — this is
+      // a pure IDC-matrix + health-band refresh.
+      await safe('ipp_doc_control_idc_matrix_recompute', async () => {
+        const result = await ippDocControlIdcMatrixRecompute(env as never);
+        console.log('ipp_doc_control_idc_matrix_recompute', JSON.stringify(result));
       });
       break;
 

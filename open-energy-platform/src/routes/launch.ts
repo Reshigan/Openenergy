@@ -705,6 +705,14 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         cta_label: 'Open Cost & EVM',
         icon: 'payments',
       },
+      {
+        key: 'document_control',
+        title: 'Document control',
+        description: 'ISO 19650 + IEC 61355 + REIPPPP Schedule 2 + FIDIC Silver §6 12-state drawing-register chain: draft → indexed → IDC → transmittal → review → approval → IFC → as-built → archive, with URGENT SLA (safety-critical 24h), 5-bridge architecture (W112/W113/W19/W20/W18), FLOOR-AT-SAFETY-CRITICAL flag overlay, and SIGNATURE reject-every-tier on safety-critical or IFC-blocking documents.',
+        href: '/ipp-lifecycle/workstation?tab=document-control',
+        cta_label: 'Open document control',
+        icon: 'description',
+      },
     ],
     ai_suggestions: await buildIppDeveloperAiSuggestions(c, user, { milestones, envSoon, invoicesOut }),
   };

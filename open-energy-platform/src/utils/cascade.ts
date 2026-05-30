@@ -1062,7 +1062,17 @@ export type EventType =
   | 'ipp_evm_reconciled' | 'ipp_evm_book_closed'
   | 'ipp_evm_cancelled' | 'ipp_evm_contingency_drawn'
   | 'ipp_evm_management_reserve_drawn' | 'ipp_evm_submitted_to_pm_review'
-  | 'ipp_evm_sla_breached';
+  | 'ipp_evm_sla_breached'
+  // Wave 114 — IPP Document Control & Drawing Register (12-state P6)
+  | 'ipp_doc_control_uploaded' | 'ipp_doc_control_indexed'
+  | 'ipp_doc_control_revision_open' | 'ipp_doc_control_idc_assigned'
+  | 'ipp_doc_control_transmitted' | 'ipp_doc_control_review_started'
+  | 'ipp_doc_control_commented' | 'ipp_doc_control_revised'
+  | 'ipp_doc_control_approved' | 'ipp_doc_control_issued_for_construction'
+  | 'ipp_doc_control_as_built_finalised' | 'ipp_doc_control_archived'
+  | 'ipp_doc_control_rejected' | 'ipp_doc_control_withdrawn'
+  | 'ipp_doc_control_held' | 'ipp_doc_control_resumed'
+  | 'ipp_doc_control_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1143,6 +1153,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   pnl_attribution: 'trader',
   ipp_schedule: 'ipp',
   ipp_evm: 'ipp',
+  ipp_doc_control: 'ipp',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',
