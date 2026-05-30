@@ -2614,6 +2614,47 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 90 — Trader JIBAR Cessation Benchmark Transition & Fallback ───
+    // TRANSITION-INTEGRITY signature: terminate_legacy is ALWAYS reportable to
+    // SARB MPG (transition-failure hard line, sister of W85 write_off / W82
+    // dispute / W84 fail_drill / W89 cancel_campaign). complete_transition
+    // crosses for material+systemic only (large transitions feed SARB MPG
+    // completion ledger). raise_dispute crosses for systemic only (ISDA
+    // Determinations Committee referral). sla_breached crosses for material+
+    // systemic.
+    case 'benchmark_transition.terminated_legacy': {
+      const tier = str('transition_tier');
+      const sev = tier === 'systemic' || tier === 'material' ? 'high' : 'medium';
+      return {
+        severity: sev,
+        title: `Benchmark transition TERMINATED LEGACY — ${str('transition_number') || entityId} (${str('trade_ref') || ''} / ${str('counterparty_name') || ''} / ${str('instrument_type') || ''} / ${str('legacy_benchmark') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'benchmark_transition.transitioned_clean': {
+      const tier = str('transition_tier');
+      if (tier !== 'material' && tier !== 'systemic') return null;
+      return {
+        severity: tier === 'systemic' ? 'medium' : 'low',
+        title: `Benchmark transition COMPLETED — ${str('transition_number') || entityId} (${str('trade_ref') || ''} / ${str('counterparty_name') || ''} / ${str('legacy_benchmark') || ''} → ${str('replacement_rate') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'benchmark_transition.disputed': {
+      const tier = str('transition_tier');
+      if (tier !== 'systemic') return null;
+      return {
+        severity: 'high',
+        title: `Benchmark transition DISPUTED → ISDA DC — ${str('transition_number') || entityId} (${str('trade_ref') || ''} / ${str('counterparty_name') || ''} / ${str('instrument_type') || ''})`.trim(),
+      };
+    }
+    case 'benchmark_transition.sla_breached': {
+      const tier = str('transition_tier');
+      if (tier !== 'material' && tier !== 'systemic') return null;
+      return {
+        severity: tier === 'systemic' ? 'high' : 'medium',
+        title: `Benchmark transition SLA breached — ${str('transition_number') || entityId} (${str('chain_status') || ''} / ${str('trade_ref') || ''} / ${str('counterparty_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     // ─── Wave 75 — Grid Connection Energization & Commissioning Hold-Point Gate ───
     // COD-driven POSITIVE signature: a Commercial Operation Date is notifiable for
     // EVERY tier (new generation registered to the national balance); energization,

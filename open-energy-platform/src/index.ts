@@ -143,6 +143,7 @@ import dscrMonitoringChainRoutes, { dscrMonitoringSlaSweep } from './routes/dscr
 import ppaNominationChainRoutes, { ppaNominationSlaSweep } from './routes/ppa-nomination-chain';
 import bessSohChainRoutes, { bessSohSlaSweep } from './routes/bess-soh-chain';
 import oemFcoChainRoutes, { oemFcoSlaSweep } from './routes/oem-fco-chain';
+import benchmarkTransitionChainRoutes, { benchmarkTransitionSlaSweep } from './routes/benchmark-transition-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -456,6 +457,7 @@ app.route('/api/dscr-monitoring/chain', dscrMonitoringChainRoutes);
 app.route('/api/ppa-nomination/chain', ppaNominationChainRoutes);
 app.route('/api/bess-soh/chain', bessSohChainRoutes);
 app.route('/api/oem-fco/chain', oemFcoChainRoutes);
+app.route('/api/benchmark-transition/chain', benchmarkTransitionChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1245,6 +1247,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('oem_fco_sla_sweep', async () => {
         const result = await oemFcoSlaSweep(env as never);
         console.log('oem_fco_sla_sweep', JSON.stringify(result));
+      });
+      // W90 Trader JIBAR Cessation Benchmark Transition: flag transitions
+      // past their URGENT SLA window (larger notional = tighter); SLA
+      // breaches cross the regulator inbox for material+systemic tiers per
+      // SARB MPG schedule-slippage reporting.
+      await safe('benchmark_transition_sla_sweep', async () => {
+        const result = await benchmarkTransitionSlaSweep(env as never);
+        console.log('benchmark_transition_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

@@ -648,6 +648,15 @@ export type EventType =
   | 'oem_fco.suspended' | 'oem_fco.resumed'
   | 'oem_fco.cancelled' | 'oem_fco.withdrawn'
   | 'oem_fco.sla_breached'
+  // ─── Wave 90: Trader JIBAR Cessation Benchmark Transition & Fallback (P6); per-contract repapering of IBOR-referencing trades (IRS / basis swap / FRA / syndicated loan / FRN / structured note / cross-currency swap) under SARB MPG JIBAR→ZARONIA Reform Plan + ISDA 2020 IBOR Fallbacks Protocol + FSCA Conduct Standard 1/2020 + FMA Ch.X + JSE-SRL Schedule SC + IFRS 9 Phase 2 — inventoried → impact_assessed → classified → notified → responded → amendment_drafted → amendment_executed → vt_settled → transitioned_clean, with disputed loop (→ classified on resolve), on_hold loop (→ classified on resume), terminate_legacy terminal, and pre-execution cancel terminal. Beats Bloomberg AIBOR/IBOR Transition / ICE Benchmark Administration fallback service / ISDA Protocol adherence tracker / LCH SwapAgent / CME LIBOR Conversion Service / Murex MX.3 IBOR Transition / Calypso Benchmark Reform / SoFi Reference Rate Transition Manager via LIVE transition-integrity battery (PV01 ZAR / value-transfer ZAR / fallback basis spread bps / days_to_cessation / compounded ZARONIA rate / counterparty response % / protocol adherence flag / dispute concentration / predicted resolution days / hedge-effectiveness flag / urgency band cessation-aware) + tier RE-DERIVED on every transition from absolute notional_zar with FLOOR-AT-MATERIAL when interbank OR <30d to cessation. URGENT SLA (larger notional = tighter; systemic interbank cessation cliff faces tightest). TRANSITION-INTEGRITY SIGNATURE: terminate_legacy crosses regulator EVERY tier ALWAYS (SARB MPG transition-failure reporting hard line); complete_transition crosses material+systemic (SARB MPG completion ledger); raise_dispute crosses systemic only (ISDA Determinations Committee); sla_breached crosses material+systemic. Single trader-desk write {admin,trader}; actor_party transition_desk/counterparty_credit/docs_legal/risk_validation from action. ───
+  | 'benchmark_transition.inventoried' | 'benchmark_transition.impact_assessed'
+  | 'benchmark_transition.classified' | 'benchmark_transition.notified'
+  | 'benchmark_transition.responded' | 'benchmark_transition.amendment_drafted'
+  | 'benchmark_transition.amendment_executed' | 'benchmark_transition.vt_settled'
+  | 'benchmark_transition.transitioned_clean' | 'benchmark_transition.disputed'
+  | 'benchmark_transition.dispute_resolved' | 'benchmark_transition.on_hold'
+  | 'benchmark_transition.resumed' | 'benchmark_transition.terminated_legacy'
+  | 'benchmark_transition.cancelled' | 'benchmark_transition.sla_breached'
   // Wave 66 — Regulator Complaints & Dispute Resolution chain (NERSA as the quasi-judicial dispute forum under ERA 4/2006 s30 + NER Act 40/2004 + NERSA Complaints Procedures; REACTIVE external-party grievance adjudication, distinct from W31 internal-intake disposition and W40 proactive inspection; lodged→admissibility→referred_to_licensee→[settle | investigation→mediation→hearing→ruling→remedy_monitoring→resolved] + dismiss/appeal/withdraw; URGENT SLA (larger affected population = tighter); single regulator-owned write {admin,regulator}, actor_party complainant/respondent/adjudicator from action; SIGNATURE lodge_appeal crosses for EVERY tier (judicial review always material), issue_ruling crosses major+systemic, dismiss crosses systemic only, sla_breached crosses major+systemic; settle_at_licensee & confirm_compliance share .resolved)
   | 'regulator_complaint.admissibility_review' | 'regulator_complaint.referred'
   | 'regulator_complaint.escalated' | 'regulator_complaint.mediating'
@@ -898,6 +907,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ppa_nomination: 'offtaker',
   bess_soh: 'support',
   oem_fco: 'support',
+  benchmark_transition: 'trader',
   trade_allocation: 'trading',
   popia: 'admin',
   auth: 'auth',

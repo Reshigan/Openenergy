@@ -12,6 +12,7 @@ import { AlgoCertChainTab } from '../trader/AlgoCertChainTab';
 import { CounterpartyMarginChainTab } from '../counterparty-margin/CounterpartyMarginChainTab';
 import { TradeAllocationChainTab } from '../trade-allocation/TradeAllocationChainTab';
 import { SettlementFailChainTab } from '../settlement-fail/SettlementFailChainTab';
+import { BenchmarkTransitionChainTab } from '../benchmark-transition/BenchmarkTransitionChainTab';
 import { api } from '../../lib/api';
 
 export function TraderWorkstationPage() {
@@ -54,6 +55,7 @@ export function TraderWorkstationPage() {
         { key: 'counterparty-margin', label: 'Counterparty default', body: () => <CounterpartyMarginChainTab /> },
         { key: 'trade-allocation', label: 'Trade allocation', body: () => <TradeAllocationChainTab /> },
         { key: 'settlement-fail', label: 'Settlement fails', body: () => <SettlementFailChainTab /> },
+        { key: 'benchmark-transition', label: 'Benchmark transition', body: () => <BenchmarkTransitionChainTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel
