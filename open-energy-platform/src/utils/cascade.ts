@@ -1052,7 +1052,17 @@ export type EventType =
   | 'ipp_schedule_late_finish_marked' | 'ipp_schedule_suspended'
   | 'ipp_schedule_resumed' | 'ipp_schedule_cancelled'
   | 'ipp_schedule_rebaseline_approved' | 'ipp_schedule_rebaseline_rejected'
-  | 'ipp_schedule_sla_breached';
+  | 'ipp_schedule_sla_breached'
+  // Wave 113 — IPP Cost Management & Earned Value Management (14-state P6)
+  | 'ipp_evm_budget_set' | 'ipp_evm_cost_committed'
+  | 'ipp_evm_cost_incurred' | 'ipp_evm_progress_measured'
+  | 'ipp_evm_variance_detected' | 'ipp_evm_reforecast_drafted'
+  | 'ipp_evm_cr_logged' | 'ipp_evm_cr_approved'
+  | 'ipp_evm_reforecast_rejected' | 'ipp_evm_reforecast_published'
+  | 'ipp_evm_reconciled' | 'ipp_evm_book_closed'
+  | 'ipp_evm_cancelled' | 'ipp_evm_contingency_drawn'
+  | 'ipp_evm_management_reserve_drawn' | 'ipp_evm_submitted_to_pm_review'
+  | 'ipp_evm_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1132,6 +1142,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   transmission_outage: 'grid',
   pnl_attribution: 'trader',
   ipp_schedule: 'ipp',
+  ipp_evm: 'ipp',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

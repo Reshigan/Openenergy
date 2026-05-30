@@ -166,6 +166,7 @@ import carbonCreditRatingChainRoutes, { carbonCreditRatingSlaSweep, carbonCredit
 import transmissionOutageChainRoutes, { transmissionOutageSlaSweep, transmissionOutageWindowMonitor } from './routes/transmission-outage-chain';
 import pnlAttributionChainRoutes, { pnlAttributionSlaSweep, pnlAttributionT1EodOpener } from './routes/pnl-attribution-chain';
 import ippScheduleChainRoutes, { ippScheduleSlaSweep, ippScheduleHealthRecompute } from './routes/ipp-schedule-chain';
+import ippEvmChainRoutes, { ippEvmSlaSweep, ippEvmHealthRecompute } from './routes/ipp-evm-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -502,6 +503,7 @@ app.route('/api/carbon/credit-rating/chain', carbonCreditRatingChainRoutes);
 app.route('/api/grid/transmission-outage/chain', transmissionOutageChainRoutes);
 app.route('/api/trader/pnl-attribution/chain', pnlAttributionChainRoutes);
 app.route('/api/ipp/wbs-schedule/chain', ippScheduleChainRoutes);
+app.route('/api/ipp/cost-evm/chain', ippEvmChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1525,6 +1527,21 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
         const result = await ippScheduleSlaSweep(env as never);
         console.log('ipp_schedule_sla_sweep', JSON.stringify(result));
       });
+      // Wave 113 — IPP Cost Management & EVM SLA sweep. INVERTED polarity:
+      // small 72h, medium 168h, large 336h, mega 480h on variance_detected
+      // anchor (larger budgets get LONGER cure runway). Walks every active
+      // oe_ipp_evm row whose sla_deadline_at has elapsed, flips
+      // sla_breached=1, bumps escalation_level, fires
+      // ipp_evm_sla_breached event. SLA breach crosses regulator on
+      // large + mega (PMBOK 7 + AACE RP-67R-11 + ANSI EIA-748-D
+      // disclosure). Distinct from W112 (schedule), W21 (drawdown), W30
+      // (disbursement UoP), W77 (reserve-account). W113 is the BAC +
+      // committed/incurred + PV/EV/AC + CPI/SPI + EAC/ETC/TCPI + VAC +
+      // contingency/MR + variance + reforecast + CR + reconcile engine.
+      await safe('ipp_evm_sla_sweep', async () => {
+        const result = await ippEvmSlaSweep(env as never);
+        console.log('ipp_evm_sla_sweep', JSON.stringify(result));
+      });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
       await safe('block_trade_publish', async () => {
@@ -1971,6 +1988,23 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_schedule_health_recompute', async () => {
         const result = await ippScheduleHealthRecompute(env as never);
         console.log('ipp_schedule_health_recompute', JSON.stringify(result));
+      });
+      break;
+
+    case '20 0 * * *':
+      // Wave 113 — nightly IPP Cost & EVM health recompute.
+      // Walks every active oe_ipp_evm row, recomputes the 12-field EVM
+      // battery (CPI/SPI/CV/SV/EAC/ETC/VAC/TCPI + contingency/MR
+      // remaining pct + evm_health_band + completeness_index) from the
+      // latest PV/EV/AC + BAC + contingency/MR drawn — without a state
+      // transition. Keeps the LIVE 22-field battery accurate even on
+      // days nobody touched the row (so dashboards, KPI strips and AI
+      // suggestions all reflect today's truth at 00:20 UTC = 02:20 SAST
+      // every morning). Distinct from the 15-min SLA sweep (which only
+      // flips sla_breached) — this is a pure EVM-input recompute.
+      await safe('ipp_evm_health_recompute', async () => {
+        const result = await ippEvmHealthRecompute(env as never);
+        console.log('ipp_evm_health_recompute', JSON.stringify(result));
       });
       break;
 

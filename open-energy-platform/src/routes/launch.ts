@@ -697,6 +697,14 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         cta_label: 'Open WBS schedule',
         icon: 'view_timeline',
       },
+      {
+        key: 'cost_evm',
+        title: 'Cost & EVM',
+        description: 'PMBOK 7 + AACE RP-67R-11 + ANSI EIA-748-D 14-state cost-control chain: BAC → committed → incurred → measured → variance → reforecast → CR → publish → reconcile → close, with CPI/SPI/EAC/ETC/TCPI/VAC live, contingency/MR remaining, and SIGNATURE regulator crossings on MR draw + cancel every tier.',
+        href: '/ipp-lifecycle/workstation?tab=cost-evm',
+        cta_label: 'Open Cost & EVM',
+        icon: 'payments',
+      },
     ],
     ai_suggestions: await buildIppDeveloperAiSuggestions(c, user, { milestones, envSoon, invoicesOut }),
   };
