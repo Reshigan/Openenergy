@@ -911,7 +911,14 @@ export type EventType =
   | 'punch_list.in_remediation' | 'punch_list.reinspect_requested'
   | 'punch_list.reinspected' | 'punch_list.accepted' | 'punch_list.closed'
   | 'punch_list.on_hold' | 'punch_list.voided' | 'punch_list.withdrawn'
-  | 'punch_list.sla_breached';
+  | 'punch_list.sla_breached'
+  // ─── Wave 99: IPP ITP / Quality inspection & test plan P6 chain ────
+  | 'itp.itp_drafted' | 'itp.submitted' | 'itp.under_review' | 'itp.approved'
+  | 'itp.released_to_site' | 'itp.inspection_scheduled' | 'itp.in_inspection'
+  | 'itp.witness_attended' | 'itp.result_recorded' | 'itp.passed' | 'itp.failed'
+  | 'itp.corrective_action' | 'itp.released_for_use' | 'itp.archived'
+  | 'itp.rejected' | 'itp.withdrawn' | 'itp.voided'
+  | 'itp.sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -978,6 +985,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   submittal_rfi: 'ipp',
   dfr: 'ipp',
   punch_list: 'ipp',
+  itp: 'ipp',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

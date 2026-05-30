@@ -152,6 +152,7 @@ import sllKpiChainRoutes, { sllKpiSlaSweep } from './routes/sll-kpi-chain';
 import submittalRfiChainRoutes, { submittalRfiSlaSweep } from './routes/submittal-rfi-chain';
 import dfrChainRoutes, { dfrSlaSweep } from './routes/dfr-chain';
 import punchListChainRoutes, { punchListSlaSweep } from './routes/punch-list-chain';
+import itpChainRoutes, { itpSlaSweep } from './routes/itp-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -474,6 +475,7 @@ app.route('/api/lender/sll-kpi/chain', sllKpiChainRoutes);
 app.route('/api/ipp/submittal-rfi/chain', submittalRfiChainRoutes);
 app.route('/api/ipp/dfr/chain', dfrChainRoutes);
 app.route('/api/ipp/punch-list/chain', punchListChainRoutes);
+app.route('/api/ipp/itp/chain', itpChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1333,6 +1335,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('punch_list_sla_sweep', async () => {
         const result = await punchListSlaSweep(env as never);
         console.log('punch_list_sla_sweep', JSON.stringify(result));
+      });
+      // IPP ITP / Quality Inspection & Test Plan SLA sweep — Wave 99.
+      // URGENT-polarity hold-point quality gates (safety/COD = tightest).
+      // Breaches on safety_critical_test always cross regulator; breaches on
+      // blocks_commercial_operation cross at high+critical tiers.
+      await safe('itp_sla_sweep', async () => {
+        const result = await itpSlaSweep(env as never);
+        console.log('itp_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
