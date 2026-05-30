@@ -918,7 +918,21 @@ export type EventType =
   | 'itp.witness_attended' | 'itp.result_recorded' | 'itp.passed' | 'itp.failed'
   | 'itp.corrective_action' | 'itp.released_for_use' | 'itp.archived'
   | 'itp.rejected' | 'itp.withdrawn' | 'itp.voided'
-  | 'itp.sla_breached';
+  | 'itp.sla_breached'
+  // ─── Wave 100: IPP Mechanical/Electrical Handover Dossier + Turnover ──
+  | 'handover_dossier.dossier_compiled' | 'handover_dossier.submitted'
+  | 'handover_dossier.under_review' | 'handover_dossier.revision_required'
+  | 'handover_dossier.approved'
+  | 'handover_dossier.witnessed_acceptance_scheduled'
+  | 'handover_dossier.witnessed_acceptance'
+  | 'handover_dossier.punch_remediated'
+  | 'handover_dossier.training_transferred'
+  | 'handover_dossier.warranty_activated'
+  | 'handover_dossier.operations_owned'
+  | 'handover_dossier.archived'
+  | 'handover_dossier.rejected' | 'handover_dossier.withdrawn'
+  | 'handover_dossier.voided'
+  | 'handover_dossier.sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -986,6 +1000,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   dfr: 'ipp',
   punch_list: 'ipp',
   itp: 'ipp',
+  handover_dossier: 'ipp',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

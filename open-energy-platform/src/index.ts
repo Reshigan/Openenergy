@@ -153,6 +153,7 @@ import submittalRfiChainRoutes, { submittalRfiSlaSweep } from './routes/submitta
 import dfrChainRoutes, { dfrSlaSweep } from './routes/dfr-chain';
 import punchListChainRoutes, { punchListSlaSweep } from './routes/punch-list-chain';
 import itpChainRoutes, { itpSlaSweep } from './routes/itp-chain';
+import handoverDossierChainRoutes, { handoverDossierSlaSweep } from './routes/handover-dossier-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -476,6 +477,7 @@ app.route('/api/ipp/submittal-rfi/chain', submittalRfiChainRoutes);
 app.route('/api/ipp/dfr/chain', dfrChainRoutes);
 app.route('/api/ipp/punch-list/chain', punchListChainRoutes);
 app.route('/api/ipp/itp/chain', itpChainRoutes);
+app.route('/api/ipp/handover-dossier/chain', handoverDossierChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1343,6 +1345,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('itp_sla_sweep', async () => {
         const result = await itpSlaSweep(env as never);
         console.log('itp_sla_sweep', JSON.stringify(result));
+      });
+      // IPP Mechanical/Electrical Handover Dossier SLA sweep — Wave 100.
+      // URGENT polarity (warranty-clock-running = tightest). Breaches on
+      // blocks_warranty_start always cross regulator; breaches on
+      // blocks_om_handover cross at high+critical tiers.
+      await safe('handover_dossier_sla_sweep', async () => {
+        const result = await handoverDossierSlaSweep(env as never);
+        console.log('handover_dossier_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

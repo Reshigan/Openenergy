@@ -12,6 +12,7 @@ import { SubmittalRfiChainTab } from '../ipp/SubmittalRfiChainTab';
 import { DfrChainTab } from '../ipp/DfrChainTab';
 import { PunchListChainTab } from '../ipp/PunchListChainTab';
 import { ItpChainTab } from '../ipp/ItpChainTab';
+import { HandoverDossierChainTab } from '../ipp/HandoverDossierChainTab';
 import { ProjectRiskChainTab } from '../ipp/ProjectRiskChainTab';
 import { InsuranceClaimChainTab } from '../ipp/InsuranceClaimChainTab';
 import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
@@ -53,6 +54,7 @@ export function IppWorkstationPage() {
         { key: 'dfr', label: 'Daily field report', body: () => <DfrChainTab /> },
         { key: 'punch_list', label: 'Punch list / COD snag', body: () => <PunchListChainTab /> },
         { key: 'itp', label: 'ITP / Quality plan', body: () => <ItpChainTab /> },
+        { key: 'handover_dossier', label: 'Handover dossier', body: () => <HandoverDossierChainTab /> },
         { key: 'project_risk', label: 'Project risk register / SRA', body: () => <ProjectRiskChainTab /> },
         { key: 'hse_chain', label: 'HSE incidents', body: () => <HseIncidentChainTab /> },
         { key: 'cyber_chain', label: 'Cyber incidents', body: () => <CyberIncidentChainTab /> },
