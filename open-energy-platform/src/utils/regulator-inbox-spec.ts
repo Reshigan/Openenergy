@@ -3338,6 +3338,81 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 97 — IPP Daily Field Report / Progress Diary chain ────────
+    case 'dfr.submitted': {
+      // Submission crosses regulator EVERY tier when triggers_hse_incident
+      // (OHSA s24 — HSE event recorded in the daily diary is reportable).
+      const hse = num('triggers_hse_incident') === 1;
+      if (!hse) return null;
+      const tier = str('current_tier');
+      const severity: InboxSeverity =
+        tier === 'critical' ? 'high' :
+        tier === 'high' ? 'medium' : 'low';
+      return {
+        severity,
+        title: `DFR submitted (HSE) — ${str('dfr_number') || entityId} (${str('project_name') || ''} / ${str('workflow_class') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'dfr.approved': {
+      // Approval crosses regulator EVERY tier when HSE, or high+critical
+      // when change_order (NERSA REIPPPP material-change baseline).
+      const hse = num('triggers_hse_incident') === 1;
+      const co = num('triggers_change_order') === 1;
+      const tier = str('current_tier');
+      const isHighOrCrit = tier === 'high' || tier === 'critical';
+      if (!hse && !(co && isHighOrCrit)) return null;
+      const severity: InboxSeverity =
+        tier === 'critical' ? 'high' :
+        tier === 'high' ? 'medium' : 'low';
+      const flags = [hse ? 'hse' : '', co ? 'change_order' : ''].filter(Boolean).join('|');
+      return {
+        severity,
+        title: `DFR approved — ${str('dfr_number') || entityId} (${str('project_name') || ''} / ${str('workflow_class') || ''} / ${tier} / ${flags})`.trim(),
+      };
+    }
+    case 'dfr.voided': {
+      // Void crosses regulator EVERY tier when HSE OR change_order
+      // (cancellation of an HSE-bearing or baseline-bearing diary is
+      // itself a reportable governance event).
+      const hse = num('triggers_hse_incident') === 1;
+      const co = num('triggers_change_order') === 1;
+      if (!hse && !co) return null;
+      const tier = str('current_tier');
+      const severity: InboxSeverity =
+        tier === 'critical' ? 'high' :
+        tier === 'high' ? 'medium' : 'low';
+      const flags = [hse ? 'hse' : '', co ? 'change_order' : ''].filter(Boolean).join('|');
+      return {
+        severity,
+        title: `DFR voided — ${str('dfr_number') || entityId} (${str('project_name') || ''} / ${tier} / ${flags} / ${str('voided_reason') || ''})`.trim(),
+      };
+    }
+    case 'dfr.distributed': {
+      // Distribution high+critical when change_order (REIPPPP baseline
+      // affecting variations released for execution).
+      const co = num('triggers_change_order') === 1;
+      if (!co) return null;
+      const tier = str('current_tier');
+      if (tier !== 'high' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `DFR distributed (change-order) — ${str('dfr_number') || entityId} (${str('project_name') || ''} / ${str('workflow_class') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'dfr.sla_breached': {
+      // SLA breach high+critical when HSE OR change_order.
+      const hse = num('triggers_hse_incident') === 1;
+      const co = num('triggers_change_order') === 1;
+      if (!hse && !co) return null;
+      const tier = str('current_tier');
+      if (tier !== 'high' && tier !== 'critical') return null;
+      const flags = [hse ? 'hse' : '', co ? 'change_order' : ''].filter(Boolean).join('|');
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `DFR SLA breached — ${str('dfr_number') || entityId} (${str('chain_status') || ''} / ${tier} / ${flags})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

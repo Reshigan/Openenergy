@@ -898,7 +898,14 @@ export type EventType =
   | 'submittal_rfi.revised' | 'submittal_rfi.distributed_for_construction'
   | 'submittal_rfi.incorporated' | 'submittal_rfi.closed_clean'
   | 'submittal_rfi.voided' | 'submittal_rfi.withdrawn'
-  | 'submittal_rfi.sla_breached';
+  | 'submittal_rfi.sla_breached'
+  // ─── Wave 97: IPP daily field report / progress diary P6 chain ─────
+  | 'dfr.drafted' | 'dfr.entries_open' | 'dfr.entries_closed'
+  | 'dfr.submitted' | 'dfr.under_review'
+  | 'dfr.returned_for_correction' | 'dfr.corrected'
+  | 'dfr.approved' | 'dfr.distributed' | 'dfr.archived'
+  | 'dfr.voided' | 'dfr.withdrawn'
+  | 'dfr.sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -963,6 +970,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   benchmark_transition: 'trader',
   trade_allocation: 'trading',
   submittal_rfi: 'ipp',
+  dfr: 'ipp',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',
