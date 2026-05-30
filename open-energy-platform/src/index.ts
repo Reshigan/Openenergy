@@ -163,6 +163,7 @@ import enforcementActionS35ChainRoutes, { enforcementActionS35SlaSweep, enforcem
 import pretradeCreditChainRoutes, { pretradeCreditSlaSweep, pretradeCreditKycRecencySweep } from './routes/pretrade-credit-chain';
 import loanRestructureChainRoutes, { loanRestructureSlaSweep, loanRestructureConsentDeadlineSweep } from './routes/loan-restructure-chain';
 import carbonCreditRatingChainRoutes, { carbonCreditRatingSlaSweep, carbonCreditRatingMonitoringFreshnessScan } from './routes/carbon-credit-rating-chain';
+import transmissionOutageChainRoutes, { transmissionOutageSlaSweep, transmissionOutageWindowMonitor } from './routes/transmission-outage-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -496,6 +497,7 @@ app.route('/api/regulator/enforcement-action-s35/chain', enforcementActionS35Cha
 app.route('/api/trader/pretrade-credit/chain', pretradeCreditChainRoutes);
 app.route('/api/lender/loan-restructure/chain', loanRestructureChainRoutes);
 app.route('/api/carbon/credit-rating/chain', carbonCreditRatingChainRoutes);
+app.route('/api/grid/transmission-outage/chain', transmissionOutageChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1473,6 +1475,21 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('carbon_credit_rating_sla_sweep', async () => {
         const result = await carbonCreditRatingSlaSweep(env as never);
         console.log('carbon_credit_rating_sla_sweep', JSON.stringify(result));
+      });
+      // W110 Grid Transmission Outage Coordination & N-1 Security — SLA
+      // sweep. URGENT polarity stored in HOURS (critical_400kv_plus 24h on
+      // outage_requested, low_sub132kv 336h). Walks every active row whose
+      // sla_deadline_at has elapsed, flips sla_breached=1, bumps
+      // escalation_level, fires transmission_outage_sla_breached event.
+      // SLA breach crosses regulator on high_275kv + critical_400kv_plus
+      // (NERSA Grid Code C-3 disclosure rule). 15-min tick is granular
+      // enough — the chain spans days/weeks across 11 lifecycle states.
+      // Distinct from W18 planned outage (asset-owner driven on IPP
+      // generators); W110 is the SO-driven transmission-network corridor
+      // outage coordination machine.
+      await safe('transmission_outage_sla_sweep', async () => {
+        const result = await transmissionOutageSlaSweep(env as never);
+        console.log('transmission_outage_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -2504,6 +2521,19 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('carbon_credit_rating_monitoring_freshness_scan', async () => {
         const result = await carbonCreditRatingMonitoringFreshnessScan(env as never);
         console.log('carbon_credit_rating_monitoring_freshness_scan', JSON.stringify(result));
+      });
+      // W110 Grid Transmission Outage Coordination — nightly outage-window
+      // monitor. Walks outage_in_progress / extended rows past
+      // scheduled_end_at without complete_outage being called, flips
+      // extension_requested=1 so the LIVE battery's
+      // extension_imminent_live flag fires the next day, logs an
+      // overdue-window event. Does NOT auto-transition — completion
+      // confirmation must come from the SO; this just keeps the dashboard
+      // honest. Sister of carbon_credit_rating_monitoring_freshness_scan
+      // (passive evidence keeper).
+      await safe('transmission_outage_window_monitor', async () => {
+        const result = await transmissionOutageWindowMonitor(env as never);
+        console.log('transmission_outage_window_monitor', JSON.stringify(result));
       });
       break;
 

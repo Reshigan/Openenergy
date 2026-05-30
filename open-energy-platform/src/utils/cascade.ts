@@ -1020,7 +1020,18 @@ export type EventType =
   | 'carbon_rating_rerating_triggered' | 'carbon_rating_rerated'
   | 'carbon_rating_downgraded' | 'carbon_rating_withdrawn'
   | 'carbon_rating_escalated_integrity' | 'carbon_rating_remediated'
-  | 'carbon_rating_sla_breached';
+  | 'carbon_rating_sla_breached'
+
+  // ─── Wave 110: Grid Transmission Network Outage Coordination & N-1 Security Assessment Chain (P6). 11th Grid chain — SO-initiated EHV/HV transmission line + substation outage windows with N-1 contingency security assessment + reliability-committee approval + real-time supervision + return-to-service verification. Distinct from W18 (asset-owner-driven planned outage on IPP generators). Beats Hitachi Energy Lumada / ABB Network Manager / Siemens Spectrum / GE PowerOn / OSI monarch / OATI WebTrans / Eskom NCC / PowerWorld / Schneider EcoStruxure ADMS — each surfaces TX outage planning as a calendar plus a CSV of affected feeders; W110 turns it into a 12-state P6 chain with URGENT SLA polarity stored in HOURS, FLOOR-AT-HIGH tier overlay on 5 floor flags (peak_demand_period, single_circuit_radial, cross_border_interconnector, black_start_path, national_grid_backbone), FLOOR-AT-CRITICAL on 2+ flags OR national_grid_backbone OR black_start_path, 4-step authority ladder (outage_planner → system_operator → reliability_committee_chair → SO_CEO), 16-field LIVE battery (sla_hours_remaining, urgency_band, authority_required, regulator_filing_window_hours, security_margin_pct, hours_to_outage_window, hours_in_outage, hours_to_planned_completion, extension_imminent, emergency_cancel_risk, returned_to_service_clean, floor_flag_count, completeness 0-130 with 4 bonus categories, 3-bridge to W18/W34/W50), and signature regulator crossings. Standards: NERSA Grid Code C-3 + NTCSA Outage Coordination Process + Eskom System Operator Standards + ENTSO-E SO Reg 2017/1485 equivalent. 12-state P6 on oe_transmission_outage: outage_requested → security_assessment → n1_contingency_run → reliability_committee_review → outage_approved → outage_window_open → outage_in_progress → outage_completed → return_to_service → post_outage_review → archived (HARD terminal) + 5 branches (rejected/withdrawn/suspended/emergency_cancelled/extended). Tier RE-DERIVED on every transition from transmission_voltage_kv (low_sub132kv<132 / medium_132kv=132 / high_275kv>=275<400 / critical_400kv_plus>=400). URGENT SLA polarity stored as HOURS — critical_400kv_plus has SHORTEST runway (outage_requested critical 24h / high 72h / medium 168h / low 336h). SIGNATURE crossings: emergency_cancel crosses regulator EVERY tier (W110 hard line — forced cancellation of an approved TX outage is always a security event, sister of W108 escalate_to_default EVERY tier, W109 escalate_to_integrity EVERY tier, W105 raise_dispute EVERY tier on HV_brp, W104 reject EVERY tier on regulator_relevant); extend_outage crosses high+critical (committee fairness review); approve_outage crosses critical ONLY when national_grid_backbone (NERSA disclosure of backbone outage approvals); suspend_outage crosses high+critical; sla_breached crosses high+critical. Write {admin,grid_operator}; READ all 9 personas; actor_party split: outage_planner (request/start_security_assessment/withdraw), system_operator (run_n1_contingency/open_window/commence/suspend/resume/emergency_cancel/complete/verify_rts), reliability_committee (submit/approve/reject/extend), archive_clerk (close_post_review/archive). ───
+  | 'transmission_outage_requested' | 'transmission_outage_security_assessment_started'
+  | 'transmission_outage_n1_contingency_ran' | 'transmission_outage_submitted_to_committee'
+  | 'transmission_outage_approved' | 'transmission_outage_rejected'
+  | 'transmission_outage_window_opened' | 'transmission_outage_commenced'
+  | 'transmission_outage_suspended' | 'transmission_outage_resumed'
+  | 'transmission_outage_emergency_cancelled' | 'transmission_outage_extended'
+  | 'transmission_outage_completed' | 'transmission_outage_return_to_service_verified'
+  | 'transmission_outage_post_outage_review_closed' | 'transmission_outage_archived'
+  | 'transmission_outage_withdrawn' | 'transmission_outage_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1097,6 +1108,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   pretrade_credit: 'trader',
   loan_restructure: 'lender',
   carbon_rating: 'carbon',
+  transmission_outage: 'grid',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',
