@@ -7,6 +7,7 @@ import { DispatchNominationTab } from '../grid/DispatchNominationTab';
 import { PlannedOutageChainTab } from '../grid/PlannedOutageChainTab';
 import { RezCapacityChainTab } from '../grid/RezCapacityChainTab';
 import { WheelingChargesTab } from '../grid/WheelingChargesTab';
+import { ImbalanceSettlementChainTab } from '../grid/ImbalanceSettlementChainTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -51,6 +52,7 @@ export function GridOpsWorkstationPage() {
         { key: 'planned_outage', label: 'Planned outages', body: () => <PlannedOutageChainTab /> },
         { key: 'rez_capacity', label: 'REZ capacity allocation', body: () => <RezCapacityChainTab /> },
         { key: 'wheeling_charges', label: 'Wheeling charges', body: () => <WheelingChargesTab /> },
+        { key: 'imbalance-settlement', label: 'Imbalance settlement', body: () => <ImbalanceSettlementChainTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

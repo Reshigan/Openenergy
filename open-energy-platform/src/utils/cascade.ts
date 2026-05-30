@@ -968,7 +968,18 @@ export type EventType =
   | 'service_request.verified' | 'service_request.closed'
   | 'service_request.archived' | 'service_request.cancelled'
   | 'service_request.reopened' | 'service_request.regulator_crossed'
-  | 'service_request.sla_breached';
+  | 'service_request.sla_breached'
+
+  // ─── Wave 105: Grid Wholesale Imbalance Settlement & MTU Pricing chain (P6). 10th Grid chain — the financial settlement engine of the SO balancing mechanism. Sister of W13 dispatch nominations (the PRE side — nominated MWh per MTU) and W50 reserve activation (the SUPPLY side — instantaneous reserve products). W105 is the post-fact per-MTU settlement: actual vs nominated imbalance MWh times imbalance price times penalty, posted to BRPs, with dispute-window and settled. Beats PJM iMM / ERCOT QSE / CAISO / NEM AEMO / Nord Pool / ENTSO-E / National Grid ESO BSC / Hitachi Lumada / OATI / Powel Pulse — every one of those surfaces imbalance settlement as an after-the-fact CSV dump plus a dispute mailbox. W105 makes it a 12-state P6 chain with LIVE per-MTU re-pricing, dispute-window state machine, completeness index 0-130, urgency band, authority ladder, and signature regulator crossings. Tier RE-DERIVED on every transition from imbalance_quantum_zar (minor<100k / standard<1m / material<10m / systemic>=10m), FLOOR-AT-MATERIAL on any one of 5 floor flags, FLOOR-AT-SYSTEMIC on high_voltage_brp OR system_critical_period. URGENT SLA polarity (higher tier = TIGHTER, systemic 12h / minor 14d on period_open). SIGNATURE: raise_dispute crosses regulator EVERY tier when high_voltage_brp=TRUE (HV-imbalance disputes always reportable); mark_settled crosses regulator on material+systemic when penalty_zar>0; aged_arrears crosses EVERY tier at >=60 days (default risk to settlement system); cancel_period crosses EVERY tier when imbalance_mwh!=0; sla_breached crosses material+systemic. Write {admin,grid_operator}; READ all 9 personas; actor_party derived from action: system_operator/settlement_admin/brp/reviewer/archiver. ───
+  | 'imbalance_settlement.period_opened' | 'imbalance_settlement.meter_data_received'
+  | 'imbalance_settlement.nominations_reconciled' | 'imbalance_settlement.imbalance_computed'
+  | 'imbalance_settlement.priced' | 'imbalance_settlement.invoice_issued'
+  | 'imbalance_settlement.invoice_acknowledged' | 'imbalance_settlement.dispute_window_opened'
+  | 'imbalance_settlement.dispute_raised' | 'imbalance_settlement.dispute_resolved'
+  | 'imbalance_settlement.invoice_revised' | 'imbalance_settlement.payment_recorded'
+  | 'imbalance_settlement.settled' | 'imbalance_settlement.archived'
+  | 'imbalance_settlement.cancelled' | 'imbalance_settlement.aged_arrears'
+  | 'imbalance_settlement.sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1041,6 +1052,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   soiling_audit: 'esums',
   esg_disclosure: 'carbon',
   service_request: 'support',
+  imbalance_settlement: 'grid',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

@@ -158,6 +158,7 @@ import ppaAnnualReconChainRoutes, { ppaAnnualReconSlaSweep } from './routes/ppa-
 import soilingAuditChainRoutes, { soilingAuditSlaSweep } from './routes/soiling-audit-chain';
 import esgDisclosureChainRoutes, { esgDisclosureSlaSweep } from './routes/esg-disclosure-chain';
 import serviceRequestChainRoutes, { serviceRequestSlaSweep, serviceRequestEntitlementWindowSweep } from './routes/service-request-chain';
+import imbalanceSettlementChainRoutes, { imbalanceSettlementSlaSweep, imbalanceSettlementArrearsSweep } from './routes/imbalance-settlement-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -486,6 +487,7 @@ app.route('/api/offtaker/ppa-annual-recon/chain', ppaAnnualReconChainRoutes);
 app.route('/api/esums/soiling-audit/chain', soilingAuditChainRoutes);
 app.route('/api/carbon/esg-disclosure/chain', esgDisclosureChainRoutes);
 app.route('/api/support/service-request/chain', serviceRequestChainRoutes);
+app.route('/api/grid/imbalance-settlement/chain', imbalanceSettlementChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1400,6 +1402,17 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('service_request_sla_sweep', async () => {
         const result = await serviceRequestSlaSweep(env as never);
         console.log('service_request_sla_sweep', JSON.stringify(result));
+      });
+      // W105 Grid Wholesale Imbalance Settlement chain: flag MTU settlement
+      // periods that overrun their URGENT SLA window (higher tier = TIGHTER,
+      // so a systemic period has 12h on period_open and a minor has 14d).
+      // SLA breaches cross the regulator inbox on material + systemic tiers
+      // (signature alongside raise_dispute-on-HV-every-tier, mark_settled-on-
+      // heavy-with-penalty, aged_arrears-every-tier-at-60d, and
+      // cancel_period-every-tier-when-imbalance-nonzero).
+      await safe('imbalance_settlement_sla_sweep', async () => {
+        const result = await imbalanceSettlementSlaSweep(env as never);
+        console.log('imbalance_settlement_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -2371,6 +2384,18 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('service_request_entitlement_window_sweep', async () => {
         const result = await serviceRequestEntitlementWindowSweep(env as never);
         console.log('service_request_entitlement_window_sweep', JSON.stringify(result));
+      });
+      // W105 Grid Wholesale Imbalance Settlement — nightly aged-arrears
+      // sweep. Walks invoice_issued/invoice_acknowledged/payment_pending/
+      // aged_arrears rows past invoice_due_at with no payment_received_at,
+      // re-computes arrears_days from invoice_due_at, sets arrears_bucket
+      // (current/0_30/30_60/60_90/90_120/120_plus), and flips chain_status
+      // to 'aged_arrears' once >=30 days past due. Crosses the regulator
+      // inbox at >=60 days per W105 signature (default risk to settlement
+      // system is reportable across every tier).
+      await safe('imbalance_settlement_arrears_sweep', async () => {
+        const result = await imbalanceSettlementArrearsSweep(env as never);
+        console.log('imbalance_settlement_arrears_sweep', JSON.stringify(result));
       });
       break;
 
