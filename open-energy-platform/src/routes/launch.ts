@@ -965,12 +965,12 @@ async function buildLenderBoard(c: any, user: any): Promise<LaunchPayload> {
       eyebrow: `Credit portfolio · ${todayStr()}`,
       title: `${greeting()}, ${firstName(user.name)}`,
       subtitle: `${active} active loan${active === 1 ? '' : 's'} of ${total} total · ${breached} covenant${breached === 1 ? '' : 's'} breached.`,
-      primary_cta: { label: 'Open lender suite', href: '/lender-suite' },
+      primary_cta: { label: 'Open lender workstation', href: '/lender-suite/workstation' },
     },
     kpis: [
-      { key: 'facilities', label: 'Facilities', value: facilities, tone: 'good', href: '/lender-suite' },
-      { key: 'covenants', label: 'Covenants monitored', value: covenants, tone: 'neutral', href: '/lender-suite' },
-      { key: 'covenants_breached', label: 'Breached covenants', value: breached, tone: breached > 0 ? 'bad' : 'good', href: '/lender-suite' },
+      { key: 'facilities', label: 'Facilities', value: facilities, tone: 'good', href: '/lender-suite/workstation' },
+      { key: 'covenants', label: 'Covenants monitored', value: covenants, tone: 'neutral', href: '/lender-suite/workstation' },
+      { key: 'covenants_breached', label: 'Breached covenants', value: breached, tone: breached > 0 ? 'bad' : 'good', href: '/lender-suite/workstation?tab=covenant_cert' },
       { key: 'actions_open', label: 'Open workout actions', value: actionsN, tone: actionsN > 0 ? 'warn' : 'good', href: '/lender-suite?tab=actions' },
       { key: 'disbursements_pending', label: 'Pending disbursements', value: pending, tone: pending > 0 ? 'warn' : 'good', href: '/funds' },
       ...(await auditKpisFor(c.env, 'lender', '/lender-suite/audit'))
