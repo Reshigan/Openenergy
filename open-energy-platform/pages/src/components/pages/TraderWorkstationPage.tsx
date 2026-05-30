@@ -13,6 +13,7 @@ import { CounterpartyMarginChainTab } from '../counterparty-margin/CounterpartyM
 import { TradeAllocationChainTab } from '../trade-allocation/TradeAllocationChainTab';
 import { SettlementFailChainTab } from '../settlement-fail/SettlementFailChainTab';
 import { BenchmarkTransitionChainTab } from '../benchmark-transition/BenchmarkTransitionChainTab';
+import { PreTradeCreditChainTab } from '../trader/PreTradeCreditChainTab';
 import { api } from '../../lib/api';
 
 export function TraderWorkstationPage() {
@@ -45,6 +46,7 @@ export function TraderWorkstationPage() {
         { key: 'rejections', label: 'Rejections', body: () => <RejectionsTab /> },
         { key: 'exceptions', label: 'Post-trade exceptions', body: ({ onRefresh }) => <ExceptionsTab onRefresh={onRefresh} /> },
         { key: 'margin', label: 'Margin calls', body: ({ onRefresh }) => <MarginTab onRefresh={onRefresh} /> },
+        { key: 'pretrade-credit', label: 'Pre-trade credit & settlement risk', body: () => <PreTradeCreditChainTab /> },
         { key: 'risk', label: 'Risk', body: () => <RiskTab /> },
         { key: 'mm-compliance', label: 'MM compliance', body: () => <MmComplianceTab /> },
         { key: 'poslimit', label: 'Position limits', body: () => <PoslimitChainTab /> },

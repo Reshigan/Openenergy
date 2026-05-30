@@ -987,7 +987,17 @@ export type EventType =
   | 'imbalance_settlement.invoice_revised' | 'imbalance_settlement.payment_recorded'
   | 'imbalance_settlement.settled' | 'imbalance_settlement.archived'
   | 'imbalance_settlement.cancelled' | 'imbalance_settlement.aged_arrears'
-  | 'imbalance_settlement.sla_breached';
+  | 'imbalance_settlement.sla_breached'
+
+  // ─── Wave 107: Trader Pre-Trade Credit Check & Settlement-Risk Exposure chain (P6). 10th Trader chain — PRE-TRADE GATE upstream of W2 trading-risk, W9 MM compliance, W29 position-limit, W36 best-execution, W44 trade-reporting, W52 market-abuse, W60 algo-cert, W68 counterparty-margin, W76 trade-allocation. Every one of those Trader chains assumes the synchronous front-end (KYC + credit-line + settlement-risk + concentration + halt-status + mark-age) was cleared. W107 turns that implicit rule-set evaluator into a 12-state P6 chain with sub-second SLA, LIVE 14-field battery (credit_line_utilization, settlement_risk_score, concentration_ratio, kyc_recency, mark_age, halt_status, 0-130 completeness, sla_seconds_remaining, urgency_band, authority_required ladder, regulator_filing_window, breach_imminent, 3-bridge architecture to W2/W29/W68), FLOOR-AT-MATERIAL tier overlay, 4-step authority ladder (junior_trader → desk_head → market_risk_manager → CRO), and signature regulator crossings. Beats Numerix CrossAsset Pre-Trade / Calypso Pre-Trade Limits / Bloomberg AIM Pre-Trade Compliance / Murex MX.3 PFE / FIS Front Arena / OpenLink Endur Pre-Deal / SAS Risk Management / Misys Kondor+ / Wall Street Systems Front-Arena — every one of those surfaces pre-trade as one large blocking rule-set evaluator. Tier RE-DERIVED on every transition from notional_exposure_zar (micro<1m / standard<10m / material<100m / systemic>=100m), FLOOR-AT-MATERIAL on any one of 5 floor flags, FLOOR-AT-SYSTEMIC on cross_border_settlement OR counterparty_credit_grade_below_B. URGENT sub-second SLA polarity stored as sla_target_ms BIGINT (order_submitted systemic 500ms / material 2s / standard 10s / micro 30s). SIGNATURE: reject_order crosses regulator EVERY tier when counterparty_credit_grade_below_B=TRUE (B-grade hard line — W107 signature, sister of W104 reject EVERY tier on regulator_relevant, W105 raise_dispute EVERY tier on HV_brp, W106 impose_sanction EVERY tier on licence_revocation); override_rejection crosses EVERY tier (compliance override is reportable); hold_for_review crosses material+systemic when SLA-triggered; sla_breached crosses systemic only (BIS PFMI s3.5). Standards: FMA Ch.X s50 + FSCA Conduct Standard 1/2020 + BIS PFMI s3.5 + CFTC Reg 1.73 + MiFID II Art 17. Write {admin,trader}; READ all 9 personas; actor_party split: trader writes submit_order; risk_system writes verify_kyc/check_credit_line/assess_settlement_risk/check_concentration/verify_halt_status/validate_mark_age/clear_order; compliance writes hold_for_review/manually_clear/manually_reject/reject_order/override_rejection; archiver writes archive_check. ───
+  | 'pretrade_credit.order_submitted' | 'pretrade_credit.kyc_verified'
+  | 'pretrade_credit.credit_line_checked' | 'pretrade_credit.settlement_risk_assessed'
+  | 'pretrade_credit.concentration_checked' | 'pretrade_credit.halt_status_verified'
+  | 'pretrade_credit.mark_age_validated' | 'pretrade_credit_cleared'
+  | 'pretrade_credit.archived' | 'pretrade_credit_rejected'
+  | 'pretrade_credit_held_for_review' | 'pretrade_credit.manually_cleared'
+  | 'pretrade_credit.manually_rejected' | 'pretrade_credit_overridden'
+  | 'pretrade_credit_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1061,6 +1071,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   esg_disclosure: 'carbon',
   service_request: 'support',
   imbalance_settlement: 'grid',
+  pretrade_credit: 'trader',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

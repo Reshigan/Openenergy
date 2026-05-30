@@ -160,6 +160,7 @@ import esgDisclosureChainRoutes, { esgDisclosureSlaSweep } from './routes/esg-di
 import serviceRequestChainRoutes, { serviceRequestSlaSweep, serviceRequestEntitlementWindowSweep } from './routes/service-request-chain';
 import imbalanceSettlementChainRoutes, { imbalanceSettlementSlaSweep, imbalanceSettlementArrearsSweep } from './routes/imbalance-settlement-chain';
 import enforcementActionS35ChainRoutes, { enforcementActionS35SlaSweep, enforcementActionS35AppealWindowSweep } from './routes/enforcement-action-s35-chain';
+import pretradeCreditChainRoutes, { pretradeCreditSlaSweep, pretradeCreditKycRecencySweep } from './routes/pretrade-credit-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -490,6 +491,7 @@ app.route('/api/carbon/esg-disclosure/chain', esgDisclosureChainRoutes);
 app.route('/api/support/service-request/chain', serviceRequestChainRoutes);
 app.route('/api/grid/imbalance-settlement/chain', imbalanceSettlementChainRoutes);
 app.route('/api/regulator/enforcement-action-s35/chain', enforcementActionS35ChainRoutes);
+app.route('/api/trader/pretrade-credit/chain', pretradeCreditChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1427,6 +1429,19 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('enforcement_action_s35_sla_sweep', async () => {
         const result = await enforcementActionS35SlaSweep(env as never);
         console.log('enforcement_action_s35_sla_sweep', JSON.stringify(result));
+      });
+      // W107 Trader Pre-Trade Credit & Settlement-Risk chain: flag pre-
+      // trade checks past their URGENT sub-second SLA (systemic 500ms,
+      // material 2s, standard 10s, micro 30s on order_submitted). Granular
+      // cron is 1-min so this sweep mostly catches lingering 15-min-old
+      // breaches; tight detection runs client-side on every read via
+      // decorate(). SLA breaches cross regulator on systemic only (BIS
+      // PFMI s3.5) alongside reject_order-EVERY-tier-on-below-B-grade,
+      // override_rejection-EVERY-tier, and hold_for_review-on-material-
+      // plus-systemic-when-SLA-triggered.
+      await safe('pretrade_credit_sla_sweep', async () => {
+        const result = await pretradeCreditSlaSweep(env as never);
+        console.log('pretrade_credit_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -2420,6 +2435,17 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('enforcement_action_s35_appeal_window_sweep', async () => {
         const result = await enforcementActionS35AppealWindowSweep(env as never);
         console.log('enforcement_action_s35_appeal_window_sweep', JSON.stringify(result));
+      });
+      // W107 Trader Pre-Trade Credit & Settlement-Risk — nightly KYC
+      // recency + mark-age refresh. Walks every still-active pre-trade
+      // check and recomputes kyc_recency_days from kyc_verified_at and
+      // mark_age_seconds from last_mark_at. Does not change chain_status;
+      // just keeps the LIVE counters honest so trader and compliance
+      // dashboards never go stale. Real KYC re-validation happens
+      // out-of-band; this just makes the recency-day counter accurate.
+      await safe('pretrade_credit_kyc_recency_sweep', async () => {
+        const result = await pretradeCreditKycRecencySweep(env as never);
+        console.log('pretrade_credit_kyc_recency_sweep', JSON.stringify(result));
       });
       break;
 
