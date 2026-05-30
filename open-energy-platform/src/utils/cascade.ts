@@ -800,6 +800,14 @@ export type EventType =
   | 'enforcement_action.appealed' | 'enforcement_action.enforced_via_court'
   | 'enforcement_action.dismissed' | 'enforcement_action.withdrawn'
   | 'enforcement_action.sla_breached'
+  // ─── Wave 94 — NTCSA Renewable-Energy-Zone (REZ) Capacity Allocation & Competitive Auction (the COMPETITIVE-ZONAL-ALLOCATION layer of a best-in-class system-operator stack; W58 grid-capacity-allocation gives the generic FCFS queue, W28 GCA the physical connection agreement, W75 connection-energization the energization gate — W94 inserts the COMPETITIVE ZONAL AUCTION in between: announcement → application → compliance → shortlist → multi-criteria scoring → award → financial-close → construction → commercial-operation; beats AEMO REZ / NYISO TPP / CAISO TPP / ERCOT CREZ / EU TYNDP / ENTSO-E TYNDP / NGESO Holistic Network Design / Hydro Quebec MRC — most run REZ auctions on spreadsheets and never recycle forfeit MW — via LIVE-scored ZONE-HEADROOM battery (configured ceiling vs allocated-to-date MW), multi-criteria WEIGHTED-SCORE (price 0.50 + B-BBEE 0.20 + ED 0.15 + local-content 0.15 per the DMRE 40%-local-content REIPPPP rule), COMPETITION-RATIO from applications-per-lot, MILESTONE-COMPLIANCE % across awarded MW, FORFEIT-RATE per zone (failed milestones recycled back), PREDICTED-OPERATION-DATE rolling forward from current state; 12-state P6 announcement_published→application_submitted→compliance_check→shortlisted→evaluation_complete→award_proposed→capacity_awarded→financial_close_met→construction_in_progress→in_operation (terminal) with rejected (SO denial at compliance/evaluation/award), forfeit (milestone failure recycled), withdrawn terminals; tier MW-MAGNITUDE-DERIVED on every transition from awarded_capacity_mw fallback requested_capacity_mw — minor<50MW / standard 50-250MW / material 250-500MW / mega ≥500MW with FLOOR-AT-MEGA for allocation_class IN (priority_zone, constraint_relief_zone, jet_program_zone); INVERTED SLA — multi-criteria diligence strengthens with magnitude per NTCSA Rules 2024 (30d compliance for sub-100MW; mega 120d; construction milestone caps 3yr); AWARD/FORFEIT-driven SIGNATURE: award_capacity crosses regulator EVERY tier (W94 SIGNATURE — public capacity-allocation register; sister of W45 write_off / W77 declare_breach / W68 declare_default / W86 declare_acceleration / W89 cancel_campaign / W90 terminate_legacy / W91 deny_ccp_label / W92 realize_risk / W93 impose_penalty), forfeit_allocation crosses regulator EVERY tier (security-of-supply public signal — capacity recycled), reject_application crosses material+mega (governance), complete_evaluation crosses mega only (multi-criteria public scrutiny), confirm_operation crosses mega only (security-of-supply milestone), sla_breached crosses material+mega (procedural-window miss risk); single SO-side write {admin,grid_operator}, actor_party compliance_officer/evaluation_panel/council/system_operator from action — applicant reads own case via tenant scoping but cannot write ───
+  | 'rez_capacity.announcement_published' | 'rez_capacity.application_submitted'
+  | 'rez_capacity.compliance_check' | 'rez_capacity.shortlisted'
+  | 'rez_capacity.evaluation_complete' | 'rez_capacity.award_proposed'
+  | 'rez_capacity.capacity_awarded' | 'rez_capacity.financial_close_met'
+  | 'rez_capacity.construction_in_progress' | 'rez_capacity.in_operation'
+  | 'rez_capacity.rejected' | 'rez_capacity.forfeit'
+  | 'rez_capacity.withdrawn' | 'rez_capacity.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
@@ -928,6 +936,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   enforcement_action: 'regulator',
   black_start: 'grid',
   connection_energization: 'grid',
+  rez_capacity: 'grid',
   settlement_fail: 'trader',
   dscr_monitoring: 'lender',
   ppa_nomination: 'offtaker',

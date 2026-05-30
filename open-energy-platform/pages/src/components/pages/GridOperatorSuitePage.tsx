@@ -13,6 +13,7 @@ import { GridCapacityChainTab } from '../grid-capacity/GridCapacityChainTab';
 import { GridCodeComplianceChainTab } from '../grid-code-compliance/GridCodeComplianceChainTab';
 import { ConnectionEnergizationChainTab } from '../connection-energization/ConnectionEnergizationChainTab';
 import { BlackStartChainTab } from '../black-start/BlackStartChainTab';
+import { RezCapacityChainTab } from '../grid/RezCapacityChainTab';
 
 const instructionTypes = [
   { value: 'curtail', label: 'Curtail' },
@@ -58,6 +59,14 @@ export function GridOperatorSuitePage() {
       description: 'NERSA Grid Code + NTCSA Interim Capacity Allocation Rules (2024) — the scarce-capacity QUEUE upstream of the GCA. Application → completeness screening → capacity assessment (load-flow / fault-level / headroom) → queue position → allocation offer → reservation → firm allocation. INVERTED tier SLA (bigger connection = longer window), two-party applicant↔network/committee write, reject / lapse / relinquish / withdraw branches.',
       columns: [],
       customContent: <GridCapacityChainTab />,
+    },
+    {
+      key: 'rez_capacity',
+      label: 'REZ capacity allocation (NTCSA 2024)',
+      endpoint: '',
+      description: 'NTCSA 2024 Grid Capacity Allocation Rules + DMRE IRP-2023 + CSIR REZ identification + REIPPPP multi-criteria scoring — competitive multi-applicant auctions inside a constrained Renewable Energy Development Zone. Application → completeness → shortlist → multi-criteria evaluation (price 50% + BBBEE 20% + ED 15% + local-content 15%) → award proposal → capacity awarded → financial close gate → construction → COD. INVERTED tier SLA (mega capacity = longer window), FLOOR-AT-MEGA for priority / constraint-relief / JET-program zones, REZ headroom + competition ratio + DMRE 40% local-content gate live battery. SIGNATURE: award_capacity + forfeit_allocation cross regulator EVERY tier (security-of-supply hard line).',
+      columns: [],
+      customContent: <RezCapacityChainTab />,
     },
     {
       key: 'gca_chain',

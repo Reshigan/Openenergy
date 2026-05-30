@@ -3132,6 +3132,68 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 94 — NTCSA REZ Capacity Allocation & Competitive Auction ──
+    // AWARD/FORFEIT-driven signature. Every capacity award and every
+    // forfeit-recycling is publicly registered regardless of MW (W94 SIGNATURE
+    // hard line — sister of W93 impose_penalty / W77 declare_breach). Rejections
+    // surface on material+. Evaluation completion + commercial-operation
+    // confirmation surface on mega only (multi-criteria public scrutiny +
+    // security-of-supply). Procedural-window misses (sla_breached) escalate on
+    // material+.
+    case 'rez_capacity.capacity_awarded': {
+      // SIGNATURE: every capacity award crosses regulator (public register).
+      const tier = str('capacity_tier');
+      return {
+        severity: tier === 'mega' ? 'critical' : tier === 'material' ? 'high' : 'medium',
+        title: `Capacity awarded — ${str('allocation_number') || entityId} (${str('applicant_party_name') || ''} / ${str('zone_name') || str('zone_code') || ''} / ${str('technology') || ''} / ${num('awarded_capacity_mw')}MW / ${tier})`.trim(),
+      };
+    }
+    case 'rez_capacity.forfeit': {
+      // SIGNATURE: forfeit recycles capacity back into the zone pool —
+      // security-of-supply public signal at every tier.
+      const tier = str('capacity_tier');
+      return {
+        severity: tier === 'mega' ? 'critical' : tier === 'material' ? 'high' : 'medium',
+        title: `REZ allocation forfeited — ${str('allocation_number') || entityId} (${str('applicant_party_name') || ''} / ${str('zone_name') || str('zone_code') || ''} / ${num('awarded_capacity_mw')}MW recycled / ${tier} / ${str('reason_code') || ''})`.trim(),
+      };
+    }
+    case 'rez_capacity.rejected': {
+      // Governance signal — material+mega only.
+      const tier = str('capacity_tier');
+      if (tier !== 'mega' && tier !== 'material') return null;
+      return {
+        severity: tier === 'mega' ? 'high' : 'medium',
+        title: `REZ application rejected — ${str('allocation_number') || entityId} (${str('applicant_party_name') || ''} / ${str('zone_name') || str('zone_code') || ''} / ${tier} / ${str('reason_code') || ''})`.trim(),
+      };
+    }
+    case 'rez_capacity.evaluation_complete': {
+      // Mega only — multi-criteria public scrutiny on REIPPPP-style weighted score.
+      const tier = str('capacity_tier');
+      if (tier !== 'mega') return null;
+      return {
+        severity: 'high',
+        title: `REZ evaluation complete (mega) — ${str('allocation_number') || entityId} (${str('applicant_party_name') || ''} / ${str('zone_name') || str('zone_code') || ''} / score ${num('weighted_score').toFixed(3)} / ${num('requested_capacity_mw')}MW)`.trim(),
+      };
+    }
+    case 'rez_capacity.in_operation': {
+      // Mega only — security-of-supply milestone (confirm commercial operation).
+      const tier = str('capacity_tier');
+      if (tier !== 'mega') return null;
+      return {
+        severity: 'medium',
+        title: `REZ commercial operation confirmed (mega) — ${str('allocation_number') || entityId} (${str('applicant_party_name') || ''} / ${str('zone_name') || str('zone_code') || ''} / ${num('awarded_capacity_mw')}MW)`.trim(),
+      };
+    }
+    case 'rez_capacity.sla_breached': {
+      // Procedural-window miss — material+mega only.
+      const tier = str('capacity_tier');
+      if (tier !== 'mega' && tier !== 'material') return null;
+      return {
+        severity: tier === 'mega' ? 'high' : 'medium',
+        title: `REZ procedural SLA breached — ${str('allocation_number') || entityId} (${str('chain_status') || ''} / ${str('applicant_party_name') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

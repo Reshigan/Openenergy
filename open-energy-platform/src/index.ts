@@ -147,6 +147,7 @@ import benchmarkTransitionChainRoutes, { benchmarkTransitionSlaSweep } from './r
 import ccpAssessmentChainRoutes, { ccpAssessmentSlaSweep } from './routes/ccp-assessment-chain';
 import projectRiskChainRoutes, { projectRiskSlaSweep } from './routes/project-risk-chain';
 import enforcementActionChainRoutes, { enforcementActionSlaSweep } from './routes/enforcement-action-chain';
+import rezCapacityChainRoutes, { rezCapacitySlaSweep } from './routes/rez-capacity-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -464,6 +465,7 @@ app.route('/api/benchmark-transition/chain', benchmarkTransitionChainRoutes);
 app.route('/api/ccp-assessment/chain', ccpAssessmentChainRoutes);
 app.route('/api/ipp/project-risk/chain', projectRiskChainRoutes);
 app.route('/api/regulator/enforcement-action/chain', enforcementActionChainRoutes);
+app.route('/api/grid/rez-capacity/chain', rezCapacityChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1284,6 +1286,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('enforcement_action_sla_sweep', async () => {
         const result = await enforcementActionSlaSweep(env as never);
         console.log('enforcement_action_sla_sweep', JSON.stringify(result));
+      });
+      // NTCSA REZ capacity allocation SLA sweep — Wave 94. Procedural-window
+      // misses on the competitive-auction stack cross the regulator inbox for
+      // material+mega tiers (multi-criteria diligence under NTCSA Rules 2024).
+      await safe('rez_capacity_sla_sweep', async () => {
+        const result = await rezCapacitySlaSweep(env as never);
+        console.log('rez_capacity_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
