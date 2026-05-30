@@ -164,6 +164,7 @@ import pretradeCreditChainRoutes, { pretradeCreditSlaSweep, pretradeCreditKycRec
 import loanRestructureChainRoutes, { loanRestructureSlaSweep, loanRestructureConsentDeadlineSweep } from './routes/loan-restructure-chain';
 import carbonCreditRatingChainRoutes, { carbonCreditRatingSlaSweep, carbonCreditRatingMonitoringFreshnessScan } from './routes/carbon-credit-rating-chain';
 import transmissionOutageChainRoutes, { transmissionOutageSlaSweep, transmissionOutageWindowMonitor } from './routes/transmission-outage-chain';
+import pnlAttributionChainRoutes, { pnlAttributionSlaSweep, pnlAttributionT1EodOpener } from './routes/pnl-attribution-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -498,6 +499,7 @@ app.route('/api/trader/pretrade-credit/chain', pretradeCreditChainRoutes);
 app.route('/api/lender/loan-restructure/chain', loanRestructureChainRoutes);
 app.route('/api/carbon/credit-rating/chain', carbonCreditRatingChainRoutes);
 app.route('/api/grid/transmission-outage/chain', transmissionOutageChainRoutes);
+app.route('/api/trader/pnl-attribution/chain', pnlAttributionChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1490,6 +1492,21 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('transmission_outage_sla_sweep', async () => {
         const result = await transmissionOutageSlaSweep(env as never);
         console.log('transmission_outage_sla_sweep', JSON.stringify(result));
+      });
+      // W111 Trader Daily P&L Attribution & Risk-Adjusted Returns — SLA
+      // sweep. URGENT polarity stored in HOURS on day_open anchor: minor 24h,
+      // standard 18h, material 12h, systemic 6h. Walks every active row whose
+      // sla_deadline_at has elapsed, flips sla_breached=1, bumps
+      // escalation_level, fires pnl_attribution_sla_breached event. SLA
+      // breach crosses regulator on material + systemic (FMA Ch.X + FSCA
+      // Conduct Standard 1/2020 + IFRS 13 fair-value-on-time disclosure). 15-
+      // min tick is granular enough — systemic SLA is 6h. Distinct from W2
+      // (rolling VaR) which is a continuous market-risk monitor; W111 is the
+      // EOD P&L decomposition + GIPS-2020 risk-adjusted returns + IFRS 9
+      // stage classification machine.
+      await safe('pnl_attribution_sla_sweep', async () => {
+        const result = await pnlAttributionSlaSweep(env as never);
+        console.log('pnl_attribution_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -2956,6 +2973,21 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
           ).run();
           await env.DB.prepare(`UPDATE oe_digest_subscriptions SET last_sent_at = datetime('now') WHERE id = ?`).bind(s.id).run();
         }
+      });
+      break;
+
+    case '0 18 * * *':
+      // W111 Trader Daily P&L Attribution — T+1 EOD opener fires at 18:00 SAST
+      // (16:00 UTC). Walks distinct active books from the last 7 days and
+      // creates a fresh day_open row per book per business_date. Skips
+      // weekends. This is the dailyP&L cadence anchor — the URGENT SLA polarity
+      // (systemic 6h / material 12h / standard 18h / minor 24h) is measured
+      // from day_open, so this cron MUST fire before traders/risk start the
+      // attribution → review → approve → publish → reconcile → archive
+      // workflow on T+1. NEW cron — also registered in wrangler.toml.
+      await safe('pnl_attribution_t1_eod_opener', async () => {
+        const result = await pnlAttributionT1EodOpener(env as never);
+        console.log('pnl_attribution_t1_eod_opener', JSON.stringify(result));
       });
       break;
 

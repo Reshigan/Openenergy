@@ -1031,7 +1031,18 @@ export type EventType =
   | 'transmission_outage_emergency_cancelled' | 'transmission_outage_extended'
   | 'transmission_outage_completed' | 'transmission_outage_return_to_service_verified'
   | 'transmission_outage_post_outage_review_closed' | 'transmission_outage_archived'
-  | 'transmission_outage_withdrawn' | 'transmission_outage_sla_breached';
+  | 'transmission_outage_withdrawn' | 'transmission_outage_sla_breached'
+
+  // ─── Wave 111: Trader Daily P&L Attribution & Risk-Adjusted Returns Chain (P6). 11th Trader chain — EOD P&L decomposition engine that turns four numbers (MTM/realised/unrealised/total) into a stratified attribution (delta/gamma/vega/theta/FX/carry/residual), a risk-decomp (VaR contribution/scenario impact/KRI exceedances), a benchmark comparison (alpha/tracking-error/information ratio), a 4-step authority ladder, a 17-field LIVE battery (incl. Sharpe/Sortino/Information/max-drawdown), and signature regulator crossings when restatements stack or attribution gaps blow out. Distinct from W2 (rolling VaR), W9 (MM-compliance), W29 (position limits), W36 (best-execution), W44 (trade reporting), W52 (market-abuse), W60 (algo-cert), W68 (counterparty-margin), W76 (trade-allocation), W107 (pre-trade credit). Beats Murex MX.3 / Calypso / Bloomberg PORT / FIS Adaptiv / OpenLink Endur / OneTick / Imagine Risk / Kondor+ / Front Arena / SunGard FastVal — each surfaces daily P&L as a flat MTM tape plus an Excel-glued attribution; W111 turns it into a 12-state P6 chain with URGENT SLA polarity stored in HOURS, FLOOR-AT-MATERIAL tier overlay on 5 floor flags (stress_period_active, restated_within_30d, large_attribution_gap_pct_5_plus, regulatory_book_FRTB_IMA, cross_border_consolidation), FLOOR-AT-SYSTEMIC on 2+ flags OR FRTB_IMA OR cross_border. 12-state P6 on oe_pnl_attribution: day_open → mtm_run → realised_computed → unrealised_computed → attribution_decomposed → risk_decomposed → benchmark_compared → reviewed → approved → published → reconciled → archived (HARD terminal) + 3 branches (held_for_review loop, variance_investigation loop, restated loop). Tier RE-DERIVED from gross_notional_zar (minor<R10m / standard<R500m / material<R5b / systemic>=R5b). URGENT SLA polarity stored in HOURS — systemic gets SHORTEST runway (day_open systemic 6h / material 12h / standard 18h / minor 24h). SIGNATURE crossings: restate_pnl crosses regulator EVERY tier when restated_within_30d (W111 hard line — second restatement within 30d is always reportable to FSCA + audit committee, sister of W110 emergency_cancel EVERY tier, W109 escalate_to_integrity EVERY tier, W108 escalate_to_default EVERY tier, W105 raise_dispute EVERY tier on HV_brp); flag_variance_investigation crosses material+systemic when attribution_gap_pct>=10% (FMA Ch.X s50 disclosure of stratified-attribution failure); approve_pnl crosses systemic only when stress_period_active (FSCA CS 1/2020 stress-period reportability); publish_pnl crosses systemic only when FRTB_IMA (Basel III FRTB IMA disclosure rule); sla_breached crosses material+systemic. Standards: FMA Ch.X (financial-markets governance) + FSCA Conduct Standard 1/2020 + IFRS 9 (Stage 1/2/3 ECL classification) + IFRS 13 (Level 1/2/3 fair-value hierarchy) + Basel III FRTB IMA + SA + GIPS 2020 + MAR. Write {admin,trader}; READ all 9 personas; actor_party split: trader (open_day/run_mtm/compute_realised/compute_unrealised); risk_analyst (decompose_attribution/decompose_risk/compare_to_benchmark/submit_to_review/flag_variance_investigation); desk_head (approve_pnl/hold_for_review/override_hold); market_risk_manager (publish_pnl); finance (reconcile/archive_pnl); CFO (restate_pnl). ───
+  | 'pnl_attribution_day_opened' | 'pnl_attribution_mtm_ran'
+  | 'pnl_attribution_realised_computed' | 'pnl_attribution_unrealised_computed'
+  | 'pnl_attribution_attribution_decomposed' | 'pnl_attribution_risk_decomposed'
+  | 'pnl_attribution_benchmark_compared' | 'pnl_attribution_submitted_to_review'
+  | 'pnl_attribution_approved' | 'pnl_attribution_held_for_review'
+  | 'pnl_attribution_hold_overridden' | 'pnl_attribution_published'
+  | 'pnl_attribution_reconciled' | 'pnl_attribution_archived'
+  | 'pnl_attribution_variance_flagged' | 'pnl_attribution_restated'
+  | 'pnl_attribution_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1109,6 +1120,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   loan_restructure: 'lender',
   carbon_rating: 'carbon',
   transmission_outage: 'grid',
+  pnl_attribution: 'trader',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

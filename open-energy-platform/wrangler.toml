@@ -99,5 +99,6 @@ crons = [
   "45 0 * * *",     # 00:45 daily: watershed anomaly scan + maturity refresh
   "0 2 1 * *",      # 02:00 on day 1 of month: platform invoice run
   "0 15 * * 5",     # Fri 17:00 SAST (15:00 UTC): trading-risk MTD digest
-  "0 6 1 * *"       # Day 1 of month 08:00 SAST: CPMI-IOSCO PFMI disclosure
+  "0 6 1 * *",      # Day 1 of month 08:00 SAST: CPMI-IOSCO PFMI disclosure
+  "0 18 * * *"      # 18:00 SAST (16:00 UTC) daily: W111 P&L attribution T+1 EOD opener
 ]

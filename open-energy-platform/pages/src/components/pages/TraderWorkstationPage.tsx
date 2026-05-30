@@ -14,6 +14,7 @@ import { TradeAllocationChainTab } from '../trade-allocation/TradeAllocationChai
 import { SettlementFailChainTab } from '../settlement-fail/SettlementFailChainTab';
 import { BenchmarkTransitionChainTab } from '../benchmark-transition/BenchmarkTransitionChainTab';
 import { PreTradeCreditChainTab } from '../trader/PreTradeCreditChainTab';
+import { PnlAttributionChainTab } from '../trader/PnlAttributionChainTab';
 import { api } from '../../lib/api';
 
 export function TraderWorkstationPage() {
@@ -47,6 +48,7 @@ export function TraderWorkstationPage() {
         { key: 'exceptions', label: 'Post-trade exceptions', body: ({ onRefresh }) => <ExceptionsTab onRefresh={onRefresh} /> },
         { key: 'margin', label: 'Margin calls', body: ({ onRefresh }) => <MarginTab onRefresh={onRefresh} /> },
         { key: 'pretrade-credit', label: 'Pre-trade credit & settlement risk', body: () => <PreTradeCreditChainTab /> },
+        { key: 'pnl-attribution', label: 'Daily P&L attribution', body: () => <PnlAttributionChainTab /> },
         { key: 'risk', label: 'Risk', body: () => <RiskTab /> },
         { key: 'mm-compliance', label: 'MM compliance', body: () => <MmComplianceTab /> },
         { key: 'poslimit', label: 'Position limits', body: () => <PoslimitChainTab /> },
