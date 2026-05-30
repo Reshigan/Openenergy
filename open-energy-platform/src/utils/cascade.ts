@@ -940,7 +940,15 @@ export type EventType =
   | 'ppa_annual_recon.dispute_resolved' | 'ppa_annual_recon.signed_off'
   | 'ppa_annual_recon.invoiced' | 'ppa_annual_recon.settled'
   | 'ppa_annual_recon.restated' | 'ppa_annual_recon.cancelled'
-  | 'ppa_annual_recon.sla_breached';
+  | 'ppa_annual_recon.sla_breached'
+  // ─── Wave 102: Esums Plant Soiling, Cleaning Authorisation & Recovery-Gain Audit (P6); PV soiling is one of the single biggest controllable production losses on a SA solar plant. 12-state chain on oe_soiling_audit covers periodic soiling-ratio measurement (reference-cell + dirty/clean pair), inspection record (visual + IR + drone), economic assessment (lost MWh tariff vs cleaning ZAR + water m3), cleaning authorisation gate (water-restrictions, neighbour notices, DFFE conditions), field cleaning execution, post-clean PR-delta validation, settled audit ledger feeding W79 generation revenue assurance, and counterparty dispute branch. Beats NTT Data Soiling Maps + Power Factors Drive Soiling + AlsoEnergy Soiling Loss Index + 3E SynaptiQ Soiling + Above Surveying drone IR + Heliolytics aerial PV + Atonometrics RSE-1 + DEWA-RTC + DroneDeploy via 12-state P6 + tier RE-DERIVED on every transition from soiling_ratio_pct (minor<2 / standard 2-4 / material 4-8 / severe>=8) + FLOOR-AT-MATERIAL on rainy_season_window_strict / post_dust_storm_event / neighbour_complaint_filed / water_restriction_active + URGENT SLA (higher soiling band = TIGHTER) + cleaning-ROI ledger (mwh_loss_per_day, zar_loss_per_day, cleaning_roi_ratio, days_to_breakeven, post_clean_pr_pct, recovered_zar) + 4-step authority ladder (site_supervisor->plant_manager->asset_director->cfo). PRODUCTION-LOSS SIGNATURE (NERSA REIPPPP production reporting + DFFE water-use): raise_dispute crosses regulator EVERY tier (production-loss dispute always reportable, sister of W79 raise_dispute + W34 declare_curtailment + W46 raise_arbitration); authorize_cleaning crosses EVERY tier when water_consumption_m3 >= 100 OR installed_capacity_mw >= 50 (DFFE WUL + NERSA large-plant); cancel_audit crosses EVERY tier on material+severe; sla_breached crosses material+severe. Single esums-desk write {admin,support}; actor_party site_supervisor/cleaning_contractor/plant_owner/regulator_observer from action. ───
+  | 'soiling_audit.inspection_scheduled' | 'soiling_audit.field_inspected'
+  | 'soiling_audit.soiling_measured' | 'soiling_audit.economics_assessed'
+  | 'soiling_audit.cleaning_authorized' | 'soiling_audit.cleaning_started'
+  | 'soiling_audit.cleaning_completed' | 'soiling_audit.post_clean_measured'
+  | 'soiling_audit.gain_validated' | 'soiling_audit.settled'
+  | 'soiling_audit.dispute_raised' | 'soiling_audit.dispute_resolved'
+  | 'soiling_audit.cancelled' | 'soiling_audit.sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1010,6 +1018,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   itp: 'ipp',
   handover_dossier: 'ipp',
   ppa_annual_recon: 'offtaker',
+  soiling_audit: 'esums',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

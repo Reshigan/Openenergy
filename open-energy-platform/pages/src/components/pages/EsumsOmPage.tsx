@@ -21,6 +21,7 @@ import { PmComplianceChainTab } from '../esums/PmComplianceChainTab';
 import { PermitToWorkChainTab } from '../esums/PermitToWorkChainTab';
 import { GenerationRevenueAssuranceChainTab } from '../esums/GenerationRevenueAssuranceChainTab';
 import { BessSohChainTab } from '../esums/BessSohChainTab';
+import { SoilingAuditChainTab } from '../esums/SoilingAuditChainTab';
 import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
 import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
 
@@ -129,6 +130,14 @@ export function EsumsOmPage() {
       description: '12-state P6 BESS State-of-Health Monitoring & Capacity-Augmentation Programme chain (NERSA Grid Code + REIPPPP BESS PPA capacity-floor warranty) — baseline set → monitoring active → drift detected → assessment pending → augmentation required → augmentation planned → augmentation in progress → augmentation complete → recommissioned (happy path), with a dispute branch (drift detected / assessment pending / augmentation required → disputed → resolved), a decommission terminal (asset retired before recovery), and a cancel terminal. The BESS counterpart to W24 PR (PV PR) and W51 availability (uptime) — measures CAPACITY FADE against the contractual SOH floor and triggers warranty-backed augmentation programmes before security-of-supply is compromised. Beats Powin Stack OS / Tesla Megapack OS / Fluence BMS / AES Advancion / Wärtsilä GEMS / Honeywell Experion BESS by re-deriving fade trajectory, RUL and augmentation NPV on every transition with a live battery (annualised fade rate, equivalent full cycles, cycle attribution %, capacity shortfall MWh, augmentation CapEx, capacity payment at risk, augmentation NPV, warranty recovery eligibility, predicted decommission years). URGENT SOH-tier SLAs RE-DERIVED on every transition (lower SOH vs contractual floor = tighter window; critical < floor / material 0–5pp above / watch 5–10pp / nominal ≥10pp). Single-party write (asset / O&M support team). SECURITY-OF-SUPPLY SIGNATURE — require_augmentation crosses the regulator EVERY tier when installed capacity ≥ 50 MW (NERSA Grid Code grid-significant threshold) or material/critical tier otherwise; decommission ALWAYS crosses (asset retirement is reportable); raise_dispute and SLA breaches cross on material/critical.',
       columns: [],
       customContent: <BessSohChainTab />,
+    },
+    {
+      key: 'soiling_audit',
+      label: 'Soiling audit',
+      endpoint: '',
+      description: '12-state P6 Plant Soiling, Cleaning Authorisation & Recovery-Gain Audit chain (IEC 61724-1 + NERSA REIPPPP production reporting + DFFE water-use licence). PV soiling is one of the single biggest controllable production losses on a SA solar plant. Periodic soiling-ratio measurement (reference-cell + dirty/clean pair) → inspection record (visual + IR + drone) → economic assessment (lost MWh tariff vs cleaning ZAR + water m³) → cleaning authorisation gate (water-restrictions + neighbour notices + DFFE conditions) → field cleaning execution → post-clean PR-delta validation → settled audit ledger that feeds W79 generation revenue assurance, plus a counterparty dispute branch. Beats NTT Data Soiling Maps + Power Factors Drive Soiling + AlsoEnergy Soiling Loss Index + 3E SynaptiQ Soiling + Above Surveying drone IR + Heliolytics aerial PV + Atonometrics RSE-1 + DEWA-RTC + DroneDeploy by re-deriving tier (minor < 2% / standard 2–4% / material 4–8% / severe ≥ 8%) on EVERY transition with FLOOR-AT-MATERIAL on rainy-season-strict / post-dust-storm-event / neighbour-complaint / water-restriction-active, and a 4-step authority ladder (site supervisor → plant manager → asset director → CFO). URGENT SLA polarity — higher soiling band = TIGHTER windows. PRODUCTION-LOSS SIGNATURE — raise_dispute crosses regulator EVERY tier (production-loss disputes always reportable), authorize_cleaning crosses when water ≥ 100 m³ OR plant ≥ 50 MW (DFFE WUL + NERSA grid-significant threshold), cancel_audit crosses on material + severe, sla_breached crosses on material + severe.',
+      columns: [],
+      customContent: <SoilingAuditChainTab />,
     },
     {
       key: 'hse_chain',
