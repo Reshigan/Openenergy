@@ -2995,6 +2995,61 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 92 — IPP Project Risk Register & SRA Monte-Carlo (REALIZATION signature) ─
+    // A realized force-majeure or regulatory-change risk on an IPP project is
+    // a notifiable disruption event for the DMRE / IPP Office / NERSA — always.
+    // Other realized risks surface for the larger tiers only. Escalations,
+    // governance-grade acceptances, post-event close-outs, and SLA breaches
+    // surface on the same risk-management hard lines.
+    case 'project_risk.realized': {
+      // realize_risk crosses for EVERY tier when force_majeure / regulatory_change
+      // — the W92 signature crossing. Otherwise crosses high + critical only.
+      const tier = str('risk_tier');
+      const cls = str('risk_class');
+      const signatureClass = cls === 'force_majeure' || cls === 'regulatory_change';
+      if (!signatureClass && tier !== 'high' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'critical' : signatureClass ? 'high' : 'high',
+        title: `Project risk REALIZED — ${str('risk_number') || entityId} (${str('project_name') || ''} / ${cls} / ${tier} / R${num('realized_cost_zar')}${num('realized_schedule_days') ? ' / ' + num('realized_schedule_days') + 'd' : ''})`.trim(),
+      };
+    }
+    case 'project_risk.escalated': {
+      // escalate crosses for HIGH tiers (high + critical) — material residual.
+      const tier = str('risk_tier');
+      if (tier !== 'high' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Project risk ESCALATED — ${str('risk_number') || entityId} (${str('project_name') || ''} / ${str('risk_class') || ''} / ${tier} / R${num('residual_emv_zar')} residual EMV${str('escalate_basis') ? ' / ' + str('escalate_basis') : ''})`.trim(),
+      };
+    }
+    case 'project_risk.accepted': {
+      // accept_risk crosses for critical only — accepting a critical risk is
+      // a sponsor / board governance event.
+      if (str('risk_tier') !== 'critical') return null;
+      return {
+        severity: 'high',
+        title: `Critical project risk ACCEPTED as-is — ${str('risk_number') || entityId} (${str('project_name') || ''} / ${str('risk_class') || ''} / R${num('emv_zar')} EMV${str('reason_code') ? ' / ' + str('reason_code') : ''})`.trim(),
+      };
+    }
+    case 'project_risk.closed': {
+      // close_risk crosses for critical + realized only — post-event close-out.
+      if (str('risk_tier') !== 'critical') return null;
+      if (num('realized_flag') !== 1) return null;
+      return {
+        severity: 'medium',
+        title: `Critical realized project risk CLOSED — ${str('risk_number') || entityId} (${str('project_name') || ''} / ${str('risk_class') || ''} / R${num('realized_cost_zar')} realized${str('close_basis') ? ' / ' + str('close_basis') : ''})`.trim(),
+      };
+    }
+    case 'project_risk.sla_breached': {
+      // sla_breached crosses for HIGH tiers only.
+      const tier = str('risk_tier');
+      if (tier !== 'high' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Project risk-management SLA breached — ${str('risk_number') || entityId} (${str('chain_status') || ''} / ${str('project_name') || ''} / ${str('risk_class') || ''} / ${tier})`.trim(),
+      };
+    }
+
     default:
       return null;
   }

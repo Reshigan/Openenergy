@@ -784,6 +784,14 @@ export type EventType =
   | 'ccp_assessment.ccp_label_denied' | 'ccp_assessment.on_hold'
   | 'ccp_assessment.returned' | 'ccp_assessment.disputed'
   | 'ccp_assessment.withdrawn' | 'ccp_assessment.sla_breached'
+  // ─── Wave 92 — IPP Project Risk Register & Quantitative Schedule-Risk Analysis (P6 SRA: the PROJECT-RISK-MANAGEMENT core of a best-in-class IPP projects system — fills the gap every real capital project relies on next, QUANTIFYING risk via probability × impact, EMV, triangular Monte-Carlo cost & schedule risk analysis, residual EMV after planned response, contingency drawdown vs project reserve, and REIPPPP bid-envelope breach %; beats Acumen Fuse Risk / Primavera Risk Analysis (PRA) / Safran Risk / Palisade @Risk / Crystal Ball / Deltek Acumen Risk / Riskonnect / Predict! / Synergi Life / Active Risk Manager — all treat the risk register as a static spreadsheet disconnected from EVM and the bid envelope — via LIVE-scored P50/P80 EMV battery + residual EMV + contingency drawdown + bid-envelope-breach % on every fetch; 12-state P6 identified→assessed→quantified→response_planned→response_active→monitoring→closed (clean) with realized (event occurred), escalated (re-analyze), accepted (sponsor as-is), withdrawn/cancelled terminals; tier EMV-DERIVED on every transition probability_pct × |worst_case_zar| low<R500k/moderate<R5m/high<R50m/critical≥R50m, floor-at-high for risk_class IN (force_majeure, regulatory_change, strategic); INVERTED SLA (larger EMV = longer windows = deeper Monte-Carlo + board review + external-advisor consultation); REALIZATION-driven signature: realize_risk + risk_class IN (force_majeure, regulatory_change) crosses regulator EVERY tier (W92 SIGNATURE hard line), realize_risk on other classes crosses high+critical, escalate crosses high+critical, accept_risk crosses critical only (governance event), close_risk crosses critical+realized only (post-event close-out), sla_breached crosses high+critical only; single project-owner write {admin,ipp,ipp_developer,wind}, actor_party project_manager/risk_owner/project_controls/sponsor from action ───
+  | 'project_risk.identified' | 'project_risk.assessed'
+  | 'project_risk.quantified' | 'project_risk.response_planned'
+  | 'project_risk.response_active' | 'project_risk.monitoring'
+  | 'project_risk.realized' | 'project_risk.closed'
+  | 'project_risk.accepted' | 'project_risk.escalated'
+  | 'project_risk.withdrawn' | 'project_risk.cancelled'
+  | 'project_risk.sla_breached'
   // ─── Reports-deep (regulator submission lifecycle) ─────────────────────
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
@@ -896,6 +904,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   scope2: 'offtaker',
   ipp: 'ipp',
   project: 'ipp',
+  project_risk: 'ipp',
   esg: 'esg',
   grid: 'grid',
   metering: 'grid',

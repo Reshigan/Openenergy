@@ -145,6 +145,7 @@ import bessSohChainRoutes, { bessSohSlaSweep } from './routes/bess-soh-chain';
 import oemFcoChainRoutes, { oemFcoSlaSweep } from './routes/oem-fco-chain';
 import benchmarkTransitionChainRoutes, { benchmarkTransitionSlaSweep } from './routes/benchmark-transition-chain';
 import ccpAssessmentChainRoutes, { ccpAssessmentSlaSweep } from './routes/ccp-assessment-chain';
+import projectRiskChainRoutes, { projectRiskSlaSweep } from './routes/project-risk-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -460,6 +461,7 @@ app.route('/api/bess-soh/chain', bessSohChainRoutes);
 app.route('/api/oem-fco/chain', oemFcoChainRoutes);
 app.route('/api/benchmark-transition/chain', benchmarkTransitionChainRoutes);
 app.route('/api/ccp-assessment/chain', ccpAssessmentChainRoutes);
+app.route('/api/ipp/project-risk/chain', projectRiskChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1265,6 +1267,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ccp_assessment_sla_sweep', async () => {
         const result = await ccpAssessmentSlaSweep(env as never);
         console.log('ccp_assessment_sla_sweep', JSON.stringify(result));
+      });
+      // W92 IPP Project Risk Register & SRA: flag risks past their INVERTED
+      // SLA window (larger EMV = longer windows, deeper Monte-Carlo). SLA
+      // breaches on high+critical tiers cross the regulator inbox as project
+      // risk-management slippage.
+      await safe('project_risk_sla_sweep', async () => {
+        const result = await projectRiskSlaSweep(env as never);
+        console.log('project_risk_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
