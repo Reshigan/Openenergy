@@ -22,6 +22,7 @@ import { GcaChainTab } from '../gca/GcaChainTab';
 import { IppScheduleChainTab } from '../ipp/IppScheduleChainTab';
 import { IppEvmChainTab } from '../ipp/IppEvmChainTab';
 import { IppDocumentControlChainTab } from '../ipp/IppDocumentControlChainTab';
+import { IppSubmittalChainTab } from '../ipp/IppSubmittalChainTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -49,6 +50,7 @@ export function IppWorkstationPage() {
         { key: 'wbs_schedule', label: 'WBS & Gantt schedule', body: () => <IppScheduleChainTab /> },
         { key: 'cost-evm', label: 'Cost & EVM', body: () => <IppEvmChainTab /> },
         { key: 'document-control', label: 'Document control', body: () => <IppDocumentControlChainTab /> },
+        { key: 'submittals', label: 'Submittals', body: () => <IppSubmittalChainTab /> },
         { key: 'insurance', label: 'Insurance', body: ({ onRefresh }) => <InsuranceTab onRefresh={onRefresh} /> },
         { key: 'insurance_claims', label: 'Insurance claims', body: () => <InsuranceClaimChainTab /> },
         { key: 'bonds', label: 'Bonds', body: () => <BondRegistryTab /> },

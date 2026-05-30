@@ -713,6 +713,14 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         cta_label: 'Open document control',
         icon: 'description',
       },
+      {
+        key: 'submittals',
+        title: 'Submittals & transmittals',
+        description: 'CSI 01 33 00 (stamps A/B/C/D/E) + ISO 19650-2 §5.7 + FIDIC Silver §6 + NEC4 §54 + REIPPPP Sch 4 + DMRE 12-state submittal chain: contractor drafted → assembled → submitted → screening → assigned → under review → coordination → response → stamped → resub loop / close-out → archive, with URGENT SLA (critical_safety 24h / shop_drawing 168h / material_approval 240h / O&M 480h), FLOOR-AT-CRITICAL-SAFETY on 5 flags (long-lead / CCP / witness / lender covenant / dispute), 6-bridge architecture (W114/W112/W113/W19/W23/W20), and SIGNATURE stamp-E-reject-every-tier on critical_safety or commissioning_critical packages.',
+        href: '/ipp-lifecycle/workstation?tab=submittals',
+        cta_label: 'Open submittals',
+        icon: 'rule_folder',
+      },
     ],
     ai_suggestions: await buildIppDeveloperAiSuggestions(c, user, { milestones, envSoon, invoicesOut }),
   };

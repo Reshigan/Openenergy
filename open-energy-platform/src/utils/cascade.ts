@@ -1072,7 +1072,17 @@ export type EventType =
   | 'ipp_doc_control_as_built_finalised' | 'ipp_doc_control_archived'
   | 'ipp_doc_control_rejected' | 'ipp_doc_control_withdrawn'
   | 'ipp_doc_control_held' | 'ipp_doc_control_resumed'
-  | 'ipp_doc_control_sla_breached';
+  | 'ipp_doc_control_sla_breached'
+  // Wave 115 — IPP Submittal / Transmittal Lifecycle (12-state P6)
+  | 'ipp_submittal_drafted' | 'ipp_submittal_assembled'
+  | 'ipp_submittal_submitted' | 'ipp_submittal_screened'
+  | 'ipp_submittal_reviewer_assigned' | 'ipp_submittal_review_started'
+  | 'ipp_submittal_coordinated' | 'ipp_submittal_response_drafted'
+  | 'ipp_submittal_stamped' | 'ipp_submittal_resubmission_requested'
+  | 'ipp_submittal_closed_out' | 'ipp_submittal_archived'
+  | 'ipp_submittal_rejected' | 'ipp_submittal_voided'
+  | 'ipp_submittal_escalated' | 'ipp_submittal_approved_with_comments'
+  | 'ipp_submittal_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1154,6 +1164,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ipp_schedule: 'ipp',
   ipp_evm: 'ipp',
   ipp_doc_control: 'ipp',
+  ipp_submittal: 'ipp',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

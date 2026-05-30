@@ -168,6 +168,7 @@ import pnlAttributionChainRoutes, { pnlAttributionSlaSweep, pnlAttributionT1EodO
 import ippScheduleChainRoutes, { ippScheduleSlaSweep, ippScheduleHealthRecompute } from './routes/ipp-schedule-chain';
 import ippEvmChainRoutes, { ippEvmSlaSweep, ippEvmHealthRecompute } from './routes/ipp-evm-chain';
 import ippDocumentControlChainRoutes, { ippDocControlSlaSweep, ippDocControlIdcMatrixRecompute } from './routes/ipp-document-control-chain';
+import ippSubmittalRoute, { ippSubmittalSlaSweep, ippSubmittalCycleRefresh } from './routes/ipp-submittal';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -506,6 +507,7 @@ app.route('/api/trader/pnl-attribution/chain', pnlAttributionChainRoutes);
 app.route('/api/ipp/wbs-schedule/chain', ippScheduleChainRoutes);
 app.route('/api/ipp/cost-evm/chain', ippEvmChainRoutes);
 app.route('/api/ipp/document-control/chain', ippDocumentControlChainRoutes);
+app.route('/api/ipp/submittals/chain', ippSubmittalRoute);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1557,6 +1559,13 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_doc_control_sla_sweep', async () => {
         const result = await ippDocControlSlaSweep(env as never);
         console.log('ipp_doc_control_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 115 - IPP Submittal/Transmittal chain. URGENT SLA polarity (HOURS):
+      // critical_safety 24h / shop_drawing 168h / material_approval 240h /
+      // om_manual 480h. SIGNATURE STAMP-E-REJECT-CRITICAL on regulator crossing.
+      await safe('ipp_submittal_sla_sweep', async () => {
+        const result = await ippSubmittalSlaSweep(env as never);
+        console.log('ipp_submittal_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -2757,6 +2766,15 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
             row.pid, row.exposure, im, posted, shortfall, dueBy,
           ).run();
         }
+      });
+      // Wave 115 - IPP Submittal nightly refresh: recompute submittal
+      // completeness index + health band (green/amber/red/critical) without
+      // a state transition. Decisions are never moved by cron; only the
+      // LIVE battery is refreshed so dashboards reflect today's truth at
+      // 00:30 UTC = 02:30 SAST. Distinct from the 15-min SLA sweep.
+      await safe('ipp_submittal_cycle_refresh', async () => {
+        const result = await ippSubmittalCycleRefresh(env as never);
+        console.log('ipp_submittal_cycle_refresh', JSON.stringify(result));
       });
       break;
 
