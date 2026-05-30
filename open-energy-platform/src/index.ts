@@ -169,6 +169,7 @@ import ippScheduleChainRoutes, { ippScheduleSlaSweep, ippScheduleHealthRecompute
 import ippEvmChainRoutes, { ippEvmSlaSweep, ippEvmHealthRecompute } from './routes/ipp-evm-chain';
 import ippDocumentControlChainRoutes, { ippDocControlSlaSweep, ippDocControlIdcMatrixRecompute } from './routes/ipp-document-control-chain';
 import ippSubmittalRoute, { ippSubmittalSlaSweep, ippSubmittalCycleRefresh } from './routes/ipp-submittal';
+import ippRfiRoute, { ippRfiSlaSweep, ippRfiAgingRefresh } from './routes/ipp-rfi';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -508,6 +509,7 @@ app.route('/api/ipp/wbs-schedule/chain', ippScheduleChainRoutes);
 app.route('/api/ipp/cost-evm/chain', ippEvmChainRoutes);
 app.route('/api/ipp/document-control/chain', ippDocumentControlChainRoutes);
 app.route('/api/ipp/submittals/chain', ippSubmittalRoute);
+app.route('/api/ipp/rfis/chain', ippRfiRoute);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1566,6 +1568,17 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_submittal_sla_sweep', async () => {
         const result = await ippSubmittalSlaSweep(env as never);
         console.log('ipp_submittal_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 116 - IPP RFI (Request For Information) chain. URGENT SLA polarity
+      // (HOURS): emergency_safety 4h / construction_blocking 24h /
+      // coordination 72h / clarification 168h. SIGNATURE SAFETY-RFI-ESCALATE
+      // crosses regulator EVERY tier when safety_hazard_identified ||
+      // regulatory_inquiry_triggered. Sister of W112/W113/W114/W115 Phase-A
+      // IPP wave family. SLA breach crosses regulator on emergency_safety +
+      // construction_blocking heavy tiers only.
+      await safe('ipp_rfi_sla_sweep', async () => {
+        const result = await ippRfiSlaSweep(env as never);
+        console.log('ipp_rfi_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -2775,6 +2788,18 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_submittal_cycle_refresh', async () => {
         const result = await ippSubmittalCycleRefresh(env as never);
         console.log('ipp_submittal_cycle_refresh', JSON.stringify(result));
+      });
+      break;
+
+    case '35 0 * * *':
+      // Wave 116 - IPP RFI nightly aging refresh: recompute rfi_age_days +
+      // completeness_index + rfi_health_band on all active (non-terminal)
+      // RFIs without auto-transitioning. Decisions are never moved by cron;
+      // only the LIVE battery is refreshed so dashboards reflect today's truth
+      // at 00:35 UTC = 02:35 SAST. Distinct from the 15-min SLA sweep.
+      await safe('ipp_rfi_aging_refresh', async () => {
+        const result = await ippRfiAgingRefresh(env as never);
+        console.log('ipp_rfi_aging_refresh', JSON.stringify(result));
       });
       break;
 

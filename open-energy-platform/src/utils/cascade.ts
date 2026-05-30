@@ -1082,7 +1082,17 @@ export type EventType =
   | 'ipp_submittal_closed_out' | 'ipp_submittal_archived'
   | 'ipp_submittal_rejected' | 'ipp_submittal_voided'
   | 'ipp_submittal_escalated' | 'ipp_submittal_approved_with_comments'
-  | 'ipp_submittal_sla_breached';
+  | 'ipp_submittal_sla_breached'
+  // Wave 116 — IPP RFI (Request For Information) Lifecycle (12-state P6)
+  | 'ipp_rfi_drafted' | 'ipp_rfi_submitted'
+  | 'ipp_rfi_triaged' | 'ipp_rfi_responder_assigned'
+  | 'ipp_rfi_research_started' | 'ipp_rfi_response_drafted'
+  | 'ipp_rfi_coordinated' | 'ipp_rfi_answered'
+  | 'ipp_rfi_clarification_requested' | 'ipp_rfi_closed_out'
+  | 'ipp_rfi_archived' | 'ipp_rfi_rejected'
+  | 'ipp_rfi_voided' | 'ipp_rfi_escalated'
+  | 'ipp_rfi_converted_to_change_order' | 'ipp_rfi_linked_to_dispute'
+  | 'ipp_rfi_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1165,6 +1175,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ipp_evm: 'ipp',
   ipp_doc_control: 'ipp',
   ipp_submittal: 'ipp',
+  ipp_rfi: 'ipp',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

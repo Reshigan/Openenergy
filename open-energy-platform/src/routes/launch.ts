@@ -721,6 +721,14 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         cta_label: 'Open submittals',
         icon: 'rule_folder',
       },
+      {
+        key: 'rfis',
+        title: 'RFI lifecycle',
+        description: 'CSI 01 31 19 + ISO 19650-2 §5.7 + FIDIC Silver §1.3 + AIA G716 + NEC4 §61 + REIPPPP technical-coord 12-state RFI chain: question drafted → submitted → triage → assigned → research → response drafted → cross-discipline review → answer returned → clarification loop / close-out → archive, with URGENT SLA (emergency_safety 4h / construction_blocking 24h / coordination 72h / clarification 168h), FLOOR-AT-EMERGENCY-SAFETY on 5 contextual flags (safety hazard / construction stoppage / contractor claim / dispute basis / regulatory inquiry), 6-bridge architecture (W114/W115/W112/W113/W19/W20), W117 change-order auto-link on construction_blocking + emergency_safety, and SIGNATURE escalate-every-tier on safety_hazard_identified or regulatory_inquiry_triggered (W116 SAFETY-RFI-ESCALATE hard line).',
+        href: '/ipp-lifecycle/workstation?tab=rfis',
+        cta_label: 'Open RFIs',
+        icon: 'question_answer',
+      },
     ],
     ai_suggestions: await buildIppDeveloperAiSuggestions(c, user, { milestones, envSoon, invoicesOut }),
   };
