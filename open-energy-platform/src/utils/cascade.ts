@@ -948,7 +948,16 @@ export type EventType =
   | 'soiling_audit.cleaning_completed' | 'soiling_audit.post_clean_measured'
   | 'soiling_audit.gain_validated' | 'soiling_audit.settled'
   | 'soiling_audit.dispute_raised' | 'soiling_audit.dispute_resolved'
-  | 'soiling_audit.cancelled' | 'soiling_audit.sla_breached';
+  | 'soiling_audit.cancelled' | 'soiling_audit.sla_breached'
+
+  | 'esg_disclosure.data_collected' | 'esg_disclosure.boundary_verified'
+  | 'esg_disclosure.metrics_computed' | 'esg_disclosure.draft_compiled'
+  | 'esg_disclosure.review_submitted' | 'esg_disclosure.assurance_engaged'
+  | 'esg_disclosure.assurance_started' | 'esg_disclosure.assurance_completed'
+  | 'esg_disclosure.published' | 'esg_disclosure.filed'
+  | 'esg_disclosure.archived' | 'esg_disclosure.dispute_raised'
+  | 'esg_disclosure.dispute_resolved' | 'esg_disclosure.restated'
+  | 'esg_disclosure.cancelled' | 'esg_disclosure.sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1019,6 +1028,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   handover_dossier: 'ipp',
   ppa_annual_recon: 'offtaker',
   soiling_audit: 'esums',
+  esg_disclosure: 'carbon',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

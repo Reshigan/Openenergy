@@ -1,11 +1,23 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // ESG Reports — TCFD, CDP, GRI, JSE SRL, King IV Compliance Reporting
+//
+// LEGACY L2 endpoint. Preserved at /api/esg-reports for backward compat.
+// New work lives at /api/carbon/esg-disclosure/chain (W103 L4 P6 chain).
+// Every response carries `_bridge` pointing to the L4 chain; /generate
+// surfaces the matching chain disclosure if one exists for the participant
+// + financial year, so consumers can migrate incrementally.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+
+const L4_BRIDGE = {
+  l4_chain: '/api/carbon/esg-disclosure/chain',
+  l4_workstation_tab: '/carbon/workstation#esg_disclosure_chain',
+  deprecation_notice: 'L2 endpoint preserved for backward compat. Use the L4 ESG Disclosure & Assurance chain for new integrations.',
+};
 
 const esgReports = new Hono<HonoEnv>();
 
@@ -25,7 +37,7 @@ esgReports.get('/templates', async (c) => {
     { id: 'king_iv', name: 'King IV Report', description: 'King IV Corporate Governance', standards: ['King IV'] },
     { id: 'combined', name: 'Combined ESG Report', description: 'Integrated report covering all standards', standards: ['TCFD', 'CDP', 'GRI', 'JSE SRL', 'King IV'] },
   ];
-  return c.json({ success: true, data: templates });
+  return c.json({ success: true, data: templates, _bridge: L4_BRIDGE });
 });
 
 // GET /esg-reports/my-reports — List participant's generated reports.
@@ -50,7 +62,7 @@ esgReports.get('/my-reports', async (c) => {
     `).bind(participant.id).all().catch(() => ({ results: [] } as any));
   });
 
-  return c.json({ success: true, data: reports.results || [] });
+  return c.json({ success: true, data: reports.results || [], _bridge: L4_BRIDGE });
 });
 
 // POST /esg-reports/generate — Generate a new ESG report
@@ -140,6 +152,19 @@ esgReports.post('/generate', async (c) => {
     env: c.env,
   });
 
+  // L4 bridge — surface matching W103 chain disclosure if one exists for
+  // this participant + financial year. Tolerates missing table on stale DBs.
+  let chainDisclosure: { id: string; chain_status: string; current_tier: string } | null = null;
+  try {
+    const fyLabel = (period_start || '2024-01-01').slice(0, 4) + '/' + (period_end || '2024-12-31').slice(2, 4);
+    const row = await c.env.DB.prepare(
+      `SELECT id, chain_status, current_tier FROM oe_esg_disclosure
+        WHERE reporting_entity_id = ? AND (financial_year_label = ? OR financial_year_label LIKE ?)
+        ORDER BY datetime(period_open_at) DESC LIMIT 1`
+    ).bind(participant.id, fyLabel, (period_start || '2024').slice(0, 4) + '%').first<{ id: string; chain_status: string; current_tier: string }>();
+    if (row) chainDisclosure = row;
+  } catch { /* table missing on stale DB — bridge gracefully degrades */ }
+
   return c.json({
     success: true,
     data: {
@@ -149,7 +174,14 @@ esgReports.post('/generate', async (c) => {
       offsets: totalOffsets,
       net_emissions: netEmissions,
       narrative,
-    }
+    },
+    _bridge: {
+      ...L4_BRIDGE,
+      chain_disclosure: chainDisclosure,
+      chain_action_hint: chainDisclosure
+        ? `POST /api/carbon/esg-disclosure/chain/${chainDisclosure.id}/generate-report for the LIVE battery snapshot`
+        : 'No chain disclosure yet for this period — create one via the Carbon ESG disclosure workstation tab.',
+    },
   });
 });
 
@@ -171,7 +203,7 @@ esgReports.get('/:id', async (c) => {
     SELECT * FROM esg_emissions WHERE participant_id = ? ORDER BY period_start DESC
   `).bind(participant.id).all();
 
-  return c.json({ success: true, data: { ...report, emissions: emissions.results || [] } });
+  return c.json({ success: true, data: { ...report, emissions: emissions.results || [] }, _bridge: L4_BRIDGE });
 });
 
 // GET /esg-reports/:id/download — Download report as PDF
@@ -185,7 +217,7 @@ esgReports.get('/:id/download', async (c) => {
 
   // Return signed R2 URL
   const r2Key = report.r2_key;
-  return c.json({ success: true, data: { download_url: `/api/vault/${r2Key}` } });
+  return c.json({ success: true, data: { download_url: `/api/vault/${r2Key}` }, _bridge: L4_BRIDGE });
 });
 
 // Helper functions

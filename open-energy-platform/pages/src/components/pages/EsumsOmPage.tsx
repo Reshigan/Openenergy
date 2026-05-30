@@ -22,6 +22,7 @@ import { PermitToWorkChainTab } from '../esums/PermitToWorkChainTab';
 import { GenerationRevenueAssuranceChainTab } from '../esums/GenerationRevenueAssuranceChainTab';
 import { BessSohChainTab } from '../esums/BessSohChainTab';
 import { SoilingAuditChainTab } from '../esums/SoilingAuditChainTab';
+import { EsgDisclosureChainTab } from '../carbon/EsgDisclosureChainTab';
 import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
 import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
 
@@ -138,6 +139,14 @@ export function EsumsOmPage() {
       description: '12-state P6 Plant Soiling, Cleaning Authorisation & Recovery-Gain Audit chain (IEC 61724-1 + NERSA REIPPPP production reporting + DFFE water-use licence). PV soiling is one of the single biggest controllable production losses on a SA solar plant. Periodic soiling-ratio measurement (reference-cell + dirty/clean pair) → inspection record (visual + IR + drone) → economic assessment (lost MWh tariff vs cleaning ZAR + water m³) → cleaning authorisation gate (water-restrictions + neighbour notices + DFFE conditions) → field cleaning execution → post-clean PR-delta validation → settled audit ledger that feeds W79 generation revenue assurance, plus a counterparty dispute branch. Beats NTT Data Soiling Maps + Power Factors Drive Soiling + AlsoEnergy Soiling Loss Index + 3E SynaptiQ Soiling + Above Surveying drone IR + Heliolytics aerial PV + Atonometrics RSE-1 + DEWA-RTC + DroneDeploy by re-deriving tier (minor < 2% / standard 2–4% / material 4–8% / severe ≥ 8%) on EVERY transition with FLOOR-AT-MATERIAL on rainy-season-strict / post-dust-storm-event / neighbour-complaint / water-restriction-active, and a 4-step authority ladder (site supervisor → plant manager → asset director → CFO). URGENT SLA polarity — higher soiling band = TIGHTER windows. PRODUCTION-LOSS SIGNATURE — raise_dispute crosses regulator EVERY tier (production-loss disputes always reportable), authorize_cleaning crosses when water ≥ 100 m³ OR plant ≥ 50 MW (DFFE WUL + NERSA grid-significant threshold), cancel_audit crosses on material + severe, sla_breached crosses on material + severe.',
       columns: [],
       customContent: <SoilingAuditChainTab />,
+    },
+    {
+      key: 'esg_disclosure',
+      label: 'ESG disclosure',
+      endpoint: '',
+      description: '12-state P6 ESG Disclosure Lifecycle & Assurance Chain (ISSB IFRS S1+S2 / TCFD 4 pillars / GRI Universal + sector / CDP Climate-Water-Forests / JSE SRL 2024 / King IV Principles 1-3 + 15-17 / SBTi alignment / Carbon Tax Act §6 / SAICA Code 8). Full JSE-listed entity annual ESG cycle: period_open → collect_data → verify_boundary → compute_metrics → compile_draft → submit_for_review → engage_assurance → start_assurance → complete_assurance → publish_disclosure → file_regulator → archive_year + disputed branch (from draft/internal-review/assured → resolve back to internal-review) + restate_disclosure from filed (UNIVERSAL hard line — sister of W42 reversal — always crosses regulator) + cancel_year (universal when year_had_listed_disclosure). Beats Workiva ESG / Sphera SpheraCloud / SAP Sustainability Control Tower / Microsoft Sustainability Manager / IBM Envizi / Salesforce Net Zero Cloud / Greenstone / EcoVadis / Persefoni / Watershed / Diligent ESG / Bloomberg ESG / Refinitiv Lipper ESG via a LIVE 4-framework completeness battery (TCFD / GRI / CDP / JSE-SRL / King-IV / ISSB-S1S2 + SBTi alignment + ESG Disclosure Index + assurance-confidence ladder + regulator-filing countdown) composed every fetch from raw inputs. Tier RE-DERIVED on every transition from scope × climate-exposure × assurance: minor entity_only+low+none / standard entity+subs OR medium OR limited / material group OR high OR limited / strategic group AND (high OR reasonable). FLOOR-AT-MATERIAL when JSE listed OR Scope 3 15-cat OR scenario-required OR 8+ material topics OR SBTi committed. INVERTED SLA polarity (strategic = 270d annual cycle; minor publish = 7d). 4-step authority ladder (analyst → director → audit chair → board). SIGNATURE — restate_disclosure crosses regulator EVERY tier (UNIVERSAL hard line), qualified/adverse/disclaimer opinion crosses on material+strategic, cancel-of-listed-year crosses universally, sla_breach strategic only (filing-deadline miss).',
+      columns: [],
+      customContent: <EsgDisclosureChainTab />,
     },
     {
       key: 'hse_chain',

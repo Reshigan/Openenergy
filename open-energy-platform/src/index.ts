@@ -156,6 +156,7 @@ import itpChainRoutes, { itpSlaSweep } from './routes/itp-chain';
 import handoverDossierChainRoutes, { handoverDossierSlaSweep } from './routes/handover-dossier-chain';
 import ppaAnnualReconChainRoutes, { ppaAnnualReconSlaSweep } from './routes/ppa-annual-recon-chain';
 import soilingAuditChainRoutes, { soilingAuditSlaSweep } from './routes/soiling-audit-chain';
+import esgDisclosureChainRoutes, { esgDisclosureSlaSweep } from './routes/esg-disclosure-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -482,6 +483,7 @@ app.route('/api/ipp/itp/chain', itpChainRoutes);
 app.route('/api/ipp/handover-dossier/chain', handoverDossierChainRoutes);
 app.route('/api/offtaker/ppa-annual-recon/chain', ppaAnnualReconChainRoutes);
 app.route('/api/esums/soiling-audit/chain', soilingAuditChainRoutes);
+app.route('/api/carbon/esg-disclosure/chain', esgDisclosureChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1374,6 +1376,17 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('soiling_audit_sla_sweep', async () => {
         const result = await soilingAuditSlaSweep(env as never);
         console.log('soiling_audit_sla_sweep', JSON.stringify(result));
+      });
+      // W103 Carbon ESG Disclosure Lifecycle & Assurance: flag disclosures
+      // that overrun their INVERTED SLA window (strategic = longest window
+      // because a full annual cycle is 270 days; minor publish = 7 days).
+      // SLA breaches cross the regulator inbox on strategic tier only
+      // (filing-deadline miss = signature crossing alongside W103
+      // restate-universal / qualified-assurance material+strategic /
+      // cancel-of-listed-year universal).
+      await safe('esg_disclosure_sla_sweep', async () => {
+        const result = await esgDisclosureSlaSweep(env as never);
+        console.log('esg_disclosure_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
