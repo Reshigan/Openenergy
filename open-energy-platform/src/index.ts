@@ -162,6 +162,7 @@ import imbalanceSettlementChainRoutes, { imbalanceSettlementSlaSweep, imbalanceS
 import enforcementActionS35ChainRoutes, { enforcementActionS35SlaSweep, enforcementActionS35AppealWindowSweep } from './routes/enforcement-action-s35-chain';
 import pretradeCreditChainRoutes, { pretradeCreditSlaSweep, pretradeCreditKycRecencySweep } from './routes/pretrade-credit-chain';
 import loanRestructureChainRoutes, { loanRestructureSlaSweep, loanRestructureConsentDeadlineSweep } from './routes/loan-restructure-chain';
+import carbonCreditRatingChainRoutes, { carbonCreditRatingSlaSweep, carbonCreditRatingMonitoringFreshnessScan } from './routes/carbon-credit-rating-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -494,6 +495,7 @@ app.route('/api/grid/imbalance-settlement/chain', imbalanceSettlementChainRoutes
 app.route('/api/regulator/enforcement-action-s35/chain', enforcementActionS35ChainRoutes);
 app.route('/api/trader/pretrade-credit/chain', pretradeCreditChainRoutes);
 app.route('/api/lender/loan-restructure/chain', loanRestructureChainRoutes);
+app.route('/api/carbon/credit-rating/chain', carbonCreditRatingChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1457,6 +1459,20 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('loan_restructure_sla_sweep', async () => {
         const result = await loanRestructureSlaSweep(env as never);
         console.log('loan_restructure_sla_sweep', JSON.stringify(result));
+      });
+      // W109 Carbon Credit Quality Rating & Continuous Re-rating — SLA
+      // sweep. INVERTED polarity stored in HOURS (institutional 180d on
+      // rating_requested, basic 30d). Walks every active row whose
+      // sla_deadline_at has elapsed, flips sla_breached=1, bumps
+      // escalation_level, fires carbon_rating_sla_breached event. SLA
+      // breach crosses regulator on premium+institutional only (CCP +
+      // ICROA + Article 6.4 disclosure threshold). 15-min cron tick is
+      // granular enough — the chain itself is multi-week. Beats Sylvera /
+      // BeZero / Pachama / Renoster / Calyx static letter-ratings by
+      // running the deadline machine continuously.
+      await safe('carbon_credit_rating_sla_sweep', async () => {
+        const result = await carbonCreditRatingSlaSweep(env as never);
+        console.log('carbon_credit_rating_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -2475,6 +2491,19 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('loan_restructure_consent_deadline_sweep', async () => {
         const result = await loanRestructureConsentDeadlineSweep(env as never);
         console.log('loan_restructure_consent_deadline_sweep', JSON.stringify(result));
+      });
+      // W109 Carbon Credit Quality Rating — daily monitoring-freshness
+      // scan. Walks every published or monitoring row, refreshes
+      // monitoring_freshness_days from last_monitoring_data_at and flips
+      // monitoring_data_stale when >=90 days. Auto-fires trigger_rerating
+      // (system actor) on stale rows so the continuous re-rating loop
+      // closes without operator action — the key differentiator vs static
+      // Sylvera / BeZero letter-ratings. Material downgrades discovered
+      // during re-rating cross regulator and hand off to W42 buffer-pool
+      // drawdown queue. Bridges to W37 PDD + W11 MRV verification chains.
+      await safe('carbon_credit_rating_monitoring_freshness_scan', async () => {
+        const result = await carbonCreditRatingMonitoringFreshnessScan(env as never);
+        console.log('carbon_credit_rating_monitoring_freshness_scan', JSON.stringify(result));
       });
       break;
 

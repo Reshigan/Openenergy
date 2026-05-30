@@ -15,6 +15,7 @@ import { PoaCpaInclusionChainTab } from '../carbon/PoaCpaInclusionChainTab';
 import { CarbonIssuanceChainTab } from '../carbon/CarbonIssuanceChainTab';
 import { CcpAssessmentChainTab } from '../carbon/CcpAssessmentChainTab';
 import { EsgDisclosureChainTab } from '../carbon/EsgDisclosureChainTab';
+import { CreditRatingChainTab } from '../carbon/CreditRatingChainTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -138,6 +139,11 @@ export function CarbonWorkstationPage() {
           key: 'ccp_assessment_chain',
           label: 'CCP-eligibility assessment',
           body: () => <CcpAssessmentChainTab />,
+        },
+        {
+          key: 'credit_rating_chain',
+          label: 'Credit quality rating',
+          body: () => <CreditRatingChainTab />,
         },
         {
           key: 'esg_disclosure_chain',

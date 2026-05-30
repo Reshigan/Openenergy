@@ -1009,7 +1009,18 @@ export type EventType =
   | 'loan_restructure_amendment_signed' | 'loan_restructure_effective'
   | 'loan_restructure_monitoring' | 'loan_restructure_completed'
   | 'loan_restructure_abandoned' | 'loan_restructure_escalated'
-  | 'loan_restructure_sla_breached';
+  | 'loan_restructure_sla_breached'
+
+  // ─── Wave 109: Carbon Credit Quality Rating & Continuous Re-rating Chain (P6). 11th Carbon chain — buyer-side due-diligence rating engine over registered + verified carbon credits, bridging W37 (registration PDD), W11 (MRV verification), W42 (reversal / buffer pool). Without W109 every buyer has to trust the registry's binary "verified" stamp and a single static letter from Sylvera/BeZero/Pachama/Renoster/Calyx — material downgrades and fraud findings auto-feed the buffer pool drawdown queue. 12-state P6 on oe_carbon_credit_rating: rating_requested → desk_review → methodology_score → additionality_score → permanence_score → leakage_score → cobenefit_score → composite_score → published → monitoring → re_rating_triggered → re_rated + 3 terminal branches (downgraded soft / withdrawn / escalated_to_integrity) + remediate loop from downgraded back to monitoring. 16 actions; Tier RE-DERIVED on every transition from credit_vintage_year + scope_scale_tonnes (basic<50k single-vintage / standard<500k OR multi-vintage / premium<5m / institutional>=5m), FLOOR-AT-PREMIUM on any one of 5 floor flags (afolu_high_reversal_risk, methodology_under_review, external_credit_red_flag, ccp_aligned_project, article_6_authorised) OR Article 6, FLOOR-AT-INSTITUTIONAL on 2+ flags OR ccp_aligned_project OR institutional_buyer. INVERTED SLA polarity stored as HOURS — institutional gets LONGEST runway (deeper diligence); rating_requested window basic 30d / standard 60d / premium 120d / institutional 180d. Re-rating windows tighter (monitoring data already in-hand): basic 14d / institutional 90d. Beats Sylvera / BeZero Carbon Ratings / Pachama Verified Credits / Renoster Carbon Ratings / Calyx Global / Carbon Direct CDx / Patch Quality Layer / Cloverly Quality Tags / S&P Global carbon methodology / Moody KYC Carbon — every one of those surfaces a rating as a single static letter; W109 turns it into a 12-state P6 chain with INVERTED SLA polarity, FLOOR-AT-PREMIUM tier overlay, 4-step authority ladder (junior_analyst → senior_analyst → ratings_committee_chair → board_rating_committee), 17-field LIVE battery (composite_score + 5 sub-scores + S&P-style 8-band + 3-bridge architecture to W37/W11/W42 + ICROA bonus), continuous monitoring with auto re-rating (90d stale → auto trigger_rerating via system cron), and signature regulator crossings. Standards: CCP Core Carbon Principles + ICROA Code of Best Practice + Article 6.4 Methodologies + ISO 14064-3 (GHG validation and verification) + VCS/Verra integrity standards. SIGNATURE crossings: downgrade crosses regulator EVERY tier on composite_drop_pct>=20% OR rating_band drops to CCC/D (W109 hard line — material rating change = market integrity event, sister of W108 escalate_to_default EVERY tier on regulator_relevant, W104 reject EVERY tier on regulator_relevant); escalate_to_integrity crosses regulator EVERY tier (fraud finding hands off to W42 reversal); publish_rating crosses regulator premium+institutional when Article 6 (authorization status disclosed); withdraw crosses regulator EVERY tier when issuer_disputed (withdrawing under dispute = integrity event); sla_breached crosses premium+institutional only. Write {admin,carbon_fund}; READ all 9 personas; actor_party split: rater writes start_desk_review/score_methodology/score_additionality/score_permanence/score_leakage/score_cobenefits/compute_composite/publish_rating/start_monitoring/trigger_rerating/rerate/downgrade/withdraw/escalate_to_integrity; issuer writes request_rating/remediate. ───
+  | 'carbon_rating_requested' | 'carbon_rating_desk_review_started'
+  | 'carbon_rating_methodology_scored' | 'carbon_rating_additionality_scored'
+  | 'carbon_rating_permanence_scored' | 'carbon_rating_leakage_scored'
+  | 'carbon_rating_cobenefit_scored' | 'carbon_rating_composite_computed'
+  | 'carbon_rating_published' | 'carbon_rating_monitoring_started'
+  | 'carbon_rating_rerating_triggered' | 'carbon_rating_rerated'
+  | 'carbon_rating_downgraded' | 'carbon_rating_withdrawn'
+  | 'carbon_rating_escalated_integrity' | 'carbon_rating_remediated'
+  | 'carbon_rating_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1085,6 +1096,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   imbalance_settlement: 'grid',
   pretrade_credit: 'trader',
   loan_restructure: 'lender',
+  carbon_rating: 'carbon',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',
