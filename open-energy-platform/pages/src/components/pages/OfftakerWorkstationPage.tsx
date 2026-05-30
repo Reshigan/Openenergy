@@ -3,6 +3,15 @@ import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '..
 import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
+import { CurtailmentClaimTab } from '../offtaker/CurtailmentClaimTab';
+import { ObligationsTab } from '../offtaker/ObligationsTab';
+import { PaymentSecurityChainTab } from '../offtaker/PaymentSecurityChainTab';
+import { PpaChangeInLawChainTab } from '../offtaker/PpaChangeInLawChainTab';
+import { PpaContractChainTab } from '../offtaker/PpaContractChainTab';
+import { PpaNominationChainTab } from '../offtaker/PpaNominationChainTab';
+import { PpaTerminationChainTab } from '../offtaker/PpaTerminationChainTab';
+import { RecLifecycleChainTab } from '../offtaker/RecLifecycleChainTab';
+import { TariffIndexationTab } from '../offtaker/TariffIndexationTab';
 
 export function OfftakerWorkstationPage() {
   const kpis = useWorkstationKpis('offtaker');
@@ -36,6 +45,15 @@ export function OfftakerWorkstationPage() {
         { key: 'bills', label: 'Bill upload & AI', body: ({ onRefresh }) => <BillUploadTab onRefresh={onRefresh} /> },
         { key: 'recs', label: 'RECs portfolio', body: ({ onRefresh }) => <RecsTab onRefresh={onRefresh} /> },
         { key: 'scope2', label: 'Scope 2', body: ({ onRefresh }) => <Scope2Tab onRefresh={onRefresh} /> },
+        { key: 'ppa_contract', label: 'PPA contracts', body: () => <PpaContractChainTab /> },
+        { key: 'ppa_nomination', label: 'PPA nominations', body: () => <PpaNominationChainTab /> },
+        { key: 'payment_security', label: 'Payment security', body: () => <PaymentSecurityChainTab /> },
+        { key: 'tariff_indexation', label: 'Tariff indexation', body: () => <TariffIndexationTab /> },
+        { key: 'curtailment_claim', label: 'Curtailment claims', body: () => <CurtailmentClaimTab /> },
+        { key: 'change_in_law', label: 'PPA change-in-law', body: () => <PpaChangeInLawChainTab /> },
+        { key: 'rec_lifecycle', label: 'REC lifecycle', body: () => <RecLifecycleChainTab /> },
+        { key: 'ppa_termination', label: 'PPA termination', body: () => <PpaTerminationChainTab /> },
+        { key: 'obligations', label: 'Obligations register', body: () => <ObligationsTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

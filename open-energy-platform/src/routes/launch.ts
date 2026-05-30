@@ -803,7 +803,7 @@ async function buildOfftakerBoard(c: any, user: any): Promise<LaunchPayload> {
       eyebrow: `Energy procurement · ${todayStr()}`,
       title: `${greeting()}, ${firstName(user.name)}`,
       subtitle: `${ppas} active PPA${ppas === 1 ? '' : 's'} · ${toPay} invoice${toPay === 1 ? '' : 's'} to pay (R${toPayZar.toLocaleString()}).`,
-      primary_cta: { label: 'Open procurement hub', href: '/procurement' },
+      primary_cta: { label: 'Open offtaker workstation', href: '/offtaker-suite/workstation' },
     },
     kpis: [
       { key: 'active_ppas', label: 'Active PPAs', value: ppas, tone: 'good', href: '/contracts' },
