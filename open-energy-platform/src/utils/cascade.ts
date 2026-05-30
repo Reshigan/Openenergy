@@ -997,7 +997,19 @@ export type EventType =
   | 'pretrade_credit.archived' | 'pretrade_credit_rejected'
   | 'pretrade_credit_held_for_review' | 'pretrade_credit.manually_cleared'
   | 'pretrade_credit.manually_rejected' | 'pretrade_credit_overridden'
-  | 'pretrade_credit_sla_breached';
+  | 'pretrade_credit_sla_breached'
+
+  // ─── Wave 108: Lender Loan Restructure & Amendment-and-Extend (A&E) / Forbearance Chain (P6). 11th Lender chain — fills the STRUCTURED-FORBEARANCE gap between W38 covenant certificate (point-in-time breach detection) + W86 DSCR monitoring (rolling coverage watch) and W45 default enforcement (acceleration / step-in). Without W108 every breach escalates straight to acceleration which kills bankability — restructure is the renegotiation runway every project-finance loan needs at least once in its life. 12-state P6 on oe_loan_restructure: trigger_event → preliminary_assessment → restructure_proposal_drafted → lender_credit_committee_review → borrower_term_sheet_negotiation → term_sheet_signed → legal_documentation_drafted → consent_solicitation → signing → effective_date → monitoring_period → completed + 3 terminal branches (rejected_by_committee/abandoned/escalated_to_default) + revise_proposal loop back to restructure_proposal_drafted. 18 actions; Tier RE-DERIVED on every transition from facility_amount_zar (minor<R50m / standard<R500m / material<R5b / systemic>=R5b), FLOOR-AT-MATERIAL on any one of 5 floor flags (cross_border_syndicate, sustainability_linked_loan, public_bondholder_consent_required, ifrs9_stage_3_at_trigger, sarb_large_exposure_threshold), FLOOR-AT-SYSTEMIC on 2+ flags OR public_bondholder OR SARB large exposure. INVERTED SLA polarity stored as HOURS — systemic gets LONGEST runway (LMA syndicate fairness + SARB disclosure rules); trigger_event window minor 30d / standard 60d / material 120d / systemic 180d. Beats LMA "Amend & Extend" templates / Fitch RestructuringRating / S&P Recovery Ratings / Moody's Covenant Quality Index / Reorg Research RestructuringDB / Debtwire Restructuring / Crescendo Strategic Advisors / Houlihan Lokey Financial Restructuring / FTI Consulting Corporate Finance / AlixPartners Restructuring — every one of those surfaces restructure as a transaction (term-sheet + amendment doc); W108 turns it into a 12-state P6 chain with 16-field LIVE battery (sla_hours_remaining, urgency_band, authority_required ladder, board_escalation_required, regulator_filing_window, consent_threshold/majority/passed, days_to_consent_deadline, floor_flag_count, proposed_relief_zar, principal_reschedule_pct, ifrs9_stage_at_trigger, restructure_completeness_index 0-130, 3-bridge architecture to W38/W86/W45). 5-step authority ladder: relationship_manager → credit_committee → portfolio_director → CRO → board_credit_subcommittee. Standards: LMA "Amendment & Extension" template + Basel III IFRS 9 Stage 2/3 + SARB Banks Act §61 (forbearance disclosure) + Companies Act §155 (Compromise with creditors). SIGNATURE crossings: escalate_to_default crosses regulator EVERY tier (W108 hard line — failed restructure feeding W45 universally reportable, sister of W104 reject EVERY tier on regulator_relevant, W105 raise_dispute EVERY tier on HV_brp, W106 impose_sanction EVERY tier on licence_revocation, W107 reject_order EVERY tier on credit_grade_below_B); submit_to_credit_committee crosses EVERY tier on systemic OR ifrs9_stage_3_at_trigger (Companies Act s.155 Compromise trigger); mark_effective crosses material+systemic (SARB Banks Act §61 large-exposure disclosure of effective restructure); launch_consent_solicitation crosses strategic on public_bondholder_consent_required only; sla_breached crosses material+systemic. Write {admin,lender}; READ all 9 personas; actor_party split: lender writes start_preliminary_assessment/draft_proposal/submit_to_credit_committee/approve_proposal/reject_proposal/draft_documentation/launch_consent_solicitation/mark_effective/monitor_compliance/complete_restructure/escalate_to_default; borrower writes trigger_restructure/revise_proposal/negotiate_term_sheet/sign_term_sheet/sign_amendment/abandon; syndicate_member writes record_consent. ───
+  | 'loan_restructure_triggered' | 'loan_restructure_preliminary_assessment_started'
+  | 'loan_restructure_proposal_drafted' | 'loan_restructure_submitted'
+  | 'loan_restructure_approved' | 'loan_restructure_rejected'
+  | 'loan_restructure_proposal_revised' | 'loan_restructure_term_sheet_negotiating'
+  | 'loan_restructure_term_sheet_signed' | 'loan_restructure_documentation_drafted'
+  | 'loan_restructure_consent_launched' | 'loan_restructure_consent_recorded'
+  | 'loan_restructure_amendment_signed' | 'loan_restructure_effective'
+  | 'loan_restructure_monitoring' | 'loan_restructure_completed'
+  | 'loan_restructure_abandoned' | 'loan_restructure_escalated'
+  | 'loan_restructure_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1072,6 +1084,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   service_request: 'support',
   imbalance_settlement: 'grid',
   pretrade_credit: 'trader',
+  loan_restructure: 'lender',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

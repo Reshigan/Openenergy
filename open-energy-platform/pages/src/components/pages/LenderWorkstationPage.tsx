@@ -8,6 +8,7 @@ import { DrawdownChainTab } from '../lender/DrawdownChainTab';
 import { DscrMonitoringChainTab } from '../lender/DscrMonitoringChainTab';
 import { DunningTab } from '../lender/DunningTab';
 import { LoanDefaultChainTab } from '../lender/LoanDefaultChainTab';
+import { LoanRestructureChainTab } from '../lender/LoanRestructureChainTab';
 import { LoanTransferChainTab } from '../lender/LoanTransferChainTab';
 import { ReserveAccountChainTab } from '../lender/ReserveAccountChainTab';
 import { SecurityPerfectionChainTab } from '../lender/SecurityPerfectionChainTab';
@@ -42,6 +43,7 @@ export function LenderWorkstationPage() {
         { key: 'security_perfection', label: 'Security perfection', body: () => <SecurityPerfectionChainTab /> },
         { key: 'sll_kpi', label: 'SLL KPI & margin ratchet', body: () => <SllKpiChainTab /> },
         { key: 'loan_transfer', label: 'Loan transfer / secondary', body: () => <LoanTransferChainTab /> },
+        { key: 'loan_restructure', label: 'Loan restructure & A&E', body: () => <LoanRestructureChainTab /> },
         { key: 'loan_default', label: 'Default & enforcement', body: () => <LoanDefaultChainTab /> },
         { key: 'dunning', label: 'Dunning queue', body: () => <DunningTab /> },
         { key: 'audit', label: 'Audit & compliance',

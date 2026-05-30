@@ -161,6 +161,7 @@ import serviceRequestChainRoutes, { serviceRequestSlaSweep, serviceRequestEntitl
 import imbalanceSettlementChainRoutes, { imbalanceSettlementSlaSweep, imbalanceSettlementArrearsSweep } from './routes/imbalance-settlement-chain';
 import enforcementActionS35ChainRoutes, { enforcementActionS35SlaSweep, enforcementActionS35AppealWindowSweep } from './routes/enforcement-action-s35-chain';
 import pretradeCreditChainRoutes, { pretradeCreditSlaSweep, pretradeCreditKycRecencySweep } from './routes/pretrade-credit-chain';
+import loanRestructureChainRoutes, { loanRestructureSlaSweep, loanRestructureConsentDeadlineSweep } from './routes/loan-restructure-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -492,6 +493,7 @@ app.route('/api/support/service-request/chain', serviceRequestChainRoutes);
 app.route('/api/grid/imbalance-settlement/chain', imbalanceSettlementChainRoutes);
 app.route('/api/regulator/enforcement-action-s35/chain', enforcementActionS35ChainRoutes);
 app.route('/api/trader/pretrade-credit/chain', pretradeCreditChainRoutes);
+app.route('/api/lender/loan-restructure/chain', loanRestructureChainRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1442,6 +1444,19 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('pretrade_credit_sla_sweep', async () => {
         const result = await pretradeCreditSlaSweep(env as never);
         console.log('pretrade_credit_sla_sweep', JSON.stringify(result));
+      });
+      // W108 Lender Loan Restructure & A&E — SLA sweep. INVERTED polarity
+      // stored in HOURS (systemic 180d on trigger_event, minor 30d). Walks
+      // every active row whose sla_deadline_at has elapsed, flips
+      // sla_breached=1, bumps escalation_level, fires a
+      // loan_restructure_sla_breached event. SLA breach crosses regulator
+      // on material+systemic (LMA Amend&Extend + SARB Banks Act §61
+      // forbearance disclosure). 15-min cron tick is granular enough — the
+      // chain itself is multi-week. Sister of W38/W86/W45 in the Lender
+      // forbearance pipeline.
+      await safe('loan_restructure_sla_sweep', async () => {
+        const result = await loanRestructureSlaSweep(env as never);
+        console.log('loan_restructure_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -2446,6 +2461,20 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('pretrade_credit_kyc_recency_sweep', async () => {
         const result = await pretradeCreditKycRecencySweep(env as never);
         console.log('pretrade_credit_kyc_recency_sweep', JSON.stringify(result));
+      });
+      // W108 Lender Loan Restructure & A&E — daily consent-deadline
+      // countdown sweep. Walks every consent_solicitation row, refreshes
+      // consent_majority_pct from current syndicate_consented /
+      // syndicate_size and recomputes consent_majority_passed against the
+      // LMA consent_threshold_pct (simple 50% / special 66.7% / super 75%
+      // / unanimity 100%). When consent_deadline_at has elapsed without
+      // majority an event is recorded so the desk sees the solicitation
+      // failed; the row stays in consent_solicitation so the operator can
+      // abandon or relaunch. Does not auto-transition — restructure
+      // decisions are too high-stakes for unattended state moves.
+      await safe('loan_restructure_consent_deadline_sweep', async () => {
+        const result = await loanRestructureConsentDeadlineSweep(env as never);
+        console.log('loan_restructure_consent_deadline_sweep', JSON.stringify(result));
       });
       break;
 
