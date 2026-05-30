@@ -905,7 +905,13 @@ export type EventType =
   | 'dfr.returned_for_correction' | 'dfr.corrected'
   | 'dfr.approved' | 'dfr.distributed' | 'dfr.archived'
   | 'dfr.voided' | 'dfr.withdrawn'
-  | 'dfr.sla_breached';
+  | 'dfr.sla_breached'
+  // ─── Wave 98: IPP punch list / COD snag handover P6 chain ──────────
+  | 'punch_list.identified' | 'punch_list.assessed' | 'punch_list.assigned'
+  | 'punch_list.in_remediation' | 'punch_list.reinspect_requested'
+  | 'punch_list.reinspected' | 'punch_list.accepted' | 'punch_list.closed'
+  | 'punch_list.on_hold' | 'punch_list.voided' | 'punch_list.withdrawn'
+  | 'punch_list.sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -971,6 +977,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   trade_allocation: 'trading',
   submittal_rfi: 'ipp',
   dfr: 'ipp',
+  punch_list: 'ipp',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',

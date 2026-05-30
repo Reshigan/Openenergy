@@ -3413,6 +3413,90 @@ export function regulatorInboxSpec(
       };
     }
 
+    // ─── Wave 98 — IPP Punch List / COD Snag Handover chain ─────────────
+    case 'punch_list.closed': {
+      // Close crosses regulator EVERY tier when COD blocker OR life safety
+      // (NERSA C-5 + REIPPPP — closing a punch that gated COD is itself a
+      // reportable governance event).
+      const cod = num('blocks_commercial_operation') === 1;
+      const safety = num('life_safety_critical') === 1;
+      if (!cod && !safety) return null;
+      const tier = str('current_tier');
+      const severity: InboxSeverity =
+        tier === 'critical' ? 'high' :
+        tier === 'high' ? 'medium' : 'low';
+      const flags = [cod ? 'cod' : '', safety ? 'safety' : ''].filter(Boolean).join('|');
+      return {
+        severity,
+        title: `Punch closed — ${str('punch_number') || entityId} (${str('project_name') || ''} / ${str('workflow_class') || ''} / ${tier} / ${flags})`.trim(),
+      };
+    }
+    case 'punch_list.accepted': {
+      // Accept on life-safety crosses regulator on high+critical only
+      // (independent engineer sign-off on remediated safety-critical item).
+      const safety = num('life_safety_critical') === 1;
+      if (!safety) return null;
+      const tier = str('current_tier');
+      if (tier !== 'high' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Punch accepted (safety) — ${str('punch_number') || entityId} (${str('project_name') || ''} / ${str('workflow_class') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'punch_list.reinspect_requested': {
+      // Reinspection rejection (via reject_reinspection action -> sends row
+      // back to assigned and emits this event for the next state) crosses
+      // regulator on high+critical when blocks_commercial_operation.
+      // Event itself is emitted on request_reinspection — not reportable.
+      void str; void num;
+      return null;
+    }
+    case 'punch_list.assigned': {
+      // Reject_reinspection routes back to assigned. SIGNATURE rejection
+      // on a COD blocker crosses regulator high+critical.
+      const cod = num('blocks_commercial_operation') === 1;
+      const reasonCode = str('reason_code');
+      if (reasonCode !== 'REINSPECTION_REJECTED') return null;
+      if (!cod) return null;
+      const tier = str('current_tier');
+      if (tier !== 'high' && tier !== 'critical') return null;
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Punch reinspection rejected (COD) — ${str('punch_number') || entityId} (${str('project_name') || ''} / ${tier})`.trim(),
+      };
+    }
+    case 'punch_list.voided': {
+      // Void crosses regulator EVERY tier when blocks_handover OR life-safety
+      // (cancellation of a handover- or safety-gating punch is itself
+      // reportable governance event).
+      const handover = num('blocks_handover') === 1;
+      const safety = num('life_safety_critical') === 1;
+      if (!handover && !safety) return null;
+      const tier = str('current_tier');
+      const severity: InboxSeverity =
+        tier === 'critical' ? 'high' :
+        tier === 'high' ? 'medium' : 'low';
+      const flags = [handover ? 'handover' : '', safety ? 'safety' : ''].filter(Boolean).join('|');
+      return {
+        severity,
+        title: `Punch voided — ${str('punch_number') || entityId} (${str('project_name') || ''} / ${tier} / ${flags} / ${str('voided_reason') || ''})`.trim(),
+      };
+    }
+    case 'punch_list.sla_breached': {
+      // SLA breach high+critical when blocks_commercial_operation OR
+      // life_safety_critical (COD-bearing or safety-bearing missed SLA).
+      const cod = num('blocks_commercial_operation') === 1;
+      const safety = num('life_safety_critical') === 1;
+      if (!cod && !safety) return null;
+      const tier = str('current_tier');
+      if (tier !== 'high' && tier !== 'critical') return null;
+      const flags = [cod ? 'cod' : '', safety ? 'safety' : ''].filter(Boolean).join('|');
+      return {
+        severity: tier === 'critical' ? 'high' : 'medium',
+        title: `Punch SLA breached — ${str('punch_number') || entityId} (${str('chain_status') || ''} / ${tier} / ${flags})`.trim(),
+      };
+    }
+
     default:
       return null;
   }
