@@ -43,14 +43,12 @@ import { ContractDetail } from './components/pages/ContractDetail';
 import { Trading } from './components/pages/Trading';
 import { Carbon } from './components/pages/Carbon';
 import { ProcurementHub } from './components/pages/ProcurementHub';
-import { RfpDetail } from './components/pages/RfpDetail';
 import { Projects } from './components/pages/Projects';
 import { ProjectDetail } from './components/pages/ProjectDetail';
 import { ProjectLifecycle } from './components/pages/ProjectLifecycle';
 import { Grid } from './components/pages/Grid';
 import { ESG } from './components/pages/ESG';
 import { Funds } from './components/pages/Funds';
-import { FundDetail } from './components/pages/FundDetail';
 import { Marketplace } from './components/pages/Marketplace';
 import { Admin } from './components/pages/Admin';
 import { Support } from './components/pages/Support';
@@ -1299,10 +1297,8 @@ function AppRoutes() {
       <Route path="/esg" element={<ProtectedRoute><Layout><ESG /></Layout></ProtectedRoute>} />
       <Route path="/grid" element={<ProtectedRoute><Layout><Grid /></Layout></ProtectedRoute>} />
       <Route path="/funds" element={<ProtectedRoute><Layout><Funds /></Layout></ProtectedRoute>} />
-      <Route path="/funds/:id" element={<ProtectedRoute><Layout><FundDetail /></Layout></ProtectedRoute>} />
       <Route path="/pipeline" element={<ProtectedRoute><Layout><Pipeline /></Layout></ProtectedRoute>} />
       <Route path="/procurement" element={<ProtectedRoute><Layout><ProcurementHub /></Layout></ProtectedRoute>} />
-      <Route path="/rfps/:id" element={<ProtectedRoute><Layout><RfpDetail /></Layout></ProtectedRoute>} />
       <Route path="/marketplace" element={<ProtectedRoute><Layout><Marketplace /></Layout></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><Layout><Admin /></Layout></ProtectedRoute>} />
       <Route path="/support" element={<ProtectedRoute><Layout><Support /></Layout></ProtectedRoute>} />
