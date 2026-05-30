@@ -170,6 +170,7 @@ import ippEvmChainRoutes, { ippEvmSlaSweep, ippEvmHealthRecompute } from './rout
 import ippDocumentControlChainRoutes, { ippDocControlSlaSweep, ippDocControlIdcMatrixRecompute } from './routes/ipp-document-control-chain';
 import ippSubmittalRoute, { ippSubmittalSlaSweep, ippSubmittalCycleRefresh } from './routes/ipp-submittal';
 import ippRfiRoute, { ippRfiSlaSweep, ippRfiAgingRefresh } from './routes/ipp-rfi';
+import ippChangeOrderRoute, { ippChangeOrderSlaSweep, ippChangeOrderCumPctRefresh } from './routes/ipp-change-order';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -510,6 +511,7 @@ app.route('/api/ipp/cost-evm/chain', ippEvmChainRoutes);
 app.route('/api/ipp/document-control/chain', ippDocumentControlChainRoutes);
 app.route('/api/ipp/submittals/chain', ippSubmittalRoute);
 app.route('/api/ipp/rfis/chain', ippRfiRoute);
+app.route('/api/ipp/change-orders/chain', ippChangeOrderRoute);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1579,6 +1581,18 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_rfi_sla_sweep', async () => {
         const result = await ippRfiSlaSweep(env as never);
         console.log('ipp_rfi_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 117 - IPP Change Orders & Variations chain. INVERTED SLA polarity
+      // (HOURS) anchored on owner_review: minor 168h / material 336h /
+      // major 720h / transformational 1080h. SIGNATURE SCOPE-BASELINE-CHANGE-
+      // APPROVE crosses regulator EVERY tier when scope_baseline_change ||
+      // regulatory_re_consent_required. 12th and TARGET-CLOSING Phase-A IPP
+      // pure chain (W1/W10/W19/W20/W23/W27/W112/W113/W114/W115/W116/W117).
+      // reject crosses regulator EVERY tier when cumulative_change_value_pct
+      // >= 15. dispute crosses regulator major + transformational only.
+      await safe('ipp_change_order_sla_sweep', async () => {
+        const result = await ippChangeOrderSlaSweep(env as never);
+        console.log('ipp_change_order_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -2800,6 +2814,21 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_rfi_aging_refresh', async () => {
         const result = await ippRfiAgingRefresh(env as never);
         console.log('ipp_rfi_aging_refresh', JSON.stringify(result));
+      });
+      break;
+
+    case '40 0 * * *':
+      // Wave 117 - IPP Change Order nightly cumulative_change_value_pct +
+      // cap-band + aging refresh: walks all active (non-terminal) CRs per
+      // project, recomputes cumulative_change_value_zar / _pct against
+      // contract_value_zar, re-derives cumulative_cap_band (clear/watch/
+      // warning/breach), refreshes change_order_age_days + completeness +
+      // health_band. Decisions are never moved by cron; only the LIVE
+      // battery is refreshed so dashboards reflect today's truth at 00:40
+      // UTC = 02:40 SAST. Distinct from the 15-min SLA sweep.
+      await safe('ipp_change_order_cum_pct_refresh', async () => {
+        const result = await ippChangeOrderCumPctRefresh(env as never);
+        console.log('ipp_change_order_cum_pct_refresh', JSON.stringify(result));
       });
       break;
 

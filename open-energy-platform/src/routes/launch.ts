@@ -729,6 +729,14 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         cta_label: 'Open RFIs',
         icon: 'question_answer',
       },
+      {
+        key: 'change-orders',
+        title: 'Change orders & variations',
+        description: 'FIDIC §13 + NEC4 §60-65 + AIA G701/G714 + CSI 01 26 00 + REIPPPP variations + DMRE EPC change-control 12-state P6 CR chain: change proposed → impact assessed → cost quoted → owner review → negotiated → approved → issued for execution → scheduled → executing → executed → closed out → archived (HARD terminal), with INVERTED SLA polarity (minor 168h / material 336h / major 720h / transformational 1080h on owner_review), FLOOR-AT-MAJOR on 5 contextual flags (scope_baseline_change / regulatory_re_consent_required / schedule_impact_critical_path / lender_consent_required / safety_design_change), 7-bridge architecture (W116/W115/W114/W112/W113/W19/W20), 4-step authority ladder (PM → engineer → owner_rep → IPP_CEO) and SIGNATURE SCOPE-BASELINE-CHANGE-APPROVE crossing regulator EVERY tier when scope_baseline_change OR regulatory_re_consent_required (W117 hard line). reject crosses regulator EVERY tier when cumulative CR pct ≥ 15% (REIPPPP cumulative cap). 12th and TARGET-CLOSING Phase-A IPP-pure chain.',
+        href: '/ipp-lifecycle/workstation?tab=change-orders',
+        cta_label: 'Open change orders',
+        icon: 'edit_note',
+      },
     ],
     ai_suggestions: await buildIppDeveloperAiSuggestions(c, user, { milestones, envSoon, invoicesOut }),
   };

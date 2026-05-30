@@ -1092,7 +1092,23 @@ export type EventType =
   | 'ipp_rfi_archived' | 'ipp_rfi_rejected'
   | 'ipp_rfi_voided' | 'ipp_rfi_escalated'
   | 'ipp_rfi_converted_to_change_order' | 'ipp_rfi_linked_to_dispute'
-  | 'ipp_rfi_sla_breached';
+  | 'ipp_rfi_sla_breached'
+  // Wave 117 — IPP Change Orders & Variations Lifecycle (12-state P6, TARGET-
+  // CLOSING Phase-A IPP-pure chain). 16 events covering 12 forward states +
+  // 4 branch states. SIGNATURE SCOPE-BASELINE-CHANGE-APPROVE crosses
+  // regulator EVERY tier when scope_baseline_change || regulatory_re_consent
+  // _required. reject crosses regulator EVERY tier when cumulative_change
+  // _value_pct >= 15. dispute crosses regulator major + transformational
+  // only. sla_breached crosses regulator major + transformational only.
+  | 'ipp_change_order_proposed' | 'ipp_change_order_impact_assessed'
+  | 'ipp_change_order_cost_quoted' | 'ipp_change_order_submitted_for_review'
+  | 'ipp_change_order_negotiated' | 'ipp_change_order_approved'
+  | 'ipp_change_order_issued' | 'ipp_change_order_scheduled'
+  | 'ipp_change_order_execution_started' | 'ipp_change_order_execution_completed'
+  | 'ipp_change_order_closed_out' | 'ipp_change_order_archived'
+  | 'ipp_change_order_rejected' | 'ipp_change_order_voided'
+  | 'ipp_change_order_hold_resumed' | 'ipp_change_order_disputed'
+  | 'ipp_change_order_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1176,6 +1192,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ipp_doc_control: 'ipp',
   ipp_submittal: 'ipp',
   ipp_rfi: 'ipp',
+  ipp_change_order: 'ipp',
   popia: 'admin',
   auth: 'auth',
   intelligence: 'admin',
