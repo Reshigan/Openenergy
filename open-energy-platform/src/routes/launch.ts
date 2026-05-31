@@ -1197,6 +1197,12 @@ async function buildRegulatorBoard(c: any, user: any): Promise<LaunchPayload> {
       { key: 'tariffs', title: 'Tariff determinations', description: 'Tariff submissions, hearings, determinations register.', href: '/regulator-suite', cta_label: 'Open tariffs', icon: 'scale', metric: { label: 'open', value: tar, tone: tar > 0 ? 'warn' : 'good' } },
       { key: 'surveillance', title: 'Market surveillance', description: 'Trading abuse signals + concentration + abnormal-volume alerts.', href: '/regulator-suite', cta_label: 'Open surveillance', icon: 'shield', metric: { label: 'open', value: alerts, tone: alerts > 0 ? 'bad' : 'good' } },
       { key: 'enforcement', title: 'Enforcement', description: 'Investigations, findings, appeals.', href: '/regulator-suite', cta_label: 'Open enforcement', icon: 'gavel', metric: { label: 'live', value: enf, tone: enf > 0 ? 'warn' : 'good' } },
+      // Wave 119 — Certified Regulator Export Packs (Phase-B wave 2).
+      // Regulator-side read into the same chain admins prepare against. The
+      // tab name 'regulator-exports' matches the AdminWorkstationPage hook
+      // and is filtered for the regulator persona to show only inbound packs
+      // (lodged/acknowledged/rejected — i.e. packs we have visibility on).
+      { key: 'incoming_exports', title: 'Incoming regulator exports', description: 'XBRL/iXBRL packs lodged via mTLS by licensees. Acknowledge or reject within the statutory clock.', href: '/regulator-suite/workstation?tab=regulator-exports', cta_label: 'Open inbox', icon: 'inbox' },
       { key: 'intelligence', title: 'Market intelligence', description: 'Pricing, volume, concentration views over the whole market.', href: '/intelligence', cta_label: 'Open intelligence', icon: 'insights' },
     ],
     ai_suggestions: [
@@ -1378,6 +1384,9 @@ async function buildAdminBoard(c: any, user: any): Promise<LaunchPayload> {
       // opener / FIRST L5 hardening wave. Public Merkle-proof verify endpoint
       // available at /api/audit-chain/verify/:block_height (no auth).
       { key: 'audit_chain', title: 'Tamper-evident audit chain', description: 'Cross-chain Merkle tree, hash-chained block ledger, NERSA/IPPO/SARB quarterly attestation.', href: '/admin-platform/workstation?tab=audit-chain', cta_label: 'Open audit chain', icon: 'verified' },
+      // Wave 119 — Certified Regulator Export Packs (Phase-B wave 2). 12-state
+      // XBRL+iXBRL+ESG-narrative chain lodged via mTLS to 10 regulators.
+      { key: 'regulator_exports', title: 'Regulator export packs', description: 'Certified XBRL/iXBRL packs lodged via mTLS to NERSA, IPPO, SARB, DMRE, FSCA, DFFE, DTI, JSE, SARS, CIPC.', href: '/admin-platform/workstation?tab=regulator-exports', cta_label: 'Open export packs', icon: 'description' },
       { key: 'reports', title: 'Revenue & reports', description: 'Settled revenue, churn, MRR, regulatory reports.', href: '/reports', cta_label: 'Open reports', icon: 'report' },
       { key: 'support', title: 'Support escalations', description: 'Tickets, breaches, cross-tenant search.', href: '/support', cta_label: 'Open support', icon: 'help' },
     ],

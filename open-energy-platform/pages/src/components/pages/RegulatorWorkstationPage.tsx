@@ -8,6 +8,7 @@ import { NoticesTab } from '../regulator/NoticesTab';
 import { EnforcementActionChainTab } from '../regulator/EnforcementActionChainTab';
 import { EnforcementActionS35ChainTab } from '../regulator/EnforcementActionS35ChainTab';
 import { EsgDisclosureChainTab } from '../carbon/EsgDisclosureChainTab';
+import { RegulatorExportPackTab } from '../regulatorExport/RegulatorExportPackTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -61,6 +62,9 @@ export function RegulatorWorkstationPage() {
         { key: 'enforcement-action', label: 'Enforcement actions (ERA s35)', body: () => <EnforcementActionChainTab /> },
         { key: 'enforcement-action-s35', label: 'Enforcement actions (s35 lifecycle)', body: () => <EnforcementActionS35ChainTab /> },
         { key: 'esg-disclosure', label: 'ESG disclosure (read-only)', body: () => <EsgDisclosureChainTab /> },
+        { key: 'regulator-exports', label: 'Incoming exports (W119)',
+          body: () => <RegulatorExportPackTab regulatorView />,
+        },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

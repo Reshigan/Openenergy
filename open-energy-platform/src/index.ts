@@ -177,6 +177,11 @@ import auditChainRoute, {
   auditChainDailyReconcileSweep,
   auditChainQuarterlyExportSweep,
 } from './routes/audit-chain';
+import regulatorExportRoutes, {
+  regulatorExportSlaSweep,
+  regulatorExportDailyRefreshSweep,
+  regulatorExportMonthlyRollupSweep,
+} from './routes/regulator-export';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -522,6 +527,12 @@ app.route('/api/ipp/change-orders/chain', ippChangeOrderRoute);
 // Platform-wide audit chain (NOT an IPP chain). Sister of cascade.ts.
 // Public /verify/:block_height endpoint requires no auth.
 app.route('/api/audit-chain', auditChainRoute);
+// Wave 119 - Certified Regulator Export Packs. Phase-B wave 2 of 4.
+// 12-state chain producing XBRL+iXBRL+ESG-narrative packs lodged via mTLS
+// to NERSA/IPPO/SARB/DMRE/FSCA/DFFE/DTI/JSE/SARS/CIPC. Joins W118 audit
+// namespace; public POST /lodge/:target requires no auth (mTLS handshake
+// is gated inside the route via cf-client-cert-sha256).
+app.route('/api/regulator-exports', regulatorExportRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1614,6 +1625,16 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('audit_chain_sla_sweep', async () => {
         const result = await auditChainSlaSweep(env as never);
         console.log('audit_chain_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 119 — Certified Regulator Export Packs.
+      // 15-min SLA sweep over every active pack. INVERTED polarity:
+      // ad_hoc 24h / monthly_return 72h / quarterly_attestation 168h /
+      // half_year 240h / annual_audit 480h. SLA breach crosses regulator
+      // on heavy tiers (quarterly_attestation / half_year / annual_audit)
+      // because that is where NERSA/IPPO/SARB/JSE visibility is greatest.
+      await safe('regulator_export_sla_sweep', async () => {
+        const result = await regulatorExportSlaSweep(env as never);
+        console.log('regulator_export_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -2989,6 +3010,20 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       });
       break;
 
+    case '50 0 * * *':
+      // Wave 119 — Certified Regulator Export Packs daily refresh.
+      // 02:50 SAST = 00:50 UTC. Refreshes all 5 LIVE-derived persisted
+      // scoring fields (completeness_index, xbrl_conformance_score,
+      // esg_narrative_quality, controls_narrative_completeness,
+      // integrity_chain_score) + health_band + days_to_quarterly_cutoff
+      // across every active pack. Used so list views can sort by
+      // health/score without re-deriving on every read.
+      await safe('regulator_export_daily_refresh_sweep', async () => {
+        const result = await regulatorExportDailyRefreshSweep(env as never);
+        console.log('regulator_export_daily_refresh_sweep', JSON.stringify(result));
+      });
+      break;
+
     case '0 2 1 * *':
       await safe('platform_invoice_run', async () => {
         const periodStart = month + '-01';
@@ -3016,6 +3051,18 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
             s.amount_zar, vat, total,
           ).run();
         }
+      });
+      break;
+
+    case '0 4 1 * *':
+      // Wave 119 — monthly rollup. 1st of month 06:00 SAST (04:00 UTC).
+      // Flags every monthly_return pack whose target period closed last
+      // month as regulator_relevant=1 so the regulator inbox materializer
+      // surfaces them. Used to drive the monthly_return cadence visibility
+      // for NERSA / IPPO / SARB / SARS dashboards.
+      await safe('regulator_export_monthly_rollup_sweep', async () => {
+        const result = await regulatorExportMonthlyRollupSweep(env as never);
+        console.log('regulator_export_monthly_rollup_sweep', JSON.stringify(result));
       });
       break;
 

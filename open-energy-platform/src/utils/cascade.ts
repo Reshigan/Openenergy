@@ -1125,7 +1125,29 @@ export type EventType =
   | 'audit_chain_rejected' | 'audit_chain_suspended'
   | 'audit_chain_resumed' | 'audit_chain_restated'
   | 'audit_chain_forked' | 'audit_chain_emergency_sealed'
-  | 'audit_chain_sla_breached' | 'audit_chain_quarterly_export_ready';
+  | 'audit_chain_sla_breached' | 'audit_chain_quarterly_export_ready'
+  // ---------- Wave 119 — Certified Regulator Export Packs ----------
+  // Phase-B wave 2 of 4 (after W118 audit-chain spine). 12-state machine
+  // producing XBRL+iXBRL+ESG-narrative packs lodged via mTLS to NERSA /
+  // IPPO / SARB / DMRE / FSCA / DFFE / DTI / JSE / SARS / CIPC. Joins the
+  // W118 audit namespace ('audit' chain) so every pack mutation lands on
+  // the same tamper-evident ledger spine.
+  //
+  // SIGNATURE: regulator_export_rejected_by_regulator crosses regulator
+  // EVERY tier (regulator-issued rejection is always reportable).
+  // regulator_export_sla_breached crosses on heavy tiers (quarterly_
+  // attestation / half_year / annual_audit). withdrawn / restated cross
+  // on heavy tiers.
+  | 'regulator_export_pack_proposed' | 'regulator_export_blocks_selected'
+  | 'regulator_export_leaves_filtered' | 'regulator_export_xbrl_assembled'
+  | 'regulator_export_narratives_attached' | 'regulator_export_internal_qa'
+  | 'regulator_export_counterparty_signoff' | 'regulator_export_packaged'
+  | 'regulator_export_countersigned' | 'regulator_export_lodged_via_api'
+  | 'regulator_export_pack_lodged'
+  | 'regulator_export_acknowledged_by_regulator' | 'regulator_export_archived'
+  | 'regulator_export_rejected_by_regulator' | 'regulator_export_withdrawn'
+  | 'regulator_export_restated' | 'regulator_export_suspended'
+  | 'regulator_export_resumed' | 'regulator_export_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1222,6 +1244,12 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // gets its own 'audit' chain (NOT 'platform') to distinguish the L5
   // tamper-evident ledger from generic platform-level audit entries.
   audit_chain: 'audit',
+  // Wave 119 — Certified Regulator Export Packs. Joins the SAME 'audit'
+  // chain as W118 so every pack mutation (propose → blocks_selected → …
+  // → lodged → ack/reject) is recorded on the platform-wide tamper-
+  // evident ledger spine. Aggregating regulator-relevant W119 events on
+  // the audit chain is the whole point of Phase B.
+  regulator_export: 'audit',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
