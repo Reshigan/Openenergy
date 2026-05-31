@@ -3,6 +3,7 @@ import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '..
 import { AuditPanel } from '../launch/AuditPanel';
 import { AuditChainBlockTab } from '../audit/AuditChainBlockTab';
 import { RegulatorExportPackTab } from '../regulatorExport/RegulatorExportPackTab';
+import { ReconciliationAttestationTab } from '../reconciliation/ReconciliationAttestationTab';
 import { api } from '../../lib/api';
 
 const formatZAR = (v: number) =>
@@ -59,6 +60,9 @@ export function AdminWorkstationPage() {
         },
         { key: 'regulator-exports', label: 'Regulator exports (W119)',
           body: () => <RegulatorExportPackTab />,
+        },
+        { key: 'reconciliation-attestation', label: 'Reconciliation attestation (W120)',
+          body: () => <ReconciliationAttestationTab />,
         },
       ]}
     />

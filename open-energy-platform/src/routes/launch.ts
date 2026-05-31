@@ -1387,6 +1387,11 @@ async function buildAdminBoard(c: any, user: any): Promise<LaunchPayload> {
       // Wave 119 — Certified Regulator Export Packs (Phase-B wave 2). 12-state
       // XBRL+iXBRL+ESG-narrative chain lodged via mTLS to 10 regulators.
       { key: 'regulator_exports', title: 'Regulator export packs', description: 'Certified XBRL/iXBRL packs lodged via mTLS to NERSA, IPPO, SARB, DMRE, FSCA, DFFE, DTI, JSE, SARS, CIPC.', href: '/admin-platform/workstation?tab=regulator-exports', cta_label: 'Open export packs', icon: 'description' },
+      // Wave 120 — Reconciliation Attestation (Phase-B wave 3). 12-state ICFR
+      // attestation chain reconciling SAP S/4HANA, Oracle, SAGE 300, Workday,
+      // STRATE, SWIFT MT940, NERSA/IPPO/DMRE inboxes, bank statements against
+      // W118 audit blocks. CFO + audit-committee + external-auditor sign-offs.
+      { key: 'reconciliation_attestation', title: 'Reconciliation attestation', description: 'L5 ICFR attestation chain reconciling SAP S/4HANA, Oracle, SAGE, STRATE, SWIFT, regulator inboxes against W118 audit blocks. CFO + audit-committee + external-auditor sign-offs.', href: '/admin-platform/workstation?tab=reconciliation-attestation', cta_label: 'Open attestations', icon: 'fact_check' },
       { key: 'reports', title: 'Revenue & reports', description: 'Settled revenue, churn, MRR, regulatory reports.', href: '/reports', cta_label: 'Open reports', icon: 'report' },
       { key: 'support', title: 'Support escalations', description: 'Tickets, breaches, cross-tenant search.', href: '/support', cta_label: 'Open support', icon: 'help' },
     ],

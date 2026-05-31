@@ -103,10 +103,12 @@ crons = [
   "40 0 * * *",     # 00:40 daily: W117 IPP Change Order cumulative_change_value_pct + cap_band + aging refresh
   "45 0 * * *",     # 00:45 daily: watershed anomaly scan + W118 audit-chain daily reconcile + chain-link verify
   "50 0 * * *",     # 00:50 daily: W119 regulator-export-pack LIVE score refresh (completeness/xbrl/esg/controls/integrity + health band + days_to_quarterly_cutoff)
+  "55 0 * * *",     # 00:55 daily: W120 reconciliation-attestation LIVE variance recompute (4 scoring indexes + attestation_health_band + days_to_quarterly_attestation)
   "5 * * * *",      # 5 past hourly: W118 audit-chain hourly block proposal (Phase-B opener)
   "0 3 1 1,4,7,10 *", # 03:00 Jan/Apr/Jul/Oct 1st: W118 audit-chain quarterly NERSA/IPPO/SARB export sweep
   "0 2 1 * *",      # 02:00 on day 1 of month: platform invoice run
   "0 4 1 * *",      # 04:00 on day 1 of month: W119 monthly_return regulator-export-pack rollup (flag closing-month packs as regulator_relevant)
+  "0 5 1 * *",      # 05:00 on day 1 of month: W120 monthly audit-committee pack rollup (flag closing-month quarterly+annual attestations regulator_relevant)
   "0 15 * * 5",     # Fri 17:00 SAST (15:00 UTC): trading-risk MTD digest
   "0 6 1 * *",      # Day 1 of month 08:00 SAST: CPMI-IOSCO PFMI disclosure
   "0 18 * * *"      # 18:00 SAST (16:00 UTC) daily: W111 P&L attribution T+1 EOD opener

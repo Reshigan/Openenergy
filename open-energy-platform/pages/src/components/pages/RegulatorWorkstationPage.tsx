@@ -9,6 +9,7 @@ import { EnforcementActionChainTab } from '../regulator/EnforcementActionChainTa
 import { EnforcementActionS35ChainTab } from '../regulator/EnforcementActionS35ChainTab';
 import { EsgDisclosureChainTab } from '../carbon/EsgDisclosureChainTab';
 import { RegulatorExportPackTab } from '../regulatorExport/RegulatorExportPackTab';
+import { ReconciliationAttestationTab } from '../reconciliation/ReconciliationAttestationTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -64,6 +65,9 @@ export function RegulatorWorkstationPage() {
         { key: 'esg-disclosure', label: 'ESG disclosure (read-only)', body: () => <EsgDisclosureChainTab /> },
         { key: 'regulator-exports', label: 'Incoming exports (W119)',
           body: () => <RegulatorExportPackTab regulatorView />,
+        },
+        { key: 'icfr-attestations', label: 'ICFR attestations (W120)',
+          body: () => <ReconciliationAttestationTab regulatorView />,
         },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (

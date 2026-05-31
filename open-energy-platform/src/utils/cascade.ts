@@ -1147,7 +1147,34 @@ export type EventType =
   | 'regulator_export_acknowledged_by_regulator' | 'regulator_export_archived'
   | 'regulator_export_rejected_by_regulator' | 'regulator_export_withdrawn'
   | 'regulator_export_restated' | 'regulator_export_suspended'
-  | 'regulator_export_resumed' | 'regulator_export_sla_breached';
+  | 'regulator_export_resumed' | 'regulator_export_sla_breached'
+  // Wave 120 — Reconciliation Attestation chain. Phase-B wave 3 of 4.
+  // 12-state + 4 branch chain attesting that every cross-chain row +
+  // external-system feed (SAP S/4HANA / Oracle / SAGE / Workday / STRATE /
+  // SWIFT MT940 / NERSA/IPPO/DMRE inboxes / bank statements / W118
+  // published blocks) reconciles against the W118 audit-chain spine.
+  // INVERTED SLA HOURS: daily 24h / weekly 96h / monthly 168h /
+  // quarterly 360h / annual 720h. Joins the SAME 'audit' chain as
+  // W118+W119 so every attestation mutation lands on the platform-wide
+  // tamper-evident ledger.
+  //
+  // SIGNATURE: escalate_to_audit_committee EVERY tier (ICFR-DEFICIENCY-
+  // ATTEST hard line). reject EVERY tier when material_variance_
+  // unresolved AND icfr_deficiency_suspected. restate quarterly+annual
+  // only. sla_breached quarterly+annual only. sign_attestation NEVER
+  // crosses (sign-off is internal control, not regulator-relevant by
+  // itself).
+  | 'reconciliation_attestation_proposed' | 'reconciliation_attestation_scope_defined'
+  | 'reconciliation_attestation_feeds_ingested' | 'reconciliation_attestation_blocks_paired'
+  | 'reconciliation_attestation_variance_computed' | 'reconciliation_attestation_break_classified'
+  | 'reconciliation_attestation_root_cause_logged' | 'reconciliation_attestation_remediation_proposed'
+  | 'reconciliation_attestation_counter_party_signoff' | 'reconciliation_attestation_independent_review'
+  | 'reconciliation_attestation_signed' | 'reconciliation_attestation_archived'
+  | 'reconciliation_attestation_rejected' | 'reconciliation_attestation_suspended'
+  | 'reconciliation_attestation_resumed' | 'reconciliation_attestation_restated'
+  | 'reconciliation_attestation_escalated_to_audit_committee'
+  | 'reconciliation_attestation_lift_escalation'
+  | 'reconciliation_attestation_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1250,6 +1277,13 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // evident ledger spine. Aggregating regulator-relevant W119 events on
   // the audit chain is the whole point of Phase B.
   regulator_export: 'audit',
+  // Wave 120 — Reconciliation Attestation. Phase-B wave 3 of 4. Joins
+  // the SAME 'audit' chain as W118 + W119 so every attestation mutation
+  // (propose → scope_defined → feeds_ingested → blocks_paired → variance
+  // → classify → root_cause → remediation → counter_party → review →
+  // signed → archived + reject/suspend/resume/restate/escalate-to-AC)
+  // is recorded on the platform-wide tamper-evident ledger spine.
+  reconciliation_attestation: 'audit',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

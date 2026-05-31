@@ -182,6 +182,11 @@ import regulatorExportRoutes, {
   regulatorExportDailyRefreshSweep,
   regulatorExportMonthlyRollupSweep,
 } from './routes/regulator-export';
+import reconciliationAttestationRoutes, {
+  reconciliationAttestationSlaSweep,
+  reconciliationAttestationVarianceRecomputeSweep,
+  reconciliationAttestationMonthlyAuditCommitteePackSweep,
+} from './routes/reconciliation-attestation';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -533,6 +538,16 @@ app.route('/api/audit-chain', auditChainRoute);
 // namespace; public POST /lodge/:target requires no auth (mTLS handshake
 // is gated inside the route via cf-client-cert-sha256).
 app.route('/api/regulator-exports', regulatorExportRoutes);
+// Wave 120 - Reconciliation Attestation. Phase-B wave 3 of 4. L5 ICFR
+// attestation chain reconciling every cross-chain row + external-system
+// feed (SAP S/4HANA, Oracle, SAGE 300, Workday, STRATE, SWIFT MT940,
+// NERSA/IPPO/DMRE inboxes, bank statements, W118 published blocks)
+// against W118 audit-chain spine. 12-state + 4-branch chain with INVERTED
+// SLA HOURS (daily 24h / weekly 96h / monthly 168h / quarterly 360h /
+// annual 720h). SIGNATURE: escalate_to_audit_committee EVERY tier.
+// WRITE {admin only}; READ all 9 personas; external-auditor read via
+// signed JWT on /external/:id (NOT mTLS like W119).
+app.route('/api/reconciliation-attestation', reconciliationAttestationRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1635,6 +1650,16 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('regulator_export_sla_sweep', async () => {
         const result = await regulatorExportSlaSweep(env as never);
         console.log('regulator_export_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 120 — Reconciliation Attestation SLA sweep.
+      // 15-min sweep over every active attestation. INVERTED HOUR polarity:
+      // daily 24h / weekly 96h / monthly 168h / quarterly 360h / annual
+      // 720h. Sla breach crosses regulator on heavy tiers (quarterly +
+      // annual) because that is where the ICFR-DEFICIENCY-ATTEST regulator
+      // visibility is greatest (JSE Listings 8.62 + Companies Act s30).
+      await safe('reconciliation_attestation_sla_sweep', async () => {
+        const result = await reconciliationAttestationSlaSweep(env as never);
+        console.log('reconciliation_attestation_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -3024,6 +3049,20 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       });
       break;
 
+    case '55 0 * * *':
+      // Wave 120 — Reconciliation Attestation nightly variance recompute.
+      // 02:55 SAST = 00:55 UTC. Re-derives all 4 LIVE scoring indexes
+      // (reconciliation_completeness_index, icfr_control_effectiveness_
+      // index, variance_score_index, remediation_progress_index) +
+      // attestation_health_band + days_to_quarterly_attestation across
+      // every active attestation. Used so list views can sort by
+      // health/score without re-deriving on every read.
+      await safe('reconciliation_attestation_variance_recompute_sweep', async () => {
+        const result = await reconciliationAttestationVarianceRecomputeSweep(env as never);
+        console.log('reconciliation_attestation_variance_recompute_sweep', JSON.stringify(result));
+      });
+      break;
+
     case '0 2 1 * *':
       await safe('platform_invoice_run', async () => {
         const periodStart = month + '-01';
@@ -3063,6 +3102,19 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('regulator_export_monthly_rollup_sweep', async () => {
         const result = await regulatorExportMonthlyRollupSweep(env as never);
         console.log('regulator_export_monthly_rollup_sweep', JSON.stringify(result));
+      });
+      break;
+
+    case '0 5 1 * *':
+      // Wave 120 — monthly audit-committee pack rollup. 1st of month
+      // 07:00 SAST (05:00 UTC). Flags every quarterly + annual
+      // attestation whose attestation period closed last month as
+      // regulator_relevant=1 so the regulator inbox materializer surfaces
+      // them. Drives monthly audit-committee + JSE Listings 8.62 +
+      // Companies Act s30 visibility dashboards.
+      await safe('reconciliation_attestation_monthly_audit_committee_pack_sweep', async () => {
+        const result = await reconciliationAttestationMonthlyAuditCommitteePackSweep(env as never);
+        console.log('reconciliation_attestation_monthly_audit_committee_pack_sweep', JSON.stringify(result));
       });
       break;
 
