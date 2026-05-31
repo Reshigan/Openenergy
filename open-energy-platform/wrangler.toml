@@ -111,6 +111,7 @@ crons = [
   "0 4 1 * *",      # 04:00 on day 1 of month: W119 monthly_return regulator-export-pack rollup (flag closing-month packs as regulator_relevant)
   "0 5 1 * *",      # 05:00 on day 1 of month: W120 monthly audit-committee pack rollup (flag closing-month quarterly+annual attestations regulator_relevant)
   "0 6 1 1 *",      # 06:00 on 1 January: W121 annual external-audit cycle opener (raise iso27001_surveillance_audit_due + sox_404_attestation_pending + soc2_type2_period_open per framework)
+  "0 6 * * 1",      # Mon 08:00 SAST (06:00 UTC): W131 Stage Gates conditions-aging sweep (flags regulator_relevant on conditions_set_at >90d; Equator IV monitoring requirement)
   "0 7 * * 1",      # Mon 09:00 SAST (07:00 UTC): W122 SCADA connector weekly cert-expiry sweep (60d / 14d revocation warning)
   "30 1 * * *",     # 03:30 SAST (01:30 UTC) daily: W124 STRATE/SWIFT settlement connector reconciliation sweep (4 scoring indexes + aging refresh + cycle_reconciled emit)
   "45 1 * * *",     # 03:45 SAST (01:45 UTC) daily: W125 SAP/Oracle ERP connector reconciliation sweep (control_effectiveness_index + days_to_period_close refresh + period_close_reconciled emit; 15 min after W124 so GL sees fresh settlement totals)

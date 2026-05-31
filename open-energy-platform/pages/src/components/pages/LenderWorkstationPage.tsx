@@ -16,6 +16,7 @@ import { SllKpiChainTab } from '../lender/SllKpiChainTab';
 import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConnectorTab';
 import { SapOracleErpConnectorTab } from '../sapOracleErpConnector/SapOracleErpConnectorTab';
 import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/GovernmentFilingConnectorTab';
+import StageGateTab from '../stageGate/StageGateTab';
 
 export function LenderWorkstationPage() {
   const kpis = useWorkstationKpis('lender');
@@ -52,6 +53,7 @@ export function LenderWorkstationPage() {
         { key: 'strate-swift-connectors', label: 'Settlement rails (W124)', body: () => <StrateSwiftConnectorTab /> },
         { key: 'sap-oracle-erp-connectors', label: 'ERP connectors (W125)', body: () => <SapOracleErpConnectorTab /> },
         { key: 'government-filing-connectors', label: 'Filing connectors (W126)', body: () => <GovernmentFilingConnectorTab /> },
+        { key: 'stage-gates', label: 'Stage gates (W131)', body: () => <StageGateTab readOnly /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

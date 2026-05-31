@@ -1382,7 +1382,31 @@ export type EventType =
   | 'ntt_comparison_battery_rolled_back'
   | 'ntt_comparison_battery_recalled'
   | 'ntt_comparison_battery_failover_to_prior_cycle'
-  | 'ntt_comparison_battery_sla_breached';
+  | 'ntt_comparison_battery_sla_breached'
+  // W131 Stage Gates (DG0-DG4) — PHASE E WAVE 1 OF N.
+  // 12-state P6 on oe_stage_gates; INVERTED SLA (low_capex 168h ->
+  // equator_cat_a 2160h). SIGNATURE: reject_gate EVERY tier
+  // (project termination universally reportable to NERSA + DMRE;
+  // REIPPPP bid death IS the reportable event; sister of W127 rollback).
+  // record_decision DG4 EVERY tier (NERSA Section 14 licence crossing).
+  // JOINS existing 'ipp' audit namespace.
+  | 'stage_gate.proposed'
+  | 'stage_gate.evidence_compiled'
+  | 'stage_gate.ie_reviewed'
+  | 'stage_gate.lender_reviewed'
+  | 'stage_gate.board_briefing_circulated'
+  | 'stage_gate.cab_held'
+  | 'stage_gate.conditions_set'
+  | 'stage_gate.decision_recorded'
+  | 'stage_gate.conditions_satisfied'
+  | 'stage_gate.gate_passed'
+  | 'stage_gate.notified_downstream'
+  | 'stage_gate.archived'
+  | 'stage_gate.gate_deferred'
+  | 'stage_gate.gate_withdrawn'
+  | 'stage_gate.gate_rejected'
+  | 'stage_gate.conditional_pass'
+  | 'stage_gate.sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1581,6 +1605,11 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // certification is ALWAYS reportable (SARB MA s38 + IFRS restatement +
   // ISO 42001 incident); CLOSES PHASE D ML governance ladder.
   ntt_comparison_battery: 'ml',
+  // W131 Stage Gates — JOINS existing 'ipp' namespace alongside
+  // ipp_schedule / ipp_evm / ipp_doc_control / ipp_submittal /
+  // ipp_rfi / ipp_change_order. DO NOT open a new 'pm' namespace.
+  // The W118 spine partition assumes one prefix per family.
+  stage_gate: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

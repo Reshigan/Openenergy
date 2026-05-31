@@ -29,6 +29,7 @@ import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlT
 import RulPredictionMlTab from '../rulPredictionMl/RulPredictionMlTab';
 import { FaultFingerprintMlTab } from '../faultFingerprintMl/FaultFingerprintMlTab';
 import { NttComparisonBatteryTab } from '../nttComparisonBattery/NttComparisonBatteryTab';
+import StageGateTab from '../stageGate/StageGateTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -59,6 +60,7 @@ export function IppWorkstationPage() {
         { key: 'submittals', label: 'Submittals', body: () => <IppSubmittalChainTab /> },
         { key: 'rfis', label: 'RFIs', body: () => <IppRfiChainTab /> },
         { key: 'change-orders', label: 'Change orders & variations', body: () => <IppChangeOrderChainTab /> },
+        { key: 'stage-gates', label: 'Stage gates (W131)', body: () => <StageGateTab /> },
         { key: 'insurance', label: 'Insurance', body: ({ onRefresh }) => <InsuranceTab onRefresh={onRefresh} /> },
         { key: 'insurance_claims', label: 'Insurance claims', body: () => <InsuranceClaimChainTab /> },
         { key: 'bonds', label: 'Bonds', body: () => <BondRegistryTab /> },

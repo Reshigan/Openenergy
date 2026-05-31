@@ -242,6 +242,10 @@ import nttComparisonBatteryRoutes, {
   nttComparisonBatteryModelCardExpirySweep,
   nttComparisonBatteryMonthlyLedgerReconciliation,
 } from './routes/ntt-comparison-battery';
+import stageGateRoutes, {
+  stageGateSlaSweep,
+  stageGateConditionsAgingSweep,
+} from './routes/stage-gate';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -746,6 +750,13 @@ app.route('/api/fault-fingerprint-ml', faultFingerprintMlRoutes);
 // "savings vs NTT-30%" KPI. WRITE {admin, support}. READ all 9 personas.
 // W118 audit bridge MANDATORY at publish_audit (422 reject otherwise).
 app.route('/api/ntt-comparison-battery', nttComparisonBatteryRoutes);
+// W131 Stage Gates (DG0-DG4) — PHASE E WAVE 1 OF N.
+// PMBOK 7 / Primavera P6 / Equator Principles project-governance gate chain.
+// 12-state P6 on oe_stage_gates. SIGNATURE: reject_gate EVERY tier
+// (project termination universally reportable to NERSA + DMRE).
+// WRITE {admin, ipp_developer}. READ all 9 personas.
+// JOINS existing 'ipp' audit namespace.
+app.route('/api/stage-gate', stageGateRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1970,6 +1981,16 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ntt_comparison_battery_sla_sweep', async () => {
         const result = await nttComparisonBatterySlaSweep(env as never);
         console.log('ntt_comparison_battery_sla_sweep', JSON.stringify(result));
+      });
+      // W131 Stage Gates — 15-min SLA sweep over every non-terminal gate
+      // with a sla_deadline_at in the past. INVERTED polarity:
+      // low_capex 168h / medium_capex 336h / high_capex 720h /
+      // mega_capex 1440h / equator_cat_a 2160h. SLA breach crosses
+      // regulator on high_capex + mega_capex + equator_cat_a.
+      // SIGNATURE: reject_gate crosses EVERY tier. PHASE E W1.
+      await safe('stage_gate_sla_sweep', async () => {
+        const result = await stageGateSlaSweep(env as never);
+        console.log('stage_gate_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -3687,6 +3708,21 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ntt_comparison_battery_model_card_expiry_sweep', async () => {
         const result = await nttComparisonBatteryModelCardExpirySweep(env as never);
         console.log('ntt_comparison_battery_model_card_expiry_sweep', JSON.stringify(result));
+      });
+      break;
+
+    case '0 6 * * 1':
+      // W131 Stage Gates — Monday 08:00 SAST (06:00 UTC) conditions-aging
+      // sweep. Walks every gate in conditions_set / decision_recorded /
+      // conditions_satisfied / gate_conditional_pass with a conditions_set_at
+      // older than 90 days. Flags regulator_relevant = 1 on stale conditions
+      // (Equator Principles IV conditions monitoring requirement). Fires
+      // stage_gate.conditions_set cascade event with type='condition_stale'.
+      // Dedicated 08:00 SAST Monday slot, clear of W127 model-card expiry
+      // at 09:00 SAST (0 7 * * 1). PHASE E W1 NEW trigger.
+      await safe('stage_gate_conditions_aging_sweep', async () => {
+        const result = await stageGateConditionsAgingSweep(env as never);
+        console.log('stage_gate_conditions_aging_sweep', JSON.stringify(result));
       });
       break;
 

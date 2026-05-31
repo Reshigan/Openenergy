@@ -12,6 +12,7 @@ import { RegulatorExportPackTab } from '../regulatorExport/RegulatorExportPackTa
 import { ReconciliationAttestationTab } from '../reconciliation/ReconciliationAttestationTab';
 import { ControlEnvironmentAuditTab } from '../controlEnvironment/ControlEnvironmentAuditTab';
 import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/GovernmentFilingConnectorTab';
+import StageGateTab from '../stageGate/StageGateTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -76,6 +77,9 @@ export function RegulatorWorkstationPage() {
         },
         { key: 'government-filing-connectors', label: 'Filing connectors (W126)',
           body: () => <GovernmentFilingConnectorTab />,
+        },
+        { key: 'stage-gates', label: 'Stage gates (W131)',
+          body: () => <StageGateTab readOnly />,
         },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
