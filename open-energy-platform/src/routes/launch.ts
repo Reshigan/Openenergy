@@ -802,6 +802,15 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         icon: 'school',
       },
       {
+        // W137 Phase-E wave 7 — IPP Method Statement (SWMS) Management.
+        key: 'method-statements',
+        title: 'Method statements (W137)',
+        description: 'OHSA Construction Regulations 2014 Reg.7 + Equator Principles EP4 + REIPPPP site safety requirements on oe_ipp_method_statements: 12-state P6 chain (drafted → reviewed → risk_assessed → approved → toolbox_briefed → active → work_completed → closed → archived + rejected / superseded / suspended branches). URGENT SLA polarity (high_risk 24h TIGHTEST → routine 336h loosest — life-safety work approved fastest). W137 SIGNATURE: approve_ms crosses regulator EVERY tier when is_critical_lift OR is_confined_space OR is_live_electrical (hazardous work planning always reportable to DOL/OHSA). suspend_work crosses when floor_regulatory_notification. SLA breach crosses when high_risk AND any critical safety flag. 4 risk tiers: high_risk / medium_risk / low_risk / routine. 10 work types: civil / structural / electrical / mechanical / instrumentation / scaffolding / demolition / excavation / commissioning / general. 5 safety flags: critical_lift (>80% SWL or >10t) / confined_space / live_electrical / hot_work / working_at_height. 5 floor flags: PTW required (W64 link) / IE review required / regulatory notification / lender notification / third-party inspection. 5 cross-references (ptw_ref W64 / ncr_ref W136 / hse_incident_ref W25 / work_order_ref W16 / risk_ref W133). SLA sweep in shared */15 cron slot. JOINS existing ipp audit namespace. Beats Procore Safety (static PDF workflow, no P6 state machine).',
+        href: '/ipp-lifecycle/workstation?tab=method-statements',
+        cta_label: 'Open method statements',
+        icon: 'checklist_rtl',
+      },
+      {
         // W136 Phase-E wave 6 — IPP Non-Conformance Report (NCR) Management.
         key: 'ncr-management',
         title: 'Non-conformance reports (W136)',

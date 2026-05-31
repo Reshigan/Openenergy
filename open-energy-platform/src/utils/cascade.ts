@@ -1498,7 +1498,24 @@ export type EventType =
   | 'ipp_ncr.accept_as_is'
   | 'ipp_ncr.reject_escalate'
   | 'ipp_ncr.void_ncr'
-  | 'ipp_ncr.flag_overdue';
+  | 'ipp_ncr.flag_overdue'
+  // W137 IPP Method Statement (SWMS) Management — OHSA Const.Reg.7 + EP4
+  // URGENT SLA: high_risk 24h (tightest) → routine 336h (loosest)
+  // SIGNATURE: approve_ms EVERY tier when is_critical_lift OR is_confined_space OR is_live_electrical
+  //            suspend_work crosses when floor_regulatory_notification
+  | 'ipp_method_statement.submit_for_review'
+  | 'ipp_method_statement.complete_risk_assessment'
+  | 'ipp_method_statement.approve_ms'
+  | 'ipp_method_statement.conduct_toolbox_talk'
+  | 'ipp_method_statement.commence_work'
+  | 'ipp_method_statement.complete_work'
+  | 'ipp_method_statement.close_ms'
+  | 'ipp_method_statement.archive_ms'
+  | 'ipp_method_statement.reject_ms'
+  | 'ipp_method_statement.supersede_ms'
+  | 'ipp_method_statement.suspend_work'
+  | 'ipp_method_statement.resume_work'
+  | 'ipp_method_statement.flag_overdue';
 
 interface CascadeContext {
   event: EventType;
@@ -1713,6 +1730,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ipp_lessons_learned: 'ipp',
   // W136 IPP NCR Management — JOINS existing 'ipp' namespace.
   ipp_ncr: 'ipp',
+  // W137 IPP Method Statement (SWMS) — JOINS existing 'ipp' namespace.
+  ipp_method_statement: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

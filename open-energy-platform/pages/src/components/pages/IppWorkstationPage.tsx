@@ -35,6 +35,7 @@ import IppRiskTab from '../ippRisk/IppRiskTab';
 import IppStakeholderTab from '../ippStakeholder/IppStakeholderTab';
 import IppLessonsLearnedTab from '../ippLessonsLearned/IppLessonsLearnedTab';
 import IppNcrTab from '../ippNcr/IppNcrTab';
+import IppMethodStatementTab from '../ippMethodStatement/IppMethodStatementTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -91,6 +92,7 @@ export function IppWorkstationPage() {
         { key: 'dfr', label: 'Daily field report', group: 'Construction', body: () => <DfrChainTab /> },
         { key: 'punch_list', label: 'Punch list', group: 'Construction', body: () => <PunchListChainTab /> },
         { key: 'handover_dossier', label: 'Handover dossier', group: 'Construction', body: () => <HandoverDossierChainTab /> },
+        { key: 'method-statements', label: 'Method statements', group: 'Safety & grid', body: () => <IppMethodStatementTab /> },
         { key: 'planned_outages', label: 'Planned outages', group: 'Safety & grid', body: () => <PlannedOutageChainTab /> },
         { key: 'hse_chain', label: 'HSE incidents', group: 'Safety & grid', body: () => <HseIncidentChainTab /> },
         { key: 'cyber_chain', label: 'Cyber incidents', group: 'Safety & grid', body: () => <CyberIncidentChainTab /> },

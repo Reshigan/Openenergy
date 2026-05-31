@@ -251,6 +251,7 @@ import ippRiskRoutes, { ippRiskSlaSweep } from './routes/ipp-risk';
 import ippStakeholderRoutes, { ippStakeholderSlaSweep } from './routes/ipp-stakeholder';
 import ippLessonsLearnedRoutes, { ippLessonsLearnedSlaSweep } from './routes/ipp-lessons-learned';
 import ippNcrRoutes, { ippNcrSlaSweep } from './routes/ipp-ncr';
+import ippMethodStatementRoutes, { ippMethodStatementSlaSweep } from './routes/ipp-method-statement';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -782,6 +783,10 @@ app.route('/api/ipp-lessons-learned', ippLessonsLearnedRoutes);
 // 12-state P6; URGENT SLA (safety_critical 24h tightest → cosmetic 720h); WRITE {admin, ipp_developer, support}.
 // SIGNATURE: reject_escalate EVERY tier; accept_as_is crosses when floor_ie_notification_required OR floor_nersa_reportable.
 app.route('/api/ipp-ncr', ippNcrRoutes);
+// W137 IPP Method Statement (SWMS) Management — OHSA Const.Reg.7 + EP4 + REIPPPP site safety.
+// 12-state P6; URGENT SLA (high_risk 24h tightest → routine 336h); WRITE {admin, ipp_developer, support}.
+// SIGNATURE: approve_ms EVERY tier on critical_lift/confined_space/live_electrical; suspend_work crosses on floor_regulatory_notification.
+app.route('/api/ipp-method-statement', ippMethodStatementRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2046,6 +2051,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_ncr_sla_sweep', async () => {
         const result = await ippNcrSlaSweep(env as never);
         console.log('ipp_ncr_sla_sweep', JSON.stringify(result));
+      });
+      // W137 — IPP Method Statement SLA sweep (URGENT: high_risk 24h TIGHTEST).
+      // SIGNATURE: high_risk + critical_lift/confined_space/live_electrical crosses regulator on breach.
+      await safe('ipp_method_statement_sla_sweep', async () => {
+        const result = await ippMethodStatementSlaSweep(env as never);
+        console.log('ipp_method_statement_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
