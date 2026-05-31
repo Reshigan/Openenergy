@@ -775,6 +775,15 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         icon: 'account_tree',
       },
       {
+        // W133 Phase-E wave 3 — IPP Risk Register & Treatment Chain.
+        key: 'risk-register',
+        title: 'Risk register (W133)',
+        description: 'PMBOK 7 Risk Management (11.1-11.7) + ISO 31000:2018 + IEC 31010:2019 + REIPPPP Schedule 2 + Equator Principles IV on oe_ipp_risks: 11-state forward path (identified → assessed → quantified → response_planned → owner_assigned → monitoring → triggered → responding → outcome_recorded → closed → archived) + 4 branch states (escalated / deferred / cancelled / overdue_flagged). INVERTED SLA polarity (low_impact 168h LOOSEST → catastrophic 2160h MOST treatment time — higher impact = more thorough response planning needed). W133 SIGNATURE: escalate_risk EVERY tier when safety AND (critical_impact|catastrophic) — OHSA s24 critical risk materialisation universally reportable. flag_triggered catastrophic EVERY tier (universal hard line — catastrophic event materialisation always crosses regulator). close_risk EVERY tier when is_nersa_notifiable. Critical/catastrophic safety/regulatory SLA breaches cross regulator. 3-step authority (risk_owner → risk_manager → risk_director). 5 floor flags (floor_board_notify / floor_ep4_action_required / floor_lender_notifiable / floor_nersa_notifiable / floor_insurance_applicable). Risk score P×I matrix 1–25 with deriveTierFromScore (≥20 catastrophic / ≥15 critical / ≥9 high / ≥4 medium / low). 5 bridge refs (issue_ref W132 / stage_gate_ref W131 / procurement_ref W19 / hse_incident_ref W25 / w118_block_ref MANDATORY at outcome_recorded). SLA sweep in shared */15 cron slot. JOINS existing ipp audit namespace. Beats Oracle Primavera Risk Analysis / Active Risk Manager ARM / Safran Risk / Accenture Risk Management.',
+        href: '/ipp-lifecycle/workstation?tab=risk-register',
+        cta_label: 'Open risk register',
+        icon: 'warning',
+      },
+      {
         // W132 Phase-E wave 2 — IPP Issues Log & Resolution Chain.
         key: 'issues-log',
         title: 'Issues log (W132)',

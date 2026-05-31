@@ -247,6 +247,7 @@ import stageGateRoutes, {
   stageGateConditionsAgingSweep,
 } from './routes/stage-gate';
 import ippIssuesRoutes, { ippIssueSlaSweep } from './routes/ipp-issues';
+import ippRiskRoutes, { ippRiskSlaSweep } from './routes/ipp-risk';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -762,6 +763,10 @@ app.route('/api/stage-gate', stageGateRoutes);
 // 12-state + 4 branch; URGENT SLA (P1=24h tightest); WRITE {admin, ipp_developer}.
 // SIGNATURE: escalate_to_regulator EVERY tier when safety OR regulatory.
 app.route('/api/ipp-issues', ippIssuesRoutes);
+// W133: IPP Risk Register & Treatment Chain — PMBOK 7 + ISO 31000 + IEC 31010.
+// 11-state + 4 branch; INVERTED SLA (catastrophic 2160h most time); WRITE {admin, ipp_developer}.
+// SIGNATURE: escalate_risk EVERY tier when safety AND (critical|catastrophic).
+app.route('/api/ipp-risk', ippRiskRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2002,6 +2007,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_issue_sla_sweep', async () => {
         const result = await ippIssueSlaSweep(env as never);
         console.log('ipp_issue_sla_sweep', JSON.stringify(result));
+      });
+      // W133 IPP Risk Register: INVERTED SLA (catastrophic 2160h most time).
+      // Critical/catastrophic safety/regulatory SLA breaches cross regulator.
+      await safe('ipp_risk_sla_sweep', async () => {
+        const result = await ippRiskSlaSweep(env as never);
+        console.log('ipp_risk_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

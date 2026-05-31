@@ -31,6 +31,7 @@ import { FaultFingerprintMlTab } from '../faultFingerprintMl/FaultFingerprintMlT
 import { NttComparisonBatteryTab } from '../nttComparisonBattery/NttComparisonBatteryTab';
 import StageGateTab from '../stageGate/StageGateTab';
 import IppIssuesTab from '../ippIssues/IppIssuesTab';
+import IppRiskTab from '../ippRisk/IppRiskTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -63,6 +64,7 @@ export function IppWorkstationPage() {
         { key: 'change-orders', label: 'Change orders & variations', body: () => <IppChangeOrderChainTab /> },
         { key: 'stage-gates', label: 'Stage gates (W131)', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log (W132)', body: () => <IppIssuesTab /> },
+        { key: 'risk-register', label: 'Risk register (W133)', body: () => <IppRiskTab /> },
         { key: 'insurance', label: 'Insurance', body: ({ onRefresh }) => <InsuranceTab onRefresh={onRefresh} /> },
         { key: 'insurance_claims', label: 'Insurance claims', body: () => <InsuranceClaimChainTab /> },
         { key: 'bonds', label: 'Bonds', body: () => <BondRegistryTab /> },

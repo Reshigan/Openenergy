@@ -1429,7 +1429,28 @@ export type EventType =
   | 'ipp_issue.escalated'
   | 'ipp_issue.deferred'
   | 'ipp_issue.cancelled'
-  | 'ipp_issue.sla_breached';
+  | 'ipp_issue.sla_breached'
+  // W133 IPP Risk Register — PHASE E WAVE 3 OF N.
+  // 11-state P6 on oe_ipp_risks; INVERTED SLA (catastrophic 2160h most time).
+  // SIGNATURE: escalate_risk EVERY tier when safety AND (critical|catastrophic).
+  // flag_triggered catastrophic EVERY tier (universal hard line).
+  // JOINS existing 'ipp' audit namespace.
+  | 'ipp_risk.identified'
+  | 'ipp_risk.assessed'
+  | 'ipp_risk.quantified'
+  | 'ipp_risk.response_planned'
+  | 'ipp_risk.owner_assigned'
+  | 'ipp_risk.monitoring'
+  | 'ipp_risk.triggered'
+  | 'ipp_risk.responding'
+  | 'ipp_risk.outcome_recorded'
+  | 'ipp_risk.closed'
+  | 'ipp_risk.archived'
+  | 'ipp_risk.escalated'
+  | 'ipp_risk.deferred'
+  | 'ipp_risk.reactivated'
+  | 'ipp_risk.cancelled'
+  | 'ipp_risk.sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1636,6 +1657,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // W132 IPP Issues Log — JOINS existing 'ipp' namespace.
   // DO NOT open a new namespace; issue events audit alongside stage_gate/rfi/co.
   ipp_issue: 'ipp',
+  // W133 IPP Risk Register — JOINS existing 'ipp' namespace.
+  ipp_risk: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
