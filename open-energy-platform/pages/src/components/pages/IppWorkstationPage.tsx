@@ -37,6 +37,7 @@ import IppLessonsLearnedTab from '../ippLessonsLearned/IppLessonsLearnedTab';
 import IppNcrTab from '../ippNcr/IppNcrTab';
 import IppMethodStatementTab from '../ippMethodStatement/IppMethodStatementTab';
 import IppEnvMonitoringTab from '../ippEnvMonitoring/IppEnvMonitoringTab';
+import IppMirTab from '../ippMir/IppMirTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -92,6 +93,7 @@ export function IppWorkstationPage() {
         { key: 'cod', label: 'Construction / COD', group: 'Construction', body: () => <CodChainTab /> },
         { key: 'dfr', label: 'Daily field report', group: 'Construction', body: () => <DfrChainTab /> },
         { key: 'punch_list', label: 'Punch list', group: 'Construction', body: () => <PunchListChainTab /> },
+        { key: 'mir', label: 'Material inspections', group: 'Construction', body: () => <IppMirTab /> },
         { key: 'handover_dossier', label: 'Handover dossier', group: 'Construction', body: () => <HandoverDossierChainTab /> },
         { key: 'method-statements', label: 'Method statements', group: 'Safety & grid', body: () => <IppMethodStatementTab /> },
         { key: 'env-monitoring', label: 'Environmental monitoring', group: 'Safety & grid', body: () => <IppEnvMonitoringTab /> },

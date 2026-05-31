@@ -253,6 +253,7 @@ import ippLessonsLearnedRoutes, { ippLessonsLearnedSlaSweep } from './routes/ipp
 import ippNcrRoutes, { ippNcrSlaSweep } from './routes/ipp-ncr';
 import ippMethodStatementRoutes, { ippMethodStatementSlaSweep } from './routes/ipp-method-statement';
 import ippEnvMonitoringRoutes, { ippEnvMonitoringSlaSweep } from './routes/ipp-env-monitoring';
+import ippMirRoutes, { ippMirSlaSweep } from './routes/ipp-mir';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -793,6 +794,10 @@ app.route('/api/ipp-method-statement', ippMethodStatementRoutes);
 // SIGNATURE: flag_exceedance EVERY tier on near_sensitive_receptor/eia_condition_breach/nema_s30_notification;
 // submit_report crosses when floor_dffe_report_required.
 app.route('/api/ipp-env-monitoring', ippEnvMonitoringRoutes);
+// W139 IPP Material Inspection Record — ISO 9001:2015 §8.6 + REIPPPP + Equator Principles EP4.
+// 12-state P6; URGENT SLA (critical_structural 24h tightest → general 168h); WRITE {admin, ipp_developer, support}.
+// SIGNATURE: reject_material EVERY tier when IE witnessed; quarantine_material when floor_critical_safety.
+app.route('/api/ipp-mir', ippMirRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2069,6 +2074,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_env_monitoring_sla_sweep', async () => {
         const result = await ippEnvMonitoringSlaSweep(env as never);
         console.log('ipp_env_monitoring_sla_sweep', JSON.stringify(result));
+      });
+      // W139 — IPP Material Inspection Record SLA sweep (URGENT: critical_structural 24h TIGHTEST).
+      // SIGNATURE: critical_structural + ie_witnessed crosses; nersa_material + critical/electrical crosses.
+      await safe('ipp_mir_sla_sweep', async () => {
+        const result = await ippMirSlaSweep(env as never);
+        console.log('ipp_mir_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

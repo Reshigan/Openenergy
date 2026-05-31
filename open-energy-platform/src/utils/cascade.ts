@@ -1529,7 +1529,24 @@ export type EventType =
   | 'ipp_env_monitoring.investigate_exceedance'
   | 'ipp_env_monitoring.resolve_corrective_action'
   | 'ipp_env_monitoring.cancel_monitoring'
-  | 'ipp_env_monitoring.flag_overdue';
+  | 'ipp_env_monitoring.flag_overdue'
+  // ─── Wave 139: IPP Material Inspection Record (MIR) ──────────────────────
+  // ISO 9001:2015 §8.6 + REIPPPP + EP4; 12-state P6 on oe_ipp_mirs.
+  // URGENT SLA (critical_structural 24h TIGHTEST → general 168h).
+  // SIGNATURE: reject_material EVERY tier when IE witnessed;
+  //            quarantine_material EVERY tier when floor_critical_safety.
+  | 'ipp_mir.record_delivery'
+  | 'ipp_mir.start_initial_inspection'
+  | 'ipp_mir.proceed_to_detailed'
+  | 'ipp_mir.take_test_samples'
+  | 'ipp_mir.await_results'
+  | 'ipp_mir.approve_material'
+  | 'ipp_mir.approve_conditional'
+  | 'ipp_mir.incorporate_material'
+  | 'ipp_mir.reject_material'
+  | 'ipp_mir.quarantine_material'
+  | 'ipp_mir.return_to_supplier'
+  | 'ipp_mir.flag_overdue';
 
 interface CascadeContext {
   event: EventType;
@@ -1750,6 +1767,9 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // NEMA s30 + DFFE EIA conditions + ISO 14001. flag_exceedance EVERY tier on
   // near_sensitive_receptor/eia_condition_breach/nema_s30_notification.
   ipp_env_monitoring: 'ipp',
+  // W139 IPP Material Inspection Record — JOINS existing 'ipp' namespace.
+  // ISO 9001:2015 §8.6 + REIPPPP + EP4. reject_material EVERY tier when IE witnessed.
+  ipp_mir: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
