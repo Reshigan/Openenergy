@@ -1406,7 +1406,30 @@ export type EventType =
   | 'stage_gate.gate_withdrawn'
   | 'stage_gate.gate_rejected'
   | 'stage_gate.conditional_pass'
-  | 'stage_gate.sla_breached';
+  | 'stage_gate.sla_breached'
+  // W132 IPP Issues Log — PHASE E WAVE 2 OF N.
+  // 12-state P6 on oe_ipp_issues; URGENT SLA (P1=24h tightest).
+  // SIGNATURE: escalate_to_regulator EVERY tier when safety OR regulatory
+  // (OHSA s24 + ERA s35 notifiable event always reportable).
+  // close EVERY tier when is_nersa_notifiable. SLA breach P1+P2 safety/reg.
+  // JOINS existing 'ipp' audit namespace.
+  | 'ipp_issue.raised'
+  | 'ipp_issue.triaged'
+  | 'ipp_issue.assigned'
+  | 'ipp_issue.acknowledged'
+  | 'ipp_issue.in_progress'
+  | 'ipp_issue.blocked'
+  | 'ipp_issue.unblocked'
+  | 'ipp_issue.under_review'
+  | 'ipp_issue.resolved'
+  | 'ipp_issue.verified'
+  | 'ipp_issue.evidence_filed'
+  | 'ipp_issue.closed'
+  | 'ipp_issue.archived'
+  | 'ipp_issue.escalated'
+  | 'ipp_issue.deferred'
+  | 'ipp_issue.cancelled'
+  | 'ipp_issue.sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1610,6 +1633,9 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // ipp_rfi / ipp_change_order. DO NOT open a new 'pm' namespace.
   // The W118 spine partition assumes one prefix per family.
   stage_gate: 'ipp',
+  // W132 IPP Issues Log — JOINS existing 'ipp' namespace.
+  // DO NOT open a new namespace; issue events audit alongside stage_gate/rfi/co.
+  ipp_issue: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

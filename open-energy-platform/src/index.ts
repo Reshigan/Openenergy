@@ -246,6 +246,7 @@ import stageGateRoutes, {
   stageGateSlaSweep,
   stageGateConditionsAgingSweep,
 } from './routes/stage-gate';
+import ippIssuesRoutes, { ippIssueSlaSweep } from './routes/ipp-issues';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -757,6 +758,10 @@ app.route('/api/ntt-comparison-battery', nttComparisonBatteryRoutes);
 // WRITE {admin, ipp_developer}. READ all 9 personas.
 // JOINS existing 'ipp' audit namespace.
 app.route('/api/stage-gate', stageGateRoutes);
+// W132: IPP Issues Log — PMBOK 7 issue register.
+// 12-state + 4 branch; URGENT SLA (P1=24h tightest); WRITE {admin, ipp_developer}.
+// SIGNATURE: escalate_to_regulator EVERY tier when safety OR regulatory.
+app.route('/api/ipp-issues', ippIssuesRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1991,6 +1996,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('stage_gate_sla_sweep', async () => {
         const result = await stageGateSlaSweep(env as never);
         console.log('stage_gate_sla_sweep', JSON.stringify(result));
+      });
+      // W132 IPP Issues: URGENT SLA (P1 critical = 24h tightest).
+      // P1+P2 safety/regulatory breaches cross regulator (OHSA s24 + ERA s35).
+      await safe('ipp_issue_sla_sweep', async () => {
+        const result = await ippIssueSlaSweep(env as never);
+        console.log('ipp_issue_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

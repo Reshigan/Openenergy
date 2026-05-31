@@ -775,6 +775,15 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         icon: 'account_tree',
       },
       {
+        // W132 Phase-E wave 2 — IPP Issues Log & Resolution Chain.
+        key: 'issues-log',
+        title: 'Issues log (W132)',
+        description: 'PMBOK 7 issue register + ISO 21500:2021 + OHSA s24 + ERA s35 on oe_ipp_issues: 12-state forward path (raised → triaged → assigned → acknowledged → in_progress → blocked → under_review → resolved → verified → evidence_filed → closed → archived) + 4 branch states (escalated / deferred / cancelled / overdue_flagged). URGENT SLA polarity (P1 critical 24h TIGHTEST → P5 informational 720h). W132 SIGNATURE: escalate_to_regulator crosses regulator EVERY tier when category = safety OR regulatory (OHSA s24 + ERA s35 notifiable event always reportable). close EVERY tier when is_nersa_notifiable. P1+P2 safety/regulatory SLA breaches cross regulator. 3-step authority ladder (project_coordinator → project_manager → project_director). 5 context flags (is_safety / is_regulatory / is_commercial / is_lender_notifiable / is_nersa_notifiable). 5 bridge refs (rfi_ref W116 / change_order_ref W117 / stage_gate_ref W131 / hse_incident_ref W25 / w118_block_ref MANDATORY at evidence_filed). SLA sweep in shared */15 cron slot. JOINS existing ipp audit namespace. Beats Procore Observations + Oracle Primavera Unifier Issue Tracking + Autodesk Construction Cloud + InEight Issue Manager + PlanGrid Punch List.',
+        href: '/ipp-lifecycle/workstation?tab=issues-log',
+        cta_label: 'Open issues log',
+        icon: 'report_problem',
+      },
+      {
         // W122 Phase-C opener — first external-system connector chain.
         key: 'scada-connectors',
         title: 'SCADA / IEC 61850 connectors (W122)',
