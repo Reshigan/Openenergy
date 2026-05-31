@@ -811,6 +811,15 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         icon: 'checklist_rtl',
       },
       {
+        // W138 Phase-E wave 8 — IPP Environmental Monitoring Log.
+        key: 'env-monitoring',
+        title: 'Environmental monitoring (W138)',
+        description: 'NEMA s30 + DFFE EIA conditions + ISO 14001:2015 + REIPPPP environmental compliance requirements on oe_ipp_env_monitoring: 12-state P6 chain (scheduled → sampling → sample_submitted → results_received → compliance_assessed → report_drafted → report_submitted → closed + exceedance_flagged / corrective_action / under_investigation branch + cancelled). URGENT SLA polarity (critical 24h TIGHTEST → baseline 720h loosest — near-receptor air quality exceedances need fastest turnaround). W138 SIGNATURE: flag_exceedance crosses regulator EVERY tier when is_near_sensitive_receptor OR floor_eia_condition_breach OR floor_nema_s30_notification; submit_report crosses when floor_dffe_report_required. SLA breach crosses when critical + near_sensitive_receptor OR floor_eia_condition_breach (any tier). 4 monitoring tiers: critical / regular / routine / baseline. 10 monitoring categories: air_quality / water_quality / noise / dust / waste / land / biodiversity / stormwater / groundwater / visual. 5 floor flags: NEMA s30 notification / DFFE report required / public notice required / lender report required / EIA condition breach. 4 cross-references (ncr_ref W136 / hse_incident_ref W25 / ms_ref W137 / stage_gate_ref W131). Parameter vs permit-limit measurement tracking with exceedance magnitude and percentage. SLA sweep in shared */15 cron slot. JOINS existing ipp audit namespace. Beats Intelex / Cority generic EMS (static checklists, no P6 state machine, no regulator crossings).',
+        href: '/ipp-lifecycle/workstation?tab=env-monitoring',
+        cta_label: 'Open env. monitoring',
+        icon: 'eco',
+      },
+      {
         // W136 Phase-E wave 6 — IPP Non-Conformance Report (NCR) Management.
         key: 'ncr-management',
         title: 'Non-conformance reports (W136)',

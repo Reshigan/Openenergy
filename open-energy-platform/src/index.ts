@@ -252,6 +252,7 @@ import ippStakeholderRoutes, { ippStakeholderSlaSweep } from './routes/ipp-stake
 import ippLessonsLearnedRoutes, { ippLessonsLearnedSlaSweep } from './routes/ipp-lessons-learned';
 import ippNcrRoutes, { ippNcrSlaSweep } from './routes/ipp-ncr';
 import ippMethodStatementRoutes, { ippMethodStatementSlaSweep } from './routes/ipp-method-statement';
+import ippEnvMonitoringRoutes, { ippEnvMonitoringSlaSweep } from './routes/ipp-env-monitoring';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -787,6 +788,11 @@ app.route('/api/ipp-ncr', ippNcrRoutes);
 // 12-state P6; URGENT SLA (high_risk 24h tightest → routine 336h); WRITE {admin, ipp_developer, support}.
 // SIGNATURE: approve_ms EVERY tier on critical_lift/confined_space/live_electrical; suspend_work crosses on floor_regulatory_notification.
 app.route('/api/ipp-method-statement', ippMethodStatementRoutes);
+// W138 IPP Environmental Monitoring Log — NEMA s30 + DFFE EIA conditions + ISO 14001:2015.
+// 12-state P6; URGENT SLA (critical 24h tightest → baseline 720h); WRITE {admin, ipp_developer, support}.
+// SIGNATURE: flag_exceedance EVERY tier on near_sensitive_receptor/eia_condition_breach/nema_s30_notification;
+// submit_report crosses when floor_dffe_report_required.
+app.route('/api/ipp-env-monitoring', ippEnvMonitoringRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2057,6 +2063,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_method_statement_sla_sweep', async () => {
         const result = await ippMethodStatementSlaSweep(env as never);
         console.log('ipp_method_statement_sla_sweep', JSON.stringify(result));
+      });
+      // W138 — IPP Environmental Monitoring SLA sweep (URGENT: critical 24h TIGHTEST).
+      // SIGNATURE: critical + near_sensitive_receptor crosses; floor_eia_condition_breach crosses any tier.
+      await safe('ipp_env_monitoring_sla_sweep', async () => {
+        const result = await ippEnvMonitoringSlaSweep(env as never);
+        console.log('ipp_env_monitoring_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

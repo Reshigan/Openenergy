@@ -1515,7 +1515,21 @@ export type EventType =
   | 'ipp_method_statement.supersede_ms'
   | 'ipp_method_statement.suspend_work'
   | 'ipp_method_statement.resume_work'
-  | 'ipp_method_statement.flag_overdue';
+  | 'ipp_method_statement.flag_overdue'
+  // Wave 138 — IPP Environmental Monitoring Log (NEMA s30 + DFFE EIA + ISO 14001)
+  | 'ipp_env_monitoring.start_sampling'
+  | 'ipp_env_monitoring.submit_sample'
+  | 'ipp_env_monitoring.record_results'
+  | 'ipp_env_monitoring.assess_compliance'
+  | 'ipp_env_monitoring.draft_report'
+  | 'ipp_env_monitoring.submit_report'
+  | 'ipp_env_monitoring.close_monitoring'
+  | 'ipp_env_monitoring.flag_exceedance'
+  | 'ipp_env_monitoring.initiate_corrective_action'
+  | 'ipp_env_monitoring.investigate_exceedance'
+  | 'ipp_env_monitoring.resolve_corrective_action'
+  | 'ipp_env_monitoring.cancel_monitoring'
+  | 'ipp_env_monitoring.flag_overdue';
 
 interface CascadeContext {
   event: EventType;
@@ -1732,6 +1746,10 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ipp_ncr: 'ipp',
   // W137 IPP Method Statement (SWMS) — JOINS existing 'ipp' namespace.
   ipp_method_statement: 'ipp',
+  // W138 IPP Environmental Monitoring Log — JOINS existing 'ipp' namespace.
+  // NEMA s30 + DFFE EIA conditions + ISO 14001. flag_exceedance EVERY tier on
+  // near_sensitive_receptor/eia_condition_breach/nema_s30_notification.
+  ipp_env_monitoring: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
