@@ -7,6 +7,7 @@ import { ReconciliationAttestationTab } from '../reconciliation/ReconciliationAt
 import { ControlEnvironmentAuditTab } from '../controlEnvironment/ControlEnvironmentAuditTab';
 import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConnectorTab';
 import { SapOracleErpConnectorTab } from '../sapOracleErpConnector/SapOracleErpConnectorTab';
+import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/GovernmentFilingConnectorTab';
 import { api } from '../../lib/api';
 
 const formatZAR = (v: number) =>
@@ -75,6 +76,9 @@ export function AdminWorkstationPage() {
         },
         { key: 'sap-oracle-erp-connectors', label: 'ERP connectors (W125)',
           body: () => <SapOracleErpConnectorTab />,
+        },
+        { key: 'government-filing-connectors', label: 'Filing connectors (W126)',
+          body: () => <GovernmentFilingConnectorTab />,
         },
       ]}
     />

@@ -114,6 +114,7 @@ crons = [
   "0 7 * * 1",      # Mon 09:00 SAST (07:00 UTC): W122 SCADA connector weekly cert-expiry sweep (60d / 14d revocation warning)
   "30 1 * * *",     # 03:30 SAST (01:30 UTC) daily: W124 STRATE/SWIFT settlement connector reconciliation sweep (4 scoring indexes + aging refresh + cycle_reconciled emit)
   "45 1 * * *",     # 03:45 SAST (01:45 UTC) daily: W125 SAP/Oracle ERP connector reconciliation sweep (control_effectiveness_index + days_to_period_close refresh + period_close_reconciled emit; 15 min after W124 so GL sees fresh settlement totals)
+  "0 2 * * *",      # 04:00 SAST (02:00 UTC) daily: W126 CIPC/SARS/NERSA government-filing connector statutory filing-deadline sweep (days_to_next_filing_deadline refresh + <7d flag as regulator_relevant); closes Phase C cron footprint
   "0 15 * * 5",     # Fri 17:00 SAST (15:00 UTC): trading-risk MTD digest
   "0 6 1 * *",      # Day 1 of month 08:00 SAST: CPMI-IOSCO PFMI disclosure
   "0 18 * * *"      # 18:00 SAST (16:00 UTC) daily: W111 P&L attribution T+1 EOD opener

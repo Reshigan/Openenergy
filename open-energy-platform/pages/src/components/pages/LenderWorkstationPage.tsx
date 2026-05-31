@@ -15,6 +15,7 @@ import { SecurityPerfectionChainTab } from '../lender/SecurityPerfectionChainTab
 import { SllKpiChainTab } from '../lender/SllKpiChainTab';
 import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConnectorTab';
 import { SapOracleErpConnectorTab } from '../sapOracleErpConnector/SapOracleErpConnectorTab';
+import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/GovernmentFilingConnectorTab';
 
 export function LenderWorkstationPage() {
   const kpis = useWorkstationKpis('lender');
@@ -50,6 +51,7 @@ export function LenderWorkstationPage() {
         { key: 'dunning', label: 'Dunning queue', body: () => <DunningTab /> },
         { key: 'strate-swift-connectors', label: 'Settlement rails (W124)', body: () => <StrateSwiftConnectorTab /> },
         { key: 'sap-oracle-erp-connectors', label: 'ERP connectors (W125)', body: () => <SapOracleErpConnectorTab /> },
+        { key: 'government-filing-connectors', label: 'Filing connectors (W126)', body: () => <GovernmentFilingConnectorTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

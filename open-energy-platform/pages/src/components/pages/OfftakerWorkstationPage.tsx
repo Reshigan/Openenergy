@@ -15,6 +15,7 @@ import { RecLifecycleChainTab } from '../offtaker/RecLifecycleChainTab';
 import { TariffIndexationTab } from '../offtaker/TariffIndexationTab';
 import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConnectorTab';
 import { SapOracleErpConnectorTab } from '../sapOracleErpConnector/SapOracleErpConnectorTab';
+import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/GovernmentFilingConnectorTab';
 
 export function OfftakerWorkstationPage() {
   const kpis = useWorkstationKpis('offtaker');
@@ -60,6 +61,7 @@ export function OfftakerWorkstationPage() {
         { key: 'obligations', label: 'Obligations register', body: () => <ObligationsTab /> },
         { key: 'strate-swift-connectors', label: 'Settlement rails (W124)', body: () => <StrateSwiftConnectorTab /> },
         { key: 'sap-oracle-erp-connectors', label: 'ERP connectors (W125)', body: () => <SapOracleErpConnectorTab /> },
+        { key: 'government-filing-connectors', label: 'Filing connectors (W126)', body: () => <GovernmentFilingConnectorTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

@@ -1290,7 +1290,24 @@ export type EventType =
   | 'sap_oracle_erp_connector_resumed'
   | 'sap_oracle_erp_connector_credential_revoked'
   | 'sap_oracle_erp_connector_failover_activated'
-  | 'sap_oracle_erp_connector_sla_breached';
+  | 'sap_oracle_erp_connector_sla_breached'
+  | 'government_filing_connector_proposed'
+  | 'government_filing_connector_authority_validated'
+  | 'government_filing_connector_tax_registration_bound'
+  | 'government_filing_connector_template_mapped'
+  | 'government_filing_connector_schemas_loaded'
+  | 'government_filing_connector_e_filing_session_established'
+  | 'government_filing_connector_test_submission_validated'
+  | 'government_filing_connector_reconciliation_period_bound'
+  | 'government_filing_connector_live_filing_active'
+  | 'government_filing_connector_filing_acknowledged'
+  | 'government_filing_connector_archived'
+  | 'government_filing_connector_disconnected'
+  | 'government_filing_connector_suspended'
+  | 'government_filing_connector_resumed'
+  | 'government_filing_connector_credential_revoked'
+  | 'government_filing_connector_failover_activated'
+  | 'government_filing_connector_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1434,6 +1451,14 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // namespace as W124 because both are FINANCIAL waves (W124 =
   // interbank rails; W125 = ERP GL/AP/AR) - explicitly NOT 'grid'.
   sap_oracle_erp_connector: 'settlement',
+  // Wave 126 - CIPC / SARS / NERSA Government Filing APIs Connector.
+  // PHASE C WAVE 5 of 5 - FINAL Phase-C connector wave. Closes Phase C.
+  // SA government regulator filing spine: CIPC Annual Returns, SARS
+  // e-Filing (IT14/VAT201/EMP201/IRP5), NERSA quarterly returns, DMRE
+  // REIPPPP, DFFE GHG, PAIA. Opens the NEW 'regulator' audit namespace
+  // - explicitly NOT 'settlement' (W124/W125 family) because government
+  // statutory filings are REGULATORY-COMPLIANCE not FINANCIAL.
+  government_filing_connector: 'regulator',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

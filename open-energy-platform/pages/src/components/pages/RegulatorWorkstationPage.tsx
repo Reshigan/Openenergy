@@ -11,6 +11,7 @@ import { EsgDisclosureChainTab } from '../carbon/EsgDisclosureChainTab';
 import { RegulatorExportPackTab } from '../regulatorExport/RegulatorExportPackTab';
 import { ReconciliationAttestationTab } from '../reconciliation/ReconciliationAttestationTab';
 import { ControlEnvironmentAuditTab } from '../controlEnvironment/ControlEnvironmentAuditTab';
+import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/GovernmentFilingConnectorTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -72,6 +73,9 @@ export function RegulatorWorkstationPage() {
         },
         { key: 'external-controls', label: 'External controls (W121)',
           body: () => <ControlEnvironmentAuditTab regulatorView />,
+        },
+        { key: 'government-filing-connectors', label: 'Filing connectors (W126)',
+          body: () => <GovernmentFilingConnectorTab />,
         },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (

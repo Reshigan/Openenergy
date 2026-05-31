@@ -212,6 +212,11 @@ import sapOracleErpConnectorRoutes, {
   sapOracleErpConnectorReconciliationSweep,
   sapOracleErpConnectorCredentialExpirySweep,
 } from './routes/sap-oracle-erp-connector';
+import governmentFilingConnectorRoutes, {
+  governmentFilingConnectorSlaSweep,
+  governmentFilingConnectorFilingDeadlineSweep,
+  governmentFilingConnectorCredentialExpirySweep,
+} from './routes/government-filing-connector';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -641,6 +646,24 @@ app.route('/api/strate-swift-connector', strateSwiftConnectorRoutes);
 // erp_counterparty via mTLS. 5 bridges (W118 mandatory). Shares
 // 'settlement' audit namespace with W124.
 app.route('/api/sap-oracle-erp-connector', sapOracleErpConnectorRoutes);
+// W126 CIPC / SARS / NERSA Government Filing APIs Connector - Phase C
+// wave 5 of 5 - FINAL Phase-C connector wave. Closes Phase C. SA
+// GOVERNMENT REGULATOR filing spine: CIPC Annual Returns + SARS e-Filing
+// (IT14, VAT201, EMP201, IRP5) + NERSA quarterly electricity/gas returns
+// + DMRE REIPPPP + DFFE GHG + PAIA disclosure. mTLS-gated PUBLIC peer
+// endpoint at /api/government-filing-connector/peer/:peer_id mounted
+// BEFORE authMiddleware inside the route module - uses
+// x-mtls-cert-fingerprint header (Phase-C consistency). 10-state forward
+// + 4 branch machine; INVERTED SLA hours (single_filing 168 ..
+// systemic_critical 720). FLOOR-AT-MULTI-JURISDICTION >=1 / FLOOR-AT-
+// SYSTEMIC-CRITICAL >=3 of 5 flags. SIGNATURE: revoke_credential EVERY
+// tier (Companies Act + Tax Admin Act + ERA s.10 + PAIA s.18). WRITE
+// {admin, regulator, trader, lender, offtaker} - 5 writers (key diff
+// from W125's 4-writer pattern). READ all 9 personas + external
+// gov_authority_peer via mTLS. 5 bridges (W125 ERP, W124 settlement,
+// W74 NERSA levy, W48 carbon tax, W118 audit). Opens NEW 'regulator'
+// audit namespace.
+app.route('/api/government-filing-connector', governmentFilingConnectorRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1804,6 +1827,17 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('sap_oracle_erp_connector_sla_sweep', async () => {
         const result = await sapOracleErpConnectorSlaSweep(env as never);
         console.log('sap_oracle_erp_connector_sla_sweep', JSON.stringify(result));
+      });
+      // W126 CIPC / SARS / NERSA government-filing connector — 15-min
+      // sweep over every active connector. INVERTED HOUR polarity
+      // (single_filing 168 / quarterly_returns 240 / annual_returns 360
+      // / multi_jurisdiction 480 / systemic_critical 720). SLA breach
+      // crosses regulator on heavy tiers (multi_jurisdiction +
+      // systemic_critical) under Companies Act + Tax Admin Act + ERA
+      // s.10 + PAIA s.18.
+      await safe('government_filing_connector_sla_sweep', async () => {
+        const result = await governmentFilingConnectorSlaSweep(env as never);
+        console.log('government_filing_connector_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -3458,6 +3492,34 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('sap_oracle_erp_connector_credential_expiry_sweep', async () => {
         const result = await sapOracleErpConnectorCredentialExpirySweep(env as never);
         console.log('sap_oracle_erp_connector_credential_expiry_sweep', JSON.stringify(result));
+      });
+      // W126 CIPC / SARS / NERSA government-filing connector — same
+      // Monday 09:00 SAST weekly e-filing credential-expiry sweep. Walks
+      // every connector with a credential_expiry_at, recomputes
+      // days_to_credential_renewal, flags 14d-out as regulator_relevant
+      // + is_reportable so the dashboard surfaces SARS e-Filing profile
+      // / CIPC director-cert rotation risk BEFORE the authority disables
+      // the account. Shared trigger with W122/W123/W124/W125 - no
+      // duplicate cron entry in wrangler.toml.
+      await safe('government_filing_connector_credential_expiry_sweep', async () => {
+        const result = await governmentFilingConnectorCredentialExpirySweep(env as never);
+        console.log('government_filing_connector_credential_expiry_sweep', JSON.stringify(result));
+      });
+      break;
+
+    case '0 2 * * *':
+      // W126 CIPC / SARS / NERSA government-filing connector — daily
+      // 04:00 SAST (02:00 UTC) statutory filing-deadline sweep. Walks
+      // every connector with a next_filing_deadline_at, recomputes
+      // days_to_next_filing_deadline, and flags connectors with <7 days
+      // remaining as regulator_relevant + is_reportable so the morning
+      // briefing surfaces CIPC annual return / SARS VAT201 / NERSA
+      // quarterly filing deadlines BEFORE statutory lateness penalty
+      // kicks in. NEW trigger - third daily cron added for Phase C,
+      // closes Phase C cron footprint.
+      await safe('government_filing_connector_filing_deadline_sweep', async () => {
+        const result = await governmentFilingConnectorFilingDeadlineSweep(env as never);
+        console.log('government_filing_connector_filing_deadline_sweep', JSON.stringify(result));
       });
       break;
 
