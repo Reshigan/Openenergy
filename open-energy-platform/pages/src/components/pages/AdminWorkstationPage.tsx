@@ -4,6 +4,7 @@ import { AuditPanel } from '../launch/AuditPanel';
 import { AuditChainBlockTab } from '../audit/AuditChainBlockTab';
 import { RegulatorExportPackTab } from '../regulatorExport/RegulatorExportPackTab';
 import { ReconciliationAttestationTab } from '../reconciliation/ReconciliationAttestationTab';
+import { ControlEnvironmentAuditTab } from '../controlEnvironment/ControlEnvironmentAuditTab';
 import { api } from '../../lib/api';
 
 const formatZAR = (v: number) =>
@@ -63,6 +64,9 @@ export function AdminWorkstationPage() {
         },
         { key: 'reconciliation-attestation', label: 'Reconciliation attestation (W120)',
           body: () => <ReconciliationAttestationTab />,
+        },
+        { key: 'control-environment-audit', label: 'Control environment (W121)',
+          body: () => <ControlEnvironmentAuditTab />,
         },
       ]}
     />

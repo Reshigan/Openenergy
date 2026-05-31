@@ -1174,7 +1174,37 @@ export type EventType =
   | 'reconciliation_attestation_resumed' | 'reconciliation_attestation_restated'
   | 'reconciliation_attestation_escalated_to_audit_committee'
   | 'reconciliation_attestation_lift_escalation'
-  | 'reconciliation_attestation_sla_breached';
+  | 'reconciliation_attestation_sla_breached'
+  // Wave 121 — Control-Environment Audit. FOURTH and FINAL Phase-B
+  // wave. Closes Phase B (W118 spine + W119 exports + W120 attestation
+  // + W121 control-environment audit). Per-control evidence dossiers
+  // (Design / ToD / ToOE / deficiency / remediation) closing SOC 2
+  // Type II + COSO 2013 ICIF + ISO 27001:2022 ISMS certification.
+  //
+  // SIGNATURE: flag_deficient EVERY tier WHEN material_weakness_
+  // suspected (W121 MATERIAL-WEAKNESS-DEFICIENT hard line - SSAE 18 +
+  // ISA 265 + JSE 8.62 + Companies Act s30 + COSO Monitoring).
+  // accept_with_exception directive+governance only. archive EVERY
+  // tier WHEN external_auditor_sign_off. sla_breached directive+
+  // governance only.
+  | 'control_environment_audit_defined'
+  | 'control_environment_audit_design_documented'
+  | 'control_environment_audit_walkthrough_completed'
+  | 'control_environment_audit_tod_test_planned'
+  | 'control_environment_audit_tod_evidence_collected'
+  | 'control_environment_audit_tod_test_executed'
+  | 'control_environment_audit_tooe_test_planned'
+  | 'control_environment_audit_tooe_evidence_collected'
+  | 'control_environment_audit_tooe_test_executed'
+  | 'control_environment_audit_deficiency_assessed'
+  | 'control_environment_audit_remediation_completed'
+  | 'control_environment_audit_archived'
+  | 'control_environment_audit_flagged_deficient'
+  | 'control_environment_audit_accepted_with_exception'
+  | 'control_environment_audit_suspended'
+  | 'control_environment_audit_re_test_initiated'
+  | 'control_environment_audit_sla_breached'
+  | 'control_environment_audit_annual_cycle_opened';
 
 interface CascadeContext {
   event: EventType;
@@ -1284,6 +1314,14 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // signed → archived + reject/suspend/resume/restate/escalate-to-AC)
   // is recorded on the platform-wide tamper-evident ledger spine.
   reconciliation_attestation: 'audit',
+  // Wave 121 — Control-Environment Audit. FOURTH and FINAL Phase-B wave.
+  // Closes Phase B. Joins the SAME 'audit' chain as W118 + W119 + W120
+  // so every control evidence dossier mutation (define → design → walk
+  // → ToD → ToOE → deficiency → remediation → archive + deficient/
+  // excepted/suspended/re-test) is recorded on the platform-wide
+  // tamper-evident ledger spine. Fourth non-role-suffixed entry — all
+  // four Phase-B chains share the same audit-namespace family.
+  control_environment_audit: 'audit',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

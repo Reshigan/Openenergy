@@ -187,6 +187,11 @@ import reconciliationAttestationRoutes, {
   reconciliationAttestationVarianceRecomputeSweep,
   reconciliationAttestationMonthlyAuditCommitteePackSweep,
 } from './routes/reconciliation-attestation';
+import controlEnvironmentAuditRoutes, {
+  controlEnvironmentAuditSlaSweep,
+  controlEnvironmentAuditNightlyEvidenceCoverageSweep,
+  controlEnvironmentAuditAnnualAuditCycleOpenerSweep,
+} from './routes/control-environment-audit';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -548,6 +553,20 @@ app.route('/api/regulator-exports', regulatorExportRoutes);
 // WRITE {admin only}; READ all 9 personas; external-auditor read via
 // signed JWT on /external/:id (NOT mTLS like W119).
 app.route('/api/reconciliation-attestation', reconciliationAttestationRoutes);
+// Wave 121 - Control-Environment Audit. FOURTH and FINAL Phase-B wave.
+// Closes Phase B (W118 spine + W119 exports + W120 attestation + W121
+// control-environment audit). Per-control evidence dossiers (Design /
+// ToD / ToOE / deficiency / remediation) closing SOC 2 Type II + COSO
+// 2013 ICIF + ISO 27001:2022 ISMS certification. 12-state + 4-branch
+// chain with INVERTED SLA HOURS (preventive 168h / detective 240h /
+// corrective 360h / directive 480h / governance 720h). SIGNATURE:
+// flag_deficient EVERY tier WHEN material_weakness_suspected
+// (MATERIAL-WEAKNESS-DEFICIENT hard line). accept_with_exception
+// directive+governance only. archive EVERY tier WHEN external_auditor_
+// sign_off. sla_breached directive+governance only. WRITE {admin
+// only}; READ all 9 personas; external-auditor read via signed JWT on
+// /external/:id (same pattern as W120).
+app.route('/api/control-environment-audit', controlEnvironmentAuditRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1660,6 +1679,17 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('reconciliation_attestation_sla_sweep', async () => {
         const result = await reconciliationAttestationSlaSweep(env as never);
         console.log('reconciliation_attestation_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 121 — Control-Environment Audit SLA sweep.
+      // 15-min sweep over every active control dossier. INVERTED HOUR
+      // polarity: preventive 168h / detective 240h / corrective 360h /
+      // directive 480h / governance 720h. SLA breach crosses regulator on
+      // heavy tiers (directive + governance) because that is where listed-
+      // issuer disclosure visibility under JSE 8.62 + Companies Act s30 +
+      // SSAE 18 is greatest.
+      await safe('control_environment_audit_sla_sweep', async () => {
+        const result = await controlEnvironmentAuditSlaSweep(env as never);
+        console.log('control_environment_audit_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -3060,6 +3090,34 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('reconciliation_attestation_variance_recompute_sweep', async () => {
         const result = await reconciliationAttestationVarianceRecomputeSweep(env as never);
         console.log('reconciliation_attestation_variance_recompute_sweep', JSON.stringify(result));
+      });
+      break;
+
+    case '58 0 * * *':
+      // Wave 121 — Control-Environment Audit nightly evidence-coverage
+      // recompute. 02:58 SAST = 00:58 UTC. Re-derives all 4 LIVE scoring
+      // indexes (design_documentation_completeness_index, tod_test_
+      // completeness_index, tooe_test_completeness_index, evidence_
+      // coverage_index) + control_health_band + days_to_quarterly_cutoff
+      // + days_to_annual_audit across every active control dossier. Used
+      // so list views can sort by health/score without re-deriving on
+      // every read.
+      await safe('control_environment_audit_nightly_evidence_coverage_sweep', async () => {
+        const result = await controlEnvironmentAuditNightlyEvidenceCoverageSweep(env as never);
+        console.log('control_environment_audit_nightly_evidence_coverage_sweep', JSON.stringify(result));
+      });
+      break;
+
+    case '0 6 1 1 *':
+      // Wave 121 — annual external-audit cycle opener. 1 January at
+      // 08:00 SAST (06:00 UTC). Raises iso27001_surveillance_audit_due
+      // + sox_404_attestation_pending + soc2_type2_period_open on every
+      // active control whose framework lists the corresponding standard.
+      // Flips regulator_relevant=1 + is_reportable_flag=1 to indicate the
+      // annual external-audit cycle is open.
+      await safe('control_environment_audit_annual_audit_cycle_opener_sweep', async () => {
+        const result = await controlEnvironmentAuditAnnualAuditCycleOpenerSweep(env as never);
+        console.log('control_environment_audit_annual_audit_cycle_opener_sweep', JSON.stringify(result));
       });
       break;
 

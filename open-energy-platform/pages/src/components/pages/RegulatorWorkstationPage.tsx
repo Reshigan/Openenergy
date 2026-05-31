@@ -10,6 +10,7 @@ import { EnforcementActionS35ChainTab } from '../regulator/EnforcementActionS35C
 import { EsgDisclosureChainTab } from '../carbon/EsgDisclosureChainTab';
 import { RegulatorExportPackTab } from '../regulatorExport/RegulatorExportPackTab';
 import { ReconciliationAttestationTab } from '../reconciliation/ReconciliationAttestationTab';
+import { ControlEnvironmentAuditTab } from '../controlEnvironment/ControlEnvironmentAuditTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -68,6 +69,9 @@ export function RegulatorWorkstationPage() {
         },
         { key: 'icfr-attestations', label: 'ICFR attestations (W120)',
           body: () => <ReconciliationAttestationTab regulatorView />,
+        },
+        { key: 'external-controls', label: 'External controls (W121)',
+          body: () => <ControlEnvironmentAuditTab regulatorView />,
         },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
