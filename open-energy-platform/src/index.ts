@@ -249,6 +249,7 @@ import stageGateRoutes, {
 import ippIssuesRoutes, { ippIssueSlaSweep } from './routes/ipp-issues';
 import ippRiskRoutes, { ippRiskSlaSweep } from './routes/ipp-risk';
 import ippStakeholderRoutes, { ippStakeholderSlaSweep } from './routes/ipp-stakeholder';
+import ippLessonsLearnedRoutes, { ippLessonsLearnedSlaSweep } from './routes/ipp-lessons-learned';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -772,6 +773,10 @@ app.route('/api/ipp-risk', ippRiskRoutes);
 // 12-state engagement lifecycle; URGENT SLA (strategic_ally 24h tightest); WRITE {admin, ipp_developer}.
 // SIGNATURE: escalate_engagement EVERY tier; flag_resistant crosses when power_score >= 4.
 app.route('/api/ipp-stakeholder', ippStakeholderRoutes);
+// W135 IPP Lessons Learned Register — PMBOK 7 / ISO 21502:2022 §12.6.
+// 13-state P6; INVERTED SLA (critical_impact 720h MOST time); WRITE {admin, ipp_developer}.
+// SIGNATURE: disseminate_finding EVERY tier when lesson_type='safety' OR prevents_fatality=1.
+app.route('/api/ipp-lessons-learned', ippLessonsLearnedRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2024,6 +2029,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_stakeholder_sla_sweep', async () => {
         const result = await ippStakeholderSlaSweep(env as never);
         console.log('ipp_stakeholder_sla_sweep', JSON.stringify(result));
+      });
+      // W135 — IPP Lessons Learned SLA sweep (INVERTED: critical_impact 720h MOST time).
+      // SIGNATURE: safety lessons + floor_safety_critical critical/high cross regulator.
+      await safe('ipp_lessons_learned_sla_sweep', async () => {
+        const result = await ippLessonsLearnedSlaSweep(env as never);
+        console.log('ipp_lessons_learned_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

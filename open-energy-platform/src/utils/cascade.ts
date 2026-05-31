@@ -1468,7 +1468,25 @@ export type EventType =
   | 'ipp_stakeholder.escalate_engagement'
   | 'ipp_stakeholder.re_engage'
   | 'ipp_stakeholder.archive_stakeholder'
-  | 'ipp_stakeholder.sla_breached';
+  | 'ipp_stakeholder.sla_breached'
+  // W135 IPP Lessons Learned Register — PHASE E WAVE 5 OF N.
+  // 13-state P6 on oe_ipp_lessons_learned; INVERTED SLA (critical_impact 720h MOST time).
+  // SIGNATURE: disseminate_finding EVERY tier when lesson_type='safety' OR prevents_fatality=1.
+  // PMBOK 7 / ISO 21502:2022 §12.6 dissemination tracking.
+  // JOINS existing 'ipp' audit namespace.
+  | 'ipp_lessons_learned.categorize_lesson'
+  | 'ipp_lessons_learned.analyze_root_cause'
+  | 'ipp_lessons_learned.assess_impact'
+  | 'ipp_lessons_learned.draft_recommendation'
+  | 'ipp_lessons_learned.submit_for_review'
+  | 'ipp_lessons_learned.approve_lesson'
+  | 'ipp_lessons_learned.disseminate_finding'
+  | 'ipp_lessons_learned.confirm_applied'
+  | 'ipp_lessons_learned.archive_lesson'
+  | 'ipp_lessons_learned.reject_lesson'
+  | 'ipp_lessons_learned.defer_lesson'
+  | 'ipp_lessons_learned.mark_duplicate'
+  | 'ipp_lessons_learned.restore_lesson';
 
 interface CascadeContext {
   event: EventType;
@@ -1679,6 +1697,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ipp_risk: 'ipp',
   // W134 IPP Stakeholder Register — JOINS existing 'ipp' namespace.
   ipp_stakeholder: 'ipp',
+  // W135 IPP Lessons Learned Register — JOINS existing 'ipp' namespace.
+  ipp_lessons_learned: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

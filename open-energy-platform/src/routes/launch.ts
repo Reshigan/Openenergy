@@ -793,6 +793,15 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         icon: 'groups',
       },
       {
+        // W135 Phase-E wave 5 — IPP Lessons Learned Register.
+        key: 'lessons-learned',
+        title: 'Lessons learned (W135)',
+        description: 'PMBOK 7 / ISO 21502:2022 §12.6 dissemination tracking on oe_ipp_lessons_learned: 13-state P6 chain (captured → categorized → root_cause_analyzed → impact_assessed → recommendation_drafted → peer_reviewed → approved → disseminated → applied → archived + rejected / deferred / duplicate). INVERTED SLA polarity (critical_impact 720h MOST time → low_impact 168h LEAST time — more-impact lessons get MORE time for thorough RCA). W135 SIGNATURE: disseminate_finding EVERY tier when lesson_type=\'safety\' OR prevents_fatality=1 — failure to apply a known safety lesson creates OHSA liability. SLA breach crosses when floor_safety_critical AND (critical_impact|high_impact). 5 impact tiers: critical_impact / high_impact / medium_impact / low_impact. 6 RCA methods (five_whys / fishbone / fmea / fault_tree / timeline_analysis / none). 12 lesson categories (technical / schedule / cost / safety / procurement / stakeholder / regulatory / environmental / quality / risk / financial / contractual). 7 project phases (development → decommissioning). 5 floor flags (floor_safety_critical / floor_regulatory_change / floor_contractual_impact / floor_design_change / floor_portfolio_impact). 5 cross-references (issue_ref W132 / risk_ref W133 / rfi_ref W116 / hse_incident_ref W25 / change_order_ref W117). Quantified cost + schedule impact fields. SLA sweep in shared */15 cron slot. JOINS existing ipp audit namespace. Beats Oracle Primavera Unifier (unstructured document storage) + MS Project (no learning registry).',
+        href: '/ipp-lifecycle/workstation?tab=lessons-learned',
+        cta_label: 'Open lessons learned',
+        icon: 'school',
+      },
+      {
         // W132 Phase-E wave 2 — IPP Issues Log & Resolution Chain.
         key: 'issues-log',
         title: 'Issues log (W132)',
