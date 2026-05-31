@@ -207,6 +207,11 @@ import strateSwiftConnectorRoutes, {
   strateSwiftConnectorReconciliationSweep,
   strateSwiftConnectorKeyExpirySweep,
 } from './routes/strate-swift-connector';
+import sapOracleErpConnectorRoutes, {
+  sapOracleErpConnectorSlaSweep,
+  sapOracleErpConnectorReconciliationSweep,
+  sapOracleErpConnectorCredentialExpirySweep,
+} from './routes/sap-oracle-erp-connector';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -621,6 +626,21 @@ app.route('/api/mqtt-opcua-connector', mqttOpcuaConnectorRoutes);
 // lender, offtaker}. READ all 9 personas + external bank_peer via
 // mTLS. 5 bridges (W120+W118 mandatory). NEW 'settlement' namespace.
 app.route('/api/strate-swift-connector', strateSwiftConnectorRoutes);
+// W125 SAP / Oracle ERP Connector - Phase C wave 4 of 5. ENTERPRISE
+// BACK-OFFICE financial integration spine: SAP S/4HANA Cloud + SAP ECC
+// (IDoc FIDCC1/FIDCC2/REMADV) + Oracle EBS + Oracle Fusion + Workday +
+// SAGE 300 + Dynamics 365 + NetSuite + Epicor + IFS. mTLS-gated PUBLIC
+// peer endpoint at /api/sap-oracle-erp-connector/peer/:peer_id mounted
+// BEFORE authMiddleware inside the route module - uses
+// x-mtls-cert-fingerprint header (Phase-C consistency). 10-state forward
+// + 4 branch machine; INVERTED SLA hours (single_module 168 ..
+// multi_country 720). FLOOR-AT-ENTERPRISE-WIDE >=1 / FLOOR-AT-MULTI-
+// COUNTRY >=3 of 5 flags. SIGNATURE: revoke_credential EVERY tier
+// (SARS + CIPC + SOC 1 Type II + ISO 27001 + PCAOB AS 5). WRITE
+// {admin, trader, lender, offtaker}. READ all 9 personas + external
+// erp_counterparty via mTLS. 5 bridges (W118 mandatory). Shares
+// 'settlement' audit namespace with W124.
+app.route('/api/sap-oracle-erp-connector', sapOracleErpConnectorRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1773,6 +1793,17 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('strate_swift_connector_sla_sweep', async () => {
         const result = await strateSwiftConnectorSlaSweep(env as never);
         console.log('strate_swift_connector_sla_sweep', JSON.stringify(result));
+      });
+      // W125 SAP / Oracle ERP connector — 15-min sweep over every
+      // active connector. INVERTED HOUR polarity (single_module 168
+      // / multi_module 240 / enterprise_wide 360 / group_consolidation
+      // 480 / multi_country 720). SLA breach crosses regulator on
+      // heavy tiers (enterprise_wide + group_consolidation +
+      // multi_country) under SARS + CIPC + SOC 1 Type II + ISO 27001
+      // + PCAOB AS 5.
+      await safe('sap_oracle_erp_connector_sla_sweep', async () => {
+        const result = await sapOracleErpConnectorSlaSweep(env as never);
+        console.log('sap_oracle_erp_connector_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -3416,6 +3447,18 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
         const result = await strateSwiftConnectorKeyExpirySweep(env as never);
         console.log('strate_swift_connector_key_expiry_sweep', JSON.stringify(result));
       });
+      // W125 SAP / Oracle ERP connector — same Monday 09:00 SAST weekly
+      // service-account credential-expiry sweep. Walks every connector
+      // with a service_account_credential_fingerprint + credential_expiry_at,
+      // recomputes days_to_credential_renewal, flags 14d-out as
+      // regulator_relevant + is_reportable so the dashboard surfaces ERP
+      // service-account rotation risk BEFORE the ERP system owner
+      // disables the account. Shared trigger with W122/W123/W124 - no
+      // duplicate cron entry in wrangler.toml.
+      await safe('sap_oracle_erp_connector_credential_expiry_sweep', async () => {
+        const result = await sapOracleErpConnectorCredentialExpirySweep(env as never);
+        console.log('sap_oracle_erp_connector_credential_expiry_sweep', JSON.stringify(result));
+      });
       break;
 
     case '30 1 * * *':
@@ -3430,6 +3473,25 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('strate_swift_connector_reconciliation_sweep', async () => {
         const result = await strateSwiftConnectorReconciliationSweep(env as never);
         console.log('strate_swift_connector_reconciliation_sweep', JSON.stringify(result));
+      });
+      break;
+
+    case '45 1 * * *':
+      // W125 SAP / Oracle ERP connector — daily 03:45 SAST (01:45 UTC)
+      // period-close reconciliation sweep. Walks every connector in
+      // live_posting_active or period_close_reconciled state, recomputes
+      // control_effectiveness_index from posting_volume / failure_rate /
+      // latency / reconciliation_break_count / SARS/CIPC filing status,
+      // refreshes days_to_period_close, and emits
+      // sap_oracle_erp_connector_period_close_reconciled events for
+      // downstream W124 STRATE/SWIFT settlement + W3 atomic-DvP +
+      // W68 counterparty-margin posting validation. Dedicated daily
+      // slot 15 min after W124 settlement reconciliation so the GL
+      // sees freshly-reconciled settlement totals before posting batch
+      // emission. NEW trigger - second daily cron added for Phase C.
+      await safe('sap_oracle_erp_connector_reconciliation_sweep', async () => {
+        const result = await sapOracleErpConnectorReconciliationSweep(env as never);
+        console.log('sap_oracle_erp_connector_reconciliation_sweep', JSON.stringify(result));
       });
       break;
 

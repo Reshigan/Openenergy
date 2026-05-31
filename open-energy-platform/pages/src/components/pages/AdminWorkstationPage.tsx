@@ -6,6 +6,7 @@ import { RegulatorExportPackTab } from '../regulatorExport/RegulatorExportPackTa
 import { ReconciliationAttestationTab } from '../reconciliation/ReconciliationAttestationTab';
 import { ControlEnvironmentAuditTab } from '../controlEnvironment/ControlEnvironmentAuditTab';
 import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConnectorTab';
+import { SapOracleErpConnectorTab } from '../sapOracleErpConnector/SapOracleErpConnectorTab';
 import { api } from '../../lib/api';
 
 const formatZAR = (v: number) =>
@@ -71,6 +72,9 @@ export function AdminWorkstationPage() {
         },
         { key: 'strate-swift-connectors', label: 'Settlement rails (W124)',
           body: () => <StrateSwiftConnectorTab />,
+        },
+        { key: 'sap-oracle-erp-connectors', label: 'ERP connectors (W125)',
+          body: () => <SapOracleErpConnectorTab />,
         },
       ]}
     />

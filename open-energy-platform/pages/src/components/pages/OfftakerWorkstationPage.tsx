@@ -14,6 +14,7 @@ import { PpaTerminationChainTab } from '../offtaker/PpaTerminationChainTab';
 import { RecLifecycleChainTab } from '../offtaker/RecLifecycleChainTab';
 import { TariffIndexationTab } from '../offtaker/TariffIndexationTab';
 import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConnectorTab';
+import { SapOracleErpConnectorTab } from '../sapOracleErpConnector/SapOracleErpConnectorTab';
 
 export function OfftakerWorkstationPage() {
   const kpis = useWorkstationKpis('offtaker');
@@ -58,6 +59,7 @@ export function OfftakerWorkstationPage() {
         { key: 'ppa_termination', label: 'PPA termination', body: () => <PpaTerminationChainTab /> },
         { key: 'obligations', label: 'Obligations register', body: () => <ObligationsTab /> },
         { key: 'strate-swift-connectors', label: 'Settlement rails (W124)', body: () => <StrateSwiftConnectorTab /> },
+        { key: 'sap-oracle-erp-connectors', label: 'ERP connectors (W125)', body: () => <SapOracleErpConnectorTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

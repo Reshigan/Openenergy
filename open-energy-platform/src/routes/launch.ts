@@ -441,6 +441,15 @@ async function buildTraderBoard(c: any, user: any): Promise<LaunchPayload> {
         cta_label: 'Open settlement rails',
         icon: 'account_balance',
       },
+      {
+        // W125 Phase-C wave 4 — SAP / Oracle ERP connector.
+        key: 'sap-oracle-erp-connectors',
+        title: 'ERP connectors (W125)',
+        description: 'Phase-C wave 4. Period-close GL spine to enterprise ERP back-office: SAP S/4HANA OData + IDoc FIDCC1/FIDCC2 + Oracle Fusion/EBS SOAP + Workday + Sage 300 + Dynamics 365 + NetSuite + Epicor + IFS. 12-state forward + 4 branch chain, INVERTED SLA hours (single_module 168 / multi_module 240 / multi_company_code 360 / multi_entity_consolidation 480 / multi_country 720). FLOOR-AT-ENTERPRISE-WIDE ≥1 / FLOOR-AT-MULTI-COUNTRY ≥3 of 5 flags (SOX 404 / IFRS consol. / Transfer pricing / SARS critical / CIPC gate). SIGNATURE: revoke_credential crosses SOX 404 + IFRS 15/9/16/17 + SARS e-Filing + CIPC + SOC 1 Type II + ISO 27001 + PCAOB AS 5 EVERY tier. mTLS-gated PUBLIC peer endpoint via x-mtls-cert-fingerprint. Shares settlement audit namespace with W124.',
+        href: '/trader-risk/workstation?tab=sap-oracle-erp-connectors',
+        cta_label: 'Open ERP connectors',
+        icon: 'account_tree',
+      },
     ],
     ai_suggestions: await buildTraderAiSuggestions(c, user, { openOrders, rejections, exceptionsN, allocPending }),
   };
@@ -975,6 +984,15 @@ async function buildOfftakerBoard(c: any, user: any): Promise<LaunchPayload> {
         cta_label: 'Open settlement rails',
         icon: 'account_balance',
       },
+      {
+        // W125 Phase-C wave 4 — SAP / Oracle ERP connector.
+        key: 'sap-oracle-erp-connectors',
+        title: 'ERP connectors (W125)',
+        description: 'Phase-C wave 4. Period-close GL spine for accounts-payable PPA invoice posting back into corporate ERP: SAP S/4HANA OData + IDoc FIDCC1/FIDCC2 + Oracle Fusion/EBS SOAP + Workday + Sage 300 + Dynamics 365 + NetSuite + Epicor + IFS. 12-state forward + 4 branch chain, INVERTED SLA hours (single_module 168 / multi_module 240 / multi_company_code 360 / multi_entity_consolidation 480 / multi_country 720). FLOOR-AT-ENTERPRISE-WIDE ≥1 / FLOOR-AT-MULTI-COUNTRY ≥3 of 5 flags (SOX 404 / IFRS consol. / Transfer pricing / SARS critical / CIPC gate). SIGNATURE: revoke_credential crosses SOX 404 + IFRS 15/9/16/17 + SARS e-Filing + CIPC + SOC 1 Type II + ISO 27001 + PCAOB AS 5 EVERY tier. mTLS-gated PUBLIC peer endpoint via x-mtls-cert-fingerprint. Shares settlement audit namespace with W124.',
+        href: '/offtaker-suite/workstation?tab=sap-oracle-erp-connectors',
+        cta_label: 'Open ERP connectors',
+        icon: 'account_tree',
+      },
     ],
     ai_suggestions: [
       ...(overdueN > 0
@@ -1066,6 +1084,8 @@ async function buildLenderBoard(c: any, user: any): Promise<LaunchPayload> {
       { key: 'draws', title: 'Disbursement requests', description: 'Approve / reject / partial drawdowns.', href: '/funds', cta_label: 'Open draws', icon: 'request_quote', metric: { label: 'pending', value: pending, tone: pending > 0 ? 'warn' : 'good' } },
       // W124 Phase-C wave 3 — STRATE / SWIFT settlement connector.
       { key: 'strate_swift_connectors', title: 'Settlement rails (W124)', description: 'Phase-C wave 3. MONEY-IN/MONEY-OUT financial settlement spine for drawdown disbursement + repayment receipt: STRATE (SA CSD) + SWIFT MT/MX (ISO 20022 pacs/camt/pain) + SARB SAMOS RTGS + commercial bank EFT/ACH. 12-state forward + 4 branch chain, INVERTED SLA hours (domestic_eft 168 / multi_bank_eft 240 / strate_csd 360 / samos_rtgs 480 / swift_global 720). FLOOR-AT-SAMOS-RTGS ≥1 / FLOOR-AT-SWIFT-GLOBAL ≥3 of 5 flags. SIGNATURE: revoke_credential crosses SARB ExCon + FIC Act + Basel III + CPMI-IOSCO PFMI P9 EVERY tier. mTLS-gated PUBLIC peer endpoint via x-mtls-cert-fingerprint.', href: '/lender-suite/workstation?tab=strate-swift-connectors', cta_label: 'Open settlement rails', icon: 'account_balance' },
+      // W125 Phase-C wave 4 — SAP / Oracle ERP connector.
+      { key: 'sap_oracle_erp_connectors', title: 'ERP connectors (W125)', description: 'Phase-C wave 4. Period-close GL spine for loan accounting (interest accrual, fee posting, drawdown GL entries, repayment receipt postings) into corporate ERP: SAP S/4HANA OData + IDoc FIDCC1/FIDCC2 + Oracle Fusion/EBS SOAP + Workday + Sage 300 + Dynamics 365 + NetSuite + Epicor + IFS. 12-state forward + 4 branch chain, INVERTED SLA hours (single_module 168 / multi_module 240 / multi_company_code 360 / multi_entity_consolidation 480 / multi_country 720). FLOOR-AT-ENTERPRISE-WIDE ≥1 / FLOOR-AT-MULTI-COUNTRY ≥3 of 5 flags (SOX 404 / IFRS consol. / Transfer pricing / SARS critical / CIPC gate). SIGNATURE: revoke_credential crosses SOX 404 + IFRS 15/9/16/17 + SARS e-Filing + CIPC + SOC 1 Type II + ISO 27001 + PCAOB AS 5 EVERY tier. mTLS-gated PUBLIC peer endpoint via x-mtls-cert-fingerprint. Shares settlement audit namespace with W124.', href: '/lender-suite/workstation?tab=sap-oracle-erp-connectors', cta_label: 'Open ERP connectors', icon: 'account_tree' },
     ],
     ai_suggestions: [
       ...(breached > 0 && actionsN < breached
@@ -1438,6 +1458,8 @@ async function buildAdminBoard(c: any, user: any): Promise<LaunchPayload> {
       { key: 'support', title: 'Support escalations', description: 'Tickets, breaches, cross-tenant search.', href: '/support', cta_label: 'Open support', icon: 'help' },
       // W124 Phase-C wave 3 — STRATE / SWIFT settlement connector.
       { key: 'strate_swift_connectors', title: 'Settlement rails (W124)', description: 'Phase-C wave 3. MONEY-IN/MONEY-OUT financial settlement spine: STRATE (SA CSD T+3/T+1) + SWIFT MT/MX (ISO 20022 pacs/camt/pain) + SARB SAMOS RTGS + SADC RTGS + commercial bank EFT/ACH. 12-state forward + 4 branch chain (proposed → bic_validated → bank_handshake → iso20022_schemas → messaging_session → test_messages → reconciliation_bound → live_settlement → cycle_reconciled → archived + suspended/resumed/credential_revoked/failover_active/disconnected), INVERTED SLA hours (domestic_eft 168 / multi_bank_eft 240 / strate_csd 360 / samos_rtgs 480 / swift_global 720). FLOOR-AT-SAMOS-RTGS ≥1 / FLOOR-AT-SWIFT-GLOBAL ≥3 of 5 flags. SIGNATURE: revoke_credential crosses SARB ExCon + FIC Act + Basel III LCR/NSFR + CPMI-IOSCO PFMI Principle 9 EVERY tier. mTLS-gated PUBLIC peer endpoint via x-mtls-cert-fingerprint. NEW settlement namespace.', href: '/admin-platform/workstation?tab=strate-swift-connectors', cta_label: 'Open settlement rails', icon: 'account_balance' },
+      // W125 Phase-C wave 4 — SAP / Oracle ERP connector.
+      { key: 'sap_oracle_erp_connectors', title: 'ERP connectors (W125)', description: 'Phase-C wave 4. Period-close GL spine to enterprise ERP back-office (SAP S/4HANA OData + IDoc FIDCC1/FIDCC2 + Oracle Fusion/EBS SOAP + Workday + Sage 300 + Dynamics 365 + NetSuite + Epicor + IFS). 12-state forward + 4 branch chain (proposed → endpoint_validated → cost_center_mapped → coa_bound → schemas_registered → idoc_or_bapi_session → test_postings → reconciliation_bound → live_postings → period_close_reconciled → archived + suspended/resumed/credential_revoked/failover_active/disconnected), INVERTED SLA hours (single_module 168 / multi_module 240 / multi_company_code 360 / multi_entity_consolidation 480 / multi_country 720). FLOOR-AT-ENTERPRISE-WIDE ≥1 / FLOOR-AT-MULTI-COUNTRY ≥3 of 5 flags (SOX 404 / IFRS 10/12 consolidation / Transfer pricing / SARS critical / CIPC AFS gate). SIGNATURE: revoke_credential crosses SOX 404 + IFRS 15/9/16/17 + SARS e-Filing + CIPC + SOC 1 Type II + ISO 27001 + PCAOB AS 5 EVERY tier. mTLS-gated PUBLIC peer endpoint via x-mtls-cert-fingerprint. Shares settlement audit namespace with W124. Cron 45 1 * * * nightly reconciliation sweep.', href: '/admin-platform/workstation?tab=sap-oracle-erp-connectors', cta_label: 'Open ERP connectors', icon: 'account_tree' },
     ],
     ai_suggestions: [
       ...(cascadeDlq + settlementDlq > 0

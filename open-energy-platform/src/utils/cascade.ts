@@ -1273,7 +1273,24 @@ export type EventType =
   | 'strate_swift_connector_credential_revoked'
   | 'strate_swift_connector_failover_activated'
   | 'strate_swift_connector_cycle_settled'
-  | 'strate_swift_connector_sla_breached';
+  | 'strate_swift_connector_sla_breached'
+  | 'sap_oracle_erp_connector_proposed'
+  | 'sap_oracle_erp_connector_endpoint_validated'
+  | 'sap_oracle_erp_connector_company_code_mapped'
+  | 'sap_oracle_erp_connector_chart_of_accounts_bound'
+  | 'sap_oracle_erp_connector_schemas_loaded'
+  | 'sap_oracle_erp_connector_idoc_session_established'
+  | 'sap_oracle_erp_connector_test_postings_validated'
+  | 'sap_oracle_erp_connector_reconciliation_period_bound'
+  | 'sap_oracle_erp_connector_live_posting_active'
+  | 'sap_oracle_erp_connector_period_close_reconciled'
+  | 'sap_oracle_erp_connector_archived'
+  | 'sap_oracle_erp_connector_disconnected'
+  | 'sap_oracle_erp_connector_suspended'
+  | 'sap_oracle_erp_connector_resumed'
+  | 'sap_oracle_erp_connector_credential_revoked'
+  | 'sap_oracle_erp_connector_failover_activated'
+  | 'sap_oracle_erp_connector_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1410,6 +1427,13 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // Opens the NEW 'settlement' audit namespace - explicitly NOT 'grid'
   // (W122/W123 family) because settlements are FINANCIAL not OT.
   strate_swift_connector: 'settlement',
+  // Wave 125 - SAP / Oracle ERP Connector. PHASE C WAVE 4 of 5.
+  // Enterprise back-office financial-integration spine: SAP S/4HANA,
+  // SAP ECC, Oracle EBS/Fusion, Workday, Sage 300, Dynamics 365,
+  // NetSuite, Epicor, IFS. Joins the SAME 'settlement' audit
+  // namespace as W124 because both are FINANCIAL waves (W124 =
+  // interbank rails; W125 = ERP GL/AP/AR) - explicitly NOT 'grid'.
+  sap_oracle_erp_connector: 'settlement',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

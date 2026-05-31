@@ -16,6 +16,7 @@ import { BenchmarkTransitionChainTab } from '../benchmark-transition/BenchmarkTr
 import { PreTradeCreditChainTab } from '../trader/PreTradeCreditChainTab';
 import { PnlAttributionChainTab } from '../trader/PnlAttributionChainTab';
 import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConnectorTab';
+import { SapOracleErpConnectorTab } from '../sapOracleErpConnector/SapOracleErpConnectorTab';
 import { api } from '../../lib/api';
 
 export function TraderWorkstationPage() {
@@ -62,6 +63,7 @@ export function TraderWorkstationPage() {
         { key: 'settlement-fail', label: 'Settlement fails', body: () => <SettlementFailChainTab /> },
         { key: 'benchmark-transition', label: 'Benchmark transition', body: () => <BenchmarkTransitionChainTab /> },
         { key: 'strate-swift-connectors', label: 'Settlement rails (W124)', body: () => <StrateSwiftConnectorTab /> },
+        { key: 'sap-oracle-erp-connectors', label: 'ERP connectors (W125)', body: () => <SapOracleErpConnectorTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel
