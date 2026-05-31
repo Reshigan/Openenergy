@@ -9,6 +9,7 @@ import { RezCapacityChainTab } from '../grid/RezCapacityChainTab';
 import { WheelingChargesTab } from '../grid/WheelingChargesTab';
 import { ImbalanceSettlementChainTab } from '../grid/ImbalanceSettlementChainTab';
 import { TransmissionOutageChainTab } from '../grid/TransmissionOutageChainTab';
+import { ScadaConnectorTab } from '../scadaConnector/ScadaConnectorTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -55,6 +56,7 @@ export function GridOpsWorkstationPage() {
         { key: 'wheeling_charges', label: 'Wheeling charges', body: () => <WheelingChargesTab /> },
         { key: 'imbalance-settlement', label: 'Imbalance settlement', body: () => <ImbalanceSettlementChainTab /> },
         { key: 'transmission-outage', label: 'Transmission outage coordination', body: () => <TransmissionOutageChainTab /> },
+        { key: 'scada-connectors', label: 'SCADA connectors (W122)', body: () => <ScadaConnectorTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

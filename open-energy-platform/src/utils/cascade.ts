@@ -1204,7 +1204,33 @@ export type EventType =
   | 'control_environment_audit_suspended'
   | 'control_environment_audit_re_test_initiated'
   | 'control_environment_audit_sla_breached'
-  | 'control_environment_audit_annual_cycle_opened';
+  | 'control_environment_audit_annual_cycle_opened'
+  // Wave 122 — SCADA / IEC 61850 Substation Connector.
+  // PHASE C OPENER (W122-W126 external-system connector family).
+  // 12-state forward path + 4 branch states. 16 actions. SIGNATURE
+  // SCADA-CONNECTOR-REVOKE hard line - revoke EVERY tier (NERSA Grid
+  // Code C-3 + IEC 62351 + SANS 27001 + SARB BA 700 cyber-incident
+  // notice). activate_failover crosses large+national. disconnect
+  // EVERY tier WHEN critical_substation_n_minus_1.
+  // authorize_control_commands national only. sla_breached
+  // large+national.
+  | 'scada_connector_proposed'
+  | 'scada_connector_endpoints_discovered'
+  | 'scada_connector_tls_configured'
+  | 'scada_connector_handshake_completed'
+  | 'scada_connector_telemetry_streaming'
+  | 'scada_connector_quality_validated'
+  | 'scada_connector_alarms_subscribed'
+  | 'scada_connector_control_commands_authorized'
+  | 'scada_connector_live_operations'
+  | 'scada_connector_reconciliation_active'
+  | 'scada_connector_archived'
+  | 'scada_connector_disconnected'
+  | 'scada_connector_suspended'
+  | 'scada_connector_resumed'
+  | 'scada_connector_revoked'
+  | 'scada_connector_failover_activated'
+  | 'scada_connector_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1322,6 +1348,14 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // tamper-evident ledger spine. Fourth non-role-suffixed entry — all
   // four Phase-B chains share the same audit-namespace family.
   control_environment_audit: 'audit',
+  // Wave 122 — SCADA / IEC 61850 Substation Connector. PHASE C OPENER.
+  // Closes the 'audit' namespace family at W121 and opens the external-
+  // system connector family (W122-W126). SCADA connector chains the
+  // physical-layer interface between the platform and IPP/grid SCADA
+  // stacks (Schneider/Siemens/ABB/GE/Honeywell). Joins the 'grid' chain
+  // because every IEC 61850 telemetry batch reads as a grid-domain
+  // mutation - explicitly NOT 'audit' (that family closed at W121).
+  scada_connector: 'grid',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

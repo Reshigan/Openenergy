@@ -192,6 +192,11 @@ import controlEnvironmentAuditRoutes, {
   controlEnvironmentAuditNightlyEvidenceCoverageSweep,
   controlEnvironmentAuditAnnualAuditCycleOpenerSweep,
 } from './routes/control-environment-audit';
+import scadaConnectorRoutes, {
+  scadaConnectorSlaSweep,
+  scadaConnectorTelemetryRefreshSweep,
+  scadaConnectorCertExpirySweep,
+} from './routes/scada-connector';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -567,6 +572,17 @@ app.route('/api/reconciliation-attestation', reconciliationAttestationRoutes);
 // only}; READ all 9 personas; external-auditor read via signed JWT on
 // /external/:id (same pattern as W120).
 app.route('/api/control-environment-audit', controlEnvironmentAuditRoutes);
+// W122 SCADA / IEC 61850 substation connector — Phase C opener.
+// External-system real-time protocol bridge: IEC 61850 MMS/GOOSE/SV +
+// 60870-5-104 + DNP3 + Modbus + IEEE C37.118 + OPC UA. mTLS-gated
+// PUBLIC peer endpoint mounted BEFORE authMiddleware inside the route
+// module — peer counterparties read via /api/scada-connector/peer/:peer_id
+// with cf-client-cert-sha256 header. 12-state forward + 4 branch
+// machine; INVERTED SLA hours (pilot 168 .. national 720); FLOOR-AT-
+// LARGE >=1 / FLOOR-AT-NATIONAL >=3 of 5 flags. SIGNATURE: revoke EVERY
+// tier (NERSA + SARB BA 700 + SOC). WRITE {admin, grid_operator,
+// ipp_developer}. READ all 9 personas. 5 bridges (W118 mandatory).
+app.route('/api/scada-connector', scadaConnectorRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1690,6 +1706,15 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('control_environment_audit_sla_sweep', async () => {
         const result = await controlEnvironmentAuditSlaSweep(env as never);
         console.log('control_environment_audit_sla_sweep', JSON.stringify(result));
+      });
+      // W122 SCADA connector — 15-min sweep over every active connector.
+      // INVERTED HOUR polarity (pilot 168 / small 240 / medium 360 /
+      // large 480 / national 720). SLA breach crosses regulator on heavy
+      // tiers only (large_substation + national_grid_backbone) under
+      // NERSA Grid Code C-3 + SARB BA 700.
+      await safe('scada_connector_sla_sweep', async () => {
+        const result = await scadaConnectorSlaSweep(env as never);
+        console.log('scada_connector_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -3063,6 +3088,16 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
           }
         }
       });
+      // W122 SCADA connector telemetry refresh: nightly walk over every
+      // active connector to recompute the persisted telemetry_quality_
+      // index + connector_health_band from latest p50/p99/jitter/loss/SNR
+      // observations. 02:45 SAST = 00:45 UTC. Decisions are never moved
+      // by cron; only the LIVE battery is refreshed so dashboards reflect
+      // last 24h trust signal.
+      await safe('scada_connector_telemetry_refresh', async () => {
+        const result = await scadaConnectorTelemetryRefreshSweep(env as never);
+        console.log('scada_connector_telemetry_refresh', JSON.stringify(result));
+      });
       break;
 
     case '50 0 * * *':
@@ -3272,6 +3307,22 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
           data: { as_of_date: asOf, breach_count: breaches.length },
           env,
         });
+      });
+      break;
+
+    case '0 7 * * 1':
+      // W122 SCADA connector — Monday 09:00 SAST = 07:00 UTC weekly
+      // cert-expiry sweep. Walks every connector with a tls_cert_expiry_at,
+      // recomputes days_to_cert_renewal, flags any connector with cert
+      // expiring within 60d (escalation_level=1) or 14d (escalation_level=2)
+      // so the dashboard surfaces revocation risk BEFORE the counterparty
+      // pulls the plug. No state transition — decisions stay with the
+      // operator. INVERTED-SLA + LIVE-battery is unaffected; this is a
+      // dedicated weekly slot so heavy SLA sweeps don't drown out the
+      // cert-renewal signal.
+      await safe('scada_connector_cert_expiry_sweep', async () => {
+        const result = await scadaConnectorCertExpirySweep(env as never);
+        console.log('scada_connector_cert_expiry_sweep', JSON.stringify(result));
       });
       break;
 

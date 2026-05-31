@@ -111,6 +111,7 @@ crons = [
   "0 4 1 * *",      # 04:00 on day 1 of month: W119 monthly_return regulator-export-pack rollup (flag closing-month packs as regulator_relevant)
   "0 5 1 * *",      # 05:00 on day 1 of month: W120 monthly audit-committee pack rollup (flag closing-month quarterly+annual attestations regulator_relevant)
   "0 6 1 1 *",      # 06:00 on 1 January: W121 annual external-audit cycle opener (raise iso27001_surveillance_audit_due + sox_404_attestation_pending + soc2_type2_period_open per framework)
+  "0 7 * * 1",      # Mon 09:00 SAST (07:00 UTC): W122 SCADA connector weekly cert-expiry sweep (60d / 14d revocation warning)
   "0 15 * * 5",     # Fri 17:00 SAST (15:00 UTC): trading-risk MTD digest
   "0 6 1 * *",      # Day 1 of month 08:00 SAST: CPMI-IOSCO PFMI disclosure
   "0 18 * * *"      # 18:00 SAST (16:00 UTC) daily: W111 P&L attribution T+1 EOD opener

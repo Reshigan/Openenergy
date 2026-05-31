@@ -25,6 +25,7 @@ import { IppDocumentControlChainTab } from '../ipp/IppDocumentControlChainTab';
 import { IppSubmittalChainTab } from '../ipp/IppSubmittalChainTab';
 import { IppRfiChainTab } from '../ipp/IppRfiChainTab';
 import { IppChangeOrderChainTab } from '../ipp/IppChangeOrderChainTab';
+import { ScadaConnectorTab } from '../scadaConnector/ScadaConnectorTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -72,6 +73,7 @@ export function IppWorkstationPage() {
         { key: 'cyber_chain', label: 'Cyber incidents', body: () => <CyberIncidentChainTab /> },
         { key: 'ed_chain', label: 'ED commitments', body: () => <EdCommitmentChainTab /> },
         { key: 'gca_chain', label: 'UNGCA chain', body: () => <GcaChainTab /> },
+        { key: 'scada-connectors', label: 'SCADA connectors (W122)', body: () => <ScadaConnectorTab /> },
         { key: 'community', label: 'Community', body: ({ onRefresh }) => <CommunityTab onRefresh={onRefresh} /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (

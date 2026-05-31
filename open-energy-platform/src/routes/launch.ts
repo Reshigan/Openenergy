@@ -737,6 +737,15 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         cta_label: 'Open change orders',
         icon: 'edit_note',
       },
+      {
+        // W122 Phase-C opener — first external-system connector chain.
+        key: 'scada-connectors',
+        title: 'SCADA / IEC 61850 connectors (W122)',
+        description: 'Phase-C opener. Real-time bidirectional bridge between the platform and IPP plant SCADA via IEC 61850 MMS/GOOSE/SV + 60870-5-104 + DNP3 + Modbus + IEEE C37.118 + OPC UA. 12-state forward + 4 branch chain (connector_proposed → endpoints_discovered → tls_configured → handshake_completed → telemetry_streaming → quality_validated → alarms_subscribed → control_commands_authorized → live_operations → reconciliation_active → archived; branches disconnected/revoked/suspended/failover_active), INVERTED SLA hours (pilot 168 / small 240 / medium 360 / large 480 / national 720), FLOOR-AT-LARGE ≥1 / FLOOR-AT-NATIONAL ≥3 of 5 contextual flags (peak demand / black-start / cross-border / NERSA C-3 / N-1 critical). SIGNATURE: revoke crosses NERSA + SARB BA 700 + SOC EVERY tier (W122 SCADA-CONNECTOR-REVOKE hard line). mTLS-gated PUBLIC peer endpoint for SCADA counterparties. Beats Triangle MicroWorks SCADA Data Gateway + Kalkitech SYNC 4000 + NovaTech Orion LX + SEL RTAC + OSIsoft PI + AVEVA System Platform.',
+        href: '/ipp-lifecycle/workstation?tab=scada-connectors',
+        cta_label: 'Open SCADA connectors',
+        icon: 'cable',
+      },
     ],
     ai_suggestions: await buildIppDeveloperAiSuggestions(c, user, { milestones, envSoon, invoicesOut }),
   };
@@ -1112,6 +1121,8 @@ async function buildGridOperatorBoard(c: any, user: any): Promise<LaunchPayload>
       { key: 'outages', title: 'Outage management', description: 'Report, update, restore grid outages with incident timeline.', href: '/grid-operator', cta_label: 'Open outages', icon: 'alert', metric: { label: 'ongoing', value: outages, tone: outages > 0 ? 'bad' : 'good' } },
       { key: 'dispatch', title: 'Dispatch + ancillary services', description: 'Publish schedules, issue dispatch instructions, clear ancillary tenders.', href: '/grid-operator', cta_label: 'Open dispatch', icon: 'gauge' },
       { key: 'imbalance', title: 'Imbalance settlement', description: 'Imbalance events, settlement runs.', href: '/settlement', cta_label: 'Open settlement', icon: 'balance' },
+      // W122 Phase-C opener — external-system protocol bridge tab.
+      { key: 'scada_connectors', title: 'SCADA / IEC 61850 connectors (W122)', description: 'Real-time IEC 61850 MMS/GOOSE/SV + 60870-5-104 + DNP3 + Modbus + IEEE C37.118 + OPC UA bridge to substation SCADA. INVERTED SLA, mTLS-gated peer endpoint, revoke crosses NERSA + SARB BA 700.', href: '/grid-operator/workstation?tab=scada-connectors', cta_label: 'Open SCADA connectors', icon: 'cable' },
     ],
     ai_suggestions: [
       ...(outages > 0
