@@ -13,6 +13,7 @@ import { OemFcoChainTab } from '../oem-fco/OemFcoChainTab';
 import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
 import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
 import RulPredictionMlTab from '../rulPredictionMl/RulPredictionMlTab';
+import { FaultFingerprintMlTab } from '../faultFingerprintMl/FaultFingerprintMlTab';
 import { api } from '../../lib/api';
 import { X } from 'lucide-react';
 
@@ -162,6 +163,11 @@ export function SupportWorkstationPage() {
             key: 'rul-prediction-ml',
             label: 'RUL Prediction ML (W128)',
             body: () => <RulPredictionMlTab />,
+          },
+          {
+            key: 'fault-fingerprint-ml',
+            label: 'Fault Fingerprint ML (W129)',
+            body: () => <FaultFingerprintMlTab />,
           },
           {
             key: 'escalations',

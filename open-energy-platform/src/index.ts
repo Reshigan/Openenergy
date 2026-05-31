@@ -227,6 +227,11 @@ import rulPredictionMlRoutes, {
   rulPredictionMlConcordanceMonitor,
   rulPredictionMlModelCardExpirySweep,
 } from './routes/rul-prediction-ml';
+import faultFingerprintMlRoutes, {
+  faultFingerprintMlSlaSweep,
+  faultFingerprintMlClassDriftScan,
+  faultFingerprintMlModelCardExpirySweep,
+} from './routes/fault-fingerprint-ml';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -708,6 +713,22 @@ app.route('/api/anomaly-detection-ml', anomalyDetectionMlRoutes);
 // W77 reserve + W63 warranty + W118 audit. WRITE {admin, support}.
 // READ all 9 personas. JOINS W127 'ml' audit namespace.
 app.route('/api/rul-prediction-ml', rulPredictionMlRoutes);
+// W129 Fault-Fingerprint Multi-Class ML chain - PHASE D WAVE 3 OF 4.
+// Multi-class fault classifier (XGBoost/RandomForest/GradientBoosting/
+// CNN-1D/LightGBM/CatBoost/baseline_physics) REPLACING the W71 12-mode
+// physics-rule fault fingerprinting. THIRD Phase-D wave, joining W127
+// (anomaly) + W128 (RUL survival) in the 'ml' audit namespace.
+// SIGNATURE W129-FFML-ROLLBACK: rollback_model crosses regulator EVERY
+// tier (THIRD Phase-D hard line, joins W127+W128). W129-UNIQUE:
+// add_novel_class crosses at fleet_systemic only (adding a previously-
+// unseen fault mode at fleet-wide scale is EU-AI-Act-reportable model-
+// scope expansion). INVERTED SLA (LARGER fleet=MORE time, longer than
+// W128 - multi-class confusion-matrix stabilisation + per-class
+// calibration need more shadow time on imbalanced classes). 5 bridges:
+// W71 NOT NULL (12-mode physics baseline reconciliation MANDATORY) +
+// W15 warranty claim + W41 ITIL problem mgmt + W63 warranty recovery +
+// W118 audit. WRITE {admin, support}. READ all 9 personas.
+app.route('/api/fault-fingerprint-ml', faultFingerprintMlRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1907,6 +1928,20 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('rul_prediction_ml_sla_sweep', async () => {
         const result = await rulPredictionMlSlaSweep(env as never);
         console.log('rul_prediction_ml_sla_sweep', JSON.stringify(result));
+      });
+      // W129 Fault-Fingerprint Multi-Class ML Model — 15-min sweep
+      // over every multi-class classifier lifecycle state with an SLA
+      // anchor. INVERTED HOUR polarity (single_asset 36 / small_fleet
+      // 120 / large_fleet 300 / multi_jurisdiction_fleet 600 /
+      // fleet_systemic 900). LONGER than W128 — multi-class
+      // confusion-matrix stabilisation + per-class calibration need
+      // more shadow time on imbalanced classes. SLA breach crosses
+      // regulator on heavy tiers under ISO 42001 + NIST AI RMF + EU
+      // AI Act + ISO 27001 + SOC 2 Type II + NERC CIP-013. THIRD
+      // Phase-D ML governance hard line.
+      await safe('fault_fingerprint_ml_sla_sweep', async () => {
+        const result = await faultFingerprintMlSlaSweep(env as never);
+        console.log('fault_fingerprint_ml_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -3600,6 +3635,19 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
         const result = await rulPredictionMlModelCardExpirySweep(env as never);
         console.log('rul_prediction_ml_model_card_expiry_sweep', JSON.stringify(result));
       });
+      // W129 Fault-Fingerprint Multi-Class ML Model — Monday 09:00
+      // SAST weekly model-card expiry sweep. Walks every live champion
+      // multi-class classifier with a model_card_expires_at,
+      // recomputes days_to_model_card_expiry, flags 14d-out (or
+      // already expired) as regulator_relevant + is_reportable so the
+      // dashboard surfaces ISO 42001 model-card re-attestation / NIST
+      // AI RMF system-card renewal BEFORE the governance committee
+      // disables the model. Shared trigger with W122/W123/W124/W125/
+      // W126/W127/W128 - no duplicate cron entry in wrangler.toml.
+      await safe('fault_fingerprint_ml_model_card_expiry_sweep', async () => {
+        const result = await faultFingerprintMlModelCardExpirySweep(env as never);
+        console.log('fault_fingerprint_ml_model_card_expiry_sweep', JSON.stringify(result));
+      });
       break;
 
     case '30 2 * * *':
@@ -3632,6 +3680,26 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('rul_prediction_ml_concordance_monitor', async () => {
         const result = await rulPredictionMlConcordanceMonitor(env as never);
         console.log('rul_prediction_ml_concordance_monitor', JSON.stringify(result));
+      });
+      break;
+
+    case '30 3 * * *':
+      // W129 Fault-Fingerprint Multi-Class ML Model — daily 05:30
+      // SAST (03:30 UTC) class-drift scan sweep. Walks every live A/B
+      // and champion multi-class classifier, recomputes class-PSI
+      // (argmax distribution drift) + per-class confusion drift +
+      // novel-class detection rate against the calibrated baseline,
+      // flips class_drift_severity, and raises is_reportable when
+      // PSI crosses regulator_reportable_misclass threshold OR a
+      // previously-unseen fault mode surfaces at fleet_systemic (EU AI
+      // Act Art 14 product-class change). NEW trigger - THIRD Phase-D
+      // daily cron, dedicated 30-min-after-W128 slot so the heavy
+      // multi-class drift scan doesn't share airtime with the 03:00
+      // W128 survival concordance monitor or the 02:30 W127 anomaly
+      // drift scan.
+      await safe('fault_fingerprint_ml_class_drift_scan', async () => {
+        const result = await faultFingerprintMlClassDriftScan(env as never);
+        console.log('fault_fingerprint_ml_class_drift_scan', JSON.stringify(result));
       });
       break;
 

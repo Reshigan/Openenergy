@@ -1341,7 +1341,26 @@ export type EventType =
   | 'rul_prediction_ml_rolled_back'
   | 'rul_prediction_ml_recalled'
   | 'rul_prediction_ml_failover_to_ols_activated'
-  | 'rul_prediction_ml_sla_breached';
+  | 'rul_prediction_ml_sla_breached'
+  | 'fault_fingerprint_ml_proposed'
+  | 'fault_fingerprint_ml_labeled_dataset_bound'
+  | 'fault_fingerprint_ml_class_imbalance_resolved'
+  | 'fault_fingerprint_ml_features_engineered'
+  | 'fault_fingerprint_ml_train_test_split'
+  | 'fault_fingerprint_ml_multiclass_trained'
+  | 'fault_fingerprint_ml_confusion_matrix_validated'
+  | 'fault_fingerprint_ml_calibrated'
+  | 'fault_fingerprint_ml_shadow_deployed'
+  | 'fault_fingerprint_ml_live_ab_active'
+  | 'fault_fingerprint_ml_champion_promoted'
+  | 'fault_fingerprint_ml_retrained'
+  | 'fault_fingerprint_ml_archived'
+  | 'fault_fingerprint_ml_class_drift_detected'
+  | 'fault_fingerprint_ml_rolled_back'
+  | 'fault_fingerprint_ml_recalled'
+  | 'fault_fingerprint_ml_failover_to_physics_baseline'
+  | 'fault_fingerprint_ml_novel_class_added'
+  | 'fault_fingerprint_ml_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1515,6 +1534,19 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // iso_42001 (replacing OLS at systemic scale is itself a
   // governance event).
   rul_prediction_ml: 'ml',
+  // W129 Fault-Fingerprint Multi-Class ML chain - JOINS W127+W128 'ml'
+  // namespace (THIRD wave in the SAME tamper-evident chain partition).
+  // XGBoost/RF/GB/CNN-1D/LightGBM/CatBoost/baseline_physics multi-class
+  // classifier proposals, training, confusion-matrix validations,
+  // class-drift detections, rollbacks, recalls, physics-baseline-
+  // failovers and novel-class additions share the W127 partition
+  // under ISO 42001 + NIST AI RMF + EU AI Act + ISO 27001 + SOC 2
+  // Type II + NERC CIP-013. SIGNATURE: rollback_model crosses
+  // regulator EVERY tier (W129-FFML-ROLLBACK - THIRD Phase-D hard
+  // line). UNIQUE: add_novel_class crosses at fleet_systemic only
+  // (adding a previously-unseen fault mode at fleet-wide scale is
+  // EU-AI-Act-reportable model-scope expansion).
+  fault_fingerprint_ml: 'ml',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

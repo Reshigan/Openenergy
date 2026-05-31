@@ -27,6 +27,7 @@ import { ScadaConnectorTab } from '../scadaConnector/ScadaConnectorTab';
 import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
 import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
 import RulPredictionMlTab from '../rulPredictionMl/RulPredictionMlTab';
+import { FaultFingerprintMlTab } from '../faultFingerprintMl/FaultFingerprintMlTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -76,6 +77,7 @@ export function IppWorkstationPage() {
         { key: 'mqtt-opcua-connectors', label: 'MQTT/OPC-UA connectors (W123)', body: () => <MqttOpcuaConnectorTab /> },
         { key: 'anomaly-detection-ml', label: 'Anomaly ML (W127)', body: () => <AnomalyDetectionMlTab /> },
         { key: 'rul-prediction-ml', label: 'RUL Prediction ML (W128)', body: () => <RulPredictionMlTab /> },
+        { key: 'fault-fingerprint-ml', label: 'Fault Fingerprint ML (W129)', body: () => <FaultFingerprintMlTab /> },
         { key: 'community', label: 'Community', body: ({ onRefresh }) => <CommunityTab onRefresh={onRefresh} /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (

@@ -10,6 +10,7 @@ import { SapOracleErpConnectorTab } from '../sapOracleErpConnector/SapOracleErpC
 import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/GovernmentFilingConnectorTab';
 import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
 import RulPredictionMlTab from '../rulPredictionMl/RulPredictionMlTab';
+import { FaultFingerprintMlTab } from '../faultFingerprintMl/FaultFingerprintMlTab';
 import { api } from '../../lib/api';
 
 const formatZAR = (v: number) =>
@@ -87,6 +88,9 @@ export function AdminWorkstationPage() {
         },
         { key: 'rul-prediction-ml', label: 'RUL Prediction ML (W128)',
           body: () => <RulPredictionMlTab />,
+        },
+        { key: 'fault-fingerprint-ml', label: 'Fault Fingerprint ML (W129)',
+          body: () => <FaultFingerprintMlTab />,
         },
       ]}
     />
