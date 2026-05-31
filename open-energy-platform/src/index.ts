@@ -217,6 +217,11 @@ import governmentFilingConnectorRoutes, {
   governmentFilingConnectorFilingDeadlineSweep,
   governmentFilingConnectorCredentialExpirySweep,
 } from './routes/government-filing-connector';
+import anomalyDetectionMlRoutes, {
+  anomalyDetectionMlSlaSweep,
+  anomalyDetectionMlDriftScan,
+  anomalyDetectionMlModelCardExpirySweep,
+} from './routes/anomaly-detection-ml';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -664,6 +669,28 @@ app.route('/api/sap-oracle-erp-connector', sapOracleErpConnectorRoutes);
 // W74 NERSA levy, W48 carbon tax, W118 audit). Opens NEW 'regulator'
 // audit namespace.
 app.route('/api/government-filing-connector', governmentFilingConnectorRoutes);
+// W127 — Anomaly-Detection ML Model — FIRST wave of Phase D (ML brain
+// replacing the W71 heuristic ensemble). 12-state P6 chain on
+// oe_anomaly_detection_ml: model_proposed → dataset_bound →
+// features_engineered → train_test_split → model_trained →
+// backtest_validated → calibrated → shadow_deployed → live_ab_active →
+// champion_promoted → retrained → archived (HARD). 4 branch states
+// (drift_detected soft / rolled_back terminal / recalled terminal /
+// failover_to_baseline soft). INVERTED SLA at model_proposed (single
+// asset 24h → fleet_systemic 720h). 5 FLOOR flags (safety_critical_
+// inference / regulator_reportable_drift / nerc_cip_audit_in_scope /
+// sox_ml_governance_required / iso_42001_ai_management_required) lift
+// to large_fleet ≥1 / fleet_systemic ≥3. SIGNATURE: rollback_model
+// crosses regulator EVERY tier (W127-ML-ROLLBACK FIRST Phase-D hard
+// line) — ISO 42001 + NIST AI RMF + EU AI Act + ISO 27001 + SOC 2
+// Type II + NERC CIP-013 alignment. WRITE {admin, support} - 2
+// writers. READ all 9 personas. INTERNAL ML governance chain (no
+// mTLS, no public peer endpoint). 5 bridges (W71 asset prognostics
+// MANDATORY, W12 site commissioning, W118 audit MANDATORY, W126
+// regulator filing when regulator_reportable_drift, W74 NERSA levy
+// when iso_42001). Opens NEW 'ml' audit namespace (4th after
+// platform/grid/settlement/regulator).
+app.route('/api/anomaly-detection-ml', anomalyDetectionMlRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1838,6 +1865,18 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('government_filing_connector_sla_sweep', async () => {
         const result = await governmentFilingConnectorSlaSweep(env as never);
         console.log('government_filing_connector_sla_sweep', JSON.stringify(result));
+      });
+      // W127 Anomaly-Detection ML Model — 15-min sweep over every
+      // model lifecycle state with an SLA anchor. INVERTED HOUR
+      // polarity (single_asset 24 / small_fleet 96 / large_fleet
+      // 240 / multi_jurisdiction_fleet 480 / fleet_systemic 720).
+      // SLA breach crosses regulator on heavy tiers
+      // (multi_jurisdiction_fleet + fleet_systemic) under ISO 42001
+      // + NIST AI RMF + EU AI Act + ISO 27001 + SOC 2 Type II +
+      // NERC CIP-013. FIRST Phase-D ML governance hard line.
+      await safe('anomaly_detection_ml_sla_sweep', async () => {
+        const result = await anomalyDetectionMlSlaSweep(env as never);
+        console.log('anomaly_detection_ml_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -3504,6 +3543,34 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('government_filing_connector_credential_expiry_sweep', async () => {
         const result = await governmentFilingConnectorCredentialExpirySweep(env as never);
         console.log('government_filing_connector_credential_expiry_sweep', JSON.stringify(result));
+      });
+      // W127 Anomaly-Detection ML Model — Monday 09:00 SAST weekly
+      // model-card expiry sweep. Walks every live champion model with
+      // a model_card_expires_at, recomputes days_to_model_card_expiry,
+      // flags 14d-out (or already expired) as regulator_relevant +
+      // is_reportable so the dashboard surfaces ISO 42001 model-card
+      // re-attestation / NIST AI RMF system-card renewal BEFORE the
+      // governance committee disables the model. Shared trigger with
+      // W122/W123/W124/W125/W126 - no duplicate cron entry in
+      // wrangler.toml.
+      await safe('anomaly_detection_ml_model_card_expiry_sweep', async () => {
+        const result = await anomalyDetectionMlModelCardExpirySweep(env as never);
+        console.log('anomaly_detection_ml_model_card_expiry_sweep', JSON.stringify(result));
+      });
+      break;
+
+    case '30 2 * * *':
+      // W127 Anomaly-Detection ML Model — daily 04:30 SAST (02:30 UTC)
+      // drift-scan sweep. Walks every live A/B and champion model,
+      // recomputes PSI + KS + recon-error p99 + lift drift signals
+      // against the calibrated baseline, flips drift_severity, and
+      // raises is_reportable when severity crosses the regulator-
+      // reportable threshold. NEW trigger - FIRST Phase-D daily cron,
+      // dedicated slot so the heavy multi-tenant drift scan doesn't
+      // share airtime with the 02:00 W126 statutory deadline scan.
+      await safe('anomaly_detection_ml_drift_scan', async () => {
+        const result = await anomalyDetectionMlDriftScan(env as never);
+        console.log('anomaly_detection_ml_drift_scan', JSON.stringify(result));
       });
       break;
 

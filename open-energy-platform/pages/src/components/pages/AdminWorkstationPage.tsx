@@ -8,6 +8,7 @@ import { ControlEnvironmentAuditTab } from '../controlEnvironment/ControlEnviron
 import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConnectorTab';
 import { SapOracleErpConnectorTab } from '../sapOracleErpConnector/SapOracleErpConnectorTab';
 import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/GovernmentFilingConnectorTab';
+import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
 import { api } from '../../lib/api';
 
 const formatZAR = (v: number) =>
@@ -79,6 +80,9 @@ export function AdminWorkstationPage() {
         },
         { key: 'government-filing-connectors', label: 'Filing connectors (W126)',
           body: () => <GovernmentFilingConnectorTab />,
+        },
+        { key: 'anomaly-detection-ml', label: 'Anomaly ML (W127)',
+          body: () => <AnomalyDetectionMlTab />,
         },
       ]}
     />

@@ -1307,7 +1307,24 @@ export type EventType =
   | 'government_filing_connector_resumed'
   | 'government_filing_connector_credential_revoked'
   | 'government_filing_connector_failover_activated'
-  | 'government_filing_connector_sla_breached';
+  | 'government_filing_connector_sla_breached'
+  | 'anomaly_detection_ml_proposed'
+  | 'anomaly_detection_ml_dataset_bound'
+  | 'anomaly_detection_ml_features_engineered'
+  | 'anomaly_detection_ml_train_test_split'
+  | 'anomaly_detection_ml_trained'
+  | 'anomaly_detection_ml_backtest_validated'
+  | 'anomaly_detection_ml_calibrated'
+  | 'anomaly_detection_ml_shadow_deployed'
+  | 'anomaly_detection_ml_live_ab_active'
+  | 'anomaly_detection_ml_champion_promoted'
+  | 'anomaly_detection_ml_retrained'
+  | 'anomaly_detection_ml_archived'
+  | 'anomaly_detection_ml_drift_detected'
+  | 'anomaly_detection_ml_rolled_back'
+  | 'anomaly_detection_ml_recalled'
+  | 'anomaly_detection_ml_failover_activated'
+  | 'anomaly_detection_ml_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1459,6 +1476,17 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // - explicitly NOT 'settlement' (W124/W125 family) because government
   // statutory filings are REGULATORY-COMPLIANCE not FINANCIAL.
   government_filing_connector: 'regulator',
+  // Wave 127 - Anomaly-Detection ML Model. FIRST wave of Phase D
+  // (the ML-brain band, replacing the W71 heuristic prognostics
+  // ensemble with real ML). Opens the NEW 'ml' audit namespace
+  // (4th after platform/grid/settlement/regulator) so model
+  // proposals, training, drift detections, rollbacks, recalls and
+  // failovers all live under their own tamper-evident chain
+  // partition - ISO 42001 AI Management Systems + NIST AI RMF +
+  // EU AI Act + ISO 27001 + SOC 2 Type II + NERC CIP-013 alignment.
+  // SIGNATURE: rollback_model crosses regulator EVERY tier
+  // (W127-ML-ROLLBACK - first Phase-D hard line).
+  anomaly_detection_ml: 'ml',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

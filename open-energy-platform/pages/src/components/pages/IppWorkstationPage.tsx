@@ -25,6 +25,7 @@ import { IppRfiChainTab } from '../ipp/IppRfiChainTab';
 import { IppChangeOrderChainTab } from '../ipp/IppChangeOrderChainTab';
 import { ScadaConnectorTab } from '../scadaConnector/ScadaConnectorTab';
 import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
+import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -72,6 +73,7 @@ export function IppWorkstationPage() {
         { key: 'gca_chain', label: 'UNGCA chain', body: () => <GcaChainTab /> },
         { key: 'scada-connectors', label: 'SCADA connectors (W122)', body: () => <ScadaConnectorTab /> },
         { key: 'mqtt-opcua-connectors', label: 'MQTT/OPC-UA connectors (W123)', body: () => <MqttOpcuaConnectorTab /> },
+        { key: 'anomaly-detection-ml', label: 'Anomaly ML (W127)', body: () => <AnomalyDetectionMlTab /> },
         { key: 'community', label: 'Community', body: ({ onRefresh }) => <CommunityTab onRefresh={onRefresh} /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (

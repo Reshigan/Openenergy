@@ -11,6 +11,7 @@ import { ServiceContractChainTab } from '../service-contract/ServiceContractChai
 import { ServiceRequestChainTab } from '../support/ServiceRequestChainTab';
 import { OemFcoChainTab } from '../oem-fco/OemFcoChainTab';
 import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
+import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
 import { api } from '../../lib/api';
 import { X } from 'lucide-react';
 
@@ -150,6 +151,11 @@ export function SupportWorkstationPage() {
             key: 'mqtt-opcua-connectors',
             label: 'MQTT/OPC-UA connectors (W123)',
             body: () => <MqttOpcuaConnectorTab />,
+          },
+          {
+            key: 'anomaly-detection-ml',
+            label: 'Anomaly ML (W127)',
+            body: () => <AnomalyDetectionMlTab />,
           },
           {
             key: 'escalations',
