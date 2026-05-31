@@ -15,6 +15,7 @@ import { SettlementFailChainTab } from '../settlement-fail/SettlementFailChainTa
 import { BenchmarkTransitionChainTab } from '../benchmark-transition/BenchmarkTransitionChainTab';
 import { PreTradeCreditChainTab } from '../trader/PreTradeCreditChainTab';
 import { PnlAttributionChainTab } from '../trader/PnlAttributionChainTab';
+import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConnectorTab';
 import { api } from '../../lib/api';
 
 export function TraderWorkstationPage() {
@@ -60,6 +61,7 @@ export function TraderWorkstationPage() {
         { key: 'trade-allocation', label: 'Trade allocation', body: () => <TradeAllocationChainTab /> },
         { key: 'settlement-fail', label: 'Settlement fails', body: () => <SettlementFailChainTab /> },
         { key: 'benchmark-transition', label: 'Benchmark transition', body: () => <BenchmarkTransitionChainTab /> },
+        { key: 'strate-swift-connectors', label: 'Settlement rails (W124)', body: () => <StrateSwiftConnectorTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

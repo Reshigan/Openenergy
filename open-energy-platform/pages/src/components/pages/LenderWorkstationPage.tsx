@@ -13,6 +13,7 @@ import { LoanTransferChainTab } from '../lender/LoanTransferChainTab';
 import { ReserveAccountChainTab } from '../lender/ReserveAccountChainTab';
 import { SecurityPerfectionChainTab } from '../lender/SecurityPerfectionChainTab';
 import { SllKpiChainTab } from '../lender/SllKpiChainTab';
+import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConnectorTab';
 
 export function LenderWorkstationPage() {
   const kpis = useWorkstationKpis('lender');
@@ -46,6 +47,7 @@ export function LenderWorkstationPage() {
         { key: 'loan_restructure', label: 'Loan restructure & A&E', body: () => <LoanRestructureChainTab /> },
         { key: 'loan_default', label: 'Default & enforcement', body: () => <LoanDefaultChainTab /> },
         { key: 'dunning', label: 'Dunning queue', body: () => <DunningTab /> },
+        { key: 'strate-swift-connectors', label: 'Settlement rails (W124)', body: () => <StrateSwiftConnectorTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

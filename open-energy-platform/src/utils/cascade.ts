@@ -1256,7 +1256,24 @@ export type EventType =
   | 'mqtt_opcua_connector_resumed'
   | 'mqtt_opcua_connector_credential_revoked'
   | 'mqtt_opcua_connector_failover_activated'
-  | 'mqtt_opcua_connector_sla_breached';
+  | 'mqtt_opcua_connector_sla_breached'
+  | 'strate_swift_connector_proposed'
+  | 'strate_swift_connector_bic_validated'
+  | 'strate_swift_connector_bank_handshake_completed'
+  | 'strate_swift_connector_iso20022_schemas_loaded'
+  | 'strate_swift_connector_messaging_session_established'
+  | 'strate_swift_connector_test_messages_validated'
+  | 'strate_swift_connector_reconciliation_account_bound'
+  | 'strate_swift_connector_live_settlement_active'
+  | 'strate_swift_connector_cycle_reconciled'
+  | 'strate_swift_connector_archived'
+  | 'strate_swift_connector_disconnected'
+  | 'strate_swift_connector_suspended'
+  | 'strate_swift_connector_resumed'
+  | 'strate_swift_connector_credential_revoked'
+  | 'strate_swift_connector_failover_activated'
+  | 'strate_swift_connector_cycle_settled'
+  | 'strate_swift_connector_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1387,6 +1404,12 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // inverters/BESS/wind turbines/RTUs reads as a grid-domain mutation -
   // explicitly NOT 'audit' (that family closed at W121).
   mqtt_opcua_connector: 'grid',
+  // Wave 124 - STRATE / SWIFT Settlement Connector. PHASE C WAVE 3 of 5.
+  // Money-in/money-out financial settlement spine: STRATE (SA CSD),
+  // SWIFT MT/MX, SARB SAMOS RTGS, SADC RTGS, commercial bank EFT/ACH.
+  // Opens the NEW 'settlement' audit namespace - explicitly NOT 'grid'
+  // (W122/W123 family) because settlements are FINANCIAL not OT.
+  strate_swift_connector: 'settlement',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

@@ -5,6 +5,7 @@ import { AuditChainBlockTab } from '../audit/AuditChainBlockTab';
 import { RegulatorExportPackTab } from '../regulatorExport/RegulatorExportPackTab';
 import { ReconciliationAttestationTab } from '../reconciliation/ReconciliationAttestationTab';
 import { ControlEnvironmentAuditTab } from '../controlEnvironment/ControlEnvironmentAuditTab';
+import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConnectorTab';
 import { api } from '../../lib/api';
 
 const formatZAR = (v: number) =>
@@ -67,6 +68,9 @@ export function AdminWorkstationPage() {
         },
         { key: 'control-environment-audit', label: 'Control environment (W121)',
           body: () => <ControlEnvironmentAuditTab />,
+        },
+        { key: 'strate-swift-connectors', label: 'Settlement rails (W124)',
+          body: () => <StrateSwiftConnectorTab />,
         },
       ]}
     />

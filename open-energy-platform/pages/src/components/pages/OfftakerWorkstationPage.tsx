@@ -13,6 +13,7 @@ import { PpaNominationChainTab } from '../offtaker/PpaNominationChainTab';
 import { PpaTerminationChainTab } from '../offtaker/PpaTerminationChainTab';
 import { RecLifecycleChainTab } from '../offtaker/RecLifecycleChainTab';
 import { TariffIndexationTab } from '../offtaker/TariffIndexationTab';
+import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConnectorTab';
 
 export function OfftakerWorkstationPage() {
   const kpis = useWorkstationKpis('offtaker');
@@ -56,6 +57,7 @@ export function OfftakerWorkstationPage() {
         { key: 'rec_lifecycle', label: 'REC lifecycle', body: () => <RecLifecycleChainTab /> },
         { key: 'ppa_termination', label: 'PPA termination', body: () => <PpaTerminationChainTab /> },
         { key: 'obligations', label: 'Obligations register', body: () => <ObligationsTab /> },
+        { key: 'strate-swift-connectors', label: 'Settlement rails (W124)', body: () => <StrateSwiftConnectorTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

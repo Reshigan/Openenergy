@@ -432,6 +432,15 @@ async function buildTraderBoard(c: any, user: any): Promise<LaunchPayload> {
         cta_label: 'Open workstation',
         icon: 'desktop_windows',
       },
+      {
+        // W124 Phase-C wave 3 — STRATE / SWIFT settlement connector.
+        key: 'strate-swift-connectors',
+        title: 'Settlement rails (W124)',
+        description: 'Phase-C wave 3. MONEY-IN/MONEY-OUT financial settlement spine: STRATE (SA CSD T+3/T+1) + SWIFT MT/MX (ISO 20022 pacs/camt/pain) + SARB SAMOS RTGS + SADC RTGS + commercial bank EFT/ACH. 12-state forward + 4 branch chain, INVERTED SLA hours (domestic_eft 168 / multi_bank_eft 240 / strate_csd 360 / samos_rtgs 480 / swift_global 720). FLOOR-AT-SAMOS-RTGS ≥1 / FLOOR-AT-SWIFT-GLOBAL ≥3 of 5 flags. SIGNATURE: revoke_credential crosses SARB ExCon + FIC Act + Basel III + CPMI-IOSCO PFMI Principle 9 EVERY tier. mTLS-gated PUBLIC peer endpoint via x-mtls-cert-fingerprint.',
+        href: '/trader-risk/workstation?tab=strate-swift-connectors',
+        cta_label: 'Open settlement rails',
+        icon: 'account_balance',
+      },
     ],
     ai_suggestions: await buildTraderAiSuggestions(c, user, { openOrders, rejections, exceptionsN, allocPending }),
   };
@@ -957,6 +966,15 @@ async function buildOfftakerBoard(c: any, user: any): Promise<LaunchPayload> {
         cta_label: 'Open workstation',
         icon: 'desktop_windows',
       },
+      {
+        // W124 Phase-C wave 3 — STRATE / SWIFT settlement connector.
+        key: 'strate-swift-connectors',
+        title: 'Settlement rails (W124)',
+        description: 'Phase-C wave 3. MONEY-IN/MONEY-OUT financial settlement spine for outgoing PPA invoice payment: STRATE (SA CSD) + SWIFT MT/MX (ISO 20022 pacs/camt/pain) + SARB SAMOS RTGS + commercial bank EFT/ACH. 12-state forward + 4 branch chain, INVERTED SLA hours (domestic_eft 168 / multi_bank_eft 240 / strate_csd 360 / samos_rtgs 480 / swift_global 720). FLOOR-AT-SAMOS-RTGS ≥1 / FLOOR-AT-SWIFT-GLOBAL ≥3 of 5 flags. SIGNATURE: revoke_credential crosses SARB ExCon + FIC Act + Basel III + CPMI-IOSCO PFMI P9 EVERY tier. mTLS-gated PUBLIC peer endpoint via x-mtls-cert-fingerprint.',
+        href: '/offtaker-suite/workstation?tab=strate-swift-connectors',
+        cta_label: 'Open settlement rails',
+        icon: 'account_balance',
+      },
     ],
     ai_suggestions: [
       ...(overdueN > 0
@@ -1046,6 +1064,8 @@ async function buildLenderBoard(c: any, user: any): Promise<LaunchPayload> {
       { key: 'covenants', title: 'Covenant monitoring', description: 'DSCR, leverage, debt-service tests + AI cure-pathway advisor.', href: '/lender-suite', cta_label: 'Open covenants', icon: 'monitoring', metric: { label: 'breached', value: breached, tone: breached > 0 ? 'bad' : 'good' } },
       { key: 'actions', title: 'Workout queue', description: 'Cure plans, waivers, accelerations — one screen for every breach.', href: '/lender-suite?tab=actions', cta_label: 'Open queue', icon: 'gavel', metric: { label: 'open', value: actionsN, tone: actionsN > 0 ? 'warn' : 'good' } },
       { key: 'draws', title: 'Disbursement requests', description: 'Approve / reject / partial drawdowns.', href: '/funds', cta_label: 'Open draws', icon: 'request_quote', metric: { label: 'pending', value: pending, tone: pending > 0 ? 'warn' : 'good' } },
+      // W124 Phase-C wave 3 — STRATE / SWIFT settlement connector.
+      { key: 'strate_swift_connectors', title: 'Settlement rails (W124)', description: 'Phase-C wave 3. MONEY-IN/MONEY-OUT financial settlement spine for drawdown disbursement + repayment receipt: STRATE (SA CSD) + SWIFT MT/MX (ISO 20022 pacs/camt/pain) + SARB SAMOS RTGS + commercial bank EFT/ACH. 12-state forward + 4 branch chain, INVERTED SLA hours (domestic_eft 168 / multi_bank_eft 240 / strate_csd 360 / samos_rtgs 480 / swift_global 720). FLOOR-AT-SAMOS-RTGS ≥1 / FLOOR-AT-SWIFT-GLOBAL ≥3 of 5 flags. SIGNATURE: revoke_credential crosses SARB ExCon + FIC Act + Basel III + CPMI-IOSCO PFMI P9 EVERY tier. mTLS-gated PUBLIC peer endpoint via x-mtls-cert-fingerprint.', href: '/lender-suite/workstation?tab=strate-swift-connectors', cta_label: 'Open settlement rails', icon: 'account_balance' },
     ],
     ai_suggestions: [
       ...(breached > 0 && actionsN < breached
@@ -1416,6 +1436,8 @@ async function buildAdminBoard(c: any, user: any): Promise<LaunchPayload> {
       { key: 'reconciliation_attestation', title: 'Reconciliation attestation', description: 'L5 ICFR attestation chain reconciling SAP S/4HANA, Oracle, SAGE, STRATE, SWIFT, regulator inboxes against W118 audit blocks. CFO + audit-committee + external-auditor sign-offs.', href: '/admin-platform/workstation?tab=reconciliation-attestation', cta_label: 'Open attestations', icon: 'fact_check' },
       { key: 'reports', title: 'Revenue & reports', description: 'Settled revenue, churn, MRR, regulatory reports.', href: '/reports', cta_label: 'Open reports', icon: 'report' },
       { key: 'support', title: 'Support escalations', description: 'Tickets, breaches, cross-tenant search.', href: '/support', cta_label: 'Open support', icon: 'help' },
+      // W124 Phase-C wave 3 — STRATE / SWIFT settlement connector.
+      { key: 'strate_swift_connectors', title: 'Settlement rails (W124)', description: 'Phase-C wave 3. MONEY-IN/MONEY-OUT financial settlement spine: STRATE (SA CSD T+3/T+1) + SWIFT MT/MX (ISO 20022 pacs/camt/pain) + SARB SAMOS RTGS + SADC RTGS + commercial bank EFT/ACH. 12-state forward + 4 branch chain (proposed → bic_validated → bank_handshake → iso20022_schemas → messaging_session → test_messages → reconciliation_bound → live_settlement → cycle_reconciled → archived + suspended/resumed/credential_revoked/failover_active/disconnected), INVERTED SLA hours (domestic_eft 168 / multi_bank_eft 240 / strate_csd 360 / samos_rtgs 480 / swift_global 720). FLOOR-AT-SAMOS-RTGS ≥1 / FLOOR-AT-SWIFT-GLOBAL ≥3 of 5 flags. SIGNATURE: revoke_credential crosses SARB ExCon + FIC Act + Basel III LCR/NSFR + CPMI-IOSCO PFMI Principle 9 EVERY tier. mTLS-gated PUBLIC peer endpoint via x-mtls-cert-fingerprint. NEW settlement namespace.', href: '/admin-platform/workstation?tab=strate-swift-connectors', cta_label: 'Open settlement rails', icon: 'account_balance' },
     ],
     ai_suggestions: [
       ...(cascadeDlq + settlementDlq > 0

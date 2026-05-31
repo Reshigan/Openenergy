@@ -202,6 +202,11 @@ import mqttOpcuaConnectorRoutes, {
   mqttOpcuaConnectorTelemetryRefreshSweep,
   mqttOpcuaConnectorCertExpirySweep,
 } from './routes/mqtt-opcua-connector';
+import strateSwiftConnectorRoutes, {
+  strateSwiftConnectorSlaSweep,
+  strateSwiftConnectorReconciliationSweep,
+  strateSwiftConnectorKeyExpirySweep,
+} from './routes/strate-swift-connector';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -602,6 +607,20 @@ app.route('/api/scada-connector', scadaConnectorRoutes);
 // WRITE {admin, grid_operator, ipp_developer, support}. READ all 9
 // personas + external iot_peer via mTLS. 5 bridges (W118 mandatory).
 app.route('/api/mqtt-opcua-connector', mqttOpcuaConnectorRoutes);
+// W124 STRATE / SWIFT Settlement Connector - Phase C wave 3 of 5.
+// MONEY-IN/MONEY-OUT financial settlement spine: STRATE (SA CSD T+3/T+1)
+// + SWIFT MT/MX (pacs/camt/pain ISO 20022) + SARB SAMOS RTGS + SADC RTGS
+// + commercial bank EFT/ACH. mTLS-gated PUBLIC peer endpoint at
+// /api/strate-swift-connector/peer/:peer_id mounted BEFORE authMiddleware
+// inside the route module - uses x-mtls-cert-fingerprint header
+// (Phase-C consistency with W122/W123). 12-state forward + 4 branch
+// machine; INVERTED SLA hours (domestic_eft 168 .. swift_global 720).
+// FLOOR-AT-SAMOS-RTGS >=1 / FLOOR-AT-SWIFT-GLOBAL >=3 of 5 flags.
+// SIGNATURE: revoke_credential EVERY tier (SARB ExCon + FIC Act +
+// Basel III + CPMI-IOSCO PFMI Principle 9). WRITE {admin, trader,
+// lender, offtaker}. READ all 9 personas + external bank_peer via
+// mTLS. 5 bridges (W120+W118 mandatory). NEW 'settlement' namespace.
+app.route('/api/strate-swift-connector', strateSwiftConnectorRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1744,6 +1763,16 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('mqtt_opcua_connector_sla_sweep', async () => {
         const result = await mqttOpcuaConnectorSlaSweep(env as never);
         console.log('mqtt_opcua_connector_sla_sweep', JSON.stringify(result));
+      });
+      // W124 STRATE / SWIFT settlement connector — 15-min sweep over
+      // every active connector. INVERTED HOUR polarity (domestic_eft 168
+      // / multi_bank_eft 240 / strate_csd 360 / samos_rtgs 480 /
+      // swift_global 720). SLA breach crosses regulator on heavy tiers
+      // (samos_rtgs + swift_global) under SARB ExCon + FIC Act +
+      // Basel III + CPMI-IOSCO PFMI Principle 9.
+      await safe('strate_swift_connector_sla_sweep', async () => {
+        const result = await strateSwiftConnectorSlaSweep(env as never);
+        console.log('strate_swift_connector_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -3374,6 +3403,33 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('mqtt_opcua_connector_cert_expiry_sweep', async () => {
         const result = await mqttOpcuaConnectorCertExpirySweep(env as never);
         console.log('mqtt_opcua_connector_cert_expiry_sweep', JSON.stringify(result));
+      });
+      // W124 STRATE / SWIFT settlement connector — same Monday 09:00
+      // SAST weekly key-expiry sweep. Walks every connector with a
+      // swift_user_key_expiry_at / strate_certificate_expiry_at,
+      // recomputes days_to_key_renewal, flags 14d-out as
+      // regulator_relevant + is_reportable so the dashboard surfaces
+      // SWIFT user-key / STRATE cert revocation risk BEFORE the
+      // counterparty pulls the plug. Shared trigger with W122/W123 -
+      // no duplicate cron entry in wrangler.toml.
+      await safe('strate_swift_connector_key_expiry_sweep', async () => {
+        const result = await strateSwiftConnectorKeyExpirySweep(env as never);
+        console.log('strate_swift_connector_key_expiry_sweep', JSON.stringify(result));
+      });
+      break;
+
+    case '30 1 * * *':
+      // W124 STRATE / SWIFT settlement connector — daily 03:30 SAST
+      // (01:30 UTC) reconciliation sweep. Walks every connector in
+      // live_settlement_active state, recomputes settlement_quality_index
+      // from latency / message_success_rate / break_rate components,
+      // refreshes reconciliation aging, and emits cycle_reconciled
+      // events for downstream W120 ISO 20022 + W68 counterparty-margin
+      // settlement validation. Dedicated daily slot so 15-min SLA sweep
+      // stays light. NEW trigger - first daily cron added for Phase C.
+      await safe('strate_swift_connector_reconciliation_sweep', async () => {
+        const result = await strateSwiftConnectorReconciliationSweep(env as never);
+        console.log('strate_swift_connector_reconciliation_sweep', JSON.stringify(result));
       });
       break;
 
