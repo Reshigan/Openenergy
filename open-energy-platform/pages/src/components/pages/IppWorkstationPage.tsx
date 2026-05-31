@@ -39,6 +39,7 @@ import IppMethodStatementTab from '../ippMethodStatement/IppMethodStatementTab';
 import IppEnvMonitoringTab from '../ippEnvMonitoring/IppEnvMonitoringTab';
 import IppMirTab from '../ippMir/IppMirTab';
 import IppSubcontractorTab from '../ippSubcontractor/IppSubcontractorTab';
+import IppProgressClaimTab from '../ippProgressClaim/IppProgressClaimTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -90,6 +91,7 @@ export function IppWorkstationPage() {
         { key: 'insurance', label: 'Insurance', group: 'Finance', body: ({ onRefresh }) => <InsuranceTab onRefresh={onRefresh} /> },
         { key: 'insurance_claims', label: 'Insurance claims', group: 'Finance', body: () => <InsuranceClaimChainTab /> },
         { key: 'bonds', label: 'Bonds', group: 'Finance', body: () => <BondRegistryTab /> },
+        { key: 'progress-claims', label: 'Progress claims', group: 'Finance', body: () => <IppProgressClaimTab /> },
         { key: 'subcontractors', label: 'Subcontractors', group: 'Construction', body: () => <IppSubcontractorTab /> },
         { key: 'procurement', label: 'Procurement / RFPs', group: 'Construction', body: () => <ProcurementChainTab /> },
         { key: 'cod', label: 'Construction / COD', group: 'Construction', body: () => <CodChainTab /> },

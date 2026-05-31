@@ -255,6 +255,7 @@ import ippMethodStatementRoutes, { ippMethodStatementSlaSweep } from './routes/i
 import ippEnvMonitoringRoutes, { ippEnvMonitoringSlaSweep } from './routes/ipp-env-monitoring';
 import ippMirRoutes, { ippMirSlaSweep } from './routes/ipp-mir';
 import ippSubcontractorRoutes, { ippSubcontractorSlaSweep } from './routes/ipp-subcontractor';
+import ippProgressClaimRoutes, { ippProgressClaimSlaSweep } from './routes/ipp-progress-claim';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -804,6 +805,11 @@ app.route('/api/ipp-mir', ippMirRoutes);
 // SIGNATURE: terminate_subcontractor EVERY tier on safety_violation; suspend when floor_ohsa_notification;
 // close_subcontract when floor_lender_escrow_release. Beats Oracle Aconex + Procore Subcontractors.
 app.route('/api/ipp-subcontractor', ippSubcontractorRoutes);
+// W141 — IPP Progress Claims & Payment Certificates (JBCC + NEC4 + REIPPPP milestones + EP4).
+// INVERTED SLA: major 720h / minor 72h. SIGNATURE: certify_by_engineer EVERY tier on IE milestone;
+// record_final_account EVERY tier; approve_payment when lender_cert_required.
+// Beats Oracle Aconex (payment-as-document) with full P6 lifecycle.
+app.route('/api/ipp-progress-claim', ippProgressClaimRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2092,6 +2098,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_subcontractor_sla_sweep', async () => {
         const result = await ippSubcontractorSlaSweep(env as never);
         console.log('ipp_subcontractor_sla_sweep', JSON.stringify(result));
+      });
+      // W141 — IPP Progress Claims SLA sweep (INVERTED SLA: major 720h, minor 72h).
+      // SIGNATURE: major+significant cross on SLA breach when floor_ie_milestone_payment.
+      await safe('ipp_progress_claim_sla_sweep', async () => {
+        const result = await ippProgressClaimSlaSweep(env as never);
+        console.log('ipp_progress_claim_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

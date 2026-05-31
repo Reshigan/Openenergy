@@ -1566,7 +1566,22 @@ export type EventType =
   | 'ipp_subcontractor.suspend_subcontractor'
   | 'ipp_subcontractor.terminate_subcontractor'
   | 'ipp_subcontractor.reinstate_subcontractor'
-  | 'ipp_subcontractor.flag_overdue';
+  | 'ipp_subcontractor.flag_overdue'
+  // W141 IPP Progress Claims & Payment Certificates
+  | 'ipp_progress_claim.commence_qs_review'
+  | 'ipp_progress_claim.complete_qs_review'
+  | 'ipp_progress_claim.certify_by_engineer'
+  | 'ipp_progress_claim.approve_payment'
+  | 'ipp_progress_claim.process_payment'
+  | 'ipp_progress_claim.close_claim'
+  | 'ipp_progress_claim.dispute_claim'
+  | 'ipp_progress_claim.resolve_dispute'
+  | 'ipp_progress_claim.suspend_payment'
+  | 'ipp_progress_claim.reinstate_payment'
+  | 'ipp_progress_claim.reject_claim'
+  | 'ipp_progress_claim.approve_partial'
+  | 'ipp_progress_claim.record_final_account'
+  | 'ipp_progress_claim.flag_overdue';
 
 interface CascadeContext {
   event: EventType;
@@ -1794,6 +1809,12 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // OHSA Construction Regs 2014 Reg.6 + ISO 45001:2018 + REIPPPP ED + EP4.
   // terminate_subcontractor EVERY tier when safety_violation (OHSA mandatory).
   ipp_subcontractor: 'ipp',
+  // W141 IPP Progress Claims & Payment Certificates — JOINS existing 'ipp' namespace.
+  // JBCC + NEC4 + REIPPPP milestones + Equator EP4 disbursement certification.
+  // certify_by_engineer EVERY tier on floor_ie_milestone_payment (lender notification mandatory).
+  // record_final_account EVERY tier.
+  // approve_payment when floor_lender_certification_required.
+  ipp_progress_claim: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
