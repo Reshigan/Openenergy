@@ -26,6 +26,7 @@ import { IppChangeOrderChainTab } from '../ipp/IppChangeOrderChainTab';
 import { ScadaConnectorTab } from '../scadaConnector/ScadaConnectorTab';
 import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
 import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
+import RulPredictionMlTab from '../rulPredictionMl/RulPredictionMlTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -74,6 +75,7 @@ export function IppWorkstationPage() {
         { key: 'scada-connectors', label: 'SCADA connectors (W122)', body: () => <ScadaConnectorTab /> },
         { key: 'mqtt-opcua-connectors', label: 'MQTT/OPC-UA connectors (W123)', body: () => <MqttOpcuaConnectorTab /> },
         { key: 'anomaly-detection-ml', label: 'Anomaly ML (W127)', body: () => <AnomalyDetectionMlTab /> },
+        { key: 'rul-prediction-ml', label: 'RUL Prediction ML (W128)', body: () => <RulPredictionMlTab /> },
         { key: 'community', label: 'Community', body: ({ onRefresh }) => <CommunityTab onRefresh={onRefresh} /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (

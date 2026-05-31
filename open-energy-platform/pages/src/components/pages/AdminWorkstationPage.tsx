@@ -9,6 +9,7 @@ import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConn
 import { SapOracleErpConnectorTab } from '../sapOracleErpConnector/SapOracleErpConnectorTab';
 import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/GovernmentFilingConnectorTab';
 import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
+import RulPredictionMlTab from '../rulPredictionMl/RulPredictionMlTab';
 import { api } from '../../lib/api';
 
 const formatZAR = (v: number) =>
@@ -83,6 +84,9 @@ export function AdminWorkstationPage() {
         },
         { key: 'anomaly-detection-ml', label: 'Anomaly ML (W127)',
           body: () => <AnomalyDetectionMlTab />,
+        },
+        { key: 'rul-prediction-ml', label: 'RUL Prediction ML (W128)',
+          body: () => <RulPredictionMlTab />,
         },
       ]}
     />

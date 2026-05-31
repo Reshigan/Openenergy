@@ -116,6 +116,7 @@ crons = [
   "45 1 * * *",     # 03:45 SAST (01:45 UTC) daily: W125 SAP/Oracle ERP connector reconciliation sweep (control_effectiveness_index + days_to_period_close refresh + period_close_reconciled emit; 15 min after W124 so GL sees fresh settlement totals)
   "0 2 * * *",      # 04:00 SAST (02:00 UTC) daily: W126 CIPC/SARS/NERSA government-filing connector statutory filing-deadline sweep (days_to_next_filing_deadline refresh + <7d flag as regulator_relevant); closes Phase C cron footprint
   "30 2 * * *",     # 04:30 SAST (02:30 UTC) daily: W127 Anomaly-Detection ML Model drift scan (PSI + KS + recon-error p99 + lift drift recompute against calibrated baseline + drift_severity flip + regulator_relevant flag); FIRST Phase-D daily cron
+  "0 3 * * *",      # 05:00 SAST (03:00 UTC) daily: W128 RUL Prediction ML Model concordance monitor (Harrell C + time-dependent AUC + Brier + Schoenfeld PH p-value + KM-lift-vs-OLS recompute against baseline; ph_violated flip when p<0.05 + regulator_relevant when concordance below threshold OR PH violated on fleet_systemic); SECOND Phase-D daily cron (30 min after W127 so heavy survival monitor doesn't share airtime)
   "0 15 * * 5",     # Fri 17:00 SAST (15:00 UTC): trading-risk MTD digest
   "0 6 1 * *",      # Day 1 of month 08:00 SAST: CPMI-IOSCO PFMI disclosure
   "0 18 * * *"      # 18:00 SAST (16:00 UTC) daily: W111 P&L attribution T+1 EOD opener

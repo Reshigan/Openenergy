@@ -12,6 +12,7 @@ import { ServiceRequestChainTab } from '../support/ServiceRequestChainTab';
 import { OemFcoChainTab } from '../oem-fco/OemFcoChainTab';
 import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
 import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
+import RulPredictionMlTab from '../rulPredictionMl/RulPredictionMlTab';
 import { api } from '../../lib/api';
 import { X } from 'lucide-react';
 
@@ -156,6 +157,11 @@ export function SupportWorkstationPage() {
             key: 'anomaly-detection-ml',
             label: 'Anomaly ML (W127)',
             body: () => <AnomalyDetectionMlTab />,
+          },
+          {
+            key: 'rul-prediction-ml',
+            label: 'RUL Prediction ML (W128)',
+            body: () => <RulPredictionMlTab />,
           },
           {
             key: 'escalations',

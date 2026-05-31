@@ -222,6 +222,11 @@ import anomalyDetectionMlRoutes, {
   anomalyDetectionMlDriftScan,
   anomalyDetectionMlModelCardExpirySweep,
 } from './routes/anomaly-detection-ml';
+import rulPredictionMlRoutes, {
+  rulPredictionMlSlaSweep,
+  rulPredictionMlConcordanceMonitor,
+  rulPredictionMlModelCardExpirySweep,
+} from './routes/rul-prediction-ml';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -691,6 +696,18 @@ app.route('/api/government-filing-connector', governmentFilingConnectorRoutes);
 // when iso_42001). Opens NEW 'ml' audit namespace (4th after
 // platform/grid/settlement/regulator).
 app.route('/api/anomaly-detection-ml', anomalyDetectionMlRoutes);
+// W128 RUL Prediction ML Model lifecycle - PHASE D WAVE 2 OF 4.
+// Survival/Cox PH ML models REPLACING the W71 OLS-style degradation
+// slope. Sister of W127 (anomaly ML). 12-state P6 + 4 branch states
+// (drift / rollback / recall / failover_to_ols). SIGNATURE
+// W128-RUL-ROLLBACK: rollback_model crosses regulator EVERY tier
+// (SECOND Phase-D hard line). W128-UNIQUE: promote_champion crosses
+// at fleet_systemic WHEN iso_42001 (replacing OLS at systemic scale
+// is itself a governance event). INVERTED SLA (LARGER fleet=MORE
+// time). 5 bridges: W71 NOT NULL (OLS baseline) + W21 lender +
+// W77 reserve + W63 warranty + W118 audit. WRITE {admin, support}.
+// READ all 9 personas. JOINS W127 'ml' audit namespace.
+app.route('/api/rul-prediction-ml', rulPredictionMlRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1877,6 +1894,19 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('anomaly_detection_ml_sla_sweep', async () => {
         const result = await anomalyDetectionMlSlaSweep(env as never);
         console.log('anomaly_detection_ml_sla_sweep', JSON.stringify(result));
+      });
+      // W128 RUL Prediction ML Model — 15-min sweep over every
+      // survival model lifecycle state with an SLA anchor. INVERTED
+      // HOUR polarity (single_asset 24 / small_fleet 120 /
+      // large_fleet 360 / multi_jurisdiction_fleet 600 /
+      // fleet_systemic 720). LONGER shadow_deployed (72-1080h) than
+      // W127 - survival models need censored-event maturation.
+      // SLA breach crosses regulator on heavy tiers under ISO 42001
+      // + NIST AI RMF + EU AI Act + ISO 27001 + SOC 2 Type II +
+      // NERC CIP-013. SECOND Phase-D ML governance hard line.
+      await safe('rul_prediction_ml_sla_sweep', async () => {
+        const result = await rulPredictionMlSlaSweep(env as never);
+        console.log('rul_prediction_ml_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -3557,6 +3587,19 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
         const result = await anomalyDetectionMlModelCardExpirySweep(env as never);
         console.log('anomaly_detection_ml_model_card_expiry_sweep', JSON.stringify(result));
       });
+      // W128 RUL Prediction ML Model — Monday 09:00 SAST weekly
+      // model-card expiry sweep. Walks every live champion survival
+      // model with a model_card_expires_at, recomputes
+      // days_to_model_card_expiry, flags 14d-out (or already expired)
+      // as regulator_relevant + is_reportable so the dashboard
+      // surfaces ISO 42001 model-card re-attestation / NIST AI RMF
+      // system-card renewal BEFORE the governance committee disables
+      // the model. Shared trigger with W122/W123/W124/W125/W126/W127
+      // - no duplicate cron entry in wrangler.toml.
+      await safe('rul_prediction_ml_model_card_expiry_sweep', async () => {
+        const result = await rulPredictionMlModelCardExpirySweep(env as never);
+        console.log('rul_prediction_ml_model_card_expiry_sweep', JSON.stringify(result));
+      });
       break;
 
     case '30 2 * * *':
@@ -3571,6 +3614,24 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('anomaly_detection_ml_drift_scan', async () => {
         const result = await anomalyDetectionMlDriftScan(env as never);
         console.log('anomaly_detection_ml_drift_scan', JSON.stringify(result));
+      });
+      break;
+
+    case '0 3 * * *':
+      // W128 RUL Prediction ML Model — daily 05:00 SAST (03:00 UTC)
+      // concordance-monitor sweep. Walks every live A/B and champion
+      // survival model, recomputes Harrell C-index + time-dependent
+      // AUC + Brier score + Schoenfeld PH-assumption p-value + KM
+      // lift vs OLS, flips ph_violated flag when p<0.05, and raises
+      // is_reportable when concordance drops below the regulator-
+      // reportable threshold OR PH assumption violated on
+      // fleet_systemic. NEW trigger - SECOND Phase-D daily cron,
+      // dedicated 30-min-after-W127 slot so heavy survival monitor
+      // doesn't share airtime with the 02:30 W127 anomaly drift
+      // scan or the 02:00 W126 statutory deadline scan.
+      await safe('rul_prediction_ml_concordance_monitor', async () => {
+        const result = await rulPredictionMlConcordanceMonitor(env as never);
+        console.log('rul_prediction_ml_concordance_monitor', JSON.stringify(result));
       });
       break;
 

@@ -1324,7 +1324,24 @@ export type EventType =
   | 'anomaly_detection_ml_rolled_back'
   | 'anomaly_detection_ml_recalled'
   | 'anomaly_detection_ml_failover_activated'
-  | 'anomaly_detection_ml_sla_breached';
+  | 'anomaly_detection_ml_sla_breached'
+  | 'rul_prediction_ml_proposed'
+  | 'rul_prediction_ml_survival_dataset_bound'
+  | 'rul_prediction_ml_features_engineered'
+  | 'rul_prediction_ml_train_test_split'
+  | 'rul_prediction_ml_trained'
+  | 'rul_prediction_ml_backtest_validated'
+  | 'rul_prediction_ml_calibrated'
+  | 'rul_prediction_ml_shadow_deployed'
+  | 'rul_prediction_ml_live_ab_active'
+  | 'rul_prediction_ml_champion_promoted'
+  | 'rul_prediction_ml_retrained'
+  | 'rul_prediction_ml_archived'
+  | 'rul_prediction_ml_drift_detected'
+  | 'rul_prediction_ml_rolled_back'
+  | 'rul_prediction_ml_recalled'
+  | 'rul_prediction_ml_failover_to_ols_activated'
+  | 'rul_prediction_ml_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1487,6 +1504,17 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // SIGNATURE: rollback_model crosses regulator EVERY tier
   // (W127-ML-ROLLBACK - first Phase-D hard line).
   anomaly_detection_ml: 'ml',
+  // W128 RUL Prediction ML Model chain - JOINS W127 'ml' namespace
+  // (SAME tamper-evident chain partition, not a new namespace).
+  // Survival/Cox PH model proposals, training, drift detections,
+  // rollbacks, recalls and OLS-failovers share the W127 partition
+  // under ISO 42001 + NIST AI RMF + EU AI Act + ISO 27001 + SOC 2
+  // Type II + NERC CIP-013. SIGNATURE: rollback_model crosses
+  // regulator EVERY tier (W128-RUL-ROLLBACK - SECOND Phase-D hard
+  // line). UNIQUE: promote_champion crosses at fleet_systemic when
+  // iso_42001 (replacing OLS at systemic scale is itself a
+  // governance event).
+  rul_prediction_ml: 'ml',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
