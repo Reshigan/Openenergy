@@ -1486,7 +1486,19 @@ export type EventType =
   | 'ipp_lessons_learned.reject_lesson'
   | 'ipp_lessons_learned.defer_lesson'
   | 'ipp_lessons_learned.mark_duplicate'
-  | 'ipp_lessons_learned.restore_lesson';
+  | 'ipp_lessons_learned.restore_lesson'
+  | 'ipp_ncr.acknowledge_ncr'
+  | 'ipp_ncr.start_investigation'
+  | 'ipp_ncr.propose_disposition'
+  | 'ipp_ncr.review_disposition'
+  | 'ipp_ncr.start_rework'
+  | 'ipp_ncr.submit_reinspection'
+  | 'ipp_ncr.plan_corrective_action'
+  | 'ipp_ncr.close_ncr'
+  | 'ipp_ncr.accept_as_is'
+  | 'ipp_ncr.reject_escalate'
+  | 'ipp_ncr.void_ncr'
+  | 'ipp_ncr.flag_overdue';
 
 interface CascadeContext {
   event: EventType;
@@ -1699,6 +1711,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ipp_stakeholder: 'ipp',
   // W135 IPP Lessons Learned Register — JOINS existing 'ipp' namespace.
   ipp_lessons_learned: 'ipp',
+  // W136 IPP NCR Management — JOINS existing 'ipp' namespace.
+  ipp_ncr: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

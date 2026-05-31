@@ -250,6 +250,7 @@ import ippIssuesRoutes, { ippIssueSlaSweep } from './routes/ipp-issues';
 import ippRiskRoutes, { ippRiskSlaSweep } from './routes/ipp-risk';
 import ippStakeholderRoutes, { ippStakeholderSlaSweep } from './routes/ipp-stakeholder';
 import ippLessonsLearnedRoutes, { ippLessonsLearnedSlaSweep } from './routes/ipp-lessons-learned';
+import ippNcrRoutes, { ippNcrSlaSweep } from './routes/ipp-ncr';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -777,6 +778,10 @@ app.route('/api/ipp-stakeholder', ippStakeholderRoutes);
 // 13-state P6; INVERTED SLA (critical_impact 720h MOST time); WRITE {admin, ipp_developer}.
 // SIGNATURE: disseminate_finding EVERY tier when lesson_type='safety' OR prevents_fatality=1.
 app.route('/api/ipp-lessons-learned', ippLessonsLearnedRoutes);
+// W136 IPP NCR Management — ISO 9001:2015 §8.7 + Equator Principles IV + REIPPPP QA.
+// 12-state P6; URGENT SLA (safety_critical 24h tightest → cosmetic 720h); WRITE {admin, ipp_developer, support}.
+// SIGNATURE: reject_escalate EVERY tier; accept_as_is crosses when floor_ie_notification_required OR floor_nersa_reportable.
+app.route('/api/ipp-ncr', ippNcrRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2035,6 +2040,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_lessons_learned_sla_sweep', async () => {
         const result = await ippLessonsLearnedSlaSweep(env as never);
         console.log('ipp_lessons_learned_sla_sweep', JSON.stringify(result));
+      });
+      // W136 — IPP NCR SLA sweep (URGENT: safety_critical 24h TIGHTEST).
+      // SIGNATURE: floor_safety_stop_work always crosses; floor_hold_point + safety_critical/structural crosses.
+      await safe('ipp_ncr_sla_sweep', async () => {
+        const result = await ippNcrSlaSweep(env as never);
+        console.log('ipp_ncr_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

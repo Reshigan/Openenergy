@@ -802,6 +802,15 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         icon: 'school',
       },
       {
+        // W136 Phase-E wave 6 — IPP Non-Conformance Report (NCR) Management.
+        key: 'ncr-management',
+        title: 'Non-conformance reports (W136)',
+        description: 'ISO 9001:2015 §8.7 + Equator Principles IV QA + REIPPPP quality requirements on oe_ipp_ncrs: 12-state P6 chain (raised → acknowledged → under_investigation → disposition_proposed → disposition_reviewed → rework_in_progress → reinspection → corrective_action_planned → closed + accepted_as_is / rejected_escalated / voided). URGENT SLA polarity (safety_critical 24h TIGHTEST → cosmetic 720h loosest — safety failures must be resolved fastest). W136 SIGNATURE: reject_escalate EVERY tier (IE rejection always reportable); accept_as_is crosses when floor_ie_notification_required OR floor_nersa_reportable. SLA breach crosses when floor_safety_stop_work (always) or floor_hold_point_triggered AND (safety_critical|structural). 5 severity tiers: safety_critical / structural / functional / minor / cosmetic. 8 NCR categories: workmanship / materials / design / documentation / safety / environmental / commissioning / testing. 5 dispositions: accept_as_is / rework / repair / replace / scrap. 7 disciplines: civil / structural / electrical / mechanical / instrumentation / hvac / process. 5 floor flags: IE notification required / lender consent required / NERSA reportable / hold point triggered / safety stop-work. 4 cross-references (itp_ref / issue_ref W132 / rfi_ref W116 / hse_incident_ref W25). SLA sweep in shared */15 cron slot. JOINS existing ipp audit namespace. Beats Procore NCR module (shallow workflow, no P6 state machine) + Oracle Aconex Quality (generic workflow, no REIPPPP-specific disposition logic).',
+        href: '/ipp-lifecycle/workstation?tab=ncr',
+        cta_label: 'Open NCR register',
+        icon: 'assignment_late',
+      },
+      {
         // W132 Phase-E wave 2 — IPP Issues Log & Resolution Chain.
         key: 'issues-log',
         title: 'Issues log (W132)',

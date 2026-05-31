@@ -34,6 +34,7 @@ import IppIssuesTab from '../ippIssues/IppIssuesTab';
 import IppRiskTab from '../ippRisk/IppRiskTab';
 import IppStakeholderTab from '../ippStakeholder/IppStakeholderTab';
 import IppLessonsLearnedTab from '../ippLessonsLearned/IppLessonsLearnedTab';
+import IppNcrTab from '../ippNcr/IppNcrTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -69,6 +70,7 @@ export function IppWorkstationPage() {
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },
         { key: 'stakeholder-register', label: 'Stakeholder register', group: 'Risk & quality', body: () => <IppStakeholderTab /> },
         { key: 'lessons-learned', label: 'Lessons learned', group: 'Risk & quality', body: () => <IppLessonsLearnedTab /> },
+        { key: 'ncr', label: 'Non-conformance (NCR)', group: 'Risk & quality', body: () => <IppNcrTab /> },
         { key: 'itp', label: 'ITP / Quality plan', group: 'Risk & quality', body: () => <ItpChainTab /> },
         { key: 'project_risk', label: 'Risk analysis (EMV/SRA)', group: 'Risk & quality', body: () => <ProjectRiskChainTab /> },
         { key: 'audit', label: 'Audit & compliance', group: 'Risk & quality',
