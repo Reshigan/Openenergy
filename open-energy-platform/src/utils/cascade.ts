@@ -1108,7 +1108,24 @@ export type EventType =
   | 'ipp_change_order_closed_out' | 'ipp_change_order_archived'
   | 'ipp_change_order_rejected' | 'ipp_change_order_voided'
   | 'ipp_change_order_hold_resumed' | 'ipp_change_order_disputed'
-  | 'ipp_change_order_sla_breached';
+  | 'ipp_change_order_sla_breached'
+  // Wave 118 — Hash-Chain Audit Trees & Tamper-Evident Ledger (Phase-B
+  // opener, FIRST L5 regulator-grade hardening wave). 17 events covering
+  // 10 forward states + 4 branches + SLA breach + quarterly export.
+  // SIGNATURE SIGNATURE-CHAIN-BREAK-SEAL: emergency_seal crosses regulator
+  // EVERY tier (W118 hard line). reject crosses regulator EVERY tier when
+  // signature_chain_break_detected || hash_collision_suspected. restate
+  // crosses regulator monthly + quarterly only. sla_breached crosses
+  // regulator monthly + quarterly only.
+  | 'audit_chain_block_proposed' | 'audit_chain_segments_collected'
+  | 'audit_chain_merkle_built' | 'audit_chain_integrity_verified'
+  | 'audit_chain_block_signed' | 'audit_chain_anchored'
+  | 'audit_chain_published' | 'audit_chain_independently_verifiable'
+  | 'audit_chain_reconciled' | 'audit_chain_archived'
+  | 'audit_chain_rejected' | 'audit_chain_suspended'
+  | 'audit_chain_resumed' | 'audit_chain_restated'
+  | 'audit_chain_forked' | 'audit_chain_emergency_sealed'
+  | 'audit_chain_sla_breached' | 'audit_chain_quarterly_export_ready';
 
 interface CascadeContext {
   event: EventType;
@@ -1201,7 +1218,10 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   maturity: 'carbon',
   anomaly: 'carbon',
   disclosure: 'esg',
-  audit_chain: 'platform',
+  // Wave 118 — non-role-suffixed entry. The W118 cross-chain audit tree
+  // gets its own 'audit' chain (NOT 'platform') to distinguish the L5
+  // tamper-evident ledger from generic platform-level audit entries.
+  audit_chain: 'audit',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

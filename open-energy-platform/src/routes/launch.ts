@@ -1374,6 +1374,10 @@ async function buildAdminBoard(c: any, user: any): Promise<LaunchPayload> {
     workflows: [
       { key: 'platform', title: 'Tenants & users', description: 'Tenants, billing, user accounts, roles, role overrides.', href: '/admin-platform', cta_label: 'Open platform', icon: 'team', metric: { label: 'active', value: activeTenants, tone: 'good' } },
       { key: 'monitoring', title: 'System health', description: 'Cron jobs, DLQ, cascade health, audit trail.', href: '/admin/monitoring', cta_label: 'Open monitoring', icon: 'gauge', metric: { label: 'DLQ', value: cascadeDlq + settlementDlq, tone: (cascadeDlq + settlementDlq) > 0 ? 'bad' : 'good' } },
+      // Wave 118 — Hash-Chain Audit Trees & Tamper-Evident Ledger. Phase-B
+      // opener / FIRST L5 hardening wave. Public Merkle-proof verify endpoint
+      // available at /api/audit-chain/verify/:block_height (no auth).
+      { key: 'audit_chain', title: 'Tamper-evident audit chain', description: 'Cross-chain Merkle tree, hash-chained block ledger, NERSA/IPPO/SARB quarterly attestation.', href: '/admin-platform/workstation?tab=audit-chain', cta_label: 'Open audit chain', icon: 'verified' },
       { key: 'reports', title: 'Revenue & reports', description: 'Settled revenue, churn, MRR, regulatory reports.', href: '/reports', cta_label: 'Open reports', icon: 'report' },
       { key: 'support', title: 'Support escalations', description: 'Tickets, breaches, cross-tenant search.', href: '/support', cta_label: 'Open support', icon: 'help' },
     ],

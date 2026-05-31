@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
+import { AuditChainBlockTab } from '../audit/AuditChainBlockTab';
 import { api } from '../../lib/api';
 
 const formatZAR = (v: number) =>
@@ -51,6 +52,9 @@ export function AdminWorkstationPage() {
         },
         { key: 'pii_access', label: 'PII access log',
           body: () => <PiiAccessTab />,
+        },
+        { key: 'audit-chain', label: 'Audit chain (W118)',
+          body: () => <AuditChainBlockTab />,
         },
       ]}
     />

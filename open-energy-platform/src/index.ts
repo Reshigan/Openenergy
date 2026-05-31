@@ -171,6 +171,12 @@ import ippDocumentControlChainRoutes, { ippDocControlSlaSweep, ippDocControlIdcM
 import ippSubmittalRoute, { ippSubmittalSlaSweep, ippSubmittalCycleRefresh } from './routes/ipp-submittal';
 import ippRfiRoute, { ippRfiSlaSweep, ippRfiAgingRefresh } from './routes/ipp-rfi';
 import ippChangeOrderRoute, { ippChangeOrderSlaSweep, ippChangeOrderCumPctRefresh } from './routes/ipp-change-order';
+import auditChainRoute, {
+  auditChainSlaSweep,
+  auditChainHourlyProposeSweep,
+  auditChainDailyReconcileSweep,
+  auditChainQuarterlyExportSweep,
+} from './routes/audit-chain';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -512,6 +518,10 @@ app.route('/api/ipp/document-control/chain', ippDocumentControlChainRoutes);
 app.route('/api/ipp/submittals/chain', ippSubmittalRoute);
 app.route('/api/ipp/rfis/chain', ippRfiRoute);
 app.route('/api/ipp/change-orders/chain', ippChangeOrderRoute);
+// Wave 118 - Hash-Chain Audit Trees & Tamper-Evident Ledger. Phase-B opener.
+// Platform-wide audit chain (NOT an IPP chain). Sister of cascade.ts.
+// Public /verify/:block_height endpoint requires no auth.
+app.route('/api/audit-chain', auditChainRoute);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1593,6 +1603,17 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_change_order_sla_sweep', async () => {
         const result = await ippChangeOrderSlaSweep(env as never);
         console.log('ipp_change_order_sla_sweep', JSON.stringify(result));
+      });
+      // Wave 118 - Hash-Chain Audit Trees & Tamper-Evident Ledger. Phase-B
+      // opener / FIRST L5 hardening wave. Platform-wide audit chain spine
+      // (NOT IPP). 15-min SLA sweep over every active block. SLA breach
+      // crosses regulator on monthly + quarterly tiers (heavy NERSA/IPPO/
+      // SARB attestation windows). INVERTED polarity - quarterly tier gets
+      // LONGEST runway (168h on block_proposed) - more diligence time when
+      // the block volume / regulator visibility is highest.
+      await safe('audit_chain_sla_sweep', async () => {
+        const result = await auditChainSlaSweep(env as never);
+        console.log('audit_chain_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -2833,6 +2854,18 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       break;
 
     case '45 0 * * *':
+      // Wave 118 - Audit Chain daily reconciliation + chain-link verify
+      // attestation roll-up. Refreshes block_age_hours + integrity_index +
+      // block_completeness_index + block_health_band + days_to_quarterly_
+      // attestation across every active audit block, and re-verifies
+      // Bitcoin-style parent_block_hash linkage for published+ blocks.
+      // Any broken link increments cross_chain_break_count + sets
+      // signature_chain_break_detected=1 (which lifts the FLOOR-AT-MONTHLY
+      // floor). Daily attestation at 02:45 SAST = 00:45 UTC.
+      await safe('audit_chain_daily_reconcile_sweep', async () => {
+        const result = await auditChainDailyReconcileSweep(env as never);
+        console.log('audit_chain_daily_reconcile_sweep', JSON.stringify(result));
+      });
       // Watershed nightly: anomaly scan + maturity refresh per tenant participant.
       await safe('watershed_anomaly_scan', async () => {
         const parts = await env.DB.prepare(`SELECT DISTINCT participant_id FROM esg_activity_transactions LIMIT 200`).all<{ participant_id: string }>();
@@ -3162,6 +3195,32 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('pnl_attribution_t1_eod_opener', async () => {
         const result = await pnlAttributionT1EodOpener(env as never);
         console.log('pnl_attribution_t1_eod_opener', JSON.stringify(result));
+      });
+      break;
+
+    case '5 * * * *':
+      // Wave 118 - Audit Chain hourly block proposal. Auto-proposes the
+      // next hourly platform-wide audit block at 5 past the hour if one
+      // has not already been proposed for the current UTC hour. Keeps the
+      // tamper-evident ledger ticking even when no admin manually triggers
+      // a block. INVERTED-SLA hourly tier = 1h SLA window from
+      // block_proposed.
+      await safe('audit_chain_hourly_propose_sweep', async () => {
+        const result = await auditChainHourlyProposeSweep(env as never);
+        console.log('audit_chain_hourly_propose_sweep', JSON.stringify(result));
+      });
+      break;
+
+    case '0 3 1 1,4,7,10 *':
+      // Wave 118 - Audit Chain quarterly NERSA/IPPO/SARB export sweep.
+      // On 1 Jan / 1 Apr / 1 Jul / 1 Oct at 03:00 UTC (05:00 SAST), flags
+      // every published+reconciled block from the closing quarter
+      // is_reportable=1 + regulator_relevant=1, fires
+      // audit_chain_quarterly_export_ready cascades. The certified export
+      // bundle generation itself ships in W119.
+      await safe('audit_chain_quarterly_export_sweep', async () => {
+        const result = await auditChainQuarterlyExportSweep(env as never);
+        console.log('audit_chain_quarterly_export_sweep', JSON.stringify(result));
       });
       break;
 
