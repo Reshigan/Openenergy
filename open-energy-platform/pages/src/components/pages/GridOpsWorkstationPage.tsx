@@ -48,18 +48,18 @@ export function GridOpsWorkstationPage() {
       kpis={kpis}
       panels={panels}
       tabs={[
-        { key: 'curtailment', label: 'Curtailment events', body: ({ onRefresh }) => <CurtailmentTab onRefresh={onRefresh} /> },
-        { key: 'outage', label: 'Outage responses', body: ({ onRefresh }) => <OutageTab onRefresh={onRefresh} /> },
-        { key: 'ancillary', label: 'Ancillary award events', body: ({ onRefresh }) => <AncillaryTab onRefresh={onRefresh} /> },
-        { key: 'dispatch_nomination', label: 'Dispatch nominations', body: () => <DispatchNominationTab /> },
-        { key: 'planned_outage', label: 'Planned outages', body: () => <PlannedOutageChainTab /> },
-        { key: 'rez_capacity', label: 'REZ capacity allocation', body: () => <RezCapacityChainTab /> },
-        { key: 'wheeling_charges', label: 'Wheeling charges', body: () => <WheelingChargesTab /> },
-        { key: 'imbalance-settlement', label: 'Imbalance settlement', body: () => <ImbalanceSettlementChainTab /> },
-        { key: 'transmission-outage', label: 'Transmission outage coordination', body: () => <TransmissionOutageChainTab /> },
-        { key: 'scada-connectors', label: 'SCADA connectors (W122)', body: () => <ScadaConnectorTab /> },
-        { key: 'mqtt-opcua-connectors', label: 'MQTT/OPC-UA connectors (W123)', body: () => <MqttOpcuaConnectorTab /> },
-        { key: 'audit', label: 'Audit & compliance',
+        { key: 'dispatch_nomination', label: 'Dispatch nominations', group: 'Operations', body: () => <DispatchNominationTab /> },
+        { key: 'curtailment', label: 'Curtailment events', group: 'Operations', body: ({ onRefresh }) => <CurtailmentTab onRefresh={onRefresh} /> },
+        { key: 'ancillary', label: 'Ancillary services', group: 'Operations', body: ({ onRefresh }) => <AncillaryTab onRefresh={onRefresh} /> },
+        { key: 'imbalance-settlement', label: 'Imbalance settlement', group: 'Operations', body: () => <ImbalanceSettlementChainTab /> },
+        { key: 'wheeling_charges', label: 'Wheeling charges', group: 'Operations', body: () => <WheelingChargesTab /> },
+        { key: 'rez_capacity', label: 'REZ capacity allocation', group: 'Connections', body: () => <RezCapacityChainTab /> },
+        { key: 'transmission-outage', label: 'Transmission outage coordination', group: 'Connections', body: () => <TransmissionOutageChainTab /> },
+        { key: 'outage', label: 'Outage responses', group: 'Connections', body: ({ onRefresh }) => <OutageTab onRefresh={onRefresh} /> },
+        { key: 'planned_outage', label: 'Planned outages', group: 'Compliance', body: () => <PlannedOutageChainTab /> },
+        { key: 'scada-connectors', label: 'SCADA data', group: 'Compliance', body: () => <ScadaConnectorTab /> },
+        { key: 'mqtt-opcua-connectors', label: 'MQTT/OPC-UA connectors', group: 'Compliance', body: () => <MqttOpcuaConnectorTab /> },
+        { key: 'audit', label: 'Audit & compliance', group: 'Compliance',
           body: ({ onRefresh }) => (
             <AuditPanel
               prefix="/grid-operator"
