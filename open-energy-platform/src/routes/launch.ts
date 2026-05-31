@@ -746,6 +746,15 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         cta_label: 'Open SCADA connectors',
         icon: 'cable',
       },
+      {
+        // W123 Phase-C wave 2 — MQTT / OPC UA edge-device + IIoT broker chain.
+        key: 'mqtt-opcua-connectors',
+        title: 'MQTT / OPC UA connectors (W123)',
+        description: 'Phase-C wave 2. Edge-device / IIoT broker bridge complementing W122 substation-grade SCADA. MQTT v5 / MQTT-SN / OPC UA 1.05 / OPC UA Pub/Sub / Sparkplug B / IEC 61400-25 / IEEE 2030.5 CSIP / SunSpec Modbus across PV-industry / energy / battery / inverter / wind companion specs. 11-state forward + 4 branch chain (connector_proposed → broker_provisioned → topics_mapped → tls_mutual_configured → client_registered → publishing_active → subscription_validated → companion_spec_bound → live_streaming → reconciliation_active → archived; branches disconnected/credential_revoked/suspended/failover_active), INVERTED SLA hours (edge 168 / small 240 / medium 360 / large 480 / national 720), FLOOR-AT-LARGE-FLEET ≥1 / FLOOR-AT-NATIONAL-IOT-BACKBONE ≥3 of 5 flags (critical safety payload / cross-border IoT / Sparkplug B / IEEE 2030.5 CSIP inverter control / aggregated DR > 50 MW). SIGNATURE: revoke_credential crosses NERSA Grid Code C-3 + IEC 62443 + POPIA s19 + SARB BA 700 EVERY tier (W123 MQTT-OPCUA-REVOKE hard line). mTLS-gated PUBLIC peer endpoint via x-mtls-cert-fingerprint header. Beats AWS IoT Core + Azure IoT Hub + HiveMQ Enterprise + EMQX + VerneMQ + Kepware KEPServerEX + Matrikon OPC UA Server + Prosys + Unified Automation + Cogent DataHub.',
+        href: '/ipp-lifecycle/workstation?tab=mqtt-opcua-connectors',
+        cta_label: 'Open MQTT/OPC-UA connectors',
+        icon: 'router',
+      },
     ],
     ai_suggestions: await buildIppDeveloperAiSuggestions(c, user, { milestones, envSoon, invoicesOut }),
   };
@@ -1123,6 +1132,8 @@ async function buildGridOperatorBoard(c: any, user: any): Promise<LaunchPayload>
       { key: 'imbalance', title: 'Imbalance settlement', description: 'Imbalance events, settlement runs.', href: '/settlement', cta_label: 'Open settlement', icon: 'balance' },
       // W122 Phase-C opener — external-system protocol bridge tab.
       { key: 'scada_connectors', title: 'SCADA / IEC 61850 connectors (W122)', description: 'Real-time IEC 61850 MMS/GOOSE/SV + 60870-5-104 + DNP3 + Modbus + IEEE C37.118 + OPC UA bridge to substation SCADA. INVERTED SLA, mTLS-gated peer endpoint, revoke crosses NERSA + SARB BA 700.', href: '/grid-operator/workstation?tab=scada-connectors', cta_label: 'Open SCADA connectors', icon: 'cable' },
+      // W123 Phase-C wave 2 — MQTT / OPC UA edge-device + IIoT broker.
+      { key: 'mqtt_opcua_connectors', title: 'MQTT / OPC UA connectors (W123)', description: 'Edge-device + IIoT broker bridge: MQTT v5 / MQTT-SN / OPC UA 1.05 / Pub/Sub / Sparkplug B / IEC 61400-25 / IEEE 2030.5 CSIP / SunSpec Modbus. INVERTED SLA, mTLS-gated peer endpoint via x-mtls-cert-fingerprint, revoke_credential crosses NERSA Grid Code C-3 + IEC 62443 + POPIA s19 + SARB BA 700 EVERY tier.', href: '/grid-operator/workstation?tab=mqtt-opcua-connectors', cta_label: 'Open MQTT/OPC-UA connectors', icon: 'router' },
     ],
     ai_suggestions: [
       ...(outages > 0
@@ -1490,6 +1501,8 @@ async function buildSupportBoard(c: any, user: any): Promise<LaunchPayload> {
       { key: 'support', title: 'Support console', description: 'Tickets, escalations, cross-tenant search, walkthroughs.', href: '/support', cta_label: 'Open support', icon: 'help', metric: { label: 'queue', value: queue, tone: queue > 0 ? 'warn' : 'good' } },
       { key: 'monitoring', title: 'System health', description: 'Watch cron, DLQ, cascade health alongside the team.', href: '/admin/monitoring', cta_label: 'Open monitoring', icon: 'gauge', metric: { label: 'DLQ', value: cascadeDlq + settlementDlq, tone: (cascadeDlq + settlementDlq) > 0 ? 'bad' : 'good' } },
       { key: 'kyc', title: 'KYC onboarding', description: 'Help applicants finish KYC; escalate to compliance when stuck.', href: '/admin-platform', cta_label: 'Open onboarding', icon: 'people', metric: { label: 'pending', value: kyc, tone: kyc > 0 ? 'neutral' : 'good' } },
+      // W123 Phase-C wave 2 — MQTT / OPC UA edge-device + IIoT broker chain.
+      { key: 'mqtt_opcua_connectors', title: 'MQTT / OPC UA connectors (W123)', description: 'Edge-device / IIoT broker bridge: MQTT v5 / OPC UA 1.05 / Pub/Sub / Sparkplug B / IEC 61400-25 / IEEE 2030.5 CSIP / SunSpec Modbus across PV / energy / battery / inverter / wind. INVERTED SLA, mTLS-gated peer endpoint, revoke_credential crosses NERSA + IEC 62443 + POPIA s19 + SARB BA 700 EVERY tier.', href: '/support/workstation?tab=mqtt-opcua-connectors', cta_label: 'Open MQTT/OPC-UA connectors', icon: 'router' },
     ],
     ai_suggestions: [
       ...(urgent > 0

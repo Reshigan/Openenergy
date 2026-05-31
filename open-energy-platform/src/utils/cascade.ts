@@ -1230,7 +1230,33 @@ export type EventType =
   | 'scada_connector_resumed'
   | 'scada_connector_revoked'
   | 'scada_connector_failover_activated'
-  | 'scada_connector_sla_breached';
+  | 'scada_connector_sla_breached'
+
+  // Wave 123 - MQTT / OPC-UA Edge-Device IIoT Connector.
+  // 11-state forward path + 4 branch states. 16 actions. SIGNATURE
+  // MQTT-OPCUA-REVOKE hard line - revoke_credential EVERY tier (NERSA
+  // Grid Code C-3 + IEC 62443 + POPIA s19 + SARB BA 700 cyber-incident
+  // notice). activate_failover crosses large+national. disconnect
+  // EVERY tier WHEN critical_safety_payload. bind_companion_spec
+  // national WHEN ieee_2030_5_csip_inverter_control. sla_breached
+  // large+national.
+  | 'mqtt_opcua_connector_proposed'
+  | 'mqtt_opcua_connector_broker_provisioned'
+  | 'mqtt_opcua_connector_topics_mapped'
+  | 'mqtt_opcua_connector_tls_mutual_configured'
+  | 'mqtt_opcua_connector_client_registered'
+  | 'mqtt_opcua_connector_publishing_active'
+  | 'mqtt_opcua_connector_subscription_validated'
+  | 'mqtt_opcua_connector_companion_spec_bound'
+  | 'mqtt_opcua_connector_live_streaming'
+  | 'mqtt_opcua_connector_reconciliation_active'
+  | 'mqtt_opcua_connector_archived'
+  | 'mqtt_opcua_connector_disconnected'
+  | 'mqtt_opcua_connector_suspended'
+  | 'mqtt_opcua_connector_resumed'
+  | 'mqtt_opcua_connector_credential_revoked'
+  | 'mqtt_opcua_connector_failover_activated'
+  | 'mqtt_opcua_connector_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1356,6 +1382,11 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // because every IEC 61850 telemetry batch reads as a grid-domain
   // mutation - explicitly NOT 'audit' (that family closed at W121).
   scada_connector: 'grid',
+  // Wave 123 - MQTT / OPC-UA Edge-Device IIoT Connector. Sister of W122.
+  // Joins the 'grid' chain because edge-device IoT telemetry from
+  // inverters/BESS/wind turbines/RTUs reads as a grid-domain mutation -
+  // explicitly NOT 'audit' (that family closed at W121).
+  mqtt_opcua_connector: 'grid',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

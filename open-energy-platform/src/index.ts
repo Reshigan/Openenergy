@@ -197,6 +197,11 @@ import scadaConnectorRoutes, {
   scadaConnectorTelemetryRefreshSweep,
   scadaConnectorCertExpirySweep,
 } from './routes/scada-connector';
+import mqttOpcuaConnectorRoutes, {
+  mqttOpcuaConnectorSlaSweep,
+  mqttOpcuaConnectorTelemetryRefreshSweep,
+  mqttOpcuaConnectorCertExpirySweep,
+} from './routes/mqtt-opcua-connector';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -583,6 +588,20 @@ app.route('/api/control-environment-audit', controlEnvironmentAuditRoutes);
 // tier (NERSA + SARB BA 700 + SOC). WRITE {admin, grid_operator,
 // ipp_developer}. READ all 9 personas. 5 bridges (W118 mandatory).
 app.route('/api/scada-connector', scadaConnectorRoutes);
+// W123 MQTT / OPC-UA Edge-Device IIoT Connector — Phase C wave 2 of 5.
+// Sister of W122 (substation-grade) - this is the EDGE-DEVICE / IIoT
+// BROKER tier: MQTT v5/MQTT-SN + OPC UA 1.05/Pub-Sub + Sparkplug B +
+// IEC 61400-25 + IEEE 2030.5 (CSIP) + SunSpec Modbus. mTLS-gated PUBLIC
+// peer endpoint at /api/mqtt-opcua-connector/peer/:peer_id mounted
+// BEFORE authMiddleware inside the route module - uses
+// x-mtls-cert-fingerprint header (Phase-C consistency with W122).
+// 11-state forward + 4 branch machine; INVERTED SLA hours (edge 168
+// .. national_iot_backbone 720); FLOOR-AT-LARGE-FLEET >=1 / FLOOR-AT-
+// NATIONAL-IOT-BACKBONE >=3 of 5 flags. SIGNATURE: revoke_credential
+// EVERY tier (NERSA C-3 + IEC 62443 + POPIA s19 + SARB BA 700).
+// WRITE {admin, grid_operator, ipp_developer, support}. READ all 9
+// personas + external iot_peer via mTLS. 5 bridges (W118 mandatory).
+app.route('/api/mqtt-opcua-connector', mqttOpcuaConnectorRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1715,6 +1734,16 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('scada_connector_sla_sweep', async () => {
         const result = await scadaConnectorSlaSweep(env as never);
         console.log('scada_connector_sla_sweep', JSON.stringify(result));
+      });
+      // W123 MQTT / OPC-UA IIoT connector — 15-min sweep over every
+      // active connector. INVERTED HOUR polarity (edge_device 168 /
+      // small_fleet 240 / medium_fleet 360 / large_fleet 480 /
+      // national_iot_backbone 720). SLA breach crosses regulator on
+      // heavy tiers only (large_fleet + national_iot_backbone) under
+      // NERSA Grid Code C-3 + IEC 62443 + SARB BA 700.
+      await safe('mqtt_opcua_connector_sla_sweep', async () => {
+        const result = await mqttOpcuaConnectorSlaSweep(env as never);
+        console.log('mqtt_opcua_connector_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -3098,6 +3127,17 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
         const result = await scadaConnectorTelemetryRefreshSweep(env as never);
         console.log('scada_connector_telemetry_refresh', JSON.stringify(result));
       });
+      // W123 MQTT / OPC-UA IIoT connector telemetry refresh: nightly
+      // walk over every active connector to recompute the persisted
+      // telemetry_quality_index + connector_health_band from latest
+      // QoS p99 / publisher count / topic depth / CSIP command ratio /
+      // payload quality observations. 02:45 SAST = 00:45 UTC. Decisions
+      // never moved by cron; only the LIVE battery is refreshed so
+      // dashboards reflect last 24h trust signal.
+      await safe('mqtt_opcua_connector_telemetry_refresh', async () => {
+        const result = await mqttOpcuaConnectorTelemetryRefreshSweep(env as never);
+        console.log('mqtt_opcua_connector_telemetry_refresh', JSON.stringify(result));
+      });
       break;
 
     case '50 0 * * *':
@@ -3323,6 +3363,17 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('scada_connector_cert_expiry_sweep', async () => {
         const result = await scadaConnectorCertExpirySweep(env as never);
         console.log('scada_connector_cert_expiry_sweep', JSON.stringify(result));
+      });
+      // W123 MQTT / OPC-UA IIoT connector — same Monday 09:00 SAST
+      // weekly cert-expiry sweep. Walks every IoT connector with a
+      // tls_cert_expiry_at, recomputes days_to_cert_renewal, flags
+      // 14d-out as regulator_relevant + is_reportable so the dashboard
+      // surfaces IoT-broker cert revocation risk BEFORE the
+      // counterparty pulls the plug. Shared trigger with W122 - no
+      // duplicate cron entry in wrangler.toml.
+      await safe('mqtt_opcua_connector_cert_expiry_sweep', async () => {
+        const result = await mqttOpcuaConnectorCertExpirySweep(env as never);
+        console.log('mqtt_opcua_connector_cert_expiry_sweep', JSON.stringify(result));
       });
       break;
 

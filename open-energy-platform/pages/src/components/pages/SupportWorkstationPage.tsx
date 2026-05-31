@@ -10,6 +10,7 @@ import { SparePartsProvisioningChainTab } from '../spare-parts-provisioning/Spar
 import { ServiceContractChainTab } from '../service-contract/ServiceContractChainTab';
 import { ServiceRequestChainTab } from '../support/ServiceRequestChainTab';
 import { OemFcoChainTab } from '../oem-fco/OemFcoChainTab';
+import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
 import { api } from '../../lib/api';
 import { X } from 'lucide-react';
 
@@ -144,6 +145,11 @@ export function SupportWorkstationPage() {
             key: 'oem_fco',
             label: 'OEM FCO/ECN',
             body: () => <OemFcoChainTab />,
+          },
+          {
+            key: 'mqtt-opcua-connectors',
+            label: 'MQTT/OPC-UA connectors (W123)',
+            body: () => <MqttOpcuaConnectorTab />,
           },
           {
             key: 'escalations',

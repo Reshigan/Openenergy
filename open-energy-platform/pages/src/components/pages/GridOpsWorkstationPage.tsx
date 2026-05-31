@@ -10,6 +10,7 @@ import { WheelingChargesTab } from '../grid/WheelingChargesTab';
 import { ImbalanceSettlementChainTab } from '../grid/ImbalanceSettlementChainTab';
 import { TransmissionOutageChainTab } from '../grid/TransmissionOutageChainTab';
 import { ScadaConnectorTab } from '../scadaConnector/ScadaConnectorTab';
+import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -57,6 +58,7 @@ export function GridOpsWorkstationPage() {
         { key: 'imbalance-settlement', label: 'Imbalance settlement', body: () => <ImbalanceSettlementChainTab /> },
         { key: 'transmission-outage', label: 'Transmission outage coordination', body: () => <TransmissionOutageChainTab /> },
         { key: 'scada-connectors', label: 'SCADA connectors (W122)', body: () => <ScadaConnectorTab /> },
+        { key: 'mqtt-opcua-connectors', label: 'MQTT/OPC-UA connectors (W123)', body: () => <MqttOpcuaConnectorTab /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

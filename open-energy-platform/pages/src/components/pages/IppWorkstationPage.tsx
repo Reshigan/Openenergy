@@ -26,6 +26,7 @@ import { IppSubmittalChainTab } from '../ipp/IppSubmittalChainTab';
 import { IppRfiChainTab } from '../ipp/IppRfiChainTab';
 import { IppChangeOrderChainTab } from '../ipp/IppChangeOrderChainTab';
 import { ScadaConnectorTab } from '../scadaConnector/ScadaConnectorTab';
+import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -74,6 +75,7 @@ export function IppWorkstationPage() {
         { key: 'ed_chain', label: 'ED commitments', body: () => <EdCommitmentChainTab /> },
         { key: 'gca_chain', label: 'UNGCA chain', body: () => <GcaChainTab /> },
         { key: 'scada-connectors', label: 'SCADA connectors (W122)', body: () => <ScadaConnectorTab /> },
+        { key: 'mqtt-opcua-connectors', label: 'MQTT/OPC-UA connectors (W123)', body: () => <MqttOpcuaConnectorTab /> },
         { key: 'community', label: 'Community', body: ({ onRefresh }) => <CommunityTab onRefresh={onRefresh} /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
