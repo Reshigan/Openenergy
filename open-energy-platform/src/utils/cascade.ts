@@ -1450,7 +1450,25 @@ export type EventType =
   | 'ipp_risk.deferred'
   | 'ipp_risk.reactivated'
   | 'ipp_risk.cancelled'
-  | 'ipp_risk.sla_breached';
+  | 'ipp_risk.sla_breached'
+  // W134 IPP Stakeholder Register — PHASE E WAVE 4 OF N.
+  // 12-state P6 on oe_ipp_stakeholders; URGENT SLA (strategic_ally 24h TIGHTEST).
+  // SIGNATURE: escalate_engagement EVERY tier (universally reportable).
+  // flag_resistant EVERY tier when power_score >= 4 (REIPPPP S4 community-participation risk).
+  // JOINS existing 'ipp' audit namespace.
+  | 'ipp_stakeholder.analyze_stakeholder'
+  | 'ipp_stakeholder.classify_stakeholder'
+  | 'ipp_stakeholder.plan_engagement'
+  | 'ipp_stakeholder.activate_engagement'
+  | 'ipp_stakeholder.record_response'
+  | 'ipp_stakeholder.confirm_supportive'
+  | 'ipp_stakeholder.elevate_to_champion'
+  | 'ipp_stakeholder.flag_resistant'
+  | 'ipp_stakeholder.flag_disengaged'
+  | 'ipp_stakeholder.escalate_engagement'
+  | 'ipp_stakeholder.re_engage'
+  | 'ipp_stakeholder.archive_stakeholder'
+  | 'ipp_stakeholder.sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1659,6 +1677,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ipp_issue: 'ipp',
   // W133 IPP Risk Register — JOINS existing 'ipp' namespace.
   ipp_risk: 'ipp',
+  // W134 IPP Stakeholder Register — JOINS existing 'ipp' namespace.
+  ipp_stakeholder: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

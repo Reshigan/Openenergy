@@ -784,6 +784,15 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         icon: 'warning',
       },
       {
+        // W134 Phase-E wave 4 — IPP Stakeholder Register & Engagement Tracking.
+        key: 'stakeholder-register',
+        title: 'Stakeholder register (W134)',
+        description: 'PMBOK 7 Section 13 + ISO 21500:2021 stakeholder management + REIPPPP Section 4 community participation + IFC Performance Standard 1 (PS1) + Equator Principles IV on oe_ipp_stakeholders: 12-state engagement lifecycle (identified → analyzed → classified → engagement_planned → active_engagement → responsive → supportive → champion + resistant / disengaged / escalated / archived). P×I×U engagement matrix (Power × Interest × Urgency, max 125) with automatic tier derivation (strategic_ally / key_player / keep_satisfied / keep_informed / monitor). URGENT SLA polarity (strategic_ally 24h TIGHTEST → monitor 720h). W134 SIGNATURE: escalate_engagement EVERY tier — any stakeholder escalation is universally reportable (REIPPPP S4 + IFC PS1 failure to manage community stakeholders always material). flag_resistant EVERY tier when power_score >= 4 (high-power resistant stakeholder = community-participation risk always reportable). NERSA-required strategic_ally/key_player SLA breach crosses regulator. 5 floor flags (floor_ep4_required / floor_board_notify / floor_legal_risk / floor_nersa_required / floor_lender_required). 5 bridge refs (stage_gate_ref W131 / issue_ref W132 / risk_ref W133 / ed_commitment_ref W27 / hse_incident_ref W25). SLA sweep in shared */15 cron slot. JOINS existing ipp audit namespace. Beats Engage + Darzin + Boora + Synergi + Quorum + Stakeholder Map Pro + Borealis CSR.',
+        href: '/ipp-lifecycle/workstation?tab=stakeholder-register',
+        cta_label: 'Open stakeholder register',
+        icon: 'groups',
+      },
+      {
         // W132 Phase-E wave 2 — IPP Issues Log & Resolution Chain.
         key: 'issues-log',
         title: 'Issues log (W132)',

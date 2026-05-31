@@ -32,6 +32,7 @@ import { NttComparisonBatteryTab } from '../nttComparisonBattery/NttComparisonBa
 import StageGateTab from '../stageGate/StageGateTab';
 import IppIssuesTab from '../ippIssues/IppIssuesTab';
 import IppRiskTab from '../ippRisk/IppRiskTab';
+import IppStakeholderTab from '../ippStakeholder/IppStakeholderTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -65,6 +66,7 @@ export function IppWorkstationPage() {
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },
+        { key: 'stakeholder-register', label: 'Stakeholder register', group: 'Risk & quality', body: () => <IppStakeholderTab /> },
         { key: 'itp', label: 'ITP / Quality plan', group: 'Risk & quality', body: () => <ItpChainTab /> },
         { key: 'project_risk', label: 'Risk analysis (EMV/SRA)', group: 'Risk & quality', body: () => <ProjectRiskChainTab /> },
         { key: 'audit', label: 'Audit & compliance', group: 'Risk & quality',

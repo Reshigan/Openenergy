@@ -248,6 +248,7 @@ import stageGateRoutes, {
 } from './routes/stage-gate';
 import ippIssuesRoutes, { ippIssueSlaSweep } from './routes/ipp-issues';
 import ippRiskRoutes, { ippRiskSlaSweep } from './routes/ipp-risk';
+import ippStakeholderRoutes, { ippStakeholderSlaSweep } from './routes/ipp-stakeholder';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -767,6 +768,10 @@ app.route('/api/ipp-issues', ippIssuesRoutes);
 // 11-state + 4 branch; INVERTED SLA (catastrophic 2160h most time); WRITE {admin, ipp_developer}.
 // SIGNATURE: escalate_risk EVERY tier when safety AND (critical|catastrophic).
 app.route('/api/ipp-risk', ippRiskRoutes);
+// W134: IPP Stakeholder Register & Engagement Tracking — PMBOK 7 S13 + ISO 21500 + REIPPPP S4 + IFC PS1.
+// 12-state engagement lifecycle; URGENT SLA (strategic_ally 24h tightest); WRITE {admin, ipp_developer}.
+// SIGNATURE: escalate_engagement EVERY tier; flag_resistant crosses when power_score >= 4.
+app.route('/api/ipp-stakeholder', ippStakeholderRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2013,6 +2018,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_risk_sla_sweep', async () => {
         const result = await ippRiskSlaSweep(env as never);
         console.log('ipp_risk_sla_sweep', JSON.stringify(result));
+      });
+      // W134 IPP Stakeholder Register: URGENT SLA (strategic_ally 24h tightest).
+      // NERSA-required strategic_ally/key_player SLA breaches cross regulator.
+      await safe('ipp_stakeholder_sla_sweep', async () => {
+        const result = await ippStakeholderSlaSweep(env as never);
+        console.log('ipp_stakeholder_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
