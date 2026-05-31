@@ -28,6 +28,7 @@ import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorT
 import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
 import RulPredictionMlTab from '../rulPredictionMl/RulPredictionMlTab';
 import { FaultFingerprintMlTab } from '../faultFingerprintMl/FaultFingerprintMlTab';
+import { NttComparisonBatteryTab } from '../nttComparisonBattery/NttComparisonBatteryTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -78,6 +79,7 @@ export function IppWorkstationPage() {
         { key: 'anomaly-detection-ml', label: 'Anomaly ML (W127)', body: () => <AnomalyDetectionMlTab /> },
         { key: 'rul-prediction-ml', label: 'RUL Prediction ML (W128)', body: () => <RulPredictionMlTab /> },
         { key: 'fault-fingerprint-ml', label: 'Fault Fingerprint ML (W129)', body: () => <FaultFingerprintMlTab /> },
+        { key: 'ntt-comparison-battery', label: 'NTT comparison (W130)', body: () => <NttComparisonBatteryTab /> },
         { key: 'community', label: 'Community', body: ({ onRefresh }) => <CommunityTab onRefresh={onRefresh} /> },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (

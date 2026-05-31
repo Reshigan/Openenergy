@@ -11,6 +11,7 @@ import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/Gover
 import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
 import RulPredictionMlTab from '../rulPredictionMl/RulPredictionMlTab';
 import { FaultFingerprintMlTab } from '../faultFingerprintMl/FaultFingerprintMlTab';
+import { NttComparisonBatteryTab } from '../nttComparisonBattery/NttComparisonBatteryTab';
 import { api } from '../../lib/api';
 
 const formatZAR = (v: number) =>
@@ -91,6 +92,9 @@ export function AdminWorkstationPage() {
         },
         { key: 'fault-fingerprint-ml', label: 'Fault Fingerprint ML (W129)',
           body: () => <FaultFingerprintMlTab />,
+        },
+        { key: 'ntt-comparison-battery', label: 'NTT comparison (W130)',
+          body: () => <NttComparisonBatteryTab />,
         },
       ]}
     />

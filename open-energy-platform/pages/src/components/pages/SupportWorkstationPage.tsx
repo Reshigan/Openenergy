@@ -14,6 +14,7 @@ import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorT
 import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
 import RulPredictionMlTab from '../rulPredictionMl/RulPredictionMlTab';
 import { FaultFingerprintMlTab } from '../faultFingerprintMl/FaultFingerprintMlTab';
+import { NttComparisonBatteryTab } from '../nttComparisonBattery/NttComparisonBatteryTab';
 import { api } from '../../lib/api';
 import { X } from 'lucide-react';
 
@@ -168,6 +169,11 @@ export function SupportWorkstationPage() {
             key: 'fault-fingerprint-ml',
             label: 'Fault Fingerprint ML (W129)',
             body: () => <FaultFingerprintMlTab />,
+          },
+          {
+            key: 'ntt-comparison-battery',
+            label: 'NTT comparison (W130)',
+            body: () => <NttComparisonBatteryTab />,
           },
           {
             key: 'escalations',

@@ -1360,7 +1360,29 @@ export type EventType =
   | 'fault_fingerprint_ml_recalled'
   | 'fault_fingerprint_ml_failover_to_physics_baseline'
   | 'fault_fingerprint_ml_novel_class_added'
-  | 'fault_fingerprint_ml_sla_breached';
+  | 'fault_fingerprint_ml_sla_breached'
+  // W130 - NTT Comparison Battery (PHASE D WAVE 4 OF 4 - CLOSES PHASE D).
+  // 16 actions + sla_breached. Aggregator stitching W127/W128/W129 vs
+  // emulated NTT IoT/O&M baseline. SIGNATURE: recall_certification
+  // crosses regulator EVERY tier (W130-NCB-RECALL hard line -
+  // withdrawal of a published savings cert is ALWAYS reportable).
+  | 'ntt_comparison_battery_cycle_proposed'
+  | 'ntt_comparison_battery_baselines_synced'
+  | 'ntt_comparison_battery_telemetry_window_bound'
+  | 'ntt_comparison_battery_ntt_emulation_run'
+  | 'ntt_comparison_battery_champion_predictions_collected'
+  | 'ntt_comparison_battery_counterfactuals_computed'
+  | 'ntt_comparison_battery_revenue_weighted_scored'
+  | 'ntt_comparison_battery_significance_tested'
+  | 'ntt_comparison_battery_savings_certified'
+  | 'ntt_comparison_battery_audit_published'
+  | 'ntt_comparison_battery_retraining_triggered'
+  | 'ntt_comparison_battery_archived'
+  | 'ntt_comparison_battery_significance_failed'
+  | 'ntt_comparison_battery_rolled_back'
+  | 'ntt_comparison_battery_recalled'
+  | 'ntt_comparison_battery_failover_to_prior_cycle'
+  | 'ntt_comparison_battery_sla_breached';
 
 interface CascadeContext {
   event: EventType;
@@ -1547,6 +1569,18 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // (adding a previously-unseen fault mode at fleet-wide scale is
   // EU-AI-Act-reportable model-scope expansion).
   fault_fingerprint_ml: 'ml',
+  // W130 NTT Comparison Battery joins the 'ml' audit namespace alongside
+  // W127/W128/W129. Each cycle aggregator row produces propose,
+  // baselines_synced, telemetry_window_bound, ntt_emulation_run,
+  // champion_predictions_collected, counterfactuals_computed,
+  // revenue_weighted_scored, significance_tested, savings_certified,
+  // audit_published (W118-mandatory), retraining_triggered, archived,
+  // significance_failed (soft), rolled_back (hard), recalled (HARD -
+  // W130 SIGNATURE crosses regulator EVERY tier), failover_to_prior_cycle.
+  // SIGNATURE: recall_certification - withdrawal of a published savings
+  // certification is ALWAYS reportable (SARB MA s38 + IFRS restatement +
+  // ISO 42001 incident); CLOSES PHASE D ML governance ladder.
+  ntt_comparison_battery: 'ml',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

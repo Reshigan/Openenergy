@@ -232,6 +232,16 @@ import faultFingerprintMlRoutes, {
   faultFingerprintMlClassDriftScan,
   faultFingerprintMlModelCardExpirySweep,
 } from './routes/fault-fingerprint-ml';
+// W130 NTT Comparison Battery - PHASE D WAVE 4 OF 4 - CLOSES PHASE D.
+// Continuous-cycle aggregator stitching W127+W128+W129 vs emulated NTT
+// IoT/O&M baseline. SIGNATURE: recall_certification crosses regulator
+// EVERY tier (withdrawal of published savings cert always reportable).
+import nttComparisonBatteryRoutes, {
+  nttComparisonBatterySlaSweep,
+  nttComparisonBatteryNightlyCycleRunner,
+  nttComparisonBatteryModelCardExpirySweep,
+  nttComparisonBatteryMonthlyLedgerReconciliation,
+} from './routes/ntt-comparison-battery';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -729,6 +739,13 @@ app.route('/api/rul-prediction-ml', rulPredictionMlRoutes);
 // W15 warranty claim + W41 ITIL problem mgmt + W63 warranty recovery +
 // W118 audit. WRITE {admin, support}. READ all 9 personas.
 app.route('/api/fault-fingerprint-ml', faultFingerprintMlRoutes);
+// W130 - NTT Comparison Battery (PHASE D WAVE 4 OF 4 - CLOSES PHASE D).
+// Aggregator chain stitching W127 anomaly + W128 RUL + W129 fault vs
+// emulated NTT IoT/O&M baseline. Each row = one comparison cycle
+// (nightly default). Esums dashboard reads /dashboard/hero for the live
+// "savings vs NTT-30%" KPI. WRITE {admin, support}. READ all 9 personas.
+// W118 audit bridge MANDATORY at publish_audit (422 reject otherwise).
+app.route('/api/ntt-comparison-battery', nttComparisonBatteryRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -1942,6 +1959,17 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('fault_fingerprint_ml_sla_sweep', async () => {
         const result = await faultFingerprintMlSlaSweep(env as never);
         console.log('fault_fingerprint_ml_sla_sweep', JSON.stringify(result));
+      });
+      // W130 NTT Comparison Battery — 15-min sweep over every comparison-
+      // cycle lifecycle state with an SLA anchor. INVERTED HOUR polarity
+      // (single_asset 12 / small_fleet 48 / large_fleet 120 /
+      // multi_jurisdiction_fleet 240 / fleet_systemic 480). TIGHTER than
+      // W127-W129 because cycles run nightly. SLA breach crosses regulator
+      // on heavy tiers under ISO 42001 + NIST AI RMF + SARB MA s38 + IFRS.
+      // FOURTH (final) Phase-D ML governance hard line. CLOSES PHASE D.
+      await safe('ntt_comparison_battery_sla_sweep', async () => {
+        const result = await nttComparisonBatterySlaSweep(env as never);
+        console.log('ntt_comparison_battery_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
@@ -3647,6 +3675,48 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('fault_fingerprint_ml_model_card_expiry_sweep', async () => {
         const result = await faultFingerprintMlModelCardExpirySweep(env as never);
         console.log('fault_fingerprint_ml_model_card_expiry_sweep', JSON.stringify(result));
+      });
+      // W130 NTT Comparison Battery — Monday 09:00 SAST weekly model-
+      // card expiry sweep. Walks every live battery cycle with a
+      // model_card_expires_at, recomputes days_to_model_card_expiry,
+      // flags 14d-out (or already expired) as regulator_relevant +
+      // is_reportable so the dashboard surfaces ISO 42001 re-attestation
+      // BEFORE the governance committee disables the comparison cycle.
+      // Shared trigger with W122/W123/W124/W125/W126/W127/W128/W129.
+      // CLOSES PHASE D weekly footprint.
+      await safe('ntt_comparison_battery_model_card_expiry_sweep', async () => {
+        const result = await nttComparisonBatteryModelCardExpirySweep(env as never);
+        console.log('ntt_comparison_battery_model_card_expiry_sweep', JSON.stringify(result));
+      });
+      break;
+
+    case '15 4 * * *':
+      // W130 NTT Comparison Battery — daily 06:15 SAST (04:15 UTC)
+      // NIGHTLY CYCLE RUNNER. Walks every live battery cycle, refreshes
+      // control/health/days fields (savings_vs_ntt_pct trend,
+      // paired_t p-value trend, days_to_next_cycle countdown), flags
+      // sustained-below-target counters when savings goes negative OR
+      // paired_t p-value >= 0.10, counts cycles near due. NEW trigger -
+      // FOURTH (final) Phase-D daily cron, dedicated 45-min-after-W129
+      // slot. CLOSES PHASE D daily footprint.
+      await safe('ntt_comparison_battery_nightly_cycle_runner', async () => {
+        const result = await nttComparisonBatteryNightlyCycleRunner(env as never);
+        console.log('ntt_comparison_battery_nightly_cycle_runner', JSON.stringify(result));
+      });
+      break;
+
+    case '0 1 1 * *':
+      // W130 NTT Comparison Battery — monthly 03:00 SAST (01:00 UTC) on
+      // 1st-of-month CUMULATIVE SAVINGS LEDGER RECONCILIATION. Validates
+      // cumulative_savings_zar against W71 asset-prognostics control
+      // savings ledger; if drift exceeds REGULATOR_DIVERSION_DISAGREEMENT_
+      // FLOOR_PCT (5%) flags regulator_reportable_diversion + emits an
+      // ntt_comparison_battery_audit_published event with the variance
+      // payload (catches drift before it surfaces as a Q+1 SARB MA s38
+      // notifiable). NEW trigger - monthly Phase-D footprint closer.
+      await safe('ntt_comparison_battery_monthly_ledger_reconciliation', async () => {
+        const result = await nttComparisonBatteryMonthlyLedgerReconciliation(env as never);
+        console.log('ntt_comparison_battery_monthly_ledger_reconciliation', JSON.stringify(result));
       });
       break;
 
