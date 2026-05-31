@@ -271,10 +271,10 @@ app.post('/', async (c: Context<HonoEnv>) => {
 
   const flags: SgFloorFlags = {
     floor_equator_cat_a: body.equator_category === 'cat_a' ? 1 : 0,
-    floor_fid_committed: body.gate_index >= 3 ? 1 : 0,
-    floor_nersa_notifiable: (body.gate_index === 0 || body.gate_index === 4) ? 1 : 0,
-    floor_debt_sized: body.debt_sized || body.gate_index >= 3 ? 1 : 0,
-    floor_shareholder_consent_required: 0,
+    floor_fid_committed: Number(body.fid_committed ?? 0),
+    floor_nersa_notifiable: Number(body.nersa_notifiable ?? 0),
+    floor_debt_sized: Number(body.debt_sized ?? 0),
+    floor_shareholder_consent_required: Number(body.shareholder_consent_required ?? 0),
   };
 
   const rawTier = tierForScope({
