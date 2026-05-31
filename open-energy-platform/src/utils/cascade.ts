@@ -1546,7 +1546,27 @@ export type EventType =
   | 'ipp_mir.reject_material'
   | 'ipp_mir.quarantine_material'
   | 'ipp_mir.return_to_supplier'
-  | 'ipp_mir.flag_overdue';
+  | 'ipp_mir.flag_overdue'
+  // ─── Wave 140: IPP Subcontractor Management ───────────────────────────────
+  // OHSA Construction Regs 2014 Reg.6 + ISO 45001:2018 + REIPPPP ED + EP4; 12-state P6.
+  // URGENT SLA (critical_trade 24h TIGHTEST → labor_only 168h).
+  // SIGNATURE: terminate_subcontractor EVERY tier when safety_violation;
+  //            suspend_subcontractor when floor_ohsa_notification;
+  //            close_subcontract when floor_lender_escrow_release.
+  | 'ipp_subcontractor.start_prequalification'
+  | 'ipp_subcontractor.complete_induction'
+  | 'ipp_subcontractor.mobilize'
+  | 'ipp_subcontractor.commence_work'
+  | 'ipp_subcontractor.trigger_review'
+  | 'ipp_subcontractor.confirm_good_standing'
+  | 'ipp_subcontractor.return_to_performing'
+  | 'ipp_subcontractor.complete_work'
+  | 'ipp_subcontractor.demobilize'
+  | 'ipp_subcontractor.close_subcontract'
+  | 'ipp_subcontractor.suspend_subcontractor'
+  | 'ipp_subcontractor.terminate_subcontractor'
+  | 'ipp_subcontractor.reinstate_subcontractor'
+  | 'ipp_subcontractor.flag_overdue';
 
 interface CascadeContext {
   event: EventType;
@@ -1770,6 +1790,10 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // W139 IPP Material Inspection Record — JOINS existing 'ipp' namespace.
   // ISO 9001:2015 §8.6 + REIPPPP + EP4. reject_material EVERY tier when IE witnessed.
   ipp_mir: 'ipp',
+  // W140 IPP Subcontractor Management — JOINS existing 'ipp' namespace.
+  // OHSA Construction Regs 2014 Reg.6 + ISO 45001:2018 + REIPPPP ED + EP4.
+  // terminate_subcontractor EVERY tier when safety_violation (OHSA mandatory).
+  ipp_subcontractor: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

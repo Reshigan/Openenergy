@@ -254,6 +254,7 @@ import ippNcrRoutes, { ippNcrSlaSweep } from './routes/ipp-ncr';
 import ippMethodStatementRoutes, { ippMethodStatementSlaSweep } from './routes/ipp-method-statement';
 import ippEnvMonitoringRoutes, { ippEnvMonitoringSlaSweep } from './routes/ipp-env-monitoring';
 import ippMirRoutes, { ippMirSlaSweep } from './routes/ipp-mir';
+import ippSubcontractorRoutes, { ippSubcontractorSlaSweep } from './routes/ipp-subcontractor';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -798,6 +799,11 @@ app.route('/api/ipp-env-monitoring', ippEnvMonitoringRoutes);
 // 12-state P6; URGENT SLA (critical_structural 24h tightest → general 168h); WRITE {admin, ipp_developer, support}.
 // SIGNATURE: reject_material EVERY tier when IE witnessed; quarantine_material when floor_critical_safety.
 app.route('/api/ipp-mir', ippMirRoutes);
+// W140 IPP Subcontractor Management — OHSA Construction Regs 2014 Reg.6 + ISO 45001:2018 + REIPPPP ED + EP4.
+// 12-state P6; URGENT SLA (critical_trade 24h tightest → labor_only 168h); WRITE {admin, ipp_developer, support}.
+// SIGNATURE: terminate_subcontractor EVERY tier on safety_violation; suspend when floor_ohsa_notification;
+// close_subcontract when floor_lender_escrow_release. Beats Oracle Aconex + Procore Subcontractors.
+app.route('/api/ipp-subcontractor', ippSubcontractorRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2080,6 +2086,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_mir_sla_sweep', async () => {
         const result = await ippMirSlaSweep(env as never);
         console.log('ipp_mir_sla_sweep', JSON.stringify(result));
+      });
+      // W140 — IPP Subcontractor Management SLA sweep (URGENT: critical_trade 24h TIGHTEST).
+      // SIGNATURE: critical_trade + ie_oversight crosses; floor_ohsa_notification crosses any tier.
+      await safe('ipp_subcontractor_sla_sweep', async () => {
+        const result = await ippSubcontractorSlaSweep(env as never);
+        console.log('ipp_subcontractor_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

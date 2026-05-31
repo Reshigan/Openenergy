@@ -811,6 +811,15 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         icon: 'checklist_rtl',
       },
       {
+        // W140 Phase-E wave 10 — IPP Subcontractor Management.
+        key: 'subcontractors',
+        title: 'Subcontractor management (W140)',
+        description: 'OHSA SA Construction Regulations 2014 Reg.6 (principal contractor responsibilities) + ISO 45001:2018 contractor management + REIPPPP ED local content requirements (W27) + Equator Principles EP4 supply chain ESG on oe_ipp_subcontractors: 12-state P6 chain (registered → pre_qualification → inducted → mobilized → performing → under_review → good_standing → work_complete → demobilized → closed + suspended / terminated branches). URGENT SLA polarity (critical_trade 24h TIGHTEST — HV electrical, structural = life safety → labor_only 168h loosest). W140 SIGNATURE: terminate_subcontractor EVERY tier when termination_cause=safety_violation (OHSA mandatory notification — principal contractor liability); suspend_subcontractor when floor_ohsa_notification (serious safety incident); close_subcontract when floor_lender_escrow_release (Equator EP4 supply-chain final-payment audit). SLA breach crosses when critical_trade + floor_ie_oversight OR floor_ohsa_notification (any tier). 4 subcontractor tiers: critical_trade / specialist / general_trade / labor_only. 12 trade categories: structural / electrical_hv / electrical_lv / mechanical / civil / instrumentation / scaffolding / demolition / commissioning_specialist / labor_supply / cleaning / general. 5 floor flags: OHSA notification / lender escrow release / REIPPPP ED reporting / BEE verification / IE oversight. Performance scoring (0–100 composite HSE + quality + schedule + BEE), CIDB grade, local content %, SA employee count, insurance expiry tracking with near-expiry alert. Cross-references: ed_commitment_ref W27 / hse_incident_ref W25 / ncr_ref W136 / ms_ref W137. SLA sweep in shared */15 cron slot. JOINS existing ipp audit namespace. Beats Oracle Aconex (documents only — no performance scoring, no OHSA lifecycle) and Procore Subcontractors (no performance scoring, no P6 state machine, no REIPPPP ED metrics).',
+        href: '/ipp-lifecycle/workstation?tab=subcontractors',
+        cta_label: 'Open subcontractor register',
+        icon: 'engineering',
+      },
+      {
         // W138 Phase-E wave 8 — IPP Environmental Monitoring Log.
         key: 'mir',
         title: 'Material inspections (W139)',
