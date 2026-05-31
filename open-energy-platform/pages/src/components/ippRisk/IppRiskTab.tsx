@@ -10,6 +10,8 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainStateBar } from '../ChainStateBar';
+import { SlaCountdown } from '../SlaCountdown';
 
 type RiskStatus =
   | 'identified' | 'assessed' | 'quantified' | 'response_planned'
@@ -136,6 +138,20 @@ const CATEGORIES: RiskCategory[] = [
 const TIERS: RiskTier[] = [
   'low_impact','medium_impact','high_impact','critical_impact','catastrophic',
 ];
+
+const MAIN_RISK_STATES: readonly RiskStatus[] = [
+  'identified','assessed','quantified','response_planned',
+  'owner_assigned','monitoring','triggered','responding',
+  'outcome_recorded','closed','archived',
+];
+const BRANCH_RISK_STATES: readonly RiskStatus[] = [
+  'escalated','deferred','cancelled','overdue_flagged',
+];
+
+const SLA_HOURS_BY_TIER: Record<RiskTier, number> = {
+  low_impact: 168, medium_impact: 336, high_impact: 720,
+  critical_impact: 1440, catastrophic: 2160,
+};
 
 function scoreColor(score: number | null): string {
   if (!score) return 'text-gray-400';
@@ -318,6 +334,7 @@ export default function IppRiskTab({ readOnly = false }: Props) {
                 <th className="text-left px-3 py-2 font-medium text-gray-500">Category</th>
                 <th className="text-left px-3 py-2 font-medium text-gray-500">Status</th>
                 <th className="text-left px-3 py-2 font-medium text-gray-500">Strategy</th>
+                <th className="text-left px-3 py-2 font-medium text-gray-500">SLA</th>
                 <th className="text-left px-3 py-2 font-medium text-gray-500">Flags</th>
                 <th className="text-left px-3 py-2 font-medium text-gray-500">Project</th>
                 {!readOnly && <th className="px-3 py-2" />}
@@ -325,7 +342,7 @@ export default function IppRiskTab({ readOnly = false }: Props) {
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={readOnly ? 9 : 10} className="px-3 py-6 text-center text-gray-400">No risks in register</td></tr>
+                <tr><td colSpan={readOnly ? 10 : 11} className="px-3 py-6 text-center text-gray-400">No risks in register</td></tr>
               )}
               {filtered.map(row => (
                 <tr key={row.id} className="border-t border-gray-100 hover:bg-gray-50 cursor-pointer" onClick={() => setSelected(row)}>
@@ -350,6 +367,16 @@ export default function IppRiskTab({ readOnly = false }: Props) {
                     </span>
                   </td>
                   <td className="px-3 py-2 capitalize text-gray-600">{row.response_strategy ?? '—'}</td>
+                  <td className="px-3 py-2">
+                    {row.sla_remaining_hours_live != null ? (
+                      <SlaCountdown
+                        remainingHours={row.sla_remaining_hours_live}
+                        totalHours={row.sla_target_hours ?? SLA_HOURS_BY_TIER[row.risk_tier]}
+                        breached={!!row.sla_breached}
+                        compact
+                      />
+                    ) : <span className="text-gray-400">—</span>}
+                  </td>
                   <td className="px-3 py-2">
                     <div className="flex gap-1">
                       {!!row.is_safety && <Flag label="S" title="Safety" cls="bg-red-100 text-red-700" />}
@@ -392,6 +419,29 @@ export default function IppRiskTab({ readOnly = false }: Props) {
               </div>
               <button className="text-gray-400 hover:text-gray-600 text-xl" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
             </div>
+
+            {/* Chain state progress */}
+            <div className="mb-4 px-3 py-3 bg-gray-50 rounded-lg">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-2">Treatment progress</p>
+              <ChainStateBar
+                allStates={MAIN_RISK_STATES}
+                currentState={selected.chain_status}
+                branchStates={BRANCH_RISK_STATES}
+                variant="full"
+              />
+            </div>
+
+            {/* SLA urgency bar */}
+            {selected.sla_remaining_hours_live != null && (
+              <div className="mb-4">
+                <SlaCountdown
+                  remainingHours={selected.sla_remaining_hours_live}
+                  totalHours={selected.sla_target_hours ?? SLA_HOURS_BY_TIER[selected.risk_tier]}
+                  breached={!!selected.sla_breached}
+                  label={`${TIER_LABEL[selected.risk_tier]} treatment SLA`}
+                />
+              </div>
+            )}
 
             {selected.description && <p className="text-sm text-gray-600 mb-4">{selected.description}</p>}
 

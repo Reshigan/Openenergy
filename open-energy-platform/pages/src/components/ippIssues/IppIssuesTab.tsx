@@ -10,6 +10,8 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainStateBar } from '../ChainStateBar';
+import { SlaCountdown } from '../SlaCountdown';
 
 type IssueStatus =
   | 'raised' | 'triaged' | 'assigned' | 'acknowledged' | 'in_progress'
@@ -133,16 +135,18 @@ const PRIORITIES: IssuePriority[] = [
   'p1_critical','p2_high','p3_medium','p4_low','p5_informational',
 ];
 
-function slaLabel(row: IssueRow, now: Date): { text: string; cls: string } {
-  if (row.sla_breached) return { text: 'SLA breached', cls: 'text-red-600 font-semibold' };
-  if (!row.sla_deadline_at) return { text: '—', cls: 'text-gray-400' };
-  const rem = (new Date(row.sla_deadline_at).getTime() - now.getTime()) / 3600000;
-  if (rem < 0) return { text: 'Overdue', cls: 'text-red-600 font-semibold' };
-  if (rem < 4) return { text: `${rem.toFixed(1)}h`, cls: 'text-red-500 font-semibold' };
-  if (rem < 24) return { text: `${rem.toFixed(0)}h`, cls: 'text-orange-500 font-medium' };
-  const days = (rem / 24).toFixed(1);
-  return { text: `${days}d`, cls: 'text-green-600' };
-}
+const MAIN_STATES: readonly IssueStatus[] = [
+  'raised','triaged','assigned','acknowledged','in_progress',
+  'under_review','resolved','verified','evidence_filed','closed','archived',
+];
+const BRANCH_STATES: readonly IssueStatus[] = [
+  'blocked','escalated','deferred','cancelled','overdue_flagged',
+];
+
+const SLA_HOURS: Record<IssuePriority, number> = {
+  p1_critical: 24, p2_high: 72, p3_medium: 168, p4_low: 336, p5_informational: 720,
+};
+
 
 interface Props { readOnly?: boolean }
 
@@ -193,8 +197,6 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
     if (filterCategory && r.category !== filterCategory) return false;
     return true;
   }), [rows, filterStatus, filterPriority, filterCategory]);
-
-  const now = useMemo(() => new Date(), []);
 
   async function handleAction(action: string) {
     if (!selected) return;
@@ -348,7 +350,6 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
                 <tr><td colSpan={readOnly ? 8 : 9} className="px-3 py-6 text-center text-gray-400">No issues</td></tr>
               )}
               {filtered.map(row => {
-                const sla = slaLabel(row, now);
                 return (
                   <tr
                     key={row.id}
@@ -370,7 +371,16 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
                         {row.chain_status.replace(/_/g, ' ')}
                       </span>
                     </td>
-                    <td className={`px-3 py-2 font-mono ${sla.cls}`}>{sla.text}</td>
+                    <td className="px-3 py-2">
+                      {row.sla_remaining_hours_live != null ? (
+                        <SlaCountdown
+                          remainingHours={row.sla_remaining_hours_live}
+                          totalHours={row.sla_target_hours ?? SLA_HOURS[row.priority]}
+                          breached={!!row.sla_breached}
+                          compact
+                        />
+                      ) : <span className="text-gray-400 text-xs">—</span>}
+                    </td>
                     <td className="px-3 py-2">
                       <div className="flex gap-1">
                         {!!row.is_safety && <Flag label="S" title="Safety" cls="bg-red-100 text-red-700" />}
@@ -421,12 +431,35 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
               <button className="text-gray-400 hover:text-gray-600 text-xl" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
             </div>
 
+            {/* Chain state progress */}
+            <div className="mb-4 px-3 py-3 bg-gray-50 rounded-lg">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-2">Workflow progress</p>
+              <ChainStateBar
+                allStates={MAIN_STATES}
+                currentState={selected.chain_status}
+                branchStates={BRANCH_STATES}
+                variant="full"
+              />
+            </div>
+
+            {/* SLA urgency bar */}
+            {selected.sla_remaining_hours_live != null && (
+              <div className="mb-4">
+                <SlaCountdown
+                  remainingHours={selected.sla_remaining_hours_live}
+                  totalHours={selected.sla_target_hours ?? SLA_HOURS[selected.priority]}
+                  breached={!!selected.sla_breached}
+                  label={PRIORITY_LABEL[selected.priority]}
+                />
+              </div>
+            )}
+
             {/* Description */}
             {selected.description && (
               <p className="text-sm text-gray-600 mb-4">{selected.description}</p>
             )}
 
-            {/* SLA */}
+            {/* Detail fields */}
             <div className="grid grid-cols-2 gap-3 mb-4">
               <DetailRow label="Category" value={selected.category} />
               <DetailRow label="Assigned to" value={selected.assigned_to ?? '—'} />

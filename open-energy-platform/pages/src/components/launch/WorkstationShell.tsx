@@ -23,6 +23,7 @@ import { motionTransition } from '../../lib/motion';
 export type WorkstationTab = {
   key: string;
   label: string;
+  group?: string;
   body: (props: { onRefresh: () => void }) => ReactNode;
 };
 
@@ -84,6 +85,27 @@ export function WorkstationShell({
 
   const refresh = () => setBump(n => n + 1);
   const current = tabs.find(t => t.key === activeTab) || tabs[0];
+
+  // Group-aware tab navigation
+  const hasGroups = tabs.some(t => t.group);
+  const allGroups: string[] = hasGroups
+    ? Array.from(new Set(tabs.map(t => t.group).filter(Boolean) as string[]))
+    : [];
+  const [activeGroup, setActiveGroup] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!hasGroups) return;
+    const g = tabs.find(t => t.key === activeTab)?.group || null;
+    setActiveGroup(g);
+  }, [activeTab, hasGroups, tabs]);
+
+  const visibleTabs = hasGroups && activeGroup != null
+    ? tabs.filter(t => t.group === activeGroup)
+    : tabs;
+
+  // KPI tone helpers
+  const toneArrow: Record<string, string> = { up: '↑', down: '↓', warn: '⚠' };
+  const toneColor: Record<string, string> = { up: '#22c55e', down: '#ef4444', warn: '#f59e0b' };
 
   // Density preference hook MUST be called unconditionally; for non-role
   // workstations we just don't read it. We pass the fallback 'trader' theme
@@ -150,6 +172,11 @@ export function WorkstationShell({
                       style={{ fontVariantNumeric: 'tabular-nums', color: '#ffffff' }}
                     >
                       {k.value}
+                      {k.tone && (
+                        <span style={{ fontSize: 13, marginLeft: 4, color: toneColor[k.tone] }}>
+                          {toneArrow[k.tone]}
+                        </span>
+                      )}
                     </div>
                     {k.caption && <div className="text-[10px] text-white/60 mt-0.5">{k.caption}</div>}
                   </div>
@@ -183,21 +210,46 @@ export function WorkstationShell({
             </div>
           )}
 
-          <nav className="flex flex-wrap items-center gap-1 bg-white border border-[#dde4ec] rounded-lg p-1 w-fit">
-            {tabs.map(t => {
-              const isActive = activeTab === t.key;
-              return (
+          <nav className="bg-white border border-[#dde4ec] rounded-lg p-1.5 w-full">
+            {hasGroups && (
+              <div className="flex flex-wrap items-center gap-1 pb-2 border-b border-[#eef2f7] mb-2">
                 <button
-                  key={t.key}
-                  onClick={() => setTab(t.key)}
-                  className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-2 ${
-                    isActive ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'
+                  onClick={() => setActiveGroup(null)}
+                  className={`h-7 px-2 rounded text-[11px] font-medium ${
+                    activeGroup === null ? 'bg-[#1a3a5c] text-white' : 'text-[#6b7685] hover:bg-gray-50'
                   }`}
                 >
-                  {t.label}
+                  All
                 </button>
-              );
-            })}
+                {allGroups.map(g => (
+                  <button
+                    key={g}
+                    onClick={() => setActiveGroup(g)}
+                    className={`h-7 px-2 rounded text-[11px] font-medium ${
+                      activeGroup === g ? 'bg-[#1a3a5c] text-white' : 'text-[#6b7685] hover:bg-gray-50'
+                    }`}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="flex flex-wrap items-center gap-1">
+              {visibleTabs.map(t => {
+                const isActive = activeTab === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => setTab(t.key)}
+                    className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-2 ${
+                      isActive ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
           </nav>
 
           <div key={`${activeTab}-${bump}`}>{current.body({ onRefresh: refresh })}</div>
@@ -236,6 +288,11 @@ export function WorkstationShell({
                 <div className="text-[10px] uppercase tracking-wider text-white/75">{k.label}</div>
                 <div className="mt-1 font-mono text-[20px] font-bold leading-tight" style={{ fontVariantNumeric: 'tabular-nums', color: '#ffffff' }}>
                   {k.value}
+                  {k.tone && (
+                    <span style={{ fontSize: 13, marginLeft: 4, color: toneColor[k.tone] }}>
+                      {toneArrow[k.tone]}
+                    </span>
+                  )}
                 </div>
                 {k.caption && <div className="text-[10px] text-white/60 mt-0.5">{k.caption}</div>}
               </div>
@@ -244,16 +301,41 @@ export function WorkstationShell({
         )}
       </section>
 
-      <nav className="flex flex-wrap items-center gap-1 bg-white border border-[#dde4ec] rounded-lg p-1">
-        {tabs.map(t => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`h-9 px-3 rounded-md text-[12px] font-semibold ${activeTab === t.key ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'}`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <nav className="bg-white border border-[#dde4ec] rounded-lg p-1.5 w-full">
+        {hasGroups && (
+          <div className="flex flex-wrap items-center gap-1 pb-2 border-b border-[#eef2f7] mb-2">
+            <button
+              onClick={() => setActiveGroup(null)}
+              className={`h-7 px-2 rounded text-[11px] font-medium ${
+                activeGroup === null ? 'bg-[#1a3a5c] text-white' : 'text-[#6b7685] hover:bg-gray-50'
+              }`}
+            >
+              All
+            </button>
+            {allGroups.map(g => (
+              <button
+                key={g}
+                onClick={() => setActiveGroup(g)}
+                className={`h-7 px-2 rounded text-[11px] font-medium ${
+                  activeGroup === g ? 'bg-[#1a3a5c] text-white' : 'text-[#6b7685] hover:bg-gray-50'
+                }`}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="flex flex-wrap items-center gap-1">
+          {visibleTabs.map(t => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`h-9 px-3 rounded-md text-[12px] font-semibold ${activeTab === t.key ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </nav>
 
       <div key={`${activeTab}-${bump}`}>{current.body({ onRefresh: refresh })}</div>
