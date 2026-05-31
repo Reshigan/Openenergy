@@ -256,6 +256,7 @@ import ippEnvMonitoringRoutes, { ippEnvMonitoringSlaSweep } from './routes/ipp-e
 import ippMirRoutes, { ippMirSlaSweep } from './routes/ipp-mir';
 import ippSubcontractorRoutes, { ippSubcontractorSlaSweep } from './routes/ipp-subcontractor';
 import ippProgressClaimRoutes, { ippProgressClaimSlaSweep } from './routes/ipp-progress-claim';
+import ippTqRoutes, { ippTqSlaSweep } from './routes/ipp-tq';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -810,6 +811,11 @@ app.route('/api/ipp-subcontractor', ippSubcontractorRoutes);
 // record_final_account EVERY tier; approve_payment when lender_cert_required.
 // Beats Oracle Aconex (payment-as-document) with full P6 lifecycle.
 app.route('/api/ipp-progress-claim', ippProgressClaimRoutes);
+// W142 — IPP Technical Query (TQ) Log (ISO 9001 + FIDIC EPC + CIDB).
+// URGENT SLA: safety_critical 24h / construction_blocking 48h / standard 168h / information_only 336h.
+// SIGNATURE: flag_design_change EVERY tier on structural safety; escalate_tq crosses on IE notification.
+// Beats Aconex (static document workflow) with full designer-response P6 lifecycle.
+app.route('/api/ipp-tq', ippTqRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2104,6 +2110,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_progress_claim_sla_sweep', async () => {
         const result = await ippProgressClaimSlaSweep(env as never);
         console.log('ipp_progress_claim_sla_sweep', JSON.stringify(result));
+      });
+      // W142 — IPP TQ Log SLA sweep (URGENT SLA: safety_critical 24h tightest).
+      // Breaches on safety_critical+structural cross regulator; IE-notification+non-info also cross.
+      await safe('ipp_tq_sla_sweep', async () => {
+        const result = await ippTqSlaSweep(env as never);
+        console.log('ipp_tq_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

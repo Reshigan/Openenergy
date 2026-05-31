@@ -40,6 +40,7 @@ import IppEnvMonitoringTab from '../ippEnvMonitoring/IppEnvMonitoringTab';
 import IppMirTab from '../ippMir/IppMirTab';
 import IppSubcontractorTab from '../ippSubcontractor/IppSubcontractorTab';
 import IppProgressClaimTab from '../ippProgressClaim/IppProgressClaimTab';
+import IppTqTab from '../ippTq/IppTqTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -70,6 +71,7 @@ export function IppWorkstationPage() {
         { key: 'submittals', label: 'Submittals', group: 'Documents', body: () => <IppSubmittalChainTab /> },
         { key: 'rfis', label: 'RFIs', group: 'Documents', body: () => <IppRfiChainTab /> },
         { key: 'change-orders', label: 'Change orders', group: 'Documents', body: () => <IppChangeOrderChainTab /> },
+        { key: 'technical-queries', label: 'Technical queries', group: 'Documents', body: () => <IppTqTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },

@@ -1581,7 +1581,21 @@ export type EventType =
   | 'ipp_progress_claim.reject_claim'
   | 'ipp_progress_claim.approve_partial'
   | 'ipp_progress_claim.record_final_account'
-  | 'ipp_progress_claim.flag_overdue';
+  | 'ipp_progress_claim.flag_overdue'
+  // W142 IPP Technical Query (TQ) Log
+  | 'ipp_tq.log_tq'
+  | 'ipp_tq.allocate_to_designer'
+  | 'ipp_tq.commence_review'
+  | 'ipp_tq.draft_response'
+  | 'ipp_tq.approve_response'
+  | 'ipp_tq.issue_response'
+  | 'ipp_tq.acknowledge_response'
+  | 'ipp_tq.close_tq'
+  | 'ipp_tq.reject_tq'
+  | 'ipp_tq.flag_design_change'
+  | 'ipp_tq.escalate_tq'
+  | 'ipp_tq.resolve_escalation'
+  | 'ipp_tq.flag_overdue';
 
 interface CascadeContext {
   event: EventType;
@@ -1815,6 +1829,12 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // record_final_account EVERY tier.
   // approve_payment when floor_lender_certification_required.
   ipp_progress_claim: 'ipp',
+  // W142 IPP Technical Query (TQ) Log — JOINS existing 'ipp' namespace.
+  // ISO 9001:2015 design communication + FIDIC EPC contracts + CIDB best practice.
+  // URGENT SLA: safety_critical 24h (tightest) / construction_blocking 48h / standard 168h / information_only 336h.
+  // SIGNATURE: flag_design_change EVERY tier when floor_structural_safety (structural integrity always reportable).
+  // escalate_tq crosses when floor_ie_notification_required; issue_response crosses when floor_nersa_impact.
+  ipp_tq: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

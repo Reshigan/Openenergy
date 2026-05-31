@@ -811,6 +811,15 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
         icon: 'checklist_rtl',
       },
       {
+        // W142 Phase-E wave 12 — IPP Technical Query (TQ) Log.
+        key: 'technical-queries',
+        title: 'Technical queries (W142)',
+        description: 'ISO 9001:2015 design communication + FIDIC EPC contracts + CIDB best practice on oe_ipp_tqs: 12-state P6 chain (raised → logged → allocated → under_review → response_drafted → response_approved → response_issued → acknowledged → closed + rejected / design_change_required / escalated branches). URGENT SLA polarity (safety_critical 24h TIGHTEST — life safety → information_only 336h loosest). W142 SIGNATURE: flag_design_change EVERY tier when floor_structural_safety (structural integrity always reportable — IE notification mandatory); escalate_tq crosses when floor_ie_notification_required; issue_response crosses when floor_nersa_impact. SLA breach crosses when safety_critical+structural or IE-notification+non-info urgency. 4 query urgency tiers: safety_critical / construction_blocking / standard / information_only. 9 disciplines: civil / structural / electrical / mechanical / instrumentation / process / fire_protection / geotechnical / environmental. 5 floor flags: structural safety / IE notification / lender notification / NERSA permit impact / specification deviation. 5 response types: clarification / accept_proposed / reject_proposed / design_change_required / refer_to_client. Cross-references: rfi_ref / ncr_ref / ms_ref / submittal_ref. DISTINCT from RFI (contractor→PM/client) — TQ is contractor→designer. SLA sweep in shared */15 cron slot. JOINS existing ipp audit namespace. Beats Aconex (static document workflow — no P6 lifecycle, no designer-response state machine, no structural safety signature crossing).',
+        href: '/ipp-lifecycle/workstation?tab=technical-queries',
+        cta_label: 'Open TQ register',
+        icon: 'quiz',
+      },
+      {
         // W140 Phase-E wave 10 — IPP Subcontractor Management.
         key: 'progress-claims',
         title: 'Progress claims (W141)',
