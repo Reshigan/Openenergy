@@ -29,7 +29,7 @@ INSERT OR IGNORE INTO oe_ipp_ncrs (
   'ncr-002', 'kakamas-500mw', 'Kakamas 500MW Solar', 'K500-NCR-002', 'acknowledged',
   'materials', 'functional', 'electrical', 'Cable trench Row C', 'IEC 60502-1:2004 §4.2',
   'Delivered DC cable batch shows insulation thickness 1.8mm against spec requirement of 2.2mm minimum. Non-conformance with IEC 60502-1:2004 §4.2.',
-  'QA Engineer Priya Naidoo', 'testing', NULL,
+  'QA Engineer Priya Naidoo', 'testing',
   120, datetime('now', '+72 hours'),
   datetime('now', '-8 hours'), datetime('now', '-6 hours'),
   'system', datetime('now', '-8 hours'), datetime('now', '-6 hours')
