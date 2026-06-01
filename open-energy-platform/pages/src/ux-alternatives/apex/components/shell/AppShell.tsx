@@ -5,9 +5,12 @@ import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { AlertBar, AlertBarItem } from './AlertBar';
 import { CommandPalette } from './CommandPalette';
+import { NotificationPanel } from './NotificationPanel';
+import { SelfManagePanel } from './SelfManagePanel';
 import { PwaInstallBanner } from './PwaInstallBanner';
 import { MobileBottomNav } from './MobileBottomNav';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useNotifCount } from '../../lib/hooks';
 
 export interface AppShellProps {
   role: RoleKey;
@@ -104,7 +107,10 @@ export function AppShell({
 }: AppShellProps) {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const { data: notifCount } = useNotifCount();
 
   const openPalette = useCallback(() => setPaletteOpen(true), []);
   const closePalette = useCallback(() => setPaletteOpen(false), []);
@@ -124,6 +130,9 @@ export function AppShell({
         onOpenPalette={openPalette}
         sidebarCollapsed={sidebarCollapsed || isMobile}
         onToggleSidebar={() => setSidebarCollapsed(c => !c)}
+        notifCount={notifCount ?? 0}
+        onOpenNotifications={() => setNotifOpen(true)}
+        onOpenProfile={() => setProfileOpen(true)}
       />
 
       {/* Alert bar — only rendered when alerts exist */}
@@ -183,6 +192,16 @@ export function AppShell({
           onClose={closePalette}
         />
       )}
+
+      <NotificationPanel
+        open={notifOpen}
+        onClose={() => setNotifOpen(false)}
+      />
+
+      <SelfManagePanel
+        open={profileOpen}
+        onClose={() => setProfileOpen(false)}
+      />
     </div>
   );
 }

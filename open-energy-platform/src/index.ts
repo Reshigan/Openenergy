@@ -307,6 +307,8 @@ import businessDepthRoutes, { computeLatePaymentFees } from './routes/business-d
 import bulkOpsRoutes from './routes/bulk-ops';
 import uxStateRoutes from './routes/ux-state';
 import documentsRoutes from './routes/documents';
+import pdfRoutes from './routes/pdf';
+import rbacRoutes from './routes/rbac';
 import { fireCascade } from './utils/cascade';
 import { computeDisclosure, evaluateBreaches } from './utils/disclosure';
 import printPacksRoutes from './routes/print-packs';
@@ -884,6 +886,8 @@ app.route('/api/business-depth',      businessDepthRoutes);
 app.route('/api/bulk',                bulkOpsRoutes);
 app.route('/api/ux-state',            uxStateRoutes);
 app.route('/api/documents',           documentsRoutes);
+app.route('/api/pdf',                 pdfRoutes);
+app.route('/api/rbac',                rbacRoutes);
 app.route('/api/print-packs',         printPacksRoutes);
 
 // Admin-only "run cron once" endpoint — invokes the same runCron() that the

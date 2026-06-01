@@ -9,6 +9,9 @@ interface TopbarProps {
   onOpenPalette: () => void;
   sidebarCollapsed: boolean;
   onToggleSidebar: () => void;
+  notifCount?: number;
+  onOpenNotifications?: () => void;
+  onOpenProfile?: () => void;
 }
 
 export function Topbar({
@@ -18,6 +21,9 @@ export function Topbar({
   onOpenPalette,
   sidebarCollapsed,
   onToggleSidebar,
+  notifCount = 0,
+  onOpenNotifications,
+  onOpenProfile,
 }: TopbarProps) {
   return (
     <header
@@ -138,12 +144,42 @@ export function Topbar({
           </kbd>
         </button>
 
-        <button style={iconBtnStyle} title="Notifications">
+        <button
+          onClick={onOpenNotifications}
+          style={{ ...iconBtnStyle, position: 'relative', cursor: 'pointer' }}
+          title="Notifications"
+        >
           <OeIcon name="bell" size={16} />
+          {notifCount > 0 && (
+            <span style={{
+              position: 'absolute',
+              top: '4px',
+              right: '4px',
+              width: notifCount > 9 ? '14px' : '8px',
+              height: '8px',
+              borderRadius: '4px',
+              background: 'var(--oe-rose)',
+              border: '1.5px solid var(--oe-surf-1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '8px',
+              fontWeight: 700,
+              color: '#fff',
+              fontFamily: 'var(--oe-font-mono)',
+              lineHeight: 1,
+            }}>
+              {notifCount > 9 ? '9+' : ''}
+            </span>
+          )}
         </button>
 
         <button style={iconBtnStyle} title="Settings">
           <OeIcon name="gear" size={16} />
+        </button>
+
+        <button onClick={onOpenProfile} style={{ ...iconBtnStyle, width: '28px', height: '28px', borderRadius: '50%', background: 'var(--oe-navy)', color: '#F59E0B', fontSize: '11px', fontWeight: 800, letterSpacing: '-0.03em', flexShrink: 0 }} title="My account">
+          ME
         </button>
       </div>
     </header>

@@ -99,6 +99,7 @@ const EsumsSiteDetailPage   = React.lazy(() => import('./components/pages/EsumsS
 
 // Apex redesign prototype — mounted at /apex (no auth gate, uses token from localStorage)
 const ApexApp = React.lazy(() => import('./ux-alternatives/apex/ApexApp').then(m => ({ default: m.ApexApp })));
+const ApexRegisterPage = React.lazy(() => import('./ux-alternatives/apex/pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
 
 // UX exploration prototypes (mounted at /ux-prototype/*) — frontend-only,
 // no backend. Density toggle + Cmd+K palette shared across all four.
@@ -1382,6 +1383,7 @@ function AppRoutes() {
         <Route path="/dev/signature" element={<SignaturePreview />} />
       ) : null}
       {/* UX exploration prototypes — no auth, no shell. Open in browser to compare. */}
+      <Route path="/apex/register"                element={<LazyWorkbench><ApexRegisterPage /></LazyWorkbench>} />
       <Route path="/apex"                         element={<LazyWorkbench><ApexApp /></LazyWorkbench>} />
       <Route path="/apex/*"                       element={<LazyWorkbench><ApexApp /></LazyWorkbench>} />
       <Route path="/ux-prototype"               element={<LazyWorkbench><UxAlternativesIndex /></LazyWorkbench>} />

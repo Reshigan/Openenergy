@@ -1595,7 +1595,11 @@ export type EventType =
   | 'ipp_tq.flag_design_change'
   | 'ipp_tq.escalate_tq'
   | 'ipp_tq.resolve_escalation'
-  | 'ipp_tq.flag_overdue';
+  | 'ipp_tq.flag_overdue'
+  // ─── RBAC ──────────────────────────────────────────────────────────────────
+  | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
+  | 'rbac.invitation_created' | 'rbac.invitation_revoked'
+  | 'rbac.profile_updated' | 'rbac.user_updated';
 
 interface CascadeContext {
   event: EventType;
