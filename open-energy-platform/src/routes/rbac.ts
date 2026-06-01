@@ -182,9 +182,10 @@ rbac.post('/registrations', async (c) => {
     env: c.env,
   });
 
-  // If came via invitation → auto-approve
+  // If came via invitation → auto-approve.
+  // email_verified=true because we already checked inv.email === body.email above.
   if (invitationId) {
-    return approveRegistration(c, id, null, invitationId);
+    return approveRegistration(c, id, null, invitationId, true);
   }
 
   return c.json({
@@ -495,13 +496,16 @@ rbac.get('/registrations', async (c) => {
 
 rbac.post('/registrations/:id/approve', async (c) => {
   const user = getCurrentUser(c);
-  if (!isAdmin(user.role)) return c.json({ success: false, error: 'Forbidden' }, 403);
+  // Only admin may approve — support has no users.write grant.
+  if (user.role !== 'admin') return c.json({ success: false, error: 'Forbidden' }, 403);
 
   const regId = c.req.param('id');
   const body = await c.req.json<any>().catch(() => ({}));
   const overrideRole = body.role;
 
-  return approveRegistration(c, regId, user.id, null, overrideRole);
+  // email_verified stays 0 for admin-approved open registrations; no email
+  // click-through has occurred. The participant must verify on first login.
+  return approveRegistration(c, regId, user.id, null, false, overrideRole);
 });
 
 rbac.post('/registrations/:id/reject', async (c) => {
@@ -561,6 +565,7 @@ async function approveRegistration(
   regId: string,
   reviewerId: string | null,
   invitationId: string | null,
+  emailVerified: boolean,
   overrideRole?: string,
 ): Promise<Response> {
   const reg = await c.env.DB.prepare(
@@ -572,16 +577,23 @@ async function approveRegistration(
 
   const role = overrideRole ?? reg.requested_role;
 
+  // Guard against an out-of-range role being injected via overrideRole or a
+  // stale/tampered registration row.
+  if (!(ALL_ROLES as readonly string[]).includes(role)) {
+    return c.json({ success: false, error: 'Invalid role' }, 400);
+  }
+
   // Create participant account
   const participantId = genId();
   await c.env.DB.prepare(`
     INSERT INTO participants
       (id, email, password_hash, name, company_name, role, status,
        phone, org_reg_num, email_verified, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, 1, datetime('now'))
+    VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, datetime('now'))
   `).bind(
     participantId, reg.email, reg.password_hash, reg.full_name,
     reg.company_name ?? null, role, reg.phone ?? null, reg.reg_number ?? null,
+    emailVerified ? 1 : 0,
   ).run();
 
   // Mark registration converted
