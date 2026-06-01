@@ -371,9 +371,10 @@ pdf.get('/settlement/:run_id', async (c) => {
            fp.name as from_name, fp.role as from_role
     FROM invoices i
     LEFT JOIN participants fp ON fp.id = i.from_participant_id
-    WHERE i.created_at >= date('now', '-1 day')
+    WHERE i.settlement_run_id = ?
+      AND (i.from_participant_id = ? OR i.to_participant_id = ? OR ? IN ('admin','regulator'))
     ORDER BY i.created_at DESC LIMIT 200
-  `).all<any>().then(r => r.results ?? []).catch(() => [] as any[]);
+  `).bind(runId, user.id, user.id, user.role).all<any>().then(r => r.results ?? []).catch(() => [] as any[]);
 
   const participantMap = new Map<string, SettlementSummaryData['participants'][0]>();
   for (const inv of invoices) {

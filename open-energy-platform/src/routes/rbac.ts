@@ -147,11 +147,16 @@ rbac.post('/registrations', async (c) => {
 
   if (invitation_token) {
     const inv = await c.env.DB.prepare(
-      `SELECT id, role, status, expires_at FROM rbac_invitations WHERE token = ?`
+      `SELECT id, role, status, expires_at, email FROM rbac_invitations WHERE token = ?`
     ).bind(invitation_token).first<any>();
     if (!inv) return c.json({ success: false, error: 'Invalid invitation link' }, 404);
     if (inv.status !== 'pending') return c.json({ success: false, error: `Invitation already ${inv.status}` }, 400);
     if (new Date(inv.expires_at) < new Date()) return c.json({ success: false, error: 'Invitation expired' }, 400);
+    // Email-binding check: if the invitation was sent to a specific address, the registrant
+    // must use that exact address — prevents invitation token theft across accounts.
+    if (inv.email && inv.email.toLowerCase() !== email.toLowerCase()) {
+      return c.json({ success: false, error: 'This invitation was issued to a different email address' }, 403);
+    }
     invitationId = inv.id;
     grantedRole = inv.role;
   }
