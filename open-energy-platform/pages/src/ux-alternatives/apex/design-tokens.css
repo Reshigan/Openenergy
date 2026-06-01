@@ -1,0 +1,168 @@
+/* ═══════════════════════════════════════════════════════════
+   Open Energy Platform — Apex Design Tokens
+   ═══════════════════════════════════════════════════════════
+   All CSS custom properties for the Apex design system.
+   Import once at the root — never duplicate in components.
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Accent: Navy-Ink ── */
+  --oe-navy-0: #07182e;
+  --oe-navy-1: #0b1f3a;
+  --oe-navy-2: #162d52;
+  --oe-navy-3: #1e3d6e;
+  --oe-navy-4: #2a5090;
+
+  /* ── Surfaces ── */
+  --oe-canvas:  #ffffff;
+  --oe-surf:    #f7f9fc;
+  --oe-surf-2:  #f1f4f8;
+  --oe-surf-3:  #e8edf4;
+
+  /* ── Borders ── */
+  --oe-border:    #e2e8f0;
+  --oe-border-2:  #edf1f6;
+
+  /* ── Text hierarchy ── */
+  --oe-text-1: #0a1628;   /* headings, primary */
+  --oe-text-2: #445570;   /* body */
+  --oe-text-3: #8698b0;   /* labels, placeholders, muted */
+  --oe-text-4: #b8c5d6;   /* disabled */
+
+  /* ── Semantic: Green (positive / on-schedule / healthy) ── */
+  --oe-green:       #0b7040;
+  --oe-green-light: #15a05e;
+  --oe-green-bg:    #e6f6ed;
+  --oe-green-ring:  rgba(11, 112, 64, 0.2);
+
+  /* ── Semantic: Amber (warning / at-risk / pending) ── */
+  --oe-amber:       #8c5a09;
+  --oe-amber-light: #c07d14;
+  --oe-amber-bg:    #fdf2da;
+  --oe-amber-ring:  rgba(140, 90, 9, 0.2);
+
+  /* ── Semantic: Rose (critical / breach / overdue) ── */
+  --oe-rose:        #b02929;
+  --oe-rose-light:  #d44545;
+  --oe-rose-bg:     #fceaea;
+  --oe-rose-ring:   rgba(176, 41, 41, 0.2);
+
+  /* ── Semantic: Blue (informational / active / submitted) ── */
+  --oe-blue:        #1549a0;
+  --oe-blue-light:  #2563eb;
+  --oe-blue-bg:     #e9f0fd;
+  --oe-blue-ring:   rgba(21, 73, 160, 0.2);
+
+  /* ── Semantic: Violet (carbon / ESG only) ── */
+  --oe-violet:      #5c2d91;
+  --oe-violet-bg:   #f1ebff;
+
+  /* ── Gradients ── */
+  --oe-grad-active:  linear-gradient(90deg, #0b1f3a 0%, #1e3d6e 100%);
+  --oe-grad-active-hover: linear-gradient(90deg, #162d52 0%, #2a5090 100%);
+  --oe-grad-sidebar: linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(241,244,248,0.99) 100%);
+  --oe-grad-hero:    linear-gradient(160deg, rgba(230,240,255,0.65) 0%, rgba(255,255,255,0) 60%);
+  --oe-grad-title:   linear-gradient(130deg, #07182e 0%, #1e3d6e 100%);
+  --oe-grad-button:  linear-gradient(145deg, #0b1f3a 0%, #1e3d6e 100%);
+  --oe-grad-button-hover: linear-gradient(145deg, #162d52 0%, #2a5090 100%);
+  --oe-grad-topbar:  linear-gradient(180deg, #ffffff 0%, #fafbfd 100%);
+  --oe-grad-table-head: linear-gradient(180deg, var(--oe-surf) 0%, var(--oe-surf-2) 100%);
+  --oe-grad-kpi:     linear-gradient(180deg, #ffffff 0%, #f8fafd 100%);
+  --oe-grad-card:    linear-gradient(180deg, #ffffff 0%, var(--oe-surf) 100%);
+  --oe-grad-body:
+    radial-gradient(ellipse at 18% 60%, rgba(7,24,46,0.10) 0%, transparent 55%),
+    radial-gradient(ellipse at 82% 15%, rgba(14,54,102,0.07) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 90%, rgba(10,22,40,0.08) 0%, transparent 50%),
+    linear-gradient(145deg, #d3dae5 0%, #c8d2e0 40%, #d6dde8 100%);
+
+  /* ── Radius ── */
+  --oe-r-shell:  18px;
+  --oe-r-card:   12px;
+  --oe-r-input:  8px;
+  --oe-r-btn:    8px;
+  --oe-r-pill:   4px;
+  --oe-r-badge:  3px;
+  --oe-r-avatar: 8px;
+  --oe-r-icon:   7px;
+
+  /* ── Shadows ── */
+  --oe-shadow-card:  0 1px 2px rgba(7,24,46,0.04), 0 4px 12px rgba(7,24,46,0.06);
+  --oe-shadow-card-hover: 0 2px 6px rgba(7,24,46,0.06), 0 8px 24px rgba(7,24,46,0.08);
+  --oe-shadow-shell: 0 0 0 1px rgba(255,255,255,0.7), 0 8px 24px rgba(7,24,46,0.08), 0 32px 72px rgba(7,24,46,0.12);
+  --oe-shadow-btn:   0 1px 3px rgba(7,24,46,0.25), 0 4px 12px rgba(7,24,46,0.10);
+  --oe-shadow-btn-hover: 0 2px 6px rgba(7,24,46,0.30), 0 8px 20px rgba(7,24,46,0.14);
+  --oe-shadow-drawer: -4px 0 24px rgba(7,24,46,0.12);
+  --oe-shadow-palette: 0 8px 32px rgba(7,24,46,0.16), 0 0 0 1px rgba(7,24,46,0.08);
+
+  /* ── Motion ── */
+  --oe-ease:       cubic-bezier(0.23, 1, 0.32, 1);
+  --oe-ease-in:    cubic-bezier(0.55, 0, 0.55, 0.2);
+  --oe-t-fast:     80ms;
+  --oe-t-mid:      150ms;
+  --oe-t-slow:     250ms;
+
+  /* ── Spacing ── */
+  --oe-sidebar-w:  232px;
+  --oe-topbar-h:   52px;
+  --oe-alertbar-h: 36px;
+  --oe-content-px: 24px;
+  --oe-content-py: 20px;
+  --oe-card-p:     16px;
+
+  /* ── Z-index layers ── */
+  --oe-z-content:  1;
+  --oe-z-sidebar:  10;
+  --oe-z-topbar:   20;
+  --oe-z-alertbar: 30;
+  --oe-z-drawer:   40;
+  --oe-z-palette:  50;
+  --oe-z-modal:    60;
+  --oe-z-toast:    70;
+}
+
+/* ── Global resets specific to Apex ── */
+.oe-apex {
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--oe-text-1);
+  background: var(--oe-grad-body);
+}
+
+.oe-apex *,
+.oe-apex *::before,
+.oe-apex *::after {
+  box-sizing: border-box;
+}
+
+/* Mono class: applied to all numbers, IDs, amounts */
+.oe-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Gradient text utility */
+.oe-grad-text {
+  background: var(--oe-grad-title);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* SLA status classes */
+.oe-sla-ok     { color: var(--oe-green); }
+.oe-sla-warn   { color: var(--oe-amber); }
+.oe-sla-breach { color: var(--oe-rose); }
+
+/* Screen-reader only */
+.oe-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

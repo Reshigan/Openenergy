@@ -1,0 +1,227 @@
+/* ─────────────────────────────────────────────────────────────────────
+ * UX-alternatives shared motion + density tokens.
+ *
+ * Emil-Kowalski rules encoded here:
+ *  - High-frequency surfaces (palette, key-nav): zero animation.
+ *  - Mid-frequency (hover, list nav): instant or sub-100ms with custom curve.
+ *  - Occasional (drawer, toast): 200-300ms with custom cubic-bezier — never
+ *    a built-in CSS easing.
+ *  - `--ease-out` is the strong overshoot curve Emil prefers; never use
+ *    `ease-in` on UI (sluggish exit).
+ *  - All motion targets `transform` and `opacity` ONLY (GPU). No padding /
+ *    margin / width / height transitions anywhere in this folder.
+ *  - Entry: `@starting-style` for CSS-driven mount; never animate from
+ *    scale(0) — nothing in nature appears from nothing. We start scale(0.96).
+ *  - Buttons get the responsive `transform: scale(0.97)` on `:active`.
+ *  - Popover transforms originate from radix-style origin var; modals stay
+ *    centered.
+ * ──────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Custom curves — never ease-in on UI surfaces. Numbers chosen to feel
+   * snappy without bouncing. Default browser eases are explicitly avoided. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);             /* strong out — Emil default */
+  --ease-out-quart: cubic-bezier(0.165, 0.84, 0.44, 1);   /* smoother long surfaces */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);          /* iOS-flavoured large surface */
+  --ease-modal: cubic-bezier(0.22, 1.5, 0.36, 1);         /* gentle overshoot for centered surfaces */
+  --ease-pulse: cubic-bezier(0.4, 0, 0.6, 1);             /* periodic pulse — symmetric */
+
+  /* Durations */
+  --dur-instant: 60ms;       /* hover, list nav */
+  --dur-quick: 160ms;        /* button press, micro */
+  --dur-mid: 220ms;          /* small surface entry */
+  --dur-drawer: 280ms;       /* drawer slide */
+  --dur-tooltip-delay: 125ms;/* Emil: tooltip initial delay */
+
+  /* Density tokens — toggled by [data-density] on the prototype root */
+  --row-h-compact: 30px;
+  --row-h-comfortable: 44px;
+  --pad-x-compact: 8px;
+  --pad-x-comfortable: 14px;
+  --font-row-compact: 12px;
+  --font-row-comfortable: 13.5px;
+  --gap-compact: 4px;
+  --gap-comfortable: 8px;
+}
+
+[data-density="compact"] {
+  --row-h: var(--row-h-compact);
+  --pad-x: var(--pad-x-compact);
+  --font-row: var(--font-row-compact);
+  --gap-y: var(--gap-compact);
+}
+
+[data-density="comfortable"] {
+  --row-h: var(--row-h-comfortable);
+  --pad-x: var(--pad-x-comfortable);
+  --font-row: var(--font-row-comfortable);
+  --gap-y: var(--gap-comfortable);
+}
+
+/* Reduce motion respect — every prototype must honour this. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Tabular numerics — every number cell in every direction. */
+.oe-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  text-align: right;
+}
+
+/* Responsive button — Emil's scale(0.97) :active.
+ * Transition only `transform` and `opacity`. */
+.oe-btn {
+  transition: transform var(--dur-quick) var(--ease-out),
+              opacity var(--dur-quick) var(--ease-out);
+}
+.oe-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.oe-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Drawer entrance — slide from right, never animate from scale(0). */
+.oe-drawer-entry {
+  transform: translateX(0);
+  opacity: 1;
+  transition: transform var(--dur-drawer) var(--ease-drawer),
+              opacity var(--dur-drawer) var(--ease-drawer);
+}
+@starting-style {
+  .oe-drawer-entry {
+    transform: translateX(8%);
+    opacity: 0;
+  }
+}
+
+/* Modal entrance — centered, gentle overshoot, scale(0.96) start. */
+.oe-modal-entry {
+  transform: scale(1);
+  opacity: 1;
+  transition: transform var(--dur-mid) var(--ease-modal),
+              opacity var(--dur-mid) var(--ease-out);
+}
+@starting-style {
+  .oe-modal-entry {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+}
+
+/* Popover entry — uses transform-origin set inline by the caller
+ * (mimics radix's `--radix-popover-content-transform-origin`). */
+.oe-popover-entry {
+  transform: scale(1);
+  opacity: 1;
+  transition: transform var(--dur-quick) var(--ease-out),
+              opacity var(--dur-quick) var(--ease-out);
+}
+@starting-style {
+  .oe-popover-entry {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+}
+
+/* SLA pulse — clip-path masked colour band. Used by the state-of-world
+ * strip and the orbit ring in pulse-lens. */
+@keyframes oe-pulse-glow {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+.oe-pulse {
+  animation: oe-pulse-glow 1800ms var(--ease-pulse) infinite;
+}
+
+/* Tooltip — 125ms delay; `data-instant` flips to 0ms for adjacent re-hover */
+.oe-tooltip {
+  opacity: 0;
+  transform: translateY(-2px) scale(0.98);
+  transition: opacity var(--dur-quick) var(--ease-out),
+              transform var(--dur-quick) var(--ease-out);
+  transition-delay: var(--dur-tooltip-delay);
+  pointer-events: none;
+}
+.oe-tooltip-host:hover .oe-tooltip,
+.oe-tooltip-host:focus-visible .oe-tooltip {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.oe-tooltip[data-instant="true"] {
+  transition-delay: 0ms;
+}
+
+/* High-frequency surfaces: cmd-palette, key-nav. Explicitly NO transition.
+ * Use this class on any element that opens/closes 100+/day. */
+.oe-no-anim, .oe-no-anim * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Comparison / hold-to-delete: clip-path reveal (transform & opacity only). */
+.oe-clip-reveal {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path var(--dur-mid) var(--ease-out);
+}
+
+/* Sticky table header — used by every direction's table mode. */
+.oe-sticky-head {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: #ffffff;
+  box-shadow: inset 0 -1px 0 #dde4ec;
+}
+
+/* Row hover — instant feedback, no transition. */
+.oe-row {
+  height: var(--row-h);
+  padding-left: var(--pad-x);
+  padding-right: var(--pad-x);
+  font-size: var(--font-row);
+}
+.oe-row:hover {
+  background: #f5f8fb;
+}
+.oe-row[data-selected="true"] {
+  background: #e7f0f9;
+  box-shadow: inset 2px 0 0 #1a3a5c;
+}
+
+/* Pulse-lens orb */
+.oe-orb {
+  position: absolute;
+  border-radius: 50%;
+  transition: transform var(--dur-quick) var(--ease-out),
+              box-shadow var(--dur-quick) var(--ease-out);
+  will-change: transform;
+}
+.oe-orb:hover, .oe-orb:focus-visible {
+  transform: scale(1.12);
+  outline: none;
+}
+
+/* Cockpit-grid tile drag handle — uses springs only in JS, not CSS. */
+.oe-tile {
+  transition: box-shadow var(--dur-quick) var(--ease-out);
+}
+.oe-tile:hover {
+  box-shadow: 0 4px 18px rgba(15, 28, 46, 0.10);
+}
+
+/* Command-lens hero ring — visual cue that bar is "live". Animates only
+ * opacity (a pulsing dot), no transform. */
+@keyframes oe-cmd-blink {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 1; }
+}
+.oe-cmd-blink {
+  animation: oe-cmd-blink 1400ms var(--ease-pulse) infinite;
+}

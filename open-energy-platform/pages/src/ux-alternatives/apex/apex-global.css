@@ -1,0 +1,79 @@
+/* ═══════════════════════════════════════════════════════════
+   Apex — Global CSS
+   Import once in ApexApp.tsx
+   ═══════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..800;1,9..40,300..800&family=JetBrains+Mono:wght@400;600;700&display=swap');
+@import './design-tokens.css';
+
+/* ── Skeleton shimmer ── */
+@keyframes oe-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Page transition ── */
+@keyframes oe-pageFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.oe-page-enter {
+  animation: oe-pageFade 120ms var(--oe-ease);
+}
+
+/* ── Focus styles ── */
+.oe-apex :focus-visible {
+  outline: 2px solid var(--oe-navy-3);
+  outline-offset: 2px;
+  border-radius: var(--oe-r-pill);
+}
+
+/* ── Scrollbar (webkit) ── */
+.oe-apex ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.oe-apex ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.oe-apex ::-webkit-scrollbar-thumb {
+  background: var(--oe-surf-3);
+  border-radius: 3px;
+}
+.oe-apex ::-webkit-scrollbar-thumb:hover {
+  background: var(--oe-border);
+}
+
+/* ── Responsive helpers ── */
+@media (max-width: 1024px) {
+  :root {
+    --oe-sidebar-w: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --oe-content-px: 16px;
+    --oe-content-py: 16px;
+  }
+}
+
+/* ── PWA viewport ── */
+@media (display-mode: standalone) {
+  .oe-apex {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* ── Print ── */
+@media print {
+  .oe-apex aside,
+  .oe-apex header,
+  .oe-apex [data-no-print] {
+    display: none !important;
+  }
+  .oe-apex main {
+    margin-left: 0 !important;
+  }
+}
