@@ -857,6 +857,10 @@ app.route('/api/public/status', statusDeepPub);
 app.route('/api/public/regulator', regulatorL5Pub);
 app.route('/api/public/audit',     auditL5Pub);
 app.route('/api/public/legal',     publicLegalRoutes);
+// Must be BEFORE /api (platformFeaturesRoutes) which has a blanket authMiddleware
+// that would intercept these routes before they reach their own per-path guards.
+app.route('/api/pdf',  pdfRoutes);
+app.route('/api/rbac', rbacRoutes);
 app.route('/api', platformFeaturesRoutes);
 app.route('/api/mfa',         mfaRoutes);
 app.route('/api/kyc',         kycRoutes);
@@ -886,8 +890,6 @@ app.route('/api/business-depth',      businessDepthRoutes);
 app.route('/api/bulk',                bulkOpsRoutes);
 app.route('/api/ux-state',            uxStateRoutes);
 app.route('/api/documents',           documentsRoutes);
-app.route('/api/pdf',                 pdfRoutes);
-app.route('/api/rbac',                rbacRoutes);
 app.route('/api/print-packs',         printPacksRoutes);
 
 // Admin-only "run cron once" endpoint — invokes the same runCron() that the
