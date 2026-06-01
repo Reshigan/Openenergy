@@ -271,4 +271,190 @@ procurement.post('/rfps/:id/evaluate', async (c) => {
   return c.json({ success: true, data: { updated } });
 });
 
+// ─── RFP file (Esums-equivalent depth for procurement) ──────────────────────
+//
+// GET /procurement/rfps/:id/file
+//
+// One payload that holds the whole RFP lifecycle: spec, bidders, scoring,
+// award, resulting contract / LOI, and the audit chain. Drives the
+// EntityFileShell-backed RFP detail page so the surface mirrors how
+// projects and contracts are presented.
+procurement.get('/rfps/:id/file', async (c) => {
+  await ensureEvaluationColumns(c.env);
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+
+  const rfp = await c.env.DB.prepare(`
+    SELECT r.*, p.name AS creator_name, p.company_name AS creator_company
+      FROM procurement_rfps r
+      JOIN participants p ON p.id = r.created_by
+     WHERE r.id = ?
+  `).bind(id).first<any>();
+  if (!rfp) return c.json({ success: false, error: 'rfp_not_found' }, 404);
+
+  // Visibility — admins / regulators / grid see everything; everyone else
+  // sees the RFP only if it's published OR they created it OR they bid on it.
+  const isPrivileged = ['admin', 'regulator', 'grid_operator'].includes(user.role);
+  if (!isPrivileged && rfp.status === 'draft' && rfp.created_by !== user.id) {
+    const ownBid = await c.env.DB.prepare(
+      `SELECT id FROM procurement_bids WHERE rfp_id = ? AND participant_id = ? LIMIT 1`,
+    ).bind(id, user.id).first();
+    if (!ownBid) return c.json({ success: false, error: 'forbidden' }, 403);
+  }
+
+  const safeAll = async <T = any>(sql: string, params: unknown[]): Promise<T[]> =>
+    c.env.DB.prepare(sql).bind(...params).all<T>().then(r => (r.results || []) as T[]).catch(() => [] as T[]);
+  const safeFirst = async <T = any>(sql: string, params: unknown[]): Promise<T | null> =>
+    c.env.DB.prepare(sql).bind(...params).first<T>().catch(() => null);
+
+  const [
+    bids, award, evaluatedBids, auditEvents, auditLogs,
+  ] = await Promise.all([
+    safeAll(
+      `SELECT b.*, p.name AS bidder_name, p.company_name AS bidder_company, p.bbbee_level
+         FROM procurement_bids b
+         JOIN participants p ON p.id = b.participant_id
+        WHERE b.rfp_id = ?
+        ORDER BY COALESCE(b.overall_score, b.score, 0) DESC, b.bid_amount ASC LIMIT 50`,
+      [id],
+    ),
+    safeFirst(
+      `SELECT a.*, p.name AS awarded_by_name
+         FROM procurement_awards a
+         LEFT JOIN participants p ON p.id = a.awarded_by
+        WHERE a.rfp_id = ?
+        ORDER BY a.awarded_at DESC LIMIT 1`,
+      [id],
+    ),
+    safeAll(
+      `SELECT b.id, b.bidder_company, b.technical_score, b.sustainability_score,
+              b.delivery_score, b.overall_score, b.bid_amount, b.rank, b.status,
+              p.name AS bidder_name, p.company_name AS bidder_company
+         FROM procurement_bids b
+         JOIN participants p ON p.id = b.participant_id
+        WHERE b.rfp_id = ? AND b.overall_score IS NOT NULL
+        ORDER BY b.overall_score DESC LIMIT 50`,
+      [id],
+    ),
+    safeAll(
+      `SELECT * FROM audit_events WHERE entity_type = 'procurement_rfps' AND entity_id = ? ORDER BY sequence_no DESC LIMIT 50`,
+      [id],
+    ),
+    safeAll(
+      `SELECT al.*, p.name AS actor_name
+         FROM audit_logs al
+         LEFT JOIN participants p ON p.id = al.actor_id
+        WHERE al.entity_type = 'procurement_rfps' AND al.entity_id = ?
+        ORDER BY al.created_at DESC LIMIT 50`,
+      [id],
+    ),
+  ]);
+
+  // Resulting contract document — if the award has linked a contract, or we
+  // can find one created off this RFP via commercial_terms.rfp_id.
+  const linkedContractId = (award as { contract_id?: string } | null)?.contract_id || null;
+  const linkedContract = linkedContractId
+    ? await safeFirst<Record<string, unknown>>(
+        `SELECT id, title, document_type, phase, created_at FROM contract_documents WHERE id = ?`,
+        [linkedContractId],
+      )
+    : await safeFirst<Record<string, unknown>>(
+        `SELECT id, title, document_type, phase, created_at FROM contract_documents
+          WHERE json_extract(commercial_terms, '$.rfp_id') = ?
+          ORDER BY created_at DESC LIMIT 1`,
+        [id],
+      );
+
+  // ── Summary counts ───────────────────────────────────────────────────
+  const bidsSubmitted = (bids as Array<{ status?: string }>).filter((b) => b.status === 'submitted').length;
+  const bidsShortlisted = (bids as Array<{ status?: string }>).filter((b) => b.status === 'shortlisted').length;
+  const bidsAwarded = (bids as Array<{ status?: string }>).filter((b) => b.status === 'awarded').length;
+  const bidsRejected = (bids as Array<{ status?: string }>).filter((b) => b.status === 'rejected').length;
+  const totalBidValue = (bids as Array<{ bid_amount?: number }>).reduce(
+    (s, b) => s + (Number(b.bid_amount) || 0),
+    0,
+  );
+  const lowestBid = bids.length > 0
+    ? Math.min(...(bids as Array<{ bid_amount?: number }>).map((b) => Number(b.bid_amount) || Infinity))
+    : 0;
+  const closingDate = rfp.closing_date as string | null;
+  const daysToClose = closingDate
+    ? Math.ceil((new Date(closingDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : null;
+
+  // ── AI inline assists ────────────────────────────────────────────────
+  type Suggest = { key: string; tab: string; title: string; why: string; confidence?: number; accept?: { label: string; href: string } };
+  const suggestions: Suggest[] = [];
+  if (rfp.status === 'published' && bids.length === 0 && daysToClose !== null && daysToClose < 14) {
+    suggestions.push({
+      key: 'no_bids_closing_soon',
+      tab: 'bidders',
+      title: `No bids and RFP closes in ${daysToClose} day${Math.abs(daysToClose) === 1 ? '' : 's'}`,
+      why: 'Low bidder interest typically signals scope or commercial-terms drift. Consider an extension or a clarifying briefing session.',
+      confidence: 0.85,
+      accept: { label: 'Open bidders tab', href: `/rfps/${id}?tab=bidders` },
+    });
+  }
+  if (rfp.status === 'evaluation' && evaluatedBids.length < bids.length) {
+    suggestions.push({
+      key: 'unscored_bids',
+      tab: 'evaluation',
+      title: `${bids.length - evaluatedBids.length} bid${bids.length - evaluatedBids.length === 1 ? '' : 's'} not yet scored`,
+      why: 'Evaluation cannot complete until every bid has technical, sustainability, and delivery scores. The weighted formula needs all three.',
+      confidence: 0.92,
+      accept: { label: 'Open evaluation tab', href: `/rfps/${id}?tab=evaluation` },
+    });
+  }
+  if (rfp.status === 'awarded' && !linkedContract) {
+    suggestions.push({
+      key: 'no_award_contract',
+      tab: 'award',
+      title: 'Award has no linked contract document',
+      why: 'A signed LOI or term sheet should follow within 14 days of the award notification per PFMA s.51.',
+      confidence: 0.78,
+      accept: { label: 'Open award tab', href: `/rfps/${id}?tab=award` },
+    });
+  }
+
+  return c.json({
+    success: true,
+    data: {
+      rfp,
+      phase: rfp.status || 'draft',
+      summary: {
+        bids_total: bids.length,
+        bids_submitted: bidsSubmitted,
+        bids_shortlisted: bidsShortlisted,
+        bids_awarded: bidsAwarded,
+        bids_rejected: bidsRejected,
+        bids_evaluated: evaluatedBids.length,
+        lowest_bid_zar: Number.isFinite(lowestBid) ? lowestBid : 0,
+        total_bid_value_zar: totalBidValue,
+        budget_zar: Number(rfp.budget) || 0,
+        days_to_close: daysToClose,
+        audit_events: auditEvents.length,
+        linked_contract: linkedContract ? 1 : 0,
+      },
+      specification: {
+        description: rfp.description,
+        rfp_reference: rfp.rfp_reference,
+        closing_date: rfp.closing_date,
+        evaluation_date: rfp.evaluation_date,
+        budget: rfp.budget,
+        currency: rfp.currency,
+        creator_name: rfp.creator_name,
+        creator_company: rfp.creator_company,
+      },
+      bidders: { bids },
+      evaluation: { scored_bids: evaluatedBids },
+      award: {
+        record: award,
+        linked_contract: linkedContract,
+      },
+      audit: { events: auditEvents, logs: auditLogs },
+      ai_suggestions: suggestions,
+    },
+  });
+});
+
 export default procurement;

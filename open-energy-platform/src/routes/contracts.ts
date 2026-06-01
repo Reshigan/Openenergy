@@ -228,6 +228,406 @@ function defaultContractBody(contract: Record<string, unknown>, vars: Record<str
     `**Signed** at ____________ on this ____ day of ________ 20__.`;
 }
 
+// GET /contracts/:id/file — Full contract file aggregator.
+//
+// A contract document is the holder for everything that orbits a single
+// agreement: the rendered legal text + signatories, phase/lifecycle history,
+// commercial terms, settlement (invoices, payments, disputes), metering
+// (delivered vs contracted), variations / liquidated damages, linked
+// project / LOIs / O&M sites, and compliance (covenants on the project,
+// environmental authorisations, counterparty KYC). The aggregator returns
+// every section in one payload so ContractDetail can render as a tabbed
+// container like Esums or ProjectDetail.
+//
+// Section conventions match /projects/:id/file:
+//   - Each section is an object on the response with arrays of rows.
+//   - Missing tables / missing FKs return [] (safeAll wrapper).
+//   - Per-table row cap is 50.
+contracts.get('/:id/file', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+
+  const contract = await c.env.DB.prepare(`
+    SELECT cd.*,
+           creator.name as creator_name,
+           creator.company_name as creator_company,
+           counterparty.name as counterparty_name,
+           counterparty.company_name as counterparty_company
+    FROM contract_documents cd
+    LEFT JOIN participants creator ON cd.creator_id = creator.id
+    LEFT JOIN participants counterparty ON cd.counterparty_id = counterparty.id
+    WHERE cd.id = ?
+      AND (cd.creator_id = ? OR cd.counterparty_id = ?
+           OR ? IN ('admin','support','regulator','lender','grid_operator'))
+  `).bind(id, user.id, user.id, user.role).first<any>();
+
+  if (!contract) {
+    return c.json({ success: false, error: 'Contract not found' }, 404);
+  }
+
+  const safeAll = async <T = any>(sql: string, params: unknown[]): Promise<T[]> =>
+    c.env.DB.prepare(sql).bind(...params).all<T>().then(r => (r.results || []) as T[]).catch(() => [] as T[]);
+  const safeFirst = async <T = any>(sql: string, params: unknown[]): Promise<T | null> =>
+    c.env.DB.prepare(sql).bind(...params).first<T>().catch(() => null);
+
+  // ── Commercial terms (parse JSON; merge template defaults for rendering) ──
+  let commercialTerms: Record<string, unknown> = {};
+  if (contract.commercial_terms && typeof contract.commercial_terms === 'string') {
+    try { commercialTerms = JSON.parse(contract.commercial_terms) as Record<string, unknown>; } catch { commercialTerms = {}; }
+  }
+
+  // ── Template + rendered body ──────────────────────────────────────────
+  const templateCode = (commercialTerms.template_code as string | undefined)
+    || inferTemplateCodeFromDocumentType(contract.document_type as string);
+  let template: Record<string, unknown> | null = null;
+  if (templateCode) {
+    template = await safeFirst<Record<string, unknown>>(
+      `SELECT id, code, name, category, document_type, description, jurisdiction,
+              governing_law, sa_law_references, template_body, variables_json, version
+       FROM contract_templates WHERE code = ? AND published = 1`,
+      [templateCode],
+    );
+  }
+  const vars: Record<string, string> = {
+    seller_name: (contract.creator_company as string) || (contract.creator_name as string) || 'Seller',
+    seller_reg: (commercialTerms.seller_reg as string) || '____________',
+    buyer_name: (contract.counterparty_company as string) || (contract.counterparty_name as string) || 'Buyer',
+    buyer_reg: (commercialTerms.buyer_reg as string) || '____________',
+    contract_volume_mwh: String(commercialTerms.volume_mwh ?? '_____'),
+    energy_type: String(commercialTerms.energy_type ?? 'renewable'),
+    project_name: (contract.title as string) || 'Project',
+    location: String(commercialTerms.location ?? 'South Africa'),
+    tenor_years: String(commercialTerms.tenor_years ?? '20'),
+    price_per_mwh: String(commercialTerms.price_per_mwh ?? '_____'),
+    escalation_pct: String(commercialTerms.escalation ?? '4.5'),
+    carbon_share: String(commercialTerms.carbon_share ?? '0'),
+    effective_date: (contract.created_at as string || '').slice(0, 10),
+  };
+  for (const [k, v] of Object.entries(commercialTerms)) {
+    if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+      vars[k] = String(v);
+    }
+  }
+  let renderedBody = '';
+  if (template && typeof template.template_body === 'string') {
+    renderedBody = interpolateTemplate(template.template_body, vars);
+  } else {
+    renderedBody = defaultContractBody(contract, vars);
+  }
+
+  // ── Signatories + statutory checks ────────────────────────────────────
+  const [signatories, statutoryChecks] = await Promise.all([
+    safeAll(
+      `SELECT ds.*, p.name as participant_name, p.company_name as participant_company
+       FROM document_signatories ds
+       LEFT JOIN participants p ON ds.participant_id = p.id
+       WHERE ds.document_id = ?
+       ORDER BY ds.created_at ASC LIMIT 50`,
+      [id],
+    ),
+    safeAll(
+      `SELECT * FROM statutory_checks WHERE document_id = ? ORDER BY created_at DESC LIMIT 50`,
+      [id],
+    ),
+  ]);
+
+  // ── Linked project (if any) + LOIs that resolved into this contract ───
+  const projectId = (contract.project_id as string | undefined) || null;
+  const [linkedProject, sourceLois, linkedOmSites] = await Promise.all([
+    projectId
+      ? safeFirst<Record<string, unknown>>(
+          `SELECT p.*, dev.name as developer_name
+           FROM ipp_projects p
+           LEFT JOIN participants dev ON p.developer_id = dev.id
+           WHERE p.id = ?`,
+          [projectId],
+        )
+      : Promise.resolve(null),
+    safeAll(
+      `SELECT * FROM loi_drafts WHERE resulting_contract_document_id = ? ORDER BY resolved_at DESC LIMIT 20`,
+      [id],
+    ),
+    safeAll(`SELECT * FROM om_sites WHERE ppa_id = ? ORDER BY name LIMIT 10`, [id]),
+  ]);
+
+  // ── Variations & liquidated damages (via epc_contracts.contract_document_id) ─
+  const [epcContracts, epcVariations, epcLDs] = await Promise.all([
+    safeAll(
+      `SELECT * FROM epc_contracts WHERE contract_document_id = ? ORDER BY commissioning_date DESC LIMIT 5`,
+      [id],
+    ),
+    safeAll(
+      `SELECT v.* FROM epc_variations v
+       INNER JOIN epc_contracts e ON e.id = v.epc_contract_id
+       WHERE e.contract_document_id = ?
+       ORDER BY v.raised_at DESC LIMIT 50`,
+      [id],
+    ),
+    safeAll(
+      `SELECT l.* FROM epc_liquidated_damages l
+       INNER JOIN epc_contracts e ON e.id = l.epc_contract_id
+       WHERE e.contract_document_id = ?
+       ORDER BY l.event_date DESC LIMIT 50`,
+      [id],
+    ),
+  ]);
+
+  // ── Settlement & invoicing ────────────────────────────────────────────
+  // contract_documents has no direct invoice link; invoices ride on
+  // project_id for PPA-style contracts. settlement_dlq is the only table
+  // that stores contract_id directly.
+  const [invoices, payments, disputes, dlqEntries, settlementRunEvents] = await Promise.all([
+    projectId
+      ? safeAll(
+          `SELECT * FROM invoices WHERE project_id = ? ORDER BY COALESCE(issued_at, created_at) DESC LIMIT 50`,
+          [projectId],
+        )
+      : Promise.resolve([]),
+    projectId
+      ? safeAll(
+          `SELECT pm.* FROM payments pm
+           INNER JOIN invoices inv ON inv.id = pm.invoice_id
+           WHERE inv.project_id = ?
+           ORDER BY pm.payment_date DESC LIMIT 50`,
+          [projectId],
+        )
+      : Promise.resolve([]),
+    projectId
+      ? safeAll(
+          `SELECT d.* FROM settlement_disputes d
+           INNER JOIN invoices inv ON inv.id = d.invoice_id
+           WHERE inv.project_id = ?
+           ORDER BY d.created_at DESC LIMIT 50`,
+          [projectId],
+        )
+      : Promise.resolve([]),
+    safeAll(
+      `SELECT * FROM settlement_dlq WHERE contract_id = ? ORDER BY created_at DESC LIMIT 20`,
+      [id],
+    ),
+    safeAll(
+      `SELECT * FROM settlement_run_events WHERE entity_type = 'contract_documents' AND entity_id = ? ORDER BY created_at DESC LIMIT 30`,
+      [id],
+    ),
+  ]);
+
+  // ── Metering & delivery ──────────────────────────────────────────────
+  // Pull metering_readings_daily for any grid connection that lives on the
+  // linked project; nominations + delivery schedule for trade-based legs.
+  const [meteringDaily, nominations, deliverySchedule] = await Promise.all([
+    projectId
+      ? safeAll(
+          `SELECT mrd.* FROM metering_readings_daily mrd
+           INNER JOIN grid_connections gc ON gc.id = mrd.connection_id
+           WHERE gc.project_id = ?
+           ORDER BY mrd.reading_date DESC LIMIT 90`,
+          [projectId],
+        )
+      : Promise.resolve([]),
+    projectId
+      ? safeAll(
+          `SELECT * FROM ipp_nominations WHERE project_id = ? ORDER BY delivery_date DESC LIMIT 30`,
+          [projectId],
+        )
+      : Promise.resolve([]),
+    safeAll(
+      `SELECT ds.* FROM delivery_schedule ds
+       INNER JOIN trade_matches tm ON tm.id = ds.match_id
+       INNER JOIN invoices inv ON inv.match_id = tm.id
+       WHERE inv.project_id = ?
+       ORDER BY ds.scheduled_date DESC LIMIT 30`,
+      [projectId || ''],
+    ),
+  ]);
+
+  // ── Compliance (covenants + env auth + counterparty KYC) ─────────────
+  const counterpartyId = (contract.counterparty_id as string | undefined) || null;
+  const creatorId = (contract.creator_id as string | undefined) || null;
+  const [covenants, envAuths, kycScreenings, kycRiskScores] = await Promise.all([
+    projectId
+      ? safeAll(
+          `SELECT * FROM covenants WHERE project_id = ? ORDER BY status, covenant_code LIMIT 50`,
+          [projectId],
+        )
+      : Promise.resolve([]),
+    projectId
+      ? safeAll(
+          `SELECT * FROM environmental_authorisations WHERE project_id = ? ORDER BY COALESCE(decision_date, applied_date, created_at) DESC LIMIT 20`,
+          [projectId],
+        )
+      : Promise.resolve([]),
+    counterpartyId
+      ? safeAll(
+          `SELECT * FROM oe_kyc_screenings WHERE participant_id IN (?, ?) ORDER BY created_at DESC LIMIT 20`,
+          [counterpartyId, creatorId || counterpartyId],
+        )
+      : Promise.resolve([]),
+    counterpartyId
+      ? safeAll(
+          `SELECT * FROM oe_kyc_risk_scores WHERE participant_id IN (?, ?) ORDER BY scored_at DESC LIMIT 10`,
+          [counterpartyId, creatorId || counterpartyId],
+        )
+      : Promise.resolve([]),
+  ]);
+
+  // ── Audit chain (tamper-evident events keyed to this contract) ────────
+  const [auditEvents, auditLogs] = await Promise.all([
+    safeAll(
+      `SELECT * FROM audit_events WHERE entity_type = 'contract_documents' AND entity_id = ? ORDER BY sequence_no DESC LIMIT 50`,
+      [id],
+    ),
+    safeAll(
+      `SELECT al.*, p.name as actor_name FROM audit_logs al
+       LEFT JOIN participants p ON p.id = al.actor_id
+       WHERE al.entity_type = 'contract_documents' AND al.entity_id = ?
+       ORDER BY al.created_at DESC LIMIT 50`,
+      [id],
+    ),
+  ]);
+
+  // ── Summary counts (drive tab badges + hero KPIs) ────────────────────
+  const sigSigned = (signatories as Array<{ signed?: number | boolean }>).filter((s) => Boolean(s.signed)).length;
+  const sigTotal = signatories.length;
+  const invoicesPaid = (invoices as Array<{ status?: string }>).filter((i) => i.status === 'paid').length;
+  const invoicesOutstanding = (invoices as Array<{ status?: string }>).filter((i) => i.status === 'issued' || i.status === 'overdue').length;
+  const covenantsBreached = (covenants as Array<{ status?: string }>).filter((c) => c.status === 'breached').length;
+  const covenantsActive = (covenants as Array<{ status?: string }>).filter((c) => c.status === 'active').length;
+  const variationsApproved = (epcVariations as Array<{ status?: string }>).filter((v) => v.status === 'approved').length;
+  const ldsTotal = (epcLDs as Array<{ capped_amount_zar?: number }>).reduce(
+    (s, l) => s + (Number(l.capped_amount_zar) || 0),
+    0,
+  );
+
+  // ── AI inline assists ────────────────────────────────────────────────
+  type Suggest = { key: string; tab: string; title: string; why: string; confidence?: number; accept?: { label: string; href: string } };
+  const suggestions: Suggest[] = [];
+  if (sigTotal > 0 && sigSigned < sigTotal) {
+    suggestions.push({
+      key: 'signatories_pending',
+      tab: 'document',
+      title: `Awaiting ${sigTotal - sigSigned} signature${sigTotal - sigSigned === 1 ? '' : 's'}`,
+      why: 'Contract phase cannot advance to "signed" until every signatory has executed. Chase the outstanding parties; the audit chain records each event.',
+      confidence: 0.92,
+      accept: { label: 'Open document tab', href: `/contracts/${id}?tab=document` },
+    });
+  }
+  if (statutoryChecks.length === 0) {
+    suggestions.push({
+      key: 'no_statutory_checks',
+      tab: 'compliance',
+      title: 'No statutory checks logged',
+      why: 'POPIA s.18 notice, B-BBEE verification, and NERSA disclosure should each have a check row before exchange of signed counterparts.',
+      confidence: 0.78,
+      accept: { label: 'Open compliance tab', href: `/contracts/${id}?tab=compliance` },
+    });
+  }
+  if (covenantsBreached > 0) {
+    suggestions.push({
+      key: 'project_covenants_breached',
+      tab: 'compliance',
+      title: `${covenantsBreached} covenant${covenantsBreached === 1 ? '' : 's'} breached on linked project`,
+      why: 'Counterparty risk: any breach on the project finance side can trigger acceleration which crystallises this PPA.',
+      confidence: 0.88,
+      accept: { label: 'Review compliance tab', href: `/contracts/${id}?tab=compliance` },
+    });
+  }
+  if (invoicesOutstanding > 0) {
+    suggestions.push({
+      key: 'invoices_outstanding',
+      tab: 'settlement',
+      title: `${invoicesOutstanding} invoice${invoicesOutstanding === 1 ? '' : 's'} outstanding`,
+      why: 'Outstanding settlement invoices breach the payment covenant if older than the contract\'s payment terms (typically 30 days).',
+      confidence: 0.85,
+      accept: { label: 'Open settlement tab', href: `/contracts/${id}?tab=settlement` },
+    });
+  }
+  if ((auditEvents as Array<unknown>).length === 0) {
+    suggestions.push({
+      key: 'no_audit_chain',
+      tab: 'audit',
+      title: 'No tamper-evident audit events yet',
+      why: 'Every contract phase transition and signature should emit a chained event. Empty chain suggests this contract was created before the chain was wired or events have not been replayed.',
+      confidence: 0.6,
+      accept: { label: 'Open audit tab', href: `/contracts/${id}?tab=audit` },
+    });
+  }
+
+  return c.json({
+    success: true,
+    data: {
+      contract,
+      phase: contract.phase || 'draft',
+      summary: {
+        signatories_total: sigTotal,
+        signatories_signed: sigSigned,
+        statutory_checks: statutoryChecks.length,
+        variations_total: epcVariations.length,
+        variations_approved: variationsApproved,
+        liquidated_damages_total_zar: ldsTotal,
+        invoices_total: invoices.length,
+        invoices_paid: invoicesPaid,
+        invoices_outstanding: invoicesOutstanding,
+        payments_total: payments.length,
+        disputes_total: disputes.length,
+        metering_days: meteringDaily.length,
+        nominations_total: nominations.length,
+        covenants_active: covenantsActive,
+        covenants_breached: covenantsBreached,
+        env_authorisations_total: envAuths.length,
+        kyc_screenings_total: kycScreenings.length,
+        linked_om_sites: linkedOmSites.length,
+        source_lois: sourceLois.length,
+        audit_events: auditEvents.length,
+      },
+      document: {
+        signatories,
+        statutory_checks: statutoryChecks,
+        template,
+        rendered_body: renderedBody,
+        can_sign: (contract.creator_id === user.id) || (contract.counterparty_id === user.id),
+        current_user_id: user.id,
+      },
+      commercial: {
+        terms: commercialTerms,
+        template_code: templateCode,
+      },
+      settlement: {
+        invoices,
+        payments,
+        disputes,
+        dlq: dlqEntries,
+        run_events: settlementRunEvents,
+      },
+      metering: {
+        daily_readings: meteringDaily,
+        nominations,
+        delivery_schedule: deliverySchedule,
+      },
+      variations: {
+        epc_contracts: epcContracts,
+        epc_variations: epcVariations,
+        epc_liquidated_damages: epcLDs,
+      },
+      linked: {
+        project: linkedProject,
+        source_lois: sourceLois,
+        om_sites: linkedOmSites,
+      },
+      compliance: {
+        covenants,
+        env_authorisations: envAuths,
+        kyc_screenings: kycScreenings,
+        kyc_risk_scores: kycRiskScores,
+      },
+      audit: {
+        events: auditEvents,
+        logs: auditLogs,
+      },
+      ai_suggestions: suggestions,
+    },
+  });
+});
+
 // POST /contracts — Create new contract
 contracts.post('/', async (c) => {
   const user = getCurrentUser(c);

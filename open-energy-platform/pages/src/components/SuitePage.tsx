@@ -257,7 +257,9 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
       {(tab.description || tab.create) && (
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           {tab.description && (
-            <p className="text-[12px] text-[#6b7685] max-w-3xl">{tab.description}</p>
+            <p className="text-[12px] text-[#6b7685] max-w-3xl">
+              {tab.description.length > 140 ? tab.description.slice(0, 137) + '…' : tab.description}
+            </p>
           )}
           <div className="flex items-center gap-2">
             <button

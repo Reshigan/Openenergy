@@ -178,7 +178,7 @@ function WorkflowCard({ wf }: { wf: Workflow }) {
         )}
       </div>
       <p className="mt-2 text-[13px] flex-1" style={{ color: '#6b7685' }}>
-        {wf.description}
+        {wf.description.length > 120 ? wf.description.slice(0, 117) + '…' : wf.description}
       </p>
       <div
         className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-semibold"

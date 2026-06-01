@@ -128,6 +128,262 @@ lois.get('/:id', async (c) => {
 });
 
 // ──────────────────────────────────────────────────────────────────────────
+// GET /lois/:id/file — Esums-equivalent file for one LOI.
+// Aggregates the LOI row + counterparties + project + resulting contract +
+// negotiation lifecycle (action_queue, audit chain, notifications) + AI hints.
+// ──────────────────────────────────────────────────────────────────────────
+lois.get('/:id/file', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+
+  // SQLite helpers — never throw out of the aggregator if a table is missing.
+  const safeAll = async <T = any>(sql: string, ...binds: unknown[]): Promise<T[]> => {
+    try {
+      const res = await c.env.DB.prepare(sql).bind(...binds).all<T>();
+      return res.results || [];
+    } catch {
+      return [];
+    }
+  };
+  const safeFirst = async <T = any>(sql: string, ...binds: unknown[]): Promise<T | null> => {
+    try {
+      return await c.env.DB.prepare(sql).bind(...binds).first<T>();
+    } catch {
+      return null;
+    }
+  };
+
+  const loi = await safeFirst<LoiRow & { from_email?: string; from_role?: string; to_email?: string; to_role?: string; project_technology?: string; project_capacity_mw?: number }>(
+    `SELECT
+       l.id, l.from_participant_id, l.to_participant_id, l.project_id,
+       l.mix_json, l.body_md, l.status, l.horizon_years, l.annual_mwh, l.blended_price,
+       l.notes, l.decline_reason, l.resulting_contract_document_id,
+       l.sent_at, l.resolved_at, l.resolved_by, l.created_at, l.updated_at,
+       fp.name AS from_name, fp.email AS from_email, fp.role AS from_role,
+       tp.name AS to_name,   tp.email AS to_email,   tp.role AS to_role,
+       pr.project_name AS project_name, pr.technology AS project_technology,
+       pr.capacity_mw AS project_capacity_mw
+     FROM loi_drafts l
+     LEFT JOIN participants fp ON fp.id = l.from_participant_id
+     LEFT JOIN participants tp ON tp.id = l.to_participant_id
+     LEFT JOIN ipp_projects pr ON pr.id = l.project_id
+     WHERE l.id = ?`,
+    id,
+  );
+  if (!loi) return c.json({ success: false, error: 'not_found' }, 404);
+
+  const allowed =
+    user.role === 'admin' ||
+    user.role === 'regulator' ||
+    loi.from_participant_id === user.id ||
+    loi.to_participant_id === user.id;
+  if (!allowed) return c.json({ success: false, error: 'forbidden' }, 403);
+
+  // Parse mix_json safely.
+  let mix: Record<string, number> = {};
+  try {
+    mix = JSON.parse(loi.mix_json || '{}');
+  } catch {
+    mix = {};
+  }
+
+  // Linked project + resulting contract.
+  const project = loi.project_id
+    ? await safeFirst<any>(
+        `SELECT id, project_name, technology, province, capacity_mw, status, cod_date, tariff_zar_per_mwh, contracted_capacity_mw
+           FROM ipp_projects WHERE id = ?`,
+        loi.project_id,
+      )
+    : null;
+  const resultingContract = loi.resulting_contract_document_id
+    ? await safeFirst<any>(
+        `SELECT id, title, document_type, phase, created_at, updated_at, project_id, commercial_terms
+           FROM contract_documents WHERE id = ?`,
+        loi.resulting_contract_document_id,
+      )
+    : null;
+  let contractSignatories: any[] = [];
+  if (resultingContract) {
+    contractSignatories = await safeAll<any>(
+      `SELECT id, contract_document_id, party_participant_id, signing_role, signed_at, signature_method
+         FROM contract_signatories WHERE contract_document_id = ?
+         ORDER BY signed_at IS NULL, signed_at`,
+      resultingContract.id,
+    );
+  }
+
+  // Counterparty richness — pull KYC, risk, and recent activity.
+  const partyIds = [loi.from_participant_id, loi.to_participant_id].filter(Boolean) as string[];
+  const kyc = partyIds.length
+    ? await safeAll<any>(
+        `SELECT participant_id, status, screening_type, overall_risk, completed_at, ran_at
+           FROM oe_kyc_screenings
+          WHERE participant_id IN (${partyIds.map(() => '?').join(',')})
+          ORDER BY ran_at DESC LIMIT 20`,
+        ...partyIds,
+      )
+    : [];
+  const riskScores = partyIds.length
+    ? await safeAll<any>(
+        `SELECT participant_id, score, band, last_evaluated_at
+           FROM oe_party_risk_scores
+          WHERE participant_id IN (${partyIds.map(() => '?').join(',')})`,
+        ...partyIds,
+      )
+    : [];
+
+  // Lifecycle — action queue + notifications.
+  const actionQueue = await safeAll<any>(
+    `SELECT id, action_type, status, assigned_to, due_at, completed_at, created_at, payload_json
+       FROM action_queue
+      WHERE entity_type = 'loi_drafts' AND entity_id = ?
+      ORDER BY created_at DESC LIMIT 40`,
+    id,
+  );
+  const notifications = await safeAll<any>(
+    `SELECT id, participant_id, type, title, body, data, created_at
+       FROM notifications
+      WHERE json_extract(data, '$.entity_id') = ?
+        AND (json_extract(data, '$.entity_type') = 'loi_drafts' OR type LIKE 'loi_%')
+      ORDER BY created_at DESC LIMIT 30`,
+    id,
+  );
+
+  // Audit chain.
+  const auditEvents = await safeAll<any>(
+    `SELECT id, prev_hash, hash, event_type, actor_id, entity_id, entity_type, data, created_at
+       FROM audit_events
+      WHERE entity_type = 'loi_drafts' AND entity_id = ?
+      ORDER BY created_at DESC LIMIT 50`,
+    id,
+  );
+  const auditLogs = await safeAll<any>(
+    `SELECT id, user_id, user_email, action, resource_type, resource_id, details, status, timestamp
+       FROM audit_logs
+      WHERE resource_type = 'loi_drafts' AND resource_id = ?
+      ORDER BY timestamp DESC LIMIT 50`,
+    id,
+  );
+
+  // Summary numbers.
+  const sentAt = loi.sent_at ? new Date(loi.sent_at) : null;
+  const resolvedAt = loi.resolved_at ? new Date(loi.resolved_at) : null;
+  const now = new Date();
+  const daysOutstanding =
+    sentAt && !resolvedAt
+      ? Math.floor((now.getTime() - sentAt.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+  const daysToResolve =
+    sentAt && resolvedAt
+      ? Math.floor((resolvedAt.getTime() - sentAt.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+  const totalContractValue =
+    loi.annual_mwh && loi.blended_price && loi.horizon_years
+      ? loi.annual_mwh * loi.blended_price * loi.horizon_years
+      : null;
+  const pendingActions = actionQueue.filter((a) => a.status === 'pending').length;
+  const counterpartyKycPending = kyc.filter(
+    (k) => k.participant_id === loi.to_participant_id && k.status !== 'completed',
+  ).length;
+
+  const summary = {
+    loi_id: loi.id,
+    status: loi.status,
+    direction: loi.from_participant_id === user.id ? 'sent' : 'received',
+    from_name: loi.from_name || loi.from_participant_id,
+    to_name: loi.to_name || loi.to_participant_id || 'Unassigned',
+    project_name: loi.project_name || '—',
+    technology: loi.project_technology || '—',
+    annual_mwh: loi.annual_mwh,
+    blended_price_zar_per_mwh: loi.blended_price,
+    horizon_years: loi.horizon_years,
+    total_contract_value_zar: totalContractValue,
+    sent_at: loi.sent_at,
+    resolved_at: loi.resolved_at,
+    decline_reason: loi.decline_reason,
+    days_outstanding: daysOutstanding,
+    days_to_resolve: daysToResolve,
+    resulting_contract_id: loi.resulting_contract_document_id,
+    contract_phase: resultingContract?.phase || null,
+    signatories_total: contractSignatories.length,
+    signatories_signed: contractSignatories.filter((s) => s.signed_at).length,
+    pending_actions: pendingActions,
+    counterparty_kyc_pending: counterpartyKycPending,
+    audit_events: auditEvents.length,
+  };
+
+  // AI suggestions — keep them specific and actionable.
+  const ai_suggestions: Array<{ id: string; kind: string; title: string; why: string; cta?: { label: string; action: string } }> = [];
+  if (loi.status === 'drafted' && (now.getTime() - new Date(loi.created_at).getTime()) > 3 * 24 * 60 * 60 * 1000) {
+    ai_suggestions.push({
+      id: 'drafted_too_long',
+      kind: 'workflow',
+      title: 'Send this LOI — drafted but never delivered',
+      why: `LOI has sat in 'drafted' for ${Math.floor((now.getTime() - new Date(loi.created_at).getTime()) / 86_400_000)} days without being sent to ${loi.to_name || 'the counterparty'}.`,
+      cta: { label: 'Send LOI', action: 'send_loi' },
+    });
+  }
+  if (loi.status === 'sent' && daysOutstanding !== null && daysOutstanding >= 14) {
+    ai_suggestions.push({
+      id: 'sent_no_response',
+      kind: 'lifecycle',
+      title: `Chase the recipient — ${daysOutstanding} days without a response`,
+      why: `Standard response window is 14 days. ${loi.to_name || 'Recipient'} has not accepted, declined, or counter-offered.`,
+      cta: { label: 'Send chase notification', action: 'chase_loi' },
+    });
+  }
+  if (counterpartyKycPending > 0 && (loi.status === 'sent' || loi.status === 'drafted')) {
+    ai_suggestions.push({
+      id: 'kyc_blocking',
+      kind: 'compliance',
+      title: `Recipient KYC incomplete — ${counterpartyKycPending} screening(s) pending`,
+      why: 'POPIA + FICA require KYC clearance before a binding offtake instrument can be accepted.',
+      cta: { label: 'Open KYC file', action: 'open_kyc' },
+    });
+  }
+  if (loi.status === 'signed' && !resultingContract) {
+    ai_suggestions.push({
+      id: 'signed_no_contract',
+      kind: 'workflow',
+      title: 'LOI marked signed but no contract document on file',
+      why: 'Acceptance should produce a term_sheet draft in contract_documents. Re-run the accept step.',
+      cta: { label: 'Generate contract', action: 'regenerate_contract' },
+    });
+  }
+  if (loi.status === 'withdrawn' && loi.decline_reason) {
+    ai_suggestions.push({
+      id: 'declined_counter',
+      kind: 'commercial',
+      title: 'Counter-offer at revised terms',
+      why: `Recipient declined with reason: "${loi.decline_reason}". A revised LOI at adjusted price or horizon may unblock the deal.`,
+      cta: { label: 'Draft counter-offer', action: 'counter_offer' },
+    });
+  }
+
+  return c.json({
+    success: true,
+    data: {
+      loi,
+      mix,
+      project,
+      counterparty: {
+        from: { id: loi.from_participant_id, name: loi.from_name, email: loi.from_email, role: loi.from_role },
+        to: { id: loi.to_participant_id, name: loi.to_name, email: loi.to_email, role: loi.to_role },
+        kyc,
+        risk_scores: riskScores,
+      },
+      contract: resultingContract
+        ? { record: resultingContract, signatories: contractSignatories }
+        : null,
+      lifecycle: { action_queue: actionQueue, notifications },
+      audit: { events: auditEvents, logs: auditLogs },
+      summary,
+      ai_suggestions,
+    },
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
 // POST /lois/:id/accept — Recipient accepts the LOI.
 // - Creates a contract_documents draft (phase='term_sheet', type derived
 //   from LOI project technology, parties copied from LOI)

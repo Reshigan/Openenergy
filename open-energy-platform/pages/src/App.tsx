@@ -96,6 +96,18 @@ const BulkOpsPage           = React.lazy(() => import('./components/pages/BulkOp
 const PaiaAdminPage         = React.lazy(() => import('./components/pages/PaiaAdminPage').then(m => ({ default: m.PaiaAdminPage })));
 const PasskeysPage          = React.lazy(() => import('./components/pages/PasskeysPage').then(m => ({ default: m.PasskeysPage })));
 const EsumsSiteDetailPage   = React.lazy(() => import('./components/pages/EsumsSiteDetailPage').then(m => ({ default: m.EsumsSiteDetailPage })));
+
+// Apex redesign prototype — mounted at /apex (no auth gate, uses token from localStorage)
+const ApexApp = React.lazy(() => import('./ux-alternatives/apex/ApexApp').then(m => ({ default: m.ApexApp })));
+
+// UX exploration prototypes (mounted at /ux-prototype/*) — frontend-only,
+// no backend. Density toggle + Cmd+K palette shared across all four.
+const UxAlternativesIndex = React.lazy(() => import('./ux-alternatives/index'));
+const PulseLensPrototype  = React.lazy(() => import('./ux-alternatives/pulse-lens/PulseLens'));
+const TimeAxisPrototype   = React.lazy(() => import('./ux-alternatives/time-axis/TimeAxis'));
+const CommandLensPrototype= React.lazy(() => import('./ux-alternatives/command-lens/CommandLens'));
+const CockpitGridPrototype= React.lazy(() => import('./ux-alternatives/cockpit-grid/CockpitGrid'));
+
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { AiAssistantDock } from './components/AiAssistantDock';
 import { OnboardingTour } from './components/OnboardingTour';
@@ -1369,6 +1381,14 @@ function AppRoutes() {
       {import.meta.env.DEV ? (
         <Route path="/dev/signature" element={<SignaturePreview />} />
       ) : null}
+      {/* UX exploration prototypes — no auth, no shell. Open in browser to compare. */}
+      <Route path="/apex"                         element={<LazyWorkbench><ApexApp /></LazyWorkbench>} />
+      <Route path="/apex/*"                       element={<LazyWorkbench><ApexApp /></LazyWorkbench>} />
+      <Route path="/ux-prototype"               element={<LazyWorkbench><UxAlternativesIndex /></LazyWorkbench>} />
+      <Route path="/ux-prototype/pulse-lens"    element={<LazyWorkbench><PulseLensPrototype /></LazyWorkbench>} />
+      <Route path="/ux-prototype/time-axis"     element={<LazyWorkbench><TimeAxisPrototype /></LazyWorkbench>} />
+      <Route path="/ux-prototype/command-lens"  element={<LazyWorkbench><CommandLensPrototype /></LazyWorkbench>} />
+      <Route path="/ux-prototype/cockpit-grid"  element={<LazyWorkbench><CockpitGridPrototype /></LazyWorkbench>} />
       <Route path="/" element={<Navigate to="/launch" replace />} />
       <Route path="*" element={<Navigate to="/launch" replace />} />
     </Routes>

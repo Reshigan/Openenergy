@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle, ArrowDownRight, ArrowUpRight, BarChart2, Briefcase,
   CheckCircle2, Clock, Download, FileText, Layers, Loader2, PiggyBank,
@@ -99,6 +100,7 @@ export function Funds() {
 
 // ─────────── 1. Portfolio ───────────
 function PortfolioTab() {
+  const navigate = useNavigate();
   const [summary, setSummary] = useState<{ aum?: number; deployed?: number; available?: number; nav?: number; irr_pct?: number; moic?: number } | null>(null);
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [navHistory, setNavHistory] = useState<Array<{ date: string; nav: number }>>([]);
@@ -206,8 +208,12 @@ function PortfolioTab() {
                 {facilities.map((f) => {
                   const util = f.commitment ? ((f.drawn || 0) / f.commitment) * 100 : 0;
                   return (
-                    <tr key={f.id} className="border-t border-[#eef2f7] hover:bg-[#fafbfd]">
-                      <td className="px-4 py-2">{f.project_id ? <EntityLink id={f.project_id} type="project" /> : (f.project_name || '—')}</td>
+                    <tr
+                      key={f.id}
+                      onClick={() => navigate(`/funds/${f.id}`)}
+                      className="border-t border-[#eef2f7] hover:bg-[#fafbfd] cursor-pointer"
+                    >
+                      <td className="px-4 py-2" onClick={(e) => e.stopPropagation()}>{f.project_id ? <EntityLink id={f.project_id} type="project" /> : (f.project_name || '—')}</td>
                       <td className="px-4 py-2 capitalize">{f.tranche || '—'}</td>
                       <td className="px-4 py-2 text-right font-mono">{formatZAR(f.commitment || 0)}</td>
                       <td className="px-4 py-2 text-right font-mono">{formatZAR(f.drawn || 0)}</td>

@@ -92,6 +92,108 @@ test('offtaker-ai-analytics', async ({ page }) => {
   });
 });
 
+test('rfp-file-overview', async ({ page }) => {
+  await shot(page, '/rfps/rfp-vid-01', {
+    dwell: 12_000,
+    waitFor: 'h1, [data-test="entity-hero"], header',
+    interact: async (p) => {
+      await smoothScroll(p, 360, 1100);
+      await moveCursor(p, 700, 400);
+      await p.waitForTimeout(900);
+    },
+  });
+});
+
+test('rfp-file-bids', async ({ page }) => {
+  await shot(page, '/rfps/rfp-vid-01', {
+    dwell: 12_000,
+    waitFor: 'h1, [data-test="entity-hero"], header',
+    interact: async (p) => {
+      await clickTabAndSettle(p, /Bidders|Bids/i);
+      await smoothScroll(p, 240, 1000);
+      await p.locator('table tbody tr').first().hover().catch(() => undefined);
+      await p.waitForTimeout(900);
+    },
+  });
+});
+
+test('contract-file-overview', async ({ page }) => {
+  await shot(page, '/contracts/doc_001', {
+    dwell: 12_000,
+    waitFor: 'h1, [data-test="entity-hero"], header',
+    interact: async (p) => {
+      await smoothScroll(p, 360, 1100);
+      await moveCursor(p, 700, 400);
+      await p.waitForTimeout(900);
+    },
+  });
+});
+
+test('contract-file-audit', async ({ page }) => {
+  await shot(page, '/contracts/doc_001', {
+    dwell: 12_000,
+    waitFor: 'h1, [data-test="entity-hero"], header',
+    interact: async (p) => {
+      await clickTabAndSettle(p, /^Audit$/i);
+      await smoothScroll(p, 240, 1000);
+      await p.locator('table tbody tr, .card').first().hover().catch(() => undefined);
+      await p.waitForTimeout(900);
+    },
+  });
+});
+
+test('loi-file-overview', async ({ page, request, baseURL }) => {
+  const ippToken = await ensureToken(request, baseURL!, 'ipp_developer');
+  await seedTokenAuth(page, ippToken);
+  await shot(page, '/lois', {
+    dwell: 12_000,
+    waitFor: 'table tbody tr',
+    interact: async (p) => {
+      await p.locator('table tbody tr a, table tbody tr').first().click().catch(() => undefined);
+      await p.waitForLoadState('networkidle', { timeout: 8_000 }).catch(() => undefined);
+      await p.waitForTimeout(1_200);
+      await smoothScroll(p, 360, 1000);
+      await p.waitForTimeout(900);
+    },
+  });
+});
+
+test('loi-file-counterparty', async ({ page, request, baseURL }) => {
+  const ippToken = await ensureToken(request, baseURL!, 'ipp_developer');
+  await seedTokenAuth(page, ippToken);
+  await shot(page, '/lois', {
+    dwell: 12_000,
+    waitFor: 'table tbody tr',
+    interact: async (p) => {
+      await p.locator('table tbody tr a, table tbody tr').first().click().catch(() => undefined);
+      await p.waitForLoadState('networkidle', { timeout: 8_000 }).catch(() => undefined);
+      await p.waitForTimeout(1_200);
+      await clickTabAndSettle(p, /Counterpart/i);
+      await smoothScroll(p, 200, 1000);
+      await p.locator('table tbody tr, .card').first().hover().catch(() => undefined);
+      await p.waitForTimeout(900);
+    },
+  });
+});
+
+test('loi-file-mix', async ({ page, request, baseURL }) => {
+  const ippToken = await ensureToken(request, baseURL!, 'ipp_developer');
+  await seedTokenAuth(page, ippToken);
+  await shot(page, '/lois', {
+    dwell: 12_000,
+    waitFor: 'table tbody tr',
+    interact: async (p) => {
+      await p.locator('table tbody tr a, table tbody tr').first().click().catch(() => undefined);
+      await p.waitForLoadState('networkidle', { timeout: 8_000 }).catch(() => undefined);
+      await p.waitForTimeout(1_200);
+      await clickTabAndSettle(p, /Energy mix|Mix/i);
+      await smoothScroll(p, 200, 1000);
+      await p.locator('.card, [data-test*="mix"]').first().hover().catch(() => undefined);
+      await p.waitForTimeout(900);
+    },
+  });
+});
+
 test('offtaker-procurement-rfp', async ({ page }) => {
   await shot(page, '/procurement', {
     dwell: 14_000,

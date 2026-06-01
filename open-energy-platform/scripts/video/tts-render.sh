@@ -27,10 +27,15 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 
 SCRIPT_PATH="../docs/video/script-2026-05-26.md"
-VOICE="${EDGE_TTS_VOICE:-en-US-AvaMultilingualNeural}"
-# Ava-Multilingual's default cadence lands ~16:30 on this script's word
-# count; +6% trims to ~15:00 without losing the conversational delivery.
-RATE="${EDGE_TTS_RATE:-+6%}"
+VOICE="${EDGE_TTS_VOICE:-en-ZA-LeahNeural}"
+# Leah is Microsoft's South African English neural voice. For a UN +
+# Global ESCO product film aimed at African energy ministers, multi-
+# lateral finance, and ESCO leadership, a local accent reads as
+# competent and credible — Ava (en-US) read as a foreign vendor.
+# Leah's default cadence is slightly slower than Ava; +4% trims to
+# ~17:00 on this script. Override via EDGE_TTS_VOICE for production-
+# VO cut (real voice actor) or to experiment with en-ZA-LukeNeural.
+RATE="${EDGE_TTS_RATE:-+4%}"
 OUT_DIR="media/voiceover"
 
 mkdir -p "$OUT_DIR"
@@ -45,7 +50,7 @@ EDGE_TTS=(python3 -m edge_tts)
 python3 - <<'PY'
 import re, pathlib
 
-src = pathlib.Path("../docs/video/script-2026-05-25.md").read_text()
+src = pathlib.Path("../docs/video/script-2026-05-26.md").read_text()
 out = pathlib.Path("media/voiceover")
 out.mkdir(parents=True, exist_ok=True)
 

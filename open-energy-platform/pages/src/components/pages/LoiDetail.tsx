@@ -1,91 +1,35 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import {
-  ArrowLeft, CheckCircle2, XCircle, Building2, User, Zap, Calendar,
-  Loader2, AlertTriangle, FileSignature,
-} from 'lucide-react';
+// ════════════════════════════════════════════════════════════════════════
+// LoiDetail — /lois/:id
+//
+// Thin EntityFileShell wrapper. The shell fetches /lois/:id/file and lays
+// out tabs/hero/KPIs. Accept + decline actions live in the hero buttons —
+// recipients see them when the LOI is still drafted/sent. Decline asks for
+// a reason via a small inline overlay that posts to /lois/:id/decline.
+// Accept posts to /lois/:id/accept and navigates straight to the resulting
+// contract file.
+// ════════════════════════════════════════════════════════════════════════
+
+import React, { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { OEIcon } from '../OEIcon';
+import { EntityFileShell } from '../file/EntityFileShell';
+import { loiFileTabs, loiHero, type LoiFileData } from '../file/loiFileConfig';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
-import { NarrativeText } from '../NarrativeText';
-import { PpaRevenueModel } from '../widgets/PpaRevenueModel';
-
-type Loi = {
-  id: string;
-  from_participant_id: string;
-  to_participant_id: string | null;
-  project_id: string | null;
-  mix_json: string | null;
-  body_md: string | null;
-  status: 'drafted' | 'sent' | 'signed' | 'withdrawn' | 'expired';
-  horizon_years: number | null;
-  annual_mwh: number | null;
-  blended_price: number | null;
-  notes: string | null;
-  decline_reason: string | null;
-  resulting_contract_document_id: string | null;
-  sent_at: string | null;
-  resolved_at: string | null;
-  resolved_by: string | null;
-  created_at: string;
-  updated_at: string | null;
-  from_name?: string;
-  from_email?: string;
-  from_role?: string;
-  to_name?: string;
-  to_email?: string;
-  to_role?: string;
-  project_name?: string;
-  project_technology?: string;
-  project_capacity_mw?: number;
-};
-
-const statusPill: Record<string, { bg: string; text: string; label: string }> = {
-  drafted:  { bg: '#eef1f4', text: '#6b7685', label: 'Drafted' },
-  sent:     { bg: '#d4e7f6', text: '#3b82c4', label: 'Awaiting response' },
-  signed:   { bg: '#e7f4ea', text: '#1a8a5b', label: 'Accepted' },
-  withdrawn:{ bg: '#fde7e9', text: '#c0392b', label: 'Declined / withdrawn' },
-  expired:  { bg: '#fef3e6', text: '#b04e0f', label: 'Expired' },
-};
 
 export function LoiDetail() {
-  const { id } = useParams<{ id: string }>();
+  const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [loi, setLoi] = useState<Loi | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<'accept' | 'decline' | null>(null);
-  const [showDeclineForm, setShowDeclineForm] = useState(false);
+  const [showDecline, setShowDecline] = useState(false);
   const [declineReason, setDeclineReason] = useState('');
+  const [busy, setBusy] = useState<'accept' | 'decline' | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  const load = useCallback(async () => {
-    if (!id) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const resp = await api.get(`/lois/${id}`);
-      setLoi(resp.data?.data as Loi);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load LOI');
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => { void load(); }, [load]);
-
-  const isRecipient = loi && user?.id === loi.to_participant_id;
-  const canRespond = Boolean(
-    isRecipient && (loi?.status === 'drafted' || loi?.status === 'sent'),
-  );
-
-  const mix = useMemo(() => {
-    if (!loi?.mix_json) return null;
-    try { return JSON.parse(loi.mix_json); } catch { return null; }
-  }, [loi]);
+  if (!id) return null;
 
   const accept = async () => {
-    if (!id || !loi) return;
     setBusy('accept');
     setError(null);
     try {
@@ -95,7 +39,7 @@ export function LoiDetail() {
         navigate(`/contracts/${docId}`);
         return;
       }
-      await load();
+      setReloadKey((k) => k + 1);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to accept LOI');
     } finally {
@@ -104,14 +48,17 @@ export function LoiDetail() {
   };
 
   const decline = async () => {
-    if (!id || !loi) return;
-    if (!declineReason.trim()) { setError('Please add a brief reason for declining'); return; }
+    if (!declineReason.trim()) {
+      setError('Please add a brief reason for declining.');
+      return;
+    }
     setBusy('decline');
     setError(null);
     try {
       await api.post(`/lois/${id}/decline`, { reason: declineReason.trim() });
-      setShowDeclineForm(false);
-      await load();
+      setShowDecline(false);
+      setDeclineReason('');
+      setReloadKey((k) => k + 1);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to decline LOI');
     } finally {
@@ -119,202 +66,124 @@ export function LoiDetail() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="p-8 text-[13px] text-[#6b7685] flex items-center gap-2">
-        <Loader2 size={14} className="animate-spin" /> Loading LOI…
-      </div>
-    );
-  }
-
-  if (error && !loi) {
-    return (
-      <div className="p-8">
-        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] px-4 py-3 text-[13px] text-[#c0392b] inline-flex items-center gap-2">
-          <AlertTriangle size={14} /> {error}
-        </div>
-        <button onClick={() => navigate('/lois')} className="mt-4 text-[13px] text-[#3b82c4] hover:underline">
-          Back to LOIs
-        </button>
-      </div>
-    );
-  }
-
-  if (!loi) return null;
-
-  const pill = statusPill[loi.status] || statusPill.drafted;
-
   return (
-    <div className="p-6 w-full max-w-[1600px] mx-auto space-y-5">
-      <button
-        onClick={() => navigate('/lois')}
-        className="inline-flex items-center gap-1.5 text-[12px] text-[#6b7685] hover:text-[#3b82c4]"
-      >
-        <ArrowLeft size={14} /> All LOIs
-      </button>
-
-      <header className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
-        <div className="flex items-start justify-between px-6 py-5 bg-gradient-to-r from-[#f5f6fa] to-[#eaf0ff] border-b border-[#f0f0f0]">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-1">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6b7685]">Letter of Intent</span>
-              <span
-                className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full"
-                style={{ background: pill.bg, color: pill.text }}
-              >
-                {pill.label}
-              </span>
-            </div>
-            <h1 className="text-[22px] font-semibold text-[#0f1c2e]">
-              {loi.project_name || 'Indicative offtake proposal'}
-            </h1>
-            <p className="text-[13px] text-[#6b7685] mt-1">
-              From <strong>{loi.from_name || '—'}</strong> → <strong>{loi.to_name || '—'}</strong> · drafted {new Date(loi.created_at).toLocaleDateString('en-ZA')}
-            </p>
-          </div>
-          {loi.status === 'signed' && loi.resulting_contract_document_id && (
-            <Link
-              to={`/contracts/${loi.resulting_contract_document_id}`}
-              className="h-9 px-4 rounded-lg bg-[#3b82c4] text-white text-[13px] font-semibold hover:bg-[#085bab] inline-flex items-center gap-2"
-            >
-              <FileSignature size={14} /> Open contract
-            </Link>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-[#f0f0f0] border-b border-[#f0f0f0]">
-          <Fact label="Annual volume" value={loi.annual_mwh ? `${Math.round(loi.annual_mwh).toLocaleString()} MWh/yr` : '—'} icon={<Zap size={14} />} />
-          <Fact label="Indicative price" value={loi.blended_price ? `R${Number(loi.blended_price).toFixed(0)} / MWh` : '—'} icon={<Building2 size={14} />} />
-          <Fact label="Horizon" value={loi.horizon_years ? `${loi.horizon_years} years` : '—'} icon={<Calendar size={14} />} />
-          <Fact label="Project" value={loi.project_name || '—'} icon={<User size={14} />} />
-        </div>
-      </header>
-
+    <>
       {error && (
-        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] px-4 py-2 text-[13px] text-[#c0392b] inline-flex items-center gap-2">
-          <AlertTriangle size={14} /> {error}
+        <div className="mx-auto mt-4 max-w-[1400px] rounded-lg border border-[#ffcdd2] bg-[#ffebee] px-4 py-2 text-[13px] text-[#c0392b]">
+          {error}
         </div>
       )}
 
-      {(loi.annual_mwh && loi.blended_price) ? (
-        <PpaRevenueModel
-          annualMwh={Number(loi.annual_mwh)}
-          blendedPriceZarPerMwh={Number(loi.blended_price)}
-          horizonYears={Number(loi.horizon_years || 15)}
-          capacityMw={loi.project_capacity_mw ? Number(loi.project_capacity_mw) : undefined}
-        />
-      ) : null}
+      <EntityFileShell<LoiFileData>
+        key={reloadKey}
+        endpoint={`/lois/${id}/file`}
+        entityKind="lois"
+        entityId={id}
+        backHref="/lois"
+        backLabel="All LOIs"
+        heroFor={(data) => {
+          const canRespond =
+            user?.id === data.loi.to_participant_id &&
+            (data.loi.status === 'drafted' || data.loi.status === 'sent');
+          return {
+            ...loiHero(data),
+            actions: (
+              <>
+                <button
+                  type="button"
+                  onClick={() => navigate('/lois')}
+                  className="h-9 px-3 rounded-md bg-white/15 border border-white/20 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/25"
+                >
+                  <OEIcon name="chevron-left" size={14} /> LOIs
+                </button>
+                {data.contract?.record?.id && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/contracts/${data.contract!.record.id}`)}
+                    className="h-9 px-3 rounded-md bg-white text-[#3a1f5d] text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/90"
+                  >
+                    <OEIcon name="doc" size={14} /> Open contract file
+                  </button>
+                )}
+                {data.project?.id && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/projects/${data.project.id}`)}
+                    className="h-9 px-3 rounded-md bg-white text-[#3a1f5d] text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/90"
+                  >
+                    <OEIcon name="workflow" size={14} /> Open project file
+                  </button>
+                )}
+                {canRespond && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={accept}
+                      disabled={busy !== null}
+                      className="h-9 px-3 rounded-md bg-[#1a8a5b] text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#0b6430] disabled:opacity-60"
+                    >
+                      <OEIcon name="check" size={14} /> {busy === 'accept' ? 'Accepting…' : 'Accept & sign'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowDecline(true)}
+                      disabled={busy !== null}
+                      className="h-9 px-3 rounded-md bg-white/15 border border-white/30 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/25 disabled:opacity-60"
+                    >
+                      <OEIcon name="close" size={14} /> Decline
+                    </button>
+                  </>
+                )}
+              </>
+            ),
+          };
+        }}
+        summaryFor={(data) => data.summary}
+        suggestionsFor={(data) => data.ai_suggestions}
+        tabs={loiFileTabs}
+      />
 
-      <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
-        <header className="flex items-center gap-2 px-5 py-3 border-b border-[#f0f0f0] bg-[#eef2f7]">
-          <h2 className="text-[13px] font-semibold text-[#0f1c2e]">LOI body</h2>
-          <span className="text-[11px] text-[#6b7685]">Non-binding · subject to due diligence</span>
-        </header>
-        <div className="p-5 bg-white max-h-[480px] overflow-auto">
-          {loi.body_md
-            ? <NarrativeText text={loi.body_md} />
-            : <div className="text-[13px] text-[#6b7685]">(No body text attached to this LOI)</div>}
-        </div>
-      </section>
-
-      {mix && typeof mix === 'object' && 'project_id' in mix && (
-        <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
-          <header className="px-5 py-3 border-b border-[#f0f0f0] bg-[#eef2f7]">
-            <h2 className="text-[13px] font-semibold text-[#0f1c2e]">Mix item</h2>
-          </header>
-          <dl className="grid grid-cols-2 md:grid-cols-4 divide-x divide-[#f0f0f0]">
-            {Object.entries(mix as Record<string, unknown>).map(([k, v]) => (
-              <div key={k} className="px-4 py-3">
-                <dt className="text-[11px] uppercase tracking-wider text-[#6b7685]">{k.replace(/_/g, ' ')}</dt>
-                <dd className="text-[13px] text-[#0f1c2e] mt-0.5 break-all">{String(v)}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      )}
-
-      {loi.decline_reason && (
-        <section className="rounded-xl border border-[#ffcdd2] bg-[#fff8f8] px-5 py-4">
-          <h3 className="text-[13px] font-semibold text-[#c0392b] inline-flex items-center gap-2">
-            <XCircle size={14} /> Declined
-          </h3>
-          <p className="text-[13px] text-[#0f1c2e] mt-1">{loi.decline_reason}</p>
-          {loi.resolved_at && (
-            <p className="text-[11px] text-[#6b7685] mt-1">
-              {new Date(loi.resolved_at).toLocaleString('en-ZA')}
-            </p>
-          )}
-        </section>
-      )}
-
-      {canRespond && (
-        <section className="rounded-xl border border-[#3b82c4]/30 bg-[#f4f9ff] px-5 py-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <FileSignature size={16} className="text-[#3b82c4]" />
-            <h3 className="text-[14px] font-semibold text-[#0f1c2e]">Respond to this LOI</h3>
-          </div>
-          <p className="text-[12px] text-[#6b7685]">
-            Accepting creates a draft Term Sheet on your Contracts page (phase: term_sheet) that you and the counterparty can progress to full PPA.
-          </p>
-          {!showDeclineForm ? (
-            <div className="flex items-center gap-3">
-              <button
-                onClick={accept}
-                disabled={busy !== null}
-                className="h-10 px-5 rounded-lg bg-[#1a8a5b] text-white text-[13px] font-semibold hover:bg-[#0b6430] disabled:opacity-50 inline-flex items-center gap-2"
-              >
-                {busy === 'accept' ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                Accept &amp; create term sheet
-              </button>
-              <button
-                onClick={() => setShowDeclineForm(true)}
-                disabled={busy !== null}
-                className="h-10 px-4 rounded-lg border border-[#c0392b] text-[#c0392b] text-[13px] font-semibold hover:bg-[#fef3f3] disabled:opacity-50 inline-flex items-center gap-2"
-              >
-                <XCircle size={14} /> Decline
-              </button>
+      {showDecline && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">
+          <div className="w-full max-w-md rounded-xl bg-white border border-[#dde4ec] shadow-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#eef2f7]">
+              <h3 className="text-[15px] font-semibold text-[#0f1c2e]">Decline LOI</h3>
+              <p className="text-[12px] text-[#6b7685] mt-1">
+                The sender will be notified. Provide a clear reason so they can counter-offer.
+              </p>
             </div>
-          ) : (
-            <div className="space-y-2">
-              <label className="text-[12px] font-semibold text-[#6b7685]">Reason for declining</label>
+            <div className="p-5 space-y-3">
+              <label className="text-[12px] font-semibold text-[#6b7685]">Reason</label>
               <textarea
                 value={declineReason}
                 onChange={(e) => setDeclineReason(e.target.value)}
-                rows={3}
+                rows={4}
                 placeholder="e.g. Volume exceeds our current offtake envelope; revisit in Q3 post-budget."
                 className="w-full rounded-lg border border-[#d0d5dd] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#3b82c4]"
               />
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-end gap-2 pt-1">
                 <button
-                  onClick={decline}
-                  disabled={busy !== null || !declineReason.trim()}
-                  className="h-9 px-4 rounded-lg bg-[#c0392b] text-white text-[13px] font-semibold hover:bg-[#9a0000] disabled:opacity-50 inline-flex items-center gap-2"
-                >
-                  {busy === 'decline' ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
-                  Confirm decline
-                </button>
-                <button
-                  onClick={() => { setShowDeclineForm(false); setDeclineReason(''); }}
-                  className="h-9 px-4 rounded-lg border border-[#d0d5dd] text-[13px] text-[#6b7685] hover:bg-[#f5f6fa]"
+                  type="button"
+                  onClick={() => { setShowDecline(false); setDeclineReason(''); }}
+                  className="h-9 px-3 rounded-md border border-[#d0d5dd] text-[12px] text-[#6b7685] hover:bg-[#f5f6fa]"
                 >
                   Cancel
                 </button>
+                <button
+                  type="button"
+                  onClick={decline}
+                  disabled={busy !== null || !declineReason.trim()}
+                  className="h-9 px-3 rounded-md bg-[#c0392b] text-white text-[12px] font-semibold hover:bg-[#9a0000] disabled:opacity-60"
+                >
+                  {busy === 'decline' ? 'Declining…' : 'Confirm decline'}
+                </button>
               </div>
             </div>
-          )}
-        </section>
+          </div>
+        </div>
       )}
-    </div>
+    </>
   );
 }
 
-function Fact({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
-  return (
-    <div className="px-4 py-3">
-      <div className="text-[11px] uppercase tracking-wider text-[#6b7685] inline-flex items-center gap-1">
-        {icon} {label}
-      </div>
-      <div className="text-[14px] font-semibold text-[#0f1c2e] mt-0.5 truncate">{value}</div>
-    </div>
-  );
-}
+export default LoiDetail;

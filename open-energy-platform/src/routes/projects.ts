@@ -377,6 +377,298 @@ projects.get('/:id/lifecycle', async (c) => {
   });
 });
 
+// GET /projects/:id/file — Full project file aggregator.
+//
+// The project entity is the holder for everything that happens to a renewable-
+// energy IPP: plan, milestones, permits, land, funding, contracts, carbon,
+// operations. This endpoint returns a single payload with every section
+// already populated, so the project detail page can render as a tabbed
+// container (like Esums for an O&M site) instead of cross-linking out to
+// half a dozen workbenches.
+//
+// Section conventions:
+//   - Each section is an object on the response with arrays of rows.
+//   - Empty sections still return [] so the UI can render "no X yet" consistently.
+//   - Per-table queries are wrapped in catch() so a missing table on an older
+//     deploy or tenant doesn't 500 the whole page.
+//   - Row limit per table is capped at 50 — sufficient for a project file view;
+//     deeper drill-down lives in the dedicated workbench.
+projects.get('/:id/file', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+
+  const project = await c.env.DB.prepare(`
+    SELECT p.*, dev.name as developer_name, dev.email as developer_email
+    FROM ipp_projects p
+    LEFT JOIN participants dev ON p.developer_id = dev.id
+    WHERE p.id = ? AND (p.developer_id = ? OR ? IN ('admin','support','regulator','lender','grid_operator'))
+  `).bind(id, user.id, user.role).first<any>();
+
+  if (!project) {
+    return c.json({ success: false, error: 'Project not found' }, 404);
+  }
+
+  // Generic safe-rows helper. Cap at 50 rows per table to keep the payload
+  // bounded; deeper inspection happens in the per-workbench drill-down.
+  const safeAll = async <T = any>(sql: string, params: unknown[]): Promise<T[]> =>
+    c.env.DB.prepare(sql).bind(...params).all<T>().then(r => (r.results || []) as T[]).catch(() => [] as T[]);
+
+  // ── Plan & milestones ──────────────────────────────────────────────────
+  const [milestones, cpReadiness] = await Promise.all([
+    safeAll('SELECT * FROM project_milestones WHERE project_id = ? ORDER BY COALESCE(order_index, 0), target_date LIMIT 50', [id]),
+    safeAll('SELECT * FROM project_cp_readiness WHERE project_id = ? ORDER BY target_date LIMIT 50', [id]),
+  ]);
+
+  // ── Origination (resource + yield) ─────────────────────────────────────
+  const [siteAssessments, resourceCampaigns, yieldEstimates] = await Promise.all([
+    safeAll('SELECT * FROM ipp_site_assessments WHERE project_id = ? ORDER BY created_at DESC LIMIT 20', [id]),
+    safeAll('SELECT * FROM ipp_resource_campaigns WHERE project_id = ? ORDER BY start_date DESC LIMIT 20', [id]),
+    safeAll('SELECT * FROM ipp_yield_estimates WHERE project_id = ? ORDER BY created_at DESC LIMIT 20', [id]),
+  ]);
+
+  // ── Permits & environmental ────────────────────────────────────────────
+  const [permits, envAuths, envCompliance, landParcels, servitudes] = await Promise.all([
+    safeAll('SELECT * FROM ipp_permits WHERE project_id = ? ORDER BY COALESCE(decided_at, applied_at, created_at) DESC LIMIT 50', [id]),
+    safeAll('SELECT * FROM environmental_authorisations WHERE project_id = ? ORDER BY COALESCE(decision_date, applied_date, created_at) DESC LIMIT 50', [id]),
+    safeAll(
+      `SELECT ec.*, ea.authorisation_type, ea.reference_number
+       FROM environmental_compliance ec
+       INNER JOIN environmental_authorisations ea ON ea.id = ec.authorisation_id
+       WHERE ea.project_id = ?
+       ORDER BY ec.due_date DESC LIMIT 50`,
+      [id],
+    ),
+    safeAll('SELECT * FROM land_parcels WHERE project_id = ? ORDER BY status, area_hectares DESC LIMIT 50', [id]),
+    safeAll('SELECT * FROM servitudes WHERE project_id = ? ORDER BY registration_date DESC LIMIT 50', [id]),
+  ]);
+
+  // ── Funding (models, memos, drawdowns, insurance, covenants, reserves) ─
+  const [
+    financialModels, infoMemorandums, drawdowns,
+    insurancePolicies, covenants, covenantTests,
+    reserveAccounts, waterfallRuns,
+  ] = await Promise.all([
+    safeAll('SELECT * FROM ipp_financial_models WHERE project_id = ? ORDER BY created_at DESC LIMIT 10', [id]),
+    safeAll('SELECT * FROM ipp_info_memorandums WHERE project_id = ? ORDER BY created_at DESC LIMIT 10', [id]),
+    safeAll('SELECT * FROM ipp_drawdown_requests WHERE project_id = ? ORDER BY COALESCE(disbursed_at, requested_at) DESC LIMIT 50', [id]),
+    safeAll('SELECT * FROM insurance_policies WHERE project_id = ? ORDER BY period_end DESC LIMIT 20', [id]),
+    safeAll('SELECT * FROM covenants WHERE project_id = ? ORDER BY status, covenant_code LIMIT 50', [id]),
+    safeAll('SELECT t.* FROM covenant_tests t INNER JOIN covenants c ON c.id = t.covenant_id WHERE c.project_id = ? ORDER BY t.test_period DESC LIMIT 50', [id]),
+    safeAll('SELECT * FROM reserve_accounts WHERE project_id = ? ORDER BY reserve_type LIMIT 20', [id]),
+    safeAll('SELECT * FROM waterfall_runs WHERE project_id = ? ORDER BY period DESC LIMIT 20', [id]),
+  ]);
+
+  // ── Contracts (EPC, term sheets, PPAs, LOIs, redlines) ─────────────────
+  const [
+    epcContracts, epcVariations, epcLDs,
+    contractDocs, lois,
+  ] = await Promise.all([
+    safeAll('SELECT * FROM epc_contracts WHERE project_id = ? ORDER BY commissioning_date DESC LIMIT 10', [id]),
+    safeAll('SELECT v.* FROM epc_variations v INNER JOIN epc_contracts e ON e.id = v.epc_contract_id WHERE e.project_id = ? ORDER BY v.raised_at DESC LIMIT 50', [id]),
+    safeAll('SELECT l.* FROM epc_liquidated_damages l INNER JOIN epc_contracts e ON e.id = l.epc_contract_id WHERE e.project_id = ? ORDER BY l.event_date DESC LIMIT 50', [id]),
+    safeAll('SELECT cd.*, p.name as counterparty_name FROM contract_documents cd LEFT JOIN participants p ON p.id = cd.counterparty_id WHERE cd.project_id = ? ORDER BY cd.created_at DESC LIMIT 50', [id]),
+    safeAll('SELECT * FROM loi_drafts WHERE project_id = ? ORDER BY created_at DESC LIMIT 50', [id]),
+  ]);
+
+  // ── Carbon (vintages, RECs, MRV) ───────────────────────────────────────
+  // Carbon vintages/MRV link via carbon_projects, which in turn may reference
+  // ipp_projects via source_project_id. RECs (offtaker suite) link via
+  // counterparty/issuer. Best-effort: include both direct & indirect links.
+  const [
+    carbonVintages, mrvSubmissions, recCertificates, esgRecCertificates,
+  ] = await Promise.all([
+    safeAll(
+      `SELECT v.* FROM credit_vintages v
+       INNER JOIN carbon_projects cp ON cp.id = v.project_id
+       WHERE cp.id = ?
+       ORDER BY v.vintage_year DESC LIMIT 20`,
+      [id],
+    ),
+    safeAll(
+      `SELECT m.* FROM mrv_submissions m
+       INNER JOIN carbon_projects cp ON cp.id = m.project_id
+       WHERE cp.id = ?
+       ORDER BY m.reporting_period_end DESC LIMIT 20`,
+      [id],
+    ),
+    safeAll('SELECT * FROM rec_certificates WHERE project_id = ? ORDER BY generation_period_end DESC LIMIT 20', [id]),
+    safeAll('SELECT * FROM esg_rec_certificates WHERE source_project_id = ? ORDER BY issue_date DESC LIMIT 20', [id]),
+  ]);
+
+  // ── Operations (Esums + project-side ops) ──────────────────────────────
+  // Esums sites store the project's operating data once COD is reached.
+  const [
+    nominations, workOrders, sparesInventory, commissioningTests,
+    omSites, omFaultsOpen, omWorkOrdersOpen,
+  ] = await Promise.all([
+    safeAll('SELECT * FROM ipp_nominations WHERE project_id = ? ORDER BY delivery_date DESC LIMIT 30', [id]),
+    safeAll('SELECT * FROM ipp_work_orders WHERE project_id = ? ORDER BY COALESCE(actual_start, scheduled_start, created_at) DESC LIMIT 30', [id]),
+    safeAll('SELECT * FROM ipp_spares_inventory WHERE project_id = ? ORDER BY description LIMIT 30', [id]),
+    safeAll('SELECT * FROM ipp_commissioning_tests WHERE project_id = ? ORDER BY COALESCE(executed_at, scheduled_at, created_at) DESC LIMIT 30', [id]),
+    safeAll('SELECT * FROM om_sites WHERE project_id = ? ORDER BY name LIMIT 5', [id]),
+    safeAll(
+      `SELECT f.* FROM om_faults f
+       INNER JOIN om_devices d ON d.id = f.device_id
+       INNER JOIN om_sites s ON s.id = d.site_id
+       WHERE s.project_id = ? AND f.status IN ('open','in_progress')
+       ORDER BY f.detected_at DESC LIMIT 20`,
+      [id],
+    ),
+    safeAll(
+      `SELECT w.* FROM om_work_orders w
+       INNER JOIN om_sites s ON s.id = w.site_id
+       WHERE s.project_id = ? AND w.status IN ('created','assigned','en_route','on_site')
+       ORDER BY w.sla_deadline LIMIT 20`,
+      [id],
+    ),
+  ]);
+
+  // ── Community & social (REIPPPP ED/SED, stakeholder engagement) ────────
+  const [communityStakeholders, communityEngagements, edSedSpend] = await Promise.all([
+    safeAll('SELECT * FROM community_stakeholders WHERE project_id = ? ORDER BY stakeholder_type, stakeholder_name LIMIT 50', [id]),
+    safeAll('SELECT * FROM community_engagements WHERE project_id = ? ORDER BY engagement_date DESC LIMIT 50', [id]),
+    safeAll('SELECT * FROM ed_sed_spend WHERE project_id = ? ORDER BY period DESC LIMIT 30', [id]),
+  ]);
+
+  // ── Decommissioning ────────────────────────────────────────────────────
+  const decommissioningPlans = await safeAll(
+    'SELECT * FROM ipp_decommissioning_plans WHERE project_id = ? ORDER BY created_at DESC LIMIT 10',
+    [id],
+  );
+
+  // ── Phase + tab status overlays ────────────────────────────────────────
+  // Convert counts into per-tab "completion" hints so the SPA can render
+  // tab badges (badge counts + status dots) without a second round-trip.
+  const completedMilestones = (milestones as Array<{ satisfied_date?: string; status?: string }>).filter(
+    (m) => m.satisfied_date || m.status === 'satisfied',
+  ).length;
+  const executedDrawdowns = (drawdowns as Array<{ status?: string }>).filter(
+    (d) => d.status === 'executed' || d.status === 'disbursed',
+  ).length;
+  const activeCovenants = (covenants as Array<{ status?: string }>).filter((c) => c.status === 'active').length;
+  const breachedCovenants = (covenants as Array<{ status?: string }>).filter((c) => c.status === 'breached').length;
+  const openFaults = omFaultsOpen.length;
+  const totalCarbonIssued = (carbonVintages as Array<{ credits_issued?: number }>).reduce(
+    (s, v) => s + (Number(v.credits_issued) || 0),
+    0,
+  );
+
+  // ── AI inline assists ──────────────────────────────────────────────────
+  type Suggest = { key: string; tab: string; title: string; why: string; confidence?: number; accept?: { label: string; href: string } };
+  const suggestions: Suggest[] = [];
+  if ((envAuths as Array<{ decision?: string }>).every((a) => (a.decision || '').toLowerCase() !== 'granted')) {
+    suggestions.push({
+      key: 'permits_pending',
+      tab: 'permits',
+      title: 'NEMA s.24 authorisation not yet granted',
+      why: 'No environmental authorisation is in "granted" state. Decision window is typically 90–120 days; chase the competent authority if lodged >60 days ago.',
+      confidence: 0.85,
+      accept: { label: 'Open permits tab', href: `/projects/${id}?tab=permits` },
+    });
+  }
+  if (financialModels.length === 0 && project.status !== 'commercial_operations') {
+    suggestions.push({
+      key: 'no_financial_model',
+      tab: 'funding',
+      title: 'No financial model on file',
+      why: 'Lender outreach is gated on a base-case financial model with DSCR ≥ 1.20 and LLCR ≥ 1.40.',
+      confidence: 0.9,
+      accept: { label: 'Open funding tab', href: `/projects/${id}?tab=funding` },
+    });
+  }
+  if (breachedCovenants > 0) {
+    suggestions.push({
+      key: 'covenant_breach',
+      tab: 'funding',
+      title: `${breachedCovenants} covenant${breachedCovenants === 1 ? '' : 's'} in breach`,
+      why: 'Notify the lender within the cure period stipulated in the facility agreement. Document remediation plan in the funding tab.',
+      confidence: 0.95,
+      accept: { label: 'Review covenant tests', href: `/projects/${id}?tab=funding` },
+    });
+  }
+  if (openFaults > 0) {
+    suggestions.push({
+      key: 'om_faults_open',
+      tab: 'operations',
+      title: `${openFaults} open O&M fault${openFaults === 1 ? '' : 's'} on linked Esums site`,
+      why: 'Open faults eat directly into availability covenant performance. Triage in the Esums work-order queue.',
+      confidence: 0.9,
+      accept: { label: 'Open operations tab', href: `/projects/${id}?tab=operations` },
+    });
+  }
+
+  return c.json({
+    success: true,
+    data: {
+      project,
+      phase: project.status || 'development',
+      summary: {
+        milestones_total: milestones.length,
+        milestones_completed: completedMilestones,
+        permits_total: permits.length + envAuths.length,
+        permits_granted: (envAuths as Array<{ decision?: string }>).filter((a) => (a.decision || '').toLowerCase() === 'granted').length,
+        land_parcels: landParcels.length,
+        drawdowns_executed: executedDrawdowns,
+        drawdowns_total: drawdowns.length,
+        covenants_active: activeCovenants,
+        covenants_breached: breachedCovenants,
+        epc_contracts: epcContracts.length,
+        lois_total: lois.length,
+        contracts_total: contractDocs.length,
+        carbon_credits_issued: totalCarbonIssued,
+        rec_certificates: recCertificates.length + esgRecCertificates.length,
+        om_sites: omSites.length,
+        om_faults_open: openFaults,
+        om_work_orders_open: omWorkOrdersOpen.length,
+      },
+      plan: { milestones, cp_readiness: cpReadiness },
+      origination: { site_assessments: siteAssessments, resource_campaigns: resourceCampaigns, yield_estimates: yieldEstimates },
+      permits: { permits, env_authorisations: envAuths, env_compliance: envCompliance },
+      land_community: {
+        land_parcels: landParcels,
+        servitudes,
+        stakeholders: communityStakeholders,
+        engagements: communityEngagements,
+        ed_sed_spend: edSedSpend,
+      },
+      funding: {
+        financial_models: financialModels,
+        info_memorandums: infoMemorandums,
+        drawdowns,
+        insurance_policies: insurancePolicies,
+        covenants,
+        covenant_tests: covenantTests,
+        reserve_accounts: reserveAccounts,
+        waterfall_runs: waterfallRuns,
+      },
+      contracts: {
+        epc: epcContracts,
+        epc_variations: epcVariations,
+        epc_liquidated_damages: epcLDs,
+        documents: contractDocs,
+        lois,
+      },
+      carbon: {
+        vintages: carbonVintages,
+        mrv_submissions: mrvSubmissions,
+        rec_certificates: recCertificates,
+        esg_rec_certificates: esgRecCertificates,
+      },
+      operations: {
+        nominations,
+        ipp_work_orders: workOrders,
+        spares_inventory: sparesInventory,
+        commissioning_tests: commissioningTests,
+        om_sites: omSites,
+        om_faults_open: omFaultsOpen,
+        om_work_orders_open: omWorkOrdersOpen,
+      },
+      decommission: { plans: decommissioningPlans },
+      ai_suggestions: suggestions,
+    },
+  });
+});
+
 // POST /projects — Create new project
 projects.post('/', async (c) => {
   const user = getCurrentUser(c);

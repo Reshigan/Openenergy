@@ -20,7 +20,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/../.."
 
-SCRIPT_PATH="../docs/video/script-2026-05-25.md"
+SCRIPT_PATH="../docs/video/script-2026-05-26.md"
 SHOTS_DIR="media/shots"
 VO_DIR="media/voiceover"
 OUT_DIR="media/master"
@@ -86,7 +86,7 @@ fi
 # Parse per-act shot keys from the script.
 python3 - <<'PY' > "$OUT_DIR/_work/act-shots.tsv"
 import re, pathlib
-src = pathlib.Path("../docs/video/script-2026-05-25.md").read_text()
+src = pathlib.Path("../docs/video/script-2026-05-26.md").read_text()
 acts = re.split(r'\n## ACT (\d+) — [^\n]+\n', src)
 for i in range(1, len(acts), 2):
     act_id = acts[i].strip()

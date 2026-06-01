@@ -28,7 +28,6 @@ import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorT
 import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
 import RulPredictionMlTab from '../rulPredictionMl/RulPredictionMlTab';
 import { FaultFingerprintMlTab } from '../faultFingerprintMl/FaultFingerprintMlTab';
-import { NttComparisonBatteryTab } from '../nttComparisonBattery/NttComparisonBatteryTab';
 import StageGateTab from '../stageGate/StageGateTab';
 import IppIssuesTab from '../ippIssues/IppIssuesTab';
 import IppRiskTab from '../ippRisk/IppRiskTab';
@@ -114,7 +113,6 @@ export function IppWorkstationPage() {
         { key: 'anomaly-detection-ml', label: 'Anomaly detection', group: 'Predictive ML', body: () => <AnomalyDetectionMlTab /> },
         { key: 'rul-prediction-ml', label: 'RUL prediction', group: 'Predictive ML', body: () => <RulPredictionMlTab /> },
         { key: 'fault-fingerprint-ml', label: 'Fault fingerprint', group: 'Predictive ML', body: () => <FaultFingerprintMlTab /> },
-        { key: 'ntt-comparison-battery', label: 'NTT comparison', group: 'Predictive ML', body: () => <NttComparisonBatteryTab /> },
       ]}
     />
   );

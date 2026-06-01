@@ -810,3 +810,24 @@ select.input {
   }
   .p-6 { padding: 16px !important; }
 }
+
+/* ─── Chain-tab section header clamping ──────────────────────────────
+ * Every chain-tab component renders an <h2> title (standards refs) +
+ * <p> description (full state-machine spec) inside a header.  Clamping
+ * here fixes all ~100 components without touching each file.
+ * h2: 1 line (show chain name, drop the standards list)
+ * p:  2 lines (enough for states + SLA key)
+ * ──────────────────────────────────────────────────────────────────── */
+div.p-5 > header > div:first-child > h2,
+div.p-5 > header > div:first-child > h3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+div.p-5 > header > div:first-child > p {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

@@ -48,6 +48,59 @@ test('ipp-project-detail-financial-model', async ({ page }) => {
   });
 });
 
+test('ipp-project-file-overview', async ({ page }) => {
+  await shot(page, '/projects/ip_001', {
+    dwell: 12_000,
+    waitFor: 'h1, [data-test="entity-hero"], header',
+    interact: async (p) => {
+      await smoothScroll(p, 0, 600);
+      await p.waitForTimeout(700);
+      await smoothScroll(p, 360, 1100);
+      await moveCursor(p, 700, 360);
+      await p.waitForTimeout(800);
+    },
+  });
+});
+
+test('ipp-project-file-financials', async ({ page }) => {
+  await shot(page, '/projects/ip_001', {
+    dwell: 12_000,
+    waitFor: 'h1, [data-test="entity-hero"], header',
+    interact: async (p) => {
+      await clickTabAndSettle(p, /^Funding$/i);
+      await smoothScroll(p, 240, 1000);
+      await p.locator('table tbody tr, .card').first().hover().catch(() => undefined);
+      await p.waitForTimeout(900);
+    },
+  });
+});
+
+test('ipp-project-file-contracts', async ({ page }) => {
+  await shot(page, '/projects/ip_001', {
+    dwell: 12_000,
+    waitFor: 'h1, [data-test="entity-hero"], header',
+    interact: async (p) => {
+      await clickTabAndSettle(p, /^Contracts$/i);
+      await smoothScroll(p, 200, 1000);
+      await p.locator('table tbody tr').first().hover().catch(() => undefined);
+      await p.waitForTimeout(900);
+    },
+  });
+});
+
+test('ipp-project-file-operations', async ({ page }) => {
+  await shot(page, '/projects/ip_001', {
+    dwell: 12_000,
+    waitFor: 'h1, [data-test="entity-hero"], header',
+    interact: async (p) => {
+      await clickTabAndSettle(p, /Operations/i);
+      await smoothScroll(p, 200, 1000);
+      await p.locator('table tbody tr, .card').first().hover().catch(() => undefined);
+      await p.waitForTimeout(900);
+    },
+  });
+});
+
 test('ipp-workstation', async ({ page }) => {
   await shot(page, '/ipp-lifecycle/workstation', {
     dwell: 14_000,

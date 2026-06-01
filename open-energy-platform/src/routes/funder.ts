@@ -206,6 +206,271 @@ funder.delete('/facilities/:id', async (c) => {
 });
 
 // ──────────────────────────────────────────────────────────────────────────
+// GET /facilities/:id/file — Esums-equivalent file for one debt facility.
+// Returns the facility + linked project + covenants + disbursements +
+// recent AI cashflow/sensitivity decisions + audit chain + AI hints.
+// ──────────────────────────────────────────────────────────────────────────
+funder.get('/facilities/:id/file', async (c) => {
+  await ensureTables(c.env);
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+
+  const safeAll = async <T = any>(sql: string, ...binds: unknown[]): Promise<T[]> => {
+    try {
+      const res = await c.env.DB.prepare(sql).bind(...binds).all<T>();
+      return res.results || [];
+    } catch {
+      return [];
+    }
+  };
+  const safeFirst = async <T = any>(sql: string, ...binds: unknown[]): Promise<T | null> => {
+    try {
+      return await c.env.DB.prepare(sql).bind(...binds).first<T>();
+    } catch {
+      return null;
+    }
+  };
+
+  // Facility + linked project.
+  // ipp_projects columns vary by migration generation — keep the SELECT to
+  // the columns that have existed since 002_domain so the JOIN never fails.
+  const facility = await safeFirst<any>(
+    `SELECT lf.*,
+            p.project_name, p.technology, p.capacity_mw,
+            p.status AS project_status,
+            p.commercial_operation_date AS cod_date,
+            p.ppa_price_per_mwh AS tariff_zar_per_mwh,
+            p.location AS province,
+            lender.name AS lender_name, lender.email AS lender_email,
+            borrower.name AS borrower_name, borrower.email AS borrower_email
+       FROM loan_facilities lf
+       LEFT JOIN ipp_projects p ON p.id = lf.project_id
+       LEFT JOIN participants lender ON lender.id = lf.lender_participant_id
+       LEFT JOIN participants borrower ON borrower.id = lf.borrower_participant_id
+      WHERE lf.id = ?`,
+    id,
+  );
+  if (!facility) return c.json({ success: false, error: 'not_found' }, 404);
+  if (
+    user.role !== 'admin' &&
+    user.role !== 'regulator' &&
+    facility.lender_participant_id !== user.id &&
+    facility.borrower_participant_id !== user.id
+  ) {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
+
+  // Covenants for this facility.
+  const covenants = await safeAll<any>(
+    `SELECT id, covenant_type, threshold, last_value, last_checked_at, status, notes, created_at
+       FROM loan_covenants
+      WHERE facility_id = ?
+      ORDER BY CASE status WHEN 'breached' THEN 0 WHEN 'watch' THEN 1 ELSE 2 END,
+               last_checked_at DESC NULLS LAST`,
+    id,
+  );
+
+  // Disbursement queue for this facility.
+  const disbursements = await safeAll<any>(
+    `SELECT id, project_id, milestone_id, amount, currency, status,
+            approved_by, approved_at, requested_by, created_at
+       FROM disbursement_requests
+      WHERE facility_id = ?
+      ORDER BY created_at DESC LIMIT 100`,
+    id,
+  );
+
+  // Action queue items linked to this facility (or its covenants/disbursements).
+  const actionQueue = await safeAll<any>(
+    `SELECT id, action_type, severity, status, summary, body, assigned_to,
+            entity_type, entity_id, due_at, completed_at, created_at
+       FROM action_queue
+      WHERE (entity_type = 'loan_facilities' AND entity_id = ?)
+         OR (entity_type = 'loan_covenants' AND entity_id IN (
+              SELECT id FROM loan_covenants WHERE facility_id = ?))
+         OR (entity_type = 'disbursement_requests' AND entity_id IN (
+              SELECT id FROM disbursement_requests WHERE facility_id = ?))
+      ORDER BY created_at DESC LIMIT 60`,
+    id, id, id,
+  );
+
+  // Recent AI decisions tied to this facility (cashflow + sensitivity + covenant triage).
+  const aiDecisions = await safeAll<any>(
+    `SELECT id, surface, intent, prompt_summary, response_json, response_text,
+            model, fallback, accepted, created_at
+       FROM ai_decisions
+      WHERE related_entity_type = 'loan_facilities' AND related_entity_id = ?
+      ORDER BY created_at DESC LIMIT 30`,
+    id,
+  );
+
+  // Audit chain.
+  const auditEvents = await safeAll<any>(
+    `SELECT id, prev_hash, hash, event_type, actor_id, entity_id, entity_type, data, created_at
+       FROM audit_events
+      WHERE (entity_type = 'loan_facilities' AND entity_id = ?)
+         OR (entity_type = 'loan_covenants' AND entity_id IN (
+              SELECT id FROM loan_covenants WHERE facility_id = ?))
+         OR (entity_type = 'disbursement_requests' AND entity_id IN (
+              SELECT id FROM disbursement_requests WHERE facility_id = ?))
+      ORDER BY created_at DESC LIMIT 60`,
+    id, id, id,
+  );
+  const auditLogs = await safeAll<any>(
+    `SELECT id, user_id, user_email, action, resource_type, resource_id, details, status, timestamp
+       FROM audit_logs
+      WHERE (resource_type = 'loan_facilities' AND resource_id = ?)
+         OR (resource_type = 'loan_covenants')
+         OR (resource_type = 'disbursement_requests')
+      ORDER BY timestamp DESC LIMIT 60`,
+    id,
+  );
+
+  // Summary numbers.
+  const committed = Number(facility.committed_amount || 0);
+  const drawn = Number(facility.drawn_amount || 0);
+  const utilisation = committed > 0 ? (drawn / committed) * 100 : null;
+  const breached = covenants.filter((co) => co.status === 'breached').length;
+  const watch = covenants.filter((co) => co.status === 'watch').length;
+  const pendingDisbursements = disbursements.filter((d) => d.status === 'pending').length;
+  const pendingDisbursementValue = disbursements
+    .filter((d) => d.status === 'pending')
+    .reduce((a, d) => a + Number(d.amount || 0), 0);
+  const approvedDisbursements = disbursements.filter((d) => d.status === 'approved').length;
+  const approvedDisbursementValue = disbursements
+    .filter((d) => d.status === 'approved')
+    .reduce((a, d) => a + Number(d.amount || 0), 0);
+  const tenorMonths = Number(facility.tenor_months || 0);
+  const startedAt = facility.created_at ? new Date(facility.created_at).getTime() : null;
+  const maturityMs = startedAt && tenorMonths
+    ? startedAt + tenorMonths * 30.44 * 24 * 60 * 60 * 1000
+    : null;
+  const monthsToMaturity = maturityMs
+    ? Math.floor((maturityMs - Date.now()) / (30.44 * 24 * 60 * 60 * 1000))
+    : null;
+  const dscrCov = covenants.find((co) => (co.covenant_type || '').toLowerCase().includes('dscr'));
+
+  const summary: Record<string, any> = {
+    facility_id: facility.id,
+    facility_name: facility.facility_name,
+    status: facility.status,
+    facility_type: facility.facility_type,
+    project_id: facility.project_id,
+    project_name: facility.project_name,
+    lender_name: facility.lender_name,
+    borrower_name: facility.borrower_name,
+    currency: facility.currency || 'ZAR',
+    committed_zar: committed,
+    drawn_zar: drawn,
+    available_zar: Math.max(0, committed - drawn),
+    utilisation_pct: utilisation,
+    interest_rate_pct: facility.interest_rate_pct,
+    tenor_months: tenorMonths,
+    months_to_maturity: monthsToMaturity,
+    dscr_covenant: facility.dscr_covenant,
+    latest_dscr_value: dscrCov?.last_value ?? null,
+    covenants_total: covenants.length,
+    covenants_breached: breached,
+    covenants_watch: watch,
+    pending_disbursements: pendingDisbursements,
+    pending_disbursement_value: pendingDisbursementValue,
+    approved_disbursements: approvedDisbursements,
+    approved_disbursement_value: approvedDisbursementValue,
+    pending_actions: actionQueue.filter((a) => a.status === 'pending').length,
+    ai_decisions: aiDecisions.length,
+    audit_events: auditEvents.length,
+  };
+
+  // AI suggestions — actionable, specific.
+  const ai_suggestions: Array<{ id: string; kind: string; title: string; why: string; cta?: { label: string; action: string } }> = [];
+  if (breached > 0) {
+    ai_suggestions.push({
+      id: 'covenants_breached',
+      kind: 'risk',
+      title: `${breached} covenant${breached === 1 ? '' : 's'} breached — credit-committee review needed`,
+      why: 'Breached covenants require formal waiver or restructuring under the facility agreement.',
+      cta: { label: 'Open covenants', action: 'open_covenants' },
+    });
+  }
+  if (pendingDisbursements > 0) {
+    ai_suggestions.push({
+      id: 'disbursements_pending',
+      kind: 'workflow',
+      title: `${pendingDisbursements} drawdown request${pendingDisbursements === 1 ? '' : 's'} awaiting approval`,
+      why: `R${(pendingDisbursementValue / 1_000_000).toFixed(1)}m queued — clearing the queue prevents construction delays and DSCR shocks.`,
+      cta: { label: 'Open drawdown queue', action: 'open_disbursements' },
+    });
+  }
+  if (utilisation != null && utilisation < 30 && facility.status === 'active') {
+    ai_suggestions.push({
+      id: 'low_utilisation',
+      kind: 'commercial',
+      title: 'Low utilisation — consider commitment-fee adjustment',
+      why: `Only ${utilisation.toFixed(0)}% of committed capital is drawn. A non-utilisation fee or right-sizing would improve return on capital.`,
+      cta: { label: 'Re-price facility', action: 'reprice_facility' },
+    });
+  }
+  if (monthsToMaturity != null && monthsToMaturity <= 18 && facility.status === 'active') {
+    ai_suggestions.push({
+      id: 'refinance_window',
+      kind: 'lifecycle',
+      title: `Facility matures in ${monthsToMaturity} months — open refinancing dialogue`,
+      why: 'Best refinancing pricing is obtained 12-18 months before maturity, before the term-out trigger lands in the loan agreement.',
+      cta: { label: 'Draft refi term sheet', action: 'draft_refi' },
+    });
+  }
+  if (aiDecisions.length === 0) {
+    ai_suggestions.push({
+      id: 'no_cashflow_model',
+      kind: 'ai',
+      title: 'No AI cashflow forecast on file',
+      why: 'A current 60-month cashflow projection makes covenant compliance, refinancing, and DSCR forecasting much more defensible to the credit committee.',
+      cta: { label: 'Run cashflow forecast', action: 'run_cashflow' },
+    });
+  }
+
+  return c.json({
+    success: true,
+    data: {
+      facility,
+      project: facility.project_id
+        ? {
+            id: facility.project_id,
+            project_name: facility.project_name,
+            technology: facility.technology,
+            province: facility.province,
+            capacity_mw: facility.capacity_mw,
+            status: facility.project_status,
+            cod_date: facility.cod_date,
+            tariff_zar_per_mwh: facility.tariff_zar_per_mwh,
+          }
+        : null,
+      parties: {
+        lender: {
+          id: facility.lender_participant_id,
+          name: facility.lender_name,
+          email: facility.lender_email,
+        },
+        borrower: facility.borrower_participant_id
+          ? {
+              id: facility.borrower_participant_id,
+              name: facility.borrower_name,
+              email: facility.borrower_email,
+            }
+          : null,
+      },
+      covenants,
+      disbursements,
+      action_queue: actionQueue,
+      ai_decisions: aiDecisions,
+      audit: { events: auditEvents, logs: auditLogs },
+      summary,
+      ai_suggestions,
+    },
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────
 // GET /summary — book-level KPIs
 // ──────────────────────────────────────────────────────────────────────────
 funder.get('/summary', async (c) => {

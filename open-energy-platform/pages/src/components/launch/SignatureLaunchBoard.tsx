@@ -202,7 +202,7 @@ function WorkflowTile({ wf }: { wf: Workflow }) {
           flex: 1,
         }}
       >
-        {wf.description}
+        {wf.description.length > 120 ? wf.description.slice(0, 117) + '…' : wf.description}
       </p>
       <span
         style={{

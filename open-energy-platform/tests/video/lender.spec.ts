@@ -44,6 +44,72 @@ test('lender-drawdown-queue', async ({ page }) => {
   });
 });
 
+test('fund-file-overview', async ({ page }) => {
+  await shot(page, '/funds/fac_004', {
+    dwell: 12_000,
+    waitFor: 'h1, [data-test="entity-hero"], header',
+    interact: async (p) => {
+      await smoothScroll(p, 0, 600);
+      await p.waitForTimeout(800);
+      await smoothScroll(p, 360, 1100);
+      await moveCursor(p, 700, 360);
+      await p.waitForTimeout(900);
+    },
+  });
+});
+
+test('fund-file-covenants', async ({ page }) => {
+  await shot(page, '/funds/fac_004', {
+    dwell: 12_000,
+    waitFor: 'h1, [data-test="entity-hero"], header',
+    interact: async (p) => {
+      await clickTabAndSettle(p, /Covenants/i);
+      await smoothScroll(p, 200, 1000);
+      await p.locator('table tbody tr').first().hover().catch(() => undefined);
+      await p.waitForTimeout(900);
+    },
+  });
+});
+
+test('fund-file-disbursements', async ({ page }) => {
+  await shot(page, '/funds/fac_004', {
+    dwell: 12_000,
+    waitFor: 'h1, [data-test="entity-hero"], header',
+    interact: async (p) => {
+      await clickTabAndSettle(p, /Drawdowns|Disbursements/i);
+      await smoothScroll(p, 200, 1000);
+      await p.locator('table tbody tr').first().hover().catch(() => undefined);
+      await p.waitForTimeout(900);
+    },
+  });
+});
+
+test('fund-file-ai', async ({ page }) => {
+  await shot(page, '/funds/fac_004', {
+    dwell: 12_000,
+    waitFor: 'h1, [data-test="entity-hero"], header',
+    interact: async (p) => {
+      await clickTabAndSettle(p, /AI history|AI/i);
+      await smoothScroll(p, 200, 1000);
+      await p.locator('table tbody tr, .card').first().hover().catch(() => undefined);
+      await p.waitForTimeout(900);
+    },
+  });
+});
+
+test('fund-file-audit', async ({ page }) => {
+  await shot(page, '/funds/fac_004', {
+    dwell: 12_000,
+    waitFor: 'h1, [data-test="entity-hero"], header',
+    interact: async (p) => {
+      await clickTabAndSettle(p, /^Audit$/i);
+      await smoothScroll(p, 200, 1000);
+      await p.locator('table tbody tr').first().hover().catch(() => undefined);
+      await p.waitForTimeout(900);
+    },
+  });
+});
+
 test('lender-workstation', async ({ page }) => {
   // Lender doesn't have a dedicated /workstation route — /lender-suite is
   // the workstation. We capture that.

@@ -27,8 +27,9 @@ export default defineConfig({
   // script with non-admin equivalents (trader / regulator / public).
   testIgnore: ['**/audit.spec.ts', '**/preflight.spec.ts', '**/admin.spec.ts'],
   // Each test does its own navigate + N-second on-screen settle + capture.
-  // 90s is plenty for the longest shot (drawdown modal walk-through).
-  timeout: 90_000,
+  // 180s accommodates the heavier entity-file shots (multiple tab clicks
+  // with networkidle waits between each) plus prod-network variance.
+  timeout: 180_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
   workers: 1,
