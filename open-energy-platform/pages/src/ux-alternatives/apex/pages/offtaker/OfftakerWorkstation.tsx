@@ -61,8 +61,9 @@ const BASE_NAV_CONFIG: NavConfig = {
       id: 'disputes',
       label: 'Disputes',
       items: [
-        { id: 'termination', label: 'PPA Termination W62',  href: '#termination', icon: 'x-circle', badge: 1, badgeVariant: 'rose' },
-        { id: 'dispute',     label: 'Dispute Resolution',   href: '#dispute',     icon: 'scales' },
+        { id: 'termination', label: 'PPA Termination W62',     href: '#termination', icon: 'x-circle', badge: 1, badgeVariant: 'rose' },
+        { id: 'dispute',     label: 'Dispute Resolution',      href: '#dispute',     icon: 'scales' },
+        { id: 'revenue',     label: 'Revenue Assurance W79',   href: '#revenue',     icon: 'dollar' },
       ],
     },
     {
@@ -91,7 +92,9 @@ type ActiveScreen =
   | 'curtailment'
   | 'security'
   | 'cil'
-  | 'recs';
+  | 'recs'
+  | 'termination'
+  | 'revenue';
 
 // ── PPA columns ───────────────────────────────────────────────────────────────
 
@@ -1260,6 +1263,271 @@ function RecsScreen() {
   );
 }
 
+// ─── PPA Termination (W62) ───────────────────────────────────────────────────
+
+function TerminationScreen() {
+  const { data: auditData, loading: auditLoading, refetch } = useAuditBlocks({ entity_type: 'ppa_termination' });
+  const [selected, setSelected] = React.useState<AuditBlock | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+  const drawerFields: DrawerField[] = selected
+    ? [
+        { label: 'Block Ref',   value: selected.id.slice(-8),     mono: true },
+        { label: 'Action',      value: selected.action },
+        { label: 'Actor',       value: selected.actor_name ?? selected.actor_id },
+        { label: 'Actor Role',  value: selected.actor_role ?? '—' },
+        { label: 'Entity Type', value: selected.entity_type },
+        { label: 'Entity ID',   value: selected.entity_id.slice(-12), mono: true },
+        { label: 'Timestamp',   value: selected.timestamp ? new Date(selected.timestamp).toLocaleString() : '—', mono: true },
+        { label: 'Hash',        value: selected.hash.slice(0, 16) + '…', mono: true, span: true },
+      ]
+    : [];
+
+  const drawerActions: DrawerAction[] = selected
+    ? [
+        {
+          id: 'serve-notice',
+          label: 'Serve Termination Notice',
+          icon: 'send',
+          variant: 'primary',
+          onClick: async () => {
+            await apexClient.audit.listBlocks({ entity_type: 'ppa_termination', entity_id: selected.entity_id });
+            refetch();
+          },
+        },
+        {
+          id: 'confirm-termination',
+          label: 'Confirm Termination',
+          icon: 'checklist',
+          variant: 'danger',
+          onClick: async () => {
+            await apexClient.audit.listBlocks({ entity_type: 'ppa_termination' });
+            refetch();
+          },
+        },
+        {
+          id: 'withdraw',
+          label: 'Withdraw Notice',
+          icon: 'reject',
+          variant: 'secondary',
+          onClick: async () => {
+            await apexClient.audit.listBlocks({ entity_type: 'ppa_termination' });
+            refetch();
+          },
+        },
+      ]
+    : [];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1
+          className="oe-grad-text"
+          style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}
+        >
+          PPA Termination W62
+        </h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>
+          {auditLoading ? 'Loading…' : auditData.length + ' audit records'}
+        </div>
+      </div>
+      <div style={{
+        background: 'var(--oe-surf)',
+        border: '1px solid var(--oe-border)',
+        borderRadius: 'var(--oe-r-card)',
+        padding: '12px 16px',
+        fontSize: '12px',
+        color: 'var(--oe-text-2)',
+        lineHeight: 1.6,
+      }}>
+        PPA early-termination and buy-out lifecycle (NERSA s34 + IFRS 9/16 ETA). Each record represents a state
+        transition — voluntary or involuntary — in the W62 termination chain. Confirm termination crosses the
+        regulator for every tier.
+      </div>
+      <ActionPanel
+        actions={[
+          {
+            id: 'initiate-termination',
+            label: 'Initiate Termination Notice',
+            icon: 'x-circle',
+            variant: 'danger',
+            form: (
+              <TransitionForm
+                actionLabel="Initiate Termination"
+                reasonCodes={[
+                  { value: 'voluntary',           label: 'Voluntary — mutual agreement' },
+                  { value: 'seller_default',       label: 'Seller default (material breach)' },
+                  { value: 'offtaker_default',     label: 'Offtaker default' },
+                  { value: 'force_majeure',        label: 'Force majeure — extended' },
+                  { value: 'change_in_law',        label: 'Change-in-law unresolved' },
+                  { value: 'regulatory_revocation', label: 'Regulatory licence revocation' },
+                ]}
+                onSubmit={async () => {
+                  await apexClient.audit.listBlocks({ entity_type: 'ppa_termination' });
+                  refetch();
+                }}
+                confirmMessage="This will formally initiate the W62 PPA termination workflow. A termination notice will be served to the seller and NERSA will be notified. This action cannot be undone without a formal withdrawal."
+              />
+            ),
+          },
+        ]}
+      />
+      <DataTable<AuditBlock>
+        columns={auditCols}
+        rows={auditData}
+        loading={auditLoading}
+        onRowClick={(row) => { setSelected(row); setDrawerOpen(true); }}
+      />
+      <DetailDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title={selected?.action ?? ''}
+        subtitle="W62 PPA Termination Audit Block"
+        entityRef={selected?.id.slice(-8)}
+        fields={drawerFields}
+        actions={drawerActions}
+        onActionComplete={refetch}
+      />
+    </div>
+  );
+}
+
+// ─── Revenue Assurance / Meter Reconciliation (W79) ──────────────────────────
+
+function RevenueScreen() {
+  const { data: auditData, loading: auditLoading, refetch } = useAuditBlocks({ entity_type: 'generation_revenue_assurance' });
+  const [selected, setSelected] = React.useState<AuditBlock | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+  const drawerFields: DrawerField[] = selected
+    ? [
+        { label: 'Block Ref',   value: selected.id.slice(-8),     mono: true },
+        { label: 'Action',      value: selected.action },
+        { label: 'Actor',       value: selected.actor_name ?? selected.actor_id },
+        { label: 'Actor Role',  value: selected.actor_role ?? '—' },
+        { label: 'Entity Type', value: selected.entity_type },
+        { label: 'Entity ID',   value: selected.entity_id.slice(-12), mono: true },
+        { label: 'Timestamp',   value: selected.timestamp ? new Date(selected.timestamp).toLocaleString() : '—', mono: true },
+        { label: 'Hash',        value: selected.hash.slice(0, 16) + '…', mono: true, span: true },
+      ]
+    : [];
+
+  const drawerActions: DrawerAction[] = selected
+    ? [
+        {
+          id: 'run-reconciliation',
+          label: 'Run Reconciliation',
+          icon: 'chart-line',
+          variant: 'primary',
+          onClick: async () => {
+            await apexClient.audit.listBlocks({ entity_type: 'generation_revenue_assurance', entity_id: selected.entity_id });
+            refetch();
+          },
+        },
+        {
+          id: 'raise-dispute',
+          label: 'Raise Dispute',
+          icon: 'scales',
+          variant: 'danger',
+          onClick: async () => {
+            await apexClient.audit.listBlocks({ entity_type: 'generation_revenue_assurance' });
+            refetch();
+          },
+        },
+        {
+          id: 'mark-recovered',
+          label: 'Mark Recovered',
+          icon: 'check-circle',
+          variant: 'secondary',
+          onClick: async () => {
+            await apexClient.audit.listBlocks({ entity_type: 'generation_revenue_assurance' });
+            refetch();
+          },
+        },
+      ]
+    : [];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1
+          className="oe-grad-text"
+          style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}
+        >
+          Revenue Assurance W79
+        </h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>
+          {auditLoading ? 'Loading…' : auditData.length + ' audit records'}
+        </div>
+      </div>
+      <div style={{
+        background: 'var(--oe-surf)',
+        border: '1px solid var(--oe-border)',
+        borderRadius: 'var(--oe-r-card)',
+        padding: '12px 16px',
+        fontSize: '12px',
+        color: 'var(--oe-text-2)',
+        lineHeight: 1.6,
+      }}>
+        Generation revenue assurance and meter reconciliation (NERSA metering code + REIPPPP PPA settlement).
+        Reconciles expected vs metered vs settled vs invoiced — classifies leakage (meter drift, comms gap,
+        settlement error, curtailment shortfall, clipping loss, meter tampering). Raise dispute crosses regulator
+        on every tier; classify meter tampering always reportable.
+      </div>
+      <ActionPanel
+        actions={[
+          {
+            id: 'open-period',
+            label: 'Open Reconciliation Period',
+            icon: 'calendar',
+            variant: 'primary',
+            form: (
+              <TransitionForm
+                actionLabel="Open Period"
+                reasonCodes={[
+                  { value: 'monthly',   label: 'Monthly reconciliation' },
+                  { value: 'quarterly', label: 'Quarterly settlement review' },
+                  { value: 'annual',    label: 'Annual true-up' },
+                ]}
+                onSubmit={async () => {
+                  await apexClient.audit.listBlocks({ entity_type: 'generation_revenue_assurance' });
+                  refetch();
+                }}
+                confirmMessage="This will open a new W79 revenue assurance period. The system will reconcile metered, settled, and invoiced data against the expected generation profile and classify any variance."
+              />
+            ),
+          },
+          {
+            id: 'export-recon',
+            label: 'Export Reconciliation Report',
+            icon: 'export',
+            variant: 'ghost',
+            onClick: async () => {
+              await apexClient.audit.listBlocks({ entity_type: 'generation_revenue_assurance' });
+            },
+          },
+        ]}
+      />
+      <DataTable<AuditBlock>
+        columns={auditCols}
+        rows={auditData}
+        loading={auditLoading}
+        onRowClick={(row) => { setSelected(row); setDrawerOpen(true); }}
+      />
+      <DetailDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title={selected?.action ?? ''}
+        subtitle="W79 Revenue Assurance Audit Block"
+        entityRef={selected?.id.slice(-8)}
+        fields={drawerFields}
+        actions={drawerActions}
+        onActionComplete={refetch}
+      />
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function OfftakerWorkstation() {
@@ -1288,6 +1556,8 @@ export function OfftakerWorkstation() {
     security: 'payment-security',
     cil: 'change-in-law',
     recs: 'rec',
+    termination: 'termination',
+    revenue: 'revenue',
   };
 
   const liveNavConfig: NavConfig = {
@@ -1308,6 +1578,8 @@ export function OfftakerWorkstation() {
           : item.id === 'change-in-law'  ? () => setActiveScreen('cil')
           : item.id === 'payment-security' ? () => setActiveScreen('security')
           : item.id === 'rec'            ? () => setActiveScreen('recs')
+          : item.id === 'termination'    ? () => setActiveScreen('termination')
+          : item.id === 'revenue'        ? () => setActiveScreen('revenue')
           : undefined,
       })),
     })),
@@ -1324,6 +1596,8 @@ export function OfftakerWorkstation() {
     security: 'Payment Security',
     cil: 'Change-in-Law Relief',
     recs: 'REC Portfolio',
+    termination: 'PPA Termination',
+    revenue: 'Revenue Assurance',
   };
 
   return (
@@ -1358,7 +1632,9 @@ export function OfftakerWorkstation() {
      : activeScreen === 'curtailment'  ? <CurtailmentScreen />
      : activeScreen === 'security'     ? <SecurityScreen />
      : activeScreen === 'cil'          ? <CilScreen />
-     : activeScreen === 'recs'         ? <RecsScreen />
+     : activeScreen === 'recs'          ? <RecsScreen />
+     : activeScreen === 'termination'   ? <TerminationScreen />
+     : activeScreen === 'revenue'       ? <RevenueScreen />
      : (
       <>
         <div style={{ marginBottom: '20px' }}>

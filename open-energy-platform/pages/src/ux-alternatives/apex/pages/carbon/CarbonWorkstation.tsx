@@ -889,9 +889,144 @@ function OffsetScreen() {
   );
 }
 
+// ─── Carbon Reversal / Buffer Pool (W42) ─────────────────────────────────────
+
+type ReversalRow = { id: string; ref: string; project_name: string; reversal_type: string; tonnes_reversed: number; buffer_cancellation_zar: number | null; chain_status: string; created_at: string };
+
+const REVERSAL_COLS: Column<ReversalRow>[] = [
+  { key: 'ref',                   header: 'Reference',       width: '150px', mono: true },
+  { key: 'project_name',          header: 'Project',         width: '220px' },
+  { key: 'reversal_type',         header: 'Type',            width: '110px' },
+  { key: 'tonnes_reversed',       header: 'tCO₂e Reversed',  width: '130px', align: 'right', mono: true, render: r => <span>{r.tonnes_reversed.toLocaleString()}</span> },
+  { key: 'buffer_cancellation_zar', header: 'Buffer Cancel.',  width: '120px', align: 'right', mono: true, render: r => <span>{r.buffer_cancellation_zar != null ? `R${(r.buffer_cancellation_zar/1e6).toFixed(2)}M` : '—'}</span> },
+  { key: 'chain_status',          header: 'Status',          width: '130px', render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} /> },
+];
+
+function ReversalScreen() {
+  const [rows, setRows] = React.useState<ReversalRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<ReversalRow | null>(null);
+  React.useEffect(() => {
+    apexClient.carbon.listReversals().then(r => { setRows(r as ReversalRow[]); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+  return (
+    <div style={{ padding: '0 24px 24px' }}>
+      <DataTable<ReversalRow> rows={rows} columns={REVERSAL_COLS} loading={loading} onRowClick={r => setSel(r)} />
+      {sel && (
+        <DetailDrawer open onClose={() => setSel(null)} title={sel.ref} subtitle={sel.project_name}
+          entityRef={sel.ref} status={sel.chain_status}
+          fields={[
+            { label: 'Project',            value: sel.project_name, span: true },
+            { label: 'Type',               value: sel.reversal_type },
+            { label: 'Tonnes Reversed',    value: sel.tonnes_reversed.toLocaleString() + ' tCO₂e', mono: true },
+            { label: 'Buffer Cancellation',value: sel.buffer_cancellation_zar != null ? `R${(sel.buffer_cancellation_zar/1e6).toFixed(2)}M` : '—', mono: true },
+            { label: 'Created',            value: sel.created_at, mono: true },
+          ]}
+          actions={[
+            { id: 'begin', label: 'Begin Assessment', icon: 'send', variant: 'primary',
+              onClick: () => apexClient.carbon.transitionReversal(sel.id, 'begin-assessment').then(() => setSel(null)) },
+            { id: 'propose', label: 'Propose Buffer Cancellation', icon: 'flag', variant: 'secondary',
+              onClick: () => apexClient.carbon.transitionReversal(sel.id, 'propose-buffer-cancellation').then(() => setSel(null)) },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Crediting Period Renewal (W56) ──────────────────────────────────────────
+
+type RenewalRow = { id: string; ref: string; project_name: string; crediting_period_end: string; baseline_cut_pct: number | null; chain_status: string; created_at: string };
+
+const RENEWAL_COLS: Column<RenewalRow>[] = [
+  { key: 'ref',                  header: 'Reference',        width: '150px', mono: true },
+  { key: 'project_name',         header: 'Project',          width: '220px' },
+  { key: 'crediting_period_end', header: 'Period End',        width: '130px', mono: true },
+  { key: 'baseline_cut_pct',     header: 'Baseline Cut %',   width: '120px', align: 'right', mono: true, render: r => <span>{r.baseline_cut_pct != null ? r.baseline_cut_pct.toFixed(1) + '%' : '—'}</span> },
+  { key: 'chain_status',         header: 'Status',           width: '130px', render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} /> },
+];
+
+function RenewalScreen() {
+  const [rows, setRows] = React.useState<RenewalRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<RenewalRow | null>(null);
+  React.useEffect(() => {
+    apexClient.carbon.listRenewals().then(r => { setRows(r as RenewalRow[]); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+  return (
+    <div style={{ padding: '0 24px 24px' }}>
+      <DataTable<RenewalRow> rows={rows} columns={RENEWAL_COLS} loading={loading} onRowClick={r => setSel(r)} />
+      {sel && (
+        <DetailDrawer open onClose={() => setSel(null)} title={sel.ref} subtitle={sel.project_name}
+          entityRef={sel.ref} status={sel.chain_status}
+          fields={[
+            { label: 'Project',              value: sel.project_name, span: true },
+            { label: 'Crediting Period End', value: sel.crediting_period_end, mono: true },
+            { label: 'Baseline Cut',         value: sel.baseline_cut_pct != null ? sel.baseline_cut_pct.toFixed(1) + '%' : '—', mono: true },
+            { label: 'Created',              value: sel.created_at, mono: true },
+          ]}
+          actions={[
+            { id: 'submit', label: 'Submit Application', icon: 'send', variant: 'primary',
+              onClick: () => apexClient.carbon.transitionRenewal(sel.id, 'submit-application').then(() => setSel(null)) },
+            { id: 'renew', label: 'Renew', icon: 'approve', variant: 'primary',
+              onClick: () => apexClient.carbon.transitionRenewal(sel.id, 'renew').then(() => setSel(null)) },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── PoA / CPA Inclusion (W73) ───────────────────────────────────────────────
+
+type PoaRow = { id: string; ref: string; programme_name: string; cpa_name: string; cpa_type: string; estimated_annual_credits: number; chain_status: string; created_at: string };
+
+const POA_COLS: Column<PoaRow>[] = [
+  { key: 'ref',                      header: 'Reference',        width: '150px', mono: true },
+  { key: 'programme_name',           header: 'Programme',        width: '200px' },
+  { key: 'cpa_name',                 header: 'CPA Name',         width: '200px' },
+  { key: 'cpa_type',                 header: 'Type',             width: '100px' },
+  { key: 'estimated_annual_credits', header: 'Annual tCO₂e',     width: '120px', align: 'right', mono: true, render: r => <span>{r.estimated_annual_credits.toLocaleString()}</span> },
+  { key: 'chain_status',             header: 'Status',           width: '130px', render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} /> },
+];
+
+function PoaScreen() {
+  const [rows, setRows] = React.useState<PoaRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<PoaRow | null>(null);
+  React.useEffect(() => {
+    apexClient.carbon.listPoaInclusions().then(r => { setRows(r as PoaRow[]); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+  return (
+    <div style={{ padding: '0 24px 24px' }}>
+      <DataTable<PoaRow> rows={rows} columns={POA_COLS} loading={loading} onRowClick={r => setSel(r)} />
+      {sel && (
+        <DetailDrawer open onClose={() => setSel(null)} title={sel.ref} subtitle={sel.cpa_name}
+          entityRef={sel.ref} status={sel.chain_status}
+          fields={[
+            { label: 'Programme',    value: sel.programme_name, span: true },
+            { label: 'CPA Name',     value: sel.cpa_name, span: true },
+            { label: 'CPA Type',     value: sel.cpa_type },
+            { label: 'Annual tCO₂e', value: sel.estimated_annual_credits.toLocaleString(), mono: true },
+            { label: 'Created',      value: sel.created_at, mono: true },
+          ]}
+          actions={[
+            { id: 'screen', label: 'Screen Eligibility', icon: 'checklist', variant: 'primary',
+              onClick: () => apexClient.carbon.transitionPoa(sel.id, 'screen-eligibility').then(() => setSel(null)) },
+            { id: 'include', label: 'Include CPA', icon: 'approve', variant: 'primary',
+              onClick: () => apexClient.carbon.transitionPoa(sel.id, 'include').then(() => setSel(null)) },
+            { id: 'exclude', label: 'Exclude', icon: 'reject', variant: 'danger',
+              onClick: () => apexClient.carbon.transitionPoa(sel.id, 'exclude').then(() => setSel(null)) },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
-type Screen = 'dashboard' | 'analytics' | 'credits' | 'projects' | 'mrv' | 'retirements' | 'registration' | 'erpa' | 'offset';
+type Screen = 'dashboard' | 'analytics' | 'credits' | 'projects' | 'mrv' | 'retirements' | 'registration' | 'erpa' | 'offset' | 'reversal' | 'renewal' | 'poa';
 
 export function CarbonWorkstation() {
   const [activeScreen, setActiveScreen] = useState<Screen>('dashboard');
@@ -917,6 +1052,9 @@ export function CarbonWorkstation() {
     registration: () => setActiveScreen('registration'),
     erpa:         () => setActiveScreen('erpa'),
     offset:       () => setActiveScreen('offset'),
+    reversal:     () => setActiveScreen('reversal'),
+    renewal:      () => setActiveScreen('renewal'),
+    poa:          () => setActiveScreen('poa'),
   };
 
   const liveNavConfig: NavConfig = {
@@ -941,6 +1079,9 @@ export function CarbonWorkstation() {
     registration: 'Registration / PDD',
     erpa:         'ERPA Delivery',
     offset:       'Carbon Tax Offset',
+    reversal:     'Reversal / Buffer Pool',
+    renewal:      'Crediting Period Renewal',
+    poa:          'PoA / CPA Inclusion',
   };
 
   return (
@@ -968,6 +1109,9 @@ export function CarbonWorkstation() {
      : activeScreen === 'registration' ? <RegistrationScreen />
      : activeScreen === 'erpa'         ? <ErpaScreen />
      : activeScreen === 'offset'       ? <OffsetScreen />
+     : activeScreen === 'reversal'     ? <ReversalScreen />
+     : activeScreen === 'renewal'      ? <RenewalScreen />
+     : activeScreen === 'poa'          ? <PoaScreen />
      : <>
       {/* Dashboard ─────────────────────────────────────────────────────────── */}
       <div style={{ marginBottom: '20px' }}>

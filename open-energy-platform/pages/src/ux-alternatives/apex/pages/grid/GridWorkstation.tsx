@@ -35,7 +35,9 @@ type ActiveScreen =
   | 'gca'
   | 'wheeling'
   | 'compliance'
-  | 'analytics';
+  | 'analytics'
+  | 'capacity'
+  | 'outage';
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
@@ -66,7 +68,9 @@ const GRID_NAV: NavConfig = {
       label: 'Capacity & Connections',
       items: [
         { id: 'grid-cap-alloc',  label: 'Capacity Allocations W58', href: '#cap-alloc',  icon: 'blueprint' },
+        { id: 'grid-capacity',   label: 'Capacity Queue',            href: '#capacity',   icon: 'chain' },
         { id: 'grid-gca',        label: 'GCA W28',                   href: '#gca',        icon: 'link' },
+        { id: 'grid-outage',     label: 'Planned Outages',           href: '#outage',     icon: 'clock' },
         { id: 'grid-code-comp',  label: 'Grid Code Compliance W67',  href: '#code-comp',  icon: 'shield' },
       ],
     },
@@ -1100,6 +1104,190 @@ function ComplianceScreen() {
   );
 }
 
+// ─── Grid Capacity Allocation (W58) ──────────────────────────────────────────
+
+type CapacityRow = { id: string; ref: string; applicant_name: string; requested_mw: number; allocated_mw: number | null; substation: string; queue_position: number | null; chain_status: string; applied_at: string };
+
+const CAPACITY_COLS: Column<CapacityRow>[] = [
+  { key: 'ref',            header: 'Reference',    width: '150px', mono: true },
+  { key: 'applicant_name', header: 'Applicant',    width: '200px' },
+  { key: 'substation',     header: 'Substation',   width: '160px' },
+  { key: 'requested_mw',   header: 'Requested MW', width: '110px', align: 'right', mono: true },
+  { key: 'allocated_mw',   header: 'Allocated MW', width: '110px', align: 'right', mono: true, render: r => <span>{r.allocated_mw ?? '—'}</span> },
+  { key: 'queue_position', header: 'Queue #',      width: '80px',  align: 'right', mono: true, render: r => <span>{r.queue_position ?? '—'}</span> },
+  { key: 'chain_status',   header: 'Status',       width: '130px', render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} size="sm" /> },
+];
+
+function CapacityScreen() {
+  const [rows, setRows] = React.useState<CapacityRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<CapacityRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    apexClient.grid.listCapacityAllocations()
+      .then(r => { setRows(r as CapacityRow[]); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const fields: DrawerField[] = sel ? [
+    { label: 'Applicant',      value: sel.applicant_name, span: true },
+    { label: 'Substation',     value: sel.substation },
+    { label: 'Requested MW',   value: String(sel.requested_mw), mono: true },
+    { label: 'Allocated MW',   value: sel.allocated_mw != null ? String(sel.allocated_mw) : '—', mono: true },
+    { label: 'Queue Position', value: sel.queue_position != null ? String(sel.queue_position) : '—', mono: true },
+    { label: 'Applied',        value: sel.applied_at, mono: true },
+    { label: 'Status',         value: <StatusPill label={sel.chain_status} variant={stateVariant(sel.chain_status)} size="sm" /> },
+  ] : [];
+
+  const actions: DrawerAction[] = sel ? [
+    {
+      id: 'screen',
+      label: 'Begin Screening',
+      icon: 'checklist',
+      variant: 'primary' as const,
+      onClick: async () => {
+        await apexClient.grid.beginCapacityScreening(sel.id);
+        setDrawerOpen(false);
+      },
+    },
+    {
+      id: 'allocate',
+      label: 'Allocate Capacity',
+      icon: 'approve',
+      variant: 'primary' as const,
+      onClick: async () => {
+        await apexClient.grid.allocateCapacity(sel.id);
+        setDrawerOpen(false);
+      },
+    },
+    {
+      id: 'reject',
+      label: 'Reject Application',
+      icon: 'reject',
+      variant: 'danger' as const,
+      onClick: async () => {
+        await apexClient.grid.rejectCapacityApplication(sel.id);
+        setDrawerOpen(false);
+      },
+    },
+  ] : [];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Grid Capacity Allocation</h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>W58 · NTCSA 2024 Capacity Rules</div>
+      </div>
+      <DataTable<CapacityRow>
+        columns={CAPACITY_COLS}
+        rows={rows}
+        loading={loading}
+        onRowClick={row => { setSel(row); setDrawerOpen(true); }}
+      />
+      <DetailDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title={sel ? sel.ref : ''}
+        subtitle={sel ? sel.applicant_name : ''}
+        entityRef={sel ? sel.ref : ''}
+        status={sel?.chain_status}
+        statusVariant={sel ? stateVariant(sel.chain_status) : 'default'}
+        fields={fields}
+        actions={actions}
+        onActionComplete={() => setDrawerOpen(false)}
+      />
+    </div>
+  );
+}
+
+// ─── Planned Outage — Grid Operator (W18) ─────────────────────────────────────
+
+type GridOutageRow = { id: string; ref: string; plant_name: string; requested_by: string; outage_type: string; requested_start: string; approved_start: string | null; duration_hours: number | null; chain_status: string };
+
+const GRID_OUTAGE_COLS: Column<GridOutageRow>[] = [
+  { key: 'ref',             header: 'Reference',   width: '150px', mono: true },
+  { key: 'plant_name',      header: 'Plant',       width: '200px' },
+  { key: 'outage_type',     header: 'Type',        width: '110px' },
+  { key: 'requested_start', header: 'Requested',   width: '150px', mono: true },
+  { key: 'approved_start',  header: 'Approved',    width: '150px', mono: true, render: r => <span>{r.approved_start ?? '—'}</span> },
+  { key: 'duration_hours',  header: 'Hours',       width: '80px',  align: 'right', mono: true, render: r => <span>{r.duration_hours ?? '—'}</span> },
+  { key: 'chain_status',    header: 'Status',      width: '130px', render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} size="sm" /> },
+];
+
+function OutageScreen() {
+  const [rows, setRows] = React.useState<GridOutageRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<GridOutageRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    apexClient.grid.listPlannedOutages()
+      .then(r => { setRows(r as GridOutageRow[]); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const fields: DrawerField[] = sel ? [
+    { label: 'Plant',           value: sel.plant_name, span: true },
+    { label: 'Requested By',    value: sel.requested_by },
+    { label: 'Type',            value: sel.outage_type },
+    { label: 'Requested Start', value: sel.requested_start, mono: true },
+    { label: 'Approved Start',  value: sel.approved_start ?? '—', mono: true },
+    { label: 'Duration (hours)',value: sel.duration_hours != null ? String(sel.duration_hours) : '—', mono: true },
+    { label: 'Status',          value: <StatusPill label={sel.chain_status} variant={stateVariant(sel.chain_status)} size="sm" /> },
+  ] : [];
+
+  const actions: DrawerAction[] = sel ? [
+    {
+      id: 'approve',
+      label: 'Approve Outage',
+      icon: 'approve',
+      variant: 'primary' as const,
+      onClick: async () => {
+        await apexClient.grid.approveOutage(sel.id);
+        setDrawerOpen(false);
+      },
+    },
+    {
+      id: 'reject',
+      label: 'Reject',
+      icon: 'reject',
+      variant: 'danger' as const,
+      onClick: async () => {
+        await apexClient.grid.cancelOutage(sel.id);
+        setDrawerOpen(false);
+      },
+    },
+  ] : [];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Planned Outages</h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>W18 · NERSA Grid Code 12-state</div>
+      </div>
+      <DataTable<GridOutageRow>
+        columns={GRID_OUTAGE_COLS}
+        rows={rows}
+        loading={loading}
+        onRowClick={row => { setSel(row); setDrawerOpen(true); }}
+      />
+      <DetailDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title={sel ? sel.ref : ''}
+        subtitle={sel ? sel.plant_name : ''}
+        entityRef={sel ? sel.ref : ''}
+        status={sel?.chain_status}
+        statusVariant={sel ? stateVariant(sel.chain_status) : 'default'}
+        fields={fields}
+        actions={actions}
+        onActionComplete={() => setDrawerOpen(false)}
+      />
+    </div>
+  );
+}
+
 // ─── Workstation ──────────────────────────────────────────────────────────────
 
 export function GridWorkstation() {
@@ -1130,6 +1318,8 @@ export function GridWorkstation() {
     gca:         'grid-gca',
     wheeling:    'grid-wheeling',
     compliance:  'grid-code-comp',
+    capacity:    'grid-capacity',
+    outage:      'grid-outage',
   };
 
   const liveNavConfig = {
@@ -1146,9 +1336,11 @@ export function GridWorkstation() {
         : item.id === 'grid-curtail'    ? () => setActiveScreen('curtailments')
         : item.id === 'grid-energize'   ? () => setActiveScreen('connections')
         : item.id === 'grid-cap-alloc'  ? () => setActiveScreen('connections')
+        : item.id === 'grid-capacity'   ? () => setActiveScreen('capacity')
         : item.id === 'grid-reserve'    ? () => setActiveScreen('reserve')
         : item.id === 'grid-ancillary'  ? () => setActiveScreen('reserve')
         : item.id === 'grid-gca'        ? () => setActiveScreen('gca')
+        : item.id === 'grid-outage'     ? () => setActiveScreen('outage')
         : item.id === 'grid-wheeling'   ? () => setActiveScreen('wheeling')
         : item.id === 'grid-code-comp'  ? () => setActiveScreen('compliance')
         : undefined,
@@ -1192,6 +1384,8 @@ export function GridWorkstation() {
     : activeScreen === 'gca'          ? 'Grid Connection Agreements'
     : activeScreen === 'wheeling'     ? 'Wheeling Charges'
     : activeScreen === 'compliance'   ? 'Grid Code Compliance'
+    : activeScreen === 'capacity'     ? 'Grid Capacity Allocation'
+    : activeScreen === 'outage'       ? 'Planned Outages'
     : 'Dashboard';
 
   return (
@@ -1219,6 +1413,8 @@ export function GridWorkstation() {
        : activeScreen === 'gca'          ? <GcaScreen />
        : activeScreen === 'wheeling'     ? <WheelingScreen />
        : activeScreen === 'compliance'   ? <ComplianceScreen />
+       : activeScreen === 'capacity'     ? <CapacityScreen />
+       : activeScreen === 'outage'       ? <OutageScreen />
        : <>{/* Page title block */}
       <div style={{ marginBottom: '20px' }}>
         <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--oe-text-1)', letterSpacing: '-0.02em' }}>

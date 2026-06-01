@@ -19,8 +19,9 @@ import { DetailDrawer, DrawerField, DrawerAction } from '../../components/displa
 import {
   useIppProjects, useIppStageGates, useIppBonds, useIppProcurement,
   useIppDrawdowns, useIppDocuments, useAuditBlocks,
+  useIppRisks, useIppIssues, useIppEvm,
 } from '../../lib/hooks';
-import { apexClient, IppProject, IppStageGate, IppBond, IppProcurement, IppDrawdown, IppDocument, AuditBlock } from '../../lib/client';
+import { apexClient, IppProject, IppStageGate, IppBond, IppProcurement, IppDrawdown, IppDocument, AuditBlock, IppRisk, IppIssue, IppEvm, GridCurtailment } from '../../lib/client';
 
 // ─── Nav config ─────────────────────────────────────────────────────────────
 
@@ -61,9 +62,22 @@ const IPP_NAV: NavConfig = {
       id: 'connections',
       label: 'Grid & Finance',
       items: [
-        { id: 'ipp-gca',        label: 'Grid Connection',  href: '#gca',        icon: 'tower' },
-        { id: 'ipp-drawdown',   label: 'Drawdowns',        href: '#drawdown',   icon: 'dollar' },
-        { id: 'ipp-documents',  label: 'Documents',        href: '#documents',  icon: 'folder' },
+        { id: 'ipp-gca',          label: 'Grid Connection',   href: '#gca',          icon: 'tower' },
+        { id: 'ipp-drawdown',     label: 'Drawdowns',         href: '#drawdown',     icon: 'dollar' },
+        { id: 'ipp-outage',       label: 'Planned Outages',   href: '#outage',       icon: 'clock' },
+        { id: 'ipp-energization', label: 'Energization',      href: '#energization', icon: 'lightning' },
+        { id: 'ipp-documents',    label: 'Documents',         href: '#documents',    icon: 'folder' },
+      ],
+    },
+    {
+      id: 'controls',
+      label: 'Project Controls',
+      items: [
+        { id: 'ipp-evm',      label: 'Cost EVM',        href: '#evm',      icon: 'bar-chart' },
+        { id: 'ipp-risks',    label: 'Risk Register',   href: '#risks',    icon: 'alert-triangle' },
+        { id: 'ipp-issues',   label: 'Issues',          href: '#issues',   icon: 'checklist' },
+        { id: 'ipp-progress', label: 'Progress Claims', href: '#progress', icon: 'dollar' },
+        { id: 'ipp-tq',       label: 'TQ Log',          href: '#tq',       icon: 'send' },
       ],
     },
     {
@@ -157,7 +171,8 @@ const AUDIT_COLS: Column<AuditBlock>[] = [
 type Screen =
   | 'dashboard' | 'projects' | 'gates' | 'analytics'
   | 'procurement' | 'construction' | 'bonds' | 'insurance'
-  | 'ed' | 'hse' | 'cyber' | 'licence' | 'gca' | 'drawdown' | 'documents';
+  | 'ed' | 'hse' | 'cyber' | 'licence' | 'gca' | 'drawdown' | 'documents'
+  | 'outage' | 'energization' | 'risks' | 'issues' | 'evm' | 'progress' | 'tq';
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
@@ -169,6 +184,9 @@ export function IppWorkstation() {
     procurement: 'Procurement', construction: 'Construction', bonds: 'Bonds', insurance: 'Insurance',
     ed: 'ED Commitments', hse: 'HSE / SHEQ', cyber: 'Cyber Incident', licence: 'Licences',
     gca: 'Grid Connection', drawdown: 'Drawdowns', documents: 'Documents',
+    outage: 'Planned Outages', energization: 'Connection Energization',
+    risks: 'Risk Register', issues: 'Issue Log', evm: 'Cost EVM',
+    progress: 'Progress Claims', tq: 'TQ Log',
   };
 
   const NAV_CLICK_MAP: Record<string, () => void> = {
@@ -186,8 +204,15 @@ export function IppWorkstation() {
     'ipp-licence':      () => setActiveScreen('licence'),
     'ipp-gca':          () => setActiveScreen('gca'),
     'ipp-drawdown':     () => setActiveScreen('drawdown'),
-    'ipp-documents':    () => setActiveScreen('documents'),
-    'ipp-reports':      () => setActiveScreen('analytics'),
+    'ipp-documents':     () => setActiveScreen('documents'),
+    'ipp-outage':        () => setActiveScreen('outage'),
+    'ipp-energization':  () => setActiveScreen('energization'),
+    'ipp-evm':           () => setActiveScreen('evm'),
+    'ipp-risks':         () => setActiveScreen('risks'),
+    'ipp-issues':        () => setActiveScreen('issues'),
+    'ipp-progress':      () => setActiveScreen('progress'),
+    'ipp-tq':            () => setActiveScreen('tq'),
+    'ipp-reports':       () => setActiveScreen('analytics'),
   };
 
   const navConfig = {
@@ -230,7 +255,14 @@ export function IppWorkstation() {
        : activeScreen === 'licence'     ? <LicenceScreen />
        : activeScreen === 'gca'         ? <GcaScreen />
        : activeScreen === 'drawdown'    ? <DrawdownScreen />
-       : activeScreen === 'documents'   ? <DocumentsScreen />
+       : activeScreen === 'documents'    ? <DocumentsScreen />
+       : activeScreen === 'outage'       ? <OutageScreen />
+       : activeScreen === 'energization' ? <EnergizationScreen />
+       : activeScreen === 'risks'        ? <RisksScreen />
+       : activeScreen === 'issues'       ? <IssuesScreen />
+       : activeScreen === 'evm'          ? <EvmScreen />
+       : activeScreen === 'progress'     ? <ProgressScreen />
+       : activeScreen === 'tq'           ? <TqScreen />
        : <Dashboard />}
     </AppShell>
   );
@@ -1557,5 +1589,330 @@ const primaryBtnStyle: React.CSSProperties = {
   fontSize: '13px', fontWeight: 600, color: '#fff',
   cursor: 'pointer', fontFamily: 'inherit', boxShadow: 'var(--oe-shadow-btn)',
 };
+
+// ─── New screens: Grid & Finance ─────────────────────────────────────────────
+
+const OUTAGE_COLS: Column<GridCurtailment>[] = [
+  { key: 'event_ref',     header: 'Reference',   width: '150px', mono: true },
+  { key: 'affected_zone', header: 'Zone',         width: '160px' },
+  { key: 'cause',         header: 'Cause',        width: '180px' },
+  { key: 'event_date',    header: 'Date',          width: '130px', mono: true },
+  { key: 'stage',         header: 'Stage',        width: '70px',  align: 'right', mono: true },
+  { key: 'shed_mw',       header: 'Shed (MW)',    width: '90px',  align: 'right', mono: true, render: row => <span>{row.shed_mw.toFixed(1)}</span> },
+  { key: 'duration_min',  header: 'Duration (min)', width: '110px', align: 'right', mono: true },
+  { key: 'status',        header: 'Status',       width: '120px', render: row => <StatusPill label={row.status} variant={stateVariant(row.status)} /> },
+];
+
+function OutageScreen() {
+  const [rows, setRows] = React.useState<GridCurtailment[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<GridCurtailment | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  React.useEffect(() => {
+    apexClient.grid.listCurtailments().then(d => { setRows(d ?? []); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+  return (
+    <div style={{ padding: '0 24px 24px' }}>
+      <DataTable<GridCurtailment> rows={rows} columns={OUTAGE_COLS} loading={loading} onRowClick={r => { setSel(r); setDrawerOpen(true); }} />
+      {sel && (
+        <DetailDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          title={sel.event_ref}
+          subtitle={sel.affected_zone}
+          entityRef={sel.event_ref}
+          status={sel.status}
+          fields={[
+            { label: 'Affected Zone',  value: sel.affected_zone },
+            { label: 'Cause',          value: sel.cause, span: true },
+            { label: 'Date',           value: sel.event_date, mono: true },
+            { label: 'Stage',          value: String(sel.stage), mono: true },
+            { label: 'Shed (MW)',      value: sel.shed_mw.toFixed(1), mono: true },
+            { label: 'Duration (min)', value: String(sel.duration_min), mono: true },
+            { label: 'Compensation',   value: sel.compensation_zar != null ? `R${(sel.compensation_zar / 1e6).toFixed(2)}M` : '—', mono: true },
+          ]}
+          actions={[
+            { id: 'audit', label: 'View Audit Trail', icon: 'checklist', variant: 'secondary',
+              onClick: () => apexClient.audit.listBlocks({ entity_type: 'planned_outage', entity_id: sel.id }).then(() => setDrawerOpen(false)) },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
+const ENERGIZATION_COLS: Column<GridCurtailment>[] = [
+  { key: 'event_ref',     header: 'Reference',   width: '150px', mono: true },
+  { key: 'affected_zone', header: 'Zone',         width: '200px' },
+  { key: 'event_date',    header: 'Date',         width: '130px', mono: true },
+  { key: 'stage',         header: 'Tier',         width: '70px',  align: 'right', mono: true },
+  { key: 'status',        header: 'Status',       width: '140px', render: row => <StatusPill label={row.status} variant={stateVariant(row.status)} /> },
+];
+
+function EnergizationScreen() {
+  const [rows, setRows] = React.useState<GridCurtailment[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<GridCurtailment | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  React.useEffect(() => {
+    apexClient.grid.listCurtailments({ type: 'energization' }).then(d => { setRows(d ?? []); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+  return (
+    <div style={{ padding: '0 24px 24px' }}>
+      <DataTable<GridCurtailment> rows={rows} columns={ENERGIZATION_COLS} loading={loading} onRowClick={r => { setSel(r); setDrawerOpen(true); }} />
+      {sel && (
+        <DetailDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          title={sel.event_ref}
+          subtitle={sel.affected_zone}
+          entityRef={sel.event_ref}
+          status={sel.status}
+          fields={[
+            { label: 'Zone',           value: sel.affected_zone },
+            { label: 'Date',           value: sel.event_date, mono: true },
+            { label: 'Tier',           value: String(sel.stage), mono: true },
+            { label: 'Shed (MW)',      value: sel.shed_mw.toFixed(1), mono: true },
+            { label: 'Cause',          value: sel.cause, span: true },
+          ]}
+          actions={[
+            { id: 'audit', label: 'View Audit Trail', icon: 'checklist', variant: 'secondary',
+              onClick: () => apexClient.audit.listBlocks({ entity_type: 'connection_energization', entity_id: sel.id }).then(() => setDrawerOpen(false)) },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── New screens: Project Controls ─────────────────────────────────────────────
+
+const RISK_COLS: Column<IppRisk>[] = [
+  { key: 'id',           header: 'ID',          width: '100px', mono: true, render: row => <span>{row.id.slice(-8).toUpperCase()}</span> },
+  { key: 'title',        header: 'Risk',         width: '260px' },
+  { key: 'severity',     header: 'Severity',    width: '100px', render: row => <StatusPill label={row.severity} variant={stateVariant(row.severity)} /> },
+  { key: 'probability',  header: 'Prob.',        width: '70px',  align: 'right', mono: true },
+  { key: 'impact',       header: 'Impact',       width: '70px',  align: 'right', mono: true },
+  { key: 'status',       header: 'Status',       width: '120px', render: row => <StatusPill label={row.status} variant={stateVariant(row.status)} /> },
+];
+
+function RisksScreen() {
+  const { data, loading, refetch } = useIppRisks();
+  const [sel, setSel] = React.useState<IppRisk | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  return (
+    <div style={{ padding: '0 24px 24px' }}>
+      <DataTable<IppRisk> rows={data} columns={RISK_COLS} loading={loading} onRowClick={r => { setSel(r); setDrawerOpen(true); }} />
+      {sel && (
+        <DetailDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          title={sel.title ?? sel.id}
+          entityRef={sel.id.slice(-8).toUpperCase()}
+          status={sel.status}
+          fields={[
+            { label: 'Severity',     value: sel.severity },
+            { label: 'Probability',  value: String(sel.probability), mono: true },
+            { label: 'Impact',       value: String(sel.impact), mono: true },
+            { label: 'Owner',        value: sel.owner_id ?? '—', mono: true },
+            { label: 'Project',      value: sel.project_id, mono: true },
+            { label: 'Mitigation',   value: sel.mitigation_plan ?? '—', span: true },
+            { label: 'Description',  value: sel.description ?? '—', span: true },
+          ]}
+          actions={[
+            { id: 'audit', label: 'View Audit Trail', icon: 'checklist', variant: 'secondary',
+              onClick: () => apexClient.audit.listBlocks({ entity_type: 'ipp_risk', entity_id: sel.id }).then(() => { refetch(); setDrawerOpen(false); }) },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
+const ISSUE_COLS: Column<IppIssue>[] = [
+  { key: 'id',          header: 'ID',        width: '100px', mono: true, render: row => <span>{row.id.slice(-8).toUpperCase()}</span> },
+  { key: 'title',       header: 'Issue',     width: '260px' },
+  { key: 'priority',    header: 'Priority',  width: '90px' },
+  { key: 'assigned_to', header: 'Owner',     width: '140px', render: row => <span>{row.assigned_to ?? '—'}</span> },
+  { key: 'status',      header: 'Status',    width: '120px', render: row => <StatusPill label={row.status} variant={stateVariant(row.status)} /> },
+];
+
+function IssuesScreen() {
+  const { data, loading, refetch } = useIppIssues();
+  const [sel, setSel] = React.useState<IppIssue | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  return (
+    <div style={{ padding: '0 24px 24px' }}>
+      <DataTable<IppIssue> rows={data} columns={ISSUE_COLS} loading={loading} onRowClick={r => { setSel(r); setDrawerOpen(true); }} />
+      {sel && (
+        <DetailDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          title={sel.title ?? sel.id}
+          entityRef={sel.id.slice(-8).toUpperCase()}
+          status={sel.status}
+          fields={[
+            { label: 'Priority',   value: sel.priority ?? '—' },
+            { label: 'Assigned',   value: sel.assigned_to ?? '—' },
+            { label: 'Project',    value: sel.project_id, mono: true },
+            { label: 'Created',    value: sel.created_at, mono: true },
+          ]}
+          actions={[
+            { id: 'audit', label: 'View Audit Trail', icon: 'checklist', variant: 'secondary',
+              onClick: () => apexClient.audit.listBlocks({ entity_type: 'ipp_issue', entity_id: sel.id }).then(() => { refetch(); setDrawerOpen(false); }) },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
+const EVM_COLS: Column<IppEvm>[] = [
+  { key: 'id',           header: 'ID',        width: '100px', mono: true, render: row => <span>{row.id.slice(-8).toUpperCase()}</span> },
+  { key: 'project_name', header: 'Project',   width: '200px' },
+  { key: 'data_date',    header: 'Data Date', width: '120px', mono: true },
+  { key: 'bac_zar',      header: 'BAC',       width: '100px', align: 'right', mono: true, render: row => <span>R{(row.bac_zar / 1e6).toFixed(1)}M</span> },
+  { key: 'ev_zar',       header: 'EV',        width: '100px', align: 'right', mono: true, render: row => <span>R{(row.ev_zar / 1e6).toFixed(1)}M</span> },
+  { key: 'ac_zar',       header: 'AC',        width: '100px', align: 'right', mono: true, render: row => <span>R{(row.ac_zar / 1e6).toFixed(1)}M</span> },
+  { key: 'spi',          header: 'SPI',       width: '70px',  align: 'right', mono: true, render: row => {
+    const v = row.spi ?? 1; return <span style={{ color: v < 0.9 ? 'var(--oe-rose)' : v < 1 ? 'var(--oe-amber)' : 'var(--oe-green)' }}>{v.toFixed(2)}</span>;
+  }},
+  { key: 'cpi',          header: 'CPI',       width: '70px',  align: 'right', mono: true, render: row => {
+    const v = row.cpi ?? 1; return <span style={{ color: v < 0.9 ? 'var(--oe-rose)' : v < 1 ? 'var(--oe-amber)' : 'var(--oe-green)' }}>{v.toFixed(2)}</span>;
+  }},
+];
+
+function EvmScreen() {
+  const { data, loading } = useIppEvm();
+  const [sel, setSel] = React.useState<IppEvm | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  return (
+    <div style={{ padding: '0 24px 24px' }}>
+      <DataTable<IppEvm> rows={data} columns={EVM_COLS} loading={loading} onRowClick={r => { setSel(r); setDrawerOpen(true); }} />
+      {sel && (
+        <DetailDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          title={`EVM — ${sel.project_name}`}
+          subtitle={`Data date: ${sel.data_date}`}
+          entityRef={sel.id.slice(-8).toUpperCase()}
+          status="active"
+          fields={[
+            { label: 'Project',  value: sel.project_name },
+            { label: 'Data Date',value: sel.data_date, mono: true },
+            { label: 'BAC',      value: `R${(sel.bac_zar / 1e6).toFixed(2)}M`, mono: true },
+            { label: 'EV',       value: `R${(sel.ev_zar / 1e6).toFixed(2)}M`, mono: true },
+            { label: 'AC',       value: `R${(sel.ac_zar / 1e6).toFixed(2)}M`, mono: true },
+            { label: 'EAC',      value: `R${(sel.eac_zar / 1e6).toFixed(2)}M`, mono: true },
+            { label: 'VAC',      value: `R${(sel.vac_zar / 1e6).toFixed(2)}M`, mono: true },
+            { label: 'SPI',      value: sel.spi.toFixed(3), mono: true },
+            { label: 'CPI',      value: sel.cpi.toFixed(3), mono: true },
+          ]}
+          actions={[]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Progress Claims screen ──────────────────────────────────────────────────
+
+type ProgressRow = { id: string; ref?: string; project_id: string; claim_number?: number; period_end?: string; claimed_amount_zar?: number; certified_amount_zar?: number | null; status: string };
+
+const PROGRESS_COLS: Column<ProgressRow>[] = [
+  { key: 'ref',                 header: 'Reference',  width: '150px', mono: true, render: row => <span>{row.ref ?? row.id.slice(-10).toUpperCase()}</span> },
+  { key: 'project_id',          header: 'Project',    width: '200px', mono: true },
+  { key: 'claim_number',        header: 'Claim #',    width: '80px',  align: 'right', mono: true, render: row => <span>{row.claim_number ?? '—'}</span> },
+  { key: 'period_end',          header: 'Period End', width: '120px', mono: true, render: row => <span>{row.period_end ?? '—'}</span> },
+  { key: 'claimed_amount_zar',  header: 'Claimed',    width: '110px', align: 'right', mono: true, render: row => <span>{row.claimed_amount_zar != null ? `R${(row.claimed_amount_zar / 1e6).toFixed(1)}M` : '—'}</span> },
+  { key: 'certified_amount_zar',header: 'Certified',  width: '110px', align: 'right', mono: true, render: row => <span>{row.certified_amount_zar != null ? `R${(row.certified_amount_zar / 1e6).toFixed(1)}M` : '—'}</span> },
+  { key: 'status',              header: 'Status',     width: '130px', render: row => <StatusPill label={row.status} variant={stateVariant(row.status)} /> },
+];
+
+function ProgressScreen() {
+  const [rows, setRows] = React.useState<ProgressRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<ProgressRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  React.useEffect(() => {
+    apexClient.ipp.listChangeOrders().then(d => { setRows(d as unknown as ProgressRow[]); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+  return (
+    <div style={{ padding: '0 24px 24px' }}>
+      <DataTable<ProgressRow> rows={rows} columns={PROGRESS_COLS} loading={loading} onRowClick={r => { setSel(r); setDrawerOpen(true); }} />
+      {sel && (
+        <DetailDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          title={sel.ref ?? sel.id.slice(-10).toUpperCase()}
+          subtitle={`Claim #${sel.claim_number ?? '—'}`}
+          entityRef={sel.id.slice(-10).toUpperCase()}
+          status={sel.status}
+          fields={[
+            { label: 'Project',          value: sel.project_id, mono: true },
+            { label: 'Claim Number',     value: String(sel.claim_number ?? '—'), mono: true },
+            { label: 'Period End',       value: sel.period_end ?? '—', mono: true },
+            { label: 'Claimed Amount',   value: sel.claimed_amount_zar != null ? `R${(sel.claimed_amount_zar / 1e6).toFixed(2)}M` : '—', mono: true },
+            { label: 'Certified Amount', value: sel.certified_amount_zar != null ? `R${(sel.certified_amount_zar / 1e6).toFixed(2)}M` : '—', mono: true },
+          ]}
+          actions={[
+            { id: 'audit', label: 'View Audit Trail', icon: 'checklist', variant: 'secondary',
+              onClick: () => apexClient.audit.listBlocks({ entity_type: 'ipp_progress_claim', entity_id: sel.id }).then(() => setDrawerOpen(false)) },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── TQ Log screen ───────────────────────────────────────────────────────────
+
+type TqRow = { id: string; ref?: string; project_id: string; subject?: string; discipline?: string; urgency?: string; status: string; created_at: string };
+
+const TQ_COLS: Column<TqRow>[] = [
+  { key: 'ref',         header: 'TQ Ref',     width: '140px', mono: true, render: row => <span>{row.ref ?? row.id.slice(-10).toUpperCase()}</span> },
+  { key: 'project_id',  header: 'Project',    width: '180px', mono: true },
+  { key: 'subject',     header: 'Subject',    width: '260px', render: row => <span>{row.subject ?? '—'}</span> },
+  { key: 'discipline',  header: 'Discipline', width: '110px', render: row => <span>{row.discipline ?? '—'}</span> },
+  { key: 'urgency',     header: 'Urgency',    width: '90px',  render: row => <span>{row.urgency ?? '—'}</span> },
+  { key: 'status',      header: 'Status',     width: '120px', render: row => <StatusPill label={row.status} variant={stateVariant(row.status)} /> },
+  { key: 'created_at',  header: 'Raised',     width: '130px', mono: true },
+];
+
+function TqScreen() {
+  const [rows, setRows] = React.useState<TqRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<TqRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  React.useEffect(() => {
+    apexClient.ipp.listDocuments().then(d => { setRows(d as unknown as TqRow[]); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+  return (
+    <div style={{ padding: '0 24px 24px' }}>
+      <DataTable<TqRow> rows={rows} columns={TQ_COLS} loading={loading} onRowClick={r => { setSel(r); setDrawerOpen(true); }} />
+      {sel && (
+        <DetailDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          title={sel.ref ?? sel.id.slice(-10).toUpperCase()}
+          subtitle={sel.subject ?? '—'}
+          entityRef={sel.id.slice(-10).toUpperCase()}
+          status={sel.status}
+          fields={[
+            { label: 'Project',    value: sel.project_id, mono: true },
+            { label: 'Subject',    value: sel.subject ?? '—', span: true },
+            { label: 'Discipline', value: sel.discipline ?? '—' },
+            { label: 'Urgency',    value: sel.urgency ?? '—' },
+            { label: 'Raised',     value: sel.created_at, mono: true },
+          ]}
+          actions={[
+            { id: 'audit', label: 'View Audit Trail', icon: 'checklist', variant: 'secondary',
+              onClick: () => apexClient.audit.listBlocks({ entity_type: 'ipp_tq', entity_id: sel.id }).then(() => setDrawerOpen(false)) },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
 
 export default IppWorkstation;

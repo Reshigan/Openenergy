@@ -739,9 +739,15 @@ export const apexClient = {
     listProjects:     (params?: Record<string, unknown>) => list<CarbonProject>('/carbon-registration/chain', params),
     listRetirements:  (params?: Record<string, unknown>) => list<CarbonRetirement>('/carbon/retirement-chain', params),
     listMrv:          (params?: Record<string, unknown>) => list<CarbonMrv>('/carbon/mrv-chain', params),
+    listReversals:    (params?: Record<string, unknown>) => list<Record<string, unknown>>('/carbon-reversal/chain', params),
+    listRenewals:     (params?: Record<string, unknown>) => list<Record<string, unknown>>('/crediting-renewal/chain', params),
+    listPoaInclusions:(params?: Record<string, unknown>) => list<Record<string, unknown>>('/poa-inclusion/chain', params),
     // transitions
     retireCredits:    (id: string, body: Record<string, unknown>) => post<CarbonCredit>(`/carbon/credits/${id}/retire`, body),
     initiateErpa:     (body: Record<string, unknown>) => post<CarbonProject>('/carbon-erpa/chain', body),
+    transitionReversal:(id: string, action: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/carbon-reversal/chain/${id}/${action}`, body),
+    transitionRenewal: (id: string, action: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/crediting-renewal/chain/${id}/${action}`, body),
+    transitionPoa:     (id: string, action: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/poa-inclusion/chain/${id}/${action}`, body),
   },
 
   // ── Offtaker ──────────────────────────────────────────────────────────────
@@ -766,21 +772,38 @@ export const apexClient = {
   // ── Grid ──────────────────────────────────────────────────────────────────
 
   grid: {
-    listConnections:      (params?: Record<string, unknown>) => list<GridConnection>('/grid/connections', params),
-    listNominations:      (params?: Record<string, unknown>) => list<GridNomination>('/grid/dispatch-nominations', params),
-    listCurtailments:     (params?: Record<string, unknown>) => list<GridCurtailment>('/grid/planned-outages', params),
-    listReserveActs:      (params?: Record<string, unknown>) => list<GridReserveActivation>('/reserve-activation/chain', params),
+    listConnections:           (params?: Record<string, unknown>) => list<GridConnection>('/grid/connections', params),
+    listNominations:           (params?: Record<string, unknown>) => list<GridNomination>('/grid/dispatch-nominations', params),
+    listCurtailments:          (params?: Record<string, unknown>) => list<GridCurtailment>('/grid/planned-outages', params),
+    listReserveActs:           (params?: Record<string, unknown>) => list<GridReserveActivation>('/reserve-activation/chain', params),
+    listCapacityAllocations:   (params?: Record<string, unknown>) => list<Record<string, unknown>>('/grid-capacity/chain', params),
+    listPlannedOutages:        (params?: Record<string, unknown>) => list<Record<string, unknown>>('/grid/planned-outages', params),
     // transitions
-    confirmNomination:    (id: string, body: Record<string, unknown>) => post<GridNomination>(`/grid/dispatch-nominations/${id}/confirm`, body),
+    confirmNomination:         (id: string, body: Record<string, unknown>) => post<GridNomination>(`/grid/dispatch-nominations/${id}/confirm`, body),
+    beginCapacityScreening:    (id: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/grid-capacity/chain/${id}/begin-screening`, body),
+    allocateCapacity:          (id: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/grid-capacity/chain/${id}/allocate`, body),
+    rejectCapacityApplication: (id: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/grid-capacity/chain/${id}/reject-application`, body),
+    approveOutage:             (id: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/grid/planned-outages/${id}/approve-outage`, body),
+    cancelOutage:              (id: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/grid/planned-outages/${id}/cancel`, body),
   },
 
   // ── Esums / O&M ──────────────────────────────────────────────────────────
 
   esums: {
-    listAssets:         (params?: Record<string, unknown>) => list<EsumsAsset>('/asset-prognostics/chain', params),
-    listWorkOrders:     (params?: Record<string, unknown>) => list<EsumsWorkOrder>('/esums/wo-chain', params),
-    listPrognostics:    (params?: Record<string, unknown>) => list<EsumsPrognostic>('/asset-prognostics/chain', params),
-    computePrognostic:  (assetId: string) => post<EsumsPrognostic>(`/asset-prognostics/chain/${assetId}/compute`),
+    listAssets:             (params?: Record<string, unknown>) => list<EsumsAsset>('/asset-prognostics/chain', params),
+    listWorkOrders:         (params?: Record<string, unknown>) => list<EsumsWorkOrder>('/esums/wo-chain', params),
+    listPrognostics:        (params?: Record<string, unknown>) => list<EsumsPrognostic>('/asset-prognostics/chain', params),
+    computePrognostic:      (assetId: string) => post<EsumsPrognostic>(`/asset-prognostics/chain/${assetId}/compute`),
+    // W12 Site Commissioning
+    listCommissioning:      (params?: Record<string, unknown>) => list<Record<string, unknown>>('/esums/commissioning', params),
+    registerSite:           (id: string) => post<Record<string, unknown>>(`/esums/commissioning/${id}/register-site`),
+    wireIngestion:          (id: string) => post<Record<string, unknown>>(`/esums/commissioning/${id}/wire-ingestion`),
+    beginOm:                (id: string) => post<Record<string, unknown>>(`/esums/commissioning/${id}/begin-om`),
+    // W35 Vendor Escalation
+    listVendorEscalation:   (params?: Record<string, unknown>) => list<Record<string, unknown>>('/esums/vendor-escalation/chain', params),
+    triageVendor:           (id: string) => post<Record<string, unknown>>(`/esums/vendor-escalation/chain/${id}/triage`),
+    escalateToOem:          (id: string) => post<Record<string, unknown>>(`/esums/vendor-escalation/chain/${id}/escalate-to-oem`),
+    resolveVendor:          (id: string) => post<Record<string, unknown>>(`/esums/vendor-escalation/chain/${id}/resolve`),
   },
 
   // ── OEM / Support ────────────────────────────────────────────────────────

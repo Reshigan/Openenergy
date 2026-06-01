@@ -1119,6 +1119,236 @@ function RevenueScreen(): React.ReactElement {
   );
 }
 
+// ─── Site Commissioning (W12) ─────────────────────────────────────────────────
+
+type CommissioningRow = {
+  id: string;
+  ref: string;
+  site_name: string;
+  technology: string;
+  capacity_mw: number;
+  chain_status: string;
+  planned_cod: string | null;
+  actual_cod: string | null;
+};
+
+const COMMISSIONING_COLS: Column<CommissioningRow>[] = [
+  { key: 'ref',          header: 'Reference',   width: '150px', mono: true },
+  { key: 'site_name',    header: 'Site',        width: '220px' },
+  { key: 'technology',   header: 'Technology',  width: '110px' },
+  { key: 'capacity_mw',  header: 'MW',          width: '80px',  align: 'right', mono: true },
+  {
+    key: 'chain_status',
+    header: 'Status',
+    width: '140px',
+    render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} />,
+  },
+  {
+    key: 'planned_cod',
+    header: 'Planned COD',
+    width: '130px',
+    mono: true,
+    render: r => <span style={{ fontFamily: '"JetBrains Mono", monospace' }}>{r.planned_cod ?? '—'}</span>,
+  },
+  {
+    key: 'actual_cod',
+    header: 'Actual COD',
+    width: '130px',
+    mono: true,
+    render: r => <span style={{ fontFamily: '"JetBrains Mono", monospace' }}>{r.actual_cod ?? '—'}</span>,
+  },
+];
+
+function CommissioningScreen(): React.ReactElement {
+  const [rows, setRows] = React.useState<CommissioningRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<CommissioningRow | null>(null);
+
+  React.useEffect(() => {
+    apexClient.esums
+      .listCommissioning()
+      .then(r => { setRows(r as unknown as CommissioningRow[]); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+          Site Commissioning W12
+        </h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>
+          {loading ? 'Loading…' : rows.length + ' sites'}
+        </div>
+      </div>
+      <DataTable<CommissioningRow>
+        rows={rows}
+        columns={COMMISSIONING_COLS}
+        loading={loading}
+        onRowClick={r => setSel(r)}
+      />
+      {sel && (
+        <DetailDrawer
+          open
+          onClose={() => setSel(null)}
+          title={sel.ref}
+          subtitle={sel.site_name}
+          entityRef={sel.ref}
+          status={sel.chain_status}
+          fields={[
+            { label: 'Site',        value: sel.site_name, span: true },
+            { label: 'Technology',  value: sel.technology },
+            { label: 'Capacity',    value: `${sel.capacity_mw} MW`, mono: true },
+            { label: 'Planned COD', value: sel.planned_cod ?? '—', mono: true },
+            { label: 'Actual COD',  value: sel.actual_cod ?? '—', mono: true },
+          ]}
+          actions={[
+            {
+              id: 'register',
+              label: 'Register Site',
+              icon: 'tower',
+              variant: 'primary',
+              onClick: () =>
+                apexClient.esums.registerSite(sel.id).then(() => setSel(null)),
+            },
+            {
+              id: 'wire',
+              label: 'Wire Ingestion',
+              icon: 'link',
+              variant: 'secondary',
+              onClick: () =>
+                apexClient.esums.wireIngestion(sel.id).then(() => setSel(null)),
+            },
+            {
+              id: 'begin-om',
+              label: 'Begin O&M',
+              icon: 'approve',
+              variant: 'primary',
+              onClick: () =>
+                apexClient.esums.beginOm(sel.id).then(() => setSel(null)),
+            },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Vendor Escalation (W35) ─────────────────────────────────────────────────
+
+type VendorRow = {
+  id: string;
+  ref: string;
+  asset_ref: string;
+  vendor_name: string;
+  issue_category: string;
+  severity: string;
+  response_due: string;
+  chain_status: string;
+  created_at: string;
+};
+
+const VENDOR_COLS: Column<VendorRow>[] = [
+  { key: 'ref',            header: 'Reference',    width: '150px', mono: true },
+  { key: 'asset_ref',      header: 'Asset',        width: '130px', mono: true },
+  { key: 'vendor_name',    header: 'Vendor',       width: '180px' },
+  { key: 'issue_category', header: 'Category',     width: '130px' },
+  {
+    key: 'severity',
+    header: 'Severity',
+    width: '90px',
+    render: r => (
+      <StatusPill
+        label={r.severity}
+        variant={r.severity === 'critical' ? 'rose' : r.severity === 'high' ? 'amber' : 'green'}
+      />
+    ),
+  },
+  { key: 'response_due',   header: 'Response Due', width: '130px', mono: true },
+  {
+    key: 'chain_status',
+    header: 'Status',
+    width: '130px',
+    render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} />,
+  },
+];
+
+function VendorScreen(): React.ReactElement {
+  const [rows, setRows] = React.useState<VendorRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<VendorRow | null>(null);
+
+  React.useEffect(() => {
+    apexClient.esums
+      .listVendorEscalation()
+      .then(r => { setRows(r as unknown as VendorRow[]); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+          Vendor Escalations W35
+        </h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>
+          {loading ? 'Loading…' : rows.length + ' cases'}
+        </div>
+      </div>
+      <DataTable<VendorRow>
+        rows={rows}
+        columns={VENDOR_COLS}
+        loading={loading}
+        onRowClick={r => setSel(r)}
+      />
+      {sel && (
+        <DetailDrawer
+          open
+          onClose={() => setSel(null)}
+          title={sel.ref}
+          subtitle={sel.vendor_name}
+          entityRef={sel.ref}
+          status={sel.chain_status}
+          fields={[
+            { label: 'Asset',        value: sel.asset_ref,       mono: true },
+            { label: 'Vendor',       value: sel.vendor_name,     span: true },
+            { label: 'Category',     value: sel.issue_category },
+            { label: 'Severity',     value: sel.severity },
+            { label: 'Response Due', value: sel.response_due,    mono: true },
+            { label: 'Created',      value: sel.created_at,      mono: true },
+          ]}
+          actions={[
+            {
+              id: 'triage',
+              label: 'Triage',
+              icon: 'checklist',
+              variant: 'primary',
+              onClick: () =>
+                apexClient.esums.triageVendor(sel.id).then(() => setSel(null)),
+            },
+            {
+              id: 'escalate',
+              label: 'Escalate to OEM',
+              icon: 'escalate',
+              variant: 'secondary',
+              onClick: () =>
+                apexClient.esums.escalateToOem(sel.id).then(() => setSel(null)),
+            },
+            {
+              id: 'resolve',
+              label: 'Mark Resolved',
+              icon: 'approve',
+              variant: 'primary',
+              onClick: () =>
+                apexClient.esums.resolveVendor(sel.id).then(() => setSel(null)),
+            },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
 // ─── EsumsWorkstation ─────────────────────────────────────────────────────────
 
 type ActiveScreen =
@@ -1131,7 +1361,9 @@ type ActiveScreen =
   | 'ptw'
   | 'hse'
   | 'availability'
-  | 'revenue';
+  | 'revenue'
+  | 'commissioning'
+  | 'vendor';
 
 const NAV_SCREEN_MAP: Record<string, ActiveScreen> = {
   'esums-dashboard':    'dashboard',
@@ -1144,6 +1376,8 @@ const NAV_SCREEN_MAP: Record<string, ActiveScreen> = {
   'esums-revenue':      'revenue',
   'esums-ptw':          'ptw',
   'esums-hse':          'hse',
+  'esums-commission':   'commissioning',
+  'esums-vendor':       'vendor',
 };
 
 function activeIdForScreen(screen: ActiveScreen): string {
@@ -1184,16 +1418,18 @@ export function EsumsWorkstation(): React.ReactElement {
   };
 
   const breadcrumbLabel: Record<ActiveScreen, string> = {
-    dashboard:    'Dashboard',
-    fleet:        'Fleet Map',
-    analytics:    'Analytics & Reports',
-    workorders:   'Work Orders',
-    prognostics:  'Predictive Health',
-    pm:           'PM Compliance',
-    ptw:          'Permit to Work',
-    hse:          'HSE Incidents',
-    availability: 'Availability Guarantee',
-    revenue:      'Revenue Assurance',
+    dashboard:      'Dashboard',
+    fleet:          'Fleet Map',
+    analytics:      'Analytics & Reports',
+    workorders:     'Work Orders',
+    prognostics:    'Predictive Health',
+    pm:             'PM Compliance',
+    ptw:            'Permit to Work',
+    hse:            'HSE Incidents',
+    availability:   'Availability Guarantee',
+    revenue:        'Revenue Assurance',
+    commissioning:  'Site Commissioning',
+    vendor:         'Vendor Escalations',
   };
 
   return (
@@ -1205,15 +1441,17 @@ export function EsumsWorkstation(): React.ReactElement {
       pageTitle="Fleet Operations"
       breadcrumbs={[{ label: 'Esums' }, { label: breadcrumbLabel[activeScreen] }]}
     >
-      {activeScreen === 'analytics'    ? <EsumsAnalytics />
-     : activeScreen === 'fleet'        ? <FleetScreen />
-     : activeScreen === 'workorders'   ? <WorkOrdersScreen />
-     : activeScreen === 'prognostics'  ? <PrognosticsScreen />
-     : activeScreen === 'pm'           ? <PmScreen />
-     : activeScreen === 'ptw'          ? <PtwScreen />
-     : activeScreen === 'hse'          ? <HseScreen />
-     : activeScreen === 'availability' ? <AvailabilityScreen />
-     : activeScreen === 'revenue'      ? <RevenueScreen />
+      {activeScreen === 'analytics'      ? <EsumsAnalytics />
+     : activeScreen === 'fleet'          ? <FleetScreen />
+     : activeScreen === 'workorders'     ? <WorkOrdersScreen />
+     : activeScreen === 'prognostics'    ? <PrognosticsScreen />
+     : activeScreen === 'pm'             ? <PmScreen />
+     : activeScreen === 'ptw'            ? <PtwScreen />
+     : activeScreen === 'hse'            ? <HseScreen />
+     : activeScreen === 'availability'   ? <AvailabilityScreen />
+     : activeScreen === 'revenue'        ? <RevenueScreen />
+     : activeScreen === 'commissioning'  ? <CommissioningScreen />
+     : activeScreen === 'vendor'         ? <VendorScreen />
      : <>{/* Dashboard */}
       <div style={{ marginBottom: '20px' }}>
         <h1

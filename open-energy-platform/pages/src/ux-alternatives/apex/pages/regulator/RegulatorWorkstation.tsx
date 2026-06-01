@@ -19,6 +19,7 @@ import { StateFlow, StateFlowStep } from '../../components/display/StateFlow';
 import { DetailDrawer, DrawerField, DrawerAction } from '../../components/display/DetailDrawer';
 import { useRegulatorFilings, useRegulatorEnforcement, useRegulatorLicences, useAuditBlocks } from '../../lib/hooks';
 import { RegulatorFiling, RegulatorEnforcement, RegulatorLicence, AuditBlock, apexClient } from '../../lib/client';
+import { api } from '../../../../lib/api';
 
 // ─── Nav config ──────────────────────────────────────────────────────────────
 
@@ -48,6 +49,7 @@ const REGULATOR_NAV: NavConfig = {
       label: 'Compliance',
       items: [
         { id: 'reg-inspect',    label: 'Inspection & Enforcement W40', href: '#inspect',   icon: 'shield',  badge: 2, badgeVariant: 'rose' },
+        { id: 'reg-inspection', label: 'Compliance Inspection',        href: '#inspection', icon: 'shield' },
         { id: 'reg-complaints', label: 'Complaints W66',               href: '#complaints',icon: 'flag' },
         { id: 'reg-disp',       label: 'Disposition W31',              href: '#disp',       icon: 'scales' },
       ],
@@ -1076,6 +1078,129 @@ function SsegScreen() {
   );
 }
 
+// ─── Compliance Inspection (W40) ─────────────────────────────────────────────
+
+type InspectionRow = {
+  id: string;
+  ref: string;
+  licensee_name: string;
+  inspection_type: string;
+  inspector_name: string;
+  finding_count: number;
+  chain_status: string;
+  scheduled_date: string;
+  completed_date: string | null;
+};
+
+const INSPECTION_COLS: Column<InspectionRow>[] = [
+  { key: 'ref',             header: 'Reference',  width: '150px', mono: true,
+    render: (r) => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: 'var(--oe-text-2)' }}>{r.ref}</span> },
+  { key: 'licensee_name',  header: 'Licensee',   width: '200px',
+    render: (r) => <span style={{ fontSize: '12px', color: 'var(--oe-text-1)', fontWeight: 500 }}>{r.licensee_name}</span> },
+  { key: 'inspection_type',header: 'Type',        width: '130px',
+    render: (r) => <span style={{ fontSize: '12px', color: 'var(--oe-text-2)' }}>{r.inspection_type}</span> },
+  { key: 'inspector_name', header: 'Inspector',   width: '160px',
+    render: (r) => <span style={{ fontSize: '12px', color: 'var(--oe-text-2)' }}>{r.inspector_name}</span> },
+  { key: 'finding_count',  header: 'Findings',    width: '80px',  align: 'right', mono: true,
+    render: (r) => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>{String(r.finding_count)}</span> },
+  { key: 'chain_status',   header: 'Status',      width: '130px',
+    render: (r) => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} size="sm" /> },
+  { key: 'scheduled_date', header: 'Scheduled',   width: '130px', mono: true,
+    render: (r) => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: 'var(--oe-text-3)' }}>{r.scheduled_date}</span> },
+];
+
+function InspectionScreen() {
+  const [rows, setRows]       = React.useState<InspectionRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel]         = React.useState<InspectionRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+  const load = React.useCallback(() => {
+    setLoading(true);
+    api.get<{ success: boolean; data: InspectionRow[] }>('/api/compliance-inspection/chain')
+      .then(r => { setRows(r.data?.data ?? []); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  React.useEffect(() => { load(); }, [load]);
+
+  const transition = (action: string) => {
+    if (!sel) return;
+    api.post(`/api/compliance-inspection/chain/${sel.id}/${action}`, {})
+      .then(() => { setDrawerOpen(false); setSel(null); load(); })
+      .catch(() => {});
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+          Compliance Inspection &amp; Enforcement
+        </h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>
+          {loading ? 'Loading…' : `${rows.length} inspections · NERSA §10/§34/§35 — W40`}
+        </div>
+      </div>
+      <DataTable<InspectionRow>
+        columns={INSPECTION_COLS}
+        rows={rows}
+        loading={loading}
+        onRowClick={r => { setSel(r); setDrawerOpen(true); }}
+      />
+      <DetailDrawer
+        open={drawerOpen}
+        onClose={() => { setDrawerOpen(false); setSel(null); }}
+        title={sel ? sel.ref : ''}
+        subtitle={sel ? sel.licensee_name : undefined}
+        entityRef={sel?.ref}
+        status={sel?.chain_status}
+        statusVariant={stateVariant(sel?.chain_status ?? '')}
+        fields={sel ? [
+          { label: 'Licensee',        value: sel.licensee_name,                span: true },
+          { label: 'Type',            value: sel.inspection_type },
+          { label: 'Inspector',       value: sel.inspector_name },
+          { label: 'Findings',        value: String(sel.finding_count),         mono: true },
+          { label: 'Scheduled',       value: sel.scheduled_date,                mono: true },
+          { label: 'Completed',       value: sel.completed_date ?? '—',         mono: true },
+          { label: 'Status',          value: <StatusPill label={sel.chain_status} variant={stateVariant(sel.chain_status)} size="sm" /> },
+        ] as DrawerField[] : []}
+        actions={sel ? [
+          {
+            id: 'begin',
+            label: 'Begin Inspection',
+            icon: 'checklist',
+            variant: 'primary',
+            onClick: () => transition('begin-inspection'),
+          },
+          {
+            id: 'draft',
+            label: 'Draft Findings',
+            icon: 'edit',
+            variant: 'secondary',
+            onClick: () => transition('draft-findings'),
+          },
+          {
+            id: 'clean',
+            label: 'Close — No Findings',
+            icon: 'check',
+            variant: 'secondary',
+            onClick: () => transition('close-no-findings'),
+          },
+          {
+            id: 'enforce',
+            label: 'Issue Enforcement Notice',
+            icon: 'escalate',
+            variant: 'danger',
+            onClick: () => transition('issue-enforcement-notice'),
+          },
+        ] as DrawerAction[] : []}
+        onActionComplete={load}
+      />
+    </div>
+  );
+}
+
 // ─── Screen type ──────────────────────────────────────────────────────────────
 
 type ActiveScreen =
@@ -1087,7 +1212,8 @@ type ActiveScreen =
   | 'complaints'
   | 'levy'
   | 'tariff-det'
-  | 'sseg';
+  | 'sseg'
+  | 'inspection';
 
 // ─── Workstation ──────────────────────────────────────────────────────────────
 
@@ -1116,6 +1242,7 @@ export function RegulatorWorkstation() {
     'reg-lic-renew':  'licences',
     'reg-sseg':       'sseg',
     'reg-inspect':    'enforcement',
+    'reg-inspection': 'inspection',
     'reg-complaints': 'complaints',
     'reg-disp':       'dashboard',
     'reg-mypd':       'tariff-det',
@@ -1179,6 +1306,7 @@ export function RegulatorWorkstation() {
       case 'levy':        return 'Levy Assessment';
       case 'tariff-det':  return 'MYPD Tariff Determination';
       case 'sseg':        return 'SSEG Registration';
+      case 'inspection':  return 'Compliance Inspection';
       default:            return 'Dashboard';
     }
   })();
@@ -1208,6 +1336,7 @@ export function RegulatorWorkstation() {
      : activeScreen === 'levy'        ? <LevyScreen />
      : activeScreen === 'tariff-det'  ? <TariffDetScreen />
      : activeScreen === 'sseg'        ? <SsegScreen />
+     : activeScreen === 'inspection'  ? <InspectionScreen />
      : <>{/* Page title block */}
       <div style={{ marginBottom: '20px' }}>
         <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--oe-text-1)', letterSpacing: '-0.02em' }}>
