@@ -213,6 +213,7 @@ INSERT OR IGNORE INTO oe_ipp_env_monitoring (
   'visual', 'baseline', 'EIA-2024-CON-062', '-28.7750, 20.3550',
   'annual', 'Visual impact score', NULL, 'VIA index',
   NULL, NULL, NULL, NULL,
+  0, 0, NULL, NULL,
   'Monitoring cancelled — photomontage scope transferred to appointed VIA specialist per revised EIA condition.', NULL, NULL, NULL,
   NULL, NULL, NULL,
   0, 0, 0, 0, 0,
