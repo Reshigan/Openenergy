@@ -65,7 +65,7 @@ export function DataTable<T>({
         background: 'var(--oe-canvas)',
         border: '1px solid var(--oe-border)',
         borderRadius: 'var(--oe-r-card)',
-        overflow: 'hidden',
+        overflow: 'clip',
         boxShadow: 'var(--oe-shadow-card)',
       }}
     >
@@ -73,6 +73,7 @@ export function DataTable<T>({
         <table
           style={{
             width: '100%',
+            minWidth: 'max-content',
             borderCollapse: 'collapse',
             fontSize,
           }}

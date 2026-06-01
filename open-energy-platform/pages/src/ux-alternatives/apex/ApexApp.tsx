@@ -17,7 +17,7 @@ import './apex-global.css';
 
 type RoleKey =
   | 'ipp_developer' | 'lender' | 'trader' | 'carbon_fund'
-  | 'offtaker' | 'regulator' | 'grid_operator' | 'support' | 'admin';
+  | 'offtaker' | 'regulator' | 'grid_operator' | 'support' | 'admin' | 'esums';
 
 interface TokenPayload { role?: string; exp?: number }
 
@@ -95,6 +95,7 @@ export function ApexApp() {
       {role === 'regulator'      && <RegulatorWorkstation />}
       {role === 'grid_operator'  && <GridWorkstation />}
       {role === 'support'        && <OemWorkstation />}
+      {role === 'esums'          && <EsumsWorkstation />}
       {role === 'admin'          && <AdminWorkstation />}
     </Suspense>
   );

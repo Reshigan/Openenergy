@@ -24,6 +24,7 @@ import type {
   Invoice, AuditBlock,
   AdminUser, AdminTenant, AdminKyc, AdminModule, AdminAuditLog,
   AdminStats, AdminFeatureFlag, AdminBillingRun, AdminInvoice,
+  NotificationItem,
 } from './client';
 
 // ─── Core query hook ─────────────────────────────────────────────────────────
@@ -99,6 +100,19 @@ function useMutation<TArgs, TResult>(
 
   return { mutate, loading, error };
 }
+
+// ─── Auth hooks ──────────────────────────────────────────────────────────────
+
+export type CurrentUser = { id: string; name: string; email: string; role: string; company_name?: string };
+
+export const useCurrentUser = () =>
+  useQuery<CurrentUser | null>(null, () => apexClient.auth.me(), []);
+
+export const useNotifCount = () =>
+  useQuery<number>(0, () => apexClient.notifications.unreadCount(), []);
+
+export const useNotifications = (enabled: boolean) =>
+  useQuery<NotificationItem[]>([], () => apexClient.notifications.list(), [enabled]);
 
 // ─── IPP hooks ───────────────────────────────────────────────────────────────
 

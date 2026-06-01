@@ -16,6 +16,7 @@ import {
   useCarbonRetirements,
   useCarbonMrv,
   useAuditBlocks,
+  useCurrentUser,
 } from '../../lib/hooks';
 import {
   CarbonCredit,
@@ -25,6 +26,7 @@ import {
   AuditBlock,
   apexClient,
 } from '../../lib/client';
+import { api } from '../../../../lib/api';
 
 // ── Nav ────────────────────────────────────────────────────────────────────────
 
@@ -55,11 +57,21 @@ const BASE_NAV_CONFIG: NavConfig = {
       id: 'monetisation',
       label: 'Monetisation',
       items: [
-        { id: 'offset',      label: 'Carbon Tax Offset W48',  href: '#offset',      icon: 'scales' },
-        { id: 'retirements', label: 'Carbon Retirement W17',  href: '#retirements', icon: 'leaf', badge: 1, badgeVariant: 'rose' },
-        { id: 'credits',     label: 'Credits Ledger',         href: '#credits',     icon: 'certificate' },
-        { id: 'projects',    label: 'Projects',               href: '#projects',    icon: 'folder' },
-        { id: 'rec',         label: 'REC Lifecycle W70',      href: '#rec',         icon: 'certificate' },
+        { id: 'offset',              label: 'Carbon Tax Offset W48',  href: '#offset',      icon: 'scales' },
+        { id: 'retirements',         label: 'Carbon Retirement W17',  href: '#retirements', icon: 'leaf', badge: 1, badgeVariant: 'rose' },
+        { id: 'credits',             label: 'Credits Ledger',         href: '#credits',     icon: 'certificate' },
+        { id: 'projects',            label: 'Projects',               href: '#projects',    icon: 'folder' },
+        { id: 'rec',                 label: 'REC Lifecycle W70',      href: '#rec',         icon: 'certificate' },
+        { id: 'carbon-credit-rating', label: 'Credit Quality W109',   href: '#',            icon: 'certificate' },
+      ],
+    },
+    {
+      id: 'registry',
+      label: 'Registry',
+      items: [
+        { id: 'article6',       label: 'Article 6 ITMO W4',    href: '#article6',       icon: 'satellite' },
+        { id: 'carbon-issuance', label: 'Credit Issuance W82', href: '#carbon-issuance', icon: 'certificate' },
+        { id: 'carbon-ccp',     label: 'CCP Assessment W91',   href: '#carbon-ccp',      icon: 'star' },
       ],
     },
     {
@@ -75,10 +87,10 @@ const BASE_NAV_CONFIG: NavConfig = {
       label: 'Reports',
       defaultCollapsed: true,
       items: [
-        { id: 'ghg',      label: 'GHG Protocol Report', href: '#ghg',      icon: 'report' },
-        { id: 'tcfd',     label: 'TCFD Report',         href: '#tcfd',     icon: 'report' },
-        { id: 'article6', label: 'Article 6 Report',    href: '#article6', icon: 'report' },
-        { id: 'settings', label: 'Settings',            href: '#settings', icon: 'gear' },
+        { id: 'carbon-esg', label: 'ESG Disclosure W103', href: '#', icon: 'document' },
+        { id: 'ghg',        label: 'GHG Protocol Report', href: '#ghg',      icon: 'report' },
+        { id: 'tcfd',       label: 'TCFD Report',         href: '#tcfd',     icon: 'report' },
+        { id: 'settings',   label: 'Settings',            href: '#settings', icon: 'gear' },
       ],
     },
   ],
@@ -486,6 +498,13 @@ function MrvScreen() {
         <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>MRV Chain</h1>
         <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading…' : data.length + ' records'}</div>
       </div>
+      <AIInsightCard
+        title="MRV Cycle 2025 — Verification Delay Risk"
+        suggestion="Kalahari Solar CDM project MRV-2025 has been at the 'Accredited Verifier (CRA) Review' stage for 31 days — 6 days beyond the expected review duration. The CRA has flagged a query on the baseline emissions factor recalculation (IPCC AR6 vs AR5). Providing the supplementary AR6 recalculation within 5 days will unblock the stage and maintain the issuance timeline."
+        reasoning="Gold Standard MRV §5.4: verification delays accumulate against the crediting period remaining. This project has 14 months of crediting period remaining; a delayed 2025 MRV cycle risks the credits being issued outside the crediting period, making them ineligible for the 2026 CDP reporting cycle. The AR6 vs AR5 discrepancy affects 3.2% of the baseline — a minor recalculation that the project's DRE consultant can turn around quickly."
+        confidence="medium"
+        onAccept={() => {}}
+      />
       <DataTable<CarbonMrv>
         columns={mrvColumns}
         rows={data}
@@ -555,6 +574,13 @@ function RetirementsScreen() {
         <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Carbon Retirements</h1>
         <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading…' : data.length + ' records'}</div>
       </div>
+      <AIInsightCard
+        title="CDP A-List: Q3 2026 Retirement Deadline in 47 Days"
+        suggestion="The client's CDP Scope-1 and Scope-2 net-zero commitment requires 18,400 tCO2e retirement in the Gold Standard registry by 15 Jul 2026. Current retired balance: 12,800 tCO2e. Retire 5,600 tCO2e from the Kalahari Solar 2025 vintage now (available in registry) to close the gap before the CDP submission window."
+        reasoning="CDP A-list scoring requires Scope-2 market-based claims to be backed by same-year attribute certificates. A retirement shortfall reduces the carbon neutrality claim and drops the score from A to B. The 5,600 tCO2e from the Kalahari Solar vintage is already verified and available — retirement is a single registry transaction (1 business day). Delaying risks availability if other buyers act first."
+        confidence="high"
+        onAccept={() => {}}
+      />
       <DataTable<CarbonRetirement>
         columns={retirementColumns}
         rows={data}
@@ -652,6 +678,13 @@ function RegistrationScreen() {
 
       <div>
         <SectionHeading title="Registration Audit Trail" />
+        <AIInsightCard
+          title="PDD Public Consultation Comment — Response Overdue"
+          suggestion="PROJ-2026-008 (Perdekraal BESS 80MWh) is in the 30-day public consultation period (Gold Standard §6.2). A substantive objection was received on day 22 from the local municipality regarding additionality. Gold Standard requires a written response within 10 business days of receipt — the 10-day window closes in 2 days. A non-response results in automatic project suspension."
+          reasoning="Gold Standard Standard v4.3 §6.2.4: if a comment is received during the public consultation period and no response is filed within 10 business days, Gold Standard treats the comment as uncontested and will refer the project for a formal additionality reassessment before the validation report can be approved. The municipality's objection is based on publicly available comparable market data — a technical additionality memo citing the REIPPPP baseline can address it within 1 day."
+          confidence="high"
+          onAccept={() => {}}
+        />
         <DataTable<AuditBlock>
           columns={auditColumns}
           rows={auditData}
@@ -747,6 +780,13 @@ function ErpaScreen() {
 
       <div>
         <SectionHeading title="ERPA Activity Log" />
+        <AIInsightCard
+          title="ERPA Delivery Default Risk — Q3 2026 Tranche"
+          suggestion="ERPA-2026-003 (24,000 tCO2e, Q3 2026 delivery, buyer: European Utility) has a 5,600 tCO2e delivery shortfall based on current MRV trajectory. The make-good provision allows delivery of equivalent Article 6 credits, but sourcing requires 45 days minimum. Initiate a make-good procurement immediately to protect the delivery obligation and the 2026 contract relationship."
+          reasoning="ERPA §4.3: a delivery shortfall exceeding 20% of the tranche notional triggers a make-good obligation. Failure to deliver or arrange make-good within 30 days of the delivery date constitutes an event of default, entitling the buyer to terminate the ERPA and claim liquidated damages of 1.5× the contract price for the undelivered volume. At EUR12/tCO2e, the LD exposure on 5,600 tCO2e is EUR100,800 (R2.0M)."
+          confidence="high"
+          onAccept={() => {}}
+        />
         <DataTable<AuditBlock>
           columns={auditColumns}
           rows={auditData}
@@ -866,6 +906,13 @@ function OffsetScreen() {
 
       <div>
         <SectionHeading title="Offset Claim Activity Log" />
+        <AIInsightCard
+          title="Section 13 Offset Claim — SARS Submission Window Closing"
+          suggestion="Carbon tax return for the period ending 31 Dec 2025 is due 31 Jul 2026 — 60 days away. The Section 13 offset claim of 42,800 tCO2e (against a R18.4M carbon tax liability) requires pre-approval from DFFE before SARS submission. DFFE's current processing time is 45-50 days. Submit the DFFE pre-approval application this week to allow time for SARS filing."
+          reasoning="Carbon Tax Act §13(4): offset credits must be pre-approved by the Department of Forestry, Fisheries and the Environment before they can be applied against a carbon tax liability in the SARS return. The 10% offset cap (Annex 2 activities) applies here — the 42,800 tCO2e claim is within the cap, but the DFFE application must include the original retirement certificates from the Gold Standard registry."
+          confidence="high"
+          onAccept={() => {}}
+        />
         <DataTable<AuditBlock>
           columns={auditColumns}
           rows={auditData}
@@ -911,6 +958,13 @@ function ReversalScreen() {
   }, []);
   return (
     <div style={{ padding: '0 24px 24px' }}>
+      <AIInsightCard
+        title="AFOLU Buffer Cancellation — Wildfire Risk Trigger"
+        suggestion="REV-2026-001 (Drakensberg Afforestation, 14,200 tCO2e buffer cancellation) is at the 'Permanence Assessment' stage following the February wildfire event. Verra's AFOLU pooled buffer account requires a cancellation report within 60 days of the triggering event (deadline: 15 Jun 2026 — 14 days away). Submit the non-permanence assessment document now."
+        reasoning="Verra VCS §4.1.5: verified carbon units from AFOLU projects that are reversed due to non-permanence events must be cancelled from the buffer pool account within 60 days. Failure to file the cancellation report within 60 days results in automatic cancellation plus a 15% punitive buffer deduction, increasing the effective reversal penalty from 14,200 to 16,330 tCO2e. The non-permanence assessment is a 3-5 day document preparation exercise."
+        confidence="high"
+        onAccept={() => {}}
+      />
       <DataTable<ReversalRow> rows={rows} columns={REVERSAL_COLS} loading={loading} onRowClick={r => setSel(r)} />
       {sel && (
         <DetailDrawer open onClose={() => setSel(null)} title={sel.ref} subtitle={sel.project_name}
@@ -1024,11 +1078,606 @@ function PoaScreen() {
   );
 }
 
+// ─── REC Lifecycle (W70 — I-REC / SAREC / EU-GO) ─────────────────────────────
+
+type RecRow = {
+  id: string;
+  case_number: string;
+  holder_name: string;
+  certificate_standard: string;
+  mwh_represented: number | null;
+  chain_status: string;
+  vintage_year: number | null;
+  severity_tier: string;
+};
+
+const REC_COLS: Column<RecRow>[] = [
+  { key: 'case_number',          header: 'Reference',    width: '160px', mono: true },
+  { key: 'holder_name',          header: 'Holder',       width: '200px' },
+  { key: 'certificate_standard', header: 'Standard',     width: '110px', mono: true },
+  { key: 'mwh_represented',      header: 'MWh',          width: '100px', align: 'right', mono: true,
+    render: r => <span>{r.mwh_represented != null ? r.mwh_represented.toLocaleString() : '—'}</span> },
+  { key: 'vintage_year',         header: 'Vintage',      width: '90px', mono: true,
+    render: r => <span>{r.vintage_year ?? '—'}</span> },
+  { key: 'chain_status',         header: 'Status',       width: '140px',
+    render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} /> },
+];
+
+function RecScreen() {
+  const [rows, setRows] = React.useState<RecRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<RecRow | null>(null);
+  React.useEffect(() => {
+    apexClient.carbon.listRecLifecycle().then(r => { setRows(r as RecRow[]); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '0 24px 24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>REC / Guarantee-of-Origin Lifecycle</h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>W70 · I-REC / SAREC / EU-GO · Scope 2 attribute certificates</div>
+      </div>
+      <AIInsightCard
+        title="I-REC 24-Month Expiry — Offtaker CDP Disclosure at Risk"
+        suggestion="2 RECs from Perdekraal Wind (vintage Jan 2025, 4,200 MWh) are approaching the I-REC 24-month expiry window — unclaimed RECs expire on 31 Dec 2026. Offtakers using these for Scope-2 claims must register the RECs in their CDP disclosure before expiry."
+        reasoning="I-REC Standard §4.3: expired RECs lose their attribute certificate status and cannot be used in Scope-2 disclosures retroactively. Early retirement locks in the CDP reporting date."
+        confidence="high"
+        onAccept={() => {}}
+      />
+      <DataTable<RecRow> rows={rows} columns={REC_COLS} loading={loading} onRowClick={r => setSel(r)} />
+      {sel && (
+        <DetailDrawer open onClose={() => setSel(null)}
+          title={sel.case_number} subtitle={`${sel.certificate_standard} · Vintage ${sel.vintage_year ?? '—'}`}
+          entityRef={sel.case_number} status={sel.chain_status}
+          fields={[
+            { label: 'Reference',  value: sel.case_number,          mono: true, span: true },
+            { label: 'Holder',     value: sel.holder_name,          span: true },
+            { label: 'Standard',   value: sel.certificate_standard, mono: true },
+            { label: 'MWh',        value: sel.mwh_represented != null ? sel.mwh_represented.toLocaleString() + ' MWh' : '—', mono: true },
+            { label: 'Vintage',    value: sel.vintage_year != null ? String(sel.vintage_year) : '—', mono: true },
+            { label: 'Tier',       value: sel.severity_tier },
+            { label: 'Status',     value: sel.chain_status,         mono: true },
+          ]}
+          actions={[
+            { id: 'transfer', label: 'Transfer Certificate', icon: 'send', variant: 'primary',
+              onClick: () => apexClient.carbon.transitionRecLifecycle(sel.id, 'transfer-certificate').then(() => setSel(null)) },
+            { id: 'retire', label: 'Retire Certificate', icon: 'leaf', variant: 'secondary',
+              onClick: () => apexClient.carbon.transitionRecLifecycle(sel.id, 'retire-certificate').then(() => setSel(null)) },
+            { id: 'dispute', label: 'Raise Dispute', icon: 'flag', variant: 'secondary',
+              onClick: () => apexClient.carbon.transitionRecLifecycle(sel.id, 'raise-dispute').then(() => setSel(null)) },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Article 6 ITMO (W4 — UNFCCC corresponding-adjustment ledger) ─────────────
+
+type ItmoRow = {
+  id: string;
+  retirement_id: string | null;
+  certificate_id: string | null;
+  host_country_iso: string;
+  beneficiary_country_iso: string;
+  tco2e: number;
+  vintage_year: number | null;
+  registry: string | null;
+  article_6_track: string;
+  ca_status: string;
+  dffe_submitted_at: string | null;
+  dffe_clearance_at: string | null;
+  unfccc_posted_at: string | null;
+  created_at: string;
+};
+
+const ITMO_COLS: Column<ItmoRow>[] = [
+  { key: 'certificate_id',         header: 'Certificate',     width: '170px', mono: true,
+    render: r => <span>{r.certificate_id ?? r.id.slice(-12).toUpperCase()}</span> },
+  { key: 'host_country_iso',       header: 'Host Country',    width: '120px', mono: true },
+  { key: 'beneficiary_country_iso',header: 'Beneficiary',     width: '120px', mono: true },
+  { key: 'tco2e',                  header: 'tCO₂e',           width: '100px', align: 'right', mono: true,
+    render: r => <span>{r.tco2e.toLocaleString()}</span> },
+  { key: 'vintage_year',           header: 'Vintage',         width: '90px', mono: true,
+    render: r => <span>{r.vintage_year ?? '—'}</span> },
+  { key: 'ca_status',              header: 'Status',          width: '150px',
+    render: r => <StatusPill label={r.ca_status} variant={stateVariant(r.ca_status)} /> },
+];
+
+function Article6Screen() {
+  const [rows, setRows] = React.useState<ItmoRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<ItmoRow | null>(null);
+  React.useEffect(() => {
+    apexClient.carbon.listArticle6Adjustments().then(r => { setRows(r as ItmoRow[]); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '0 24px 24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Article 6 ITMO Corresponding-Adjustment Ledger</h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>W4 · UNFCCC Paris Agreement · DFFE DNA authority</div>
+      </div>
+      <AIInsightCard
+        title="Unrecorded ITMO Adjustments Risk Invalidating UNFCCC Claims"
+        suggestion="South Africa's DNA has approved ITMO transfers for 3 projects totalling 18,400 tCO₂e but corresponding adjustments have not been reflected in the national registry for 2 of them. Unrecorded adjustments invalidate the ITMO claim for buying countries."
+        reasoning="Paris Agreement Article 6.2 requires both parties to record corresponding adjustments in their NDC by the end of the calendar year in which the transfer occurs. Failure to record by 31 Dec voids the ITMO's additionality claim."
+        confidence="high"
+        onAccept={() => {}}
+      />
+      <DataTable<ItmoRow> rows={rows} columns={ITMO_COLS} loading={loading} onRowClick={r => setSel(r)} />
+      {sel && (
+        <DetailDrawer open onClose={() => setSel(null)}
+          title={sel.certificate_id ?? sel.id.slice(-12).toUpperCase()}
+          subtitle={`${sel.host_country_iso} → ${sel.beneficiary_country_iso} · ${sel.article_6_track}`}
+          entityRef={sel.certificate_id ?? sel.id.slice(-12).toUpperCase()}
+          status={sel.ca_status}
+          fields={[
+            { label: 'Certificate ID',       value: sel.certificate_id ?? '—',           mono: true, span: true },
+            { label: 'Host Country ISO',     value: sel.host_country_iso,                mono: true },
+            { label: 'Beneficiary Country',  value: sel.beneficiary_country_iso,         mono: true },
+            { label: 'tCO₂e',               value: sel.tco2e.toLocaleString() + ' tCO₂e', mono: true },
+            { label: 'Vintage Year',         value: sel.vintage_year != null ? String(sel.vintage_year) : '—', mono: true },
+            { label: 'Registry',             value: sel.registry ?? '—',                 mono: true },
+            { label: 'Article 6 Track',      value: sel.article_6_track },
+            { label: 'DFFE Submitted',       value: sel.dffe_submitted_at ? sel.dffe_submitted_at.slice(0, 10) : '—', mono: true },
+            { label: 'DFFE Cleared',         value: sel.dffe_clearance_at ? sel.dffe_clearance_at.slice(0, 10) : '—', mono: true },
+            { label: 'UNFCCC Posted',        value: sel.unfccc_posted_at ? sel.unfccc_posted_at.slice(0, 10) : '—', mono: true },
+            { label: 'Created',              value: sel.created_at.slice(0, 10),          mono: true },
+          ]}
+          actions={[
+            { id: 'submit-dffe', label: 'Submit to DFFE', icon: 'send', variant: 'primary',
+              onClick: () => apexClient.carbon.transitionArticle6(sel.id, 'submit-dffe').then(() => setSel(null)) },
+            { id: 'post-unfccc', label: 'Post to UNFCCC Ledger', icon: 'satellite', variant: 'secondary',
+              onClick: () => apexClient.carbon.transitionArticle6(sel.id, 'post-unfccc').then(() => setSel(null)) },
+            { id: 'block', label: 'Block Adjustment', icon: 'flag', variant: 'secondary',
+              onClick: () => apexClient.carbon.transitionArticle6(sel.id, 'block').then(() => setSel(null)) },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Credit Issuance Chain (W82) ─────────────────────────────────────────────
+
+type IssuanceRow = {
+  id: string;
+  ref: string;
+  project_name: string;
+  registry: string;
+  vintage: number;
+  quantity: number;
+  chain_status: string;
+  issued_at: string | null;
+  tier: string;
+};
+
+const ISSUANCE_COLS: Column<IssuanceRow>[] = [
+  { key: 'ref',          header: 'Reference',   width: '150px', mono: true },
+  { key: 'project_name', header: 'Project',     width: '220px' },
+  { key: 'registry',     header: 'Registry',    width: '110px', mono: true },
+  { key: 'vintage',      header: 'Vintage',     width: '90px',  align: 'right', mono: true },
+  { key: 'quantity',     header: 'Quantity',    width: '120px', align: 'right', mono: true,
+    render: r => <span>{r.quantity.toLocaleString()}</span> },
+  { key: 'chain_status', header: 'Status',      width: '140px',
+    render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} /> },
+  { key: 'issued_at',    header: 'Issued',      width: '120px', mono: true,
+    render: r => <span>{r.issued_at ? r.issued_at.slice(0, 10) : '—'}</span> },
+];
+
+function IssuanceScreen() {
+  const [rows, setRows] = React.useState<IssuanceRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<IssuanceRow | null>(null);
+
+  React.useEffect(() => {
+    apexClient.carbon.listIssuanceChain()
+      .then(r => { setRows(r as IssuanceRow[]); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const reload = () => {
+    setLoading(true);
+    apexClient.carbon.listIssuanceChain()
+      .then(r => { setRows(r as IssuanceRow[]); setLoading(false); })
+      .catch(() => setLoading(false));
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '0 24px 24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Credit Issuance Chain</h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>W82 · Registry issuance workflow</div>
+      </div>
+      <AIInsightCard
+        title="VVB Validation Delay — Issuance at Risk"
+        suggestion="Kalahari Solar W-001 issuance request (12,400 tCO₂e, Verra VCS) has been pending VVB validation for 34 days. Typical validation takes 45 days — the 11-day window remaining is tight given current VVB workload. Consider parallel UNFCCC CDM as backup methodology."
+        reasoning="Verra §4.3 validation delay beyond 60 days requires re-submission with updated baseline calculations, effectively adding 4-6 months to the issuance timeline and affecting project cashflow."
+        confidence="high"
+        onAccept={() => {}}
+      />
+      <DataTable<IssuanceRow>
+        rows={rows}
+        columns={ISSUANCE_COLS}
+        loading={loading}
+        onRowClick={r => setSel(r)}
+      />
+      {sel && (
+        <DetailDrawer
+          open
+          onClose={() => setSel(null)}
+          title={sel.ref}
+          subtitle={`${sel.project_name} · ${sel.registry}`}
+          entityRef={sel.ref}
+          status={sel.chain_status}
+          fields={[
+            { label: 'Reference',   value: sel.ref,                              mono: true, span: true },
+            { label: 'Project',     value: sel.project_name,                     span: true },
+            { label: 'Registry',    value: sel.registry,                         mono: true },
+            { label: 'Vintage',     value: String(sel.vintage),                  mono: true },
+            { label: 'Quantity',    value: sel.quantity.toLocaleString() + ' tCO₂e', mono: true },
+            { label: 'Tier',        value: sel.tier },
+            { label: 'Issued At',   value: sel.issued_at ? sel.issued_at.slice(0, 10) : '—', mono: true },
+            { label: 'Status',      value: sel.chain_status,                     mono: true },
+          ]}
+          actions={[
+            { id: 'submit',  label: 'Submit for Verification', icon: 'send',        variant: 'primary',
+              onClick: () => apexClient.carbon.transitionIssuance(sel.id, 'submit').then(() => { setSel(null); reload(); }) },
+            { id: 'verify',  label: 'Verify',                  icon: 'check-circle', variant: 'primary',
+              onClick: () => apexClient.carbon.transitionIssuance(sel.id, 'verify').then(() => { setSel(null); reload(); }) },
+            { id: 'issue',   label: 'Issue to Registry',       icon: 'certificate', variant: 'secondary',
+              onClick: () => apexClient.carbon.transitionIssuance(sel.id, 'issue').then(() => { setSel(null); reload(); }) },
+            { id: 'reject',  label: 'Reject',                  icon: 'flag',        variant: 'danger',
+              onClick: () => apexClient.carbon.transitionIssuance(sel.id, 'reject').then(() => { setSel(null); reload(); }) },
+          ]}
+          onActionComplete={() => { setSel(null); reload(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── CCP Assessment Chain (W91 — ICVCM Carbon Credit Premium) ────────────────
+
+type CcpRow = {
+  id: string;
+  ref: string;
+  project_name: string;
+  ccp_score: number | null;
+  ccp_grade: string | null;
+  chain_status: string;
+  assessment_date: string | null;
+  tier: string;
+};
+
+const CCP_COLS: Column<CcpRow>[] = [
+  { key: 'ref',             header: 'Reference',       width: '150px', mono: true },
+  { key: 'project_name',   header: 'Project',         width: '220px' },
+  { key: 'ccp_score',      header: 'CCP Score',       width: '110px', align: 'right', mono: true,
+    render: r => <span>{r.ccp_score != null ? r.ccp_score.toFixed(1) : '—'}</span> },
+  { key: 'ccp_grade',      header: 'Grade',           width: '120px',
+    render: r => r.ccp_grade
+      ? <StatusPill label={r.ccp_grade} variant={stateVariant(r.ccp_grade)} />
+      : <span style={{ color: 'var(--oe-text-3)' }}>—</span> },
+  { key: 'chain_status',   header: 'Status',          width: '140px',
+    render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} /> },
+  { key: 'assessment_date',header: 'Assessment Date', width: '140px', mono: true,
+    render: r => <span>{r.assessment_date ? r.assessment_date.slice(0, 10) : '—'}</span> },
+];
+
+function CcpScreen() {
+  const [rows, setRows] = React.useState<CcpRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<CcpRow | null>(null);
+
+  React.useEffect(() => {
+    apexClient.carbon.listCcpAssessments()
+      .then(r => { setRows(r as CcpRow[]); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const reload = () => {
+    setLoading(true);
+    apexClient.carbon.listCcpAssessments()
+      .then(r => { setRows(r as CcpRow[]); setLoading(false); })
+      .catch(() => setLoading(false));
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '0 24px 24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>CCP Assessment</h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>W91 · ICVCM Carbon Credit Premium label workflow</div>
+      </div>
+      <AIInsightCard
+        title="Crediting Periods Expiring Without Active Renewals"
+        suggestion="2 projects have crediting periods expiring in Q3 2026 without active renewal applications. Total at-risk forward pipeline is 47,200 tCO₂e (R14.6M at current SAREC spot price). W56 renewal typically takes 90 days — applications are already 30 days late."
+        reasoning="W56 crediting-period renewal requires current-year monitoring data. Projects expiring without renewal lose their VCS registration and cannot issue credits for the lapsed period retroactively."
+        confidence="high"
+        onAccept={() => {}}
+      />
+      <DataTable<CcpRow>
+        rows={rows}
+        columns={CCP_COLS}
+        loading={loading}
+        onRowClick={r => setSel(r)}
+      />
+      {sel && (
+        <DetailDrawer
+          open
+          onClose={() => setSel(null)}
+          title={sel.ref}
+          subtitle={sel.project_name}
+          entityRef={sel.ref}
+          status={sel.chain_status}
+          fields={[
+            { label: 'Reference',       value: sel.ref,                                           mono: true, span: true },
+            { label: 'Project',         value: sel.project_name,                                  span: true },
+            { label: 'CCP Score',       value: sel.ccp_score != null ? sel.ccp_score.toFixed(1) : '—', mono: true },
+            { label: 'CCP Grade',       value: sel.ccp_grade ?? '—',                              mono: true },
+            { label: 'Tier',            value: sel.tier },
+            { label: 'Assessment Date', value: sel.assessment_date ? sel.assessment_date.slice(0, 10) : '—', mono: true },
+            { label: 'Status',          value: sel.chain_status,                                  mono: true },
+          ]}
+          actions={[
+            { id: 'submit',      label: 'Submit for Assessment', icon: 'send',        variant: 'primary',
+              onClick: () => apexClient.carbon.transitionCcp(sel.id, 'submit').then(() => { setSel(null); reload(); }) },
+            { id: 'assess',      label: 'Assess',                icon: 'checklist',   variant: 'primary',
+              onClick: () => apexClient.carbon.transitionCcp(sel.id, 'assess').then(() => { setSel(null); reload(); }) },
+            { id: 'grant_label', label: 'Grant CCP Label',       icon: 'certificate', variant: 'secondary',
+              onClick: () => apexClient.carbon.transitionCcp(sel.id, 'grant-label').then(() => { setSel(null); reload(); }) },
+            { id: 'deny_label',  label: 'Deny Label',            icon: 'flag',        variant: 'danger',
+              onClick: () => apexClient.carbon.transitionCcp(sel.id, 'deny-label').then(() => { setSel(null); reload(); }) },
+          ]}
+          onActionComplete={() => { setSel(null); reload(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── ESG Disclosure Lifecycle & Assurance (W103) ─────────────────────────────
+
+type EsgRow = {
+  id: string;
+  ref: string;
+  entity_name: string;
+  framework: string;
+  disclosure_year: string;
+  assurance_level: string;
+  chain_status: string;
+  published_at: string | null;
+  tier: string;
+};
+
+const ESG_COLS: Column<EsgRow>[] = [
+  { key: 'ref',             header: 'Ref',             mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>{row.ref ?? row.id.slice(-8).toUpperCase()}</span> },
+  { key: 'entity_name',     header: 'Entity',          render: row => <span style={{ fontSize: '13px' }}>{row.entity_name}</span> },
+  { key: 'framework',       header: 'Framework',       render: row => <span style={{ fontSize: '13px', color: 'var(--oe-text-2)' }}>{row.framework}</span> },
+  { key: 'disclosure_year', header: 'Year',            mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>{row.disclosure_year}</span> },
+  { key: 'assurance_level', header: 'Assurance',       render: row => <span style={{ fontSize: '12px' }}>{row.assurance_level}</span> },
+  { key: 'chain_status',    header: 'Status',
+    render: row => <StatusPill label={row.chain_status} variant={stateVariant(row.chain_status)} /> },
+  { key: 'published_at',    header: 'Published',       mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>{row.published_at ? row.published_at.slice(0, 10) : '—'}</span> },
+];
+
+function EsgDisclosureScreen() {
+  const [rows, setRows] = React.useState<EsgRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<EsgRow | null>(null);
+
+  const fetch = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/carbon/esg-disclosure/chain');
+      setRows((res.data?.data ?? res.data?.results ?? res.data ?? []) as EsgRow[]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => { void fetch(); }, [fetch]);
+
+  const drawerFields = (row: EsgRow): DrawerField[] => [
+    { label: 'Ref',             value: row.ref ?? row.id,                                     mono: true, span: true },
+    { label: 'Entity',          value: row.entity_name,                                       span: true },
+    { label: 'Framework',       value: row.framework },
+    { label: 'Disclosure Year', value: row.disclosure_year,                                   mono: true },
+    { label: 'Assurance Level', value: row.assurance_level },
+    { label: 'Status',          value: <StatusPill label={row.chain_status} variant={stateVariant(row.chain_status)} />, span: true },
+    { label: 'Published At',    value: row.published_at ? row.published_at.slice(0, 10) : '—', mono: true },
+    { label: 'Tier',            value: row.tier ?? '—',                                       mono: true },
+  ];
+
+  const drawerActions = (row: EsgRow): DrawerAction[] => {
+    const s = row.chain_status ?? '';
+    const actions: DrawerAction[] = [];
+    if (s === 'draft' || s === 'open' || s === 'pending') {
+      actions.push({ id: 'initiate', label: 'Initiate Disclosure', icon: 'send', variant: 'primary',
+        onClick: () => api.post(`/api/carbon/esg-disclosure/chain/${row.id}/transition`, { action: 'initiate_disclosure' }).then(() => { void fetch(); setSel(null); }) });
+    }
+    if (s === 'draft' || s === 'initiated') {
+      actions.push({ id: 'submit-assurance', label: 'Submit for Assurance', icon: 'checklist', variant: 'secondary',
+        onClick: () => api.post(`/api/carbon/esg-disclosure/chain/${row.id}/transition`, { action: 'submit_for_assurance' }).then(() => { void fetch(); setSel(null); }) });
+    }
+    if (s === 'assured') {
+      actions.push({ id: 'publish', label: 'Publish', icon: 'check-circle', variant: 'primary',
+        onClick: () => api.post(`/api/carbon/esg-disclosure/chain/${row.id}/transition`, { action: 'publish' }).then(() => { void fetch(); setSel(null); }) });
+    }
+    actions.push({ id: 'restate', label: 'Restate', icon: 'flag', variant: 'danger',
+      onClick: () => api.post(`/api/carbon/esg-disclosure/chain/${row.id}/transition`, { action: 'restate' }).then(() => { void fetch(); setSel(null); }) });
+    return actions;
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+          ESG Disclosure Lifecycle &amp; Assurance
+        </h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading…' : rows.length + ' disclosures'}</div>
+      </div>
+      <div style={{ background: 'var(--oe-canvas)', border: '1px solid var(--oe-border)', borderRadius: 'var(--oe-r-card)', padding: '12px 16px', fontSize: '12px', color: 'var(--oe-text-3)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        W103 — ESG disclosure lifecycle and third-party assurance. GRI / TCFD / ISSB / SASB frameworks; limited or reasonable assurance; publish crosses regulator on material disclosures. Restate always crosses.
+      </div>
+      <AIInsightCard
+        suggestion="Kalahari Solar's GRI 305 disclosure shows Scope 2 emissions at 1,240 tCO₂e — 18% above the baseline in the project's CDM PDD. The TCFD alignment score is 64%, below the 70% threshold required for JSE sustainability index inclusion."
+        reasoning="JSE Listings Requirement §3.84(b) requires TCFD-aligned disclosure by FY2026. Missing the 70% threshold in this cycle triggers an automatic 12-month remediation period."
+        title="Review TCFD Gap"
+        onAccept={() => {}}
+      />
+      <DataTable<EsgRow> columns={ESG_COLS} rows={rows} loading={loading} onRowClick={r => setSel(r)} />
+      {sel && (
+        <DetailDrawer
+          open
+          onClose={() => setSel(null)}
+          title={`ESG — ${sel.entity_name}`}
+          subtitle={`${sel.framework} · ${sel.disclosure_year}`}
+          entityRef={sel.ref ?? sel.id.slice(-8).toUpperCase()}
+          status={sel.chain_status}
+          statusVariant={stateVariant(sel.chain_status)}
+          fields={drawerFields(sel)}
+          actions={drawerActions(sel)}
+          onActionComplete={fetch}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Carbon Credit Quality Rating (W109) ─────────────────────────────────────
+
+type CreditRatingRow = {
+  id: string;
+  ref: string;
+  project_name: string;
+  vintage: string;
+  methodology: string;
+  rating: string;
+  rating_basis: string;
+  chain_status: string;
+  rated_at: string | null;
+  tier: string;
+};
+
+const CREDIT_RATING_COLS: Column<CreditRatingRow>[] = [
+  { key: 'ref',          header: 'Ref',         mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>{row.ref ?? row.id.slice(-8).toUpperCase()}</span> },
+  { key: 'project_name', header: 'Project',     render: row => <span style={{ fontSize: '13px' }}>{row.project_name}</span> },
+  { key: 'vintage',      header: 'Vintage',     mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>{row.vintage}</span> },
+  { key: 'methodology',  header: 'Methodology', render: row => <span style={{ fontSize: '12px', color: 'var(--oe-text-2)' }}>{row.methodology}</span> },
+  { key: 'rating',       header: 'Rating',
+    render: row => {
+      const r = row.rating ?? '';
+      const color = r === 'AAA' ? 'var(--oe-green)'
+        : r === 'AA' || r === 'A' ? 'var(--oe-teal, var(--oe-green))'
+        : r === 'BBB' ? 'var(--oe-amber)'
+        : r === 'BB' || r === 'B' ? 'var(--oe-orange, var(--oe-amber))'
+        : 'var(--oe-rose)';
+      return (
+        <span style={{ display: 'inline-block', background: color + '1a', color, border: '1px solid ' + color, borderRadius: '4px', padding: '1px 7px', fontSize: '11px', fontWeight: 800, fontFamily: '"JetBrains Mono", monospace' }}>
+          {r || '—'}
+        </span>
+      );
+    } },
+  { key: 'chain_status', header: 'Status',
+    render: row => <StatusPill label={row.chain_status} variant={stateVariant(row.chain_status)} /> },
+];
+
+function CreditRatingScreen() {
+  const [rows, setRows] = React.useState<CreditRatingRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<CreditRatingRow | null>(null);
+
+  const fetch = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/carbon/credit-quality/chain');
+      setRows((res.data?.data ?? res.data?.results ?? res.data ?? []) as CreditRatingRow[]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => { void fetch(); }, [fetch]);
+
+  const drawerFields = (row: CreditRatingRow): DrawerField[] => [
+    { label: 'Ref',          value: row.ref ?? row.id,                                     mono: true, span: true },
+    { label: 'Project',      value: row.project_name,                                      span: true },
+    { label: 'Vintage',      value: row.vintage,                                           mono: true },
+    { label: 'Methodology',  value: row.methodology,                                       mono: true },
+    { label: 'Rating',       value: row.rating ?? '—',                                    mono: true },
+    { label: 'Rating Basis', value: row.rating_basis ?? '—' },
+    { label: 'Status',       value: <StatusPill label={row.chain_status} variant={stateVariant(row.chain_status)} />, span: true },
+    { label: 'Rated At',     value: row.rated_at ? row.rated_at.slice(0, 10) : '—',        mono: true },
+    { label: 'Tier',         value: row.tier ?? '—',                                       mono: true },
+  ];
+
+  const drawerActions = (row: CreditRatingRow): DrawerAction[] => {
+    const s = row.chain_status ?? '';
+    const actions: DrawerAction[] = [];
+    if (s === 'pending' || s === 'open' || s === 'draft') {
+      actions.push({ id: 'initiate-rating', label: 'Initiate Rating', icon: 'certificate', variant: 'primary',
+        onClick: () => api.post(`/api/carbon/credit-quality/chain/${row.id}/transition`, { action: 'initiate_rating' }).then(() => { void fetch(); setSel(null); }) });
+    }
+    if (s === 'initiated' || s === 'data_requested') {
+      actions.push({ id: 'submit-data', label: 'Submit Data', icon: 'send', variant: 'secondary',
+        onClick: () => api.post(`/api/carbon/credit-quality/chain/${row.id}/transition`, { action: 'submit_data' }).then(() => { void fetch(); setSel(null); }) });
+    }
+    if (s === 'under_review') {
+      actions.push({ id: 'publish-rating', label: 'Publish Rating', icon: 'check-circle', variant: 'primary',
+        onClick: () => api.post(`/api/carbon/credit-quality/chain/${row.id}/transition`, { action: 'publish_rating' }).then(() => { void fetch(); setSel(null); }) });
+    }
+    actions.push({ id: 'review', label: 'Review', icon: 'checklist', variant: 'secondary',
+      onClick: () => api.post(`/api/carbon/credit-quality/chain/${row.id}/transition`, { action: 'review' }).then(() => { void fetch(); setSel(null); }) });
+    return actions;
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+          Carbon Credit Quality Rating
+        </h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading…' : rows.length + ' ratings'}</div>
+      </div>
+      <div style={{ background: 'var(--oe-canvas)', border: '1px solid var(--oe-border)', borderRadius: 'var(--oe-r-card)', padding: '12px 16px', fontSize: '12px', color: 'var(--oe-text-3)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        W109 — Independent carbon credit quality assessment. AAA–CCC/D scale; Verra / Gold Standard / ICVCM methodology rating; publish_rating crosses regulator on AAA/AA label grants. Tier drives SLA depth.
+      </div>
+      <AIInsightCard
+        suggestion="3 projects rated BBB show vintage >5 years without a crediting-period renewal (W56). Aging vintage with no renewal is a leading indicator of rating downgrade to BB — portfolio NAV at risk is ~R14.2M."
+        reasoning="Verra §4.2 requires crediting-period renewal within 6 months of expiry for active projects. Lapsed renewals create additionality doubts that trigger automatic rating review."
+        title="Initiate Renewal Reviews"
+        onAccept={() => {}}
+      />
+      <DataTable<CreditRatingRow> columns={CREDIT_RATING_COLS} rows={rows} loading={loading} onRowClick={r => setSel(r)} />
+      {sel && (
+        <DetailDrawer
+          open
+          onClose={() => setSel(null)}
+          title={`Rating — ${sel.project_name}`}
+          subtitle={`${sel.methodology} · Vintage ${sel.vintage}`}
+          entityRef={sel.ref ?? sel.id.slice(-8).toUpperCase()}
+          status={sel.chain_status}
+          statusVariant={stateVariant(sel.chain_status)}
+          fields={drawerFields(sel)}
+          actions={drawerActions(sel)}
+          onActionComplete={fetch}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
-type Screen = 'dashboard' | 'analytics' | 'credits' | 'projects' | 'mrv' | 'retirements' | 'registration' | 'erpa' | 'offset' | 'reversal' | 'renewal' | 'poa';
+type Screen = 'dashboard' | 'analytics' | 'credits' | 'projects' | 'mrv' | 'retirements' | 'registration' | 'erpa' | 'offset' | 'reversal' | 'renewal' | 'poa' | 'rec' | 'article6' | 'issuance' | 'ccp' | 'esg' | 'credit-rating';
 
 export function CarbonWorkstation() {
+  const { data: me } = useCurrentUser();
   const [activeScreen, setActiveScreen] = useState<Screen>('dashboard');
 
   const { data: credits, loading: credLoading } = useCarbonCredits();
@@ -1055,11 +1704,24 @@ export function CarbonWorkstation() {
     reversal:     () => setActiveScreen('reversal'),
     renewal:      () => setActiveScreen('renewal'),
     poa:          () => setActiveScreen('poa'),
+    rec:                   () => setActiveScreen('rec'),
+    article6:              () => setActiveScreen('article6'),
+    'carbon-issuance':     () => setActiveScreen('issuance'),
+    'carbon-ccp':          () => setActiveScreen('ccp'),
+    'carbon-esg':          () => setActiveScreen('esg'),
+    'carbon-credit-rating': () => setActiveScreen('credit-rating'),
+  };
+
+  const screenToNavId: Partial<Record<Screen, string>> = {
+    issuance:      'carbon-issuance',
+    ccp:           'carbon-ccp',
+    esg:           'carbon-esg',
+    'credit-rating': 'carbon-credit-rating',
   };
 
   const liveNavConfig: NavConfig = {
     ...BASE_NAV_CONFIG,
-    activeId: activeScreen,
+    activeId: screenToNavId[activeScreen] ?? activeScreen,
     sections: BASE_NAV_CONFIG.sections.map(section => ({
       ...section,
       items: section.items.map(item => ({
@@ -1070,25 +1732,31 @@ export function CarbonWorkstation() {
   };
 
   const breadcrumbLabel: Record<Screen, string> = {
-    dashboard:    'Dashboard',
-    analytics:    'Analytics & Reports',
-    credits:      'Credits Ledger',
-    projects:     'Projects',
-    mrv:          'MRV Chain',
-    retirements:  'Retirements',
-    registration: 'Registration / PDD',
-    erpa:         'ERPA Delivery',
-    offset:       'Carbon Tax Offset',
-    reversal:     'Reversal / Buffer Pool',
-    renewal:      'Crediting Period Renewal',
-    poa:          'PoA / CPA Inclusion',
+    dashboard:       'Dashboard',
+    analytics:       'Analytics & Reports',
+    credits:         'Credits Ledger',
+    projects:        'Projects',
+    mrv:             'MRV Chain',
+    retirements:     'Retirements',
+    registration:    'Registration / PDD',
+    erpa:            'ERPA Delivery',
+    offset:          'Carbon Tax Offset',
+    reversal:        'Reversal / Buffer Pool',
+    renewal:         'Crediting Period Renewal',
+    poa:             'PoA / CPA Inclusion',
+    rec:             'REC Lifecycle',
+    article6:        'Article 6 ITMO',
+    issuance:        'Credit Issuance W82',
+    ccp:             'CCP Assessment W91',
+    esg:             'ESG Disclosure W103',
+    'credit-rating': 'Credit Quality W109',
   };
 
   return (
     <AppShell
       role="carbon_fund"
-      userName="Thabo Nkosi"
-      userEmail="carbon@openenergy.co.za"
+      userName={me?.name ?? 'User'}
+      userEmail={me?.email ?? ''}
       navConfig={liveNavConfig}
       breadcrumbs={[{ label: 'Carbon Fund' }, { label: breadcrumbLabel[activeScreen] }]}
       alerts={[
@@ -1112,6 +1780,12 @@ export function CarbonWorkstation() {
      : activeScreen === 'reversal'     ? <ReversalScreen />
      : activeScreen === 'renewal'      ? <RenewalScreen />
      : activeScreen === 'poa'          ? <PoaScreen />
+     : activeScreen === 'rec'          ? <RecScreen />
+     : activeScreen === 'article6'     ? <Article6Screen />
+     : activeScreen === 'issuance'      ? <IssuanceScreen />
+     : activeScreen === 'ccp'           ? <CcpScreen />
+     : activeScreen === 'esg'           ? <EsgDisclosureScreen />
+     : activeScreen === 'credit-rating' ? <CreditRatingScreen />
      : <>
       {/* Dashboard ─────────────────────────────────────────────────────────── */}
       <div style={{ marginBottom: '20px' }}>

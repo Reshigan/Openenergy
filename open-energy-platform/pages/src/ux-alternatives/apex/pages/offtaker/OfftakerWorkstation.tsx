@@ -15,6 +15,7 @@ import {
   useOfftakerDeliveries,
   useOfftakerTariffs,
   useAuditBlocks,
+  useCurrentUser,
 } from '../../lib/hooks';
 import {
   OfftakerPpa,
@@ -23,6 +24,7 @@ import {
   AuditBlock,
   apexClient,
 } from '../../lib/client';
+import { api } from '../../../../lib/api';
 
 // ── Nav ────────────────────────────────────────────────────────────────────────
 
@@ -55,6 +57,20 @@ const BASE_NAV_CONFIG: NavConfig = {
       items: [
         { id: 'payment-security', label: 'Payment Security W54', href: '#payment-security', icon: 'shield' },
         { id: 'rec',              label: 'REC Portfolio W70',    href: '#rec',              icon: 'leaf' },
+      ],
+    },
+    {
+      id: 'monthly-mgmt',
+      label: 'Monthly Management',
+      items: [
+        { id: 'oft-nominations', label: 'Monthly Nominations W87', href: '#', icon: 'calendar' },
+      ],
+    },
+    {
+      id: 'annual-settlement',
+      label: 'Annual Settlement',
+      items: [
+        { id: 'oft-annual-recon', label: 'Annual Recon W101', href: '#', icon: 'report' },
       ],
     },
     {
@@ -91,10 +107,12 @@ type ActiveScreen =
   | 'top'
   | 'curtailment'
   | 'security'
-  | 'cil'
+  | 'change-in-law'
   | 'recs'
   | 'termination'
-  | 'revenue';
+  | 'revenue'
+  | 'nominations'
+  | 'annual-recon';
 
 // ── PPA columns ───────────────────────────────────────────────────────────────
 
@@ -1008,6 +1026,13 @@ function SecurityScreen() {
           },
         ]}
       />
+      <AIInsightCard
+        title="Credit Support Expiry Warning"
+        suggestion="Eskom LC (Letter of Credit) for Kalahari Solar PPA expires 30 Jul 2026 — 59 days away. Renewal process with Standard Bank takes 30-45 days. A lapse in LC coverage triggers the PPA's credit support default provision, allowing the seller to suspend delivery."
+        reasoning="PPA §12.3: payment security must be maintained continuously. Any gap in coverage — even 1 day — constitutes a payment security default and entitles the IPP to suspend delivery and claim standby costs."
+        confidence="high"
+        onAccept={() => {}}
+      />
       <DataTable<AuditBlock>
         columns={auditCols}
         rows={auditData}
@@ -1028,44 +1053,157 @@ function SecurityScreen() {
   );
 }
 
-function CilScreen() {
-  const { data: auditData, loading: auditLoading, refetch } = useAuditBlocks({ entity_type: 'ppa_change_in_law' });
-  const [selected, setSelected] = React.useState<AuditBlock | null>(null);
-  const [drawerOpen, setDrawerOpen] = React.useState(false);
+// ─── W78 PPA Change-in-Law Relief ────────────────────────────────────────────
 
-  const drawerFields: DrawerField[] = selected
+type CilRow = {
+  id: string;
+  ref: string;
+  ppa_name: string;
+  event_type: 'tax_change' | 'regulatory' | 'statutory' | 'discriminatory';
+  quantum_zar: number;
+  chain_status: string;
+  event_logged_at: string;
+  tier: string;
+  is_reportable: boolean;
+};
+
+function cilEventVariant(event_type: CilRow['event_type']): 'amber' | 'blue' | 'blue' | 'rose' {
+  if (event_type === 'tax_change')    return 'amber';
+  if (event_type === 'regulatory')    return 'blue';
+  if (event_type === 'statutory')     return 'blue';
+  return 'rose'; // discriminatory
+}
+
+const cilCols: Column<CilRow>[] = [
+  { key: 'ref',             header: 'Ref',          width: '13%', mono: true },
+  { key: 'ppa_name',        header: 'PPA',          width: '22%' },
+  {
+    key: 'event_type',
+    header: 'Event Type',
+    width: '16%',
+    render: (row) => (
+      <StatusPill label={row.event_type} variant={cilEventVariant(row.event_type)} size="sm" />
+    ),
+  },
+  {
+    key: 'quantum_zar',
+    header: 'Quantum',
+    width: '13%',
+    align: 'right',
+    render: (row) => (
+      <span style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+        R {(row.quantum_zar / 1e6).toFixed(1)}M
+      </span>
+    ),
+  },
+  {
+    key: 'chain_status',
+    header: 'Status',
+    width: '14%',
+    render: (row) => <StatusPill label={row.chain_status} variant={stateVariant(row.chain_status)} size="sm" />,
+  },
+  { key: 'event_logged_at', header: 'Logged',        width: '14%', mono: true },
+];
+
+function ChangeInLawScreen() {
+  const [rows, setRows] = useState<CilRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sel, setSel] = useState<CilRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const refetch = React.useCallback(() => {
+    setLoading(true);
+    api.get('/api/ppa-change-in-law/chain')
+      .then((res: { data?: CilRow[] }) => { setRows(res.data ?? []); })
+      .catch(() => { setRows([]); })
+      .finally(() => setLoading(false));
+  }, []);
+
+  React.useEffect(() => { refetch(); }, [refetch]);
+
+  const drawerFields: DrawerField[] = sel
     ? [
-        { label: 'Block Ref',   value: selected.id.slice(-8),     mono: true },
-        { label: 'Action',      value: selected.action },
-        { label: 'Actor',       value: selected.actor_name ?? selected.actor_id },
-        { label: 'Actor Role',  value: selected.actor_role ?? '—' },
-        { label: 'Entity Type', value: selected.entity_type },
-        { label: 'Entity ID',   value: selected.entity_id.slice(-12), mono: true },
-        { label: 'Timestamp',   value: selected.timestamp ? new Date(selected.timestamp).toLocaleString() : '—', mono: true },
-        { label: 'Hash',        value: selected.hash.slice(0, 16) + '…', mono: true, span: true },
+        { label: 'Ref',          value: sel.ref,            mono: true },
+        { label: 'PPA',          value: sel.ppa_name },
+        {
+          label: 'Event Type',
+          value: <StatusPill label={sel.event_type} variant={cilEventVariant(sel.event_type)} size="sm" />,
+        },
+        {
+          label: 'Quantum',
+          value: `R ${(sel.quantum_zar / 1e6).toFixed(2)}M`,
+          mono: true,
+        },
+        { label: 'Tier',         value: sel.tier,           mono: true },
+        { label: 'Logged At',    value: sel.event_logged_at, mono: true },
+        {
+          label: 'Reportable',
+          value: (
+            <span style={{ color: sel.is_reportable ? 'var(--oe-rose)' : 'var(--oe-green)', fontWeight: 700, fontSize: '12px' }}>
+              {sel.is_reportable ? 'Yes — NERSA notified' : 'No'}
+            </span>
+          ),
+        },
+        { label: 'Status', value: <StatusPill label={sel.chain_status} variant={stateVariant(sel.chain_status)} size="sm" />, span: true },
       ]
     : [];
 
-  const drawerActions: DrawerAction[] = selected
+  const drawerActions: DrawerAction[] = sel
     ? [
         {
-          id: 'view-ppa',
-          label: 'View Linked PPA',
-          icon: 'blueprint',
-          variant: 'secondary',
-          onClick: async () => {
-            await apexClient.offtaker.listPpas();
-          },
-        },
-        {
-          id: 'refresh-cil',
-          label: 'Refresh CIL Chain',
+          id: 'assess_eligibility',
+          label: 'Assess Eligibility',
           icon: 'checklist',
           variant: 'secondary',
-          onClick: async () => {
-            await apexClient.audit.listBlocks({ entity_type: 'ppa_change_in_law' });
-            refetch();
-          },
+          disabled: sel.chain_status !== 'event_logged',
+          disabledReason: 'Eligibility assessment requires event_logged state',
+          onClick: () =>
+            api.post(`/api/ppa-change-in-law/chain/${sel.id}/action`, { action: 'assess_eligibility' })
+              .then(() => { setDrawerOpen(false); setSel(null); refetch(); }),
+        },
+        {
+          id: 'quantify_impact',
+          label: 'Quantify Impact',
+          icon: 'dollar',
+          variant: 'secondary',
+          disabled: sel.chain_status !== 'eligibility',
+          disabledReason: 'Impact quantification requires eligibility state',
+          onClick: () =>
+            api.post(`/api/ppa-change-in-law/chain/${sel.id}/action`, { action: 'quantify_impact' })
+              .then(() => { setDrawerOpen(false); setSel(null); refetch(); }),
+        },
+        {
+          id: 'submit_claim',
+          label: 'Submit Claim',
+          icon: 'send',
+          variant: 'primary',
+          disabled: sel.chain_status !== 'impact',
+          disabledReason: 'Claim submission requires impact quantification to be complete',
+          onClick: () =>
+            api.post(`/api/ppa-change-in-law/chain/${sel.id}/action`, { action: 'submit_claim' })
+              .then(() => { setDrawerOpen(false); setSel(null); refetch(); }),
+        },
+        {
+          id: 'refer_to_arbitration',
+          label: 'Refer to Arbitration',
+          icon: 'scales',
+          variant: 'danger',
+          disabled: sel.chain_status === 'closed' || sel.chain_status === 'arbitration' || sel.chain_status === 'relief_granted',
+          disabledReason: 'Cannot refer to arbitration from current state',
+          onClick: () =>
+            api.post(`/api/ppa-change-in-law/chain/${sel.id}/action`, { action: 'refer_to_arbitration' })
+              .then(() => { setDrawerOpen(false); setSel(null); refetch(); }),
+        },
+        {
+          id: 'withdraw',
+          label: 'Withdraw',
+          icon: 'reject',
+          variant: 'secondary',
+          disabled: sel.chain_status === 'closed' || sel.chain_status === 'withdrawn',
+          disabledReason: 'Cannot withdraw a closed or already-withdrawn claim',
+          onClick: () =>
+            api.post(`/api/ppa-change-in-law/chain/${sel.id}/action`, { action: 'withdraw' })
+              .then(() => { setDrawerOpen(false); setSel(null); refetch(); }),
         },
       ]
     : [];
@@ -1080,7 +1218,7 @@ function CilScreen() {
           Change-in-Law Relief W78
         </h1>
         <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>
-          {auditLoading ? 'Loading…' : auditData.length + ' audit records'}
+          {loading ? 'Loading…' : rows.length + ' records'}
         </div>
       </div>
       <div style={{
@@ -1092,47 +1230,30 @@ function CilScreen() {
         color: 'var(--oe-text-2)',
         lineHeight: 1.6,
       }}>
-        Tax, regulatory or statutory change-in-law relief claims are tracked via the W78 audit chain.
-        Each event represents a state transition in the change-in-law lifecycle for an active PPA.
+        NERSA ERA §4 pass-through relief claims for tax, regulatory, statutory, or discriminatory
+        change-in-law events affecting active PPAs. Larger quantum events receive more time (INVERTED SLA).
+        Refer to arbitration crosses the regulator on every tier.
       </div>
-      <ActionPanel
-        actions={[
-          {
-            id: 'lodge-cil',
-            label: 'Lodge Change-in-Law Event',
-            icon: 'flag',
-            variant: 'primary',
-            form: (
-              <TransitionForm
-                actionLabel="Lodge CIL Event"
-                reasonCodes={[
-                  { value: 'tax_change',        label: 'Tax legislation change' },
-                  { value: 'regulatory_change', label: 'Regulatory / licence condition change' },
-                  { value: 'statutory_change',  label: 'Statutory instrument change' },
-                  { value: 'discriminatory',    label: 'Discriminatory change affecting only this PPA' },
-                ]}
-                onSubmit={async () => {
-                  await apexClient.audit.listBlocks({ entity_type: 'ppa_change_in_law' });
-                  refetch();
-                }}
-                confirmMessage="This will log a formal change-in-law event against the selected PPA. An eligibility assessment will begin under W78. The counterparty and NERSA will be notified."
-              />
-            ),
-          },
-        ]}
+      <AIInsightCard
+        suggestion="The Carbon Tax Act Amendment (2026) constitutes a qualifying Change-in-Law event under §14.2 of the Kalahari Solar PPA. Estimated tariff pass-through quantum is R3.8M/year. Claim must be submitted within 90 days of the promulgation date (by 28 Jul 2026)."
+        reasoning="PPA §14.2 defines the 90-day submission window as a contractual sunset clause — missed claims are permanently waived regardless of quantum."
+        title="Submit CiL Claim"
+        onAccept={() => {}}
       />
-      <DataTable<AuditBlock>
-        columns={auditCols}
-        rows={auditData}
-        loading={auditLoading}
-        onRowClick={(row) => { setSelected(row); setDrawerOpen(true); }}
+      <DataTable<CilRow>
+        columns={cilCols}
+        rows={rows}
+        loading={loading}
+        onRowClick={(row) => { setSel(row); setDrawerOpen(true); }}
       />
       <DetailDrawer
         open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        title={selected?.action ?? ''}
-        subtitle="W78 Change-in-Law Audit Block"
-        entityRef={selected?.id.slice(-8)}
+        onClose={() => { setDrawerOpen(false); setSel(null); }}
+        title={sel ? `${sel.ppa_name} — ${sel.ref}` : ''}
+        subtitle="W78 PPA Change-in-Law Relief"
+        entityRef={sel?.ref}
+        status={sel?.chain_status}
+        statusVariant={stateVariant(sel?.chain_status ?? '')}
         fields={drawerFields}
         actions={drawerActions}
         onActionComplete={refetch}
@@ -1242,6 +1363,13 @@ function RecsScreen() {
             },
           },
         ]}
+      />
+      <AIInsightCard
+        title="Scope-2 Certificate Shortfall"
+        suggestion="Scope-2 disclosure for FY2025 requires 24,000 MWh of I-REC certificates (annual CDP commitment). Current registry balance is 19,200 MWh — 4,800 MWh shortfall. Available I-RECs from Perdekraal Wind vintage Dec 2025 can close the gap at ~R18/MWh."
+        reasoning="CDP A-list scoring requires verifiable Scope-2 claims with attribute certificates matching the reporting period. A 4,800 MWh gap in the CDP disclosure would downgrade the Scope-2 claim from 'market-based' to 'location-based' — reducing the carbon neutrality claim by 20%."
+        confidence="medium"
+        onAccept={() => {}}
       />
       <DataTable<AuditBlock>
         columns={auditCols}
@@ -1371,6 +1499,13 @@ function TerminationScreen() {
             ),
           },
         ]}
+      />
+      <AIInsightCard
+        title="ETA Confirmation Required"
+        suggestion="PTER-2026-001 (involuntary termination trigger: Eskom change-of-control) has reached the ETA calculation stage. Preliminary ETA estimate is R1.85B — significantly above the R1.2B provision in the financial model. Mark-to-market ETA must be auditor-confirmed before IFRS 9 derecognition."
+        reasoning="IFRS 9 §3.3.1: financial instruments (PPA as finance lease) cannot be derecognised until the termination amount is confirmed and disclosed. Unconfirmed ETA creates a contingent liability requiring footnote disclosure in the interim financials."
+        confidence="high"
+        onAccept={() => {}}
       />
       <DataTable<AuditBlock>
         columns={auditCols}
@@ -1528,9 +1663,365 @@ function RevenueScreen() {
   );
 }
 
+// ─── PPA Monthly Nominations (W87) ───────────────────────────────────────────
+
+type NomRow = {
+  id: string;
+  ref: string;
+  ppa_name: string;
+  delivery_month: string;
+  nominated_mwh: number;
+  accepted_mwh: number | null;
+  chain_status: string;
+  tier: string;
+};
+
+const nomCols: Column<NomRow>[] = [
+  { key: 'ref',            header: 'Ref',            width: '14%', mono: true },
+  { key: 'ppa_name',       header: 'PPA',            width: '24%' },
+  { key: 'delivery_month', header: 'Delivery Month', width: '15%', mono: true },
+  { key: 'nominated_mwh',  header: 'Nominated MWh',  width: '14%', mono: true, align: 'right' },
+  {
+    key: 'accepted_mwh',
+    header: 'Accepted MWh',
+    width: '14%',
+    mono: true,
+    align: 'right',
+    render: (row) => (
+      <span style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+        {row.accepted_mwh != null ? row.accepted_mwh.toLocaleString() : '—'}
+      </span>
+    ),
+  },
+  {
+    key: 'chain_status',
+    header: 'Status',
+    width: '14%',
+    render: (row) => <StatusPill label={row.chain_status} variant={stateVariant(row.chain_status)} size="sm" />,
+  },
+];
+
+function NominationsScreen() {
+  const [rows, setRows] = useState<NomRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sel, setSel] = useState<NomRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  React.useEffect(() => {
+    api.get('/api/ppa-nomination/chain')
+      .then((res: { data?: NomRow[] }) => { setRows(res.data ?? []); })
+      .catch(() => { setRows([]); })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const drawerFields: DrawerField[] = sel
+    ? [
+        { label: 'Ref',            value: sel.ref,            mono: true },
+        { label: 'PPA',            value: sel.ppa_name },
+        { label: 'Delivery Month', value: sel.delivery_month, mono: true },
+        { label: 'Nominated MWh',  value: sel.nominated_mwh.toLocaleString(), mono: true },
+        { label: 'Accepted MWh',   value: sel.accepted_mwh != null ? sel.accepted_mwh.toLocaleString() : '—', mono: true },
+        { label: 'Tier',           value: sel.tier,           mono: true },
+        { label: 'Status', value: <StatusPill label={sel.chain_status} variant={stateVariant(sel.chain_status)} size="sm" />, span: true },
+      ]
+    : [];
+
+  const drawerActions: DrawerAction[] = sel
+    ? [
+        {
+          id: 'submit',
+          label: 'Submit Nomination',
+          icon: 'send',
+          variant: 'primary',
+          disabled: sel.chain_status !== 'draft',
+          disabledReason: 'Nomination must be in draft state to submit',
+          onClick: () =>
+            api.post(`/api/ppa-nomination/chain/${sel.id}/action`, { action: 'submit' })
+              .then(() => setSel(null)),
+        },
+        {
+          id: 'accept',
+          label: 'Accept Nomination',
+          icon: 'check-circle',
+          variant: 'secondary',
+          disabled: sel.chain_status !== 'submitted',
+          disabledReason: 'Can only accept a submitted nomination',
+          onClick: () =>
+            api.post(`/api/ppa-nomination/chain/${sel.id}/action`, { action: 'accept' })
+              .then(() => setSel(null)),
+        },
+        {
+          id: 'revise',
+          label: 'Revise Nomination',
+          icon: 'flag',
+          variant: 'secondary',
+          disabled: sel.chain_status === 'accepted' || sel.chain_status === 'closed',
+          disabledReason: 'Cannot revise an accepted or closed nomination',
+          onClick: () =>
+            api.post(`/api/ppa-nomination/chain/${sel.id}/action`, { action: 'revise' })
+              .then(() => setSel(null)),
+        },
+        {
+          id: 'close',
+          label: 'Close Nomination',
+          icon: 'x-circle',
+          variant: 'danger',
+          disabled: sel.chain_status === 'closed',
+          disabledReason: 'Nomination is already closed',
+          onClick: () =>
+            api.post(`/api/ppa-nomination/chain/${sel.id}/action`, { action: 'close' })
+              .then(() => setSel(null)),
+        },
+      ]
+    : [];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1
+          className="oe-grad-text"
+          style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}
+        >
+          Monthly Nominations W87
+        </h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>
+          {loading ? 'Loading…' : rows.length + ' records'}
+        </div>
+      </div>
+      <div style={{
+        background: 'var(--oe-surf)',
+        border: '1px solid var(--oe-border)',
+        borderRadius: 'var(--oe-r-card)',
+        padding: '12px 16px',
+        fontSize: '12px',
+        color: 'var(--oe-text-2)',
+        lineHeight: 1.6,
+      }}>
+        Monthly PPA energy nominations — submit, accept, and revise per-delivery-month quantities against active
+        PPAs. Click a row to submit, accept, revise, or close the nomination lifecycle.
+      </div>
+      <AIInsightCard
+        suggestion="June 2026 nomination for Kalahari Solar PPA is 14% below the contracted minimum-take quantity of 8,400 MWh. At this level, take-or-pay provisions in §7.3 will trigger an automatic cure notice of R2.1M against the offtaker."
+        reasoning="NERSA ERA §4 PPA take-or-pay clauses activate when delivery falls below 90% of the monthly contract quantity for 2 consecutive months. May was 88% — June at 86% would trigger the clause."
+        title="Review Nomination"
+        onAccept={() => {}}
+      />
+      <DataTable<NomRow>
+        columns={nomCols}
+        rows={rows}
+        loading={loading}
+        onRowClick={(row) => { setSel(row); setDrawerOpen(true); }}
+      />
+      <DetailDrawer
+        open={drawerOpen}
+        onClose={() => { setDrawerOpen(false); setSel(null); }}
+        title={sel ? `${sel.ppa_name} — ${sel.delivery_month}` : ''}
+        subtitle="Monthly Nomination W87"
+        entityRef={sel?.ref}
+        status={sel?.chain_status}
+        statusVariant={stateVariant(sel?.chain_status ?? '')}
+        fields={drawerFields}
+        actions={drawerActions}
+      />
+    </div>
+  );
+}
+
+// ─── PPA Annual Reconciliation (W101) ─────────────────────────────────────────
+
+type AnnualReconRow = {
+  id: string;
+  ref: string;
+  ppa_name: string;
+  contract_year: string;
+  variance_zar: number;
+  net_cash_zar: number;
+  chain_status: string;
+  tier: string;
+};
+
+const annualReconCols: Column<AnnualReconRow>[] = [
+  { key: 'ref',           header: 'Ref',           width: '14%', mono: true },
+  { key: 'ppa_name',      header: 'PPA',           width: '24%' },
+  { key: 'contract_year', header: 'Contract Year', width: '13%', mono: true },
+  {
+    key: 'variance_zar',
+    header: 'Variance (ZAR)',
+    width: '16%',
+    align: 'right',
+    render: (row) => (
+      <span style={{
+        fontFamily: '"JetBrains Mono", monospace',
+        color: row.variance_zar < 0 ? 'var(--oe-rose)' : 'var(--oe-green)',
+        fontWeight: 600,
+      }}>
+        R{(row.variance_zar / 1e6).toFixed(1)}m
+      </span>
+    ),
+  },
+  {
+    key: 'net_cash_zar',
+    header: 'Net Cash (ZAR)',
+    width: '16%',
+    align: 'right',
+    render: (row) => (
+      <span style={{
+        fontFamily: '"JetBrains Mono", monospace',
+        color: row.net_cash_zar < 0 ? 'var(--oe-rose)' : 'var(--oe-text-1)',
+      }}>
+        R{(row.net_cash_zar / 1e6).toFixed(1)}m
+      </span>
+    ),
+  },
+  {
+    key: 'chain_status',
+    header: 'Status',
+    width: '14%',
+    render: (row) => <StatusPill label={row.chain_status} variant={stateVariant(row.chain_status)} size="sm" />,
+  },
+];
+
+function AnnualReconScreen() {
+  const [rows, setRows] = useState<AnnualReconRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sel, setSel] = useState<AnnualReconRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  React.useEffect(() => {
+    api.get('/api/offtaker/ppa-annual-recon/chain')
+      .then((res: { data?: AnnualReconRow[] }) => { setRows(res.data ?? []); })
+      .catch(() => { setRows([]); })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const drawerFields: DrawerField[] = sel
+    ? [
+        { label: 'Ref',           value: sel.ref,           mono: true },
+        { label: 'PPA',           value: sel.ppa_name },
+        { label: 'Contract Year', value: sel.contract_year, mono: true },
+        { label: 'Variance',      value: `R${(sel.variance_zar / 1e6).toFixed(2)}m`, mono: true },
+        { label: 'Net Cash',      value: `R${(sel.net_cash_zar / 1e6).toFixed(2)}m`, mono: true },
+        { label: 'Tier',          value: sel.tier,          mono: true },
+        { label: 'Status', value: <StatusPill label={sel.chain_status} variant={stateVariant(sel.chain_status)} size="sm" />, span: true },
+      ]
+    : [];
+
+  const drawerActions: DrawerAction[] = sel
+    ? [
+        {
+          id: 'open_period',
+          label: 'Open Period',
+          icon: 'calendar',
+          variant: 'primary',
+          disabled: sel.chain_status !== 'pending',
+          disabledReason: 'Period must be pending to open',
+          onClick: () =>
+            api.post(`/api/offtaker/ppa-annual-recon/chain/${sel.id}/action`, { action: 'open_period' })
+              .then(() => setSel(null)),
+        },
+        {
+          id: 'finalise_data',
+          label: 'Finalise Data',
+          icon: 'checklist',
+          variant: 'secondary',
+          disabled: sel.chain_status !== 'open',
+          disabledReason: 'Period must be open to finalise data',
+          onClick: () =>
+            api.post(`/api/offtaker/ppa-annual-recon/chain/${sel.id}/action`, { action: 'finalise_data' })
+              .then(() => setSel(null)),
+        },
+        {
+          id: 'sign_off',
+          label: 'Sign Off',
+          icon: 'check-circle',
+          variant: 'primary',
+          disabled: sel.chain_status !== 'data_finalised',
+          disabledReason: 'Data must be finalised before sign-off',
+          onClick: () =>
+            api.post(`/api/offtaker/ppa-annual-recon/chain/${sel.id}/action`, { action: 'sign_off' })
+              .then(() => setSel(null)),
+        },
+        {
+          id: 'restate_year',
+          label: 'Restate Year',
+          icon: 'flag',
+          variant: 'secondary',
+          disabled: sel.chain_status !== 'signed_off',
+          disabledReason: 'Can only restate a signed-off period',
+          onClick: () =>
+            api.post(`/api/offtaker/ppa-annual-recon/chain/${sel.id}/action`, { action: 'restate_year' })
+              .then(() => setSel(null)),
+        },
+        {
+          id: 'raise_dispute',
+          label: 'Raise Dispute',
+          icon: 'scales',
+          variant: 'danger',
+          disabled: sel.chain_status === 'closed' || sel.chain_status === 'disputed',
+          disabledReason: 'Cannot raise a dispute on a closed or already-disputed recon',
+          onClick: () =>
+            api.post(`/api/offtaker/ppa-annual-recon/chain/${sel.id}/action`, { action: 'raise_dispute' })
+              .then(() => setSel(null)),
+        },
+      ]
+    : [];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1
+          className="oe-grad-text"
+          style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}
+        >
+          Annual Recon W101
+        </h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>
+          {loading ? 'Loading…' : rows.length + ' records'}
+        </div>
+      </div>
+      <div style={{
+        background: 'var(--oe-surf)',
+        border: '1px solid var(--oe-border)',
+        borderRadius: 'var(--oe-r-card)',
+        padding: '12px 16px',
+        fontSize: '12px',
+        color: 'var(--oe-text-2)',
+        lineHeight: 1.6,
+      }}>
+        Annual PPA reconciliation — open the period, finalise metered vs settled data, sign off, or raise a
+        formal dispute. Net-cash variance flows to the settlement ledger. Restate triggers a full re-audit cycle.
+      </div>
+      <AIInsightCard
+        suggestion="FY2025 annual reconciliation shows R8.4M net payable to Perdekraal Wind following settlement of curtailment shortfalls and tariff CPI adjustments. 3 line items are disputed — resolution required before sign-off deadline of 30 Jun 2026."
+        reasoning="IFRS 16 §42 requires all PPA modifications and annual recon settlements to be reflected in the lease liability within the reporting period. Unresolved disputes create a disclosure obligation."
+        title="Resolve Disputed Items"
+        onAccept={() => {}}
+      />
+      <DataTable<AnnualReconRow>
+        columns={annualReconCols}
+        rows={rows}
+        loading={loading}
+        onRowClick={(row) => { setSel(row); setDrawerOpen(true); }}
+      />
+      <DetailDrawer
+        open={drawerOpen}
+        onClose={() => { setDrawerOpen(false); setSel(null); }}
+        title={sel ? `${sel.ppa_name} — ${sel.contract_year}` : ''}
+        subtitle="Annual PPA Reconciliation W101"
+        entityRef={sel?.ref}
+        status={sel?.chain_status}
+        statusVariant={stateVariant(sel?.chain_status ?? '')}
+        fields={drawerFields}
+        actions={drawerActions}
+      />
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function OfftakerWorkstation() {
+  const { data: me } = useCurrentUser();
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>('dashboard');
 
   const { data: ppas, loading: ppasLoading } = useOfftakerPpas();
@@ -1554,10 +2045,12 @@ export function OfftakerWorkstation() {
     top: 'take-or-pay',
     curtailment: 'curtailment',
     security: 'payment-security',
-    cil: 'change-in-law',
+    'change-in-law': 'change-in-law',
     recs: 'rec',
     termination: 'termination',
     revenue: 'revenue',
+    nominations: 'oft-nominations',
+    'annual-recon': 'oft-annual-recon',
   };
 
   const liveNavConfig: NavConfig = {
@@ -1575,11 +2068,13 @@ export function OfftakerWorkstation() {
           : item.id === 'tariff'         ? () => setActiveScreen('tariff')
           : item.id === 'take-or-pay'    ? () => setActiveScreen('top')
           : item.id === 'curtailment'    ? () => setActiveScreen('curtailment')
-          : item.id === 'change-in-law'  ? () => setActiveScreen('cil')
+          : item.id === 'change-in-law'  ? () => setActiveScreen('change-in-law')
           : item.id === 'payment-security' ? () => setActiveScreen('security')
           : item.id === 'rec'            ? () => setActiveScreen('recs')
           : item.id === 'termination'    ? () => setActiveScreen('termination')
           : item.id === 'revenue'        ? () => setActiveScreen('revenue')
+          : item.id === 'oft-nominations' ? () => setActiveScreen('nominations')
+          : item.id === 'oft-annual-recon' ? () => setActiveScreen('annual-recon')
           : undefined,
       })),
     })),
@@ -1594,17 +2089,19 @@ export function OfftakerWorkstation() {
     top: 'Take-or-Pay',
     curtailment: 'Curtailment Claims',
     security: 'Payment Security',
-    cil: 'Change-in-Law Relief',
+    'change-in-law': 'Change-in-Law Relief',
     recs: 'REC Portfolio',
     termination: 'PPA Termination',
     revenue: 'Revenue Assurance',
+    nominations: 'Monthly Nominations',
+    'annual-recon': 'Annual Reconciliation',
   };
 
   return (
     <AppShell
       role="offtaker"
-      userName="Refilwe Dlamini"
-      userEmail="offtaker@openenergy.co.za"
+      userName={me?.name ?? 'User'}
+      userEmail={me?.email ?? ''}
       navConfig={liveNavConfig}
       breadcrumbs={[{ label: 'Offtaker' }, { label: screenLabel[activeScreen] }]}
       alerts={[
@@ -1631,10 +2128,12 @@ export function OfftakerWorkstation() {
      : activeScreen === 'top'          ? <TopScreen />
      : activeScreen === 'curtailment'  ? <CurtailmentScreen />
      : activeScreen === 'security'     ? <SecurityScreen />
-     : activeScreen === 'cil'          ? <CilScreen />
+     : activeScreen === 'change-in-law' ? <ChangeInLawScreen />
      : activeScreen === 'recs'          ? <RecsScreen />
      : activeScreen === 'termination'   ? <TerminationScreen />
      : activeScreen === 'revenue'       ? <RevenueScreen />
+     : activeScreen === 'nominations'   ? <NominationsScreen />
+     : activeScreen === 'annual-recon'  ? <AnnualReconScreen />
      : (
       <>
         <div style={{ marginBottom: '20px' }}>

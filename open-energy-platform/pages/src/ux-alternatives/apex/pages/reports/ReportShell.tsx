@@ -26,6 +26,12 @@ import {
   LicenceRenewalStatusReport,
   RiskExposureReport,
   ProjectFinanceReport,
+  MlModelPerformanceReport,
+  SllKpiComplianceReport,
+  DscrPortfolioReport,
+  PreTradeCreditUtilisationReport,
+  ImbalanceSettlementReport,
+  ChangeInLawTrackerReport,
 } from './ReportTemplates';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -126,6 +132,13 @@ const REPORT_CATALOGUE: ReportCategory[] = [
         roles: ['trader', 'admin'],
         component: TradeRevenueReport,
       },
+      {
+        id: 'pretrade-credit-utilisation',
+        label: 'Pre-Trade Credit Utilisation',
+        description: 'Real-time pre-trade credit limit utilisation by counterparty',
+        roles: ['trader', 'admin'],
+        component: PreTradeCreditUtilisationReport,
+      },
     ],
   },
   {
@@ -154,6 +167,13 @@ const REPORT_CATALOGUE: ReportCategory[] = [
         roles: ['grid_operator', 'admin'],
         component: RiskExposureReport,
       },
+      {
+        id: 'imbalance-settlement',
+        label: 'Imbalance Settlement',
+        description: 'MTU imbalance settlement summary and disputed interval register',
+        roles: ['grid_operator', 'admin'],
+        component: ImbalanceSettlementReport,
+      },
     ],
   },
   {
@@ -167,6 +187,13 @@ const REPORT_CATALOGUE: ReportCategory[] = [
         description: 'Per-licence expiry countdown and renewal state',
         roles: ['regulator', 'ipp_developer', 'admin'],
         component: LicenceRenewalStatusReport,
+      },
+      {
+        id: 'change-in-law-tracker',
+        label: 'Change-in-Law Tracker',
+        description: 'Open change-in-law relief claims across all PPA portfolios',
+        roles: ['offtaker', 'regulator', 'admin'],
+        component: ChangeInLawTrackerReport,
       },
     ],
   },
@@ -201,6 +228,34 @@ const REPORT_CATALOGUE: ReportCategory[] = [
         description: 'Drawdown / IE Cert / Disbursement match status',
         roles: ['lender', 'admin'],
         component: ThreeWayMatchReport,
+      },
+      {
+        id: 'sll-kpi-compliance',
+        label: 'SLL KPI Compliance',
+        description: 'Sustainability-linked loan KPI compliance status and margin ratchet tracking',
+        roles: ['lender', 'admin'],
+        component: SllKpiComplianceReport,
+      },
+      {
+        id: 'dscr-portfolio',
+        label: 'DSCR Portfolio',
+        description: 'Portfolio DSCR monitoring across all project finance facilities',
+        roles: ['lender', 'admin'],
+        component: DscrPortfolioReport,
+      },
+    ],
+  },
+  {
+    id: 'ml-models',
+    label: 'ML & Predictive',
+    icon: 'chart-line',
+    reports: [
+      {
+        id: 'ml-model-performance',
+        label: 'ML Model Performance',
+        description: 'ML model accuracy and inference metrics for W127-W130 predictive chains',
+        roles: ['admin', 'support'],
+        component: MlModelPerformanceReport,
       },
     ],
   },

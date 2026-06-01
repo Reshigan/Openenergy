@@ -18,6 +18,16 @@ import { api } from '../../../lib/api';
 
 export type ChainStatus = string;
 
+export interface NotificationItem {
+  id: string;
+  title: string;
+  body: string;
+  entity_type?: string;
+  entity_id?: string;
+  read: boolean;
+  created_at: string;
+}
+
 export interface ApiListResponse<T> {
   success: boolean;
   data: T[];
@@ -686,6 +696,11 @@ export const apexClient = {
     me: () => item<{ id: string; name: string; email: string; role: string; company_name?: string }>('/auth/me'),
   },
 
+  notifications: {
+    unreadCount: () => api.get<any>('/notifications/unread-count').then(r => (r.data?.data?.unread_count ?? 0) as number),
+    list: () => api.get<any>('/notifications').then(r => (r.data?.data?.notifications ?? []) as NotificationItem[]),
+  },
+
   // ── IPP ──────────────────────────────────────────────────────────────────
 
   ipp: {
@@ -741,13 +756,21 @@ export const apexClient = {
     listMrv:          (params?: Record<string, unknown>) => list<CarbonMrv>('/carbon/mrv-chain', params),
     listReversals:    (params?: Record<string, unknown>) => list<Record<string, unknown>>('/carbon-reversal/chain', params),
     listRenewals:     (params?: Record<string, unknown>) => list<Record<string, unknown>>('/crediting-renewal/chain', params),
-    listPoaInclusions:(params?: Record<string, unknown>) => list<Record<string, unknown>>('/poa-inclusion/chain', params),
+    listPoaInclusions:         (params?: Record<string, unknown>) => list<Record<string, unknown>>('/poa-inclusion/chain', params),
+    listRecLifecycle:          (params?: Record<string, unknown>) => list<Record<string, unknown>>('/rec-lifecycle/chain', params),
+    listArticle6Adjustments:   (params?: Record<string, unknown>) => list<Record<string, unknown>>('/carbon/article-6', params),
+    listIssuanceChain:         (params?: Record<string, unknown>) => list<Record<string, unknown>>('/carbon-issuance/chain', params),
+    listCcpAssessments:        (params?: Record<string, unknown>) => list<Record<string, unknown>>('/ccp-assessment/chain', params),
     // transitions
-    retireCredits:    (id: string, body: Record<string, unknown>) => post<CarbonCredit>(`/carbon/credits/${id}/retire`, body),
-    initiateErpa:     (body: Record<string, unknown>) => post<CarbonProject>('/carbon-erpa/chain', body),
-    transitionReversal:(id: string, action: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/carbon-reversal/chain/${id}/${action}`, body),
-    transitionRenewal: (id: string, action: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/crediting-renewal/chain/${id}/${action}`, body),
-    transitionPoa:     (id: string, action: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/poa-inclusion/chain/${id}/${action}`, body),
+    retireCredits:             (id: string, body: Record<string, unknown>) => post<CarbonCredit>(`/carbon/credits/${id}/retire`, body),
+    initiateErpa:              (body: Record<string, unknown>) => post<CarbonProject>('/carbon-erpa/chain', body),
+    transitionReversal:        (id: string, action: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/carbon-reversal/chain/${id}/${action}`, body),
+    transitionRenewal:         (id: string, action: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/crediting-renewal/chain/${id}/${action}`, body),
+    transitionPoa:             (id: string, action: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/poa-inclusion/chain/${id}/${action}`, body),
+    transitionRecLifecycle:    (id: string, action: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/rec-lifecycle/chain/${id}/${action}`, body),
+    transitionArticle6:        (id: string, action: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/carbon/article-6/${id}/${action}`, body),
+    transitionIssuance:        (id: string, action: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/carbon-issuance/chain/${id}/${action}`, body),
+    transitionCcp:             (id: string, action: string, body?: Record<string, unknown>) => post<Record<string, unknown>>(`/ccp-assessment/chain/${id}/${action}`, body),
   },
 
   // ── Offtaker ──────────────────────────────────────────────────────────────
@@ -854,6 +877,7 @@ export const apexClient = {
     listBillingRuns:    () => list<AdminBillingRun>('/platform-admin/billing-runs'),
     runBilling:         () => post<AdminBillingRun>('/platform-admin/invoices/run'),
     listInvoices:       (params?: Record<string, unknown>) => list<AdminInvoice>('/platform-admin/invoices', params),
+    runCron:            (body: Record<string, unknown>) => post<{ ok: boolean }>('/admin/cron/run', body),
   },
 
 };

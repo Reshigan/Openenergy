@@ -20,11 +20,12 @@ import { Timeline, TimelineEvent } from '../../components/display/Timeline';
 import { DetailDrawer, DrawerField, DrawerAction } from '../../components/display/DetailDrawer';
 import {
   useGridNominations, useGridCurtailments, useGridConnections, useGridReserveActivations,
-  useAuditBlocks,
+  useAuditBlocks, useCurrentUser,
 } from '../../lib/hooks';
 import {
   GridNomination, GridCurtailment, GridConnection, GridReserveActivation, AuditBlock, apexClient,
 } from '../../lib/client';
+import { api } from '../../../../lib/api';
 
 type ActiveScreen =
   | 'dashboard'
@@ -37,7 +38,11 @@ type ActiveScreen =
   | 'compliance'
   | 'analytics'
   | 'capacity'
-  | 'outage';
+  | 'outage'
+  | 'blackstart'
+  | 'rez'
+  | 'imbalance'
+  | 'tx-outage';
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
@@ -71,15 +76,19 @@ const GRID_NAV: NavConfig = {
         { id: 'grid-capacity',   label: 'Capacity Queue',            href: '#capacity',   icon: 'chain' },
         { id: 'grid-gca',        label: 'GCA W28',                   href: '#gca',        icon: 'link' },
         { id: 'grid-outage',     label: 'Planned Outages',           href: '#outage',     icon: 'clock' },
+        { id: 'grid-tx-outage',  label: 'TX Network Outage W110',    href: '#',           icon: 'alert-triangle', badge: 1, badgeVariant: 'amber' },
         { id: 'grid-code-comp',  label: 'Grid Code Compliance W67',  href: '#code-comp',  icon: 'shield' },
+        { id: 'grid-blackstart', label: 'Black Start W84',           href: '#blackstart', icon: 'bolt' },
+        { id: 'grid-rez',        label: 'REZ Capacity W94',          href: '#rez',        icon: 'layers' },
       ],
     },
     {
       id: 'settlements',
       label: 'Settlements',
       items: [
-        { id: 'grid-wheeling',   label: 'Wheeling Charges W8',     href: '#wheeling',   icon: 'dollar' },
-        { id: 'grid-reserve',    label: 'Reserve Activation W50',  href: '#reserve',    icon: 'lightning' },
+        { id: 'grid-wheeling',    label: 'Wheeling Charges W8',           href: '#wheeling',    icon: 'dollar' },
+        { id: 'grid-reserve',     label: 'Reserve Activation W50',        href: '#reserve',     icon: 'lightning' },
+        { id: 'grid-imbalance',   label: 'Imbalance Settlement W105',     href: '#',            icon: 'bolt' },
       ],
     },
     {
@@ -536,6 +545,12 @@ function NominationsScreen() {
         <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Dispatch Nominations</h1>
         <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading…' : data.length + ' records'}</div>
       </div>
+      <AIInsightCard
+        suggestion="BRP nomination for the 06:00 interval shows 847 MW of declared capacity but SCADA telemetry from Prieska REZ reads only 612 MW available — 235 MW overnomination. Overnomination at this level triggers CASOM penalties if not corrected by T-60min."
+        reasoning="NERSA Grid Code §CC.3.2: BRP overnomination corrections must be submitted before T-60min of the trading interval. The window closes in 34 minutes."
+        title="Submit Correction"
+        onAccept={() => {}}
+      />
       <DataTable<GridNomination>
         columns={NOM_COLS}
         rows={data}
@@ -605,6 +620,12 @@ function CurtailmentsScreen() {
         <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Load Curtailment Orders</h1>
         <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading…' : data.length + ' records'}</div>
       </div>
+      <AIInsightCard
+        suggestion="Load-shedding Stage 4 curtailment has affected 14 grid-connected generators since 18:00. Total curtailed energy is 2,340 MWh across 6 hours — deemed energy compensation exposure is R4.2M under REIPPPP PPA deemed-energy provisions."
+        reasoning="NERSA PPA §7.6: curtailment events must be logged in the dispatch control system within 2h and notified to affected generators within 4h to preserve SO indemnity against deemed-energy claims."
+        title="Log Curtailment Events"
+        onAccept={() => {}}
+      />
       <DataTable<GridCurtailment>
         columns={CURTAIL_COLS}
         rows={data}
@@ -687,6 +708,12 @@ function ConnectionsScreen() {
         <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Grid Connections</h1>
         <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading…' : data.length + ' records'}</div>
       </div>
+      <AIInsightCard
+        suggestion="Jeffreys Bay 2 (200 MW) GCA signed but FAT testing is 23 days behind schedule. Current forecast: first synchronisation on 14 Sep 2026 — missing the 30 Sep REIPPPP deadline by 16 days. Partial energisation of 120 MW is technically feasible if FAT waiver is granted."
+        reasoning="NERSA Grid Code §C-7.4 permits partial commercial operation with SO written consent if system studies confirm N-1 compliance at the partial load level. A 120 MW partial COD preserves the commercial availability date."
+        title="Request Partial COD Assessment"
+        onAccept={() => {}}
+      />
       <DataTable<GridConnection>
         columns={CONN_COLS}
         rows={data}
@@ -769,6 +796,12 @@ function ReserveScreen() {
         <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Reserve Activations</h1>
         <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading…' : data.length + ' records'}</div>
       </div>
+      <AIInsightCard
+        suggestion="SR-2026-0041 spinning reserve dispatch (Ruacana Hydro, 180 MW) activated for 47 minutes during frequency event at 14:23. Settlement due within 24h is R890k. Current automated settlement engine shows the payment queued but not yet confirmed by the reserve provider."
+        reasoning="NERSA Grid Code §CC.6.4: reserve settlement must be confirmed within 24h of the activation event. Unconfirmed settlements after 24h automatically trigger a dispute process under the balancing mechanism."
+        title="Confirm Settlement"
+        onAccept={() => {}}
+      />
       <DataTable<GridReserveActivation>
         columns={RESERVE_COLS}
         rows={data}
@@ -856,6 +889,13 @@ function GcaScreen() {
             onClick: async () => { refetch(); },
           },
         ]}
+      />
+
+      <AIInsightCard
+        suggestion="GCA-TX-2026-0007 (Roggeveld Phase 2, 147 MW) shows 'executed' status but the SO wayleave registration with the Deeds Office has not been completed. Connection cannot be energised without registered wayleave — energisation date risk of +45 days."
+        reasoning="NERSA Grid Code §C-1.7: physical connection cannot proceed without registered servitudes. The Deeds Office registration typically takes 30-60 days and must be initiated now to maintain the Sep 2026 energisation schedule."
+        title="Initiate Wayleave Registration"
+        onAccept={() => {}}
       />
 
       <div style={cardStyle}>
@@ -960,6 +1000,12 @@ function WheelingScreen() {
         <SectionHeader
           title="Wheeling Activity Log"
           subtitle={auditLoading ? 'Loading…' : `${auditData.length} audit block${auditData.length !== 1 ? 's' : ''}`}
+        />
+        <AIInsightCard
+          suggestion="Wheeling charge dispute WCD-2026-007 (Meridian Energy, R1.2M) has been in negotiation for 88 days. The 90-day dispute resolution deadline under §6.4 of the wheeling agreement expires on 3 Jun. After 90 days, the dispute auto-escalates to NERSA arbitration."
+          reasoning="NERSA ERA §30 arbitration adds 6-12 months to resolution and requires publication of the dispute in the NERSA register — creating reputational risk for both parties."
+          title="Propose Settlement"
+          onAccept={() => {}}
         />
         <DataTable<AuditBlock>
           columns={AUDIT_COLS}
@@ -1083,6 +1129,12 @@ function ComplianceScreen() {
           title="Compliance Activity Log"
           subtitle={auditLoading ? 'Loading…' : `${auditData.length} audit block${auditData.length !== 1 ? 's' : ''}`}
         />
+        <AIInsightCard
+          suggestion="3 generators have failed the Q1 2026 power quality compliance test (voltage unbalance >1.5% during peak demand). NRS 097-2-1 requires non-compliant generators to submit a remediation plan within 30 days. Deadline for 2 of the 3 is 5 Jun 2026 — 4 days away."
+          reasoning="Grid Code §C-8.3: generators without a submitted remediation plan after the deadline face connection suspension. Suspension of a REIPPPP plant triggers PA force majeure provisions and bank covenant breaches."
+          title="Issue Compliance Notice"
+          onAccept={() => {}}
+        />
         <DataTable<AuditBlock>
           columns={AUDIT_COLS}
           rows={auditData}
@@ -1179,6 +1231,12 @@ function CapacityScreen() {
         <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Grid Capacity Allocation</h1>
         <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>W58 · NTCSA 2024 Capacity Rules</div>
       </div>
+      <AIInsightCard
+        suggestion="Prieska REZ export capacity is 94% allocated (1,128 MW of 1,200 MW headroom). Next planned network reinforcement (2028 MCEP upgrade) will add 450 MW headroom. Any new allocation above 72 MW would breach the 95% planning threshold."
+        reasoning="NTCSA 2024 Capacity Rules §8.2: allocations above 95% require a network capacity adequacy study (90-day process) before approval. New applications should be held until the adequacy study completes."
+        title="Commission Adequacy Study"
+        onAccept={() => {}}
+      />
       <DataTable<CapacityRow>
         columns={CAPACITY_COLS}
         rows={rows}
@@ -1266,6 +1324,12 @@ function OutageScreen() {
         <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Planned Outages</h1>
         <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>W18 · NERSA Grid Code 12-state</div>
       </div>
+      <AIInsightCard
+        suggestion="Koeberg Unit 2 maintenance outage (14,400 MWh/day) coincides with a scheduled Steenbras pumped-storage maintenance window. Combined loss of 16,800 MWh/day during weekday peak (18:00-22:00) will require Stage 2 load-shedding unless Gamma Hydro can dispatch 240 MW."
+        reasoning="NERSA Grid Code §CC.5: combined generation outages exceeding 15% of peak demand require a generation adequacy report to the Regulator 30 days before the outage commencement date."
+        title="Submit Generation Adequacy Report"
+        onAccept={() => {}}
+      />
       <DataTable<GridOutageRow>
         columns={GRID_OUTAGE_COLS}
         rows={rows}
@@ -1288,9 +1352,761 @@ function OutageScreen() {
   );
 }
 
+// ─── Black Start Capability (W84) ────────────────────────────────────────────
+
+type BlackStartRow = {
+  id: string;
+  ref: string;
+  provider_name: string;
+  restoration_zone: string;
+  capability_mw: number;
+  chain_status: string;
+  drill_date: string | null;
+  tier: string;
+};
+
+const BLACKSTART_COLS: Column<BlackStartRow>[] = [
+  { key: 'ref',              header: 'Reference',        width: '150px', mono: true,
+    render: r => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: 'var(--oe-text-2)' }}>{r.ref}</span>,
+  },
+  { key: 'provider_name',   header: 'Provider',         width: '200px',
+    render: r => <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--oe-text-1)' }}>{r.provider_name}</span>,
+  },
+  { key: 'restoration_zone', header: 'Restoration Zone', width: '160px',
+    render: r => <span style={{ fontSize: '12px', color: 'var(--oe-text-2)' }}>{r.restoration_zone}</span>,
+  },
+  { key: 'capability_mw',   header: 'Capability MW',    width: '110px', align: 'right', mono: true,
+    render: r => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12px' }}>{r.capability_mw.toFixed(1)}</span>,
+  },
+  { key: 'chain_status',    header: 'Status',           width: '130px',
+    render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} size="sm" />,
+  },
+  { key: 'drill_date',      header: 'Drill Date',       width: '110px', mono: true,
+    render: r => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: 'var(--oe-text-3)' }}>{r.drill_date ?? '—'}</span>,
+  },
+];
+
+function BlackStartScreen() {
+  const [rows, setRows] = React.useState<BlackStartRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<BlackStartRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+  const fetchRows = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/black-start/chain');
+      setRows((res.data?.data ?? res.data?.results ?? res.data ?? []) as BlackStartRow[]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => { void fetchRows(); }, [fetchRows]);
+
+  const fields: DrawerField[] = sel ? [
+    { label: 'Reference',        value: sel.ref,              mono: true },
+    { label: 'Provider',         value: sel.provider_name,    span: true },
+    { label: 'Restoration Zone', value: sel.restoration_zone },
+    { label: 'Capability MW',    value: sel.capability_mw.toFixed(1), mono: true },
+    { label: 'Tier',             value: sel.tier,             mono: true },
+    { label: 'Drill Date',       value: sel.drill_date ?? '—', mono: true },
+    { label: 'Status',           value: <StatusPill label={sel.chain_status} variant={stateVariant(sel.chain_status)} size="sm" /> },
+  ] : [];
+
+  const actions: DrawerAction[] = sel ? [
+    {
+      id: 'schedule-drill',
+      label: 'Schedule Drill',
+      icon: 'calendar',
+      variant: 'primary' as const,
+      onClick: () => {},
+      form: (
+        <TransitionForm
+          actionLabel="Schedule Black Start Drill"
+          fields={[
+            { key: 'drill_date', label: 'Drill Date', type: 'text', required: true, placeholder: 'e.g. 2026-07-15' },
+            { key: 'drill_window', label: 'Time Window', type: 'text', required: true, placeholder: 'e.g. 08:00–12:00' },
+          ]}
+          requireReason={false}
+          onSubmit={async () => {
+            await api.post(`/api/black-start/chain/${sel.id}/transition`, { action: 'schedule_drill' });
+            void fetchRows();
+          }}
+        />
+      ),
+    },
+    {
+      id: 'conduct-drill',
+      label: 'Conduct Drill',
+      icon: 'checklist',
+      variant: 'primary' as const,
+      onClick: () => {},
+      form: (
+        <TransitionForm
+          actionLabel="Conduct Black Start Drill"
+          fields={[
+            { key: 'actual_mw', label: 'Actual MW Achieved', type: 'number', required: true, placeholder: 'e.g. 145' },
+            { key: 'duration_min', label: 'Duration (min)', type: 'number', required: true, placeholder: 'e.g. 240' },
+          ]}
+          requireReason={false}
+          onSubmit={async () => {
+            await api.post(`/api/black-start/chain/${sel.id}/transition`, { action: 'conduct_drill' });
+            void fetchRows();
+          }}
+        />
+      ),
+    },
+    {
+      id: 'fail-drill',
+      label: 'Fail Drill',
+      icon: 'alert-triangle',
+      variant: 'danger' as const,
+      onClick: () => {},
+      form: (
+        <TransitionForm
+          actionLabel="Record Drill Failure"
+          requireReason
+          reasonCodes={[
+            { value: 'mw_below_threshold', label: 'MW achieved below certified threshold' },
+            { value: 'protection_fault',   label: 'Protection system fault during drill' },
+            { value: 'comms_failure',      label: 'SCADA/comms failure during drill' },
+            { value: 'time_exceeded',      label: 'Black start time exceeded limit' },
+          ]}
+          onSubmit={async (data) => {
+            await api.post(`/api/black-start/chain/${sel.id}/transition`, { action: 'fail_drill', ...data });
+            void fetchRows();
+          }}
+        />
+      ),
+    },
+    {
+      id: 'certify',
+      label: 'Certify Capability',
+      icon: 'certificate',
+      variant: 'secondary' as const,
+      onClick: () => {},
+      form: (
+        <TransitionForm
+          actionLabel="Certify Black Start Capability"
+          fields={[
+            { key: 'certified_mw', label: 'Certified MW', type: 'number', required: true, placeholder: 'e.g. 150' },
+            { key: 'cert_expiry',  label: 'Certification Expiry', type: 'text', required: true, placeholder: 'e.g. 2027-06-30' },
+          ]}
+          requireReason={false}
+          onSubmit={async () => {
+            await api.post(`/api/black-start/chain/${sel.id}/transition`, { action: 'certify' });
+            void fetchRows();
+          }}
+        />
+      ),
+    },
+  ] : [];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Black Start Capability</h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>W84 · Grid restoration provider register</div>
+      </div>
+      <AIInsightCard
+        suggestion="Gamma Hydro Unit 2 black-start capability test is overdue by 47 days (last tested 3 Apr 2026). NERSA Grid Code §C-7 mandates black-start capability tests every 6 months. Non-compliance triggers the automatic capability withdrawal process."
+        reasoning="Black-start capability withdrawal from Gamma Hydro reduces system black-start margin from 340 MW to 180 MW — below the minimum 200 MW Grid Code requirement."
+        title="Schedule Test"
+        onAccept={() => {}}
+      />
+      <DataTable<BlackStartRow>
+        columns={BLACKSTART_COLS}
+        rows={rows}
+        loading={loading}
+        onRowClick={row => { setSel(row); setDrawerOpen(true); }}
+      />
+      <DetailDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title={sel ? sel.provider_name : ''}
+        subtitle={sel ? `${sel.restoration_zone} · ${sel.capability_mw.toFixed(1)} MW` : ''}
+        entityRef={sel ? sel.ref : ''}
+        status={sel?.chain_status}
+        statusVariant={sel ? stateVariant(sel.chain_status) : 'default'}
+        fields={fields}
+        actions={actions}
+        onActionComplete={() => { void fetchRows(); setDrawerOpen(false); }}
+      />
+    </div>
+  );
+}
+
+// ─── REZ Capacity Allocation (W94) ───────────────────────────────────────────
+
+type RezRow = {
+  id: string;
+  ref: string;
+  project_name: string;
+  rez_zone: string;
+  applied_mw: number;
+  allocated_mw: number | null;
+  chain_status: string;
+  tier: string;
+};
+
+const REZ_COLS: Column<RezRow>[] = [
+  { key: 'ref',          header: 'Reference',    width: '150px', mono: true,
+    render: r => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: 'var(--oe-text-2)' }}>{r.ref}</span>,
+  },
+  { key: 'project_name', header: 'Project',      width: '220px',
+    render: r => <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--oe-text-1)' }}>{r.project_name}</span>,
+  },
+  { key: 'rez_zone',     header: 'REZ Zone',     width: '140px',
+    render: r => <span style={{ fontSize: '12px', color: 'var(--oe-text-2)' }}>{r.rez_zone}</span>,
+  },
+  { key: 'applied_mw',  header: 'Applied MW',   width: '110px', align: 'right', mono: true,
+    render: r => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12px' }}>{r.applied_mw.toFixed(1)}</span>,
+  },
+  { key: 'allocated_mw', header: 'Allocated MW', width: '110px', align: 'right', mono: true,
+    render: r => (
+      <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', color: r.allocated_mw == null ? 'var(--oe-text-3)' : 'var(--oe-text-1)' }}>
+        {r.allocated_mw ?? '—'}
+      </span>
+    ),
+  },
+  { key: 'chain_status', header: 'Status',       width: '130px',
+    render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} size="sm" />,
+  },
+];
+
+function RezScreen() {
+  const [rows, setRows] = React.useState<RezRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<RezRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+  const fetchRows = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/grid/rez-capacity/chain');
+      setRows((res.data?.data ?? res.data?.results ?? res.data ?? []) as RezRow[]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => { void fetchRows(); }, [fetchRows]);
+
+  const fields: DrawerField[] = sel ? [
+    { label: 'Reference',    value: sel.ref,              mono: true },
+    { label: 'Project',      value: sel.project_name,     span: true },
+    { label: 'REZ Zone',     value: sel.rez_zone },
+    { label: 'Applied MW',   value: sel.applied_mw.toFixed(1), mono: true },
+    { label: 'Allocated MW', value: sel.allocated_mw != null ? sel.allocated_mw.toFixed(1) : '—', mono: true },
+    { label: 'Tier',         value: sel.tier,             mono: true },
+    { label: 'Status',       value: <StatusPill label={sel.chain_status} variant={stateVariant(sel.chain_status)} size="sm" /> },
+  ] : [];
+
+  const actions: DrawerAction[] = sel ? [
+    {
+      id: 'evaluate',
+      label: 'Begin Evaluation',
+      icon: 'checklist',
+      variant: 'primary' as const,
+      onClick: () => {},
+      form: (
+        <TransitionForm
+          actionLabel="Begin REZ Capacity Evaluation"
+          fields={[
+            { key: 'evaluator', label: 'Evaluator Name', type: 'text', required: true, placeholder: 'e.g. NTCSA Capacity Planning' },
+            { key: 'eval_date', label: 'Evaluation Date', type: 'text', required: true, placeholder: 'e.g. 2026-06-20' },
+          ]}
+          requireReason={false}
+          onSubmit={async () => {
+            await api.post(`/api/grid/rez-capacity/chain/${sel.id}/transition`, { action: 'evaluate' });
+            void fetchRows();
+          }}
+        />
+      ),
+    },
+    {
+      id: 'award-capacity',
+      label: 'Award Capacity',
+      icon: 'approve',
+      variant: 'primary' as const,
+      onClick: () => {},
+      form: (
+        <TransitionForm
+          actionLabel="Award REZ Capacity"
+          fields={[
+            { key: 'allocated_mw', label: 'Allocated MW', type: 'number', required: true, placeholder: 'e.g. 80' },
+            { key: 'queue_rank',   label: 'Queue Rank',   type: 'number', required: true, placeholder: 'e.g. 1' },
+          ]}
+          requireReason={false}
+          onSubmit={async (data) => {
+            await api.post(`/api/grid/rez-capacity/chain/${sel.id}/transition`, { action: 'award_capacity', ...data });
+            void fetchRows();
+          }}
+        />
+      ),
+    },
+    {
+      id: 'reject',
+      label: 'Reject Application',
+      icon: 'reject',
+      variant: 'danger' as const,
+      onClick: () => {},
+      form: (
+        <TransitionForm
+          actionLabel="Reject REZ Capacity Application"
+          requireReason
+          reasonCodes={[
+            { value: 'capacity_exhausted',  label: 'REZ zone capacity exhausted' },
+            { value: 'grid_constraint',     label: 'Network constraint — thermal limit exceeded' },
+            { value: 'incomplete_docs',     label: 'Application documents incomplete' },
+            { value: 'lower_queue_score',   label: 'Outranked in queue scoring' },
+          ]}
+          onSubmit={async (data) => {
+            await api.post(`/api/grid/rez-capacity/chain/${sel.id}/transition`, { action: 'reject', ...data });
+            void fetchRows();
+          }}
+        />
+      ),
+    },
+    {
+      id: 'forfeit-allocation',
+      label: 'Forfeit Allocation',
+      icon: 'alert-triangle',
+      variant: 'danger' as const,
+      onClick: () => {},
+      form: (
+        <TransitionForm
+          actionLabel="Forfeit REZ Capacity Allocation"
+          requireReason
+          reasonCodes={[
+            { value: 'applicant_withdrawal', label: 'Applicant voluntarily withdrew' },
+            { value: 'non_payment',          label: 'Capacity reservation fee not paid' },
+            { value: 'milestone_failure',    label: 'Financial close milestone not met' },
+          ]}
+          onSubmit={async (data) => {
+            await api.post(`/api/grid/rez-capacity/chain/${sel.id}/transition`, { action: 'forfeit_allocation', ...data });
+            void fetchRows();
+          }}
+        />
+      ),
+    },
+  ] : [];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>REZ Capacity Allocation</h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>W94 · Renewable Energy Zone capacity queue</div>
+      </div>
+      <AIInsightCard
+        suggestion="Northern Cape REZ (Prieska) current capacity queue stands at 2,847 MW against available headroom of 1,200 MW. Garob Wind (140 MW, GCA-TX-2026-0009) is the next project in queue — approval of this allocation would consume 11.7% of remaining headroom."
+        reasoning="NTCSA 2024 Capacity Rules §6.3 require headroom adequacy confirmation before any new capacity allocation. Sub-headroom approvals require Minister of Energy sign-off and a public consultation period."
+        title="Review Headroom"
+        onAccept={() => {}}
+      />
+      <DataTable<RezRow>
+        columns={REZ_COLS}
+        rows={rows}
+        loading={loading}
+        onRowClick={row => { setSel(row); setDrawerOpen(true); }}
+      />
+      <DetailDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title={sel ? sel.project_name : ''}
+        subtitle={sel ? `${sel.rez_zone} · ${sel.applied_mw.toFixed(1)} MW applied` : ''}
+        entityRef={sel ? sel.ref : ''}
+        status={sel?.chain_status}
+        statusVariant={sel ? stateVariant(sel.chain_status) : 'default'}
+        fields={fields}
+        actions={actions}
+        onActionComplete={() => { void fetchRows(); setDrawerOpen(false); }}
+      />
+    </div>
+  );
+}
+
+// ─── Wholesale Imbalance Settlement & MTU Pricing (W105) ─────────────────────
+
+type ImbalanceRow = {
+  id: string;
+  ref: string;
+  trading_interval: string;
+  direction: 'long' | 'short';
+  volume_mwh: number;
+  mtu_price_r: number;
+  settlement_zar: number;
+  chain_status: string;
+  tier: string;
+};
+
+const IMBALANCE_COLS: Column<ImbalanceRow>[] = [
+  { key: 'ref',              header: 'Reference',         width: '150px', mono: true,
+    render: r => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: 'var(--oe-text-2)' }}>{r.ref}</span>,
+  },
+  { key: 'trading_interval', header: 'Trading Interval',  width: '160px', mono: true,
+    render: r => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: 'var(--oe-text-2)' }}>{r.trading_interval}</span>,
+  },
+  { key: 'direction',        header: 'Direction',         width: '90px',
+    render: r => <StatusPill label={r.direction} variant={r.direction === 'long' ? 'green' : 'rose'} size="sm" />,
+  },
+  { key: 'volume_mwh',       header: 'Volume MWh',        width: '110px', align: 'right', mono: true,
+    render: r => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12px' }}>{r.volume_mwh.toFixed(2)}</span>,
+  },
+  { key: 'mtu_price_r',      header: 'MTU Price',         width: '130px', align: 'right', mono: true,
+    render: r => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12px' }}>{`R ${r.mtu_price_r.toFixed(2)}/MWh`}</span>,
+  },
+  { key: 'settlement_zar',   header: 'Settlement',        width: '110px', align: 'right', mono: true,
+    render: r => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', color: 'var(--oe-green)' }}>{`R ${(r.settlement_zar / 1000).toFixed(0)}k`}</span>,
+  },
+  { key: 'chain_status',     header: 'Status',            width: '130px',
+    render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} size="sm" />,
+  },
+];
+
+function ImbalanceScreen() {
+  const [rows, setRows] = React.useState<ImbalanceRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<ImbalanceRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+  const fetchRows = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/grid/imbalance-settlement/chain');
+      setRows((res.data?.data ?? res.data?.results ?? res.data ?? []) as ImbalanceRow[]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => { void fetchRows(); }, [fetchRows]);
+
+  const fields: DrawerField[] = sel ? [
+    { label: 'Reference',         value: sel.ref,                                                    mono: true },
+    { label: 'Trading Interval',  value: sel.trading_interval,                                       mono: true },
+    { label: 'Direction',         value: <StatusPill label={sel.direction} variant={sel.direction === 'long' ? 'green' : 'rose'} size="sm" /> },
+    { label: 'Volume (MWh)',      value: sel.volume_mwh.toFixed(2),                                  mono: true },
+    { label: 'MTU Price',         value: `R ${sel.mtu_price_r.toFixed(2)}/MWh`,                      mono: true },
+    { label: 'Settlement (ZAR)',  value: `R ${(sel.settlement_zar / 1000).toFixed(0)}k`,             mono: true },
+    { label: 'Tier',              value: sel.tier,                                                    mono: true },
+    { label: 'Status',            value: <StatusPill label={sel.chain_status} variant={stateVariant(sel.chain_status)} size="sm" /> },
+  ] : [];
+
+  const actions: DrawerAction[] = sel ? [
+    {
+      id: 'confirm-position',
+      label: 'Confirm Position',
+      icon: 'checklist',
+      variant: 'primary' as const,
+      onClick: () => api.post(`/api/grid/imbalance-settlement/chain/${sel.id}/transition`, { action: 'confirm_position' }).then(() => setSel(null)),
+    },
+    {
+      id: 'calculate-settlement',
+      label: 'Calculate Settlement',
+      icon: 'dollar',
+      variant: 'primary' as const,
+      onClick: () => api.post(`/api/grid/imbalance-settlement/chain/${sel.id}/transition`, { action: 'calculate_settlement' }).then(() => { void fetchRows(); setSel(null); }),
+    },
+    {
+      id: 'dispute',
+      label: 'Dispute',
+      icon: 'alert-triangle',
+      variant: 'danger' as const,
+      onClick: () => {},
+      form: (
+        <TransitionForm
+          actionLabel="Raise Imbalance Dispute"
+          requireReason
+          reasonCodes={[
+            { value: 'meter_error',       label: 'Metering error — volume incorrect' },
+            { value: 'mtu_price_error',   label: 'MTU price incorrect' },
+            { value: 'interval_mismatch', label: 'Trading interval misclassification' },
+            { value: 'direction_error',   label: 'Long/short direction error' },
+          ]}
+          onSubmit={async (data) => {
+            await api.post(`/api/grid/imbalance-settlement/chain/${sel.id}/transition`, { action: 'dispute', ...data });
+            void fetchRows();
+          }}
+        />
+      ),
+    },
+    {
+      id: 'settle',
+      label: 'Settle',
+      icon: 'approve',
+      variant: 'secondary' as const,
+      onClick: () => api.post(`/api/grid/imbalance-settlement/chain/${sel.id}/transition`, { action: 'settle' }).then(() => { void fetchRows(); setSel(null); }),
+    },
+  ] : [];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Imbalance Settlement</h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>W105 · Wholesale imbalance settlement & MTU pricing</div>
+      </div>
+      <AIInsightCard
+        suggestion="MTU pricing peaked at R1,847/MWh during the 14:00-15:00 balancing interval — 2.3× above daily VWAP. Short position of 187 MWh at Koeberg node suggests supply compression from scheduled maintenance outage."
+        reasoning="High MTU imbalance price signals during scheduled outages often indicate compounding N-1 constraints. Early dispute filing locks in the pre-settlement price."
+        title="File Dispute"
+        onAccept={() => { /* no-op */ }}
+      />
+      <DataTable<ImbalanceRow>
+        columns={IMBALANCE_COLS}
+        rows={rows}
+        loading={loading}
+        onRowClick={row => { setSel(row); setDrawerOpen(true); }}
+      />
+      <DetailDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title={sel ? sel.ref : ''}
+        subtitle={sel ? `${sel.trading_interval} · ${sel.direction.toUpperCase()}` : ''}
+        entityRef={sel ? sel.ref : ''}
+        status={sel?.chain_status}
+        statusVariant={sel ? stateVariant(sel.chain_status) : 'default'}
+        fields={fields}
+        actions={actions}
+        onActionComplete={() => { void fetchRows(); setDrawerOpen(false); }}
+      />
+    </div>
+  );
+}
+
+// ─── TX Network Outage Coordination & N-1 Security (W110) ────────────────────
+
+type TxOutageRow = {
+  id: string;
+  ref: string;
+  circuit_name: string;
+  voltage_kv: number;
+  outage_type: string;
+  n1_secure: boolean;
+  planned_start: string;
+  planned_end: string | null;
+  chain_status: string;
+  tier: string;
+};
+
+const TX_OUTAGE_COLS: Column<TxOutageRow>[] = [
+  {
+    key: 'ref',
+    header: 'Reference',
+    width: '150px',
+    mono: true,
+    render: r => (
+      <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: 'var(--oe-text-2)' }}>{r.ref}</span>
+    ),
+  },
+  {
+    key: 'circuit_name',
+    header: 'Circuit',
+    width: '220px',
+    render: r => (
+      <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--oe-text-1)' }}>{r.circuit_name}</span>
+    ),
+  },
+  {
+    key: 'voltage_kv',
+    header: 'Voltage',
+    width: '90px',
+    align: 'right',
+    mono: true,
+    render: r => (
+      <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '12px' }}>{`${r.voltage_kv}kV`}</span>
+    ),
+  },
+  {
+    key: 'outage_type',
+    header: 'Type',
+    width: '120px',
+    render: r => (
+      <span style={{ fontSize: '11px', color: 'var(--oe-text-2)', textTransform: 'uppercase' }}>{r.outage_type}</span>
+    ),
+  },
+  {
+    key: 'n1_secure',
+    header: 'N-1 Security',
+    width: '110px',
+    render: r => (
+      <StatusPill
+        label={r.n1_secure ? 'N-1 Secure' : 'N-1 Risk'}
+        variant={r.n1_secure ? 'green' : 'rose'}
+        size="sm"
+      />
+    ),
+  },
+  {
+    key: 'chain_status',
+    header: 'Status',
+    width: '130px',
+    render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} size="sm" />,
+  },
+  {
+    key: 'planned_start',
+    header: 'Planned Start',
+    width: '150px',
+    mono: true,
+    render: r => (
+      <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px', color: 'var(--oe-text-3)' }}>{r.planned_start}</span>
+    ),
+  },
+];
+
+function TxOutageScreen() {
+  const [rows, setRows] = React.useState<TxOutageRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<TxOutageRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+  const fetchRows = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/grid/transmission-outage/chain');
+      setRows((res.data?.data ?? res.data?.results ?? res.data ?? []) as TxOutageRow[]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => { void fetchRows(); }, [fetchRows]);
+
+  const fields: DrawerField[] = sel ? [
+    { label: 'Reference',     value: sel.ref,            mono: true },
+    { label: 'Circuit',       value: sel.circuit_name,   span: true },
+    { label: 'Voltage (kV)',  value: `${sel.voltage_kv}kV`, mono: true },
+    { label: 'Outage Type',   value: sel.outage_type },
+    { label: 'N-1 Security',  value: <StatusPill label={sel.n1_secure ? 'N-1 Secure' : 'N-1 Risk'} variant={sel.n1_secure ? 'green' : 'rose'} size="sm" /> },
+    { label: 'Planned Start', value: sel.planned_start,  mono: true },
+    { label: 'Planned End',   value: sel.planned_end ?? '—', mono: true },
+    { label: 'Tier',          value: sel.tier,           mono: true },
+    { label: 'Status',        value: <StatusPill label={sel.chain_status} variant={stateVariant(sel.chain_status)} size="sm" /> },
+  ] : [];
+
+  const actions: DrawerAction[] = sel ? [
+    {
+      id: 'raise-outage',
+      label: 'Raise Outage',
+      icon: 'send',
+      variant: 'primary' as const,
+      onClick: () => {},
+      form: (
+        <TransitionForm
+          actionLabel="Raise TX Network Outage"
+          fields={[
+            { key: 'circuit_name',  label: 'Circuit Name',     type: 'text',   required: true,  placeholder: 'e.g. Boland–Muldersvlei 400kV' },
+            { key: 'voltage_kv',    label: 'Voltage (kV)',      type: 'number', required: true,  placeholder: 'e.g. 400' },
+            { key: 'outage_type',   label: 'Outage Type',       type: 'text',   required: true,  placeholder: 'e.g. planned / emergency' },
+            { key: 'planned_start', label: 'Planned Start',     type: 'text',   required: true,  placeholder: 'e.g. 2026-06-10T06:00' },
+            { key: 'planned_end',   label: 'Planned End',       type: 'text',   required: false, placeholder: 'e.g. 2026-06-10T18:00' },
+          ]}
+          requireReason={false}
+          onSubmit={async (data) => {
+            await api.post(`/api/grid/transmission-outage/chain/${sel.id}/transition`, { action: 'raise_outage', ...data });
+            void fetchRows();
+          }}
+        />
+      ),
+    },
+    {
+      id: 'approve-outage',
+      label: 'Approve Outage',
+      icon: 'approve',
+      variant: 'primary' as const,
+      onClick: () => api.post(`/api/grid/transmission-outage/chain/${sel.id}/transition`, { action: 'approve_outage' }).then(() => { void fetchRows(); setDrawerOpen(false); }),
+    },
+    {
+      id: 'activate',
+      label: 'Activate Outage',
+      icon: 'lightning',
+      variant: 'secondary' as const,
+      onClick: () => api.post(`/api/grid/transmission-outage/chain/${sel.id}/transition`, { action: 'activate' }).then(() => { void fetchRows(); setDrawerOpen(false); }),
+    },
+    {
+      id: 'restore',
+      label: 'Restore Circuit',
+      icon: 'check',
+      variant: 'secondary' as const,
+      onClick: () => {},
+      form: (
+        <TransitionForm
+          actionLabel="Restore Circuit"
+          fields={[
+            { key: 'restored_at', label: 'Restoration Time', type: 'text', required: true, placeholder: 'e.g. 2026-06-10T17:45' },
+          ]}
+          requireReason={false}
+          onSubmit={async (data) => {
+            await api.post(`/api/grid/transmission-outage/chain/${sel.id}/transition`, { action: 'restore', ...data });
+            void fetchRows();
+          }}
+        />
+      ),
+    },
+    {
+      id: 'force-cancel',
+      label: 'Force Cancel',
+      icon: 'alert-triangle',
+      variant: 'danger' as const,
+      onClick: () => {},
+      form: (
+        <TransitionForm
+          actionLabel="Force Cancel Outage"
+          requireReason
+          reasonCodes={[
+            { value: 'grid_emergency',    label: 'Grid emergency — circuit required immediately' },
+            { value: 'n1_violation',      label: 'N-1 security violation detected' },
+            { value: 'approval_lapsed',   label: 'Approval window lapsed' },
+            { value: 'contractor_cancel', label: 'Contractor cancelled' },
+          ]}
+          onSubmit={async (data) => {
+            await api.post(`/api/grid/transmission-outage/chain/${sel.id}/transition`, { action: 'force_cancel', ...data });
+            void fetchRows();
+          }}
+        />
+      ),
+    },
+  ] : [];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>TX Network Outage Coordination</h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>W110 · Transmission network outage & N-1 security</div>
+      </div>
+      <AIInsightCard
+        suggestion="Planned Grassridge-Aranos 400kV outage scheduled 09:00-16:00 on 3 Jun reduces N-1 security margin to 11% at Koeberg MTS. Two concurrent forced outages in the same corridor would trigger load shedding Stage 2."
+        reasoning="NERSA Grid Code §CC.5 requires SO notification 72h before any outage reducing N-1 margin below 15%."
+        title="Review N-1 Assessment"
+        onAccept={() => { /* no-op */ }}
+      />
+      <DataTable<TxOutageRow>
+        columns={TX_OUTAGE_COLS}
+        rows={rows}
+        loading={loading}
+        onRowClick={row => { setSel(row); setDrawerOpen(true); }}
+      />
+      <DetailDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title={sel ? sel.circuit_name : ''}
+        subtitle={sel ? `${sel.voltage_kv}kV · ${sel.outage_type}` : ''}
+        entityRef={sel ? sel.ref : ''}
+        status={sel?.chain_status}
+        statusVariant={sel ? stateVariant(sel.chain_status) : 'default'}
+        fields={fields}
+        actions={actions}
+        onActionComplete={() => { void fetchRows(); setDrawerOpen(false); }}
+      />
+    </div>
+  );
+}
+
 // ─── Workstation ──────────────────────────────────────────────────────────────
 
 export function GridWorkstation() {
+  const { data: me } = useCurrentUser();
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>('dashboard');
 
   // ─── Real API data ──────────────────────────────────────────────────────────
@@ -1320,6 +2136,10 @@ export function GridWorkstation() {
     compliance:  'grid-code-comp',
     capacity:    'grid-capacity',
     outage:      'grid-outage',
+    blackstart:  'grid-blackstart',
+    rez:         'grid-rez',
+    imbalance:   'grid-imbalance',
+    'tx-outage': 'grid-tx-outage',
   };
 
   const liveNavConfig = {
@@ -1343,6 +2163,10 @@ export function GridWorkstation() {
         : item.id === 'grid-outage'     ? () => setActiveScreen('outage')
         : item.id === 'grid-wheeling'   ? () => setActiveScreen('wheeling')
         : item.id === 'grid-code-comp'  ? () => setActiveScreen('compliance')
+        : item.id === 'grid-blackstart' ? () => setActiveScreen('blackstart')
+        : item.id === 'grid-rez'        ? () => setActiveScreen('rez')
+        : item.id === 'grid-imbalance'  ? () => setActiveScreen('imbalance')
+        : item.id === 'grid-tx-outage'  ? () => setActiveScreen('tx-outage')
         : undefined,
       })),
     })),
@@ -1386,13 +2210,17 @@ export function GridWorkstation() {
     : activeScreen === 'compliance'   ? 'Grid Code Compliance'
     : activeScreen === 'capacity'     ? 'Grid Capacity Allocation'
     : activeScreen === 'outage'       ? 'Planned Outages'
+    : activeScreen === 'blackstart'   ? 'Black Start Capability'
+    : activeScreen === 'rez'          ? 'REZ Capacity Allocation'
+    : activeScreen === 'imbalance'    ? 'Imbalance Settlement'
+    : activeScreen === 'tx-outage'    ? 'TX Network Outage Coordination'
     : 'Dashboard';
 
   return (
     <AppShell
       role="grid_operator"
-      userName="Eng. T. Ndaba"
-      userEmail="grid@openenergy.co.za"
+      userName={me?.name ?? 'User'}
+      userEmail={me?.email ?? ''}
       navConfig={liveNavConfig}
       breadcrumbs={[{ label: 'Grid Operator' }, { label: breadcrumbLabel }]}
       pageTitle="Grid Operations"
@@ -1415,6 +2243,10 @@ export function GridWorkstation() {
        : activeScreen === 'compliance'   ? <ComplianceScreen />
        : activeScreen === 'capacity'     ? <CapacityScreen />
        : activeScreen === 'outage'       ? <OutageScreen />
+       : activeScreen === 'blackstart'   ? <BlackStartScreen />
+       : activeScreen === 'rez'          ? <RezScreen />
+       : activeScreen === 'imbalance'    ? <ImbalanceScreen />
+       : activeScreen === 'tx-outage'    ? <TxOutageScreen />
        : <>{/* Page title block */}
       <div style={{ marginBottom: '20px' }}>
         <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--oe-text-1)', letterSpacing: '-0.02em' }}>

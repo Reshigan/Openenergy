@@ -2,15 +2,17 @@
  * Trader Workstation — Apex design
  *
  * Screens:
- * 1. Trade Desk      — live order book summary, P&L, VaR
- * 2. Orders          — order list with pre-trade guard status
- * 3. Positions       — position limit chain (W29)
- * 4. Market Abuse    — surveillance (W52)
- * 5. RFQ/Best Exec   — best execution (W36)
- * 6. Trade Reporting — OTC reporting (W44)
- * 7. Algo Certs      — algo cert + kill-switch (W60)
- * 8. Allocations     — trade allocation chain (W76)
- * 9. Analytics       — P&L attribution, VaR timeseries, VWAP
+ * 1. Trade Desk          — live order book summary, P&L, VaR
+ * 2. Orders              — order list with pre-trade guard status
+ * 3. Positions           — position limit chain (W29)
+ * 4. Market Abuse        — surveillance (W52)
+ * 5. RFQ/Best Exec       — best execution (W36)
+ * 6. Trade Reporting     — OTC reporting (W44)
+ * 7. Algo Certs          — algo cert + kill-switch (W60)
+ * 8. Allocations         — trade allocation chain (W76)
+ * 9. Analytics           — P&L attribution, VaR timeseries, VWAP
+ * 10. Settlement Fails   — CSDR buy-in management (W85)
+ * 11. Benchmark Transition — JIBAR to ZARONIA transition (W90)
  */
 
 import React, { useState } from 'react';
@@ -24,8 +26,9 @@ import { ActionPanel } from '../../components/actions/ActionPanel';
 import { TransitionForm } from '../../components/actions/TransitionForm';
 import { OeIcon } from '../../components/icons/Icons';
 import { DetailDrawer, DrawerField, DrawerAction } from '../../components/display/DetailDrawer';
-import { useTraderOrders, useTraderPositions, useTraderPnl, useAuditBlocks } from '../../lib/hooks';
+import { useTraderOrders, useTraderPositions, useTraderPnl, useAuditBlocks, useCurrentUser } from '../../lib/hooks';
 import { TraderOrder, TraderPosition, TraderPnl, AuditBlock, apexClient } from '../../lib/client';
+import { api } from '../../../../lib/api';
 
 // ─── Nav ─────────────────────────────────────────────────────────────────────
 
@@ -46,19 +49,24 @@ const TRADER_NAV: NavConfig = {
       id: 'compliance',
       label: 'Compliance',
       items: [
-        { id: 'tr-abuse',      label: 'Market Abuse',   href: '#abuse',     icon: 'shield',    badge: 1, badgeVariant: 'rose' },
-        { id: 'tr-reporting',  label: 'Trade Reporting',href: '#reporting', icon: 'report' },
-        { id: 'tr-algo',       label: 'Algo Certs',     href: '#algo',      icon: 'gear' },
-        { id: 'tr-alloc',      label: 'Allocations',    href: '#alloc',     icon: 'hierarchy' },
-        { id: 'tr-margin',     label: 'Margin',         href: '#margin',    icon: 'scales',    badge: 1, badgeVariant: 'amber' },
+        { id: 'tr-abuse',              label: 'Market Abuse',          href: '#abuse',              icon: 'shield',         badge: 1, badgeVariant: 'rose' },
+        { id: 'tr-reporting',          label: 'Trade Reporting',       href: '#reporting',          icon: 'report' },
+        { id: 'tr-algo',               label: 'Algo Certs',            href: '#algo',               icon: 'gear' },
+        { id: 'tr-alloc',              label: 'Allocations',           href: '#alloc',              icon: 'hierarchy' },
+        { id: 'tr-margin',             label: 'Margin',                href: '#margin',             icon: 'scales',         badge: 1, badgeVariant: 'amber' },
+        { id: 'tr-mm',                 label: 'MM Compliance',         href: '#mm',                 icon: 'shield' },
+        { id: 'trader-pre-trade',      label: 'Pre-Trade Credit W107', href: '#',                   icon: 'lock',           badge: 2, badgeVariant: 'rose' },
+        { id: 'tr-settlement-fails',   label: 'Settlement Fails W85',  href: '#settlement-fails',   icon: 'alert-triangle' },
+        { id: 'tr-benchmark',          label: 'Benchmark Transition W90', href: '#benchmark',       icon: 'checklist' },
       ],
     },
     {
       id: 'analytics',
       label: 'Analytics',
       items: [
-        { id: 'tr-pnl',        label: 'P&L Analytics',  href: '#pnl',      icon: 'chart-line' },
-        { id: 'tr-risk',       label: 'Risk Dashboard', href: '#risk',     icon: 'alert-triangle' },
+        { id: 'tr-pnl',              label: 'P&L Analytics',       href: '#pnl',      icon: 'chart-line' },
+        { id: 'tr-risk',             label: 'Risk Dashboard',      href: '#risk',     icon: 'alert-triangle' },
+        { id: 'trader-pnl-attr',     label: 'P&L Attribution W111', href: '#',        icon: 'chart-line' },
       ],
     },
   ],
@@ -234,6 +242,13 @@ function PositionsScreen() {
         <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Positions</h1>
         <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading…' : data.length + ' books'}</div>
       </div>
+      <AIInsightCard
+        title="Position Limit Breach Warning — Wind Energy Net Long 94%"
+        suggestion="Trader account TRD-0044 has reached 94% of their approved wind energy net long position limit (current: R47M vs R50M limit). A single additional standard contract (R2.5M) would trigger an automatic order rejection. Review the trader's open order book — there are 2 pending buy orders totalling R4.2M that, if filled, would breach the limit and trigger a forced partial liquidation."
+        reasoning="FSCA §41 position limit rules: the platform must prevent positions from exceeding approved limits. The forced liquidation at limit breach (vs a soft warning at 90%) is a pre-trade guard — it cannot be waived in real-time. The trader should either reduce open orders or request a temporary limit increase from the risk desk before the afternoon trading session peak."
+        confidence="high"
+        onAccept={() => {}}
+      />
       <DataTable
         columns={POSITION_COLS}
         rows={data}
@@ -363,6 +378,13 @@ function BexScreen() {
         <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>RFQ / Best Execution</h1>
         <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading…' : data.length + ' orders'}</div>
       </div>
+      <AIInsightCard
+        title="Best Execution Review — 2 Outlier Trades Detected"
+        suggestion="The quarterly best-execution report (Q1 2026) flags 2 OTC trades where the executed price deviated >15bps from the VWAP benchmark: RFQ-2026-0142 (wind energy, -18bps) and RFQ-2026-0203 (PV forward, +21bps). Both trades require a documented exception justification filed within 5 business days of the quarterly report. Draft the justifications now while trade context is fresh."
+        reasoning="FSCA Conduct Standard 1/2020 §6.2: best execution obligations require that any deviation >10bps from the contemporaneous benchmark must be documented with a client-impact assessment. Undocumented deviations discovered during a FSCA inspection are treated as systematic best-execution failures and carry administrative sanctions up to R5M per violation. The 5-day documentation window is a platform rule, not a regulatory one — but it ensures the justifications are prepared while the trading context is available."
+        confidence="medium"
+        onAccept={() => {}}
+      />
       <DataTable
         columns={BEX_COLS}
         rows={data}
@@ -528,6 +550,13 @@ function AlgoScreen() {
           W60 — FMA/FSCA/MiFID RTS6 pre-deployment governance gate. Certified systems only. Kill-switch activation crosses regulator every tier.
         </span>
       </div>
+      <AIInsightCard
+        title="Algo Certification Expiry — 23 Days Remaining"
+        suggestion="ALGO-SYS-001 (Market-Making Algo v2.4) certification expires 24 Jun 2026. FMA RTS6 requires annual recertification before the expiry date. The recertification requires a 5-day live-market test period on a test environment plus a 3-day FSCA review. Submit the recertification application today to ensure certification remains continuous — a lapse suspends the algo from live order submission."
+        reasoning="FSCA Conduct Standard §8.3: algorithmic trading systems must be certified before deployment and recertified annually. A certification lapse requires immediate withdrawal of the system from live markets. The market-making obligation requires continuous quote presence during trading hours — a suspension triggers a MM compliance breach (W9) if it extends more than 15 minutes during a mandatory quoting period."
+        confidence="high"
+        onAccept={() => {}}
+      />
       <DataTable
         columns={AUDIT_COLS}
         rows={data}
@@ -717,6 +746,13 @@ function AllocationsScreen() {
           W76 — DTCC-ITP/Omgeo-CTM post-execution institutional processing. Block-to-account breakdown, CSDR break review, affirmation. Flag-break crosses regulator every tier.
         </span>
       </div>
+      <AIInsightCard
+        title="Block Trade Allocation Deadline — 3 Sub-Accounts Pending"
+        suggestion="Block trade ALLOC-2026-0089 (15,000 MWh, R4.2M) has 3 sub-account allocations pending confirmation (accounts: Kalahari Fund, Umoya Infra, SA Wind Partners). CSDR T+1 deadline is tomorrow at 10:00. Two counterparties have not responded to the affirmation request. Send a follow-up now — if sub-accounts are not confirmed by T+1, the trade enters the break-review cycle and may fail settlement."
+        reasoning="DTCC ITP/Omgeo CTM industry practice: block trade allocations must be affirmed by all sub-accounts by T+1 10:00 to settle on T+2. A break at this stage triggers the CSDR mandatory buy-in framework if the failure extends to T+4 — the buy-in penalty is up to 10bps of the notional on the unallocated portion. Early follow-up at T+0 is the most effective intervention point."
+        confidence="high"
+        onAccept={() => {}}
+      />
       <DataTable
         columns={AUDIT_COLS}
         rows={data}
@@ -828,6 +864,13 @@ function MarginScreen() {
           W68 — CPMI-IOSCO PFMI counterparty-credit waterfall. Margin call active. Declare-default crosses regulator every tier.
         </span>
       </div>
+      <AIInsightCard
+        title="Margin Call Escalation — Eskom Trading Desk Unresponsive"
+        suggestion="CCM-2026-0003 (Eskom Trading Desk, R6.8M variation margin call, issued 09:00 today) has reached the 4-hour response deadline without payment or written objection. FMA §34 default management procedures activate automatically at hour 4. Initiate the formal escalation: send a default notice and begin the close-out netting calculation on all open Eskom positions."
+        reasoning="FMA §34 + CPMI-IOSCO PFMI Principle 7: when a margin call is unmet for 4 hours without a formal dispute, the central counterparty must begin default management procedures. Waiting beyond the 4-hour window increases the platform's exposure to Eskom's mark-to-market position, which is currently R14.2M adverse. The close-out netting calculation should be initiated even if Eskom ultimately pays — it can be withdrawn if payment arrives within the next 2 hours."
+        confidence="high"
+        onAccept={() => {}}
+      />
       <DataTable
         columns={AUDIT_COLS}
         rows={data}
@@ -922,13 +965,1066 @@ function MarginScreen() {
   );
 }
 
+// ─── Sub-screen: MM Compliance (W9) ──────────────────────────────────────────
+
+type MmRow = {
+  id: string;
+  ref: string;
+  instrument: string;
+  miss_count: number;
+  chain_status: string;
+  breach_date: string | null;
+  tier: string;
+  // Obligation fields from backend
+  energy_type: string;
+  obligation_type: string;
+  consecutive_misses: number | null;
+  breach_status: string | null;
+  last_breach_at: string | null;
+  last_escalated_at: string | null;
+  last_acknowledged_at: string | null;
+  performance_score: number | null;
+  status: string;
+};
+
+const MM_COLS: Column<MmRow>[] = [
+  { key: 'ref', header: 'Ref', mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>{row.id.slice(-8).toUpperCase()}</span>
+  },
+  { key: 'instrument',         header: 'Instrument',   render: row => <span>{row.energy_type ?? row.instrument}</span> },
+  { key: 'obligation_type',    header: 'Type',         render: row => <span style={{ fontSize: '12px', color: 'var(--oe-text-2)' }}>{row.obligation_type}</span> },
+  { key: 'miss_count',         header: 'Misses',       align: 'right', mono: true,
+    render: row => {
+      const n = row.consecutive_misses ?? 0;
+      return <span style={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 700, color: n >= 3 ? 'var(--oe-rose)' : n >= 1 ? 'var(--oe-amber)' : 'var(--oe-text-3)' }}>{n}</span>;
+    }
+  },
+  { key: 'chain_status',       header: 'Breach Status',
+    render: row => <StatusPill label={row.breach_status ?? row.status ?? 'none'} variant={stateVariant(row.breach_status ?? row.status ?? 'none')} />
+  },
+  { key: 'breach_date',        header: 'Last Breach',  align: 'right', mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>{(row.last_breach_at ?? row.breach_date) ? (row.last_breach_at ?? row.breach_date ?? '').slice(0, 10) : '—'}</span>
+  },
+];
+
+function mmDrawerFields(row: MmRow): DrawerField[] {
+  return [
+    { label: 'Obligation ID',    value: row.id,                                                                              mono: true, span: true },
+    { label: 'Instrument',       value: row.energy_type ?? row.instrument },
+    { label: 'Obligation Type',  value: row.obligation_type },
+    { label: 'Status',           value: row.status,                                                                         mono: true },
+    { label: 'Consecutive Misses', value: String(row.consecutive_misses ?? 0),                                              mono: true },
+    { label: 'Breach Status',    value: <StatusPill label={row.breach_status ?? 'none'} variant={stateVariant(row.breach_status ?? 'none')} />, span: true },
+    { label: 'Performance Score', value: row.performance_score != null ? row.performance_score.toFixed(2) + '%' : '—',      mono: true },
+    { label: 'Last Breach At',   value: row.last_breach_at ? row.last_breach_at.slice(0, 10) : '—',                        mono: true },
+    { label: 'Last Escalated',   value: row.last_escalated_at ? row.last_escalated_at.slice(0, 10) : '—',                  mono: true },
+    { label: 'Last Acknowledged', value: row.last_acknowledged_at ? row.last_acknowledged_at.slice(0, 10) : '—',           mono: true },
+  ];
+}
+
+function mmDrawerActions(row: MmRow, onDone: () => void): DrawerAction[] {
+  const actions: DrawerAction[] = [];
+  const breachStatus = row.breach_status ?? 'none';
+
+  if (breachStatus === 'none' || breachStatus === 'warning') {
+    actions.push({
+      id: 'record-performance',
+      label: 'Record Daily Performance',
+      icon: 'chart-line',
+      variant: 'primary',
+      form: (
+        <TransitionForm
+          actionLabel="Record Performance"
+          requireReason={false}
+          fields={[
+            { key: 'uptime_pct', label: 'Uptime %', type: 'number', required: true, placeholder: '100' },
+            { key: 'spread_bps', label: 'Spread (bps)', type: 'number', required: false, placeholder: '0' },
+            { key: 'quote_volume_mwh', label: 'Quote Volume (MWh)', type: 'number', required: false, placeholder: '0' },
+          ]}
+          onSubmit={async (formData) => {
+            await api.post(`/api/trader/mm-compliance/${row.id}/performance`, formData);
+            onDone();
+          }}
+        />
+      ),
+      onClick: async () => { /* form handles submission */ },
+    });
+  }
+
+  if (breachStatus === 'breach' || breachStatus === 'escalated') {
+    actions.push({
+      id: 'acknowledge-breach',
+      label: 'Acknowledge Breach',
+      icon: 'checklist',
+      variant: 'secondary',
+      form: (
+        <TransitionForm
+          actionLabel="Acknowledge Breach"
+          reasonCodes={[
+            { value: 'system_outage',      label: 'System outage — force majeure' },
+            { value: 'market_conditions',  label: 'Extreme market conditions' },
+            { value: 'operational_error',  label: 'Operational error — remediated' },
+          ]}
+          onSubmit={async (formData) => {
+            await api.post(`/api/trader/mm-compliance/${row.id}/acknowledge`, formData);
+            onDone();
+          }}
+        />
+      ),
+      onClick: async () => { /* form handles submission */ },
+    });
+  }
+
+  if (breachStatus === 'escalated') {
+    actions.push({
+      id: 'clear-escalation',
+      label: 'Clear Escalation',
+      icon: 'approve',
+      variant: 'primary',
+      form: (
+        <TransitionForm
+          actionLabel="Clear Escalation"
+          reasonCodes={[
+            { value: 'remediation_complete', label: 'Remediation plan accepted by regulator' },
+            { value: 'cure_period_passed',   label: 'Cure period elapsed — 3 consecutive compliant days' },
+          ]}
+          confirmMessage="Clearing this escalation will return the obligation to monitored status. Performance record must show 3 consecutive compliant days."
+          onSubmit={async (formData) => {
+            await api.post(`/api/trader/mm-compliance/${row.id}/clear`, formData);
+            onDone();
+          }}
+        />
+      ),
+      onClick: async () => { /* form handles submission */ },
+    });
+  }
+
+  actions.push({
+    id: 'view-performance',
+    label: 'View Performance History',
+    icon: 'list',
+    variant: 'secondary',
+    onClick: async () => {
+      await api.get(`/api/trader/mm-compliance/${row.id}`);
+      onDone();
+    },
+  });
+
+  return actions;
+}
+
+function MmComplianceScreen() {
+  const [rows, setRows] = React.useState<MmRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [selected, setSelected] = React.useState<MmRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+  const fetch = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/trader/mm-compliance');
+      setRows((res.data?.data ?? res.data?.results ?? res.data ?? []) as MmRow[]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => { void fetch(); }, [fetch]);
+
+  const breachedCount = rows.filter(r => (r.breach_status ?? 'none') !== 'none').length;
+  const escalatedCount = rows.filter(r => r.breach_status === 'escalated').length;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+          Market-Maker Compliance
+        </h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading…' : rows.length + ' obligations'}</div>
+      </div>
+
+      {escalatedCount > 0 && (
+        <div style={{ background: 'var(--oe-rose-bg)', border: '1px solid var(--oe-rose)', borderRadius: 'var(--oe-r-card)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <OeIcon name="shield" size={14} color="var(--oe-rose)" />
+          <span style={{ fontSize: '13px', color: 'var(--oe-rose)', fontWeight: 500 }}>
+            {escalatedCount} obligation{escalatedCount > 1 ? 's' : ''} escalated to regulator — remediation acknowledgement required.
+          </span>
+        </div>
+      )}
+
+      <div style={{ background: 'var(--oe-canvas)', border: '1px solid var(--oe-border)', borderRadius: 'var(--oe-r-card)', padding: '12px 16px', fontSize: '12px', color: 'var(--oe-text-3)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <OeIcon name="shield" size={14} />
+        W9 MM Compliance — consecutive-miss breach machine: none → warning → breach → escalated. FSCA CONDUCT STANDARD 1/2020. Escalation crosses regulator. {breachedCount > 0 ? breachedCount + ' obligations in breach.' : 'All obligations within thresholds.'}
+      </div>
+
+      <AIInsightCard
+        suggestion="Energy-peak desk missed 3 consecutive market-making windows this week (09:00-09:30 on Mon/Tue/Wed), triggering the FSCA Conduct Standard warning threshold. One more miss this week escalates to a formal breach notification."
+        reasoning="FSCA Conduct Standard 1/2020 §4.2 requires market makers to maintain bid-offer presence in 90% of prescribed windows. A formal breach results in a public register entry and potential suspension of MM designation."
+        title="Review MM Schedule"
+        onAccept={() => {}}
+      />
+
+      <DataTable
+        columns={MM_COLS}
+        rows={rows}
+        loading={loading}
+        onRowClick={row => { setSelected(row); setDrawerOpen(true); }}
+      />
+
+      <DetailDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title={selected ? (selected.energy_type ?? selected.instrument) + ' — ' + selected.obligation_type : 'MM Obligation'}
+        subtitle={selected ? 'Consecutive misses: ' + (selected.consecutive_misses ?? 0) : undefined}
+        entityRef={selected ? selected.id.slice(-8).toUpperCase() : undefined}
+        status={selected?.breach_status ?? selected?.status}
+        fields={selected ? mmDrawerFields(selected) : []}
+        actions={selected ? mmDrawerActions(selected, () => { void fetch(); setDrawerOpen(false); }) : []}
+        onActionComplete={fetch}
+      />
+    </div>
+  );
+}
+
+// ─── Sub-screen: Settlement Fails & CSDR Buy-In (W85) ────────────────────────
+
+type SettleFail = {
+  id: string;
+  ref: string;
+  counterparty: string;
+  instrument: string;
+  fail_quantity: number;
+  accrued_penalty_zar: number;
+  chain_status: string;
+  fail_date: string;
+  tier: string;
+};
+
+const SETTLE_FAIL_COLS: Column<SettleFail>[] = [
+  { key: 'ref',                  header: 'Ref',              mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>{row.ref ?? row.id.slice(-8).toUpperCase()}</span> },
+  { key: 'counterparty',         header: 'Counterparty',     render: row => <span style={{ fontSize: '13px' }}>{row.counterparty}</span> },
+  { key: 'instrument',           header: 'Instrument',       render: row => <span style={{ fontSize: '13px' }}>{row.instrument}</span> },
+  { key: 'fail_quantity',        header: 'Fail Qty',         align: 'right', mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace' }}>{(row.fail_quantity ?? 0).toLocaleString()} MWh</span> },
+  { key: 'accrued_penalty_zar',  header: 'Accrued Penalty',  align: 'right', mono: true,
+    render: row => {
+      const v = row.accrued_penalty_zar ?? 0;
+      return <span style={{ fontFamily: '"JetBrains Mono", monospace', color: v > 0 ? 'var(--oe-rose)' : 'var(--oe-text-3)' }}>
+        {v >= 1e6 ? `R${(v / 1e6).toFixed(2)}m` : `R${v.toLocaleString()}`}
+      </span>;
+    } },
+  { key: 'chain_status',         header: 'Status',
+    render: row => <StatusPill label={row.chain_status} variant={stateVariant(row.chain_status)} /> },
+  { key: 'fail_date',            header: 'Fail Date',        align: 'right', mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>{row.fail_date ? row.fail_date.slice(0, 10) : '—'}</span> },
+];
+
+function settleFailDrawerFields(row: SettleFail): DrawerField[] {
+  return [
+    { label: 'Ref',              value: row.ref ?? row.id,                         mono: true, span: true },
+    { label: 'Counterparty',     value: row.counterparty },
+    { label: 'Instrument',       value: row.instrument },
+    { label: 'Fail Quantity',    value: `${(row.fail_quantity ?? 0).toLocaleString()} MWh`,   mono: true },
+    { label: 'Accrued Penalty',  value: (() => { const v = row.accrued_penalty_zar ?? 0; return v >= 1e6 ? `R${(v / 1e6).toFixed(2)}m` : `R${v.toLocaleString()}`; })(), mono: true },
+    { label: 'Status',           value: <StatusPill label={row.chain_status} variant={stateVariant(row.chain_status)} />, span: true },
+    { label: 'Fail Date',        value: row.fail_date ? row.fail_date.slice(0, 10) : '—',     mono: true },
+    { label: 'Tier',             value: row.tier ?? '—',                           mono: true },
+  ];
+}
+
+function settleFailDrawerActions(row: SettleFail, onDone: () => void): DrawerAction[] {
+  const actions: DrawerAction[] = [];
+  const s = row.chain_status ?? '';
+
+  if (s === 'open' || s === 'pending') {
+    actions.push({
+      id: 'initiate-buy-in',
+      label: 'Initiate Buy-In',
+      icon: 'flag',
+      variant: 'danger',
+      form: (
+        <TransitionForm
+          actionLabel="Initiate Buy-In"
+          requireReason={true}
+          fields={[
+            { key: 'buy_in_agent', label: 'Buy-In Agent', type: 'text', required: true, placeholder: 'Agent name' },
+            { key: 'buy_in_date',  label: 'Buy-In Date',  type: 'date', required: true },
+          ]}
+          onSubmit={async (formData) => {
+            await api.post(`/api/settlement-fail/chain/${row.id}/transition`, { action: 'initiate_buy_in', ...formData });
+            onDone();
+          }}
+        />
+      ),
+      onClick: async () => { /* form handles submission */ },
+    });
+    actions.push({
+      id: 'close-cash',
+      label: 'Close — Cash Settlement',
+      icon: 'check-circle',
+      variant: 'primary',
+      form: (
+        <TransitionForm
+          actionLabel="Confirm Cash Close"
+          requireReason={false}
+          fields={[
+            { key: 'cash_amount_zar', label: 'Cash Amount (ZAR)', type: 'number', required: true, placeholder: '0' },
+          ]}
+          onSubmit={async (formData) => {
+            await api.post(`/api/settlement-fail/chain/${row.id}/transition`, { action: 'close_cash', ...formData });
+            onDone();
+          }}
+        />
+      ),
+      onClick: async () => { /* form handles submission */ },
+    });
+  }
+
+  if (s !== 'written_off' && s !== 'closed') {
+    actions.push({
+      id: 'write-off',
+      label: 'Write Off',
+      icon: 'flag',
+      variant: 'danger',
+      form: (
+        <TransitionForm
+          actionLabel="Confirm Write-Off"
+          requireReason={true}
+          reasonCodes={[
+            { value: 'counterparty_default', label: 'Counterparty default — irrecoverable' },
+            { value: 'agreed_waiver',        label: 'Bilaterally agreed waiver' },
+            { value: 'de_minimis',           label: 'De minimis — below threshold' },
+          ]}
+          onSubmit={async (formData) => {
+            await api.post(`/api/settlement-fail/chain/${row.id}/transition`, { action: 'write_off', ...formData });
+            onDone();
+          }}
+        />
+      ),
+      onClick: async () => { /* form handles submission */ },
+    });
+  }
+
+  actions.push({
+    id: 'view-chain',
+    label: 'View Audit Chain',
+    icon: 'list',
+    variant: 'secondary',
+    onClick: async () => {
+      await api.get(`/api/settlement-fail/chain/${row.id}`);
+      onDone();
+    },
+  });
+
+  return actions;
+}
+
+function SettlementFailsScreen() {
+  const [rows, setRows] = React.useState<SettleFail[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [selected, setSelected] = React.useState<SettleFail | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+  const fetch = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/settlement-fail/chain');
+      setRows((res.data?.data ?? res.data?.results ?? res.data ?? []) as SettleFail[]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => { void fetch(); }, [fetch]);
+
+  const openCount     = rows.filter(r => r.chain_status === 'open' || r.chain_status === 'pending').length;
+  const buyInCount    = rows.filter(r => r.chain_status === 'buy_in_initiated').length;
+  const totalPenalty  = rows.reduce((s, r) => s + (r.accrued_penalty_zar ?? 0), 0);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+          Settlement Fails &amp; CSDR Buy-In
+        </h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading…' : rows.length + ' fails'}</div>
+      </div>
+
+      {openCount > 0 && (
+        <div style={{ background: 'var(--oe-rose-bg)', border: '1px solid var(--oe-rose)', borderRadius: 'var(--oe-r-card)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <OeIcon name="alert-triangle" size={14} color="var(--oe-rose)" />
+          <span style={{ fontSize: '13px', color: 'var(--oe-rose)', fontWeight: 500 }}>
+            {openCount} open fail{openCount > 1 ? 's' : ''} — CSDR cash penalty accruing.
+            {buyInCount > 0 ? ` ${buyInCount} buy-in procedure${buyInCount > 1 ? 's' : ''} active.` : ''}
+          </span>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+        {[
+          { label: 'Open Fails',       value: String(openCount),    positive: openCount === 0 },
+          { label: 'Buy-In Active',    value: String(buyInCount),   positive: buyInCount === 0 },
+          { label: 'Total Accrued',    value: totalPenalty >= 1e6 ? `R${(totalPenalty / 1e6).toFixed(2)}m` : `R${totalPenalty.toLocaleString()}`, positive: totalPenalty === 0 },
+        ].map(item => (
+          <div key={item.label} style={{ background: 'var(--oe-canvas)', border: '1px solid var(--oe-border)', borderRadius: 'var(--oe-r-card)', padding: '14px 16px' }}>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--oe-text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>{item.label}</div>
+            <div style={{ fontSize: '18px', fontWeight: 800, fontFamily: 'var(--oe-font-mono)', color: item.positive ? 'var(--oe-green)' : 'var(--oe-rose)' }}>{item.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: 'var(--oe-canvas)', border: '1px solid var(--oe-border)', borderRadius: 'var(--oe-r-card)', padding: '12px 16px', fontSize: '12px', color: 'var(--oe-text-3)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <OeIcon name="alert-triangle" size={14} />
+        W85 — CSDR settlement discipline. Daily cash penalties accrue on open fails from T+2. Buy-in mandatory from T+7 for equity-type instruments. Crosses regulator on write-off every tier.
+      </div>
+
+      <AIInsightCard
+        suggestion="Settlement fail on TRD-2026-0892 (R4.8M, Day+2 ETP) is now at Day+4. STRATE buy-in will automatically trigger on Day+5 at prevailing market price plus 1% penalty. Current market price is 8.3% above the contracted price."
+        reasoning="JSE Rules §18.5: fails uncured by Day+5 trigger mandatory STRATE buy-in plus a 1% penalty applied to the original trade value. At this price differential, total exposure is R5.4M vs R4.8M contracted."
+        title="Initiate Buy-In Prevention"
+        onAccept={() => {}}
+      />
+
+      <DataTable
+        columns={SETTLE_FAIL_COLS}
+        rows={rows}
+        loading={loading}
+        onRowClick={row => { setSelected(row); setDrawerOpen(true); }}
+      />
+
+      <DetailDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title={selected ? `Fail — ${selected.counterparty}` : 'Settlement Fail'}
+        subtitle={selected ? `${selected.instrument} · ${(selected.fail_quantity ?? 0).toLocaleString()} MWh` : undefined}
+        entityRef={selected ? (selected.ref ?? selected.id.slice(-8).toUpperCase()) : undefined}
+        status={selected?.chain_status}
+        statusVariant={selected ? stateVariant(selected.chain_status) : 'default'}
+        fields={selected ? settleFailDrawerFields(selected) : []}
+        actions={selected ? settleFailDrawerActions(selected, () => { void fetch(); setDrawerOpen(false); }) : []}
+        onActionComplete={fetch}
+      />
+    </div>
+  );
+}
+
+// ─── Sub-screen: JIBAR Benchmark Transition (W90) ─────────────────────────────
+
+type BenchmarkRow = {
+  id: string;
+  ref: string;
+  counterparty: string;
+  instrument_type: string;
+  notional_zar: number;
+  days_to_cessation: number | null;
+  chain_status: string;
+  tier: string;
+};
+
+const BENCHMARK_COLS: Column<BenchmarkRow>[] = [
+  { key: 'ref',               header: 'Ref',              mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>{row.ref ?? row.id.slice(-8).toUpperCase()}</span> },
+  { key: 'counterparty',      header: 'Counterparty',     render: row => <span style={{ fontSize: '13px' }}>{row.counterparty}</span> },
+  { key: 'instrument_type',   header: 'Instrument Type',  render: row => <span style={{ fontSize: '13px' }}>{row.instrument_type}</span> },
+  { key: 'notional_zar',      header: 'Notional',         align: 'right', mono: true,
+    render: row => {
+      const v = row.notional_zar ?? 0;
+      return <span style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+        {v >= 1e6 ? `R${(v / 1e6).toFixed(1)}m` : `R${v.toLocaleString()}`}
+      </span>;
+    } },
+  { key: 'days_to_cessation', header: 'Days to Cessation', align: 'right', mono: true,
+    render: row => {
+      const d = row.days_to_cessation;
+      if (d == null) return <span style={{ color: 'var(--oe-text-3)' }}>—</span>;
+      return <span style={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 700, color: d < 30 ? 'var(--oe-rose)' : d < 90 ? 'var(--oe-amber)' : 'var(--oe-text-1)' }}>{d}d</span>;
+    } },
+  { key: 'chain_status',      header: 'Status',
+    render: row => <StatusPill label={row.chain_status} variant={stateVariant(row.chain_status)} /> },
+];
+
+function benchmarkDrawerFields(row: BenchmarkRow): DrawerField[] {
+  const v = row.notional_zar ?? 0;
+  return [
+    { label: 'Ref',                  value: row.ref ?? row.id,                             mono: true, span: true },
+    { label: 'Counterparty',         value: row.counterparty },
+    { label: 'Instrument Type',      value: row.instrument_type },
+    { label: 'Notional',             value: v >= 1e6 ? `R${(v / 1e6).toFixed(2)}m` : `R${v.toLocaleString()}`, mono: true },
+    { label: 'Days to Cessation',    value: row.days_to_cessation != null ? `${row.days_to_cessation}d` : '—', mono: true },
+    { label: 'Status',               value: <StatusPill label={row.chain_status} variant={stateVariant(row.chain_status)} />, span: true },
+    { label: 'Tier',                 value: row.tier ?? '—',                               mono: true },
+  ];
+}
+
+function benchmarkDrawerActions(row: BenchmarkRow, onDone: () => void): DrawerAction[] {
+  const actions: DrawerAction[] = [];
+  const s = row.chain_status ?? '';
+
+  const transition = async (action: string, extra?: Record<string, unknown>) => {
+    await api.post(`/api/benchmark-transition/chain/${row.id}/transition`, { action, ...extra });
+    onDone();
+  };
+
+  if (s === 'open' || s === 'identified') {
+    actions.push({
+      id: 'impact-assess',
+      label: 'Impact Assessment',
+      icon: 'scales',
+      variant: 'primary',
+      form: (
+        <TransitionForm
+          actionLabel="Submit Assessment"
+          requireReason={false}
+          fields={[
+            { key: 'fallback_rate', label: 'Proposed Fallback Rate', type: 'select', required: true, options: [
+              { value: 'zaronia',    label: 'ZARONIA (SA Overnight)' },
+              { value: 'prime_csrc', label: 'Prime + Credit Spread' },
+              { value: 'repo',       label: 'SARB Repo Rate' },
+            ]},
+            { key: 'exposure_zar', label: 'Estimated Exposure (ZAR)', type: 'number', required: false, placeholder: '0' },
+          ]}
+          onSubmit={async (formData) => { await transition('impact_assess', formData); }}
+        />
+      ),
+      onClick: async () => { /* form handles submission */ },
+    });
+  }
+
+  if (s === 'assessed') {
+    actions.push({
+      id: 'classify',
+      label: 'Classify Contract',
+      icon: 'list',
+      variant: 'primary',
+      form: (
+        <TransitionForm
+          actionLabel="Classify"
+          requireReason={false}
+          fields={[
+            { key: 'classification', label: 'Classification', type: 'select', required: true, options: [
+              { value: 'active_transition',  label: 'Active — amendment required' },
+              { value: 'passive_fallback',   label: 'Passive — contractual fallback' },
+              { value: 'legacy_exempt',      label: 'Legacy exempt' },
+            ]},
+          ]}
+          onSubmit={async (formData) => { await transition('classify', formData); }}
+        />
+      ),
+      onClick: async () => { /* form handles submission */ },
+    });
+  }
+
+  if (s === 'classified') {
+    actions.push({
+      id: 'notify',
+      label: 'Notify Counterparty',
+      icon: 'send',
+      variant: 'secondary',
+      onClick: async () => { await transition('notify'); },
+    });
+  }
+
+  if (s === 'notified' || s === 'in_negotiation') {
+    actions.push({
+      id: 'execute-amendment',
+      label: 'Execute Amendment',
+      icon: 'check-circle',
+      variant: 'primary',
+      form: (
+        <TransitionForm
+          actionLabel="Confirm Amendment Execution"
+          requireReason={false}
+          fields={[
+            { key: 'amendment_ref',  label: 'Amendment Reference', type: 'text', required: true, placeholder: 'AMD-...' },
+            { key: 'effective_date', label: 'Effective Date',       type: 'date', required: true },
+          ]}
+          onSubmit={async (formData) => { await transition('execute_amendment', formData); }}
+        />
+      ),
+      onClick: async () => { /* form handles submission */ },
+    });
+  }
+
+  if (s === 'amended') {
+    actions.push({
+      id: 'complete-transition',
+      label: 'Complete Transition',
+      icon: 'approve',
+      variant: 'primary',
+      onClick: async () => { await transition('complete_transition'); },
+    });
+  }
+
+  if (s !== 'terminated' && s !== 'completed') {
+    actions.push({
+      id: 'terminate-legacy',
+      label: 'Terminate Legacy Contract',
+      icon: 'flag',
+      variant: 'danger',
+      form: (
+        <TransitionForm
+          actionLabel="Confirm Termination"
+          requireReason={true}
+          reasonCodes={[
+            { value: 'cessation_date',  label: 'Benchmark cessation date reached' },
+            { value: 'mutual_agree',    label: 'Mutually agreed early termination' },
+            { value: 'regulatory_dir',  label: 'Regulatory direction' },
+          ]}
+          onSubmit={async (formData) => { await transition('terminate_legacy', formData); }}
+        />
+      ),
+      onClick: async () => { /* form handles submission */ },
+    });
+  }
+
+  actions.push({
+    id: 'view-chain',
+    label: 'View Audit Chain',
+    icon: 'list',
+    variant: 'secondary',
+    onClick: async () => {
+      await api.get(`/api/benchmark-transition/chain/${row.id}`);
+      onDone();
+    },
+  });
+
+  return actions;
+}
+
+function BenchmarkTransitionScreen() {
+  const [rows, setRows] = React.useState<BenchmarkRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [selected, setSelected] = React.useState<BenchmarkRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+  const fetch = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/benchmark-transition/chain');
+      setRows((res.data?.data ?? res.data?.results ?? res.data ?? []) as BenchmarkRow[]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => { void fetch(); }, [fetch]);
+
+  const urgentCount    = rows.filter(r => (r.days_to_cessation ?? 999) < 30).length;
+  const pendingCount   = rows.filter(r => r.chain_status !== 'completed' && r.chain_status !== 'terminated').length;
+  const totalNotional  = rows.reduce((s, r) => s + (r.notional_zar ?? 0), 0);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+          JIBAR Benchmark Transition
+        </h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading…' : rows.length + ' contracts'}</div>
+      </div>
+
+      {urgentCount > 0 && (
+        <div style={{ background: 'var(--oe-rose-bg)', border: '1px solid var(--oe-rose)', borderRadius: 'var(--oe-r-card)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <OeIcon name="alert-triangle" size={14} color="var(--oe-rose)" />
+          <span style={{ fontSize: '13px', color: 'var(--oe-rose)', fontWeight: 500 }}>
+            {urgentCount} contract{urgentCount > 1 ? 's' : ''} within 30 days of JIBAR cessation — amendment required immediately.
+          </span>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+        {[
+          { label: 'Pending Transition', value: String(pendingCount),  positive: pendingCount === 0 },
+          { label: '< 30 Days Urgent',   value: String(urgentCount),   positive: urgentCount === 0 },
+          { label: 'Total Notional',     value: totalNotional >= 1e6 ? `R${(totalNotional / 1e6).toFixed(0)}m` : `R${totalNotional.toLocaleString()}`, positive: true },
+        ].map(item => (
+          <div key={item.label} style={{ background: 'var(--oe-canvas)', border: '1px solid var(--oe-border)', borderRadius: 'var(--oe-r-card)', padding: '14px 16px' }}>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--oe-text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>{item.label}</div>
+            <div style={{ fontSize: '18px', fontWeight: 800, fontFamily: 'var(--oe-font-mono)', color: item.positive ? 'var(--oe-green)' : 'var(--oe-rose)' }}>{item.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: 'var(--oe-canvas)', border: '1px solid var(--oe-border)', borderRadius: 'var(--oe-r-card)', padding: '12px 16px', fontSize: '12px', color: 'var(--oe-text-3)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <OeIcon name="checklist" size={14} />
+        W90 — JIBAR to ZARONIA/SOFR benchmark transition. FSCA / SARB directive. Contracts referencing JIBAR must be amended or terminated prior to cessation date. Terminate-legacy crosses regulator every tier.
+      </div>
+
+      <AIInsightCard
+        suggestion="JSAFIX benchmark rate for 5-year ZAR swaps moved 47bps this week — the largest single-week move in 2026. 3 existing OTC positions have embedded benchmark references that are scheduled for JSAFIX discontinuation in Dec 2026. Fallback to ZARONIA is not yet documented."
+        reasoning="FMA 2012 §35A: counterparties to benchmark-referencing contracts must document fallback provisions before benchmark discontinuation. Failure to document by 90 days prior triggers mandatory novation via JSE."
+        title="Document Fallback Provisions"
+        onAccept={() => {}}
+      />
+
+      <DataTable
+        columns={BENCHMARK_COLS}
+        rows={rows}
+        loading={loading}
+        onRowClick={row => { setSelected(row); setDrawerOpen(true); }}
+      />
+
+      <DetailDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title={selected ? `Transition — ${selected.counterparty}` : 'Benchmark Transition'}
+        subtitle={selected ? `${selected.instrument_type} · ${selected.notional_zar >= 1e6 ? `R${(selected.notional_zar / 1e6).toFixed(1)}m` : `R${(selected.notional_zar ?? 0).toLocaleString()}`}` : undefined}
+        entityRef={selected ? (selected.ref ?? selected.id.slice(-8).toUpperCase()) : undefined}
+        status={selected?.chain_status}
+        statusVariant={selected ? stateVariant(selected.chain_status) : 'default'}
+        fields={selected ? benchmarkDrawerFields(selected) : []}
+        actions={selected ? benchmarkDrawerActions(selected, () => { void fetch(); setDrawerOpen(false); }) : []}
+        onActionComplete={fetch}
+      />
+    </div>
+  );
+}
+
+// ─── Sub-screen: Pre-Trade Credit Check & Settlement-Risk Exposure (W107) ────
+
+type PreTradeRow = {
+  id: string;
+  ref: string;
+  counterparty_name: string;
+  proposed_notional_zar: number;
+  credit_grade: string;
+  utilisation_pct: number;
+  chain_status: string;
+  checked_at: string | null;
+  tier: string;
+};
+
+const PRETRADE_COLS: Column<PreTradeRow>[] = [
+  { key: 'ref',                   header: 'Ref',              mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>{row.ref ?? row.id.slice(-8).toUpperCase()}</span> },
+  { key: 'counterparty_name',     header: 'Counterparty',     render: row => <span style={{ fontSize: '13px' }}>{row.counterparty_name}</span> },
+  { key: 'credit_grade',          header: 'Credit Grade',
+    render: row => {
+      const grade = row.credit_grade ?? '';
+      const variant = /^AA?$/.test(grade) ? 'green' : grade === 'BBB' ? 'amber' : 'rose';
+      return <StatusPill label={grade || '—'} variant={variant} />;
+    } },
+  { key: 'proposed_notional_zar', header: 'Notional',         align: 'right', mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace' }}>{`R ${(row.proposed_notional_zar / 1e6).toFixed(1)}M`}</span> },
+  { key: 'utilisation_pct',       header: 'Utilisation',      align: 'right', mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace', color: row.utilisation_pct > 90 ? 'var(--oe-rose)' : 'var(--oe-text-1)' }}>{row.utilisation_pct.toFixed(1)}%</span> },
+  { key: 'chain_status',          header: 'Status',
+    render: row => <StatusPill label={row.chain_status} variant={stateVariant(row.chain_status)} /> },
+];
+
+function preTradeDrawerFields(row: PreTradeRow): DrawerField[] {
+  return [
+    { label: 'Ref',                    value: row.ref ?? row.id,                     mono: true, span: true },
+    { label: 'Counterparty',           value: row.counterparty_name,                 span: true },
+    { label: 'Credit Grade',           value: row.credit_grade ?? '—',               mono: true },
+    { label: 'Proposed Notional',      value: `R ${(row.proposed_notional_zar / 1e6).toFixed(1)}M`, mono: true },
+    { label: 'Utilisation',            value: `${row.utilisation_pct.toFixed(1)}%`,  mono: true },
+    { label: 'Status',                 value: <StatusPill label={row.chain_status} variant={stateVariant(row.chain_status)} />, span: true },
+    { label: 'Checked At',             value: row.checked_at ? row.checked_at.slice(0, 19).replace('T', ' ') : '—', mono: true },
+    { label: 'Tier',                   value: row.tier ?? '—',                       mono: true },
+  ];
+}
+
+function preTradeDrawerActions(row: PreTradeRow, onDone: () => void): DrawerAction[] {
+  const s = row.chain_status ?? '';
+  const actions: DrawerAction[] = [];
+
+  if (s === 'pending' || s === 'open') {
+    actions.push({
+      id: 'run-check',
+      label: 'Run Credit Check',
+      icon: 'checklist',
+      variant: 'primary',
+      onClick: () => api.post(`/api/trader/pretrade-credit/chain/${row.id}/transition`, { action: 'run_check' }).then(() => onDone()),
+    });
+  }
+  if (s === 'checked') {
+    actions.push({
+      id: 'approve-trade',
+      label: 'Approve Trade',
+      icon: 'check-circle',
+      variant: 'primary',
+      onClick: () => api.post(`/api/trader/pretrade-credit/chain/${row.id}/transition`, { action: 'approve_trade' }).then(() => onDone()),
+    });
+    actions.push({
+      id: 'reject-trade',
+      label: 'Reject Trade',
+      icon: 'flag',
+      variant: 'danger',
+      onClick: () => api.post(`/api/trader/pretrade-credit/chain/${row.id}/transition`, { action: 'reject_trade' }).then(() => onDone()),
+    });
+  }
+  actions.push({
+    id: 'flag-review',
+    label: 'Flag for Review',
+    icon: 'shield',
+    variant: 'secondary',
+    onClick: () => api.post(`/api/trader/pretrade-credit/chain/${row.id}/transition`, { action: 'flag_for_review' }).then(() => onDone()),
+  });
+
+  return actions;
+}
+
+function PreTradeScreen() {
+  const [rows, setRows] = React.useState<PreTradeRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [selected, setSelected] = React.useState<PreTradeRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+  const fetch = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/trader/pretrade-credit/chain');
+      setRows((res.data?.data ?? res.data?.results ?? res.data ?? []) as PreTradeRow[]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => { void fetch(); }, [fetch]);
+
+  const highUtilCount = rows.filter(r => r.utilisation_pct > 90).length;
+  const pendingCount  = rows.filter(r => r.chain_status === 'pending' || r.chain_status === 'open').length;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+          Pre-Trade Credit Check &amp; Settlement-Risk Exposure
+        </h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading…' : rows.length + ' checks'}</div>
+      </div>
+
+      {highUtilCount > 0 && (
+        <div style={{ background: 'var(--oe-rose-bg)', border: '1px solid var(--oe-rose)', borderRadius: 'var(--oe-r-card)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <OeIcon name="lock" size={14} color="var(--oe-rose)" />
+          <span style={{ fontSize: '13px', color: 'var(--oe-rose)', fontWeight: 500 }}>
+            {highUtilCount} counterpart{highUtilCount > 1 ? 'ies' : 'y'} at &gt;90% credit utilisation — approve with caution.
+          </span>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+        {[
+          { label: 'Pending Checks',      value: String(pendingCount),    positive: pendingCount === 0 },
+          { label: '>90% Utilisation',     value: String(highUtilCount),   positive: highUtilCount === 0 },
+          { label: 'Total Checks',         value: String(rows.length),     positive: true },
+        ].map(item => (
+          <div key={item.label} style={{ background: 'var(--oe-canvas)', border: '1px solid var(--oe-border)', borderRadius: 'var(--oe-r-card)', padding: '14px 16px' }}>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--oe-text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>{item.label}</div>
+            <div style={{ fontSize: '18px', fontWeight: 800, fontFamily: 'var(--oe-font-mono)', color: item.positive ? 'var(--oe-green)' : 'var(--oe-rose)' }}>{item.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: 'var(--oe-canvas)', border: '1px solid var(--oe-border)', borderRadius: 'var(--oe-r-card)', padding: '12px 16px', fontSize: '12px', color: 'var(--oe-text-3)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <OeIcon name="lock" size={14} />
+        W107 — Pre-trade credit check and settlement-risk exposure gate. Grades A/AA approved; BBB requires review; BB and below auto-reject pending override. Utilisation &gt;90% triggers flag-for-review.
+      </div>
+
+      <AIInsightCard
+        suggestion="3 counterparties showing utilisation >85%. Alpha Solar and Meridian Energy approach credit limits — consider pre-clearing netting opportunities before end of trading day."
+        reasoning="Credit limit breaches trigger forced rejection at 100% utilisation, creating order-book gaps at inopportune moments."
+        title="Review Exposures"
+        onAccept={() => {}}
+      />
+
+      <DataTable<PreTradeRow>
+        columns={PRETRADE_COLS}
+        rows={rows}
+        loading={loading}
+        onRowClick={row => { setSelected(row); setDrawerOpen(true); }}
+      />
+
+      <DetailDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title={selected ? `Pre-Trade — ${selected.counterparty_name}` : 'Pre-Trade Credit Check'}
+        subtitle={selected ? `Grade: ${selected.credit_grade ?? '—'} · ${(selected.proposed_notional_zar / 1e6).toFixed(1)}M` : undefined}
+        entityRef={selected ? (selected.ref ?? selected.id.slice(-8).toUpperCase()) : undefined}
+        status={selected?.chain_status}
+        statusVariant={selected ? stateVariant(selected.chain_status) : 'default'}
+        fields={selected ? preTradeDrawerFields(selected) : []}
+        actions={selected ? preTradeDrawerActions(selected, () => { void fetch(); setDrawerOpen(false); }) : []}
+        onActionComplete={fetch}
+      />
+    </div>
+  );
+}
+
+// ─── Sub-screen: Daily P&L Attribution & Risk-Adjusted Returns (W111) ─────────
+
+type PnlAttrRow = {
+  id: string;
+  ref: string;
+  trading_date: string;
+  desk: string;
+  gross_pnl_zar: number;
+  risk_charge_zar: number;
+  net_pnl_zar: number;
+  sharpe_ratio: number | null;
+  chain_status: string;
+  tier: string;
+};
+
+const PNL_ATTR_COLS: Column<PnlAttrRow>[] = [
+  { key: 'ref',            header: 'Ref',          mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>{row.ref ?? row.id.slice(-8).toUpperCase()}</span> },
+  { key: 'trading_date',   header: 'Date',         mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>{row.trading_date ? row.trading_date.slice(0, 10) : '—'}</span> },
+  { key: 'desk',           header: 'Desk',         render: row => <span style={{ fontSize: '13px' }}>{row.desk}</span> },
+  { key: 'gross_pnl_zar',  header: 'Gross P&L',    align: 'right', mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace', color: row.gross_pnl_zar >= 0 ? 'var(--oe-green)' : 'var(--oe-rose)' }}>{`R ${(row.gross_pnl_zar / 1e6).toFixed(2)}M`}</span> },
+  { key: 'risk_charge_zar',header: 'Risk Charge',  align: 'right', mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace', color: 'var(--oe-text-2)' }}>{`R ${(row.risk_charge_zar / 1e6).toFixed(2)}M`}</span> },
+  { key: 'net_pnl_zar',    header: 'Net P&L',      align: 'right', mono: true,
+    render: row => <span style={{ fontFamily: '"JetBrains Mono", monospace', fontWeight: 700, color: row.net_pnl_zar >= 0 ? 'var(--oe-green)' : 'var(--oe-rose)' }}>{`R ${(row.net_pnl_zar / 1e6).toFixed(2)}M`}</span> },
+  { key: 'chain_status',   header: 'Status',
+    render: row => <StatusPill label={row.chain_status} variant={stateVariant(row.chain_status)} /> },
+];
+
+function pnlAttrDrawerFields(row: PnlAttrRow): DrawerField[] {
+  return [
+    { label: 'Ref',          value: row.ref ?? row.id,                                           mono: true, span: true },
+    { label: 'Trading Date', value: row.trading_date ? row.trading_date.slice(0, 10) : '—',      mono: true },
+    { label: 'Desk',         value: row.desk },
+    { label: 'Gross P&L',    value: `R ${(row.gross_pnl_zar / 1e6).toFixed(2)}M`,               mono: true },
+    { label: 'Risk Charge',  value: `R ${(row.risk_charge_zar / 1e6).toFixed(2)}M`,              mono: true },
+    { label: 'Net P&L',      value: `R ${(row.net_pnl_zar / 1e6).toFixed(2)}M`,                 mono: true },
+    { label: 'Sharpe Ratio', value: row.sharpe_ratio != null ? row.sharpe_ratio.toFixed(2) : '—', mono: true },
+    { label: 'Status',       value: <StatusPill label={row.chain_status} variant={stateVariant(row.chain_status)} />, span: true },
+    { label: 'Tier',         value: row.tier ?? '—',                                             mono: true },
+  ];
+}
+
+function pnlAttrDrawerActions(row: PnlAttrRow, onDone: () => void): DrawerAction[] {
+  const s = row.chain_status ?? '';
+  const actions: DrawerAction[] = [];
+
+  if (s === 'draft' || s === 'pending') {
+    actions.push({
+      id: 'submit-attribution',
+      label: 'Submit Attribution',
+      icon: 'send',
+      variant: 'primary',
+      onClick: () => api.post(`/api/trader/pnl-attribution/chain/${row.id}/transition`, { action: 'submit_attribution' }).then(() => onDone()),
+    });
+  }
+  if (s === 'submitted') {
+    actions.push({
+      id: 'review',
+      label: 'Review',
+      icon: 'checklist',
+      variant: 'secondary',
+      onClick: () => api.post(`/api/trader/pnl-attribution/chain/${row.id}/transition`, { action: 'review' }).then(() => onDone()),
+    });
+  }
+  if (s === 'under_review') {
+    actions.push({
+      id: 'approve',
+      label: 'Approve',
+      icon: 'check-circle',
+      variant: 'primary',
+      onClick: () => api.post(`/api/trader/pnl-attribution/chain/${row.id}/transition`, { action: 'approve' }).then(() => onDone()),
+    });
+    actions.push({
+      id: 'restate',
+      label: 'Restate',
+      icon: 'flag',
+      variant: 'danger',
+      onClick: () => api.post(`/api/trader/pnl-attribution/chain/${row.id}/transition`, { action: 'restate' }).then(() => onDone()),
+    });
+  }
+
+  return actions;
+}
+
+function PnlAttributionScreen() {
+  const [rows, setRows] = React.useState<PnlAttrRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [selected, setSelected] = React.useState<PnlAttrRow | null>(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+  const fetch = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/api/trader/pnl-attribution/chain');
+      setRows((res.data?.data ?? res.data?.results ?? res.data ?? []) as PnlAttrRow[]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => { void fetch(); }, [fetch]);
+
+  const totalNet  = rows.reduce((s, r) => s + r.net_pnl_zar, 0);
+  const avgSharpe = rows.length > 0 ? rows.reduce((s, r) => s + (r.sharpe_ratio ?? 0), 0) / rows.length : null;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+          Daily P&amp;L Attribution &amp; Risk-Adjusted Returns
+        </h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading…' : rows.length + ' records'}</div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+        {[
+          { label: 'Total Net P&L',  value: `R ${(totalNet / 1e6).toFixed(2)}M`,                  positive: totalNet >= 0 },
+          { label: 'Avg Sharpe',     value: avgSharpe != null ? avgSharpe.toFixed(2) : '—',        positive: avgSharpe != null && avgSharpe >= 1 },
+          { label: 'Records',        value: String(rows.length),                                    positive: true },
+        ].map(item => (
+          <div key={item.label} style={{ background: 'var(--oe-canvas)', border: '1px solid var(--oe-border)', borderRadius: 'var(--oe-r-card)', padding: '14px 16px' }}>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--oe-text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>{item.label}</div>
+            <div style={{ fontSize: '18px', fontWeight: 800, fontFamily: 'var(--oe-font-mono)', color: item.positive ? 'var(--oe-green)' : 'var(--oe-rose)' }}>{item.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: 'var(--oe-canvas)', border: '1px solid var(--oe-border)', borderRadius: 'var(--oe-r-card)', padding: '12px 16px', fontSize: '12px', color: 'var(--oe-text-3)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <OeIcon name="chart-line" size={14} />
+        W111 — Daily P&amp;L attribution and risk-adjusted returns. Gross P&amp;L split by desk; risk charge applied per VaR allocation; net Sharpe computed rolling 30-day. Restate crosses risk management every tier.
+      </div>
+
+      <AIInsightCard
+        suggestion="Tuesday's energy-peak desk contributed R2.4M net P&L but Sharpe ratio is 0.31 — below the 0.5 house threshold. Risk-adjusted returns underperform vs short-term desk."
+        reasoning="Desks trading below Sharpe threshold trigger re-examination of position sizing per FSCA best-execution guidelines."
+        title="View Risk Decomposition"
+        onAccept={() => {}}
+      />
+
+      <DataTable<PnlAttrRow>
+        columns={PNL_ATTR_COLS}
+        rows={rows}
+        loading={loading}
+        onRowClick={row => { setSelected(row); setDrawerOpen(true); }}
+      />
+
+      <DetailDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title={selected ? `P&L — ${selected.desk}` : 'P&L Attribution'}
+        subtitle={selected ? `${selected.trading_date ? selected.trading_date.slice(0, 10) : '—'} · Net R ${(selected.net_pnl_zar / 1e6).toFixed(2)}M` : undefined}
+        entityRef={selected ? (selected.ref ?? selected.id.slice(-8).toUpperCase()) : undefined}
+        status={selected?.chain_status}
+        statusVariant={selected ? stateVariant(selected.chain_status) : 'default'}
+        fields={selected ? pnlAttrDrawerFields(selected) : []}
+        actions={selected ? pnlAttrDrawerActions(selected, () => { void fetch(); setDrawerOpen(false); }) : []}
+        onActionComplete={fetch}
+      />
+    </div>
+  );
+}
+
 // ─── Type for all screens ─────────────────────────────────────────────────────
 
-type ActiveScreen = 'desk' | 'orders' | 'positions' | 'book' | 'risk' | 'bex' | 'surveillance' | 'algo' | 'analytics' | 'reporting' | 'allocations' | 'margin';
+type ActiveScreen = 'desk' | 'orders' | 'positions' | 'book' | 'risk' | 'bex' | 'surveillance' | 'algo' | 'analytics' | 'reporting' | 'allocations' | 'margin' | 'mm' | 'pre-trade' | 'pnl-attribution' | 'settlement-fails' | 'benchmark';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function TraderWorkstation() {
+  const { data: me } = useCurrentUser();
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>('desk');
 
   const navConfig = {
@@ -939,6 +2035,8 @@ export function TraderWorkstation() {
         book: 'tr-orders', risk: 'tr-risk', bex: 'tr-rfq',
         surveillance: 'tr-abuse', algo: 'tr-algo', analytics: 'tr-pnl',
         reporting: 'tr-reporting', allocations: 'tr-alloc', margin: 'tr-margin',
+        mm: 'tr-mm', 'pre-trade': 'trader-pre-trade', 'pnl-attribution': 'trader-pnl-attr',
+        'settlement-fails': 'tr-settlement-fails', benchmark: 'tr-benchmark',
       };
       return map[activeScreen] ?? 'tr-desk';
     })(),
@@ -948,17 +2046,22 @@ export function TraderWorkstation() {
         ...item,
         onClick: ((): (() => void) | undefined => {
           const clickMap: Record<string, () => void> = {
-            'tr-desk':      () => setActiveScreen('desk'),
-            'tr-orders':    () => setActiveScreen('orders'),
-            'tr-positions': () => setActiveScreen('positions'),
-            'tr-rfq':       () => setActiveScreen('bex'),
-            'tr-abuse':     () => setActiveScreen('surveillance'),
-            'tr-reporting': () => setActiveScreen('reporting'),
-            'tr-algo':      () => setActiveScreen('algo'),
-            'tr-alloc':     () => setActiveScreen('allocations'),
-            'tr-margin':    () => setActiveScreen('margin'),
-            'tr-pnl':       () => setActiveScreen('analytics'),
-            'tr-risk':      () => setActiveScreen('risk'),
+            'tr-desk':              () => setActiveScreen('desk'),
+            'tr-orders':            () => setActiveScreen('orders'),
+            'tr-positions':         () => setActiveScreen('positions'),
+            'tr-rfq':               () => setActiveScreen('bex'),
+            'tr-abuse':             () => setActiveScreen('surveillance'),
+            'tr-reporting':         () => setActiveScreen('reporting'),
+            'tr-algo':              () => setActiveScreen('algo'),
+            'tr-alloc':             () => setActiveScreen('allocations'),
+            'tr-margin':            () => setActiveScreen('margin'),
+            'tr-mm':                () => setActiveScreen('mm'),
+            'trader-pre-trade':     () => setActiveScreen('pre-trade'),
+            'tr-pnl':               () => setActiveScreen('analytics'),
+            'tr-risk':              () => setActiveScreen('risk'),
+            'trader-pnl-attr':      () => setActiveScreen('pnl-attribution'),
+            'tr-settlement-fails':  () => setActiveScreen('settlement-fails'),
+            'tr-benchmark':         () => setActiveScreen('benchmark'),
           };
           return clickMap[item.id];
         })(),
@@ -971,13 +2074,15 @@ export function TraderWorkstation() {
     book: 'Order Book', risk: 'Risk Dashboard', bex: 'RFQ / Best Execution',
     surveillance: 'Market Abuse', algo: 'Algo Certs', analytics: 'Analytics & Reports',
     reporting: 'Trade Reporting', allocations: 'Allocations', margin: 'Margin',
+    mm: 'MM Compliance', 'pre-trade': 'Pre-Trade Credit W107', 'pnl-attribution': 'P&L Attribution W111',
+    'settlement-fails': 'Settlement Fails', benchmark: 'Benchmark Transition',
   };
 
   return (
     <AppShell
       role="trader"
-      userName="Sipho Dlamini"
-      userEmail="trader@openenergy.co.za"
+      userName={me?.name ?? 'User'}
+      userEmail={me?.email ?? ''}
       navConfig={navConfig}
       breadcrumbs={[{ label: 'Trader' }, { label: breadcrumbLabel[activeScreen] }]}
       alerts={[
@@ -985,17 +2090,22 @@ export function TraderWorkstation() {
         { id: 'a2', message: 'STOR alert: pattern detected on ORD-002 — surveillance review required', variant: 'rose', href: '#abuse' },
       ]}
     >
-      {activeScreen === 'analytics'    ? <TraderAnalytics />
-     : activeScreen === 'orders'       ? <OrdersScreen />
-     : activeScreen === 'positions'    ? <PositionsScreen />
-     : activeScreen === 'book'         ? <BookScreen />
-     : activeScreen === 'risk'         ? <RiskScreen />
-     : activeScreen === 'bex'          ? <BexScreen />
-     : activeScreen === 'surveillance' ? <SurveillanceScreen />
-     : activeScreen === 'algo'         ? <AlgoScreen />
-     : activeScreen === 'reporting'    ? <ReportingScreen />
-     : activeScreen === 'allocations'  ? <AllocationsScreen />
-     : activeScreen === 'margin'       ? <MarginScreen />
+      {activeScreen === 'analytics'         ? <TraderAnalytics />
+     : activeScreen === 'orders'            ? <OrdersScreen />
+     : activeScreen === 'positions'         ? <PositionsScreen />
+     : activeScreen === 'book'              ? <BookScreen />
+     : activeScreen === 'risk'              ? <RiskScreen />
+     : activeScreen === 'bex'              ? <BexScreen />
+     : activeScreen === 'surveillance'      ? <SurveillanceScreen />
+     : activeScreen === 'algo'              ? <AlgoScreen />
+     : activeScreen === 'reporting'         ? <ReportingScreen />
+     : activeScreen === 'allocations'       ? <AllocationsScreen />
+     : activeScreen === 'margin'            ? <MarginScreen />
+     : activeScreen === 'mm'               ? <MmComplianceScreen />
+     : activeScreen === 'pre-trade'         ? <PreTradeScreen />
+     : activeScreen === 'pnl-attribution'   ? <PnlAttributionScreen />
+     : activeScreen === 'settlement-fails'  ? <SettlementFailsScreen />
+     : activeScreen === 'benchmark'         ? <BenchmarkTransitionScreen />
      : <TradeDeskDashboard />}
     </AppShell>
   );

@@ -804,6 +804,616 @@ export function ProjectFinanceReport() {
   );
 }
 
+// ─── 11. ML Model Performance Report ─────────────────────────────────────────
+
+interface MlModelRow {
+  id: string;
+  model: string;
+  wave: string;
+  algorithm: string;
+  accuracy: string;
+  f1Score: string;
+  inferenceTime: string;
+  status: string;
+}
+
+const ML_MODEL_ROWS: MlModelRow[] = [
+  { id: '1', model: 'Anomaly Detection',   wave: 'W127', algorithm: 'IF + Z-Score Ensemble',  accuracy: '96.4%', f1Score: '0.94', inferenceTime: '12ms', status: 'active' },
+  { id: '2', model: 'RUL Prediction',       wave: 'W128', algorithm: 'RF Regressor',            accuracy: '94.1%', f1Score: '0.91', inferenceTime: '18ms', status: 'active' },
+  { id: '3', model: 'Fault Fingerprint',    wave: 'W129', algorithm: 'XGBoost + CNN-1D',        accuracy: '97.8%', f1Score: '0.96', inferenceTime: '24ms', status: 'active' },
+  { id: '4', model: 'NTT Comparison',       wave: 'W130', algorithm: 'Aggregator (live stitch)', accuracy: '—',     f1Score: '—',    inferenceTime: '8ms',  status: 'active' },
+];
+
+export function MlModelPerformanceReport() {
+  const thStyle: React.CSSProperties = {
+    padding: '9px 14px',
+    background: 'var(--oe-grad-table-head)',
+    borderBottom: '1px solid var(--oe-border)',
+    fontSize: '10px',
+    fontWeight: 700,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    color: 'var(--oe-text-3)',
+    textAlign: 'left',
+    whiteSpace: 'nowrap',
+  };
+  const tdStyle: React.CSSProperties = {
+    padding: '0 14px',
+    height: '44px',
+    verticalAlign: 'middle',
+    borderBottom: '1px solid var(--oe-border-2)',
+    fontSize: '13px',
+    color: 'var(--oe-text-2)',
+  };
+
+  return (
+    <ReportContainer>
+      <SectionHeader
+        title="ML Model Performance — W127–W130"
+        subtitle="Apex predictive chain model metrics. Accuracy and F1 evaluated on held-out test sets. Inference time p95 on CF Workers AI."
+      />
+      <div
+        style={{
+          background: 'var(--oe-canvas)',
+          border: '1px solid var(--oe-border)',
+          borderRadius: 'var(--oe-r-card)',
+          overflow: 'hidden',
+          boxShadow: 'var(--oe-shadow-card)',
+        }}
+      >
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr>
+                <th style={thStyle}>Model</th>
+                <th style={thStyle}>Wave</th>
+                <th style={thStyle}>Algorithm</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Accuracy</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>F1 Score</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Inference Time</th>
+                <th style={thStyle}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ML_MODEL_ROWS.map((r, i) => (
+                <tr key={r.id}>
+                  <td style={{ ...tdStyle, fontWeight: 600, color: 'var(--oe-text-1)', borderBottom: i < ML_MODEL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{r.model}</td>
+                  <td style={{ ...tdStyle, borderBottom: i < ML_MODEL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>
+                    <StatusPill label={r.wave} variant="blue" dot={false} size="xs" />
+                  </td>
+                  <td style={{ ...tdStyle, fontSize: '12px', color: 'var(--oe-text-3)', borderBottom: i < ML_MODEL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{r.algorithm}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right', borderBottom: i < ML_MODEL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>
+                    {r.accuracy === '—' ? <span style={{ color: 'var(--oe-text-4)', fontFamily: '"JetBrains Mono", monospace', fontSize: '12px' }}>—</span> : coloredNum(r.accuracy, true)}
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: 'right', borderBottom: i < ML_MODEL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>
+                    {r.f1Score === '—' ? <span style={{ color: 'var(--oe-text-4)', fontFamily: '"JetBrains Mono", monospace', fontSize: '12px' }}>—</span> : mono(r.f1Score)}
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: 'right', borderBottom: i < ML_MODEL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{mono(r.inferenceTime)}</td>
+                  <td style={{ ...tdStyle, borderBottom: i < ML_MODEL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>
+                    <StatusPill label={r.status} variant="green" dot size="sm" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style={{ fontSize: '11px', color: 'var(--oe-text-3)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <OeIcon name="info-circle" size={12} color="var(--oe-text-4)" />
+        W130 Aggregator stitches W127–W129 live outputs; per-model accuracy N/A. Recall certification nightly via INVERTED SLA.
+      </div>
+    </ReportContainer>
+  );
+}
+
+// ─── 12. SLL KPI Compliance Report ───────────────────────────────────────────
+
+interface SllRow {
+  id: string;
+  facility: string;
+  kpi: string;
+  target: string;
+  actual: string;
+  status: 'Met' | 'Missed' | 'At Risk';
+  ratchet: string;
+}
+
+const SLL_ROWS: SllRow[] = [
+  { id: '1', facility: 'SLL-0041 (Lephalale Wind)', kpi: 'Carbon intensity (tCO2e/MWh)',      target: '≤ 0.025',  actual: '0.021',  status: 'Met',     ratchet: '−15bps' },
+  { id: '2', facility: 'SLL-0044 (Upington Solar)',  kpi: 'Availability factor (%)',           target: '≥ 92.0%',  actual: '91.4%',  status: 'At Risk', ratchet: '0bps'   },
+  { id: '3', facility: 'SLL-0051 (Richards Bay Off)',kpi: 'Local content spend (%)',           target: '≥ 40.0%',  actual: '43.2%',  status: 'Met',     ratchet: '−10bps' },
+  { id: '4', facility: 'SLL-0058 (De Aar BESS)',     kpi: 'ED commitment disbursed (ZAR)',     target: '≥ R 18M',  actual: 'R 11.4M',status: 'Missed',  ratchet: '+25bps' },
+];
+
+export function SllKpiComplianceReport() {
+  const thStyle: React.CSSProperties = {
+    padding: '9px 14px',
+    background: 'var(--oe-grad-table-head)',
+    borderBottom: '1px solid var(--oe-border)',
+    fontSize: '10px',
+    fontWeight: 700,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    color: 'var(--oe-text-3)',
+    textAlign: 'left',
+    whiteSpace: 'nowrap',
+  };
+  const tdStyle: React.CSSProperties = {
+    padding: '0 14px',
+    height: '44px',
+    verticalAlign: 'middle',
+    borderBottom: '1px solid var(--oe-border-2)',
+    fontSize: '13px',
+    color: 'var(--oe-text-2)',
+  };
+  const statusVariant = (s: SllRow['status']) =>
+    s === 'Met' ? 'green' : s === 'Missed' ? 'rose' : 'amber';
+
+  return (
+    <ReportContainer>
+      <SectionHeader
+        title="SLL KPI Compliance — Active Facilities"
+        subtitle="Sustainability-linked loan KPI test results. Ratchet = margin adjustment applied at next reset date."
+      />
+      <div
+        style={{
+          background: 'var(--oe-canvas)',
+          border: '1px solid var(--oe-border)',
+          borderRadius: 'var(--oe-r-card)',
+          overflow: 'hidden',
+          boxShadow: 'var(--oe-shadow-card)',
+        }}
+      >
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr>
+                <th style={thStyle}>Facility</th>
+                <th style={thStyle}>KPI</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Target</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Actual</th>
+                <th style={thStyle}>Status</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Ratchet</th>
+              </tr>
+            </thead>
+            <tbody>
+              {SLL_ROWS.map((r, i) => (
+                <tr key={r.id}>
+                  <td style={{ ...tdStyle, fontWeight: 600, color: 'var(--oe-text-1)', borderBottom: i < SLL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{r.facility}</td>
+                  <td style={{ ...tdStyle, fontSize: '12px', color: 'var(--oe-text-3)', borderBottom: i < SLL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{r.kpi}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right', borderBottom: i < SLL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{mono(r.target)}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right', borderBottom: i < SLL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{mono(r.actual)}</td>
+                  <td style={{ ...tdStyle, borderBottom: i < SLL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>
+                    <StatusPill label={r.status} variant={statusVariant(r.status)} dot size="sm" />
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: 'right', borderBottom: i < SLL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>
+                    <span style={{
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontVariantNumeric: 'tabular-nums',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: r.ratchet.startsWith('−') || r.ratchet.startsWith('-') ? 'var(--oe-green)' : r.ratchet === '0bps' ? 'var(--oe-text-3)' : 'var(--oe-rose)',
+                    }}>
+                      {r.ratchet}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ReportContainer>
+  );
+}
+
+// ─── 13. DSCR Portfolio Report ────────────────────────────────────────────────
+
+interface DscrRow {
+  id: string;
+  project: string;
+  facility: string;
+  q1Dscr: string;
+  trend: string;
+  threshold: string;
+  status: 'Above' | 'Below' | 'Covenant Breach';
+  trendUp: boolean;
+}
+
+const DSCR_ROWS: DscrRow[] = [
+  { id: '1', project: 'Lephalale Wind Farm',    facility: 'SLL-0041', q1Dscr: '1.42', trend: '+0.08', threshold: '1.20', status: 'Above',           trendUp: true  },
+  { id: '2', project: 'Upington Solar PV',      facility: 'SLL-0044', q1Dscr: '1.18', trend: '-0.05', threshold: '1.20', status: 'Below',           trendUp: false },
+  { id: '3', project: 'Richards Bay Offshore',  facility: 'SLL-0051', q1Dscr: '1.35', trend: '+0.03', threshold: '1.25', status: 'Above',           trendUp: true  },
+  { id: '4', project: 'De Aar Storage (BESS)',  facility: 'SLL-0058', q1Dscr: '0.94', trend: '-0.18', threshold: '1.15', status: 'Covenant Breach', trendUp: false },
+  { id: '5', project: 'Nkosi Hydro',            facility: 'DRW-0019', q1Dscr: '1.67', trend: '+0.11', threshold: '1.20', status: 'Above',           trendUp: true  },
+];
+
+export function DscrPortfolioReport() {
+  const thStyle: React.CSSProperties = {
+    padding: '9px 14px',
+    background: 'var(--oe-grad-table-head)',
+    borderBottom: '1px solid var(--oe-border)',
+    fontSize: '10px',
+    fontWeight: 700,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    color: 'var(--oe-text-3)',
+    textAlign: 'left',
+    whiteSpace: 'nowrap',
+  };
+  const tdStyle: React.CSSProperties = {
+    padding: '0 14px',
+    height: '44px',
+    verticalAlign: 'middle',
+    borderBottom: '1px solid var(--oe-border-2)',
+    fontSize: '13px',
+    color: 'var(--oe-text-2)',
+  };
+  const statusVariant = (s: DscrRow['status']) =>
+    s === 'Above' ? 'green' : s === 'Covenant Breach' ? 'rose' : 'amber';
+
+  return (
+    <ReportContainer>
+      <SectionHeader
+        title="DSCR Portfolio Monitoring — Q1 2026"
+        subtitle="Debt service coverage ratios vs covenant thresholds. Covenant Breach triggers W38 certificate + W45 enforcement review."
+      />
+      <div
+        style={{
+          background: 'var(--oe-canvas)',
+          border: '1px solid var(--oe-border)',
+          borderRadius: 'var(--oe-r-card)',
+          overflow: 'hidden',
+          boxShadow: 'var(--oe-shadow-card)',
+        }}
+      >
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr>
+                <th style={thStyle}>Project</th>
+                <th style={thStyle}>Facility</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Q1 2026 DSCR</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Trend</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Threshold</th>
+                <th style={thStyle}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {DSCR_ROWS.map((r, i) => (
+                <tr key={r.id}>
+                  <td style={{ ...tdStyle, fontWeight: 600, color: 'var(--oe-text-1)', borderBottom: i < DSCR_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{r.project}</td>
+                  <td style={{ ...tdStyle, borderBottom: i < DSCR_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>
+                    <StatusPill label={r.facility} variant="default" dot={false} size="xs" />
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: 'right', borderBottom: i < DSCR_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>
+                    <span style={{
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontVariantNumeric: 'tabular-nums',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      color: parseFloat(r.q1Dscr) >= parseFloat(r.threshold) ? 'var(--oe-green)' : 'var(--oe-rose)',
+                    }}>
+                      {r.q1Dscr}
+                    </span>
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: 'right', borderBottom: i < DSCR_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>
+                    {coloredNum(r.trend, r.trendUp)}
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: 'right', borderBottom: i < DSCR_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{mono(r.threshold)}</td>
+                  <td style={{ ...tdStyle, borderBottom: i < DSCR_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>
+                    <StatusPill label={r.status} variant={statusVariant(r.status)} dot size="sm" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ReportContainer>
+  );
+}
+
+// ─── 14. Pre-Trade Credit Utilisation Report ──────────────────────────────────
+
+interface CreditUtilRow {
+  id: string;
+  counterparty: string;
+  limitZar: string;
+  utilisedZar: string;
+  utilPct: number;
+  creditGrade: string;
+  status: string;
+}
+
+const CREDIT_UTIL_ROWS: CreditUtilRow[] = [
+  { id: '1', counterparty: 'Eskom SOC Ltd',        limitZar: 'R 500,000,000', utilisedZar: 'R 60,000,000',  utilPct: 12, creditGrade: 'BBB+', status: 'within_limit' },
+  { id: '2', counterparty: 'ACWA Power',            limitZar: 'R 200,000,000', utilisedZar: 'R 124,000,000', utilPct: 62, creditGrade: 'BBB',  status: 'within_limit' },
+  { id: '3', counterparty: 'Old Mutual Investment', limitZar: 'R 200,000,000', utilisedZar: 'R 162,000,000', utilPct: 81, creditGrade: 'A−',   status: 'near_limit'   },
+  { id: '4', counterparty: 'Nedbank CIB',           limitZar: 'R 250,000,000', utilisedZar: 'R 222,500,000', utilPct: 89, creditGrade: 'A',    status: 'near_limit'   },
+  { id: '5', counterparty: 'Mainstream RE',         limitZar: 'R 150,000,000', utilisedZar: 'R 141,000,000', utilPct: 94, creditGrade: 'BB+',  status: 'near_limit'   },
+];
+
+export function PreTradeCreditUtilisationReport() {
+  const thStyle: React.CSSProperties = {
+    padding: '9px 14px',
+    background: 'var(--oe-grad-table-head)',
+    borderBottom: '1px solid var(--oe-border)',
+    fontSize: '10px',
+    fontWeight: 700,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    color: 'var(--oe-text-3)',
+    textAlign: 'left',
+    whiteSpace: 'nowrap',
+  };
+  const tdStyle: React.CSSProperties = {
+    padding: '0 14px',
+    height: '44px',
+    verticalAlign: 'middle',
+    borderBottom: '1px solid var(--oe-border-2)',
+    fontSize: '13px',
+    color: 'var(--oe-text-2)',
+  };
+
+  return (
+    <ReportContainer>
+      <SectionHeader
+        title="Pre-Trade Credit Utilisation"
+        subtitle="Real-time credit limit utilisation by counterparty. >85% = near limit (amber). Breach auto-triggers pre-trade guard rejection."
+      />
+      <div
+        style={{
+          background: 'var(--oe-canvas)',
+          border: '1px solid var(--oe-border)',
+          borderRadius: 'var(--oe-r-card)',
+          overflow: 'hidden',
+          boxShadow: 'var(--oe-shadow-card)',
+        }}
+      >
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr>
+                <th style={thStyle}>Counterparty</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Limit ZAR</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Utilised ZAR</th>
+                <th style={{ ...thStyle }}>Utilisation %</th>
+                <th style={thStyle}>Credit Grade</th>
+                <th style={thStyle}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {CREDIT_UTIL_ROWS.map((r, i) => (
+                <tr key={r.id}>
+                  <td style={{ ...tdStyle, fontWeight: 600, color: 'var(--oe-text-1)', borderBottom: i < CREDIT_UTIL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{r.counterparty}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right', borderBottom: i < CREDIT_UTIL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{mono(r.limitZar)}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right', borderBottom: i < CREDIT_UTIL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{mono(r.utilisedZar)}</td>
+                  <td style={{ ...tdStyle, borderBottom: i < CREDIT_UTIL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>
+                    <UtilBar pct={r.utilPct} />
+                  </td>
+                  <td style={{ ...tdStyle, borderBottom: i < CREDIT_UTIL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>
+                    <StatusPill label={r.creditGrade} variant="default" dot={false} size="xs" />
+                  </td>
+                  <td style={{ ...tdStyle, borderBottom: i < CREDIT_UTIL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>
+                    <StatusPill label={r.status.replace('_', ' ')} variant={stateVariant(r.status)} dot size="sm" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ReportContainer>
+  );
+}
+
+// ─── 15. Imbalance Settlement Report ─────────────────────────────────────────
+
+interface ImbalanceRow {
+  id: string;
+  interval: string;
+  direction: 'Long' | 'Short';
+  volumeMwh: string;
+  mtuPrice: string;
+  settlementZar: string;
+  status: string;
+}
+
+const IMBALANCE_ROWS: ImbalanceRow[] = [
+  { id: '1', interval: '06:00–06:30', direction: 'Long',  volumeMwh: '14.2',  mtuPrice: 'R 1,840', settlementZar: 'R 26,128',   status: 'settled'  },
+  { id: '2', interval: '06:30–07:00', direction: 'Short', volumeMwh: '8.7',   mtuPrice: 'R 2,010', settlementZar: 'R 17,487',   status: 'settled'  },
+  { id: '3', interval: '07:00–07:30', direction: 'Short', volumeMwh: '22.1',  mtuPrice: 'R 2,340', settlementZar: 'R 51,714',   status: 'settled'  },
+  { id: '4', interval: '07:30–08:00', direction: 'Long',  volumeMwh: '5.4',   mtuPrice: 'R 1,960', settlementZar: 'R 10,584',   status: 'disputed' },
+  { id: '5', interval: '14:00–14:30', direction: 'Long',  volumeMwh: '31.0',  mtuPrice: 'R 1,720', settlementZar: 'R 53,320',   status: 'settled'  },
+  { id: '6', interval: '14:30–15:00', direction: 'Short', volumeMwh: '18.6',  mtuPrice: 'R 1,980', settlementZar: 'R 36,828',   status: 'settled'  },
+  { id: '7', interval: '15:00–15:30', direction: 'Long',  volumeMwh: '9.3',   mtuPrice: 'R 2,120', settlementZar: 'R 19,716',   status: 'pending'  },
+  { id: '8', interval: '15:30–16:00', direction: 'Short', volumeMwh: '41.8',  mtuPrice: 'R 2,480', settlementZar: 'R 103,664',  status: 'pending'  },
+];
+
+export function ImbalanceSettlementReport() {
+  const thStyle: React.CSSProperties = {
+    padding: '9px 14px',
+    background: 'var(--oe-grad-table-head)',
+    borderBottom: '1px solid var(--oe-border)',
+    fontSize: '10px',
+    fontWeight: 700,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    color: 'var(--oe-text-3)',
+    textAlign: 'left',
+    whiteSpace: 'nowrap',
+  };
+  const tdStyle: React.CSSProperties = {
+    padding: '0 14px',
+    height: '42px',
+    verticalAlign: 'middle',
+    borderBottom: '1px solid var(--oe-border-2)',
+    fontSize: '13px',
+    color: 'var(--oe-text-2)',
+  };
+
+  return (
+    <ReportContainer>
+      <SectionHeader
+        title="Imbalance Settlement — MTU Summary"
+        subtitle="Half-hourly metering unit intervals. Long = generation excess; Short = generation deficit. Disputed intervals feed W66."
+      />
+      <div
+        style={{
+          background: 'var(--oe-canvas)',
+          border: '1px solid var(--oe-border)',
+          borderRadius: 'var(--oe-r-card)',
+          overflow: 'hidden',
+          boxShadow: 'var(--oe-shadow-card)',
+        }}
+      >
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr>
+                <th style={thStyle}>Trading Interval</th>
+                <th style={thStyle}>Direction</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Volume MWh</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>MTU Price R/MWh</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Settlement ZAR</th>
+                <th style={thStyle}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {IMBALANCE_ROWS.map((r, i) => (
+                <tr key={r.id}>
+                  <td style={{ ...tdStyle, borderBottom: i < IMBALANCE_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{mono(r.interval)}</td>
+                  <td style={{ ...tdStyle, borderBottom: i < IMBALANCE_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>
+                    <StatusPill
+                      label={r.direction}
+                      variant={r.direction === 'Long' ? 'green' : 'rose'}
+                      dot
+                      size="sm"
+                    />
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: 'right', borderBottom: i < IMBALANCE_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{mono(r.volumeMwh)}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right', borderBottom: i < IMBALANCE_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{mono(r.mtuPrice)}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 600, borderBottom: i < IMBALANCE_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{mono(r.settlementZar)}</td>
+                  <td style={{ ...tdStyle, borderBottom: i < IMBALANCE_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>
+                    <StatusPill label={r.status} variant={stateVariant(r.status)} dot size="sm" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '24px', fontFamily: '"JetBrains Mono", monospace', fontSize: '12px', fontVariantNumeric: 'tabular-nums', color: 'var(--oe-text-3)' }}>
+        <span style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: '11px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Day Total</span>
+        <span>Volume: 151.1 MWh</span>
+        {coloredNum('Settlement: R 319,441', true)}
+        <span>Disputed: 1 interval</span>
+      </div>
+    </ReportContainer>
+  );
+}
+
+// ─── 16. Change-in-Law Tracker Report ────────────────────────────────────────
+
+interface CilRow {
+  id: string;
+  ppa: string;
+  eventType: string;
+  quantumZar: string;
+  submissionDate: string;
+  daysOpen: number;
+  status: string;
+}
+
+const CIL_ROWS: CilRow[] = [
+  { id: '1', ppa: 'PPA-0041 (Lephalale)',   eventType: 'Carbon Tax Act amendment', quantumZar: 'R 4,200,000',  submissionDate: '2026-02-14', daysOpen: 106, status: 'negotiation'  },
+  { id: '2', ppa: 'PPA-0044 (Upington)',    eventType: 'ERA grid-code tariff',      quantumZar: 'R 1,800,000',  submissionDate: '2026-03-01', daysOpen: 91,  status: 'eligibility'  },
+  { id: '3', ppa: 'PPA-0051 (Richards Bay)',eventType: 'Discriminatory change',     quantumZar: 'R 12,500,000', submissionDate: '2026-01-20', daysOpen: 131, status: 'arbitration'  },
+  { id: '4', ppa: 'PPA-0058 (De Aar BESS)', eventType: 'SARS transfer pricing',     quantumZar: 'R 680,000',    submissionDate: '2026-04-08', daysOpen: 53,  status: 'impact'       },
+  { id: '5', ppa: 'PPA-0062 (Nkosi Hydro)', eventType: 'Statutory change (DMRE)',   quantumZar: 'R 3,100,000',  submissionDate: '2026-04-22', daysOpen: 39,  status: 'event_logged' },
+];
+
+export function ChangeInLawTrackerReport() {
+  const thStyle: React.CSSProperties = {
+    padding: '9px 14px',
+    background: 'var(--oe-grad-table-head)',
+    borderBottom: '1px solid var(--oe-border)',
+    fontSize: '10px',
+    fontWeight: 700,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    color: 'var(--oe-text-3)',
+    textAlign: 'left',
+    whiteSpace: 'nowrap',
+  };
+  const tdStyle: React.CSSProperties = {
+    padding: '0 14px',
+    height: '44px',
+    verticalAlign: 'middle',
+    borderBottom: '1px solid var(--oe-border-2)',
+    fontSize: '13px',
+    color: 'var(--oe-text-2)',
+  };
+  const daysColor = (d: number): string =>
+    d > 120 ? 'var(--oe-rose)' : d > 60 ? 'var(--oe-amber)' : 'var(--oe-text-2)';
+
+  return (
+    <ReportContainer>
+      <SectionHeader
+        title="Change-in-Law Tracker — Open Claims"
+        subtitle="Active W78 CiL relief claims across all PPA portfolios. Arbitration cases trigger regulatory crossing to W66."
+      />
+      <div
+        style={{
+          background: 'var(--oe-canvas)',
+          border: '1px solid var(--oe-border)',
+          borderRadius: 'var(--oe-r-card)',
+          overflow: 'hidden',
+          boxShadow: 'var(--oe-shadow-card)',
+        }}
+      >
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr>
+                <th style={thStyle}>PPA</th>
+                <th style={thStyle}>Event Type</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Quantum ZAR</th>
+                <th style={thStyle}>Submission Date</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Days Open</th>
+                <th style={thStyle}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {CIL_ROWS.map((r, i) => (
+                <tr key={r.id}>
+                  <td style={{ ...tdStyle, fontWeight: 600, color: 'var(--oe-text-1)', borderBottom: i < CIL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{r.ppa}</td>
+                  <td style={{ ...tdStyle, fontSize: '12px', color: 'var(--oe-text-3)', borderBottom: i < CIL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{r.eventType}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right', borderBottom: i < CIL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{mono(r.quantumZar)}</td>
+                  <td style={{ ...tdStyle, borderBottom: i < CIL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>{mono(r.submissionDate)}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right', borderBottom: i < CIL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>
+                    <span style={{ fontFamily: '"JetBrains Mono", monospace', fontVariantNumeric: 'tabular-nums', fontSize: '12px', fontWeight: 700, color: daysColor(r.daysOpen) }}>
+                      {r.daysOpen}d
+                    </span>
+                  </td>
+                  <td style={{ ...tdStyle, borderBottom: i < CIL_ROWS.length - 1 ? '1px solid var(--oe-border-2)' : 'none' }}>
+                    <StatusPill label={r.status.replace('_', ' ')} variant={stateVariant(r.status)} dot size="sm" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style={{ fontSize: '11px', color: 'var(--oe-text-3)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <OeIcon name="info-circle" size={12} color="var(--oe-text-4)" />
+        Total open quantum: R 22,280,000 across 5 claims. INVERTED SLA — larger quantum claims receive extended determination timeline per ERA §4.
+      </div>
+    </ReportContainer>
+  );
+}
+
 export default {
   SoxAuditTrailReport,
   SodMatrixReport,
@@ -815,4 +1425,10 @@ export default {
   LicenceRenewalStatusReport,
   RiskExposureReport,
   ProjectFinanceReport,
+  MlModelPerformanceReport,
+  SllKpiComplianceReport,
+  DscrPortfolioReport,
+  PreTradeCreditUtilisationReport,
+  ImbalanceSettlementReport,
+  ChangeInLawTrackerReport,
 };

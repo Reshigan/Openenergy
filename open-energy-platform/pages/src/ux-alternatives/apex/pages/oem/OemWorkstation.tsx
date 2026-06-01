@@ -20,8 +20,10 @@ import {
   useOemSpareParts,
   useOemWarrantyRecovery,
   useAuditBlocks,
+  useCurrentUser,
 } from '../../lib/hooks';
 import { OemTicket, OemSparePart, OemWarrantyRecovery, AuditBlock, apexClient } from '../../lib/client';
+import { api } from '../../../../lib/api';
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
@@ -41,6 +43,7 @@ const OEM_NAV: NavConfig = {
       id: 'itil',
       label: 'ITIL Chains',
       items: [
+        { id: 'oem-workorders', label: 'Work Orders W16',          href: '#wo',        icon: 'wrench' },
         { id: 'oem-incident',  label: 'Incident W14',             href: '#incident',  icon: 'alert-triangle', badge: 3, badgeVariant: 'rose' },
         { id: 'oem-problem',   label: 'Problem Mgmt W41',         href: '#problem',   icon: 'hierarchy' },
         { id: 'oem-change',    label: 'Change Enablement W47',    href: '#change',    icon: 'checklist', badge: 1, badgeVariant: 'amber' },
@@ -53,7 +56,9 @@ const OEM_NAV: NavConfig = {
       items: [
         { id: 'oem-warranty-claim',    label: 'Warranty Claim W15',    href: '#warranty',       icon: 'certificate', badge: 1, badgeVariant: 'amber' },
         { id: 'oem-warranty-recovery', label: 'Warranty Recovery W63', href: '#warranty-rec',   icon: 'dollar' },
-        { id: 'oem-fco',               label: 'FCO / Field Change',    href: '#fco',            icon: 'wrench' },
+        { id: 'oem-fco',               label: 'FCO / Field Change W89',href: '#fco',            icon: 'gear' },
+        { id: 'oem-contracts',         label: 'Service Contracts W80', href: '#contracts',      icon: 'document' },
+        { id: 'oem-service-req',       label: 'Service Requests W104', href: '#service-req',    icon: 'checklist' },
       ],
     },
     {
@@ -513,6 +518,13 @@ function TicketsScreen(): React.ReactElement {
         <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Ticket Queue</h1>
         <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading...' : data.length + ' records'}</div>
       </div>
+      <AIInsightCard
+        title="P1 Ticket TKT-2026-0089 — SLA Breach in 47 Minutes"
+        suggestion="TKT-2026-0089 (grid inverter total failure, Kalahari Solar 500MW, P1 severity) was logged 2h13m ago. P1 SLA requires initial response within 1 hour (breached) and resolution within 4 hours (47 minutes remaining). Escalate to the senior field engineer on call and dispatch a technician to site — travel time is 35 minutes."
+        reasoning="ITIL P1 SLA: a P1 ticket breach at 4 hours triggers automatic escalation to the Account Director and generates a contractual SLA breach report. For a grid-connected inverter failure, each hour of downtime costs R15,360 in lost generation (850kW × R1.28/kWh × 1h). The OEM O&M agreement §6.2 includes a financial penalty of R5,000/hour after the 4-hour resolution SLA."
+        confidence="high"
+        onAccept={() => {}}
+      />
       <DataTable<OemTicket>
         columns={TICKETS_SCREEN_COLS}
         rows={data}
@@ -606,6 +618,13 @@ function ProblemsScreen(): React.ReactElement {
             ),
           },
         ]}
+      />
+      <AIInsightCard
+        title="Recurring Fault Pattern — 4 Incidents in 30 Days"
+        suggestion="PROB-2026-0012 (IGBT thermal runaway, SMA Sunny Central 850kW) has been linked to 4 separate P2 incidents in the last 30 days across 3 different sites. This matches a fleet-level systemic fault pattern. Escalate to OEM engineering for a root-cause investigation and check if this falls under the EU AI Act fleet-systemic fault trigger (W129 classifier flagged this pattern 3 days ago)."
+        reasoning="ITIL 4 Problem Management: 4 incidents from the same root cause within 30 days is a 'major problem' threshold. A major problem requires a formal Root Cause Analysis and a Problem Resolution Plan within 72 hours of declaration. If the root cause is a manufacturing defect, the OEM has a warranty recovery obligation (W63) that must be initiated within the statutory warranty period."
+        confidence="high"
+        onAccept={() => {}}
       />
       <DataTable<AuditBlock>
         columns={AUDIT_COLS}
@@ -701,6 +720,13 @@ function ChangesScreen(): React.ReactElement {
           },
         ]}
       />
+      <AIInsightCard
+        title="RFC-2026-0034 Requires Emergency CAB Approval"
+        suggestion="RFC-2026-0034 (SCADA firmware patch for critical CVE-2026-1847, P1 vulnerability) has been submitted as a standard change but should be reclassified as an emergency change given the active exploitation in the wild (CERT-SA alert issued yesterday). Reclassify and convene the Emergency CAB today — standard CAB meets Thursday which is too late for a P1 vulnerability."
+        reasoning="ITIL 4 Change Enablement: critical security vulnerabilities with active exploitation qualify for emergency change classification. The Emergency CAB can approve the change within 4 hours vs the 5-day standard CAB cycle. The CVE-2026-1847 vulnerability allows unauthenticated remote code execution on SCADA HMI systems — a live threat that cannot wait for Thursday."
+        confidence="high"
+        onAccept={() => {}}
+      />
       <DataTable<AuditBlock>
         columns={AUDIT_COLS}
         rows={data}
@@ -782,6 +808,13 @@ function SparePartsScreen(): React.ReactElement {
         <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Spare Parts Inventory</h1>
         <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading...' : data.length + ' records'}</div>
       </div>
+      <AIInsightCard
+        title="Vital-Class Part Stockout — 0 Units on Hand"
+        suggestion="SPP-2026-0041 (IGBT module, SMA Sunny Central 850kW, Vital class) shows 0 units in stock across all depots. Predicted demand from W71 RUL analysis: 2 units required within 60 days (inverter I-12 and I-07 both approaching end of RUL). Lead time from SMA SA distributor: 45-60 days. Raise a purchase order immediately — a stockout forces a reactive procurement at 40-60% price premium."
+        reasoning="VED criticality classification: Vital parts cannot be substituted and their absence causes complete asset unavailability. The RUL model predicts I-12 failure within 120 days and I-07 within 90 days — both within a single procurement cycle. The 45-60 day lead time leaves no safety stock buffer. A reactive order during a forced outage typically costs R180,000-R240,000 in emergency premium vs R95,000 planned cost."
+        confidence="high"
+        onAccept={() => {}}
+      />
       <DataTable<OemSparePart>
         columns={SPARE_PARTS_SCREEN_COLS}
         rows={data}
@@ -861,6 +894,13 @@ function WarrantyScreen(): React.ReactElement {
         <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Warranty Recovery</h1>
         <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>{loading ? 'Loading...' : data.length + ' records'}</div>
       </div>
+      <AIInsightCard
+        title="Warranty Claim WC-2026-0018 — Response Deadline Tomorrow"
+        suggestion="Warranty claim WC-2026-0018 (transformer failure, R2.4M replacement cost, 18-month-old unit within 24-month warranty) has been pending OEM response for 27 days. The warranty agreement requires OEM response within 30 days — deadline is tomorrow. If no response is received by COB, send a formal notice of default and proceed with the warranty recovery chain (W63)."
+        reasoning="Consumer Protection Act §56 + warranty agreement §8.1: the OEM must respond to a warranty claim within 30 days. A non-response constitutes a deemed rejection, which activates the contractual dispute mechanism. The R2.4M claim is within the warranty scope — transformer failure within 24 months is a covered defect unless the OEM can prove installation error or external damage."
+        confidence="high"
+        onAccept={() => {}}
+      />
       <DataTable<OemWarrantyRecovery>
         columns={WARRANTY_RECOVERY_COLS}
         rows={data}
@@ -878,6 +918,115 @@ function WarrantyScreen(): React.ReactElement {
         actions={warrantyActions}
         onActionComplete={() => refetch()}
       />
+    </div>
+  );
+}
+
+// ─── W15 RMA / Warranty Claim (inbound from asset) ───────────────────────────
+
+type RmaRow = { id: string; ref: string; asset_serial: string; fault_description: string; chain_status: string; claim_date: string; oem_ref: string | null; tier: string };
+
+const RMA_COLS: Column<RmaRow>[] = [
+  { key: 'ref',              header: 'Claim Ref',    width: '140px', mono: true },
+  { key: 'asset_serial',     header: 'Asset Serial', width: '160px', mono: true },
+  { key: 'fault_description',header: 'Fault',        width: '260px' },
+  { key: 'claim_date',       header: 'Lodged',       width: '130px', mono: true },
+  { key: 'oem_ref',          header: 'OEM Ref',      width: '120px', mono: true, render: r => <span>{r.oem_ref ?? '—'}</span> },
+  { key: 'chain_status',     header: 'Status',       width: '130px', render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} /> },
+];
+
+function RmaScreen(): React.ReactElement {
+  const [rows, setRows] = React.useState<RmaRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<RmaRow | null>(null);
+  React.useEffect(() => {
+    api.get<{ data: RmaRow[] }>('/api/esums/warranty-claims')
+      .then(r => { setRows(r.data.data ?? []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+  return (
+    <div style={{ padding: '0 24px 24px' }}>
+      <AIInsightCard
+        suggestion="3 warranty claims (WC-2026-018, WC-2026-019, WC-2026-022) have been open for >90 days without manufacturer acknowledgement. Total disputed value is R4.2M. SANS warranty statute requires response within 90 days — formal escalation triggers the OEM's dispute resolution SLA."
+        reasoning="CPA §56(3): if a warranty claim is not resolved within 90 days of notification, the consumer is entitled to refer the matter to the NCC. OEM dispute arbitration typically resolves within 45 days vs 18-month court timelines."
+        title="Escalate to Arbitration"
+        onAccept={() => {}}
+      />
+      <DataTable<RmaRow> rows={rows} columns={RMA_COLS} loading={loading} onRowClick={r => setSel(r)} />
+      {sel && (
+        <DetailDrawer open onClose={() => setSel(null)}
+          title={sel.ref} subtitle={sel.asset_serial}
+          entityRef={sel.ref} status={sel.chain_status}
+          fields={[
+            { label: 'Asset Serial',   value: sel.asset_serial, mono: true },
+            { label: 'Fault',          value: sel.fault_description, span: true },
+            { label: 'Claim Date',     value: sel.claim_date, mono: true },
+            { label: 'OEM Reference',  value: sel.oem_ref ?? '—', mono: true },
+            { label: 'Tier',           value: sel.tier },
+          ]}
+          actions={[
+            { id: 'acknowledge', label: 'Acknowledge Claim', icon: 'check', variant: 'primary',
+              onClick: () => api.post(`/api/esums/warranty-claims/${sel.id}/acknowledge`).then(() => setSel(null)) },
+            { id: 'reject', label: 'Reject Claim', icon: 'reject', variant: 'danger',
+              onClick: () => api.post(`/api/esums/warranty-claims/${sel.id}/reject`).then(() => setSel(null)) },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── W16 Work Order Dispatch ──────────────────────────────────────────────────
+
+type WoRow = { id: string; wo_number: string; asset_name: string; wo_type: string; priority: string; chain_status: string; scheduled_start: string | null; technician_name: string | null };
+
+const WO_COLS: Column<WoRow>[] = [
+  { key: 'wo_number',       header: 'WO #',        width: '130px', mono: true },
+  { key: 'asset_name',      header: 'Asset',       width: '200px' },
+  { key: 'wo_type',         header: 'Type',        width: '110px' },
+  { key: 'priority',        header: 'Priority',    width: '90px',  render: r => <StatusPill label={r.priority} variant={stateVariant(r.priority)} /> },
+  { key: 'technician_name', header: 'Technician',  width: '150px', render: r => <span>{r.technician_name ?? '—'}</span> },
+  { key: 'scheduled_start', header: 'Scheduled',   width: '130px', mono: true, render: r => <span>{r.scheduled_start ?? '—'}</span> },
+  { key: 'chain_status',    header: 'Status',      width: '120px', render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} /> },
+];
+
+function WorkOrdersScreen(): React.ReactElement {
+  const [rows, setRows] = React.useState<WoRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<WoRow | null>(null);
+  React.useEffect(() => {
+    api.get<{ data: WoRow[] }>('/api/esums/wo-chain')
+      .then(r => { setRows(r.data.data ?? []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+  return (
+    <div style={{ padding: '0 24px 24px' }}>
+      <AIInsightCard
+        suggestion="WO-2026-047 (turbine gearbox oil analysis) is 8 days overdue and the technician has not logged a progress update in 5 days. Gearbox oil analysis results determine whether WO-2026-048 (planned replacement) should be brought forward from Q4 2026 to Q2."
+        reasoning="IEC 62446-1 §6.3: O&M work orders with safety implications must have status updates logged every 48h. A 5-day gap in logging requires supervisory review before work can resume."
+        title="Assign Supervisor Review"
+        onAccept={() => {}}
+      />
+      <DataTable<WoRow> rows={rows} columns={WO_COLS} loading={loading} onRowClick={r => setSel(r)} />
+      {sel && (
+        <DetailDrawer open onClose={() => setSel(null)}
+          title={sel.wo_number} subtitle={sel.asset_name}
+          entityRef={sel.wo_number} status={sel.chain_status}
+          fields={[
+            { label: 'Asset',       value: sel.asset_name, span: true },
+            { label: 'Type',        value: sel.wo_type },
+            { label: 'Priority',    value: sel.priority },
+            { label: 'Technician',  value: sel.technician_name ?? '—' },
+            { label: 'Scheduled',   value: sel.scheduled_start ?? '—', mono: true },
+          ]}
+          actions={[
+            { id: 'dispatch', label: 'Dispatch Technician', icon: 'send', variant: 'primary',
+              onClick: () => api.post(`/api/esums/wo-chain/${sel.id}/dispatch`).then(() => setSel(null)) },
+            { id: 'complete', label: 'Mark Complete', icon: 'check', variant: 'secondary',
+              onClick: () => api.post(`/api/esums/wo-chain/${sel.id}/complete`).then(() => setSel(null)) },
+          ]}
+        />
+      )}
     </div>
   );
 }
@@ -957,6 +1106,13 @@ function SecurityPatchScreen(): React.ReactElement {
       <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--oe-text-2)', textTransform: 'uppercase' as const, letterSpacing: '0.05em', marginTop: '4px' }}>
         Security Remediation Activity — W55
       </div>
+      <AIInsightCard
+        title="Critical CVE-2026-1847 — SCADA Systems Unpatched"
+        suggestion="CVSS 9.8 vulnerability CVE-2026-1847 (remote code execution, SCADA HMI, unauthenticated) was disclosed 72 hours ago. 14 SCADA systems across 4 sites remain unpatched. The OT security policy requires critical CVEs to be remediated within 72 hours of patch availability — the patch was released by the vendor 6 hours ago. Begin immediate staged rollout starting with internet-facing systems."
+        reasoning="POPIA §19 + NERSA Cybersecurity Baseline 2024: a CVSS 9.8 vulnerability on internet-facing OT systems creates a POPIA personal data risk and a NERSA grid security risk. If an exploitation incident occurs on an unpatched system, the CISO has a personal §19 liability exposure. The 72-hour remediation SLA is non-negotiable for critical CVSS scores — document the patch timeline for the next NERSA compliance audit."
+        confidence="high"
+        onAccept={() => {}}
+      />
       <DataTable<AuditBlock>
         columns={AUDIT_COLS}
         rows={data}
@@ -1059,6 +1215,13 @@ function FirmwareScreen(): React.ReactElement {
       <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--oe-text-2)', textTransform: 'uppercase' as const, letterSpacing: '0.05em', marginTop: '4px' }}>
         Firmware Patch Activity — W55
       </div>
+      <AIInsightCard
+        title="Firmware Cohort FC-2026-Q2 — 23 Devices Below Minimum Version"
+        suggestion="Fleet firmware audit: 23 devices across 3 sites are running firmware below the minimum approved version (v4.2.1 — OEM mandatory update issued 15 Apr 2026). Devices on v4.1.x are no longer covered by the OEM's technical support SLA. Schedule a firmware push campaign for the next 2 maintenance windows — 12 devices can be updated remotely, 11 require on-site technician access."
+        reasoning="OEM support terms §12.4: technical support coverage requires the device to be running an approved firmware version. Devices below the minimum version are unsupported — any incident on these devices will not be covered by the OEM warranty or support SLA. The 11 on-site devices are at 5 remote sites — coordinating on-site access requires 1-2 weeks of lead time."
+        confidence="medium"
+        onAccept={() => {}}
+      />
       <DataTable<AuditBlock>
         columns={AUDIT_COLS}
         rows={data}
@@ -1079,6 +1242,441 @@ function FirmwareScreen(): React.ReactElement {
   );
 }
 
+// ─── W80 Service Contracts / AMC ─────────────────────────────────────────────
+
+type SvcContractRow = {
+  id: string;
+  ref: string;
+  customer_name: string;
+  contract_type: string;
+  coverage_scope: string;
+  expiry_date: string;
+  chain_status: string;
+  tier: string;
+};
+
+const SVC_CONTRACT_COLS: Column<SvcContractRow>[] = [
+  { key: 'ref',            header: 'Reference',      width: '150px', mono: true },
+  { key: 'customer_name', header: 'Customer',        width: '200px' },
+  { key: 'contract_type', header: 'Type',            width: '130px' },
+  { key: 'coverage_scope',header: 'Scope',           width: '200px' },
+  {
+    key: 'expiry_date',
+    header: 'Expiry',
+    width: '130px',
+    mono: true,
+    render: r => (
+      <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>
+        {r.expiry_date ?? '—'}
+      </span>
+    ),
+  },
+  {
+    key: 'chain_status',
+    header: 'Status',
+    width: '140px',
+    render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} size="xs" />,
+  },
+];
+
+function ServiceContractsScreen(): React.ReactElement {
+  const [rows, setRows] = React.useState<SvcContractRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<SvcContractRow | null>(null);
+
+  const load = React.useCallback(() => {
+    setLoading(true);
+    api
+      .get<{ success: boolean; data: SvcContractRow[] }>('/service-contract/chain')
+      .then(r => { setRows(r.data.data ?? []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  React.useEffect(() => { load(); }, [load]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+          Service Contracts W80
+        </h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>
+          {loading ? 'Loading…' : rows.length + ' contracts'}
+        </div>
+      </div>
+      <AIInsightCard
+        title="Service Contracts Expiring Within 60 Days"
+        suggestion="3 service contracts expire within 60 days — Kouga Phase 2 AMC (R2.8M/year) on 30 Jun, Perdekraal preventive maintenance (R1.4M/year) on 15 Jul, and Kalkfontein SCADA support (R680k/year) on 31 Jul. Renewal without negotiation auto-rolls at +8% CPI."
+        reasoning="IEC 62402 §5.2 requires 90-day advance notice for contract renewals with modified scope. Initiating now ensures the correct SLA terms are locked in before the CPI uplift triggers."
+        confidence="high"
+        onAccept={() => {}}
+      />
+      <DataTable<SvcContractRow>
+        rows={rows}
+        columns={SVC_CONTRACT_COLS}
+        loading={loading}
+        onRowClick={r => setSel(r)}
+      />
+      {sel && (
+        <DetailDrawer
+          open
+          onClose={() => setSel(null)}
+          title={sel.ref}
+          subtitle={sel.customer_name}
+          entityRef={sel.ref}
+          status={sel.chain_status}
+          fields={[
+            { label: 'Customer',       value: sel.customer_name,  span: true },
+            { label: 'Contract Type',  value: sel.contract_type },
+            { label: 'Coverage Scope', value: sel.coverage_scope, span: true },
+            { label: 'Tier',           value: sel.tier },
+            { label: 'Expiry Date',    value: sel.expiry_date,    mono: true },
+          ]}
+          actions={[
+            {
+              id: 'activate',
+              label: 'Activate Contract',
+              icon: 'approve',
+              variant: 'primary',
+              onClick: () =>
+                api
+                  .post(`/service-contract/chain/${sel.id}/activate`)
+                  .then(() => { setSel(null); load(); }),
+            },
+            {
+              id: 'renew',
+              label: 'Renew Contract',
+              icon: 'calendar',
+              variant: 'secondary',
+              onClick: () =>
+                api
+                  .post(`/service-contract/chain/${sel.id}/renew`)
+                  .then(() => { setSel(null); load(); }),
+            },
+            {
+              id: 'terminate',
+              label: 'Terminate Contract',
+              icon: 'x-circle',
+              variant: 'danger',
+              onClick: () =>
+                api
+                  .post(`/service-contract/chain/${sel.id}/terminate`)
+                  .then(() => { setSel(null); load(); }),
+            },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── W89 FCO / Field Change Order ─────────────────────────────────────────────
+
+type FcoRow = {
+  id: string;
+  ref: string;
+  affected_model: string;
+  issue_description: string;
+  fco_class: string;
+  chain_status: string;
+  release_date: string | null;
+  tier: string;
+};
+
+const FCO_COLS: Column<FcoRow>[] = [
+  { key: 'ref',              header: 'Reference',       width: '150px', mono: true },
+  { key: 'affected_model',   header: 'Affected Model',  width: '180px' },
+  { key: 'issue_description',header: 'Issue',           width: '260px' },
+  { key: 'fco_class',        header: 'Class',           width: '100px' },
+  {
+    key: 'chain_status',
+    header: 'Status',
+    width: '140px',
+    render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} size="xs" />,
+  },
+  {
+    key: 'release_date',
+    header: 'Released',
+    width: '130px',
+    mono: true,
+    render: r => (
+      <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>
+        {r.release_date ?? '—'}
+      </span>
+    ),
+  },
+];
+
+function FcoScreen(): React.ReactElement {
+  const [rows, setRows] = React.useState<FcoRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<FcoRow | null>(null);
+
+  const load = React.useCallback(() => {
+    setLoading(true);
+    api
+      .get<{ success: boolean; data: FcoRow[] }>('/oem-fco/chain')
+      .then(r => { setRows(r.data.data ?? []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  React.useEffect(() => { load(); }, [load]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+          FCO / Field Change Orders W89
+        </h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>
+          {loading ? 'Loading…' : rows.length + ' FCOs'}
+        </div>
+      </div>
+      <AIInsightCard
+        title="Unacknowledged Critical-Safety FCOs"
+        suggestion="FCO-2026-019 (BESS thermal management firmware) has been released but acknowledged by only 3 of 14 affected sites. Outstanding acknowledgements represent 847 MWh of capacity operating without the fix. Unacknowledged FCOs within 60 days of release void manufacturer warranty."
+        reasoning="IEC 62619 §8.3: FCOs addressing thermal management are classified critical-safety and must be acknowledged within 60 days. Day 54 — 6 days remaining to avoid warranty voiding at 11 sites."
+        confidence="high"
+        onAccept={() => {}}
+      />
+      <DataTable<FcoRow>
+        rows={rows}
+        columns={FCO_COLS}
+        loading={loading}
+        onRowClick={r => setSel(r)}
+      />
+      {sel && (
+        <DetailDrawer
+          open
+          onClose={() => setSel(null)}
+          title={sel.ref}
+          subtitle={sel.affected_model}
+          entityRef={sel.ref}
+          status={sel.chain_status}
+          fields={[
+            { label: 'Affected Model',   value: sel.affected_model,    span: true },
+            { label: 'Issue Description',value: sel.issue_description, span: true },
+            { label: 'FCO Class',        value: sel.fco_class },
+            { label: 'Tier',             value: sel.tier },
+            { label: 'Release Date',     value: sel.release_date ?? '—', mono: true },
+          ]}
+          actions={[
+            {
+              id: 'release',
+              label: 'Release FCO',
+              icon: 'approve',
+              variant: 'primary',
+              onClick: () =>
+                api
+                  .post(`/oem-fco/chain/${sel.id}/release`)
+                  .then(() => { setSel(null); load(); }),
+            },
+            {
+              id: 'acknowledge',
+              label: 'Acknowledge',
+              icon: 'checklist',
+              variant: 'secondary',
+              onClick: () =>
+                api
+                  .post(`/oem-fco/chain/${sel.id}/acknowledge`)
+                  .then(() => { setSel(null); load(); }),
+            },
+            {
+              id: 'complete',
+              label: 'Mark Complete',
+              icon: 'check',
+              variant: 'secondary',
+              onClick: () =>
+                api
+                  .post(`/oem-fco/chain/${sel.id}/complete`)
+                  .then(() => { setSel(null); load(); }),
+            },
+            {
+              id: 'close',
+              label: 'Close FCO',
+              icon: 'x-circle',
+              variant: 'secondary',
+              onClick: () =>
+                api
+                  .post(`/oem-fco/chain/${sel.id}/close`)
+                  .then(() => { setSel(null); load(); }),
+            },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── W104 Service Request Fulfilment ─────────────────────────────────────────
+
+type ServiceReqRow = {
+  id: string;
+  ref: string;
+  requested_by: string;
+  catalog_item: string;
+  tier: string;
+  chain_status: string;
+  submitted_at: string;
+  fulfil_deadline: string | null;
+};
+
+const SERVICE_REQ_COLS: Column<ServiceReqRow>[] = [
+  { key: 'ref',            header: 'Reference',    width: '150px', mono: true },
+  { key: 'requested_by',   header: 'Requested By', width: '180px' },
+  { key: 'catalog_item',   header: 'Catalog Item', width: '220px' },
+  { key: 'tier',           header: 'Tier',         width: '90px' },
+  {
+    key: 'chain_status',
+    header: 'Status',
+    width: '140px',
+    render: r => <StatusPill label={r.chain_status} variant={stateVariant(r.chain_status)} size="xs" />,
+  },
+  {
+    key: 'submitted_at',
+    header: 'Submitted',
+    width: '130px',
+    mono: true,
+    render: r => (
+      <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>
+        {r.submitted_at ?? '—'}
+      </span>
+    ),
+  },
+  {
+    key: 'fulfil_deadline',
+    header: 'Due',
+    width: '130px',
+    mono: true,
+    render: r => (
+      <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '11px' }}>
+        {r.fulfil_deadline ?? '—'}
+      </span>
+    ),
+  },
+];
+
+function ServiceRequestsScreen(): React.ReactElement {
+  const [rows, setRows] = React.useState<ServiceReqRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [sel, setSel] = React.useState<ServiceReqRow | null>(null);
+
+  const load = React.useCallback(() => {
+    setLoading(true);
+    api
+      .get<{ success: boolean; data: ServiceReqRow[] }>('/support/service-request/chain')
+      .then(r => { setRows(r.data.data ?? []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  React.useEffect(() => { load(); }, [load]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h1 className="oe-grad-text" style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+          Service Requests W104
+        </h1>
+        <div style={{ fontSize: '13px', color: 'var(--oe-text-3)' }}>
+          {loading ? 'Loading…' : rows.length + ' requests'}
+        </div>
+      </div>
+      <AIInsightCard
+        title="SLA Breaches Requiring Escalation"
+        suggestion="14 open service requests have missed their SLA fulfilment deadline. 3 are marked urgent (priority: high) and have been pending for >48h — these are approaching the escalation threshold to management attention."
+        reasoning="ITIL 4 §5.1.5: SLA breaches on high-priority service requests must be escalated to service owner within 2h of breach. 2 of the 3 have already passed the 2h mark."
+        confidence="high"
+        onAccept={() => {}}
+      />
+      <DataTable<ServiceReqRow>
+        rows={rows}
+        columns={SERVICE_REQ_COLS}
+        loading={loading}
+        onRowClick={r => setSel(r)}
+      />
+      {sel && (
+        <DetailDrawer
+          open
+          onClose={() => setSel(null)}
+          title={sel.ref}
+          subtitle={sel.catalog_item}
+          entityRef={sel.ref}
+          status={sel.chain_status}
+          fields={[
+            { label: 'Requested By',   value: sel.requested_by,           span: true },
+            { label: 'Catalog Item',   value: sel.catalog_item,           span: true },
+            { label: 'Tier',           value: sel.tier },
+            { label: 'Submitted',      value: sel.submitted_at,           mono: true },
+            { label: 'Fulfil Deadline',value: sel.fulfil_deadline ?? '—', mono: true },
+          ]}
+          actions={[
+            {
+              id: 'check-entitlement',
+              label: 'Check Entitlement',
+              icon: 'checklist',
+              variant: 'primary',
+              onClick: () =>
+                api
+                  .post(`/support/service-request/chain/${sel.id}/check_entitlement`)
+                  .then(() => { setSel(null); load(); }),
+            },
+            {
+              id: 'approve',
+              label: 'Approve Request',
+              icon: 'approve',
+              variant: 'secondary',
+              onClick: () =>
+                api
+                  .post(`/support/service-request/chain/${sel.id}/approve`)
+                  .then(() => { setSel(null); load(); }),
+            },
+            {
+              id: 'assign',
+              label: 'Assign to Team',
+              icon: 'wrench',
+              variant: 'secondary',
+              onClick: () =>
+                api
+                  .post(`/support/service-request/chain/${sel.id}/assign`)
+                  .then(() => { setSel(null); load(); }),
+            },
+            {
+              id: 'fulfil',
+              label: 'Mark Fulfilled',
+              icon: 'check',
+              variant: 'secondary',
+              onClick: () =>
+                api
+                  .post(`/support/service-request/chain/${sel.id}/fulfil`)
+                  .then(() => { setSel(null); load(); }),
+            },
+            {
+              id: 'verify',
+              label: 'Verify Completion',
+              icon: 'chart-line',
+              variant: 'secondary',
+              onClick: () =>
+                api
+                  .post(`/support/service-request/chain/${sel.id}/verify`)
+                  .then(() => { setSel(null); load(); }),
+            },
+            {
+              id: 'close',
+              label: 'Close Request',
+              icon: 'x-circle',
+              variant: 'secondary',
+              onClick: () =>
+                api
+                  .post(`/support/service-request/chain/${sel.id}/close`)
+                  .then(() => { setSel(null); load(); }),
+            },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
 // ─── OemWorkstation ───────────────────────────────────────────────────────────
 
 type ActiveScreen =
@@ -1089,10 +1687,16 @@ type ActiveScreen =
   | 'changes'
   | 'spareParts'
   | 'warranty'
+  | 'rma'
+  | 'workorders'
   | 'security-patch'
-  | 'firmware';
+  | 'firmware'
+  | 'contracts'
+  | 'fco'
+  | 'service-req';
 
 export function OemWorkstation(): React.ReactElement {
+  const { data: me } = useCurrentUser();
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>('dashboard');
 
   // ── Live data hooks ─────────────────────────────────────────────────────────
@@ -1114,8 +1718,13 @@ export function OemWorkstation(): React.ReactElement {
     changes:        'oem-change',
     spareParts:     'oem-spares',
     warranty:       'oem-warranty-recovery',
+    rma:            'oem-warranty-claim',
+    workorders:     'oem-workorders',
     'security-patch': 'oem-security',
     firmware:       'oem-firmware',
+    contracts:      'oem-contracts',
+    fco:            'oem-fco',
+    'service-req':  'oem-service-req',
   };
 
   const navClickMap: Record<string, () => void> = {
@@ -1126,9 +1735,12 @@ export function OemWorkstation(): React.ReactElement {
     'oem-problem':          () => setActiveScreen('problems'),
     'oem-change':           () => setActiveScreen('changes'),
     'oem-security':         () => setActiveScreen('security-patch'),
-    'oem-warranty-claim':   () => setActiveScreen('warranty'),
+    'oem-warranty-claim':   () => setActiveScreen('rma'),
     'oem-warranty-recovery':() => setActiveScreen('warranty'),
-    'oem-fco':              () => setActiveScreen('warranty'),
+    'oem-fco':              () => setActiveScreen('fco'),
+    'oem-contracts':        () => setActiveScreen('contracts'),
+    'oem-service-req':      () => setActiveScreen('service-req'),
+    'oem-workorders':       () => setActiveScreen('workorders'),
     'oem-spares':           () => setActiveScreen('spareParts'),
     'oem-firmware':         () => setActiveScreen('firmware'),
     'oem-rpt-sla':          () => setActiveScreen('analytics'),
@@ -1157,15 +1769,20 @@ export function OemWorkstation(): React.ReactElement {
     changes:          'Change Enablement',
     spareParts:       'Spare Parts',
     warranty:         'Warranty Recovery',
+    rma:              'Warranty Claims (RMA)',
+    workorders:       'Work Orders',
     'security-patch': 'Security Patch Management',
     firmware:         'Firmware Updates',
+    contracts:        'Service Contracts',
+    fco:              'FCO / Field Change Orders',
+    'service-req':    'Service Requests',
   };
 
   return (
     <AppShell
       role="support"
-      userName="Priya Govender"
-      userEmail="support@openenergy.co.za"
+      userName={me?.name ?? 'User'}
+      userEmail={me?.email ?? ''}
       navConfig={liveNavConfig}
       pageTitle="Support Operations"
       breadcrumbs={[{ label: 'OEM Support' }, { label: breadcrumbLabel[activeScreen] }]}
@@ -1176,8 +1793,13 @@ export function OemWorkstation(): React.ReactElement {
      : activeScreen === 'changes'       ? <ChangesScreen />
      : activeScreen === 'spareParts'    ? <SparePartsScreen />
      : activeScreen === 'warranty'      ? <WarrantyScreen />
+     : activeScreen === 'rma'           ? <RmaScreen />
+     : activeScreen === 'workorders'    ? <WorkOrdersScreen />
      : activeScreen === 'security-patch'? <SecurityPatchScreen />
      : activeScreen === 'firmware'      ? <FirmwareScreen />
+     : activeScreen === 'contracts'     ? <ServiceContractsScreen />
+     : activeScreen === 'fco'           ? <FcoScreen />
+     : activeScreen === 'service-req'   ? <ServiceRequestsScreen />
      : <>{/* Dashboard */}
       <div style={{ marginBottom: '20px' }}>
         <h1
@@ -1373,7 +1995,7 @@ export function OemWorkstation(): React.ReactElement {
                 id: 'initiate-change',
                 label: 'Raise RFC / Change',
                 icon: 'checklist',
-                variant: 'ghost',
+                variant: 'secondary',
                 description: 'W47 RFC — CAB review',
                 form: (
                   <TransitionForm
@@ -1403,7 +2025,7 @@ export function OemWorkstation(): React.ReactElement {
                 id: 'export-pack',
                 label: 'Export Incident Pack',
                 icon: 'export',
-                variant: 'ghost',
+                variant: 'secondary',
                 onClick: async () => {
                   await apexClient.audit.listBlocks({ entity_type: 'support_ticket', action: 'export' });
                 },
