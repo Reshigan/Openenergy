@@ -2,7 +2,7 @@
 -- 12 rows covering all 12 chain states.
 -- Kakamas 500MW project — REIPPPP Round 7 bid.
 
-INSERT INTO oe_ipp_stakeholders (
+INSERT OR IGNORE INTO oe_ipp_stakeholders (
   id, project_id, project_name, stakeholder_name, organization, stakeholder_type,
   chain_status, power_score, interest_score, urgency_score, engagement_score,
   stakeholder_tier, current_engagement_level, desired_engagement_level,
