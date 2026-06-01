@@ -107,7 +107,7 @@ jobs:
             rc=$?
             echo "$out"
             if [ $rc -ne 0 ]; then
-              if echo "$out" | grep -qE "duplicate column name|already exists|SQLITE_CONSTRAINT_UNIQUE"; then
+              if echo "$out" | grep -qE "duplicate column name|already exists|SQLITE_CONSTRAINT_UNIQUE|Not currently importing"; then
                 echo "::warning::$desc already applied"
               elif echo "$out" | grep -qE "no such column|no such table"; then
                 echo "::warning::$desc skipped (depends on schema that does not exist on prod yet)"
@@ -165,7 +165,7 @@ jobs:
             rc=$?
             echo "$out"
             if [ $rc -ne 0 ]; then
-              if echo "$out" | grep -qE "duplicate column name|already exists|SQLITE_CONSTRAINT_UNIQUE"; then
+              if echo "$out" | grep -qE "duplicate column name|already exists|SQLITE_CONSTRAINT_UNIQUE|Not currently importing"; then
                 echo "::warning::idempotent re-run on $f — already applied, continuing"
               else
                 echo "::error::migration failed: $f"
@@ -197,7 +197,7 @@ jobs:
             rc=$?
             echo "$out"
             if [ $rc -ne 0 ]; then
-              if echo "$out" | grep -qE "duplicate column name|already exists|SQLITE_CONSTRAINT_UNIQUE"; then
+              if echo "$out" | grep -qE "duplicate column name|already exists|SQLITE_CONSTRAINT_UNIQUE|Not currently importing"; then
                 echo "::warning::$desc already applied"
               elif echo "$out" | grep -qE "no such column|no such table"; then
                 echo "::warning::$desc skipped (depends on schema that does not exist on prod yet)"
