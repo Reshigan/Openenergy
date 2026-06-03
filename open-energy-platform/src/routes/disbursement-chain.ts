@@ -273,7 +273,16 @@ app.get('/:id', async (c) => {
     return c.json({ success: false, error: 'Forbidden' }, 403);
   }
   const id = c.req.param('id')!;
-  const row = await c.env.DB.prepare('SELECT * FROM oe_disbursement_cases WHERE id = ?').bind(id).first<DisbursementRow>();
+  // admin/support/regulator have platform-wide read; lender/ipp scoped to their party
+  const PLATFORM_WIDE = new Set(['admin', 'support', 'regulator']);
+  let row: DisbursementRow | null;
+  if (PLATFORM_WIDE.has(user.role)) {
+    row = await c.env.DB.prepare('SELECT * FROM oe_disbursement_cases WHERE id = ?').bind(id).first<DisbursementRow>();
+  } else {
+    row = await c.env.DB.prepare(
+      'SELECT * FROM oe_disbursement_cases WHERE id = ? AND (lender_party = ? OR borrower_party = ?)',
+    ).bind(id, user.id, user.id).first<DisbursementRow>();
+  }
   if (!row) return c.json({ success: false, error: 'Not found' }, 404);
 
   const ev = await c.env.DB.prepare(
@@ -340,7 +349,17 @@ async function transition(
   const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   const notes = typeof body.notes === 'string' ? body.notes : null;
 
-  const row = await c.env.DB.prepare('SELECT * FROM oe_disbursement_cases WHERE id = ?').bind(id).first<DisbursementRow>();
+  // Scope the fetch to the requesting user's party to prevent cross-tenant transitions.
+  // admin/support can act on any case.
+  const TRANSITION_PLATFORM_WIDE = new Set(['admin', 'support']);
+  let row: DisbursementRow | null;
+  if (TRANSITION_PLATFORM_WIDE.has(user.role)) {
+    row = await c.env.DB.prepare('SELECT * FROM oe_disbursement_cases WHERE id = ?').bind(id).first<DisbursementRow>();
+  } else {
+    row = await c.env.DB.prepare(
+      'SELECT * FROM oe_disbursement_cases WHERE id = ? AND (lender_party = ? OR borrower_party = ?)',
+    ).bind(id, user.id, user.id).first<DisbursementRow>();
+  }
   if (!row) return c.json({ success: false, error: 'Not found' }, 404);
 
   const to = nextStatus(row.chain_status, action);

@@ -354,7 +354,7 @@ async function applyAdvance(
   try {
     r = advance(row.chain_status, opts.action);
   } catch (err) {
-    return { kind: 'invalid' as const, error: (err as Error).message };
+    return { kind: 'invalid' as const };
   }
 
   const now = new Date();
@@ -424,7 +424,7 @@ app.post('/:id/triage', async (c) => {
     extraSql: 'triaged_by = ?', extraBinds: [user.id],
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 
@@ -440,7 +440,7 @@ app.post('/:id/submit', async (c) => {
 
   let r;
   try { r = advance(row.chain_status, 'submit'); }
-  catch (err) { return c.json({ success: false, error: (err as Error).message }, 409); }
+  catch { return c.json({ success: false, error: 'invalid_transition' }, 409); }
 
   const nowIso = new Date().toISOString();
   const dueAt = slaDueAt(r.next, row.severity, new Date())?.toISOString() ?? null;
@@ -482,7 +482,7 @@ app.post('/:id/acknowledge', async (c) => {
     tsColumn: 'acknowledged_at',
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 
@@ -496,7 +496,7 @@ app.post('/:id/begin-review', async (c) => {
     tsColumn: 'review_started_at',
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 
@@ -511,7 +511,7 @@ app.post('/:id/approve', async (c) => {
     extraSql: 'approved_by = ?', extraBinds: [user.id],
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 
@@ -531,7 +531,7 @@ app.post('/:id/deny', async (c) => {
     extraCascade: { denial_reason: body.denial_reason },
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 
@@ -550,7 +550,7 @@ app.post('/:id/dispute', async (c) => {
     extraCascade: { dispute_reason: body.dispute_reason },
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 
@@ -565,7 +565,7 @@ app.post('/:id/uphold-denial', async (c) => {
     extraSql: 'closed_by = ?', extraBinds: [user.id],
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 
@@ -584,7 +584,7 @@ app.post('/:id/fulfill', async (c) => {
     extraCascade: { recovery_zar: body.recovery_zar ?? null },
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 
@@ -599,7 +599,7 @@ app.post('/:id/close', async (c) => {
     extraSql: 'closed_by = ?', extraBinds: [user.id],
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 

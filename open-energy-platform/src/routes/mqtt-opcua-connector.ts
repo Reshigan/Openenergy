@@ -37,6 +37,7 @@ import { Hono, Context } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
+import { assertSafeWebhookUrl } from '../utils/url-safety';
 import {
   nextStatus,
   isTerminal,
@@ -613,6 +614,13 @@ app.post('/', async (c) => {
     return c.json({ success: false, error: 'Forbidden' }, 403);
   }
   const body = (await c.req.json().catch(() => ({}))) as Partial<CreateBody>;
+
+  if (typeof body.endpoint_url === 'string' && body.endpoint_url.length > 0) {
+    try { assertSafeWebhookUrl(body.endpoint_url); } catch (e: any) {
+      return c.json({ success: false, error: e?.message || 'invalid endpoint_url' }, 400);
+    }
+  }
+
   const id = `moc-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
 
   const protocol = isKnownMqttOpcuaProtocol(body.protocol)
@@ -760,7 +768,12 @@ async function transition(
     }, 422);
   }
 
-  const overrides = bodyHandler ? bodyHandler(row, body) : {};
+  let overrides: Partial<MocRow>;
+  try {
+    overrides = bodyHandler ? bodyHandler(row, body) : {};
+  } catch (e: any) {
+    return c.json({ success: false, error: e?.message || 'invalid request body' }, 400);
+  }
 
   // Re-derive tier from endpoint_count + 5 floor flags (every transition).
   const endpointCount = (overrides.endpoint_count as number | undefined) ?? row.endpoint_count;
@@ -902,7 +915,10 @@ app.post('/:id/provision-broker', async (c) => transition(c, 'provision_broker',
   }>;
   const out: Partial<MocRow> = {};
   if (typeof b.broker_name === 'string')         out.broker_name = b.broker_name;
-  if (typeof b.endpoint_url === 'string')        out.endpoint_url = b.endpoint_url;
+  if (typeof b.endpoint_url === 'string') {
+    assertSafeWebhookUrl(b.endpoint_url); // throws → transition() try/catch returns 400
+    out.endpoint_url = b.endpoint_url;
+  }
   if (typeof b.active_publishers === 'number')   out.active_publishers = b.active_publishers;
   if (typeof b.active_subscribers === 'number')  out.active_subscribers = b.active_subscribers;
   return applyCommon(b, out);

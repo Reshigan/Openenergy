@@ -34,6 +34,7 @@ import { Hono, Context } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
+import { assertSafeWebhookUrl } from '../utils/url-safety';
 import {
   nextStatus,
   isTerminal,
@@ -589,6 +590,13 @@ app.post('/', async (c) => {
     return c.json({ success: false, error: 'Forbidden' }, 403);
   }
   const body = (await c.req.json().catch(() => ({}))) as Partial<CreateBody>;
+
+  if (typeof body.endpoint_url === 'string' && body.endpoint_url.length > 0) {
+    try { assertSafeWebhookUrl(body.endpoint_url); } catch (e: any) {
+      return c.json({ success: false, error: e?.message || 'invalid endpoint_url' }, 400);
+    }
+  }
+
   const id = `scc-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
 
   const protocol = isKnownScadaProtocol(body.protocol)
@@ -730,7 +738,12 @@ async function transition(
     }, 422);
   }
 
-  const overrides = bodyHandler ? bodyHandler(row, body) : {};
+  let overrides: Partial<SccRow>;
+  try {
+    overrides = bodyHandler ? bodyHandler(row, body) : {};
+  } catch (e: any) {
+    return c.json({ success: false, error: e?.message || 'invalid request body' }, 400);
+  }
 
   // Re-derive tier from capacity + 5 floor flags (every transition).
   const capacity = (overrides.substation_capacity_mva as number | undefined) ?? row.substation_capacity_mva;
@@ -868,7 +881,10 @@ app.post('/:id/discover-endpoints', async (c) => transition(c, 'discover_endpoin
     data_object_count?: number;
   }>;
   const out: Partial<SccRow> = {};
-  if (typeof b.endpoint_url === 'string')        out.endpoint_url = b.endpoint_url;
+  if (typeof b.endpoint_url === 'string') {
+    assertSafeWebhookUrl(b.endpoint_url); // throws → transition() catches and returns 400
+    out.endpoint_url = b.endpoint_url;
+  }
   if (typeof b.logical_node_count === 'number')  out.logical_node_count = b.logical_node_count;
   if (typeof b.data_object_count === 'number')   out.data_object_count = b.data_object_count;
   return applyCommon(b, out);

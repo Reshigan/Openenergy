@@ -296,7 +296,7 @@ async function transition(
 
   let next: DrawdownStatus;
   try { next = advance(row.chain_status, action); }
-  catch (err) { return c.json({ success: false, error: (err as Error).message }, 409); }
+  catch { return c.json({ success: false, error: 'invalid_transition' }, 409); }
 
   const now = new Date();
   const sla = slaDueAt(next, tier, now);

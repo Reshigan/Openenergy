@@ -634,6 +634,10 @@ gridOps.post('/outages/:id/updates', async (c) => {
     b.restored_load_mw == null ? null : Number(b.restored_load_mw),
     user.id,
   ).run();
+  const VALID_OUTAGE_STATUSES = ['open', 'in_progress', 'restored', 'closed', 'cancelled'];
+  if (b.status && !VALID_OUTAGE_STATUSES.includes(b.status as string)) {
+    return c.json({ success: false, error: 'invalid status value' }, 400);
+  }
   if (b.status) {
     await c.env.DB.prepare('UPDATE grid_outages SET status = ? WHERE id = ?').bind(b.status, outageId).run();
   }

@@ -158,6 +158,22 @@ om.put('/sites/:id', async (c) => {
   if (!canMutate(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
   const b = await c.req.json().catch(() => ({} as any));
+  // Numeric fields must be non-negative
+  const POSITIVE_FIELDS = ['capacity_mw', 'ppa_tariff_zar_mwh', 'latitude', 'longitude', 'panel_count', 'inverter_count'];
+  for (const field of POSITIVE_FIELDS) {
+    if (b[field] !== undefined) {
+      const v = Number(b[field]);
+      if (!Number.isFinite(v) || v < 0) {
+        return c.json({ success: false, error: `${field} must be a non-negative number` }, 400);
+      }
+      b[field] = v; // normalize
+    }
+  }
+  // Status enum validation
+  const VALID_SITE_STATUSES = ['planned','construction','commissioning','operational','maintenance','decommissioned','suspended'];
+  if (b.status !== undefined && !VALID_SITE_STATUSES.includes(String(b.status))) {
+    return c.json({ success: false, error: 'invalid status value' }, 400);
+  }
   const fields = ['name', 'technology', 'capacity_mw', 'province', 'ppa_tariff_zar_mwh', 'status'];
   const sets: string[] = [];
   const vals: any[] = [];

@@ -264,7 +264,7 @@ async function applyAdvance(
   try {
     r = advance(row.nomination_status, opts.action);
   } catch (err) {
-    return { kind: 'invalid' as const, error: (err as Error).message };
+    return { kind: 'invalid' as const };
   }
 
   const now = new Date();
@@ -314,7 +314,7 @@ app.post('/:id/accept', async (c) => {
     extraSql: 'accepted_by = ?', extraBinds: [user.id],
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 
@@ -332,7 +332,7 @@ app.post('/:id/reject', async (c) => {
 
   let r;
   try { r = advance(row.nomination_status, 'reject'); }
-  catch (err) { return c.json({ success: false, error: (err as Error).message }, 409); }
+  catch { return c.json({ success: false, error: 'invalid_transition' }, 409); }
 
   const nowIso = new Date().toISOString();
   await c.env.DB.prepare(`
@@ -368,7 +368,7 @@ app.post('/:id/activate', async (c) => {
     extraSql: 'activated_by = ?', extraBinds: [user.id],
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 
@@ -386,7 +386,7 @@ app.post('/:id/record-performance', async (c) => {
 
   let r;
   try { r = advance(row.nomination_status, 'record_performance'); }
-  catch (err) { return c.json({ success: false, error: (err as Error).message }, 409); }
+  catch { return c.json({ success: false, error: 'invalid_transition' }, 409); }
 
   const now = new Date();
   const nowIso = now.toISOString();
@@ -431,7 +431,7 @@ app.post('/:id/settle', async (c) => {
 
   let r;
   try { r = advance(row.nomination_status, 'settle'); }
-  catch (err) { return c.json({ success: false, error: (err as Error).message }, 409); }
+  catch { return c.json({ success: false, error: 'invalid_transition' }, 409); }
 
   const now = new Date();
   const nowIso = now.toISOString();
@@ -471,7 +471,7 @@ app.post('/:id/close', async (c) => {
     tsColumn: 'closed_at',
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 
@@ -489,7 +489,7 @@ app.post('/:id/raise-dispute', async (c) => {
 
   let r;
   try { r = advance(row.nomination_status, 'raise_dispute'); }
-  catch (err) { return c.json({ success: false, error: (err as Error).message }, 409); }
+  catch { return c.json({ success: false, error: 'invalid_transition' }, 409); }
 
   const now = new Date();
   const nowIso = now.toISOString();
@@ -534,7 +534,7 @@ app.post('/:id/resolve-dispute', async (c) => {
 
   let r;
   try { r = advance(row.nomination_status, 'resolve_dispute'); }
-  catch (err) { return c.json({ success: false, error: (err as Error).message }, 409); }
+  catch { return c.json({ success: false, error: 'invalid_transition' }, 409); }
 
   const nowIso = new Date().toISOString();
   await c.env.DB.prepare(`
@@ -570,7 +570,7 @@ app.post('/:id/close-disputed', async (c) => {
     tsColumn: 'closed_at',
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 

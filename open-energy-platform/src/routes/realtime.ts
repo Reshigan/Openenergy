@@ -183,7 +183,7 @@ realtime.get('/:channel', async (c) => {
             lastHeartbeat = now;
           }
         } catch (err) {
-          send(controller, encoder, 'error', { message: (err as Error).message });
+          send(controller, encoder, 'error', { code: 'POLL_ERROR' });
           break;
         }
       }

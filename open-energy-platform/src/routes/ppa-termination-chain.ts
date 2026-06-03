@@ -282,7 +282,16 @@ app.get('/:id', async (c) => {
     return c.json({ success: false, error: 'Forbidden' }, 403);
   }
   const id = c.req.param('id')!;
-  const row = await c.env.DB.prepare('SELECT * FROM oe_ppa_terminations WHERE id = ?').bind(id).first<PpaTerminationRow>();
+  // admin/support/regulator have platform-wide read; offtaker/ipp_developer scoped to their party
+  const PLATFORM_WIDE = new Set(['admin', 'support', 'regulator']);
+  let row: PpaTerminationRow | null;
+  if (PLATFORM_WIDE.has(user.role)) {
+    row = await c.env.DB.prepare('SELECT * FROM oe_ppa_terminations WHERE id = ?').bind(id).first<PpaTerminationRow>();
+  } else {
+    row = await c.env.DB.prepare(
+      'SELECT * FROM oe_ppa_terminations WHERE id = ? AND (offtaker_party_id = ? OR seller_party_id = ?)',
+    ).bind(id, user.id, user.id).first<PpaTerminationRow>();
+  }
   if (!row) return c.json({ success: false, error: 'Not found' }, 404);
 
   const ev = await c.env.DB.prepare(
@@ -318,7 +327,17 @@ async function transition(
   const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   const notes = typeof body.notes === 'string' ? body.notes : null;
 
-  const row = await c.env.DB.prepare('SELECT * FROM oe_ppa_terminations WHERE id = ?').bind(id).first<PpaTerminationRow>();
+  // Scope the fetch to the requesting user's party to prevent cross-tenant transitions.
+  // admin/support can act on any case.
+  const TRANSITION_PLATFORM_WIDE = new Set(['admin', 'support']);
+  let row: PpaTerminationRow | null;
+  if (TRANSITION_PLATFORM_WIDE.has(user.role)) {
+    row = await c.env.DB.prepare('SELECT * FROM oe_ppa_terminations WHERE id = ?').bind(id).first<PpaTerminationRow>();
+  } else {
+    row = await c.env.DB.prepare(
+      'SELECT * FROM oe_ppa_terminations WHERE id = ? AND (offtaker_party_id = ? OR seller_party_id = ?)',
+    ).bind(id, user.id, user.id).first<PpaTerminationRow>();
+  }
   if (!row) return c.json({ success: false, error: 'Not found' }, 404);
 
   const to = nextStatus(row.chain_status, action);

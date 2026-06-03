@@ -21,6 +21,7 @@ import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { cached, shouldBypass } from '../utils/kv-cache';
 import { pollConnection } from '../utils/oem-adapters';
 import { fireCascade } from '../utils/cascade';
+import { assertSafeWebhookUrl } from '../utils/url-safety';
 
 const intel = new Hono<HonoEnv>();
 intel.use('*', authMiddleware);
@@ -390,6 +391,11 @@ intel.post('/ingestion', async (c) => {
   if (!['admin', 'support', 'asset_owner', 'ipp'].includes(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const b = await c.req.json().catch(() => ({} as any));
   if (!b.site_id || !b.adapter) return c.json({ success: false, error: 'site_id + adapter required' }, 400);
+  if (typeof b.endpoint_url === 'string' && b.endpoint_url.length > 0) {
+    try { assertSafeWebhookUrl(b.endpoint_url); } catch (e: any) {
+      return c.json({ success: false, error: e?.message || 'invalid endpoint_url' }, 400);
+    }
+  }
   const id = genId('omcon');
   await c.env.DB.prepare(`
     INSERT INTO om_connections (id, site_id, adapter, endpoint_url, credentials_kv, polling_minutes, enabled)

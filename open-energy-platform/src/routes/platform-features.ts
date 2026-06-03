@@ -18,6 +18,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { assertSafeWebhookUrl } from '../utils/url-safety';
 
 const platform = new Hono<HonoEnv>();
 platform.use('*', authMiddleware);
@@ -196,8 +197,8 @@ platform.post('/webhooks/subscriptions', async (c) => {
   if (!b.target_url || !b.events || !Array.isArray(b.events)) {
     return c.json({ success: false, error: 'target_url + events[] required' }, 400);
   }
-  try { new URL(b.target_url); } catch {
-    return c.json({ success: false, error: 'invalid target_url' }, 400);
+  try { assertSafeWebhookUrl(b.target_url); } catch (e: any) {
+    return c.json({ success: false, error: e?.message || 'invalid target_url' }, 400);
   }
   const id = genId('oewh');
   const secret = randomToken('whsec');
@@ -255,6 +256,9 @@ platform.post('/webhooks/subscriptions/:id/test', async (c) => {
     delivery_id: genId('test'),
   });
   const signature = await hmacSha256Hex(row.secret, payload);
+  try { assertSafeWebhookUrl(row.target_url); } catch (e: any) {
+    return c.json({ success: false, error: e?.message || 'unsafe target_url' }, 400);
+  }
   try {
     const r = await fetch(row.target_url, {
       method: 'POST',
@@ -264,7 +268,11 @@ platform.post('/webhooks/subscriptions/:id/test', async (c) => {
         'x-oe-event': 'test',
       },
       body: payload,
+      redirect: 'manual',
     });
+    if (r.status >= 300 && r.status < 400) {
+      return c.json({ success: false, error: 'webhook target returned a redirect; redirects are not followed for security' }, 502);
+    }
     await c.env.DB.prepare(`
       INSERT INTO oe_webhook_deliveries
         (id, subscription_id, event, payload_json, status, status_code, delivered_at)

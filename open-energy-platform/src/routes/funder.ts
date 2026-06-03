@@ -167,6 +167,20 @@ funder.put('/facilities/:id', async (c) => {
     return c.json({ success: false, error: 'Not authorised' }, 403);
   }
   const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
+  const VALID_FACILITY_STATUSES = ['pending','active','suspended','closed','defaulted','cancelled'];
+  if (body.status !== undefined && !VALID_FACILITY_STATUSES.includes(String(body.status))) {
+    return c.json({ success: false, error: 'invalid status value' }, 400);
+  }
+  // Reject negative financial values
+  const FINANCIAL_FIELDS = ['committed_amount', 'drawn_amount', 'interest_rate_pct', 'tenor_years'];
+  for (const f of FINANCIAL_FIELDS) {
+    if (body[f] !== undefined) {
+      const v = Number(body[f]);
+      if (!Number.isFinite(v) || v < 0) {
+        return c.json({ success: false, error: `${f} must be a non-negative number` }, 400);
+      }
+    }
+  }
   const editable = ['facility_name', 'project_id', 'facility_type', 'committed_amount',
     'drawn_amount', 'currency', 'interest_rate_pct', 'tenor_months',
     'dscr_covenant', 'status', 'borrower_participant_id'] as const;

@@ -280,7 +280,7 @@ async function applyAdvance(
   try {
     r = advance(row.chain_status, opts.action);
   } catch (err) {
-    return { kind: 'invalid' as const, error: (err as Error).message };
+    return { kind: 'invalid' as const };
   }
 
   const now = new Date();
@@ -352,7 +352,7 @@ app.post('/:id/triage', async (c) => {
     legacyStatus: 'in_progress',
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 
@@ -367,7 +367,7 @@ app.post('/:id/pick-up', async (c) => {
     legacyStatus: 'in_progress',
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 
@@ -382,7 +382,7 @@ app.post('/:id/wait-for-user', async (c) => {
     legacyStatus: 'waiting_on_customer',
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 
@@ -403,7 +403,7 @@ app.post('/:id/user-responded', async (c) => {
     legacyStatus: 'in_progress',
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 
@@ -419,7 +419,7 @@ app.post('/:id/resolve', async (c) => {
 
   let r;
   try { r = advance(row.chain_status, 'resolve'); }
-  catch (err) { return c.json({ success: false, error: (err as Error).message }, 409); }
+  catch { return c.json({ success: false, error: 'invalid_transition' }, 409); }
 
   const nowIso = new Date().toISOString();
   await c.env.DB.prepare(`
@@ -460,7 +460,7 @@ app.post('/:id/close', async (c) => {
     legacyStatus: 'closed',
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 
@@ -480,7 +480,7 @@ app.post('/:id/reopen', async (c) => {
     legacyStatus: 'in_progress',
   });
   if (out.kind === 'not_found') return c.json({ success: false, error: 'Not found' }, 404);
-  if (out.kind === 'invalid')   return c.json({ success: false, error: out.error }, 409);
+  if (out.kind === 'invalid')   return c.json({ success: false, error: 'invalid_transition' }, 409);
   return c.json({ success: true, data: out });
 });
 
@@ -499,7 +499,7 @@ app.post('/:id/escalate', async (c) => {
 
   let r;
   try { r = advance(row.chain_status, 'escalate'); }
-  catch (err) { return c.json({ success: false, error: (err as Error).message }, 409); }
+  catch { return c.json({ success: false, error: 'invalid_transition' }, 409); }
 
   const nowIso = new Date().toISOString();
   await c.env.DB.prepare(`

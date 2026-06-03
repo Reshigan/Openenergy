@@ -409,7 +409,7 @@ popia.post('/export', async (c) => {
     return c.json({ success: true, data: { id, status: 'ready', byte_size: body.length, expires_at: expiresAt } });
   } catch (e: any) {
     await c.env.DB.prepare(`UPDATE oe_data_export_requests SET status = 'failed', error = ? WHERE id = ?`).bind(e?.message || 'unknown', id).run();
-    return c.json({ success: false, error: e?.message || 'export failed' }, 500);
+    return c.json({ success: false, error: 'export_failed' }, 500);
   }
 });
 

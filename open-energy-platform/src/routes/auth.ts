@@ -56,7 +56,9 @@ auth.post('/register', async (c) => {
     VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
   `).bind(participantId, email, passwordHash, name, company_name || null, role, new Date().toISOString()).run();
 
-  const verificationToken = await createEmailVerificationToken(c.env.DB, participantId);
+  // Token is generated and persisted in DB for later delivery via email.
+  // It is intentionally NOT returned in the response — see comment below.
+  await createEmailVerificationToken(c.env.DB, participantId);
 
   await fireCascade({
     event: 'auth.registered',
@@ -72,8 +74,8 @@ auth.post('/register', async (c) => {
     data: {
       participant_id: participantId,
       message: 'Account created. A verification link has been dispatched to your email.',
-      // Until a mail provider is configured, surface the token for developer/admin use.
-      verification_token: verificationToken,
+      // In production the token is delivered via email only. If you need to expose it for dev/test, gate it on:
+      // `...(c.env.ENVIRONMENT !== 'production' && { verification_token: verificationToken })`
     },
   });
 });

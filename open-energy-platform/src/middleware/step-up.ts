@@ -18,6 +18,7 @@
 import { Context, Next } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { getCurrentUser } from './auth';
+import { randomId } from '../utils/auth-tokens';
 
 const HIGH_RISK_OPS = new Set([
   'invoice.issue.high',
@@ -74,7 +75,7 @@ export async function recordStepUpAuth(
   method: 'totp' | 'webauthn' | 'recovery',
   graceSeconds: number,
 ): Promise<void> {
-  const id = `stup_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+  const id = randomId('stup_');
   const expiresAt = new Date(Date.now() + graceSeconds * 1000).toISOString();
   await env.DB.prepare(`
     INSERT INTO oe_step_up_sessions (id, participant_id, op_type, method, expires_at)

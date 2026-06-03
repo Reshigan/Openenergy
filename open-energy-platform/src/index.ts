@@ -355,7 +355,7 @@ app.get('/api/health', (c) => c.json({
 // each with LIMIT 1.
 app.get('/api/health/deep', async (c) => {
   const start = Date.now();
-  const checks: Record<string, { ok: boolean; latency_ms: number; error?: string }> = {};
+  const checks: Record<string, { ok: boolean; latency_ms: number; code?: string }> = {};
 
   async function probe<T>(name: string, fn: () => Promise<T>): Promise<void> {
     const t = Date.now();
@@ -363,7 +363,8 @@ app.get('/api/health/deep', async (c) => {
       await fn();
       checks[name] = { ok: true, latency_ms: Date.now() - t };
     } catch (err) {
-      checks[name] = { ok: false, latency_ms: Date.now() - t, error: (err as Error).message };
+      const code = (err as Error).message === 'binding_absent' ? 'binding_absent' : 'probe_failed';
+      checks[name] = { ok: false, latency_ms: Date.now() - t, code };
     }
   }
 
@@ -407,7 +408,7 @@ app.get('/api/health/deep', async (c) => {
     }),
   ]);
 
-  const allOk = Object.values(checks).every((c) => c.ok || c.error === 'binding_absent');
+  const allOk = Object.values(checks).every((c) => c.ok || c.code === 'binding_absent');
   const status = allOk ? 200 : 503;
   return c.json(
     {
@@ -861,7 +862,6 @@ app.route('/api/public/legal',     publicLegalRoutes);
 // that would intercept these routes before they reach their own per-path guards.
 app.route('/api/pdf',  pdfRoutes);
 app.route('/api/rbac', rbacRoutes);
-app.route('/api', platformFeaturesRoutes);
 app.route('/api/mfa',         mfaRoutes);
 app.route('/api/kyc',         kycRoutes);
 app.route('/api/consent',     consentRoutes);
@@ -891,6 +891,9 @@ app.route('/api/bulk',                bulkOpsRoutes);
 app.route('/api/ux-state',            uxStateRoutes);
 app.route('/api/documents',           documentsRoutes);
 app.route('/api/print-packs',         printPacksRoutes);
+// platformFeaturesRoutes is the catch-all for /api — it must remain LAST
+// so all specific /api/* mounts above are tried first.
+app.route('/api', platformFeaturesRoutes);
 
 // Admin-only "run cron once" endpoint — invokes the same runCron() that the
 // Workers scheduler fires, but on demand so operators (and the smoke-cron
@@ -917,7 +920,7 @@ app.route('/api/print-packs',         printPacksRoutes);
       return c.json({
         success: false,
         error: 'cron failed',
-        detail: (err as Error).message,
+        detail: null,
       }, 500);
     }
   });
@@ -943,7 +946,7 @@ app.onError((err, c) => {
   const status = appErr?.statusCode ?? 500;
   const outgoingBody: Record<string, unknown> = appErr
     ? { error: appErr.code, message: appErr.message, req_id: reqId }
-    : { error: 'Internal Server Error', message: err.message, req_id: reqId };
+    : { error: 'Internal Server Error', message: 'An unexpected error occurred', req_id: reqId };
 
   // Only log unexpected errors at error-level; log AppError at warn-level
   // so the alerting pipeline doesn't page operators for a user typo.

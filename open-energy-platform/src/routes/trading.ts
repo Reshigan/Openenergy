@@ -842,6 +842,11 @@ trading.post('/match', async (c) => {
         if (user.id !== buy.participant_id && user.id !== sell.participant_id && user.role !== 'admin') {
           throw new LockBusyError('__not_counterparty__');
         }
+        // FIX bizlogic-2: self-trade prevention — a participant cannot be
+        // both buyer and seller on the same match (wash-trade / VWAP manipulation).
+        if (buy.participant_id === sell.participant_id) {
+          throw new LockBusyError('__self_trade__');
+        }
 
         // Remaining-volume defaulting: legacy rows may have null in
         // remaining_volume_mwh (only the post-020 path sets it). Treat
@@ -856,6 +861,10 @@ trading.post('/match', async (c) => {
 
         const matchId = 'mt_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
         const price = Number(price_per_mwh ?? sell.price_min ?? buy.price_max ?? 0);
+        // FIX bizlogic-3: reject non-positive price to prevent inverted settlement direction.
+        if (!Number.isFinite(price) || price <= 0) {
+          throw new LockBusyError('__invalid_price__');
+        }
         const total_value = price * fillVol;
         const now = new Date().toISOString();
 
@@ -1003,8 +1012,12 @@ trading.post('/match', async (c) => {
           return c.json({ success: false, error: 'Only open or partial orders can be matched' }, 400);
         case '__not_counterparty__':
           return c.json({ success: false, error: 'Not a counterparty to either order' }, 403);
+        case '__self_trade__':
+          return c.json({ success: false, error: 'Self-trade not permitted' }, 422);
         case '__nothing_to_fill__':
           return c.json({ success: false, error: 'No remaining volume on either side to fill' }, 400);
+        case '__invalid_price__':
+          return c.json({ success: false, error: 'price_per_mwh must be a positive number' }, 422);
         default:
           return c.json({ success: false, error: 'Another match is in progress on these orders — retry in a moment' }, 409);
       }

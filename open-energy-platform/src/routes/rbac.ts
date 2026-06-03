@@ -293,7 +293,9 @@ rbac.patch('/me', async (c) => {
 rbac.get('/me/invitations', async (c) => {
   const user = getCurrentUser(c);
   const rows = await c.env.DB.prepare(`
-    SELECT i.*, p.name as accepted_by_name, p.email as accepted_by_email
+    SELECT i.id, i.email, i.role, i.organization, i.note, i.status,
+           i.expires_at, i.accepted_by, i.accepted_at, i.created_at,
+           p.name as accepted_by_name
     FROM rbac_invitations i
     LEFT JOIN participants p ON p.id = i.accepted_by
     WHERE i.invited_by = ?
@@ -419,7 +421,10 @@ rbac.get('/users/:id', async (c) => {
   }
 
   const profile = await c.env.DB.prepare(`
-    SELECT p.*, inv.name as invited_by_name
+    SELECT p.id, p.email, p.name, p.company_name, p.role, p.status, p.kyc_status,
+           p.bbbee_level, p.subscription_tier, p.phone, p.job_title, p.org_website,
+           p.org_reg_num, p.bio, p.email_verified, p.last_login, p.created_at,
+           p.invited_by, inv.name as invited_by_name
     FROM participants p
     LEFT JOIN participants inv ON inv.id = p.invited_by
     WHERE p.id = ?
@@ -485,7 +490,10 @@ rbac.get('/registrations', async (c) => {
 
   const status = c.req.query('status') ?? 'pending';
   const rows = await c.env.DB.prepare(`
-    SELECT r.*, rev.name as reviewed_by_name
+    SELECT r.id, r.email, r.full_name, r.company_name, r.requested_role,
+           r.organization_type, r.reg_number, r.phone, r.motivation, r.status,
+           r.reviewed_by, r.reviewed_at, r.rejection_reason, r.invitation_id,
+           r.created_at, rev.name as reviewed_by_name
     FROM rbac_registrations r
     LEFT JOIN participants rev ON rev.id = r.reviewed_by
     WHERE r.status = ?

@@ -22,6 +22,8 @@ import { computeSettlementRun, PpaContract, PeriodReading } from '../utils/settl
 import { insertMeteringReading, invalidateMonthlyAggregate } from '../utils/metering-router';
 import { appendAudit } from '../utils/audit-chain';
 import { fireCascade } from '../utils/cascade';
+import { withLock } from '../utils/locks';
+import { assertSafeWebhookUrl } from '../utils/url-safety';
 
 const sa = new Hono<HonoEnv>();
 
@@ -45,25 +47,45 @@ sa.post('/runs', async (c) => {
   const idempotencyKey = (b.idempotency_key as string) ||
     `${b.run_type}:${b.period_start}:${b.period_end}`;
 
-  // Idempotency check.
-  const existing = await c.env.DB.prepare(
-    `SELECT id, status FROM settlement_runs WHERE idempotency_key = ?`,
-  ).bind(idempotencyKey).first<{ id: string; status: string }>();
-  if (existing) {
+  // Idempotency check + INSERT wrapped in an advisory lock so that concurrent
+  // cron runs cannot both pass the SELECT before either has committed the row.
+  let lockResult: { kind: 'idempotent'; id: string; status: string } | { kind: 'new'; runId: string };
+  try {
+    lockResult = await withLock(
+      c.env,
+      `settlement:run:${idempotencyKey}`,
+      user.id,
+      async (): Promise<{ kind: 'idempotent'; id: string; status: string } | { kind: 'new'; runId: string }> => {
+        // Re-check inside the lock — another caller may have inserted while we waited.
+        const existing = await c.env.DB.prepare(
+          `SELECT id, status FROM settlement_runs WHERE idempotency_key = ?`,
+        ).bind(idempotencyKey).first<{ id: string; status: string }>();
+        if (existing) {
+          return { kind: 'idempotent', id: existing.id, status: existing.status };
+        }
+        const newRunId = genId('sr');
+        await c.env.DB.prepare(
+          `INSERT INTO settlement_runs
+             (id, run_type, period_start, period_end, initiated_by, status, idempotency_key)
+           VALUES (?, ?, ?, ?, ?, 'running', ?)`,
+        ).bind(newRunId, b.run_type, b.period_start, b.period_end, user.id, idempotencyKey).run();
+        return { kind: 'new', runId: newRunId };
+      },
+      { ttlSeconds: 30 },
+    );
+  } catch {
+    return c.json({ success: false, error: 'Settlement run already in progress for this period' }, 409);
+  }
+
+  if (lockResult.kind === 'idempotent') {
     return c.json({
       success: true,
-      data: { id: existing.id, status: existing.status },
+      data: { id: lockResult.id, status: lockResult.status },
       idempotent: true,
     });
   }
 
-  const runId = genId('sr');
-  await c.env.DB.prepare(
-    `INSERT INTO settlement_runs
-       (id, run_type, period_start, period_end, initiated_by, status, idempotency_key)
-     VALUES (?, ?, ?, ?, ?, 'running', ?)`,
-  ).bind(runId, b.run_type, b.period_start, b.period_end, user.id, idempotencyKey).run();
-
+  const runId = lockResult.runId;
   const result = await executeSettlementRun(
     c.env, runId,
     b.run_type as string, b.period_start as string, b.period_end as string,
@@ -212,6 +234,11 @@ sa.post('/ingest/channels', async (c) => {
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   for (const k of ['connection_id', 'channel_type']) {
     if (!b[k]) return c.json({ success: false, error: `${k} is required` }, 400);
+  }
+  if (typeof b.endpoint_url === 'string' && b.endpoint_url.length > 0) {
+    try { assertSafeWebhookUrl(b.endpoint_url as string); } catch (e: any) {
+      return c.json({ success: false, error: e?.message || 'invalid endpoint_url' }, 400);
+    }
   }
   const id = genId('mic');
   await c.env.DB.prepare(

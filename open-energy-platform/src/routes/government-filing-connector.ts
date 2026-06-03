@@ -45,6 +45,7 @@ import { Hono, Context } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
+import { assertSafeWebhookUrl } from '../utils/url-safety';
 import {
   nextStatus,
   isTerminal,
@@ -667,6 +668,13 @@ app.post('/', async (c) => {
     return c.json({ success: false, error: 'Forbidden' }, 403);
   }
   const body = (await c.req.json().catch(() => ({}))) as Partial<CreateBody>;
+
+  if (typeof body.endpoint_url === 'string' && body.endpoint_url.length > 0) {
+    try { assertSafeWebhookUrl(body.endpoint_url); } catch (e: any) {
+      return c.json({ success: false, error: e?.message || 'invalid endpoint_url' }, 400);
+    }
+  }
+
   const id = `gfc-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
 
   const filingAuthority = isKnownFilingAuthority(body.filing_authority)
@@ -836,7 +844,12 @@ async function transition(
     }, 422);
   }
 
-  const overrides = bodyHandler ? bodyHandler(row, body) : {};
+  let overrides: Partial<GfcRow>;
+  try {
+    overrides = bodyHandler ? bodyHandler(row, body) : {};
+  } catch (e: any) {
+    return c.json({ success: false, error: e?.message || 'invalid request body' }, 400);
+  }
 
   // Re-derive tier from (filing_count, jurisdiction_count, national_statutory) + 5 floor flags.
   const filingCount =
@@ -1006,7 +1019,10 @@ app.post('/:id/validate-filing-authority', async (c) => transition(c, 'validate_
     counterparty_name?: string;
   }>;
   const out: Partial<GfcRow> = {};
-  if (typeof b.endpoint_url === 'string') out.endpoint_url = b.endpoint_url;
+  if (typeof b.endpoint_url === 'string') {
+    assertSafeWebhookUrl(b.endpoint_url); // throws → transition() try/catch returns 400
+    out.endpoint_url = b.endpoint_url;
+  }
   if (typeof b.counterparty_name === 'string') out.counterparty_name = b.counterparty_name;
   return applyCommon(b, out);
 }));
@@ -1172,7 +1188,10 @@ app.post('/:id/activate-failover', async (c) => transition(c, 'activate_failover
     endpoint_url?: string;
   }>;
   const out: Partial<GfcRow> = {};
-  if (typeof b.endpoint_url === 'string') out.endpoint_url = b.endpoint_url;
+  if (typeof b.endpoint_url === 'string') {
+    assertSafeWebhookUrl(b.endpoint_url); // throws → transition() try/catch returns 400
+    out.endpoint_url = b.endpoint_url;
+  }
   return applyCommon(b, out);
 }));
 

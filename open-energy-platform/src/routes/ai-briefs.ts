@@ -46,7 +46,7 @@ briefs.post('/:role', async (c) => {
     return c.json({ success: true, data: result, context });
   } catch (err) {
     return c.json(
-      { success: false, error: 'Brief generation failed', message: (err as Error).message },
+      { success: false, error: 'Brief generation failed' },
       500,
     );
   }

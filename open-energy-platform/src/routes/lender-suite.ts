@@ -89,14 +89,31 @@ lender.post('/covenants', async (c) => {
 });
 
 lender.get('/covenants', async (c) => {
+  const user = getCurrentUser(c);
+  if (!['lender', 'admin', 'support'].includes(user.role)) {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
   const projectId = c.req.query('project_id');
-  const rs = projectId
-    ? await c.env.DB.prepare(
-        `SELECT * FROM covenants WHERE project_id = ? ORDER BY covenant_code LIMIT 500`,
-      ).bind(projectId).all()
-    : await c.env.DB.prepare(
-        `SELECT * FROM covenants ORDER BY created_at DESC LIMIT 500`,
-      ).all();
+  // admin/support can see all; lender is scoped to their own records
+  const isAdmin = user.role === 'admin' || user.role === 'support';
+  let rs;
+  if (projectId) {
+    rs = isAdmin
+      ? await c.env.DB.prepare(
+          `SELECT * FROM covenants WHERE project_id = ? ORDER BY covenant_code LIMIT 500`,
+        ).bind(projectId).all()
+      : await c.env.DB.prepare(
+          `SELECT * FROM covenants WHERE project_id = ? AND lender_participant_id = ? ORDER BY covenant_code LIMIT 500`,
+        ).bind(projectId, user.id).all();
+  } else {
+    rs = isAdmin
+      ? await c.env.DB.prepare(
+          `SELECT * FROM covenants ORDER BY created_at DESC LIMIT 500`,
+        ).all()
+      : await c.env.DB.prepare(
+          `SELECT * FROM covenants WHERE lender_participant_id = ? ORDER BY created_at DESC LIMIT 500`,
+        ).bind(user.id).all();
+  }
   return c.json({ success: true, data: rs.results || [] });
 });
 

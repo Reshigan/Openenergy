@@ -125,7 +125,7 @@ export async function securityHeaders(c: Context<HonoEnv>, next: Next) {
     [
       "default-src 'self'",
       // Vite ships hashed JS/CSS; we also need the Cloudflare Insights beacon.
-      "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
+      "script-src 'self' https://static.cloudflareinsights.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.cdnfonts.com",
       "img-src 'self' data: blob: https://lh3.googleusercontent.com",
       "font-src 'self' data: https://fonts.gstatic.com https://fonts.cdnfonts.com",
@@ -159,12 +159,13 @@ export async function corsMiddleware(c: Context<HonoEnv>, next: Next) {
   
   if (origin && allowedOrigins.includes(origin)) {
     c.res.headers.set('Access-Control-Allow-Origin', origin);
+    c.res.headers.set('Access-Control-Allow-Credentials', 'true');
   }
-  
+
   c.res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID');
   c.res.headers.set('Access-Control-Max-Age', '86400');
-  c.res.headers.set('Access-Control-Allow-Credentials', 'true');
+  c.res.headers.set('Vary', 'Origin');
   
   if (c.req.method === 'OPTIONS') {
     return new Response(null, { status: 204 });

@@ -118,9 +118,20 @@ app.get('/', async (c) => {
   const user = getCurrentUser(c);
   if (!READ_ROLES.has(user.role)) return c.json({ error: 'Forbidden' }, 403);
 
-  const rows = await c.env.DB.prepare(
-    'SELECT * FROM oe_ipp_ncrs ORDER BY created_at DESC'
-  ).all<NcrRow>();
+  // Roles with platform-wide visibility: admin, regulator, lender, support
+  const PLATFORM_WIDE_ROLES = new Set(['admin', 'regulator', 'lender', 'support']);
+  let rows;
+  if (PLATFORM_WIDE_ROLES.has(user.role)) {
+    rows = await c.env.DB.prepare(
+      'SELECT * FROM oe_ipp_ncrs ORDER BY created_at DESC'
+    ).all<NcrRow>();
+  } else {
+    // ipp_developer, carbon_fund, trader, offtaker, grid_operator:
+    // scope to NCRs they created (tenant isolation via created_by)
+    rows = await c.env.DB.prepare(
+      'SELECT * FROM oe_ipp_ncrs WHERE created_by = ? ORDER BY created_at DESC'
+    ).bind(user.id).all<NcrRow>();
+  }
 
   const now = new Date();
   const data = (rows.results ?? []).map(r => decorateLiveFields(r, now));

@@ -33,10 +33,16 @@ export async function verifyToken(token: string, secret: string): Promise<JWTPay
 
     const [header, body, signature] = parts;
 
-    // Verify signature
+    // Verify signature — constant-time comparison to prevent timing oracle
     const sig = await signWithHMAC(`${header}.${body}`, secret);
     const expectedSig = base64UrlEncodeBytes(new Uint8Array(sig));
-    if (signature !== expectedSig) return null;
+    const enc = new TextEncoder();
+    const a = enc.encode(signature);
+    const b = enc.encode(expectedSig);
+    if (a.length !== b.length) return null;
+    let diff = 0;
+    for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+    if (diff !== 0) return null;
 
     // Parse and check expiry
     const payload: JWTPayload = JSON.parse(atob(body.replace(/-/g, '+').replace(/_/g, '/')));
@@ -283,9 +289,11 @@ export function getCurrentUser(c: Context<HonoEnv>) {
   return auth.user;
 }
 
-// Generate OTP code
+// Generate OTP code — crypto.getRandomValues() replaces Math.random() (V8 xorshift128+ is predictable)
 export function generateOTP(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return (100000 + (buf[0] % 900000)).toString();
 }
 
 // Password hashing — PBKDF2 over Web Crypto (Workers-native, no node_compat needed).
@@ -364,6 +372,9 @@ export async function refreshToken(c: Context<HonoEnv>) {
   }
   
   const secret = c.env.JWT_SECRET;
+  if (!secret) {
+    throw new AppError(ErrorCode.INTERNAL_ERROR, 'JWT secret not configured', 500);
+  }
   return signToken({
     sub: auth.user.id,
     email: auth.user.email,

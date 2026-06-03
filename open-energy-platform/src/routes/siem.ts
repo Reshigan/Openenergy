@@ -19,6 +19,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { assertSafeWebhookUrl } from '../utils/url-safety';
 
 const siem = new Hono<HonoEnv>();
 siem.use('*', authMiddleware);
@@ -64,6 +65,11 @@ siem.post('/forwarders', async (c) => {
   for (const k of ['name', 'vendor', 'endpoint_url', 'subscribe']) {
     if (!b[k]) return c.json({ success: false, error: `${k} is required` }, 400);
   }
+  try {
+    assertSafeWebhookUrl(String(b.endpoint_url), true); // HTTPS required for SIEM
+  } catch (e: any) {
+    return c.json({ success: false, error: e?.message || 'invalid endpoint_url' }, 400);
+  }
   const id = genId('siem');
   await c.env.DB.prepare(
     `INSERT INTO siem_forwarders
@@ -99,6 +105,13 @@ siem.put('/forwarders/:id', async (c) => {
   const sets: string[] = ['updated_at = datetime(\'now\')'];
   const binds: unknown[] = [];
   const changedFields: string[] = [];
+  if ('endpoint_url' in b && b.endpoint_url != null) {
+    try {
+      assertSafeWebhookUrl(String(b.endpoint_url), true); // HTTPS required for SIEM
+    } catch (e: any) {
+      return c.json({ success: false, error: e?.message || 'invalid endpoint_url' }, 400);
+    }
+  }
   for (const k of ['name', 'endpoint_url', 'secret_kv_key'] as const) {
     if (k in b) { sets.push(`${k} = ?`); binds.push(b[k] == null ? null : String(b[k])); changedFields.push(k); }
   }
@@ -319,9 +332,15 @@ async function deliverBatch(
       method: 'POST',
       headers,
       body: payload,
+      redirect: 'manual',
     });
-    status = resp.status;
-    bodySnippet = (await resp.text()).slice(0, 500);
+    if (resp.status >= 300 && resp.status < 400) {
+      status = resp.status;
+      bodySnippet = 'SSRF-guard: SIEM forwarder returned a redirect; not followed';
+    } else {
+      status = resp.status;
+      bodySnippet = (await resp.text()).slice(0, 500);
+    }
   } catch (err) {
     status = 599; // network / DNS error
     bodySnippet = (err as Error).message.slice(0, 500);

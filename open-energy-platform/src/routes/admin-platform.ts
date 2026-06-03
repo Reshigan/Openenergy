@@ -579,11 +579,18 @@ pa.post('/usage/snapshot', async (c) => {
 // subscriptions / feature_flag tables.
 // ────────────────────────────────────────────────────────────────────────
 
+const VALID_EVENT_TYPES = ['created','suspended','activated','terminated','upgraded','downgraded','transferred','archived'];
+const VALID_RUN_TYPES = ['monthly','quarterly','annual','adhoc','correction'];
+
 pa.post('/tenant-events', async (c) => {
   const user = getCurrentUser(c);
+  if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const body = (await c.req.json().catch(() => ({}))) as any;
   if (!body.tenant_id || !body.event_type) {
     return c.json({ success: false, error: 'tenant_id, event_type required' }, 400);
+  }
+  if (!VALID_EVENT_TYPES.includes(String(body.event_type))) {
+    return c.json({ success: false, error: 'invalid event_type' }, 400);
   }
   const id = crypto.randomUUID();
   await c.env.DB.prepare(
@@ -605,6 +612,8 @@ pa.post('/tenant-events', async (c) => {
 });
 
 pa.get('/tenant-events', async (c) => {
+  const user = getCurrentUser(c);
+  if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const tenantId = c.req.query('tenant_id');
   const where: string[] = [];
   const binds: unknown[] = [];
@@ -618,9 +627,13 @@ pa.get('/tenant-events', async (c) => {
 
 pa.post('/billing-runs', async (c) => {
   const user = getCurrentUser(c);
+  if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const body = (await c.req.json().catch(() => ({}))) as any;
   if (!body.run_type || !body.period_start || !body.period_end) {
     return c.json({ success: false, error: 'run_type, period_start, period_end required' }, 400);
+  }
+  if (!VALID_RUN_TYPES.includes(String(body.run_type))) {
+    return c.json({ success: false, error: 'invalid run_type' }, 400);
   }
   const id = crypto.randomUUID();
   await c.env.DB.prepare(
@@ -632,6 +645,8 @@ pa.post('/billing-runs', async (c) => {
 });
 
 pa.get('/billing-runs', async (c) => {
+  const user = getCurrentUser(c);
+  if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const rows = await c.env.DB.prepare(
     `SELECT * FROM admin_billing_runs ORDER BY created_at DESC LIMIT 100`,
   ).all().catch(() => ({ results: [] } as any));
@@ -640,6 +655,7 @@ pa.get('/billing-runs', async (c) => {
 
 pa.post('/flag-overrides', async (c) => {
   const user = getCurrentUser(c);
+  if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const body = (await c.req.json().catch(() => ({}))) as any;
   if (!body.flag_key || !body.scope_type || body.new_value === undefined) {
     return c.json({ success: false, error: 'flag_key, scope_type, new_value required' }, 400);
@@ -670,6 +686,8 @@ pa.post('/flag-overrides', async (c) => {
 });
 
 pa.get('/flag-overrides', async (c) => {
+  const user = getCurrentUser(c);
+  if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const flag = c.req.query('flag_key');
   const where: string[] = [];
   const binds: unknown[] = [];

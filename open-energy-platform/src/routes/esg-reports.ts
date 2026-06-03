@@ -208,9 +208,12 @@ esgReports.get('/:id', async (c) => {
 
 // GET /esg-reports/:id/download — Download report as PDF
 esgReports.get('/:id/download', async (c) => {
+  const participant = getCurrentUser(c);
   const { id } = c.req.param();
-  
-  const report = await c.env.DB.prepare('SELECT * FROM esg_reports WHERE id = ?').bind(id).first();
+
+  const report = await c.env.DB.prepare(
+    'SELECT * FROM esg_reports WHERE id = ? AND participant_id = ?'
+  ).bind(id, participant.id).first();
   if (!report) {
     return c.json({ success: false, error: 'Report not found' }, 404);
   }

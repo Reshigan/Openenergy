@@ -15,7 +15,10 @@ participants.use('*', authMiddleware);
 
 // GET /api/participants — List with pagination and filtering
 participants.get('/', async (c) => {
-  getCurrentUser(c);                          // require auth
+  const user = getCurrentUser(c);
+  if (!['admin', 'support'].includes(user.role)) {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
   const page = parseInt(c.req.query('page') || '1');
   const pageSize = Math.min(parseInt(c.req.query('pageSize') || '20'), 100);
   const offset = (page - 1) * pageSize;
@@ -66,6 +69,10 @@ participants.get('/', async (c) => {
 // GET /api/participants/:id — Get single participant
 participants.get('/:id', async (c) => {
   const id = c.req.param('id');
+  const requestingUser = getCurrentUser(c);
+  if (!['admin', 'support'].includes(requestingUser.role) && requestingUser.id !== id) {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
   const participant = await c.env.DB.prepare(`
     SELECT id, email, name, company_name, role, status, kyc_status, bbbee_level,
            subscription_tier, email_verified, last_login, onboarding_completed, created_at
@@ -78,12 +85,11 @@ participants.get('/:id', async (c) => {
 
   // POPIA s.19 accountability — record when a privileged actor views another
   // participant's profile. logPiiAccess is a no-op when actor_id === subject_id.
-  const user = getCurrentUser(c);
-  if (['admin', 'support', 'regulator'].includes(user.role)) {
+  if (['admin', 'support', 'regulator'].includes(requestingUser.role)) {
     await logPiiAccess(c.env, {
-      actor_id: user.id,
+      actor_id: requestingUser.id,
       subject_id: id,
-      access_type: inferAccessType(user.role),
+      access_type: inferAccessType(requestingUser.role),
       justification: 'Participant profile view',
     });
   }

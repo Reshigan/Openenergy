@@ -4,6 +4,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import { ask } from '../utils/ai';
+import { withLock, LockBusyError } from '../utils/locks';
 
 const carbon = new Hono<HonoEnv>();
 carbon.use('*', authMiddleware);
@@ -148,33 +149,64 @@ carbon.post('/credits/:id/retire', async (c) => {
   const beneficiary = body.beneficiary ?? body.retirement_beneficiary ?? null;
   if (!qty || qty <= 0) return c.json({ success: false, error: 'quantity_required' }, 400);
 
-  const holding = await c.env.DB.prepare(
-    `SELECT id, project_id, quantity, status FROM carbon_holdings WHERE id = ? AND participant_id = ?`,
-  ).bind(id, user.id).first() as { id?: string; project_id?: string; quantity?: number; status?: string } | null;
-  if (!holding) return c.json({ success: false, error: 'credit_not_found' }, 404);
-  if ((holding.status || 'available') === 'retired') return c.json({ success: false, error: 'already_retired' }, 400);
-  if (qty > Number(holding.quantity || 0)) return c.json({ success: false, error: 'insufficient_balance' }, 400);
+  // FIX bizlogic-1: wrap SELECT+check+UPDATE+INSERT in an advisory lock to
+  // prevent TOCTOU double-retirement from concurrent requests on the same
+  // holding. The holding is re-read INSIDE the lock so any race that slipped
+  // past the outer early-return still sees the committed state.
+  let retireResult: { retired: number; certificate_number: string; retirement_id: string };
+  try {
+    retireResult = await withLock(
+      c.env,
+      `carbon:retire:${id}`,
+      user.id,
+      async () => {
+        // Re-read inside the lock — canonical TOCTOU prevention.
+        const holding = await c.env.DB.prepare(
+          `SELECT id, project_id, quantity, status FROM carbon_holdings WHERE id = ? AND participant_id = ?`,
+        ).bind(id, user.id).first() as { id?: string; project_id?: string; quantity?: number; status?: string } | null;
+        if (!holding) throw new LockBusyError('__not_found__');
+        if ((holding.status || 'available') === 'retired') throw new LockBusyError('__already_retired__');
+        if (qty > Number(holding.quantity || 0)) throw new LockBusyError('__insufficient_balance__');
 
-  const newQty = Number(holding.quantity || 0) - qty;
-  await c.env.DB.prepare(
-    `UPDATE carbon_holdings SET quantity = ?, status = ? WHERE id = ?`,
-  ).bind(newQty, newQty <= 0 ? 'retired' : 'available', id).run();
+        const newQty = Number(holding.quantity || 0) - qty;
+        const retId = 'cr_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        const cert = `OE-${retId.slice(-8).toUpperCase()}`;
 
-  const retId = 'cr_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-  const cert = `OE-${retId.slice(-8).toUpperCase()}`;
-  await c.env.DB.prepare(`
-    INSERT INTO carbon_retirements
-      (id, participant_id, project_id, quantity, retirement_reason, certificate_number, beneficiary_name, retirement_date, created_by)
-    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), ?)
-  `).bind(retId, user.id, holding.project_id, qty, reason, cert, beneficiary, user.id).run();
+        // Atomic batch: UPDATE holding + INSERT retirement record together.
+        await c.env.DB.batch([
+          c.env.DB.prepare(
+            `UPDATE carbon_holdings SET quantity = ?, status = ? WHERE id = ?`,
+          ).bind(newQty, newQty <= 0 ? 'retired' : 'available', id),
+          c.env.DB.prepare(`
+            INSERT INTO carbon_retirements
+              (id, participant_id, project_id, quantity, retirement_reason, certificate_number, beneficiary_name, retirement_date, created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), ?)
+          `).bind(retId, user.id, holding.project_id, qty, reason, cert, beneficiary, user.id),
+        ]);
+
+        return { retired: qty, certificate_number: cert, retirement_id: retId, project_id: holding.project_id };
+      },
+      { ttlSeconds: 10 },
+    );
+  } catch (err) {
+    if (err instanceof LockBusyError) {
+      switch (err.key) {
+        case '__not_found__': return c.json({ success: false, error: 'credit_not_found' }, 404);
+        case '__already_retired__': return c.json({ success: false, error: 'already_retired' }, 400);
+        case '__insufficient_balance__': return c.json({ success: false, error: 'insufficient_balance' }, 400);
+        default: return c.json({ success: false, error: 'Retirement in progress — retry in a moment' }, 409);
+      }
+    }
+    throw err;
+  }
 
   await fireCascade({
     event: 'carbon.retired', actor_id: user.id,
     entity_type: 'carbon_holdings', entity_id: id,
-    data: { quantity: qty, reason, certificate_number: cert },
+    data: { quantity: retireResult.retired, reason, certificate_number: retireResult.certificate_number },
     env: c.env,
   });
-  return c.json({ success: true, data: { retired: qty, certificate_number: cert, retirement_id: retId } });
+  return c.json({ success: true, data: retireResult });
 });
 
 // GET /carbon/options — caller's open + recently-closed options.
