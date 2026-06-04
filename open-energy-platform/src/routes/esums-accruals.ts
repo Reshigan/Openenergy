@@ -219,7 +219,9 @@ app.get('/', async (c) => {
   const period = c.req.query('period') ?? 'month';
   const participantId = c.req.query('participant_id');
   const user = getCurrentUser(c);
-  const resolvedParticipant = participantId ?? user.id;
+  const resolvedParticipant = (participantId && ['admin', 'support'].includes(user.role))
+    ? participantId
+    : user.id;
 
   const now = new Date();
   let sinceDate: string;
