@@ -95,7 +95,7 @@ export async function computeStationAccruals(
 export async function backfillStationHistory(
   stationId: string,
   env: HonoEnv['Bindings'],
-): Promise<{ days_backfilled: number; hours_backfilled?: number; kwh_total: number }> {
+): Promise<{ days_backfilled: number; hours_backfilled?: number; kwh_total: number; error_count?: number; first_error?: string }> {
   const station = await env.DB
     .prepare(`SELECT ss.*, mc.tariff_rate_zar_per_kwh, mc.customer_tariff_rate_zar_per_kwh, mc.carbon_intensity_gco2_per_kwh,
         mc.client_id, mc.client_secret, mc.auth_type, mc.api_key, mc.token, mc.username, mc.password, mc.base_url, mc.site_id AS cred_site_id, mc.extra_config
@@ -172,6 +172,8 @@ export async function backfillStationHistory(
   // Collect ALL hourly data points across all windows.
   // Map: ISO-hour-string → totalYield at that hour (for delta computation).
   const hourTotals = new Map<string, number>(); // "2026-06-04T17" → totalYield kWh
+  let errorCount = 0;
+  let firstError = '';
 
   for (let i = 0; i < windows.length; i += CONCURRENCY) {
     const batch = windows.slice(i, i + CONCURRENCY);
@@ -186,11 +188,18 @@ export async function backfillStationHistory(
           const prev = hourTotals.get(hourKey) ?? 0;
           if (p.total_kwh > prev) hourTotals.set(hourKey, p.total_kwh);
         }
-      } catch { /* skip failed window */ }
+      } catch (e) {
+        errorCount++;
+        if (!firstError) firstError = String(e);
+      }
     }));
+    // Early bail: if first batch produced only errors and no data, stop immediately.
+    if (i === 0 && errorCount >= CONCURRENCY && hourTotals.size === 0) break;
   }
 
-  if (hourTotals.size === 0) return { days_backfilled: 0, kwh_total: 0 };
+  if (hourTotals.size === 0) {
+    return { days_backfilled: 0, kwh_total: 0, error_count: errorCount, first_error: firstError || undefined };
+  }
 
   // Sort hour keys chronologically, compute delta = totalYield[i] − totalYield[i−1].
   const sortedHours = [...hourTotals.keys()].sort();
