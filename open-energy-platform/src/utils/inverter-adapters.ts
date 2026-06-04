@@ -92,11 +92,18 @@ export class AdapterError extends Error {
 // base_url is optional; when null the hardcoded default is used (safe).
 // When a participant supplies base_url, it must match this list exactly.
 //
-// Rules enforced by validateBaseUrl():
+// Rules enforced by validateBaseUrl() and validateOpenBaseUrl():
 //   1. Must parse as a valid URL.
 //   2. Scheme must be https: — no plaintext transport.
 //   3. Hostname must not be an IPv4/v6 literal (blocks metadata/internal IPs).
-//   4. Hostname must end with one of the per-manufacturer allowed suffixes.
+//   4. Hostname must not be in the metadata/internal blocklist (cloud IMDs, mDNS, etc.).
+//   5. For known manufacturers: hostname must end with one of the per-manufacturer
+//      allowed suffixes.  For custom/open use: suffix check is skipped but rules
+//      1–4 still apply unconditionally.
+//
+// NOTE: hydro_scada and waste_scada still have an empty suffix list because their
+// customer-supplied SCADA endpoints vary by site.  Rules 1–4 are enforced for
+// these types as they are for all others — the empty list only skips rule 5.
 
 const BASE_URL_ALLOWLIST: Record<Manufacturer, string[]> = {
   // Solar
@@ -113,18 +120,45 @@ const BASE_URL_ALLOWLIST: Record<Manufacturer, string[]> = {
   siemens_gamesa:['siemensgamesa.com', 'siemens-gamesa.com'],
   goldwind:      ['goldwindscada.com', 'goldwind.com'],
   envision:      ['envisioniot.com', 'envision-group.com'],
-  // Hydro / run-of-river
+  // Hydro / run-of-river — hostname varies by site; suffix check skipped (rules 1–4 still apply)
   andritz:       ['andritz.com'],
   voith:         ['voith.com'],
-  hydro_scada:   [], // allow any https host — validated at the SCADA-adapter layer
-  // Waste-to-energy / biomass
+  hydro_scada:   [],
+  // Waste-to-energy / biomass — hostname varies by site; suffix check skipped (rules 1–4 still apply)
   babcock:       ['babcock.com'],
   covanta:       ['covanta.com'],
-  waste_scada:   [], // allow any https host — validated at the SCADA-adapter layer
+  waste_scada:   [],
 };
 
 // IPv4 + IPv6 literal patterns (covers RFC1918, loopback, link-local, ::1, etc.)
 const IP_LITERAL_RE = /^(?:\d{1,3}\.){3}\d{1,3}$|^\[?[0-9a-f:]+\]?$/i;
+
+// Cloud instance-metadata hostnames and private DNS zone suffixes that must
+// never be reachable from the platform, regardless of allowlist entries.
+// Applied unconditionally by both validateBaseUrl and validateOpenBaseUrl.
+const METADATA_HOSTNAME_BLOCKLIST = new Set([
+  'metadata.google.internal',   // GCP IMDS
+  'metadata.google',
+  'metadata.internal',          // common internal DNS alias
+  'instance-data',              // common SCADA internal alias
+  'instance-data.ec2.internal', // AWS EC2 internal
+  'ecs.internal',
+]);
+
+// Hostname suffix patterns that indicate non-public resolver zones.
+// mDNS (.local), private DNS (.internal), Windows domain (.localdomain) etc.
+const BLOCKED_HOSTNAME_SUFFIXES = ['.local', '.internal', '.localhost', '.localdomain'];
+
+function assertNotMetadata(hostname: string, label: string): void {
+  if (METADATA_HOSTNAME_BLOCKLIST.has(hostname)) {
+    throw new Error(`${label}: hostname '${hostname}' is not permitted`);
+  }
+  for (const suffix of BLOCKED_HOSTNAME_SUFFIXES) {
+    if (hostname.endsWith(suffix)) {
+      throw new Error(`${label}: hostname suffix '${suffix}' is not permitted`);
+    }
+  }
+}
 
 export function validateBaseUrl(manufacturer: Manufacturer, rawUrl: string): void {
   let parsed: URL;
@@ -144,9 +178,13 @@ export function validateBaseUrl(manufacturer: Manufacturer, rawUrl: string): voi
     throw new AdapterError(manufacturer, 'base_url must be a domain name, not an IP address or localhost');
   }
 
+  try {
+    assertNotMetadata(hostname, 'base_url');
+  } catch (e) {
+    throw new AdapterError(manufacturer, (e as Error).message);
+  }
+
   const allowed = BASE_URL_ALLOWLIST[manufacturer] ?? [];
-  // Empty allowlist = open (used for generic SCADA types where the host is customer-supplied
-  // but scheme + IP checks above still apply).
   if (allowed.length > 0) {
     const permitted = allowed.some(s => hostname === s || hostname.endsWith(`.${s}`));
     if (!permitted) {
@@ -156,6 +194,27 @@ export function validateBaseUrl(manufacturer: Manufacturer, rawUrl: string): voi
       );
     }
   }
+}
+
+// validateOpenBaseUrl — for custom/user-defined manufacturer slugs that are not
+// in SUPPORTED_MANUFACTURERS.  Enforces rules 1–4 (scheme, IP, metadata blocklist)
+// but skips the per-manufacturer hostname suffix check (rule 5) since the OEM
+// endpoint is not known in advance.  Do NOT use this as a general bypass.
+export function validateOpenBaseUrl(rawUrl: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error('base_url is not a valid URL');
+  }
+  if (parsed.protocol !== 'https:') {
+    throw new Error('base_url must use https:');
+  }
+  const hostname = parsed.hostname.toLowerCase();
+  if (IP_LITERAL_RE.test(hostname) || hostname === 'localhost' || hostname.endsWith('.localhost')) {
+    throw new Error('base_url must be a domain name, not an IP address or localhost');
+  }
+  assertNotMetadata(hostname, 'base_url');
 }
 
 // Checked fetch: validates base URL then fetches with redirect: 'manual'

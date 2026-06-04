@@ -26,6 +26,7 @@ import { AppError, ErrorCode } from '../utils/types';
 import {
   getRealtimeReading,
   validateBaseUrl,
+  validateOpenBaseUrl,
   SUPPORTED_MANUFACTURERS,
   MANUFACTURER_TECH,
   type Manufacturer,
@@ -132,14 +133,16 @@ mr.post('/credentials', async (c) => {
     throw new AppError(ErrorCode.VALIDATION_ERROR, 'auth_type must be oauth2_client_creds | api_key | basic | token', 400);
   }
 
-  // Validate base_url: known manufacturers use the strict hostname allowlist;
-  // custom manufacturer slugs get scheme + IP checks only (no suffix constraint).
+  // Validate base_url: known manufacturers use the strict per-OEM hostname allowlist;
+  // custom manufacturer slugs use validateOpenBaseUrl which enforces https + IP +
+  // metadata/internal hostname blocklist without a suffix constraint.
   if (b.base_url) {
     try {
-      const knownMfr = SUPPORTED_MANUFACTURERS.includes(manufacturer as Manufacturer)
-        ? (manufacturer as Manufacturer)
-        : 'hydro_scada'; // open-allowlist type — applies https + IP checks, no suffix constraint
-      validateBaseUrl(knownMfr, String(b.base_url));
+      if (SUPPORTED_MANUFACTURERS.includes(manufacturer as Manufacturer)) {
+        validateBaseUrl(manufacturer as Manufacturer, String(b.base_url));
+      } else {
+        validateOpenBaseUrl(String(b.base_url));
+      }
     } catch (e: unknown) {
       throw new AppError(ErrorCode.VALIDATION_ERROR, String((e as Error).message), 400);
     }
@@ -207,10 +210,11 @@ mr.put('/credentials/:id', async (c) => {
   // Validate updated base_url (SSRF prevention)
   if (b.base_url) {
     try {
-      const knownMfr = SUPPORTED_MANUFACTURERS.includes(existing.manufacturer as Manufacturer)
-        ? (existing.manufacturer as Manufacturer)
-        : 'hydro_scada';
-      validateBaseUrl(knownMfr, String(b.base_url));
+      if (SUPPORTED_MANUFACTURERS.includes(existing.manufacturer as Manufacturer)) {
+        validateBaseUrl(existing.manufacturer as Manufacturer, String(b.base_url));
+      } else {
+        validateOpenBaseUrl(String(b.base_url));
+      }
     } catch (e: unknown) {
       throw new AppError(ErrorCode.VALIDATION_ERROR, String((e as Error).message), 400);
     }
