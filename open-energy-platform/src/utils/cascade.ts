@@ -1734,6 +1734,15 @@ export type EventType =
   | 'lam_evt_resolve_objections' | 'lam_evt_grant_amendment'
   | 'lam_evt_refuse_amendment' | 'lam_evt_file_appeal'
   | 'lam_evt_determine_appeal' | 'lam_evt_flag_sla_breach'
+  // ─── W164: IPP Community Trust ───────────────────────────────────────────
+  | 'ipp_ctr.created' | 'ipp_ctr.sla_breached'
+  | 'ctr_evt_commence_data_preparation' | 'ctr_evt_submit_to_trustees'
+  | 'ctr_evt_complete_trustee_review' | 'ctr_evt_complete_ipp_review'
+  | 'ctr_evt_submit_to_dtic' | 'ctr_evt_commence_dtic_review'
+  | 'ctr_evt_raise_queries' | 'ctr_evt_submit_responses'
+  | 'ctr_evt_accept_report' | 'ctr_evt_reject_report'
+  | 'ctr_evt_file_appeal' | 'ctr_evt_determine_appeal'
+  | 'ctr_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2008,6 +2017,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   lta_evt: 'ipp',
   ipp_lam: 'ipp',
   lam_evt: 'ipp',
+  ipp_ctr: 'ipp',
+  ctr_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

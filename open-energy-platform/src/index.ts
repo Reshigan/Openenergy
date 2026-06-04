@@ -278,6 +278,7 @@ import ippContractorDefaultRoutes, { ippContractorDefaultSlaSweep } from './rout
 import ippEcoReportRoutes, { ippEcoReportSlaSweep } from './routes/ipp-eco-report';
 import ippLtaCertificateRoutes, { ippLtaCertificateSlaSweep } from './routes/ipp-lta-certificate';
 import ippLandAmendmentRoutes, { ippLandAmendmentSlaSweep } from './routes/ipp-land-amendment';
+import ippCommunityTrustRoutes, { ippCommunityTrustSlaSweep } from './routes/ipp-community-trust';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -887,6 +888,7 @@ app.route('/api/ipp-contractor-default', ippContractorDefaultRoutes);
 app.route('/api/ipp-eco-report', ippEcoReportRoutes);
 app.route('/api/ipp-lta-certificate', ippLtaCertificateRoutes);
 app.route('/api/ipp-land-amendment', ippLandAmendmentRoutes);
+app.route('/api/ipp-community-trust', ippCommunityTrustRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2291,6 +2293,10 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       // W163: refuse_amendment crosses EVERY tier; grant_amendment crosses major+.
       await safe('ipp_land_amendment_sla_sweep', async () => {
         await ippLandAmendmentSlaSweep(env as never);
+      });
+      // W164: reject_report crosses EVERY tier; accept_report crosses major+.
+      await safe('ipp_community_trust_sla_sweep', async () => {
+        await ippCommunityTrustSlaSweep(env as never);
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
