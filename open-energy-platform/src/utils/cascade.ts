@@ -1683,6 +1683,14 @@ export type EventType =
   | 'ipp_coc.transfer_control' | 'ipp_coc.reject_change' | 'ipp_coc.file_appeal'
   | 'ipp_coc.determine_appeal' | 'ipp_coc.withdraw'
   | 'ipp_coc.sla_breached' | 'ipp_coc.flag_sla_breach'
+  // ─── IPP Project Refinancing & Debt Restructuring (W157) ─────────────────
+  | 'ipp_refi.created' | 'ipp_refi.sign_term_sheet' | 'ipp_refi.submit_credit'
+  | 'ipp_refi.satisfy_conditions' | 'ipp_refi.apply_sarb' | 'ipp_refi.obtain_sarb_approval'
+  | 'ipp_refi.apply_nersa_clearance' | 'ipp_refi.obtain_nersa_clearance'
+  | 'ipp_refi.finalise_documentation' | 'ipp_refi.achieve_financial_close'
+  | 'ipp_refi.reject_refinancing' | 'ipp_refi.abandon'
+  | 'ipp_refi.declare_lender_default' | 'ipp_refi.resolve_lender_default'
+  | 'ipp_refi.sla_breached' | 'ipp_refi.flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -1944,6 +1952,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ipp_tpa: 'ipp',
   ipp_ppavar: 'ipp',
   ipp_coc: 'ipp',
+  ipp_refi: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
