@@ -288,6 +288,7 @@ import ippWulRoutes, { ippWulSlaSweep } from './routes/ipp-wul';
 import ippHraRoutes, { ippHraSlaSweep } from './routes/ipp-hra';
 import ippAelRoutes, { ippAelSlaSweep } from './routes/ipp-ael';
 import ippForceMajeureRoutes, { ippForceMajeureSlaSweep } from './routes/ipp-force-majeure';
+import ippLcReportRoutes, { ippLcReportSlaSweep } from './routes/ipp-lc-report';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -907,6 +908,7 @@ app.route('/api/ipp-wul', ippWulRoutes);
 app.route('/api/ipp-hra', ippHraRoutes);
 app.route('/api/ipp-ael', ippAelRoutes);
 app.route('/api/ipp-force-majeure', ippForceMajeureRoutes);
+app.route('/api/ipp-lc-reports', ippLcReportRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2351,6 +2353,10 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       // W173: declare_arbitration + refuse_relief cross EVERY tier; confirm_relief crosses major+.
       await safe('ipp_fmr_sla_sweep', async () => {
         await ippForceMajeureSlaSweep(env as never);
+      });
+      // W174: confirm_non_compliance crosses EVERY tier; conditional_compliance medium+.
+      await safe('ipp_lcr_sla_sweep', async () => {
+        await ippLcReportSlaSweep(env as never);
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

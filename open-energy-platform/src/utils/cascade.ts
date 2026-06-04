@@ -1816,6 +1816,14 @@ export type EventType =
   | 'fmr_evt_commence_negotiation' | 'fmr_evt_confirm_relief'
   | 'fmr_evt_refuse_relief' | 'fmr_evt_declare_arbitration'
   | 'fmr_evt_flag_sla_breach'
+  // ─── W174: IPP LC/SED Quarterly Compliance ──────────────────────────────────
+  | 'ipp_lcr.created' | 'ipp_lcr.sla_breached'
+  | 'lcr_evt_commence_collection' | 'lcr_evt_submit_for_verification'
+  | 'lcr_evt_prepare_report' | 'lcr_evt_submit_report'
+  | 'lcr_evt_accept_for_review' | 'lcr_evt_request_clarification'
+  | 'lcr_evt_submit_clarification' | 'lcr_evt_commence_technical_assessment'
+  | 'lcr_evt_confirm_compliant' | 'lcr_evt_confirm_non_compliance'
+  | 'lcr_evt_grant_conditional_compliance' | 'lcr_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2110,6 +2118,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ael_evt: 'ipp',
   ipp_fmr: 'ipp',
   fmr_evt: 'ipp',
+  ipp_lcr: 'ipp',
+  lcr_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
