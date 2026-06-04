@@ -16,7 +16,7 @@
 import { Hono } from 'hono';
 import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
-import { getHistoricalData } from '../utils/inverter-adapters';
+import { getHistoricalData, getRealtimeReading } from '../utils/inverter-adapters';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -40,11 +40,60 @@ export async function computeStationAccruals(
     .first<Record<string, unknown>>();
   if (!station) return { kwh_delta: 0, rows_written: 0 };
 
-  // Current telemetry snapshot
-  const snap = await env.DB
+  // Fetch realtime reading and refresh the snapshot if it's stale (>70 min) or absent.
+  // This avoids needing manufacturer_credentials in D1 — falls back to env vars like
+  // the backfill does, so the hourly cron works out-of-the-box.
+  const snapRow = await env.DB
+    .prepare('SELECT total_kwh, updated_at FROM station_telemetry_snapshot WHERE station_id = ?')
+    .bind(stationId)
+    .first<{ total_kwh: number | null; updated_at: string | null }>();
+
+  const staleThresholdMs = 70 * 60 * 1000;
+  const snapAge = snapRow?.updated_at
+    ? Date.now() - new Date(snapRow.updated_at).getTime()
+    : Infinity;
+
+  if (snapAge > staleThresholdMs && station.manufacturer === 'solax') {
+    try {
+      const clientId = (station.client_id as string | null) ?? (env as unknown as Record<string, string>).SOLAX_CLIENT_ID ?? null;
+      const clientSecret = (station.client_secret as string | null) ?? (env as unknown as Record<string, string>).SOLAX_CLIENT_SECRET ?? null;
+      if (clientId && clientSecret) {
+        const creds = {
+          manufacturer: 'solax' as const,
+          auth_type: 'oauth2_client_creds' as const,
+          client_id: clientId, client_secret: clientSecret,
+          api_key: null, token: null, username: null, password: null,
+          base_url: (station.base_url as string | null) ?? null,
+          site_id: null, extra_config: null,
+        };
+        const reading = await getRealtimeReading(creds, station.device_sn as string);
+        const now = new Date().toISOString();
+        await env.DB
+          .prepare(`INSERT INTO station_telemetry_snapshot
+              (station_id, ts, ac_kw, dc_kw, daily_kwh, total_kwh,
+               battery_soc, temperature_c, online, raw_json, updated_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)
+            ON CONFLICT(station_id) DO UPDATE SET
+              ts=excluded.ts, ac_kw=excluded.ac_kw, dc_kw=excluded.dc_kw,
+              daily_kwh=excluded.daily_kwh, total_kwh=excluded.total_kwh,
+              battery_soc=excluded.battery_soc, temperature_c=excluded.temperature_c,
+              online=excluded.online, raw_json=excluded.raw_json, updated_at=excluded.updated_at`)
+          .bind(stationId, now,
+            reading.ac_kw ?? 0, reading.dc_kw ?? 0,
+            reading.daily_kwh ?? 0, reading.total_kwh ?? 0,
+            reading.battery_soc ?? null, reading.temperature_c ?? null,
+            reading.online ? 1 : 0,
+            JSON.stringify(reading), now)
+          .run();
+      }
+    } catch { /* non-fatal — fall through to snapshot read below */ }
+  }
+
+  const snap = snapRow ?? await env.DB
     .prepare('SELECT total_kwh FROM station_telemetry_snapshot WHERE station_id = ?')
     .bind(stationId)
     .first<{ total_kwh: number | null }>();
+
   const currentTotalKwh = snap?.total_kwh ?? 0;
   if (currentTotalKwh <= 0) return { kwh_delta: 0, rows_written: 0 };
 
