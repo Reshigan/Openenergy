@@ -1751,6 +1751,15 @@ export type EventType =
   | 'gcc_evt_note_deficiency' | 'gcc_evt_commence_corrective_action'
   | 'gcc_evt_submit_for_verification' | 'gcc_evt_certify_compliant'
   | 'gcc_evt_issue_non_compliance' | 'gcc_evt_flag_sla_breach'
+  // ─── W166: IPP CCC Negotiation ───────────────────────────────────────────
+  | 'ipp_ccc.created' | 'ipp_ccc.sla_breached'
+  | 'ccc_evt_commission_load_flow_study' | 'ccc_evt_complete_cost_assessment'
+  | 'ccc_evt_submit_for_ipp_review' | 'ccc_evt_commence_negotiation'
+  | 'ccc_evt_refer_to_expert' | 'ccc_evt_accept_expert_determination'
+  | 'ccc_evt_reach_provisional_agreement' | 'ccc_evt_file_dispute'
+  | 'ccc_evt_commence_arbitration' | 'ccc_evt_agree_ccc'
+  | 'ccc_evt_reject_ccc' | 'ccc_evt_refer_to_nersa'
+  | 'ccc_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2029,6 +2038,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ctr_evt: 'ipp',
   ipp_gcc: 'ipp',
   gcc_evt: 'ipp',
+  ipp_ccc: 'ipp',
+  ccc_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

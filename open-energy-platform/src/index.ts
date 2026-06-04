@@ -280,6 +280,7 @@ import ippLtaCertificateRoutes, { ippLtaCertificateSlaSweep } from './routes/ipp
 import ippLandAmendmentRoutes, { ippLandAmendmentSlaSweep } from './routes/ipp-land-amendment';
 import ippCommunityTrustRoutes, { ippCommunityTrustSlaSweep } from './routes/ipp-community-trust';
 import ippGridComplianceRoutes, { ippGridComplianceSlaSweep } from './routes/ipp-grid-compliance';
+import ippCccRoutes, { ippCccSlaSweep } from './routes/ipp-ccc';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -891,6 +892,7 @@ app.route('/api/ipp-lta-certificate', ippLtaCertificateRoutes);
 app.route('/api/ipp-land-amendment', ippLandAmendmentRoutes);
 app.route('/api/ipp-community-trust', ippCommunityTrustRoutes);
 app.route('/api/ipp-grid-compliance', ippGridComplianceRoutes);
+app.route('/api/ipp-ccc', ippCccRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2303,6 +2305,10 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       // W165: issue_non_compliance crosses EVERY tier; certify_compliant crosses utility+.
       await safe('ipp_grid_compliance_sla_sweep', async () => {
         await ippGridComplianceSlaSweep(env as never);
+      });
+      // W166: reject_ccc + refer_to_nersa cross EVERY tier; agree_ccc crosses major+.
+      await safe('ipp_ccc_sla_sweep', async () => {
+        await ippCccSlaSweep(env as never);
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
