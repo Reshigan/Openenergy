@@ -47,6 +47,7 @@ import { fireCascade } from '../utils/cascade';
 import { cached, invalidatePrefix, shouldBypass } from '../utils/kv-cache';
 import { hashToken, randomIngestToken } from '../utils/esums-ingest-auth';
 import { runFaultEngine } from '../utils/esums-fault-engine';
+import { writeTelemetry, readTelemetry, type TelemetryReading } from '../utils/esums-telemetry-router';
 
 const om = new Hono<HonoEnv>();
 om.use('*', authMiddleware);
@@ -238,31 +239,62 @@ om.post('/telemetry', async (c) => {
   const user = getCurrentUser(c);
   if (!canMutate(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const body = await c.req.json().catch(() => ({} as any));
-  // Accept either single point or { readings: [...] }
-  const readings = Array.isArray(body?.readings) ? body.readings : [body];
-  let written = 0;
-  for (const r of readings) {
+  const raw = Array.isArray(body?.readings) ? body.readings : [body];
+
+  // Resolve site_id + project_id for each reading, group by project shard
+  type Enriched = TelemetryReading & { _shard?: string | null };
+  const enriched: Enriched[] = [];
+  for (const r of raw) {
     if (!r.device_id || !r.ts) continue;
-    const dev = await c.env.DB.prepare('SELECT site_id FROM om_devices WHERE id = ?').bind(r.device_id).first<{ site_id: string }>();
+    const dev = await c.env.DB.prepare(`
+      SELECT d.site_id, s.project_id,
+             ep.shard_key
+      FROM om_devices d
+      JOIN om_sites s ON s.id = d.site_id
+      LEFT JOIN esums_projects ep ON ep.id = s.project_id
+      WHERE d.id = ?
+    `).bind(r.device_id).first<{ site_id: string; project_id: string | null; shard_key: string | null }>();
     if (!dev) continue;
-    const id = genId('omt');
-    await c.env.DB.prepare(`
-      INSERT INTO om_telemetry
-        (id, device_id, site_id, ts, ac_kw, dc_kw, yield_kwh, interval_kwh,
-         voltage_v, current_a, frequency_hz, temperature_c, irradiance_w_m2,
-         status_code, quality)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-    `).bind(
-      id, r.device_id, dev.site_id, r.ts,
-      num(r.ac_kw), num(r.dc_kw), num(r.yield_kwh), num(r.interval_kwh),
-      num(r.voltage_v), num(r.current_a), num(r.frequency_hz),
-      num(r.temperature_c), num(r.irradiance_w_m2),
-      r.status_code || null, r.quality || 'valid',
-    ).run();
-    // Keep last_seen_at fresh
-    await c.env.DB.prepare(`UPDATE om_devices SET last_seen_at = ? WHERE id = ?`).bind(r.ts, r.device_id).run();
-    written += 1;
+
+    enriched.push({
+      id: genId('omt'),
+      device_id: r.device_id,
+      site_id: dev.site_id,
+      project_id: dev.project_id,
+      ts: r.ts,
+      ac_kw: num(r.ac_kw),
+      dc_kw: num(r.dc_kw),
+      yield_kwh: num(r.yield_kwh),
+      interval_kwh: num(r.interval_kwh),
+      voltage_v: num(r.voltage_v),
+      current_a: num(r.current_a),
+      frequency_hz: num(r.frequency_hz),
+      temperature_c: num(r.temperature_c),
+      irradiance_w_m2: num(r.irradiance_w_m2),
+      status_code: r.status_code || null,
+      quality: r.quality || 'valid',
+      _shard: dev.shard_key,
+    });
   }
+
+  // Fan out to each shard bucket — usually all the same shard
+  const shards = new Map<string | null, Enriched[]>();
+  for (const row of enriched) {
+    const key = row._shard ?? null;
+    if (!shards.has(key)) shards.set(key, []);
+    shards.get(key)!.push(row);
+  }
+
+  let written = 0;
+  for (const [shardKey, rows] of shards) {
+    written += await writeTelemetry(c.env as any, rows, shardKey);
+  }
+
+  // Keep last_seen_at fresh (always hits main DB — device table lives there)
+  for (const r of enriched) {
+    await c.env.DB.prepare(`UPDATE om_devices SET last_seen_at = ? WHERE id = ?`).bind(r.ts, r.device_id).run();
+  }
+
   return c.json({ success: true, data: { written } });
 });
 
@@ -275,15 +307,18 @@ function num(v: any): number | null {
 om.get('/telemetry/:device_id', async (c) => {
   const deviceId = c.req.param('device_id');
   const hours = Math.min(168, Math.max(1, Number(c.req.query('hours') || 24)));
-  const rows = await c.env.DB.prepare(`
-    SELECT ts, ac_kw, dc_kw, interval_kwh, temperature_c, irradiance_w_m2, status_code, quality
-    FROM om_telemetry
-    WHERE device_id = ?
-      AND ts >= datetime('now', ? || ' hours')
-    ORDER BY ts ASC
-    LIMIT 5000
-  `).bind(deviceId, `-${hours}`).all();
-  return c.json({ success: true, data: rows.results || [] });
+
+  // Resolve project shard for this device
+  const dev = await c.env.DB.prepare(`
+    SELECT ep.shard_key
+    FROM om_devices d
+    JOIN om_sites s ON s.id = d.site_id
+    LEFT JOIN esums_projects ep ON ep.id = s.project_id
+    WHERE d.id = ?
+  `).bind(deviceId).first<{ shard_key: string | null }>();
+
+  const data = await readTelemetry(c.env as any, deviceId, hours, dev?.shard_key);
+  return c.json({ success: true, data });
 });
 
 // ─── Faults — Revenue Impact Engine baked in ─────────────────────────────

@@ -9,6 +9,31 @@ export interface WorkersAI {
   run: (model: string, input: Record<string, unknown>) => Promise<unknown>;
 }
 
+// Analytics Engine dataset — high-frequency time-series (Esums telemetry,
+// metering events). Write-only from Workers; read via CF Analytics Engine
+// SQL API (https://developers.cloudflare.com/analytics/analytics-engine/sql-api/).
+export interface AnalyticsEngineDataset {
+  writeDataPoint(event: {
+    blobs?: (string | null | undefined)[];
+    doubles?: (number | null | undefined)[];
+    indexes?: string[];
+  }): void;
+}
+
+// Hyperdrive connection pooler — wraps an external Postgres database
+// (Neon, Supabase, PlanetScale, AWS RDS) at the Cloudflare edge.
+// Use for transaction-heavy tables that need true MVCC/ACID beyond D1's
+// SQLite WAL envelope. See src/utils/db-adapter.ts for usage.
+export interface HyperdriveBinding {
+  /** Postgres connection string injected by Hyperdrive. Pass to `postgres()`. */
+  connectionString: string;
+  host: string;
+  port: number;
+  user: string;
+  password: string;
+  database: string;
+}
+
 // Cloudflare Bindings Interface — the shape of `env` injected into Workers.
 // This is what `c.env` resolves to inside a Hono handler.
 export interface HonoBindings {
@@ -20,24 +45,40 @@ export interface HonoBindings {
   ESCROW_MGR: DurableObjectNamespace;
   RISK_ENGINE: DurableObjectNamespace;
   SMART_CONTRACT: DurableObjectNamespace;
-  // Metering write shard — current-month D1 separated from the main DB so
-  // hot writes don't sit on the same disk as contracts / participants /
-  // settlement. Optional: when absent, callers fall back to env.DB.
-  // See src/utils/metering-router.ts for the routing logic.
+
+  // ── Metering shards ───────────────────────────────────────────────────────
+  // Current-month D1 for hot metering writes — see metering-router.ts.
   METERING_DB_CURRENT?: D1Database;
-  // Static assets binding — Cloudflare's Worker+assets model serves the
-  // React SPA through this binding. Everything under /api/* is handled
-  // by the Hono router; anything else falls through to ASSETS.
+
+  // ── Esums storage tiers ───────────────────────────────────────────────────
+  // Tier 2: Dedicated telemetry D1 (all sites, separate from main DB).
+  //   Provision: wrangler d1 create esums-telemetry
+  ESUMS_TELEMETRY_DB?: D1Database;
+  // Tier 3: Per-project D1 shards (ESUMS_DB_<SHARD_KEY>).
+  //   Provision: wrangler d1 create esums-<project-key>
+  //   Bind as ESUMS_DB_MYPROJECT in wrangler.toml.
+  //   Large deployments only; set shard_key on the esums_projects row.
+  // Tier 4: Analytics Engine — high-frequency side-write for dashboards.
+  //   Provision: add [[analytics_engine_datasets]] block in wrangler.toml.
+  TELEMETRY?: AnalyticsEngineDataset;
+
+  // ── Hyperdrive (Postgres) — Tier 5 ───────────────────────────────────────
+  // Activate for transaction-heavy workloads that exceed D1's SQLite envelope:
+  //   wrangler hyperdrive create open-energy-pg \
+  //     --connection-string "postgres://user:pass@host:5432/db"
+  // Then uncomment the [[hyperdrive]] block in wrangler.toml and set tables
+  // to route via db-adapter.ts. Start with new high-volume tables; existing
+  // D1 tables can be migrated incrementally.
+  HYPERDRIVE?: HyperdriveBinding;
+
+  // ── Platform ──────────────────────────────────────────────────────────────
   ASSETS?: { fetch: (req: Request) => Promise<Response> };
   JWT_SECRET: string;
-  // Microsoft Entra ID SSO bindings (optional — when unset, SSO is disabled)
   AZURE_AD_CLIENT_ID?: string;
   AZURE_AD_TENANT_ID?: string;
   AZURE_AD_CLIENT_SECRET?: string;
   AZURE_AD_REDIRECT_URI?: string;
   APP_BASE_URL?: string;
-  // Shared secret used by the scheduled GitHub Actions cron job to trigger
-  // /api/backup/run without a user JWT. Set via `wrangler secret put BACKUP_TOKEN`.
   BACKUP_TOKEN?: string;
 }
 

@@ -86,6 +86,44 @@ new_sqlite_classes = ["OrderBook"]
 # database_name = "open-energy-metering-current"
 # database_id = "<id-returned-by-wrangler-d1-create>"
 
+# ── Esums Telemetry Tier 2: Dedicated telemetry D1 ────────────────────────────
+# Isolates high-frequency sensor writes from the main business-logic DB.
+# Activate when you have 10+ sites or want to keep om_telemetry off the
+# main 10 GB envelope.
+#   wrangler d1 create esums-telemetry
+# [[d1_databases]]
+# binding = "ESUMS_TELEMETRY_DB"
+# database_name = "esums-telemetry"
+# database_id = "<id-returned-by-wrangler-d1-create>"
+# migrations_dir = "migrations"   # migration 380 creates esums_telemetry table
+
+# ── Esums Telemetry Tier 3: Per-project D1 shard ──────────────────────────────
+# One D1 per large project (>50 sites). Set shard_key on the esums_projects row
+# then add the binding here. The telemetry router resolves it automatically.
+#   wrangler d1 create esums-myproject
+# [[d1_databases]]
+# binding = "ESUMS_DB_MYPROJECT"      ← uppercase shard_key
+# database_name = "esums-myproject"
+# database_id = "<id-returned-by-wrangler-d1-create>"
+
+# ── Esums Telemetry Tier 4: Analytics Engine (unlimited scale side-write) ──────
+# Captures every data point for long-term analytics and dashboards.
+# Query via CF Analytics Engine SQL API — reads do NOT go through this Worker.
+# Activate: uncomment and redeploy. No wrangler create command needed.
+# [[analytics_engine_datasets]]
+# binding = "TELEMETRY"
+# dataset = "esums_telemetry"
+
+# ── Tier 5: Hyperdrive → Postgres (transaction-heavy workloads) ───────────────
+# Use for tables that need true MVCC, window functions, or > 10 GB.
+# Recommended: Neon (serverless Postgres, instant branching, SA-proxied).
+#   wrangler hyperdrive create open-energy-pg \
+#     --connection-string "postgres://user:pass@neon-host:5432/open_energy"
+# Then route affected tables via src/utils/db-adapter.ts.
+# [[hyperdrive]]
+# binding = "HYPERDRIVE"
+# id = "<id-returned-by-wrangler-hyperdrive-create>"
+
 # Scheduled handlers — the Worker's `scheduled()` export in src/index.ts
 # dispatches by cron pattern. Each entry maps to a named job inside the
 # handler. Cloudflare runs these independently of HTTP traffic.
