@@ -1824,6 +1824,14 @@ export type EventType =
   | 'lcr_evt_submit_clarification' | 'lcr_evt_commence_technical_assessment'
   | 'lcr_evt_confirm_compliant' | 'lcr_evt_confirm_non_compliance'
   | 'lcr_evt_grant_conditional_compliance' | 'lcr_evt_flag_sla_breach'
+  // ─── W175: IPP REIPPPP Milestone Certification ──────────────────────────────
+  | 'ipp_mc.created' | 'ipp_mc.sla_breached'
+  | 'mc_evt_commence_documentation' | 'mc_evt_submit_for_ie_review'
+  | 'mc_evt_submit_to_ipp_office' | 'mc_evt_acknowledge_receipt'
+  | 'mc_evt_commence_technical_verification' | 'mc_evt_request_clarification'
+  | 'mc_evt_submit_clarification' | 'mc_evt_commence_final_review'
+  | 'mc_evt_certify_milestone' | 'mc_evt_reject_milestone'
+  | 'mc_evt_lapse_milestone' | 'mc_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2120,6 +2128,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   fmr_evt: 'ipp',
   ipp_lcr: 'ipp',
   lcr_evt: 'ipp',
+  ipp_mc: 'ipp',
+  mc_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
