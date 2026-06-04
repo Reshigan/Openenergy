@@ -260,6 +260,16 @@ import ippTqRoutes, { ippTqSlaSweep } from './routes/ipp-tq';
 import ippDiaryRoutes, { ippDiarySlaSweep } from './routes/ipp-diary';
 import ippSiteInstructionRoutes, { ippSiteInstructionSlaSweep } from './routes/ipp-site-instruction';
 import ippDlpDefectRoutes, { ippDlpDefectSlaSweep } from './routes/ipp-dlp-defect';
+import ippVariationOrderRoutes, { ippVariationOrderSlaSweep } from './routes/ipp-variation-order';
+import ippPaymentCertRoutes, { ippPaymentCertSlaSweep } from './routes/ipp-payment-cert';
+import ippFinalCompletionRoutes, { ippFinalCompletionSlaSweep } from './routes/ipp-final-completion';
+import ippOmHandoverRoutes, { ippOmHandoverSlaSweep } from './routes/ipp-om-handover';
+import ippLandRegisterRoutes, { ippLandRegisterSlaSweep } from './routes/ipp-land-register';
+import ippEnvClosureRoutes, { ippEnvClosureSlaSweep } from './routes/ipp-env-closure';
+import ippCommissioningTestRoutes, { ippCommissioningTestSlaSweep } from './routes/ipp-commissioning-test';
+import ippIeCertRoutes, { ippIeCertSlaSweep } from './routes/ipp-ie-cert';
+import ippTpaRoutes, { ippTpaSlaSweep } from './routes/ipp-tpa';
+import ippPpaVariationRoutes, { ippPpaVariationSlaSweep } from './routes/ipp-ppa-variation';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -838,6 +848,26 @@ app.route('/api/ipp-site-instruction', ippSiteInstructionRoutes);
 // W145 DLP Defects Register — JBCC Cl.19/32 + NEC4 Cl.43 + REIPPPP QMP
 // SIGNATURE: ie_reject → escalated_to_ncr EVERY tier; notify_defect crosses when safety/structural
 app.route('/api/ipp-dlp-defect', ippDlpDefectRoutes);
+// W146: JBCC Cl.38-39 / NEC4 Cl.60-62; INVERTED SLA; refer_adjudication crosses EVERY tier
+app.route('/api/ipp-variation-order', ippVariationOrderRoutes);
+// W147: JBCC Cl.40-43 / NEC4 Cl.51; INVERTED SLA; refer_adjudication + certify_final cross
+app.route('/api/ipp-payment-cert', ippPaymentCertRoutes);
+// W148: JBCC Cl.27-29 / NEC4 Cl.53-54; INVERTED SLA; issue_fcc crosses EVERY tier
+app.route('/api/ipp-final-completion', ippFinalCompletionRoutes);
+// W149: OHSA §8 + IEC 62446-1; INVERTED SLA; accept_handover crosses EVERY tier
+app.route('/api/ipp-om-handover', ippOmHandoverRoutes);
+// W150: Deeds Act 47/1937 + SPLUMA; INVERTED SLA; lodge_deeds crosses EVERY tier
+app.route('/api/ipp-land-register', ippLandRegisterRoutes);
+// W151: NEMA 107/1998 §24G + EIA Regs 2014; INVERTED SLA; issue_closure_cert crosses EVERY tier
+app.route('/api/ipp-env-closure', ippEnvClosureRoutes);
+// W152: IEC 61724-1 + NERSA Grid Code §C-5; PAC/FAC; INVERTED SLA; issue_performance_cert crosses EVERY tier
+app.route('/api/ipp-commissioning-test', ippCommissioningTestRoutes);
+// W153: REIPPPP Schedule 5 + LMA IE role; INVERTED SLA; issue_cert crosses EVERY tier
+app.route('/api/ipp-ie-cert', ippIeCertRoutes);
+// W154: ERA §22 + Grid Code §C-2; INVERTED SLA; sign_tpa_agreement crosses EVERY tier
+app.route('/api/ipp-tpa', ippTpaRoutes);
+// W155: ERA §35 PPA variation; INVERTED SLA; approve_variation crosses EVERY tier
+app.route('/api/ipp-ppa-variation', ippPpaVariationRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2168,6 +2198,48 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_dlp_defect_sla_sweep', async () => {
         const result = await ippDlpDefectSlaSweep(env as never);
         console.log('ipp_dlp_defect_sla_sweep', JSON.stringify(result));
+      });
+      // W146 — IPP Variation Order SLA sweep (INVERTED SLA: material 45d, minor 7d).
+      // refer_adjudication crosses regulator EVERY tier (SIGNATURE).
+      await safe('ipp_variation_order_sla_sweep', async () => {
+        await ippVariationOrderSlaSweep(env as never);
+      });
+      // W147 — IPP Payment Certificate SLA sweep; also marks certified → lapsed.
+      // refer_adjudication crosses EVERY tier; certify_final crosses major/material.
+      await safe('ipp_payment_cert_sla_sweep', async () => {
+        await ippPaymentCertSlaSweep(env as never);
+      });
+      // W148: issue_fcc crosses regulator EVERY tier (COD milestone); reject crosses major/material.
+      await safe('ipp_final_completion_sla_sweep', async () => {
+        await ippFinalCompletionSlaSweep(env as never);
+      });
+      // W149: accept_handover crosses EVERY tier (COD gate); reject crosses major/material.
+      await safe('ipp_om_handover_sla_sweep', async () => {
+        await ippOmHandoverSlaSweep(env as never);
+      });
+      // W150: lodge_deeds crosses EVERY tier; reject_survey crosses major/material.
+      await safe('ipp_land_register_sla_sweep', async () => {
+        await ippLandRegisterSlaSweep(env as never);
+      });
+      // W151: issue_closure_cert crosses EVERY tier; reject_application crosses major/material.
+      await safe('ipp_env_closure_sla_sweep', async () => {
+        await ippEnvClosureSlaSweep(env as never);
+      });
+      // W152: issue_performance_cert crosses EVERY tier; declare_test_failure crosses major/material.
+      await safe('ipp_commissioning_test_sla_sweep', async () => {
+        await ippCommissioningTestSlaSweep(env as never);
+      });
+      // W153: issue_cert crosses EVERY tier; reject_certification crosses major/material.
+      await safe('ipp_ie_cert_sla_sweep', async () => {
+        await ippIeCertSlaSweep(env as never);
+      });
+      // W154: sign_tpa_agreement crosses EVERY tier; reject_application crosses major/material.
+      await safe('ipp_tpa_sla_sweep', async () => {
+        await ippTpaSlaSweep(env as never);
+      });
+      // W155: approve_variation crosses EVERY tier; reject_variation + file_appeal cross major/material.
+      await safe('ipp_ppavar_sla_sweep', async () => {
+        await ippPpaVariationSlaSweep(env as never);
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

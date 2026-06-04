@@ -43,6 +43,16 @@ import IppTqTab from '../ippTq/IppTqTab';
 import { IppDiaryTab } from '../ipp/IppDiaryTab';
 import { IppSiteInstructionTab } from '../ipp/IppSiteInstructionTab';
 import { IppDlpDefectTab } from '../ipp/IppDlpDefectTab';
+import { IppVariationOrderTab } from '../ipp/IppVariationOrderTab';
+import { IppPaymentCertTab } from '../ipp/IppPaymentCertTab';
+import { IppFinalCompletionTab } from '../ipp/IppFinalCompletionTab';
+import { IppOmHandoverTab } from '../ipp/IppOmHandoverTab';
+import { IppLandRegisterTab } from '../ipp/IppLandRegisterTab';
+import { IppEnvClosureTab } from '../ipp/IppEnvClosureTab';
+import { IppCommissioningTestTab } from '../ipp/IppCommissioningTestTab';
+import { IppIeCertTab } from '../ipp/IppIeCertTab';
+import { IppTpaTab } from '../ipp/IppTpaTab';
+import { IppPpaVariationTab } from '../ipp/IppPpaVariationTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -76,6 +86,16 @@ export function IppWorkstationPage() {
         { key: 'technical-queries', label: 'Technical queries', group: 'Documents', body: () => <IppTqTab /> },
         { key: 'site-instructions', label: 'Site instructions (W144)', group: 'Documents', body: () => <IppSiteInstructionTab /> },
         { key: 'dlp-defects', label: 'DLP defects (W145)', group: 'Documents', body: () => <IppDlpDefectTab /> },
+        { key: 'variation-orders', label: 'Variation orders (W146)', group: 'Documents', body: () => <IppVariationOrderTab /> },
+        { key: 'payment-certs', label: 'Payment certs (W147)', group: 'Documents', body: () => <IppPaymentCertTab /> },
+        { key: 'final-completion', label: 'Final completion (W148)', group: 'Documents', body: () => <IppFinalCompletionTab /> },
+        { key: 'om-handover', label: 'O&M handover (W149)', group: 'Documents', body: () => <IppOmHandoverTab /> },
+        { key: 'land-register', label: 'Land register (W150)', group: 'Documents', body: () => <IppLandRegisterTab /> },
+        { key: 'env-closure', label: 'Env closure (W151)', group: 'Documents', body: () => <IppEnvClosureTab /> },
+        { key: 'commissioning-test', label: 'Commissioning test (W152)', group: 'Documents', body: () => <IppCommissioningTestTab /> },
+        { key: 'ie-cert', label: 'IE certifications (W153)', group: 'Documents', body: () => <IppIeCertTab /> },
+        { key: 'tpa-wheeling', label: 'TPA wheeling (W154)', group: 'Documents', body: () => <IppTpaTab /> },
+        { key: 'ppa-variation', label: 'PPA variations (W155)', group: 'Documents', body: () => <IppPpaVariationTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },

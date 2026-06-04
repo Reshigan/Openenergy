@@ -1614,6 +1614,67 @@ export type EventType =
   | 'ipp_dlp.ie_accept' | 'ipp_dlp.ie_reject' | 'ipp_dlp.close_defect'
   | 'ipp_dlp.dispute_rectification' | 'ipp_dlp.resolve_dispute' | 'ipp_dlp.waive_defect'
   | 'ipp_dlp.cancel_defect' | 'ipp_dlp.flag_sla_breach'
+  // ─── W146: IPP Variation Orders ─────────────────────────────────────────────
+  | 'ipp_vo.instructed' | 'ipp_vo.acknowledge_instruction' | 'ipp_vo.submit_quotation'
+  | 'ipp_vo.review_quotation' | 'ipp_vo.approve_variation' | 'ipp_vo.reject_variation'
+  | 'ipp_vo.commence_work' | 'ipp_vo.complete_work' | 'ipp_vo.certify_payment'
+  | 'ipp_vo.dispute_pricing' | 'ipp_vo.resolve_dispute' | 'ipp_vo.refer_adjudication'
+  | 'ipp_vo.cancel_instruction' | 'ipp_vo.sla_breached' | 'ipp_vo.flag_sla_breach'
+  // ─── W147: IPP Payment Certificates ────────────────────────────────────────
+  | 'ipp_pc.created' | 'ipp_pc.submit_claim' | 'ipp_pc.assess_claim'
+  | 'ipp_pc.certify_payment' | 'ipp_pc.confirm_payment' | 'ipp_pc.certify_final'
+  | 'ipp_pc.dispute_certificate' | 'ipp_pc.revise_certificate' | 'ipp_pc.refer_adjudication'
+  | 'ipp_pc.reject_claim' | 'ipp_pc.withdraw_claim' | 'ipp_pc.mark_lapsed'
+  | 'ipp_pc.sla_breached' | 'ipp_pc.flag_sla_breach'
+  // ─── W148 Final Completion Certificate
+  | 'ipp_fcc.application_submitted' | 'ipp_fcc.schedule_inspection' | 'ipp_fcc.complete_inspection'
+  | 'ipp_fcc.issue_snag_list' | 'ipp_fcc.clear_snag_list' | 'ipp_fcc.issue_fcc'
+  | 'ipp_fcc.release_retention' | 'ipp_fcc.reject_application' | 'ipp_fcc.dispute_rejection'
+  | 'ipp_fcc.refer_adjudication' | 'ipp_fcc.withdraw_application'
+  | 'ipp_fcc.sla_breached' | 'ipp_fcc.flag_sla_breach'
+  // ─── W149 O&M Handover Pack
+  | 'ipp_omh.created' | 'ipp_omh.submit_for_internal_review' | 'ipp_omh.approve_internal'
+  | 'ipp_omh.submit_to_om' | 'ipp_omh.raise_deficiencies' | 'ipp_omh.resolve_deficiencies'
+  | 'ipp_omh.accept_handover' | 'ipp_omh.conditionally_accept' | 'ipp_omh.reject_handover'
+  | 'ipp_omh.supersede' | 'ipp_omh.archive' | 'ipp_omh.withdraw'
+  | 'ipp_omh.sla_breached' | 'ipp_omh.flag_sla_breach'
+  // ─── W150 As-Built Survey & Land Register
+  | 'ipp_lr.survey_commissioned' | 'ipp_lr.commence_field_survey' | 'ipp_lr.submit_diagram'
+  | 'ipp_lr.sg_approve' | 'ipp_lr.notarise_servitude' | 'ipp_lr.lodge_deeds'
+  | 'ipp_lr.confirm_registration' | 'ipp_lr.raise_defective_title' | 'ipp_lr.resolve_defective_title'
+  | 'ipp_lr.reject_survey' | 'ipp_lr.abandon' | 'ipp_lr.supersede'
+  | 'ipp_lr.sla_breached' | 'ipp_lr.flag_sla_breach'
+  // ─── IPP Env Closure (W151) ──────────────────────────────────────────────
+  | 'ipp_ec.created' | 'ipp_ec.commence_inspection' | 'ipp_ec.draft_report'
+  | 'ipp_ec.commence_stakeholder_review' | 'ipp_ec.raise_remediation' | 'ipp_ec.confirm_remediation'
+  | 'ipp_ec.recommend_closure' | 'ipp_ec.submit_to_nema' | 'ipp_ec.nema_commence_review'
+  | 'ipp_ec.issue_closure_cert' | 'ipp_ec.reject_application' | 'ipp_ec.withdraw'
+  | 'ipp_ec.sla_breached' | 'ipp_ec.flag_sla_breach'
+  // ─── IPP Commissioning Test (W152) ───────────────────────────────────────
+  | 'ipp_ct.created' | 'ipp_ct.commence_witness_inspection' | 'ipp_ct.open_hold_point'
+  | 'ipp_ct.clear_hold_point' | 'ipp_ct.start_performance_test' | 'ipp_ct.issue_punch_list'
+  | 'ipp_ct.clear_punch_list' | 'ipp_ct.recommend_pac' | 'ipp_ct.issue_pac'
+  | 'ipp_ct.start_post_pac_test' | 'ipp_ct.recommend_fac' | 'ipp_ct.issue_performance_cert'
+  | 'ipp_ct.declare_test_failure' | 'ipp_ct.withdraw'
+  | 'ipp_ct.sla_breached' | 'ipp_ct.flag_sla_breach'
+  // ─── IPP IE Milestone Certification (W153) ───────────────────────────────
+  | 'ipp_ie.created' | 'ipp_ie.commence_site_visit' | 'ipp_ie.prepare_draft'
+  | 'ipp_ie.issue_for_borrower_review' | 'ipp_ie.raise_comments' | 'ipp_ie.resolve_comments'
+  | 'ipp_ie.issue_cert' | 'ipp_ie.reject_certification' | 'ipp_ie.withdraw'
+  | 'ipp_ie.sla_breached' | 'ipp_ie.flag_sla_breach'
+  // ─── IPP TPA Wheeling Agreement (W154) ───────────────────────────────────
+  | 'ipp_tpa.created' | 'ipp_tpa.commence_review' | 'ipp_tpa.commence_technical_assessment'
+  | 'ipp_tpa.propose_commercial_terms' | 'ipp_tpa.commence_negotiation' | 'ipp_tpa.agree_terms'
+  | 'ipp_tpa.sign_tpa_agreement' | 'ipp_tpa.activate_wheeling' | 'ipp_tpa.reject_application'
+  | 'ipp_tpa.file_appeal' | 'ipp_tpa.determine_appeal' | 'ipp_tpa.withdraw'
+  | 'ipp_tpa.sla_breached' | 'ipp_tpa.flag_sla_breach'
+  // ─── IPP PPA Variation & Amendment (W155) ────────────────────────────────
+  | 'ipp_ppavar.created' | 'ipp_ppavar.commence_screen' | 'ipp_ppavar.submit_technical'
+  | 'ipp_ppavar.commence_commercial' | 'ipp_ppavar.open_public_participation'
+  | 'ipp_ppavar.close_public_participation' | 'ipp_ppavar.approve_variation'
+  | 'ipp_ppavar.amend_ppa' | 'ipp_ppavar.reject_variation' | 'ipp_ppavar.file_appeal'
+  | 'ipp_ppavar.determine_appeal' | 'ipp_ppavar.withdraw'
+  | 'ipp_ppavar.sla_breached' | 'ipp_ppavar.flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -1864,6 +1925,16 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ipp_diary: 'ipp',
   ipp_si: 'ipp',
   ipp_dlp: 'ipp',
+  ipp_vo: 'ipp',
+  ipp_pc: 'ipp',
+  ipp_fcc: 'ipp',
+  ipp_omh: 'ipp',
+  ipp_lr: 'ipp',
+  ipp_ec: 'ipp',
+  ipp_ct: 'ipp',
+  ipp_ie: 'ipp',
+  ipp_tpa: 'ipp',
+  ipp_ppavar: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
