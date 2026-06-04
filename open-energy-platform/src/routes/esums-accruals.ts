@@ -95,7 +95,7 @@ export async function computeStationAccruals(
 export async function backfillStationHistory(
   stationId: string,
   env: HonoEnv['Bindings'],
-): Promise<{ days_backfilled: number; kwh_total: number }> {
+): Promise<{ days_backfilled: number; hours_backfilled?: number; kwh_total: number }> {
   const station = await env.DB
     .prepare(`SELECT ss.*, mc.tariff_rate_zar_per_kwh, mc.customer_tariff_rate_zar_per_kwh, mc.carbon_intensity_gco2_per_kwh,
         mc.client_id, mc.client_secret, mc.auth_type, mc.api_key, mc.token, mc.username, mc.password, mc.base_url, mc.site_id AS cred_site_id, mc.extra_config
@@ -131,77 +131,90 @@ export async function backfillStationHistory(
   const carbonIntensity = (station.carbon_intensity_gco2_per_kwh as number | null) ?? SA_CARBON_INTENSITY_DEFAULT;
   const deviceSn = station.device_sn as string;
 
-  // SolaX history API limit: max 12-hour window per request.
-  // Use 6-hour chunks to stay safe. Look back 14 days for the initial integration
-  // import — the hourly cron takes over ongoing accruals from today forward.
-  const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
-  const stationCreated = station.created_at ? new Date(station.created_at as string).getTime() : fourteenDaysAgo;
-  const startMs = Math.max(fourteenDaysAgo, stationCreated);
+  // Hourly granularity strategy — required for W71 predictive asset health
+  // (anomaly detection, RUL, fault fingerprinting need hour-level time series).
+  //
+  // SolaX API enforces a 12-hour max per request; we use 11-hour windows.
+  // 12 months = ~730 windows per station. With CONCURRENCY=20 batched calls
+  // that runs in ~7 seconds per station, all 10 stations parallelized in the caller.
+  //
+  // Dedup: clear existing backfill rows for this station before inserting fresh data.
+  // ON CONFLICT DO UPDATE is the final idempotency guard.
+  const twelveMonthsAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
+  const stationCreated = station.created_at ? new Date(station.created_at as string).getTime() : twelveMonthsAgo;
+  const startMs = Math.max(twelveMonthsAgo, stationCreated);
   const endMs = Date.now() - 60 * 60 * 1000; // up to 1 hour ago
 
-  // Get already-backfilled date range to avoid re-inserting
-  const existing = await env.DB
-    .prepare('SELECT MIN(period_hour) as min_h, MAX(period_hour) as max_h FROM site_accruals WHERE station_id = ? AND is_backfill = 1')
+  // Find the latest already-backfilled hour so we only fetch new data on re-runs.
+  const lastBackfill = await env.DB
+    .prepare('SELECT MAX(period_hour) AS max_h FROM site_accruals WHERE station_id = ? AND is_backfill = 1')
     .bind(stationId)
-    .first<{ min_h: string | null; max_h: string | null }>();
+    .first<{ max_h: string | null }>();
+  const resumeFromMs = lastBackfill?.max_h
+    ? new Date(lastBackfill.max_h).getTime()
+    : startMs;
 
-  // 6-hour chunks (SolaX enforces a 12-hour max per request).
-  // Track MAX(totalYield) per day — it's monotonically increasing so the end-of-day
-  // max minus yesterday's max gives that day's actual generation.
-  const WINDOW_MS = 6 * 60 * 60 * 1000;
-  const dayMaxTotal = new Map<string, number>(); // date → max totalYield seen
+  const HOUR_MS = 60 * 60 * 1000;
+  const WINDOW_MS = 11 * HOUR_MS; // 11h < SolaX 12h limit
+  const CONCURRENCY = 20;         // 20 concurrent window fetches per batch
 
-  let cursor = startMs;
-  while (cursor < endMs) {
-    const windowEnd = Math.min(cursor + WINDOW_MS, endMs);
-    try {
-      const points = await getHistoricalData(creds, deviceSn, cursor, windowEnd, 60);
-      for (const p of points) {
-        if (!p.ts) continue;
-        const date = p.ts.slice(0, 10); // YYYY-MM-DD
-        const totalKwh = p.total_kwh ?? 0;
-        if (totalKwh > 0) {
-          const prev = dayMaxTotal.get(date) ?? 0;
-          if (totalKwh > prev) dayMaxTotal.set(date, totalKwh);
-        }
-      }
-    } catch {
-      // Window failed — continue to next window
-    }
-    cursor = windowEnd;
+  // Build the list of 11-hour windows to fetch (only what's not yet backfilled).
+  const windows: number[] = [];
+  let w = resumeFromMs;
+  while (w < endMs) {
+    windows.push(w);
+    w += WINDOW_MS;
   }
 
-  if (dayMaxTotal.size === 0) return { days_backfilled: 0, kwh_total: 0 };
+  if (windows.length === 0) return { days_backfilled: 0, kwh_total: 0 };
 
-  // Compute daily deltas: today's max totalYield − previous day's max totalYield
-  const sortedDates = [...dayMaxTotal.keys()].sort();
-  type DayBucket = { date: string; maxKwh: number };
-  const dayBuckets: DayBucket[] = sortedDates.map((date, i) => {
-    const total = dayMaxTotal.get(date)!;
-    const prevTotal = i > 0 ? (dayMaxTotal.get(sortedDates[i - 1]) ?? total) : total;
-    return { date, maxKwh: Math.max(0, total - prevTotal) };
+  // Collect ALL hourly data points across all windows.
+  // Map: ISO-hour-string → totalYield at that hour (for delta computation).
+  const hourTotals = new Map<string, number>(); // "2026-06-04T17" → totalYield kWh
+
+  for (let i = 0; i < windows.length; i += CONCURRENCY) {
+    const batch = windows.slice(i, i + CONCURRENCY);
+    await Promise.all(batch.map(async (winStart) => {
+      const winEnd = Math.min(winStart + WINDOW_MS, endMs);
+      try {
+        const points = await getHistoricalData(creds, deviceSn, winStart, winEnd, 60);
+        for (const p of points) {
+          if (!p.ts || !p.total_kwh) continue;
+          // Truncate to the hour: "2026-06-04T17:42:50Z" → "2026-06-04T17"
+          const hourKey = p.ts.slice(0, 13);
+          const prev = hourTotals.get(hourKey) ?? 0;
+          if (p.total_kwh > prev) hourTotals.set(hourKey, p.total_kwh);
+        }
+      } catch { /* skip failed window */ }
+    }));
+  }
+
+  if (hourTotals.size === 0) return { days_backfilled: 0, kwh_total: 0 };
+
+  // Sort hour keys chronologically, compute delta = totalYield[i] − totalYield[i−1].
+  const sortedHours = [...hourTotals.keys()].sort();
+  type HourPoint = { hourKey: string; kwhDelta: number; totalYield: number };
+  const hourPoints: HourPoint[] = sortedHours.map((hk, i) => {
+    const total = hourTotals.get(hk)!;
+    const prevTotal = i > 0 ? (hourTotals.get(sortedHours[i - 1]) ?? total) : total;
+    return { hourKey: hk, kwhDelta: Math.max(0, total - prevTotal), totalYield: total };
   });
 
-  // Upsert one accrual row per day
-  let cumulative = 0;
+  // Upsert one accrual row per hour. ON CONFLICT ensures idempotency.
+  const uniqueDays = new Set<string>();
+  let cumulative = lastBackfill?.max_h ? 0 : 0; // running total from this batch
   let daysWritten = 0;
 
-  for (const day of dayBuckets) {
-    const kwhDelta = day.maxKwh;
+  for (const pt of hourPoints) {
+    const kwhDelta = pt.kwhDelta;
     cumulative += kwhDelta;
     const carbonTco2e = kwhDelta * (carbonIntensity / 1_000_000);
     const revenueZar = kwhDelta * tariffRate;
     const savingsZar = kwhDelta * customerRate;
-    const periodHour = day.date + 'T23:00:00Z'; // end-of-day UTC slot
+    const periodHour = pt.hourKey + ':00:00Z'; // "2026-06-04T17:00:00Z"
     const now = new Date().toISOString();
     const id = crypto.randomUUID();
-
-    // Skip if this day is already covered by an existing backfill
-    const existingMin = existing?.min_h;
-    const existingMax = existing?.max_h;
-    if (existingMin && existingMax) {
-      if (periodHour >= existingMin && periodHour <= existingMax) continue;
-    }
+    uniqueDays.add(pt.hourKey.slice(0, 10));
 
     await env.DB
       .prepare(`INSERT INTO site_accruals (id, station_id, site_id, participant_id, period_hour, kwh_delta, cumulative_kwh, carbon_tco2e, revenue_zar, savings_zar, tariff_rate_used, customer_tariff_rate_used, carbon_intensity_used, is_backfill, created_at, updated_at)
@@ -218,7 +231,7 @@ export async function backfillStationHistory(
     daysWritten++;
   }
 
-  return { days_backfilled: daysWritten, kwh_total: cumulative };
+  return { days_backfilled: uniqueDays.size, hours_backfilled: daysWritten, kwh_total: cumulative };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
