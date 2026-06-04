@@ -1711,6 +1711,13 @@ export type EventType =
   | 'cd_evt_initiate_bond_call' | 'cd_evt_commence_handover' | 'cd_evt_award_replacement_contract'
   | 'cd_evt_appoint_replacement' | 'cd_evt_reach_settlement' | 'cd_evt_withdraw_termination'
   | 'cd_evt_flag_sla_breach'
+  // W161 IPP Environmental Compliance Audit (ECO Annual Report)
+  | 'ipp_eco.created' | 'ipp_eco.sla_breached'
+  | 'eco_evt_appoint_eco' | 'eco_evt_commence_site_inspection' | 'eco_evt_complete_site_inspection'
+  | 'eco_evt_submit_for_review' | 'eco_evt_submit_report' | 'eco_evt_commence_dffe_review'
+  | 'eco_evt_raise_queries' | 'eco_evt_submit_responses' | 'eco_evt_certify_compliant'
+  | 'eco_evt_identify_non_compliance' | 'eco_evt_commence_corrective_action'
+  | 'eco_evt_refer_to_enforcement' | 'eco_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -1979,6 +1986,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   anr_evt: 'ipp',
   ipp_cd: 'ipp',
   cd_evt: 'ipp',
+  ipp_eco: 'ipp',
+  eco_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
