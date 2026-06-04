@@ -368,6 +368,7 @@ export function EsumsOmPage() {
         {
           label: 'Link IPP project',
           tone: 'primary' as const,
+          method: 'PUT' as const,
           endpoint: '/esums/projects/{id}',
           form: {
             title: 'Link to IPP project',
@@ -385,6 +386,7 @@ export function EsumsOmPage() {
         {
           label: 'Archive',
           tone: 'default' as const,
+          method: 'PUT' as const,
           endpoint: '/esums/projects/{id}',
           form: {
             title: 'Archive project',
