@@ -1768,6 +1768,14 @@ export type EventType =
   | 'omc_evt_obtain_nersa_acknowledgement' | 'omc_evt_execute_contract'
   | 'omc_evt_declare_renewal_failed' | 'omc_evt_trigger_novation'
   | 'omc_evt_execute_novation' | 'omc_evt_flag_sla_breach'
+  // ─── W168: IPP BFS Re-certification ─────────────────────────────────────
+  | 'ipp_bfs.created' | 'ipp_bfs.sla_breached'
+  | 'bfs_evt_define_scope' | 'bfs_evt_commence_data_collection'
+  | 'bfs_evt_commence_analysis' | 'bfs_evt_issue_draft_bfs'
+  | 'bfs_evt_commence_peer_review' | 'bfs_evt_submit_ipp_comments'
+  | 'bfs_evt_submit_to_ie' | 'bfs_evt_raise_queries'
+  | 'bfs_evt_submit_responses' | 'bfs_evt_certify_bfs'
+  | 'bfs_evt_reject_bfs' | 'bfs_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2050,6 +2058,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ccc_evt: 'ipp',
   ipp_omc: 'ipp',
   omc_evt: 'ipp',
+  ipp_bfs: 'ipp',
+  bfs_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

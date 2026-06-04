@@ -65,6 +65,7 @@ import { IppCommunityTrustTab } from '../ipp/IppCommunityTrustTab';
 import { IppGridComplianceTab } from '../ipp/IppGridComplianceTab';
 import { IppCccTab } from '../ipp/IppCccTab';
 import { IppOmContractTab } from '../ipp/IppOmContractTab';
+import { IppBfsTab } from '../ipp/IppBfsTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -120,6 +121,7 @@ export function IppWorkstationPage() {
         { key: 'grid-compliance', label: 'Grid code compliance (W165)', group: 'Technical', body: () => <IppGridComplianceTab /> },
         { key: 'ccc', label: 'Connection cost contribution (W166)', group: 'Technical', body: () => <IppCccTab /> },
         { key: 'om-contract', label: 'O&M contract renewal (W167)', group: 'Technical', body: () => <IppOmContractTab /> },
+        { key: 'bfs', label: 'BFS re-certification (W168)', group: 'Technical', body: () => <IppBfsTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },
