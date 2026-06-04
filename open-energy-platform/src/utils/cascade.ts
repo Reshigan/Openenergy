@@ -1856,6 +1856,14 @@ export type EventType =
   | 'insr_evt_submit_documents' | 'insr_evt_request_lender_confirmation'
   | 'insr_evt_confirm_adequate' | 'insr_evt_confirm_inadequate'
   | 'insr_evt_lapse_coverage' | 'insr_evt_flag_sla_breach'
+  // ─── W179 IPP Performance Security / Construction Guarantee Renewal ─────────
+  | 'ipp_psec.created' | 'ipp_psec.sla_breached'
+  | 'psec_evt_submit_application' | 'psec_evt_commence_bank_assessment'
+  | 'psec_evt_issue_terms' | 'psec_evt_commence_ipp_review'
+  | 'psec_evt_accept_terms' | 'psec_evt_prepare_bond_documentation'
+  | 'psec_evt_issue_bond' | 'psec_evt_send_dmre_notification'
+  | 'psec_evt_confirm_security' | 'psec_evt_reject_security'
+  | 'psec_evt_lapse_security' | 'psec_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2160,6 +2168,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   iear_evt: 'ipp',
   ipp_insr: 'ipp',
   insr_evt: 'ipp',
+  ipp_psec: 'ipp',
+  psec_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

@@ -76,6 +76,7 @@ import { IppMilestoneCertTab } from '../ipp/IppMilestoneCertTab';
 import { IppEsmrTab } from '../ipp/IppEsmrTab';
 import { IppIearTab } from '../ipp/IppIearTab';
 import { IppInsrTab } from '../ipp/IppInsrTab';
+import { IppPerfSecurityTab } from '../ipp/IppPerfSecurityTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -142,6 +143,7 @@ export function IppWorkstationPage() {
         { key: 'esmr', label: 'DFI E&S monitoring report (W176)', group: 'Risk', body: () => <IppEsmrTab /> },
         { key: 'iear', label: 'IE annual performance review (W177)', group: 'Risk', body: () => <IppIearTab /> },
         { key: 'insr', label: 'Insurance renewal (W178)', group: 'Risk', body: () => <IppInsrTab /> },
+        { key: 'perf-security', label: 'Performance security (W179)', group: 'Risk', body: () => <IppPerfSecurityTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },
