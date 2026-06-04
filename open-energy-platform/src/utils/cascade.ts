@@ -1726,6 +1726,14 @@ export type EventType =
   | 'lta_evt_qualify_certificate' | 'lta_evt_resolve_conditions'
   | 'lta_evt_refuse_certificate' | 'lta_evt_raise_appeal'
   | 'lta_evt_determine_appeal' | 'lta_evt_flag_sla_breach'
+  // ─── W163: IPP Land Amendment ────────────────────────────────────────────
+  | 'ipp_lam.created' | 'ipp_lam.sla_breached'
+  | 'lam_evt_appoint_surveyor' | 'lam_evt_complete_survey'
+  | 'lam_evt_submit_application' | 'lam_evt_commence_authority_review'
+  | 'lam_evt_issue_public_notice' | 'lam_evt_close_objection_period'
+  | 'lam_evt_resolve_objections' | 'lam_evt_grant_amendment'
+  | 'lam_evt_refuse_amendment' | 'lam_evt_file_appeal'
+  | 'lam_evt_determine_appeal' | 'lam_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -1998,6 +2006,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   eco_evt: 'ipp',
   ipp_lta: 'ipp',
   lta_evt: 'ipp',
+  ipp_lam: 'ipp',
+  lam_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

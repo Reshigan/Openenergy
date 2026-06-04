@@ -60,6 +60,7 @@ import { IppAnnualReportTab } from '../ipp/IppAnnualReportTab';
 import { IppContractorDefaultTab } from '../ipp/IppContractorDefaultTab';
 import { IppEcoReportTab } from '../ipp/IppEcoReportTab';
 import { IppLtaCertificateTab } from '../ipp/IppLtaCertificateTab';
+import { IppLandAmendmentTab } from '../ipp/IppLandAmendmentTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -110,6 +111,7 @@ export function IppWorkstationPage() {
         { key: 'contractor-default', label: 'Contractor default (W160)', group: 'Documents', body: () => <IppContractorDefaultTab /> },
         { key: 'eco-report', label: 'ECO audit report (W161)', group: 'Documents', body: () => <IppEcoReportTab /> },
         { key: 'lta-certificate', label: 'LTA drawdown cert (W162)', group: 'Documents', body: () => <IppLtaCertificateTab /> },
+        { key: 'land-amendment', label: 'Land & servitude amendment (W163)', group: 'Documents', body: () => <IppLandAmendmentTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },
