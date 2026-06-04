@@ -285,6 +285,7 @@ import ippOmContractRoutes, { ippOmContractSlaSweep } from './routes/ipp-om-cont
 import ippBfsRoutes, { ippBfsSlaSweep } from './routes/ipp-bfs';
 import ippEaAmendmentRoutes, { ippEaAmendmentSlaSweep } from './routes/ipp-ea-amendment';
 import ippWulRoutes, { ippWulSlaSweep } from './routes/ipp-wul';
+import ippHraRoutes, { ippHraSlaSweep } from './routes/ipp-hra';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -901,6 +902,7 @@ app.route('/api/ipp-om-contract', ippOmContractRoutes);
 app.route('/api/ipp-bfs', ippBfsRoutes);
 app.route('/api/ipp-ea-amendment', ippEaAmendmentRoutes);
 app.route('/api/ipp-wul', ippWulRoutes);
+app.route('/api/ipp-hra', ippHraRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2333,6 +2335,10 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       // W170: refuse_wul crosses EVERY tier; lapse_wul + grant_wul cross utility+.
       await safe('ipp_wul_sla_sweep', async () => {
         await ippWulSlaSweep(env as never);
+      });
+      // W171: refuse_hra crosses EVERY tier; add_to_watchlist + approve_hra cross utility+.
+      await safe('ipp_hra_sla_sweep', async () => {
+        await ippHraSlaSweep(env as never);
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

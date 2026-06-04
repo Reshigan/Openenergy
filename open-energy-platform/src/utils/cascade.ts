@@ -1792,6 +1792,14 @@ export type EventType =
   | 'wul_evt_commence_technical_assessment' | 'wul_evt_commence_final_review'
   | 'wul_evt_grant_wul' | 'wul_evt_refuse_wul'
   | 'wul_evt_lapse_wul' | 'wul_evt_flag_sla_breach'
+  // ─── W171: HRA ───────────────────────────────────────────────────────────
+  | 'ipp_hra.created' | 'ipp_hra.sla_breached'
+  | 'hra_evt_commence_desktop_study' | 'hra_evt_commence_field_survey'
+  | 'hra_evt_prepare_hra_report' | 'hra_evt_submit_hra'
+  | 'hra_evt_commence_sahra_review' | 'hra_evt_open_public_participation'
+  | 'hra_evt_commence_specialist_assessment' | 'hra_evt_commence_final_review'
+  | 'hra_evt_approve_hra' | 'hra_evt_refuse_hra'
+  | 'hra_evt_add_to_watchlist' | 'hra_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2080,6 +2088,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   eam_evt: 'ipp',
   ipp_wul: 'ipp',
   wul_evt: 'ipp',
+  ipp_hra: 'ipp',
+  hra_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
