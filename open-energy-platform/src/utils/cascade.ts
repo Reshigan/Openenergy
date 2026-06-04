@@ -1880,6 +1880,14 @@ export type EventType =
   | 'sed_evt_complete_audit' | 'sed_evt_submit_to_dmre'
   | 'sed_evt_confirm_compliant' | 'sed_evt_declare_non_compliant'
   | 'sed_evt_lapse_sed' | 'sed_evt_flag_sla_breach'
+  // ─── W182 IPP REIPPPP BBBEE Annual Compliance Verification ──────────────────
+  | 'ipp_bbbee.created' | 'ipp_bbbee.sla_breached'
+  | 'bbbee_evt_prepare_documentation' | 'bbbee_evt_engage_agency'
+  | 'bbbee_evt_submit_data' | 'bbbee_evt_commence_assessment'
+  | 'bbbee_evt_issue_preliminary_score' | 'bbbee_evt_commence_ipp_review'
+  | 'bbbee_evt_commence_final_assessment' | 'bbbee_evt_issue_certificate'
+  | 'bbbee_evt_confirm_verified' | 'bbbee_evt_declare_non_compliant'
+  | 'bbbee_evt_lapse_certificate' | 'bbbee_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2190,6 +2198,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   cep_evt: 'ipp',
   ipp_sed: 'ipp',
   sed_evt: 'ipp',
+  ipp_bbbee: 'ipp',
+  bbbee_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
