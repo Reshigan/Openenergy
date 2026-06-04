@@ -1896,6 +1896,14 @@ export type EventType =
   | 'lrep_evt_distribute_to_lenders' | 'lrep_evt_request_acknowledgement'
   | 'lrep_evt_confirm_acknowledged' | 'lrep_evt_raise_dispute'
   | 'lrep_evt_declare_covenant_breach' | 'lrep_evt_flag_sla_breach'
+  // ─── W184: IPP Annual NERSA Licence Compliance Return ──────────────────────
+  | 'ipp_acr.created' | 'ipp_acr.sla_breached'
+  | 'acr_evt_commence_data_assembly' | 'acr_evt_conduct_internal_review'
+  | 'acr_evt_obtain_board_approval' | 'acr_evt_submit_to_portal'
+  | 'acr_evt_confirm_receipt' | 'acr_evt_begin_nersa_review'
+  | 'acr_evt_request_clarification' | 'acr_evt_submit_clarification'
+  | 'acr_evt_accept_return' | 'acr_evt_reject_return'
+  | 'acr_evt_declare_lapsed' | 'acr_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2210,6 +2218,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   bbbee_evt: 'ipp',
   ipp_lrep: 'ipp',
   lrep_evt: 'ipp',
+  ipp_acr: 'ipp',
+  acr_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
