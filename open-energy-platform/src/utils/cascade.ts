@@ -1704,6 +1704,13 @@ export type EventType =
   | 'anr_evt_commence_review' | 'anr_evt_raise_queries' | 'anr_evt_submit_responses'
   | 'anr_evt_accept_report' | 'anr_evt_reject_report' | 'anr_evt_lodge_appeal'
   | 'anr_evt_determine_appeal' | 'anr_evt_flag_sla_breach'
+  // W160 IPP EPC Contractor Default & Termination
+  | 'ipp_cd.created' | 'ipp_cd.sla_breached'
+  | 'cd_evt_issue_default_notice' | 'cd_evt_acknowledge_cure_period' | 'cd_evt_confirm_default'
+  | 'cd_evt_issue_termination_notice' | 'cd_evt_assess_step_in_rights' | 'cd_evt_invoke_step_in_rights'
+  | 'cd_evt_initiate_bond_call' | 'cd_evt_commence_handover' | 'cd_evt_award_replacement_contract'
+  | 'cd_evt_appoint_replacement' | 'cd_evt_reach_settlement' | 'cd_evt_withdraw_termination'
+  | 'cd_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -1970,6 +1977,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   fm_evt: 'ipp',
   ipp_anr: 'ipp',
   anr_evt: 'ipp',
+  ipp_cd: 'ipp',
+  cd_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
