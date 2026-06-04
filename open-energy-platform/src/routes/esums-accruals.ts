@@ -137,7 +137,7 @@ export async function backfillStationHistory(
   // Serial requests only (no concurrency) — SolaX silently returns empty for
   // concurrent calls against the same token.
   //
-  // Chunk size defaults to 30 days (~65 windows × ~600ms each ≈ 40s) so each
+  // Chunk size defaults to 7 days (~15 windows × ~1.4s each ≈ 21s) so each
   // HTTP call completes within the CF Worker wall-clock budget.
   // Callers iterate through 12 months by passing next_from_ms from prior response.
   const HOUR_MS = 60 * 60 * 1000;
@@ -145,7 +145,7 @@ export async function backfillStationHistory(
 
   const fullStartMs = Date.now() - 365 * 24 * HOUR_MS;
   const endMs = chunkEndMs ?? (Date.now() - HOUR_MS);
-  const startMs = chunkStartMs ?? (endMs - 30 * 24 * HOUR_MS);
+  const startMs = chunkStartMs ?? (endMs - 7 * 24 * HOUR_MS);
   const clampedStart = Math.max(startMs, fullStartMs);
 
   const windows: number[] = [];
@@ -157,29 +157,35 @@ export async function backfillStationHistory(
 
   if (windows.length === 0) {
     const more = clampedStart > fullStartMs;
-    return { days_backfilled: 0, kwh_total: 0, more_available: more, next_from_ms: more ? clampedStart - 30 * 24 * HOUR_MS : undefined };
+    return { days_backfilled: 0, kwh_total: 0, more_available: more, next_from_ms: more ? clampedStart - 7 * 24 * HOUR_MS : undefined };
   }
 
-  // Collect hourly totalYield readings. Serial to avoid SolaX rate-limit on
-  // concurrent same-token requests.
+  // Collect hourly totalYield readings.
+  // CONCURRENCY=2 — SolaX silently returns empty when the same token has too
+  // many simultaneous requests (tested: 20 concurrent = 0 data, 1 serial = OK).
+  // 2 parallel is the empirically-safe balance of speed vs rate-limit avoidance.
+  const CONCURRENCY = 2;
   const hourTotals = new Map<string, number>(); // "2026-06-04T17" → max totalYield kWh that hour
 
-  for (const winStart of windows) {
-    const winEnd = Math.min(winStart + WINDOW_MS, endMs);
-    try {
-      const points = await getHistoricalData(creds, deviceSn, winStart, winEnd, 60);
-      for (const p of points) {
-        if (!p.ts || !p.total_kwh) continue;
-        const hourKey = p.ts.slice(0, 13); // "2026-06-04T17"
-        const prev = hourTotals.get(hourKey) ?? 0;
-        if (p.total_kwh > prev) hourTotals.set(hourKey, p.total_kwh);
-      }
-    } catch { /* skip failed window */ }
+  for (let i = 0; i < windows.length; i += CONCURRENCY) {
+    const batch = windows.slice(i, i + CONCURRENCY);
+    await Promise.all(batch.map(async (winStart) => {
+      const winEnd = Math.min(winStart + WINDOW_MS, endMs);
+      try {
+        const points = await getHistoricalData(creds, deviceSn, winStart, winEnd, 60);
+        for (const p of points) {
+          if (!p.ts || !p.total_kwh) continue;
+          const hourKey = p.ts.slice(0, 13); // "2026-06-04T17"
+          const prev = hourTotals.get(hourKey) ?? 0;
+          if (p.total_kwh > prev) hourTotals.set(hourKey, p.total_kwh);
+        }
+      } catch { /* skip failed window */ }
+    }));
   }
 
   if (hourTotals.size === 0) {
     const more = clampedStart > fullStartMs;
-    return { days_backfilled: 0, kwh_total: 0, more_available: more, next_from_ms: more ? startMs - 30 * 24 * HOUR_MS : undefined };
+    return { days_backfilled: 0, kwh_total: 0, more_available: more, next_from_ms: more ? startMs - 7 * 24 * HOUR_MS : undefined };
   }
 
   // Sort hour keys chronologically, compute delta = totalYield[i] − totalYield[i−1].
@@ -228,7 +234,7 @@ export async function backfillStationHistory(
     hours_backfilled: daysWritten,
     kwh_total: cumulative,
     more_available: more,
-    next_from_ms: more ? startMs - 30 * 24 * HOUR_MS : undefined,
+    next_from_ms: more ? startMs - 7 * 24 * HOUR_MS : undefined,
   };
 }
 
@@ -287,12 +293,17 @@ app.get('/', async (c) => {
   return c.json({ period, since: sinceDate, totals, stations: rows.results ?? [] });
 });
 
-// GET /api/esums/accruals/time-series?station_id=...&granularity=daily&period=month
+// GET /api/esums/accruals/time-series?station_id=...&granularity=daily&period=month&participant_id=...
 app.get('/time-series', async (c) => {
   const stationId = c.req.query('station_id');
   const granularity = c.req.query('granularity') ?? 'daily';
   const period = c.req.query('period') ?? 'month';
+  const participantOverride = c.req.query('participant_id');
   const user = getCurrentUser(c);
+
+  const effectiveParticipant = (participantOverride && ['admin', 'support'].includes(user.role))
+    ? participantOverride
+    : user.id;
 
   const now = new Date();
   let sinceDate: string;
@@ -310,8 +321,8 @@ app.get('/time-series', async (c) => {
     ? `sa.station_id = ? AND sa.participant_id = ? AND sa.period_hour >= ?`
     : `sa.participant_id = ? AND sa.period_hour >= ?`;
   const bindings = stationId
-    ? [stationId, user.id, sinceDate + 'T00:00:00Z']
-    : [user.id, sinceDate + 'T00:00:00Z'];
+    ? [stationId, effectiveParticipant, sinceDate + 'T00:00:00Z']
+    : [effectiveParticipant, sinceDate + 'T00:00:00Z'];
 
   const rows = await c.env.DB
     .prepare(`SELECT
@@ -364,7 +375,7 @@ app.post('/compute', async (c) => {
 //   chunk_start_ms?  — start of the 30-day window (default: chunk_end_ms - 30d)
 //
 // Returns more_available + next_from_ms when there is older data to fetch.
-// Iterate by calling again with chunk_end_ms = next_from_ms + 30d,
+// Iterate by calling again with chunk_end_ms = next_from_ms + 7d,
 // chunk_start_ms = next_from_ms.
 app.post('/backfill', async (c) => {
   const user = getCurrentUser(c);
