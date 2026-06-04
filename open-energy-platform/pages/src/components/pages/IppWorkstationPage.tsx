@@ -77,6 +77,7 @@ import { IppEsmrTab } from '../ipp/IppEsmrTab';
 import { IppIearTab } from '../ipp/IppIearTab';
 import { IppInsrTab } from '../ipp/IppInsrTab';
 import { IppPerfSecurityTab } from '../ipp/IppPerfSecurityTab';
+import { IppCepComplianceTab } from '../ipp/IppCepComplianceTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -144,6 +145,7 @@ export function IppWorkstationPage() {
         { key: 'iear', label: 'IE annual performance review (W177)', group: 'Risk', body: () => <IppIearTab /> },
         { key: 'insr', label: 'Insurance renewal (W178)', group: 'Risk', body: () => <IppInsrTab /> },
         { key: 'perf-security', label: 'Performance security (W179)', group: 'Risk', body: () => <IppPerfSecurityTab /> },
+        { key: 'cep-compliance', label: 'Community equity participation (W180)', group: 'Risk', body: () => <IppCepComplianceTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },

@@ -1864,6 +1864,14 @@ export type EventType =
   | 'psec_evt_issue_bond' | 'psec_evt_send_dmre_notification'
   | 'psec_evt_confirm_security' | 'psec_evt_reject_security'
   | 'psec_evt_lapse_security' | 'psec_evt_flag_sla_breach'
+  // ─── W180 IPP REIPPPP Community Equity Participation Compliance ─────────────
+  | 'ipp_cep.created' | 'ipp_cep.sla_breached'
+  | 'cep_evt_identify_stakeholders' | 'cep_evt_calculate_distributions'
+  | 'cep_evt_obtain_trustee_approval' | 'cep_evt_prepare_payments'
+  | 'cep_evt_confirm_distributions_paid' | 'cep_evt_verify_community_dev'
+  | 'cep_evt_compile_documentation' | 'cep_evt_submit_to_dmre'
+  | 'cep_evt_confirm_compliant' | 'cep_evt_declare_non_compliant'
+  | 'cep_evt_lapse_cep' | 'cep_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2170,6 +2178,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   insr_evt: 'ipp',
   ipp_psec: 'ipp',
   psec_evt: 'ipp',
+  ipp_cep: 'ipp',
+  cep_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
