@@ -1,5 +1,6 @@
 'use client';
 import React, { useCallback, useEffect, useState } from 'react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { api } from '../../lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -13,6 +14,8 @@ interface Credential {
   base_url: string | null;
   site_id: string | null;
   tariff_rate_zar_per_kwh: number | null;
+  customer_tariff_rate_zar_per_kwh: number | null;
+  carbon_intensity_gco2_per_kwh: number | null;
   status: 'active' | 'inactive' | 'error';
   has_secret: boolean;
   has_password: boolean;
@@ -236,7 +239,9 @@ function CredModal({
     auth_type:               initial?.auth_type ?? 'oauth2_client_creds',
     base_url:                initial?.base_url ?? '',
     site_id:                 initial?.site_id ?? '',
-    tariff_rate_zar_per_kwh: initial?.tariff_rate_zar_per_kwh != null ? String(initial.tariff_rate_zar_per_kwh) : '',
+    tariff_rate_zar_per_kwh:          initial?.tariff_rate_zar_per_kwh != null ? String(initial.tariff_rate_zar_per_kwh) : '',
+    customer_tariff_rate_zar_per_kwh: initial?.customer_tariff_rate_zar_per_kwh != null ? String(initial.customer_tariff_rate_zar_per_kwh) : '',
+    carbon_intensity_gco2_per_kwh:    initial?.carbon_intensity_gco2_per_kwh != null ? String(initial.carbon_intensity_gco2_per_kwh) : '950',
     client_id:               '',
     client_secret:           '',
     api_key:                 '',
@@ -394,8 +399,8 @@ function CredModal({
 
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              Tariff rate (ZAR / kWh)
-              <span className="ml-1 text-gray-400 font-normal">— used to show ZAR revenue in the stations table</span>
+              Fund tariff (ZAR / kWh)
+              <span className="ml-1 text-gray-400 font-normal">— rate at which the fund sells energy (revenue accrual)</span>
             </label>
             <input
               type="number"
@@ -408,6 +413,42 @@ function CredModal({
               autoComplete="off"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Customer grid rate (ZAR / kWh)
+                <span className="ml-1 text-gray-400 font-normal">— what customer pays Eskom (savings accrual)</span>
+              </label>
+              <input
+                type="number"
+                name="customer_tariff_rate_zar_per_kwh"
+                value={form.customer_tariff_rate_zar_per_kwh}
+                onChange={e => set('customer_tariff_rate_zar_per_kwh', e.target.value)}
+                placeholder="e.g. 2.50"
+                min="0"
+                step="0.01"
+                autoComplete="off"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Grid carbon intensity (gCO₂e / kWh)
+                <span className="ml-1 text-gray-400 font-normal">— SA Eskom default 950</span>
+              </label>
+              <input
+                type="number"
+                name="carbon_intensity_gco2_per_kwh"
+                value={form.carbon_intensity_gco2_per_kwh}
+                onChange={e => set('carbon_intensity_gco2_per_kwh', e.target.value)}
+                placeholder="950"
+                min="0"
+                step="1"
+                autoComplete="off"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
 
           {error && <div className="text-xs text-red-600 bg-red-50 border border-red-100 rounded px-3 py-2">{error}</div>}
@@ -482,6 +523,219 @@ function StationRow({ s }: { s: Station }) {
         {fmtTs(s.snapshot_ts ?? s.last_sync_at)}
       </td>
     </tr>
+  );
+}
+
+// ─── Accruals panel ───────────────────────────────────────────────────────────
+
+type AccrualPeriod = 'today' | 'week' | 'month' | 'ytd';
+
+interface AccrualTotals { kwh: number; carbon_tco2e: number; revenue_zar: number; savings_zar: number }
+interface AccrualStation {
+  station_id: string; plant_name: string | null; device_sn: string;
+  total_kwh: number; total_carbon_tco2e: number; total_revenue_zar: number; total_savings_zar: number;
+  last_accrual_at: string | null;
+}
+interface SeriesPoint { bucket: string; kwh: number; revenue_zar: number; savings_zar: number; carbon_tco2e: number }
+
+function fmtTco2e(v: number): string {
+  if (v >= 1000) return `${(v / 1000).toFixed(1)} ktCO₂e`;
+  if (v >= 1) return `${v.toFixed(2)} tCO₂e`;
+  return `${(v * 1000).toFixed(0)} kgCO₂e`;
+}
+function fmtZar(v: number): string {
+  if (v >= 1_000_000) return `R ${(v / 1_000_000).toFixed(2)}M`;
+  if (v >= 1000) return `R ${(v / 1000).toFixed(1)}k`;
+  return `R ${v.toFixed(2)}`;
+}
+
+function AccrualsPanel() {
+  const [period, setPeriod] = useState<AccrualPeriod>('month');
+  const [totals, setTotals] = useState<AccrualTotals | null>(null);
+  const [stations, setAccStations] = useState<AccrualStation[]>([]);
+  const [series, setSeries] = useState<SeriesPoint[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillMsg, setBackfillMsg] = useState<string | null>(null);
+
+  const loadAccruals = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [agg, ts] = await Promise.all([
+        api.get<{ totals: AccrualTotals; stations: AccrualStation[] }>(`/api/esums/accruals?period=${period}`),
+        api.get<{ series: SeriesPoint[] }>(`/api/esums/accruals/time-series?period=${period}&granularity=daily`),
+      ]);
+      setTotals(agg.data.totals);
+      setAccStations(agg.data.stations ?? []);
+      setSeries(ts.data.series ?? []);
+    } catch { /* silent */ }
+    finally { setLoading(false); }
+  }, [period]);
+
+  useEffect(() => { loadAccruals(); }, [loadAccruals]);
+
+  const handleBackfill = async () => {
+    setBackfilling(true);
+    setBackfillMsg(null);
+    try {
+      const { data: r } = await api.post<{
+        stations_processed: number;
+        results: Array<{ station_id: string; days_backfilled?: number; kwh_total?: number; error?: string }>;
+      }>('/api/esums/accruals/backfill', {});
+      const ok = r.results.filter(x => !x.error);
+      const totalDays = ok.reduce((s, x) => s + (x.days_backfilled ?? 0), 0);
+      const totalKwh = ok.reduce((s, x) => s + (x.kwh_total ?? 0), 0);
+      setBackfillMsg(`Imported ${totalDays} days of history (${totalKwh.toFixed(0)} kWh) across ${ok.length} station(s).`);
+      await loadAccruals();
+    } catch (e) {
+      setBackfillMsg(`Backfill failed: ${String(e)}`);
+    } finally {
+      setBackfilling(false);
+    }
+  };
+
+  const PERIOD_LABELS: Record<AccrualPeriod, string> = {
+    today: 'Today', week: '7 days', month: 'This month', ytd: 'Year to date',
+  };
+
+  const kpiCards = [
+    {
+      label: 'Carbon avoided', sublabel: 'Fund — UNFCCC tCO₂e',
+      value: totals ? fmtTco2e(totals.carbon_tco2e) : '—',
+      colour: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200',
+    },
+    {
+      label: 'Revenue accrued', sublabel: 'Fund — ZAR from energy sales',
+      value: totals ? fmtZar(totals.revenue_zar) : '—',
+      colour: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200',
+    },
+    {
+      label: 'Customer savings', sublabel: 'Customer — vs Eskom grid rate',
+      value: totals ? fmtZar(totals.savings_zar) : '—',
+      colour: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200',
+    },
+    {
+      label: 'Generation', sublabel: 'Fleet total',
+      value: totals ? `${totals.kwh >= 1000 ? (totals.kwh / 1000).toFixed(1) + ' MWh' : totals.kwh.toFixed(0) + ' kWh'}` : '—',
+      colour: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200',
+    },
+  ];
+
+  const chartData = series.map(p => ({
+    day: p.bucket.slice(5), // MM-DD
+    'Revenue (ZAR)': parseFloat(p.revenue_zar.toFixed(2)),
+    'Savings (ZAR)': parseFloat(p.savings_zar.toFixed(2)),
+    'kWh': parseFloat(p.kwh.toFixed(1)),
+  }));
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Value accruals</h4>
+          <p className="text-xs text-gray-500 mt-0.5">Carbon · revenue · customer savings from generation</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Period selector */}
+          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+            {(Object.keys(PERIOD_LABELS) as AccrualPeriod[]).map(p => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-3 py-1.5 transition-colors ${period === p ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+              >
+                {PERIOD_LABELS[p]}
+              </button>
+            ))}
+          </div>
+          {/* One-time historical backfill */}
+          <button
+            onClick={handleBackfill}
+            disabled={backfilling}
+            title="Pull full historical data from SolaX API for all connected stations"
+            className="px-3 py-1.5 text-xs font-medium border border-amber-300 text-amber-700 bg-amber-50 rounded-lg hover:bg-amber-100 disabled:opacity-50 transition-colors"
+          >
+            {backfilling ? 'Importing…' : 'Import historical data'}
+          </button>
+        </div>
+      </div>
+
+      {backfillMsg && (
+        <div className={`text-xs px-3 py-2 rounded border ${backfillMsg.includes('failed') ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
+          {backfillMsg}
+        </div>
+      )}
+
+      {/* KPI cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {kpiCards.map(card => (
+          <div key={card.label} className={`p-3 rounded-lg border ${card.border} ${card.bg}`}>
+            <p className="text-xs text-gray-500">{card.label}</p>
+            <p className={`text-lg font-bold tabular-nums mt-0.5 ${card.colour}`}>
+              {loading ? <span className="animate-pulse text-sm">…</span> : card.value}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">{card.sublabel}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Daily chart */}
+      {chartData.length > 0 && (
+        <div className="border border-gray-200 rounded-lg p-4 bg-white">
+          <p className="text-xs font-medium text-gray-600 mb-3">Daily revenue vs customer savings (ZAR)</p>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={chartData} barSize={8} margin={{ top: 0, right: 8, left: -16, bottom: 0 }}>
+              <XAxis dataKey="day" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+              <Tooltip
+                formatter={(v: number, name: string) => [`R ${v.toFixed(2)}`, name]}
+                contentStyle={{ fontSize: 11, borderRadius: 6 }}
+              />
+              <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 10 }} />
+              <Bar dataKey="Revenue (ZAR)" fill="#059669" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="Savings (ZAR)" fill="#3b82f6" radius={[2, 2, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Per-station breakdown */}
+      {stations.length > 0 && (
+        <div className="overflow-x-auto border border-gray-200 rounded-lg">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-100">
+                {['Station', 'Serial', 'kWh', 'Carbon (tCO₂e)', 'Revenue (ZAR)', 'Customer savings', 'Last accrual'].map(h => (
+                  <th key={h} className="px-3 py-2 text-left text-gray-500 font-medium">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {stations.map(st => (
+                <tr key={st.station_id} className="hover:bg-gray-50">
+                  <td className="px-3 py-2 text-gray-700">{st.plant_name ?? '—'}</td>
+                  <td className="px-3 py-2 font-mono text-gray-500">{st.device_sn}</td>
+                  <td className="px-3 py-2 tabular-nums text-gray-700">{st.total_kwh?.toFixed(1) ?? '—'}</td>
+                  <td className="px-3 py-2 tabular-nums text-green-700 font-medium">{fmtTco2e(st.total_carbon_tco2e ?? 0)}</td>
+                  <td className="px-3 py-2 tabular-nums text-emerald-700 font-medium">{fmtZar(st.total_revenue_zar ?? 0)}</td>
+                  <td className="px-3 py-2 tabular-nums text-blue-700">{fmtZar(st.total_savings_zar ?? 0)}</td>
+                  <td className="px-3 py-2 text-gray-400">{st.last_accrual_at ? fmtTs(st.last_accrual_at) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {!loading && stations.length === 0 && (
+        <div className="border border-dashed border-gray-200 rounded-lg py-8 text-center">
+          <p className="text-sm text-gray-400">No accruals yet.</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Click <strong>Import historical data</strong> to backfill from SolaX, or wait for the hourly cron.
+          </p>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -750,6 +1004,9 @@ export function InverterIntegrationsTab() {
           </div>
         )}
       </section>
+
+      {/* ── Value accruals ── */}
+      <AccrualsPanel />
 
       {/* ── Modal ── */}
       {showModal && (

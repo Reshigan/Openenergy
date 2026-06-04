@@ -281,6 +281,7 @@ import esumsDataSourcesRoutes from './routes/esums-data-sources';
 import esumsProjectsRoutes from './routes/esums-projects';
 import esumsOmSolaxRoutes from './routes/esums-solax';
 import esumsManufacturersRoutes from './routes/esums-manufacturers';
+import esumsAccrualsRoutes, { computeStationAccruals } from './routes/esums-accruals';
 import { runFaultEngine } from './utils/esums-fault-engine';
 import platformFeaturesRoutes from './routes/platform-features';
 import onboardingRoutes from './routes/onboarding';
@@ -858,6 +859,7 @@ app.route('/api/esums/data-sources', esumsDataSourcesRoutes);
 app.route('/api/esums/projects', esumsProjectsRoutes);
 app.route('/api/esums/solax', esumsOmSolaxRoutes);
 app.route('/api/esums/manufacturers', esumsManufacturersRoutes);
+app.route('/api/esums/accruals', esumsAccrualsRoutes);
 // Public status page MUST be mounted BEFORE the catch-all platform router.
 // platformFeaturesRoutes is mounted at /api and applies authMiddleware to
 // every request that passes through it, including those that don't match
@@ -2542,6 +2544,20 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       break;
 
     case '0 * * * *':
+      // Hourly GoldRush accrual compute — carbon/revenue/savings per active station
+      await safe('esums_accrual_compute', async () => {
+        const activeStations = await env.DB
+          .prepare("SELECT id FROM solax_stations WHERE status = 'active'")
+          .all<{ id: string }>();
+        const results = [];
+        for (const st of activeStations.results ?? []) {
+          try {
+            const r = await computeStationAccruals(st.id, env as never);
+            if (r.kwh_delta > 0) results.push({ id: st.id, ...r });
+          } catch { /* per-station failures are non-fatal */ }
+        }
+        console.log('esums_accrual_compute', JSON.stringify({ stations: results.length }));
+      });
       await safe('mark_price_vwap', async () => {
         // Trigger the same logic as POST /api/trader-risk/mark-prices/vwap-run.
         const types = await env.DB.prepare(

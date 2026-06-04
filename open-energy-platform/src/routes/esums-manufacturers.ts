@@ -59,6 +59,8 @@ type CredRow = {
   site_id: string | null;
   extra_config: string | null;
   tariff_rate_zar_per_kwh: number | null;
+  customer_tariff_rate_zar_per_kwh: number | null;
+  carbon_intensity_gco2_per_kwh: number | null;
   status: string;
   last_tested_at: string | null;
   last_error: string | null;
@@ -152,16 +154,20 @@ mr.post('/credentials', async (c) => {
   const now = nowIso();
   const id = randomId('mfrc_');
 
-  const tariffRatePost = (b.tariff_rate_zar_per_kwh != null && b.tariff_rate_zar_per_kwh !== '')
-    ? Number(b.tariff_rate_zar_per_kwh) : null;
+  const toRate = (v: unknown) => (v != null && v !== '') ? Number(v) : null;
+  const tariffRatePost = toRate(b.tariff_rate_zar_per_kwh);
+  const customerRatePost = toRate(b.customer_tariff_rate_zar_per_kwh);
+  const carbonIntensityPost = toRate(b.carbon_intensity_gco2_per_kwh) ?? 950;
 
   try {
     await c.env.DB.prepare(`
       INSERT INTO manufacturer_credentials
         (id, participant_id, manufacturer, auth_type,
          client_id, client_secret, api_key, token, username, password,
-         base_url, site_id, extra_config, tariff_rate_zar_per_kwh, status, created_at, updated_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+         base_url, site_id, extra_config,
+         tariff_rate_zar_per_kwh, customer_tariff_rate_zar_per_kwh, carbon_intensity_gco2_per_kwh,
+         status, created_at, updated_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
       ON CONFLICT(participant_id, manufacturer) DO UPDATE SET
         auth_type = excluded.auth_type,
         client_id = excluded.client_id,
@@ -174,6 +180,8 @@ mr.post('/credentials', async (c) => {
         site_id = excluded.site_id,
         extra_config = excluded.extra_config,
         tariff_rate_zar_per_kwh = excluded.tariff_rate_zar_per_kwh,
+        customer_tariff_rate_zar_per_kwh = excluded.customer_tariff_rate_zar_per_kwh,
+        carbon_intensity_gco2_per_kwh = excluded.carbon_intensity_gco2_per_kwh,
         status = 'active',
         updated_at = excluded.updated_at
     `).bind(
@@ -187,7 +195,7 @@ mr.post('/credentials', async (c) => {
       (b.base_url as string) || null,
       (b.site_id as string) || null,
       (b.extra_config as string) || null,
-      tariffRatePost,
+      tariffRatePost, customerRatePost, carbonIntensityPost,
       'active', now, now,
     ).run();
   } catch (e: unknown) {
@@ -227,16 +235,21 @@ mr.put('/credentials/:id', async (c) => {
   }
 
   const now = nowIso();
-  const tariffRatePut = b.tariff_rate_zar_per_kwh !== undefined
-    ? ((b.tariff_rate_zar_per_kwh != null && b.tariff_rate_zar_per_kwh !== '') ? Number(b.tariff_rate_zar_per_kwh) : null)
-    : existing.tariff_rate_zar_per_kwh;
+  const toRatePut = (v: unknown, fallback: number | null) =>
+    v !== undefined ? ((v != null && v !== '') ? Number(v) : null) : fallback;
+  const tariffRatePut = toRatePut(b.tariff_rate_zar_per_kwh, existing.tariff_rate_zar_per_kwh);
+  const customerRatePut = toRatePut(b.customer_tariff_rate_zar_per_kwh, existing.customer_tariff_rate_zar_per_kwh);
+  const carbonIntensityPut = toRatePut(b.carbon_intensity_gco2_per_kwh, existing.carbon_intensity_gco2_per_kwh ?? 950);
   await c.env.DB.prepare(`
     UPDATE manufacturer_credentials SET
       client_id = ?, client_secret = ?,
       api_key = ?, token = ?,
       username = ?, password = ?,
       base_url = ?, site_id = ?,
-      extra_config = ?, tariff_rate_zar_per_kwh = ?,
+      extra_config = ?,
+      tariff_rate_zar_per_kwh = ?,
+      customer_tariff_rate_zar_per_kwh = ?,
+      carbon_intensity_gco2_per_kwh = ?,
       status = ?, updated_at = ?
     WHERE id = ? AND participant_id = ?
   `).bind(
@@ -249,7 +262,7 @@ mr.put('/credentials/:id', async (c) => {
     b.base_url !== undefined ? b.base_url : existing.base_url,
     b.site_id !== undefined ? b.site_id : existing.site_id,
     b.extra_config !== undefined ? b.extra_config : existing.extra_config,
-    tariffRatePut,
+    tariffRatePut, customerRatePut, carbonIntensityPut,
     b.status !== undefined ? b.status : existing.status,
     now, id, user.id,
   ).run();
@@ -316,7 +329,9 @@ mr.get('/stations', async (c) => {
            snap.ac_kw, snap.dc_kw, snap.daily_kwh, snap.total_kwh,
            snap.battery_soc, snap.temperature_c, snap.online AS snapshot_online,
            snap.ts AS snapshot_ts,
-           mc.tariff_rate_zar_per_kwh
+           mc.tariff_rate_zar_per_kwh,
+           mc.customer_tariff_rate_zar_per_kwh,
+           mc.carbon_intensity_gco2_per_kwh
     FROM solax_stations ss
     LEFT JOIN om_sites s ON s.id = ss.site_id
     LEFT JOIN station_telemetry_snapshot snap ON snap.station_id = ss.id
