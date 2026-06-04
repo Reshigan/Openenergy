@@ -1776,6 +1776,14 @@ export type EventType =
   | 'bfs_evt_submit_to_ie' | 'bfs_evt_raise_queries'
   | 'bfs_evt_submit_responses' | 'bfs_evt_certify_bfs'
   | 'bfs_evt_reject_bfs' | 'bfs_evt_flag_sla_breach'
+  // ─── W169: EA Amendment ───────────────────────────────────────────────────
+  | 'ipp_eam.created' | 'ipp_eam.sla_breached'
+  | 'eam_evt_define_scope' | 'eam_evt_prepare_application'
+  | 'eam_evt_submit_application' | 'eam_evt_accept_for_review'
+  | 'eam_evt_open_public_participation' | 'eam_evt_close_public_participation'
+  | 'eam_evt_submit_specialist_review' | 'eam_evt_commence_final_review'
+  | 'eam_evt_grant_amendment' | 'eam_evt_refuse_amendment'
+  | 'eam_evt_refer_s24g' | 'eam_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2060,6 +2068,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   omc_evt: 'ipp',
   ipp_bfs: 'ipp',
   bfs_evt: 'ipp',
+  ipp_eam: 'ipp',
+  eam_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
