@@ -1904,6 +1904,14 @@ export type EventType =
   | 'acr_evt_request_clarification' | 'acr_evt_submit_clarification'
   | 'acr_evt_accept_return' | 'acr_evt_reject_return'
   | 'acr_evt_declare_lapsed' | 'acr_evt_flag_sla_breach'
+  // ─── W185: IPP REIPPPP Annual Progress & Compliance Report ─────────────────
+  | 'ipp_rpr.created' | 'ipp_rpr.sla_breached'
+  | 'rpr_evt_commence_data_collection' | 'rpr_evt_verify_local_content'
+  | 'rpr_evt_reconcile_ed_spend' | 'rpr_evt_tabulate_jobs'
+  | 'rpr_evt_conduct_internal_review' | 'rpr_evt_obtain_board_approval'
+  | 'rpr_evt_submit_to_ipp_office' | 'rpr_evt_confirm_acknowledgement'
+  | 'rpr_evt_accept_report' | 'rpr_evt_reject_report'
+  | 'rpr_evt_declare_lapsed' | 'rpr_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2220,6 +2228,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   lrep_evt: 'ipp',
   ipp_acr: 'ipp',
   acr_evt: 'ipp',
+  ipp_rpr: 'ipp',
+  rpr_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
