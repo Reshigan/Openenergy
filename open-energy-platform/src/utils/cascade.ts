@@ -1872,6 +1872,14 @@ export type EventType =
   | 'cep_evt_compile_documentation' | 'cep_evt_submit_to_dmre'
   | 'cep_evt_confirm_compliant' | 'cep_evt_declare_non_compliant'
   | 'cep_evt_lapse_cep' | 'cep_evt_flag_sla_breach'
+  // ─── W181 IPP REIPPPP SED Annual Spend Compliance ───────────────────────────
+  | 'ipp_sed.created' | 'ipp_sed.sla_breached'
+  | 'sed_evt_identify_beneficiaries' | 'sed_evt_plan_programme'
+  | 'sed_evt_obtain_board_approval' | 'sed_evt_execute_spend'
+  | 'sed_evt_verify_expenditure' | 'sed_evt_commence_audit'
+  | 'sed_evt_complete_audit' | 'sed_evt_submit_to_dmre'
+  | 'sed_evt_confirm_compliant' | 'sed_evt_declare_non_compliant'
+  | 'sed_evt_lapse_sed' | 'sed_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2180,6 +2188,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   psec_evt: 'ipp',
   ipp_cep: 'ipp',
   cep_evt: 'ipp',
+  ipp_sed: 'ipp',
+  sed_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
