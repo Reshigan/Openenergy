@@ -25,6 +25,7 @@ import { SoilingAuditChainTab } from '../esums/SoilingAuditChainTab';
 import { EsgDisclosureChainTab } from '../carbon/EsgDisclosureChainTab';
 import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
 import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
+import { DataSourcesTab } from '../esums/DataSourcesTab';
 
 export function EsumsOmPage() {
   const tabs: TabSpec[] = [
@@ -332,38 +333,10 @@ export function EsumsOmPage() {
     {
       key: 'data_sources',
       label: 'Data sources',
-      endpoint: '/esums/data-sources',
-      description: 'Sensor connections and data-ingest APIs — Modbus TCP, SunSpec, MQTT, REST API, OPC-UA and push-ingest endpoints. Activate, deactivate or test a connection without leaving this tab.',
-      columns: [
-        { key: 'label',       label: 'Label' },
-        { key: 'source_type', label: 'Protocol' },
-        { key: 'host',        label: 'Host / Broker' },
-        { key: 'port',        label: 'Port',     align: 'right', number: true },
-        { key: 'polling_interval_sec', label: 'Poll (s)', align: 'right', number: true },
-        { key: 'last_read_at', label: 'Last read', date: true },
-        { key: 'last_error',  label: 'Last error' },
-        { key: 'status',      label: 'Status', render: (r) => <StatusPill status={String(r.status)} /> },
-      ],
-      rowActions: [
-        {
-          label: 'Test',
-          tone: 'default' as const,
-          endpoint: '/esums/data-sources/{id}/test',
-          confirm: 'Run a live connectivity test?',
-        },
-        {
-          label: 'Activate',
-          tone: 'primary' as const,
-          endpoint: '/esums/data-sources/{id}/activate',
-          confirm: 'Activate this data source?',
-        },
-        {
-          label: 'Deactivate',
-          tone: 'default' as const,
-          endpoint: '/esums/data-sources/{id}/deactivate',
-          confirm: 'Deactivate this data source?',
-        },
-      ],
+      endpoint: '',
+      description: 'Sensor connections and data-ingest APIs — Modbus TCP, SunSpec, MQTT, REST API, OPC-UA and push-ingest endpoints. Click the interval to edit it inline. Hit Live on any row to open a short-window live graph that auto-refreshes on the source\'s polling cycle.',
+      columns: [],
+      customContent: <DataSourcesTab />,
     },
     {
       key: 'projects',

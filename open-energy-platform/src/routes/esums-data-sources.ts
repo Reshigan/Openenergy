@@ -24,6 +24,7 @@ import { fireCascade } from '../utils/cascade';
 import { randomId } from '../utils/auth-tokens';
 import { AppError, ErrorCode } from '../utils/types';
 import { assertSafeWebhookUrl } from '../utils/url-safety';
+import { readSiteTelemetry } from '../utils/esums-telemetry-router';
 
 const ds = new Hono<HonoEnv>();
 ds.use('*', authMiddleware);
@@ -317,6 +318,58 @@ ds.post('/:id/test', async (c) => {
   ).run();
 
   return c.json({ data: result });
+});
+
+// ─── GET /:id/live — short-window telemetry for live graph ───────────────────
+// Returns recent readings from the data source's site.
+// ?minutes=N controls the lookback window (default 60, max 1440 = 24h).
+// The response includes the current polling_interval_sec so the frontend
+// knows how often to refresh.
+
+ds.get('/:id/live', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const minutes = Math.min(1440, Math.max(1, Number(c.req.query('minutes') || 60)));
+
+  const row = await c.env.DB
+    .prepare('SELECT * FROM esums_data_sources WHERE id = ? AND participant_id = ?')
+    .bind(id, user.id).first<Record<string, unknown>>();
+  if (!row) throw new AppError(ErrorCode.NOT_FOUND, 'Data source not found', 404);
+
+  const siteId = row.site_id as string | null;
+  if (!siteId) {
+    return c.json({
+      data: [],
+      polling_interval_sec: row.polling_interval_sec,
+      source_type: row.source_type,
+      label: row.label,
+      note: 'No site linked to this data source',
+    });
+  }
+
+  // Resolve project shard for the site
+  const siteRow = await c.env.DB.prepare(`
+    SELECT s.id, ep.shard_key
+    FROM om_sites s
+    LEFT JOIN esums_projects ep ON ep.id = s.project_id
+    WHERE s.id = ? AND s.participant_id = ?
+  `).bind(siteId, user.id).first<{ id: string; shard_key: string | null }>();
+
+  if (!siteRow) {
+    return c.json({ data: [], polling_interval_sec: row.polling_interval_sec, note: 'Site not accessible' });
+  }
+
+  const hours = minutes / 60;
+  const readings = await readSiteTelemetry(c.env as any, siteId, hours, siteRow.shard_key);
+
+  return c.json({
+    data: readings,
+    polling_interval_sec: row.polling_interval_sec,
+    source_type: row.source_type,
+    label: row.label,
+    site_id: siteId,
+    window_minutes: minutes,
+  });
 });
 
 // ─── POST /:id/activate & /deactivate ────────────────────────────────────────
