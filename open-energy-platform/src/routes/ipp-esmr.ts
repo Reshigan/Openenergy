@@ -1,0 +1,388 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// Wave 176 — IPP DFI Environmental & Social Monitoring Report (ESMR)
+//
+// Mounted at /api/ipp-esmr.
+// INVERTED SLA: larger project loans attract more DFI scrutiny and require
+// more comprehensive E&S monitoring, warranting longer review windows.
+// WRITE: admin | ipp_developer
+// ═══════════════════════════════════════════════════════════════════════════
+
+import { Hono } from 'hono';
+import type { HonoEnv } from '../utils/types';
+import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { fireCascade } from '../utils/cascade';
+import type { EventType } from '../utils/cascade';
+import {
+  deriveEsmrLoanTier,
+  SLA_DAYS,
+  HARD_TERMINALS,
+  VALID_TRANSITIONS,
+  STATE_TRANSITIONS,
+  crossesIntoRegulator,
+  slaBreachCrossesIntoRegulator,
+} from '../utils/ipp-esmr-spec';
+import type { EsmrStatus, EsmrAction, EsmrLoanTier } from '../utils/ipp-esmr-spec';
+
+const router = new Hono<HonoEnv>();
+router.use('*', authMiddleware);
+
+const WRITE_ROLES = ['admin', 'ipp_developer'];
+
+// ─── SLA sweep ───────────────────────────────────────────────────────────────
+
+export async function ippEsmrSlaSweep(env: HonoEnv['Bindings']): Promise<void> {
+  const now = new Date().toISOString();
+  const terminalList = [...HARD_TERMINALS].map(() => '?').join(',');
+
+  const breaches = await env.DB
+    .prepare(
+      `SELECT id, loan_tier FROM oe_ipp_esmr
+       WHERE sla_due_date IS NOT NULL AND sla_breached = 0
+         AND chain_status NOT IN (${terminalList})
+         AND sla_due_date <= ?`,
+    )
+    .bind(...HARD_TERMINALS, now)
+    .all<{ id: string; loan_tier: EsmrLoanTier }>();
+
+  for (const row of breaches.results ?? []) {
+    await env.DB
+      .prepare(`UPDATE oe_ipp_esmr SET sla_breached = 1, updated_at = ? WHERE id = ?`)
+      .bind(now, row.id)
+      .run();
+
+    await fireCascade({
+      event: 'ipp_esmr.sla_breached' as EventType,
+      actor_id: 'system',
+      entity_type: 'ipp_esmr',
+      entity_id: row.id,
+      data: {
+        loan_tier: row.loan_tier,
+        is_reportable: slaBreachCrossesIntoRegulator(row.loan_tier),
+        crosses_into_regulator: slaBreachCrossesIntoRegulator(row.loan_tier),
+      },
+      env,
+    });
+  }
+}
+
+// ─── GET / — list all + KPIs ─────────────────────────────────────────────────
+
+router.get('/', async (c) => {
+  const user = getCurrentUser(c);
+
+  const {
+    project_ref,
+    chain_status,
+    loan_tier,
+    reporting_period,
+    breach_category,
+    limit = '50',
+    offset = '0',
+  } = c.req.query();
+
+  const perPage = Math.min(200, Math.max(1, parseInt(limit) || 50));
+  const off     = Math.max(0, parseInt(offset) || 0);
+
+  const clauses: string[] = [];
+  const binds: unknown[]  = [];
+
+  if (!['admin', 'support', 'regulator'].includes(user.role)) {
+    clauses.push('actor_party = ?');
+    binds.push(user.id);
+  } else if (project_ref) {
+    clauses.push('project_ref = ?');
+    binds.push(project_ref);
+  }
+  if (chain_status)     { clauses.push('chain_status = ?');     binds.push(chain_status); }
+  if (loan_tier)        { clauses.push('loan_tier = ?');        binds.push(loan_tier); }
+  if (reporting_period) { clauses.push('reporting_period = ?'); binds.push(reporting_period); }
+  if (breach_category)  { clauses.push('breach_category = ?');  binds.push(breach_category); }
+
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+  const terminalPlaceholders = [...HARD_TERMINALS].map(() => '?').join(',');
+
+  const [rows, totalRow, kpis] = await Promise.all([
+    c.env.DB
+      .prepare(
+        `SELECT * FROM oe_ipp_esmr ${where}
+         ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      )
+      .bind(...binds, perPage, off)
+      .all<Record<string, unknown>>(),
+    c.env.DB
+      .prepare(`SELECT COUNT(*) as n FROM oe_ipp_esmr ${where}`)
+      .bind(...binds)
+      .first<{ n: number }>(),
+    c.env.DB
+      .prepare(
+        `SELECT
+           COUNT(*) as total,
+           SUM(CASE WHEN chain_status NOT IN (${terminalPlaceholders}) THEN 1 ELSE 0 END) as active,
+           SUM(CASE WHEN sla_breached = 1 THEN 1 ELSE 0 END) as sla_breached,
+           SUM(CASE WHEN chain_status = 'certificate_issued' THEN 1 ELSE 0 END) as certified_count,
+           SUM(CASE WHEN chain_status = 'certificate_withheld' THEN 1 ELSE 0 END) as withheld_count,
+           SUM(CASE WHEN chain_status = 'material_breach_declared' THEN 1 ELSE 0 END) as breach_count
+         FROM oe_ipp_esmr ${where}`,
+      )
+      .bind(...[...HARD_TERMINALS], ...binds)
+      .first<Record<string, unknown>>(),
+  ]);
+
+  return c.json({
+    success: true,
+    data: {
+      items: rows.results ?? [],
+      pagination: {
+        limit: perPage,
+        offset: off,
+        total: totalRow?.n ?? 0,
+      },
+      kpis,
+    },
+  });
+});
+
+// ─── POST / — create a new ESMR record ───────────────────────────────────────
+
+router.post('/', async (c) => {
+  const user = getCurrentUser(c);
+  if (!WRITE_ROLES.includes(user.role)) {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+
+  const body = await c.req.json<{
+    project_ref: string;
+    reporting_period: string;
+    loan_size_zar: number;
+    dfi_names?: string | null;
+    lender_ta_ref?: string | null;
+    notes?: string | null;
+  }>();
+
+  if (
+    !body.project_ref ||
+    !body.reporting_period ||
+    body.loan_size_zar == null
+  ) {
+    return c.json(
+      {
+        success: false,
+        error: 'project_ref, reporting_period, loan_size_zar are required',
+      },
+      400,
+    );
+  }
+
+  const tier = deriveEsmrLoanTier(body.loan_size_zar);
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const id = crypto.randomUUID();
+
+  const slaDays = SLA_DAYS[tier];
+  const slaDueDate = new Date(now.getTime() + slaDays * 24 * 3_600_000).toISOString();
+
+  await c.env.DB
+    .prepare(
+      `INSERT INTO oe_ipp_esmr
+         (id, project_ref, reporting_period, loan_size_zar, loan_tier,
+          dfi_names, lender_ta_ref, breach_category,
+          chain_status, sla_due_date, sla_breached, is_reportable,
+          actor_party, reason, notes, created_at, updated_at)
+       VALUES (?,?,?,?,?,?,?,NULL,?,?,0,0,?,NULL,?,?,?)`,
+    )
+    .bind(
+      id,
+      body.project_ref,
+      body.reporting_period,
+      body.loan_size_zar,
+      tier,
+      body.dfi_names ?? null,
+      body.lender_ta_ref ?? null,
+      'reporting_period_open',
+      slaDueDate,
+      user.id,
+      body.notes ?? null,
+      nowIso,
+      nowIso,
+    )
+    .run();
+
+  await fireCascade({
+    event: 'ipp_esmr.created' as EventType,
+    actor_id: user.id,
+    entity_type: 'ipp_esmr',
+    entity_id: id,
+    data: {
+      loan_tier: tier,
+      project_ref: body.project_ref,
+      reporting_period: body.reporting_period,
+      loan_size_zar: body.loan_size_zar,
+      dfi_names: body.dfi_names ?? null,
+    },
+    env: c.env,
+  });
+
+  return c.json({ success: true, data: { id, loan_tier: tier } }, 201);
+});
+
+// ─── GET /:id — single row + is_reportable + audit trail ─────────────────────
+
+router.get('/:id', async (c) => {
+  const user = getCurrentUser(c);
+  const { id } = c.req.param();
+
+  const row = await c.env.DB
+    .prepare('SELECT * FROM oe_ipp_esmr WHERE id = ?')
+    .bind(id)
+    .first<Record<string, unknown>>();
+  if (!row) return c.json({ success: false, error: 'Not found' }, 404);
+
+  if (
+    !['admin', 'support', 'regulator'].includes(user.role) &&
+    row.actor_party !== user.id
+  ) {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+
+  const audit = await c.env.DB
+    .prepare(
+      `SELECT * FROM audit_events
+       WHERE entity_type = 'ipp_esmr' AND entity_id = ?
+       ORDER BY created_at ASC`,
+    )
+    .bind(id)
+    .all<Record<string, unknown>>();
+
+  const lastAction = (audit.results ?? []).at(-1);
+  const isReportable = lastAction
+    ? crossesIntoRegulator(
+        lastAction.action as EsmrAction,
+        row.loan_tier as EsmrLoanTier,
+      )
+    : false;
+
+  return c.json({
+    success: true,
+    data: { ...row, is_reportable: isReportable ? 1 : 0, audit_trail: audit.results ?? [] },
+  });
+});
+
+// ─── PUT /:id/action — state machine dispatch ─────────────────────────────────
+
+router.put('/:id/action', async (c) => {
+  const user = getCurrentUser(c);
+  if (!WRITE_ROLES.includes(user.role)) {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+
+  const { id } = c.req.param();
+  const body = await c.req.json<{
+    action: EsmrAction;
+    breach_category?: string | null;
+    reason?: string;
+    notes?: string;
+  }>();
+
+  const row = await c.env.DB
+    .prepare('SELECT * FROM oe_ipp_esmr WHERE id = ?')
+    .bind(id)
+    .first<Record<string, unknown>>();
+  if (!row) return c.json({ success: false, error: 'Not found' }, 404);
+
+  if (
+    !['admin', 'support', 'regulator'].includes(user.role) &&
+    row.actor_party !== user.id
+  ) {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+
+  const current = row.chain_status as EsmrStatus;
+  if (HARD_TERMINALS.has(current)) {
+    return c.json({ success: false, error: `Status '${current}' is terminal` }, 409);
+  }
+
+  const action = body.action as EsmrAction;
+  const nextSt = STATE_TRANSITIONS[action];
+  if (nextSt === undefined) {
+    return c.json({ success: false, error: `Unknown action: ${action}` }, 400);
+  }
+
+  const rule = VALID_TRANSITIONS[action];
+  if (!rule || !rule.from.includes(current)) {
+    return c.json(
+      { success: false, error: `Cannot transition '${current}' → '${action}'` },
+      409,
+    );
+  }
+
+  const tier = row.loan_tier as EsmrLoanTier;
+  const now = new Date();
+  const nowIso = now.toISOString();
+
+  let slaDueDate: string | null = null;
+  if (!HARD_TERMINALS.has(nextSt)) {
+    const slaDays = SLA_DAYS[tier] ?? 0;
+    if (slaDays > 0) {
+      slaDueDate = new Date(now.getTime() + slaDays * 24 * 3_600_000).toISOString();
+    }
+  }
+
+  const reportable = crossesIntoRegulator(action, tier);
+
+  // For declare_material_breach, capture the breach_category if provided
+  const breachCategory =
+    action === 'declare_material_breach' ? (body.breach_category ?? null) : null;
+
+  const updateSql = breachCategory !== null
+    ? `UPDATE oe_ipp_esmr
+       SET chain_status = ?, sla_due_date = ?, breach_category = ?, reason = ?, notes = ?,
+           is_reportable = ?, updated_at = ?
+       WHERE id = ?`
+    : `UPDATE oe_ipp_esmr
+       SET chain_status = ?, sla_due_date = ?, reason = ?, notes = ?,
+           is_reportable = ?, updated_at = ?
+       WHERE id = ?`;
+
+  if (breachCategory !== null) {
+    await c.env.DB
+      .prepare(updateSql)
+      .bind(nextSt, slaDueDate, breachCategory, body.reason ?? null, body.notes ?? null, reportable ? 1 : 0, nowIso, id)
+      .run();
+  } else {
+    await c.env.DB
+      .prepare(updateSql)
+      .bind(nextSt, slaDueDate, body.reason ?? null, body.notes ?? null, reportable ? 1 : 0, nowIso, id)
+      .run();
+  }
+
+  await fireCascade({
+    event: `esmr_evt_${action}` as EventType,
+    actor_id: user.id,
+    entity_type: 'ipp_esmr',
+    entity_id: id,
+    data: {
+      action,
+      previous_status: current,
+      new_status: nextSt,
+      loan_tier: tier,
+      loan_size_zar: row.loan_size_zar,
+      project_ref: row.project_ref,
+      reporting_period: row.reporting_period,
+      dfi_names: row.dfi_names ?? null,
+      lender_ta_ref: row.lender_ta_ref ?? null,
+      breach_category: breachCategory ?? row.breach_category ?? null,
+      reason: body.reason ?? null,
+      notes: body.notes ?? null,
+      is_reportable: reportable,
+      crosses_into_regulator: reportable,
+    },
+    env: c.env,
+  });
+
+  return c.json({
+    success: true,
+    data: { id, status: nextSt, is_reportable: reportable },
+  });
+});
+
+export default router;

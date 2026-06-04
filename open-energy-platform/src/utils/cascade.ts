@@ -1832,6 +1832,14 @@ export type EventType =
   | 'mc_evt_submit_clarification' | 'mc_evt_commence_final_review'
   | 'mc_evt_certify_milestone' | 'mc_evt_reject_milestone'
   | 'mc_evt_lapse_milestone' | 'mc_evt_flag_sla_breach'
+  // ─── W176: IPP DFI E&S Monitoring Report (Equator Principles) ───────────────
+  | 'ipp_esmr.created' | 'ipp_esmr.sla_breached'
+  | 'esmr_evt_commence_data_collection' | 'esmr_evt_compile_monitoring_report'
+  | 'esmr_evt_commence_ta_review' | 'esmr_evt_prepare_ta_report'
+  | 'esmr_evt_submit_report' | 'esmr_evt_commence_lender_review'
+  | 'esmr_evt_request_clarification' | 'esmr_evt_submit_clarification'
+  | 'esmr_evt_issue_certificate' | 'esmr_evt_withhold_certificate'
+  | 'esmr_evt_declare_material_breach' | 'esmr_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2130,6 +2138,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   lcr_evt: 'ipp',
   ipp_mc: 'ipp',
   mc_evt: 'ipp',
+  ipp_esmr: 'ipp',
+  esmr_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
