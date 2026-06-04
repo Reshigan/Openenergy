@@ -1808,6 +1808,14 @@ export type EventType =
   | 'ael_evt_commence_technical_assessment' | 'ael_evt_commence_final_review'
   | 'ael_evt_grant_ael' | 'ael_evt_refuse_ael'
   | 'ael_evt_lapse_ael' | 'ael_evt_flag_sla_breach'
+  // ─── W173: Force Majeure Relief Claim ───────────────────────────────────
+  | 'ipp_fmr.created' | 'ipp_fmr.sla_breached'
+  | 'fmr_evt_issue_fm_notice' | 'fmr_evt_receive_acknowledgment'
+  | 'fmr_evt_request_ie_assessment' | 'fmr_evt_commence_ie_assessment'
+  | 'fmr_evt_issue_ie_report' | 'fmr_evt_quantify_relief'
+  | 'fmr_evt_commence_negotiation' | 'fmr_evt_confirm_relief'
+  | 'fmr_evt_refuse_relief' | 'fmr_evt_declare_arbitration'
+  | 'fmr_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2100,6 +2108,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   hra_evt: 'ipp',
   ipp_ael: 'ipp',
   ael_evt: 'ipp',
+  ipp_fmr: 'ipp',
+  fmr_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
