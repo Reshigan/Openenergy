@@ -292,6 +292,7 @@ import ippLcReportRoutes, { ippLcReportSlaSweep } from './routes/ipp-lc-report';
 import ippMilestoneCertRoutes, { ippMilestoneCertSlaSweep } from './routes/ipp-milestone-cert';
 import ippEsmrRoutes, { ippEsmrSlaSweep } from './routes/ipp-esmr';
 import ippIeAnnualReviewRoutes, { ippIeAnnualReviewSlaSweep } from './routes/ipp-iear';
+import ippInsuranceRenewalRoutes, { ippInsuranceRenewalSlaSweep } from './routes/ipp-insr';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -915,6 +916,7 @@ app.route('/api/ipp-lc-reports', ippLcReportRoutes);
 app.route('/api/ipp-milestone-certs', ippMilestoneCertRoutes);
 app.route('/api/ipp-esmr', ippEsmrRoutes);
 app.route('/api/ipp-ie-annual-reviews', ippIeAnnualReviewRoutes);
+app.route('/api/ipp-insurance-renewals', ippInsuranceRenewalRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2375,6 +2377,10 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       // W177: escalate_to_lenders crosses ALL tiers; require_remediation large+; close_review utility+.
       await safe('ipp_iear_sla_sweep', async () => {
         await ippIeAnnualReviewSlaSweep(env as never);
+      });
+      // W178: confirm_inadequate + lapse_coverage cross ALL tiers; confirm_adequate major+.
+      await safe('ipp_insr_sla_sweep', async () => {
+        await ippInsuranceRenewalSlaSweep(env as never);
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

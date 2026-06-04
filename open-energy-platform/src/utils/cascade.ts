@@ -1848,6 +1848,14 @@ export type EventType =
   | 'iear_evt_commence_final_review' | 'iear_evt_issue_report'
   | 'iear_evt_close_review' | 'iear_evt_require_remediation'
   | 'iear_evt_escalate_to_lenders' | 'iear_evt_flag_sla_breach'
+  // ─── W178: IPP Annual Insurance Renewal ──────────────────────────────────────
+  | 'ipp_insr.created' | 'ipp_insr.sla_breached'
+  | 'insr_evt_commence_gap_analysis' | 'insr_evt_instruct_broker'
+  | 'insr_evt_place_in_market' | 'insr_evt_receive_terms'
+  | 'insr_evt_commence_lender_review' | 'insr_evt_prepare_documentation'
+  | 'insr_evt_submit_documents' | 'insr_evt_request_lender_confirmation'
+  | 'insr_evt_confirm_adequate' | 'insr_evt_confirm_inadequate'
+  | 'insr_evt_lapse_coverage' | 'insr_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2150,6 +2158,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   esmr_evt: 'ipp',
   ipp_iear: 'ipp',
   iear_evt: 'ipp',
+  ipp_insr: 'ipp',
+  insr_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
