@@ -56,6 +56,7 @@ import { IppPpaVariationTab } from '../ipp/IppPpaVariationTab';
 import { IppChangeOfControlTab } from '../ipp/IppChangeOfControlTab';
 import { IppRefinancingTab } from '../ipp/IppRefinancingTab';
 import { IppFmTab } from '../ipp/IppFmTab';
+import { IppAnnualReportTab } from '../ipp/IppAnnualReportTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -102,6 +103,7 @@ export function IppWorkstationPage() {
         { key: 'change-of-control', label: 'Change of control (W156)', group: 'Documents', body: () => <IppChangeOfControlTab /> },
         { key: 'refinancing', label: 'Refinancing (W157)', group: 'Documents', body: () => <IppRefinancingTab /> },
         { key: 'force-majeure', label: 'Force majeure (W158)', group: 'Documents', body: () => <IppFmTab /> },
+        { key: 'annual-report', label: 'Annual compliance report (W159)', group: 'Documents', body: () => <IppAnnualReportTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },

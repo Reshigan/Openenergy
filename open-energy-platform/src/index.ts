@@ -273,6 +273,7 @@ import ippPpaVariationRoutes, { ippPpaVariationSlaSweep } from './routes/ipp-ppa
 import ippChangeOfControlRoutes, { ippChangeOfControlSlaSweep } from './routes/ipp-change-of-control';
 import ippRefinancingRoutes, { ippRefinancingSlaSweep } from './routes/ipp-refinancing';
 import ippFmRoutes, { ippFmSlaSweep } from './routes/ipp-fm';
+import ippAnnualReportRoutes, { ippAnnualReportSlaSweep } from './routes/ipp-annual-report';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -877,6 +878,7 @@ app.route('/api/ipp-change-of-control', ippChangeOfControlRoutes);
 app.route('/api/ipp-refinancing', ippRefinancingRoutes);
 // W158: REIPPPP Schedule 6 + ERA §35 + FIDIC 19 force majeure; URGENT SLA; grant_relief + declare_prolonged cross EVERY tier
 app.route('/api/ipp-fm', ippFmRoutes);
+app.route('/api/ipp-annual-report', ippAnnualReportRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2261,6 +2263,10 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       // W158: grant_relief + declare_prolonged cross EVERY tier; dispute_claim crosses significant+.
       await safe('ipp_fm_sla_sweep', async () => {
         await ippFmSlaSweep(env as never);
+      });
+      // W159: reject_report + lodge_appeal + determine_appeal cross EVERY tier; accept_report crosses large+.
+      await safe('ipp_anr_sla_sweep', async () => {
+        await ippAnnualReportSlaSweep(env as never);
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

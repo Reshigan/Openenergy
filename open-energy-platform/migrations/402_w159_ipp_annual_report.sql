@@ -1,0 +1,293 @@
+-- Wave 159: IPP Annual Regulatory Compliance Report chain
+-- ERA 4/2006 §11(1)(h) annual returns, NERSA licence condition reporting,
+-- DMRE technical compliance, FSCA financial-statement obligations
+--
+-- 18 columns:
+--   id, participant_id, project_id, reporting_year, capacity_mw, capacity_tier,
+--   report_category, description, chain_status, sla_due_at, sla_breached,
+--   submitted_at, accepted_at, rejected_at, appeal_lodged_at,
+--   appeal_determined_at, created_at, updated_at
+
+CREATE TABLE IF NOT EXISTS `oe_ipp_annual_reports` (
+  id TEXT PRIMARY KEY,
+  participant_id TEXT NOT NULL,
+  project_id TEXT NOT NULL,
+  reporting_year INTEGER NOT NULL,
+  capacity_mw REAL NOT NULL,
+  capacity_tier TEXT NOT NULL CHECK(capacity_tier IN ('small','medium','large','utility','strategic')),
+  report_category TEXT NOT NULL CHECK(report_category IN ('annual_returns','licence_conditions','technical_compliance','financial_compliance')),
+  description TEXT,
+  chain_status TEXT NOT NULL DEFAULT 'report_due',
+  sla_due_at TEXT,
+  sla_breached INTEGER NOT NULL DEFAULT 0,
+  submitted_at TEXT,
+  accepted_at TEXT,
+  rejected_at TEXT,
+  appeal_lodged_at TEXT,
+  appeal_determined_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_ipp_anr_participant
+  ON oe_ipp_annual_reports(participant_id);
+
+CREATE INDEX IF NOT EXISTS idx_ipp_anr_project
+  ON oe_ipp_annual_reports(project_id);
+
+CREATE INDEX IF NOT EXISTS idx_ipp_anr_status
+  ON oe_ipp_annual_reports(chain_status);
+
+CREATE INDEX IF NOT EXISTS idx_ipp_anr_sla
+  ON oe_ipp_annual_reports(sla_due_at)
+  WHERE sla_breached = 0;
+
+-- 12 seed rows, 18 values each.
+-- Column order:
+--  1:id  2:participant_id  3:project_id  4:reporting_year  5:capacity_mw
+--  6:capacity_tier  7:report_category  8:description  9:chain_status
+--  10:sla_due_at  11:sla_breached  12:submitted_at  13:accepted_at
+--  14:rejected_at  15:appeal_lodged_at  16:appeal_determined_at
+--  17:created_at  18:updated_at
+
+INSERT OR IGNORE INTO oe_ipp_annual_reports VALUES
+  (
+    'ipp_anr_a1b2c3d4e5f6g7h8i9j0k1l2',
+    'part_ipp_001',
+    'proj_001',
+    2024,
+    7.5,
+    'small',
+    'annual_returns',
+    'REIPPPP Round 5 small-scale wind project annual compliance filing for 2024 — ERA §11(1)(h) annual returns submission covering generation output, availability factors and licence condition adherence.',
+    'accepted',
+    NULL,
+    0,
+    '2025-02-28T09:00:00Z',
+    '2025-03-15T11:00:00Z',
+    NULL,
+    NULL,
+    NULL,
+    '2025-01-15T08:00:00Z',
+    '2025-03-15T11:00:00Z'
+  ),
+  (
+    'ipp_anr_b2c3d4e5f6g7h8i9j0k1l2m3',
+    'part_ipp_001',
+    'proj_002',
+    2024,
+    4.2,
+    'small',
+    'licence_conditions',
+    'Small embedded solar PV project licence condition compliance report for 2024 — covers metering accuracy certification, grid-code adherence and community benefit programme disbursements per NERSA licence schedule.',
+    'report_due',
+    '2025-06-30T23:59:59Z',
+    0,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    '2025-01-10T10:00:00Z',
+    '2025-06-04T08:00:00Z'
+  ),
+  (
+    'ipp_anr_c3d4e5f6g7h8i9j0k1l2m3n4',
+    'part_ipp_002',
+    'proj_003',
+    2024,
+    38.0,
+    'medium',
+    'technical_compliance',
+    'REIPPPP Round 4 medium-scale solar PV technical compliance report for 2024 — NERSA Grid Code §B4 power quality, protection relay settings audit and IEC 61724 performance ratio verification.',
+    'submitted',
+    '2025-04-30T23:59:59Z',
+    0,
+    '2025-04-10T14:00:00Z',
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    '2025-01-20T09:00:00Z',
+    '2025-04-10T14:00:00Z'
+  ),
+  (
+    'ipp_anr_d4e5f6g7h8i9j0k1l2m3n4o5',
+    'part_ipp_002',
+    'proj_004',
+    2025,
+    25.5,
+    'medium',
+    'financial_compliance',
+    'Medium-scale wind project FSCA financial compliance report for 2025 — audited financial statements, debt service coverage ratios, lender covenant certificates and SARB large-exposure schedule per NCA requirements.',
+    'under_review',
+    '2026-04-30T23:59:59Z',
+    0,
+    '2026-03-15T10:00:00Z',
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    '2026-01-05T08:00:00Z',
+    '2026-03-15T10:00:00Z'
+  ),
+  (
+    'ipp_anr_e5f6g7h8i9j0k1l2m3n4o5p6',
+    'part_ipp_003',
+    'proj_005',
+    2024,
+    142.0,
+    'large',
+    'annual_returns',
+    'REIPPPP Round 3 large-scale solar park annual returns filing for 2024 — ERA §11(1)(h) submission including plant availability statistics, curtailment records, carbon offset credits retired and environmental compliance schedule.',
+    'accepted',
+    NULL,
+    0,
+    '2025-03-05T11:00:00Z',
+    '2025-04-02T14:00:00Z',
+    NULL,
+    NULL,
+    NULL,
+    '2025-01-08T09:00:00Z',
+    '2025-04-02T14:00:00Z'
+  ),
+  (
+    'ipp_anr_f6g7h8i9j0k1l2m3n4o5p6q7',
+    'part_ipp_003',
+    'proj_006',
+    2024,
+    98.0,
+    'large',
+    'licence_conditions',
+    'Large-scale biomass plant licence conditions compliance report for 2024 — NERSA conditions covering fuel supply chain traceability, emission monitoring per NEMA §30, local content requirements and economic development programme spend.',
+    'rejected',
+    NULL,
+    0,
+    '2025-02-20T09:00:00Z',
+    NULL,
+    '2025-03-10T16:00:00Z',
+    '2025-03-25T10:00:00Z',
+    NULL,
+    '2025-01-12T08:00:00Z',
+    '2025-03-25T10:00:00Z'
+  ),
+  (
+    'ipp_anr_g7h8i9j0k1l2m3n4o5p6q7r8',
+    'part_ipp_003',
+    'proj_007',
+    2025,
+    175.0,
+    'large',
+    'technical_compliance',
+    'REIPPPP Round 5 large onshore wind farm technical compliance report for 2025 — blade inspection records, SCADA telemetry audit, NERSA Grid Code §B4 power-factor band compliance and IEC 61400-12 performance measurement.',
+    'queries_raised',
+    '2026-05-31T23:59:59Z',
+    1,
+    '2026-03-28T10:00:00Z',
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    '2026-01-15T08:00:00Z',
+    '2026-04-20T13:00:00Z'
+  ),
+  (
+    'ipp_anr_h8i9j0k1l2m3n4o5p6q7r8s9',
+    'part_ipp_004',
+    'proj_008',
+    2024,
+    320.0,
+    'utility',
+    'annual_returns',
+    'Utility-scale CSP plant annual returns for 2024 — ERA §11(1)(h) submission covering molten-salt storage dispatch logs, thermal efficiency ratios, REIPPPP Schedule 3 local content verification and environmental monitoring programme results.',
+    'accepted',
+    NULL,
+    0,
+    '2025-02-14T10:00:00Z',
+    '2025-03-28T09:00:00Z',
+    NULL,
+    NULL,
+    NULL,
+    '2025-01-05T08:00:00Z',
+    '2025-03-28T09:00:00Z'
+  ),
+  (
+    'ipp_anr_i9j0k1l2m3n4o5p6q7r8s9t0',
+    'part_ipp_004',
+    'proj_009',
+    2025,
+    450.0,
+    'utility',
+    'financial_compliance',
+    'Utility-scale offshore wind project FSCA and SARB financial compliance report for 2025 — audited IFRS financial statements, project-finance debt waterfall, DSRA funding adequacy and Basel III large-exposure notification to SARB.',
+    'report_drafting',
+    '2026-07-31T23:59:59Z',
+    0,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    '2026-01-20T09:00:00Z',
+    '2026-06-04T08:00:00Z'
+  ),
+  (
+    'ipp_anr_j0k1l2m3n4o5p6q7r8s9t0u1',
+    'part_ipp_004',
+    'proj_010',
+    2024,
+    380.0,
+    'utility',
+    'licence_conditions',
+    'Utility-scale solar PV licence conditions compliance filing for 2024 — community upliftment fund disbursements, preferential procurement scorecard, grid-code protection settings audit and NERSA §14 reporting obligations.',
+    'queries_raised',
+    '2025-05-15T23:59:59Z',
+    1,
+    '2025-04-01T11:00:00Z',
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    '2025-01-18T08:00:00Z',
+    '2025-04-25T14:00:00Z'
+  ),
+  (
+    'ipp_anr_k1l2m3n4o5p6q7r8s9t0u1v2',
+    'part_ipp_001',
+    'proj_011',
+    2024,
+    850.0,
+    'strategic',
+    'annual_returns',
+    'Strategic-scale pumped-storage hydro project annual returns for 2024 — national energy security asset; ERA §11(1)(h) submission includes full dispatch log correlated against NTCSA system operator instructions, capacity payment reconciliation and NERSA §10 compliance certificate.',
+    'appeal_lodged',
+    NULL,
+    0,
+    '2025-02-10T09:00:00Z',
+    NULL,
+    '2025-03-20T15:00:00Z',
+    '2025-04-03T10:00:00Z',
+    NULL,
+    '2025-01-08T09:00:00Z',
+    '2025-04-03T10:00:00Z'
+  ),
+  (
+    'ipp_anr_l2m3n4o5p6q7r8s9t0u1v2w3',
+    'part_ipp_002',
+    'proj_012',
+    2024,
+    620.0,
+    'strategic',
+    'technical_compliance',
+    'Strategic-scale offshore wind technical compliance report for 2024 — IEC 61400-3 offshore structural inspection, NERSA Grid Code §B6 fault ride-through verification, dynamic reactive power capability audit and NTCSA system-impact study review.',
+    'appeal_determined',
+    NULL,
+    0,
+    '2025-02-18T10:00:00Z',
+    NULL,
+    '2025-03-25T14:00:00Z',
+    '2025-04-08T11:00:00Z',
+    '2025-05-22T09:00:00Z',
+    '2025-01-10T08:00:00Z',
+    '2025-05-22T09:00:00Z'
+  );

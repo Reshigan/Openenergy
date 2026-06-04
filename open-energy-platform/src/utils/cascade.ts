@@ -1697,6 +1697,13 @@ export type EventType =
   | 'fm_evt_commence_monitoring' | 'fm_evt_resolve_event' | 'fm_evt_dispute_claim'
   | 'fm_evt_commence_arbitration' | 'fm_evt_determine_arbitration'
   | 'fm_evt_declare_prolonged' | 'fm_evt_withdraw_claim' | 'fm_evt_flag_sla_breach'
+  // W159 IPP Annual Regulatory Compliance Report
+  | 'ipp_anr.created' | 'ipp_anr.sla_breached'
+  | 'anr_evt_start_drafting' | 'anr_evt_begin_data_collection' | 'anr_evt_complete_data_collection'
+  | 'anr_evt_submit_for_internal_review' | 'anr_evt_approve_internally' | 'anr_evt_submit_report'
+  | 'anr_evt_commence_review' | 'anr_evt_raise_queries' | 'anr_evt_submit_responses'
+  | 'anr_evt_accept_report' | 'anr_evt_reject_report' | 'anr_evt_lodge_appeal'
+  | 'anr_evt_determine_appeal' | 'anr_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -1961,6 +1968,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ipp_refi: 'ipp',
   ipp_fm: 'ipp',
   fm_evt: 'ipp',
+  ipp_anr: 'ipp',
+  anr_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
