@@ -72,7 +72,8 @@ export interface InverterHistoryPoint {
   ts: string;
   ac_kw: number | null;
   dc_kw: number | null;
-  interval_kwh: number | null;
+  interval_kwh: number | null;  // daily yield up to this snapshot (resets at midnight)
+  total_kwh: number | null;     // lifetime cumulative yield (monotonically increasing)
   temperature_c: number | null;
 }
 
@@ -313,6 +314,7 @@ async function solaxHistory(
     ac_kw: toNum(d.totalActivePower),
     dc_kw: toNum(d.MPPTTotalInputPower),
     interval_kwh: toNum(d.dailyYield),
+    total_kwh: toNum(d.totalYield),
     temperature_c: toNum(d.inverterTemperature),
   }));
 }

@@ -131,10 +131,12 @@ export async function backfillStationHistory(
   const carbonIntensity = (station.carbon_intensity_gco2_per_kwh as number | null) ?? SA_CARBON_INTENSITY_DEFAULT;
   const deviceSn = station.device_sn as string;
 
-  // Determine start: station created_at or 2 years ago, whichever is later
-  const twoYearsAgo = Date.now() - 2 * 365 * 24 * 60 * 60 * 1000;
-  const stationCreated = station.created_at ? new Date(station.created_at as string).getTime() : twoYearsAgo;
-  const startMs = Math.max(twoYearsAgo, stationCreated);
+  // SolaX history API limit: max 12-hour window per request.
+  // Use 6-hour chunks to stay safe. Look back 14 days for the initial integration
+  // import — the hourly cron takes over ongoing accruals from today forward.
+  const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+  const stationCreated = station.created_at ? new Date(station.created_at as string).getTime() : fourteenDaysAgo;
+  const startMs = Math.max(fourteenDaysAgo, stationCreated);
   const endMs = Date.now() - 60 * 60 * 1000; // up to 1 hour ago
 
   // Get already-backfilled date range to avoid re-inserting
@@ -143,10 +145,11 @@ export async function backfillStationHistory(
     .bind(stationId)
     .first<{ min_h: string | null; max_h: string | null }>();
 
-  // Pull in 30-day windows to respect API limits
-  const WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
-  type DayBucket = { maxKwh: number; date: string };
-  const dayBuckets = new Map<string, DayBucket>();
+  // 6-hour chunks (SolaX enforces a 12-hour max per request).
+  // Track MAX(totalYield) per day — it's monotonically increasing so the end-of-day
+  // max minus yesterday's max gives that day's actual generation.
+  const WINDOW_MS = 6 * 60 * 60 * 1000;
+  const dayMaxTotal = new Map<string, number>(); // date → max totalYield seen
 
   let cursor = startMs;
   while (cursor < endMs) {
@@ -154,12 +157,12 @@ export async function backfillStationHistory(
     try {
       const points = await getHistoricalData(creds, deviceSn, cursor, windowEnd, 60);
       for (const p of points) {
-        if (!p.ts || p.interval_kwh === null) continue;
+        if (!p.ts) continue;
         const date = p.ts.slice(0, 10); // YYYY-MM-DD
-        const existing_bucket = dayBuckets.get(date);
-        const kwh = p.interval_kwh ?? 0;
-        if (!existing_bucket || kwh > existing_bucket.maxKwh) {
-          dayBuckets.set(date, { maxKwh: kwh, date });
+        const totalKwh = p.total_kwh ?? 0;
+        if (totalKwh > 0) {
+          const prev = dayMaxTotal.get(date) ?? 0;
+          if (totalKwh > prev) dayMaxTotal.set(date, totalKwh);
         }
       }
     } catch {
@@ -168,15 +171,23 @@ export async function backfillStationHistory(
     cursor = windowEnd;
   }
 
-  if (dayBuckets.size === 0) return { days_backfilled: 0, kwh_total: 0 };
+  if (dayMaxTotal.size === 0) return { days_backfilled: 0, kwh_total: 0 };
+
+  // Compute daily deltas: today's max totalYield − previous day's max totalYield
+  const sortedDates = [...dayMaxTotal.keys()].sort();
+  type DayBucket = { date: string; maxKwh: number };
+  const dayBuckets: DayBucket[] = sortedDates.map((date, i) => {
+    const total = dayMaxTotal.get(date)!;
+    const prevTotal = i > 0 ? (dayMaxTotal.get(sortedDates[i - 1]) ?? total) : total;
+    return { date, maxKwh: Math.max(0, total - prevTotal) };
+  });
 
   // Upsert one accrual row per day
   let cumulative = 0;
   let daysWritten = 0;
-  const sortedDays = [...dayBuckets.values()].sort((a, b) => a.date.localeCompare(b.date));
 
-  for (const day of sortedDays) {
-    const kwhDelta = Math.max(0, day.maxKwh);
+  for (const day of dayBuckets) {
+    const kwhDelta = day.maxKwh;
     cumulative += kwhDelta;
     const carbonTco2e = kwhDelta * (carbonIntensity / 1_000_000);
     const revenueZar = kwhDelta * tariffRate;
@@ -360,15 +371,18 @@ app.post('/backfill', async (c) => {
     .bind(...stationBinds)
     .all<{ id: string }>();
 
-  const results = [];
-  for (const st of stations.results ?? []) {
-    try {
-      const r = await backfillStationHistory(st.id, env);
-      results.push({ station_id: st.id, ...r });
-    } catch (e) {
-      results.push({ station_id: st.id, error: String(e) });
-    }
-  }
+  // Parallelize across stations — each station's 6-hour window chunks run sequentially
+  // inside, but all stations run concurrently to keep total wall-clock time low.
+  const results = await Promise.all(
+    (stations.results ?? []).map(async (st) => {
+      try {
+        const r = await backfillStationHistory(st.id, env);
+        return { station_id: st.id, ...r };
+      } catch (e) {
+        return { station_id: st.id, error: String(e) };
+      }
+    })
+  );
   return c.json({ stations_processed: results.length, results });
 });
 
