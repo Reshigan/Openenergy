@@ -157,7 +157,11 @@ jobs:
           # next step.
           files=$(ls migrations/*.sql | sort -V | awk -F/ '{
             n = substr($NF, 1, 3) + 0
-            if (n <= 18 || n == 49 || n >= 51) print
+            # Skip 019-048 (force-applied out-of-band per GLR §1.1).
+            # Skip 050 (per-statement reconcile in next step).
+            # Skip 380-381 (esums_projects band — rolled back on first run
+            #   due to om_sites FK conflict; handled in ESUMS reconcile step).
+            if (n <= 18 || n == 49 || (n >= 51 && n < 380) || n >= 382) print
           }')
           for f in $files; do
             echo "::group::Applying $f"
@@ -226,6 +230,54 @@ jobs:
           # what migration 020 tried to add but failed). Defensively add
           # it so the matching engine + order-detail endpoints work.
           attempt "ALTER trade_orders ADD remaining_volume_mwh" "ALTER TABLE trade_orders ADD COLUMN remaining_volume_mwh REAL;"
+          $ok || exit 1
+
+      - name: Reconcile ESUMS 380-381 schema (per-statement, idempotent)
+        # Migrations 380 + 381 rolled back on first deploy because D1 runs
+        # each file as a transaction — the ALTER TABLE om_sites ADD COLUMN
+        # project_id failed (column already existed), rolling back the whole
+        # file including CREATE TABLE esums_projects.
+        # We apply each statement individually so duplicate-column / already-
+        # exists errors don't abort the remaining DDL.
+        working-directory: open-energy-platform
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set +e
+          ok=true
+          attempt() {
+            local desc="$1"; local sql="$2"
+            echo "::group::$desc"
+            out=$(npx wrangler@4 d1 execute open-energy-db --remote --command "$sql" -y 2>&1)
+            rc=$?
+            echo "$out"
+            if [ $rc -ne 0 ]; then
+              if echo "$out" | grep -qE "duplicate column name|already exists|SQLITE_CONSTRAINT_UNIQUE|Not currently importing"; then
+                echo "::warning::$desc already applied"
+              elif echo "$out" | grep -qE "no such column|no such table"; then
+                echo "::warning::$desc skipped (depends on schema not yet on prod)"
+              else
+                echo "::error::$desc failed"
+                ok=false
+              fi
+            fi
+            echo "::endgroup::"
+          }
+          # ── 380: esums_projects table ────────────────────────────────────
+          attempt "CREATE esums_projects" "CREATE TABLE IF NOT EXISTS esums_projects (id TEXT PRIMARY KEY, participant_id TEXT NOT NULL REFERENCES participants(id) ON DELETE CASCADE, name TEXT NOT NULL, description TEXT, shard_key TEXT UNIQUE, site_count INTEGER NOT NULL DEFAULT 0, total_capacity_kw REAL NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','archived')), created_at TEXT NOT NULL DEFAULT (datetime('now')), updated_at TEXT NOT NULL DEFAULT (datetime('now')));"
+          attempt "INDEX esums_projects_participant" "CREATE INDEX IF NOT EXISTS idx_esums_projects_participant ON esums_projects(participant_id);"
+          # ── 381: project_type + ipp_project_id columns ───────────────────
+          attempt "ALTER esums_projects ADD project_type" "ALTER TABLE esums_projects ADD COLUMN project_type TEXT NOT NULL DEFAULT 'standalone' CHECK(project_type IN ('ipp','standalone'));"
+          attempt "ALTER esums_projects ADD ipp_project_id" "ALTER TABLE esums_projects ADD COLUMN ipp_project_id TEXT REFERENCES ipp_projects(id) ON DELETE SET NULL;"
+          attempt "INDEX esums_projects_ipp" "CREATE INDEX IF NOT EXISTS idx_esums_projects_ipp ON esums_projects(ipp_project_id);"
+          # ── 380: om_sites FK (may already exist — duplicate is benign) ───
+          attempt "ALTER om_sites ADD project_id" "ALTER TABLE om_sites ADD COLUMN project_id TEXT REFERENCES esums_projects(id) ON DELETE SET NULL;"
+          attempt "INDEX om_sites_project" "CREATE INDEX IF NOT EXISTS idx_om_sites_project ON om_sites(project_id);"
+          # ── 380: esums_telemetry table ───────────────────────────────────
+          attempt "CREATE esums_telemetry" "CREATE TABLE IF NOT EXISTS esums_telemetry (id TEXT PRIMARY KEY, device_id TEXT NOT NULL, site_id TEXT NOT NULL, project_id TEXT, ts TEXT NOT NULL, ac_kw REAL, dc_kw REAL, yield_kwh REAL, interval_kwh REAL, voltage_v REAL, current_a REAL, frequency_hz REAL, temperature_c REAL, irradiance_w_m2 REAL, status_code TEXT, quality TEXT NOT NULL DEFAULT 'valid');"
+          attempt "INDEX esums_telemetry_device_ts" "CREATE INDEX IF NOT EXISTS idx_esums_tel_device_ts ON esums_telemetry(device_id, ts DESC);"
+          attempt "INDEX esums_telemetry_site_ts" "CREATE INDEX IF NOT EXISTS idx_esums_tel_site_ts ON esums_telemetry(site_id, ts DESC);"
           $ok || exit 1
 
       - name: Deploy Worker (oe.vantax.co.za)
