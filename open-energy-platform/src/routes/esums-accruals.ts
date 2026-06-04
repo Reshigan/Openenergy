@@ -140,9 +140,10 @@ export async function backfillStationHistory(
   //
   // Dedup: clear existing backfill rows for this station before inserting fresh data.
   // ON CONFLICT DO UPDATE is the final idempotency guard.
-  const twelveMonthsAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
-  const stationCreated = station.created_at ? new Date(station.created_at as string).getTime() : twelveMonthsAgo;
-  const startMs = Math.max(twelveMonthsAgo, stationCreated);
+  // Always start 12 months back — the inverter was installed before the platform
+  // entry was created, so station.created_at (today for newly synced devices) is
+  // not a valid lower bound for historical data.
+  const startMs = Date.now() - 365 * 24 * 60 * 60 * 1000;
   const endMs = Date.now() - 60 * 60 * 1000; // up to 1 hour ago
 
   // Find the latest already-backfilled hour so we only fetch new data on re-runs.
