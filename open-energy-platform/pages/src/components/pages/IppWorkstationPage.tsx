@@ -80,6 +80,7 @@ import { IppPerfSecurityTab } from '../ipp/IppPerfSecurityTab';
 import { IppCepComplianceTab } from '../ipp/IppCepComplianceTab';
 import { IppSedComplianceTab } from '../ipp/IppSedComplianceTab';
 import { IppBbbeeVerificationTab } from '../ipp/IppBbbeeVerificationTab';
+import { IppLenderReportingTab } from '../ipp/IppLenderReportingTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -150,6 +151,7 @@ export function IppWorkstationPage() {
         { key: 'cep-compliance', label: 'Community equity participation (W180)', group: 'Risk', body: () => <IppCepComplianceTab /> },
         { key: 'sed-compliance', label: 'SED annual spend compliance (W181)', group: 'Risk', body: () => <IppSedComplianceTab /> },
         { key: 'bbbee-verification', label: 'BBBEE annual verification (W182)', group: 'Risk', body: () => <IppBbbeeVerificationTab /> },
+        { key: 'lender-reporting', label: 'Lender reporting covenant (W183)', group: 'Risk', body: () => <IppLenderReportingTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },

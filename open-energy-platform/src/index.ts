@@ -297,6 +297,7 @@ import ippPerfSecurityRoutes, { ippPerfSecuritySlaSweep } from './routes/ipp-per
 import ippCepComplianceRoutes, { ippCepComplianceSlaSweep } from './routes/ipp-cep-compliance';
 import ippSedComplianceRoutes, { ippSedComplianceSlaSweep } from './routes/ipp-sed-compliance';
 import ippBbbeeVerificationRoutes, { ippBbbeeVerificationSlaSweep } from './routes/ipp-bbbee-verification';
+import ippLenderReportingRoutes, { ippLenderReportingSlaSweep } from './routes/ipp-lender-reporting';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -925,6 +926,7 @@ app.route('/api/ipp-perf-securities', ippPerfSecurityRoutes);
 app.route('/api/ipp-cep-compliance', ippCepComplianceRoutes);
 app.route('/api/ipp-sed-compliance', ippSedComplianceRoutes);
 app.route('/api/ipp-bbbee-verification', ippBbbeeVerificationRoutes);
+app.route('/api/ipp-lender-reporting', ippLenderReportingRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2405,6 +2407,10 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       // W182: declare_non_compliant + lapse_certificate cross ALL tiers; confirm_verified majority+.
       await safe('ipp_bbbee_sla_sweep', async () => {
         await ippBbbeeVerificationSlaSweep(env as never);
+      });
+      // W183: declare_covenant_breach cross ALL tiers; raise_dispute + confirm_acknowledged syndicated+.
+      await safe('ipp_lrep_sla_sweep', async () => {
+        await ippLenderReportingSlaSweep(env as never);
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

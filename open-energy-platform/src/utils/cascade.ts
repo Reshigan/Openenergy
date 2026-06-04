@@ -1888,6 +1888,14 @@ export type EventType =
   | 'bbbee_evt_commence_final_assessment' | 'bbbee_evt_issue_certificate'
   | 'bbbee_evt_confirm_verified' | 'bbbee_evt_declare_non_compliant'
   | 'bbbee_evt_lapse_certificate' | 'bbbee_evt_flag_sla_breach'
+  // ─── W183 IPP Lender Information Covenant & Reporting Package ───────────────
+  | 'ipp_lrep.created' | 'ipp_lrep.sla_breached'
+  | 'lrep_evt_commence_data_collection' | 'lrep_evt_update_financial_model'
+  | 'lrep_evt_conduct_technical_review' | 'lrep_evt_compile_documents'
+  | 'lrep_evt_obtain_ipp_sign_off' | 'lrep_evt_submit_to_agent_bank'
+  | 'lrep_evt_distribute_to_lenders' | 'lrep_evt_request_acknowledgement'
+  | 'lrep_evt_confirm_acknowledged' | 'lrep_evt_raise_dispute'
+  | 'lrep_evt_declare_covenant_breach' | 'lrep_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2200,6 +2208,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   sed_evt: 'ipp',
   ipp_bbbee: 'ipp',
   bbbee_evt: 'ipp',
+  ipp_lrep: 'ipp',
+  lrep_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
