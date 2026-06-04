@@ -340,16 +340,20 @@ app.post('/backfill', async (c) => {
     return c.json({ error: 'Forbidden' }, 403);
   }
 
-  const body = await c.req.json<{ station_id?: string }>().catch(() => ({ station_id: undefined }));
+  const body = await c.req.json<{ station_id?: string; participant_id?: string }>().catch(() => ({ station_id: undefined, participant_id: undefined }));
   const env = c.env;
   const stationId = body.station_id;
+  // Admin can pass participant_id to backfill another user's stations
+  const targetParticipant = (['admin', 'support'].includes(user.role) && body.participant_id)
+    ? body.participant_id
+    : user.id;
 
   const stationFilter = stationId
     ? 'WHERE id = ? AND participant_id = ? AND status = ?'
     : 'WHERE participant_id = ? AND status = ?';
   const stationBinds: unknown[] = stationId
-    ? [stationId, user.id, 'active']
-    : [user.id, 'active'];
+    ? [stationId, targetParticipant, 'active']
+    : [targetParticipant, 'active'];
 
   const stations = await env.DB
     .prepare(`SELECT id FROM solax_stations ${stationFilter}`)
