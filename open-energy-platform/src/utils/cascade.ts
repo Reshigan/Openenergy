@@ -1691,6 +1691,12 @@ export type EventType =
   | 'ipp_refi.reject_refinancing' | 'ipp_refi.abandon'
   | 'ipp_refi.declare_lender_default' | 'ipp_refi.resolve_lender_default'
   | 'ipp_refi.sla_breached' | 'ipp_refi.flag_sla_breach'
+  // ─── W158: IPP Force Majeure Declaration & Relief ──────────────────────────
+  | 'ipp_fm.created' | 'ipp_fm.sla_breached'
+  | 'fm_evt_issue_fm_notice' | 'fm_evt_verify_notice' | 'fm_evt_grant_relief'
+  | 'fm_evt_commence_monitoring' | 'fm_evt_resolve_event' | 'fm_evt_dispute_claim'
+  | 'fm_evt_commence_arbitration' | 'fm_evt_determine_arbitration'
+  | 'fm_evt_declare_prolonged' | 'fm_evt_withdraw_claim' | 'fm_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -1953,6 +1959,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ipp_ppavar: 'ipp',
   ipp_coc: 'ipp',
   ipp_refi: 'ipp',
+  ipp_fm: 'ipp',
+  fm_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
