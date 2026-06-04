@@ -25,6 +25,7 @@ import { randomId } from '../utils/auth-tokens';
 import { AppError, ErrorCode } from '../utils/types';
 import {
   getRealtimeReading,
+  validateBaseUrl,
   SUPPORTED_MANUFACTURERS,
   type Manufacturer,
   type ManufacturerCredentials,
@@ -123,6 +124,15 @@ mr.post('/credentials', async (c) => {
     throw new AppError(ErrorCode.VALIDATION_ERROR, 'auth_type must be oauth2_client_creds | api_key | basic | token', 400);
   }
 
+  // Validate base_url against per-manufacturer allowlist (SSRF prevention)
+  if (b.base_url) {
+    try {
+      validateBaseUrl(manufacturer, String(b.base_url));
+    } catch (e: unknown) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, String((e as Error).message), 400);
+    }
+  }
+
   const now = nowIso();
   const id = randomId('mfrc_');
 
@@ -181,6 +191,15 @@ mr.put('/credentials/:id', async (c) => {
     .prepare('SELECT * FROM manufacturer_credentials WHERE id = ? AND participant_id = ?')
     .bind(id, user.id).first<CredRow>();
   if (!existing) throw new AppError(ErrorCode.NOT_FOUND, 'Credential not found', 404);
+
+  // Validate updated base_url against allowlist (SSRF prevention)
+  if (b.base_url) {
+    try {
+      validateBaseUrl(existing.manufacturer as Manufacturer, String(b.base_url));
+    } catch (e: unknown) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, String((e as Error).message), 400);
+    }
+  }
 
   const now = nowIso();
   await c.env.DB.prepare(`

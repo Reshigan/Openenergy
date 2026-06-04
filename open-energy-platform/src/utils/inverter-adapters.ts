@@ -73,6 +73,67 @@ export class AdapterError extends Error {
   }
 }
 
+// ─── Base-URL SSRF allowlist ──────────────────────────────────────────────────
+// Each manufacturer may only use its own cloud endpoint.
+// base_url is optional; when null the hardcoded default is used (safe).
+// When a participant supplies base_url, it must match this list exactly.
+//
+// Rules enforced by validateBaseUrl():
+//   1. Must parse as a valid URL.
+//   2. Scheme must be https: — no plaintext transport.
+//   3. Hostname must not be an IPv4/v6 literal (blocks metadata/internal IPs).
+//   4. Hostname must end with one of the per-manufacturer allowed suffixes.
+
+const BASE_URL_ALLOWLIST: Record<Manufacturer, string[]> = {
+  solax:     ['solaxcloud.com'],
+  solaredge: ['solaredge.com'],
+  huawei:    ['fusionsolar.huawei.com', 'huawei.com'],
+  fronius:   ['solarweb.com', 'fronius.com'],
+  sungrow:   ['isolarcloud.eu', 'isolarcloud.com.au', 'isolarcloud.com'],
+  victron:   ['victronenergy.com'],
+  growatt:   ['growatt.com'],
+  sma:       ['sunnyportal.com', 'sma.de'],
+};
+
+// IPv4 + IPv6 literal patterns (covers RFC1918, loopback, link-local, ::1, etc.)
+const IP_LITERAL_RE = /^(?:\d{1,3}\.){3}\d{1,3}$|^\[?[0-9a-f:]+\]?$/i;
+
+export function validateBaseUrl(manufacturer: Manufacturer, rawUrl: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new AdapterError(manufacturer, 'base_url is not a valid URL');
+  }
+
+  if (parsed.protocol !== 'https:') {
+    throw new AdapterError(manufacturer, 'base_url must use https:');
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+
+  if (IP_LITERAL_RE.test(hostname) || hostname === 'localhost' || hostname.endsWith('.localhost')) {
+    throw new AdapterError(manufacturer, 'base_url must be a domain name, not an IP address or localhost');
+  }
+
+  const allowed = BASE_URL_ALLOWLIST[manufacturer] ?? [];
+  const permitted = allowed.some(s => hostname === s || hostname.endsWith(`.${s}`));
+  if (!permitted) {
+    throw new AdapterError(
+      manufacturer,
+      `base_url hostname '${hostname}' is not in the allowed list for ${manufacturer} (allowed: ${allowed.join(', ')})`,
+    );
+  }
+}
+
+// Checked fetch: validates base URL then fetches with redirect: 'manual'
+// so a malicious upstream redirect can't pivot to an internal service.
+function safeFetch(manufacturer: Manufacturer, base: string | undefined, defaultBase: string, path: string, init?: RequestInit): Promise<Response> {
+  const resolvedBase = base ?? defaultBase;
+  if (base) validateBaseUrl(manufacturer, base);
+  return fetch(`${resolvedBase}${path}`, { ...init, redirect: 'manual' });
+}
+
 // ─── Token cache (per-isolate) ────────────────────────────────────────────────
 
 type TokenEntry = { token: string; expiresAt: number };
@@ -98,8 +159,7 @@ async function solaxToken(creds: ManufacturerCredentials): Promise<string> {
   const cached = getCachedToken(cacheKey);
   if (cached) return cached;
 
-  const base = creds.base_url ?? SOLAX_BASE;
-  const res = await fetch(`${base}/openapi/auth/oauth/token`, {
+  const res = await safeFetch('solax', creds.base_url ?? undefined, SOLAX_BASE, '/openapi/auth/oauth/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -119,9 +179,8 @@ async function solaxToken(creds: ManufacturerCredentials): Promise<string> {
 
 async function solaxRealtime(creds: ManufacturerCredentials, deviceSn: string): Promise<InverterReading> {
   const token = await solaxToken(creds);
-  const base = creds.base_url ?? SOLAX_BASE;
   const params = new URLSearchParams({ snList: deviceSn, deviceType: '1', businessType: String(SOLAX_BTYPE) });
-  const res = await fetch(`${base}/openapi/v2/device/realtime_data?${params}`, {
+  const res = await safeFetch('solax', creds.base_url ?? undefined, SOLAX_BASE, `/openapi/v2/device/realtime_data?${params}`, {
     headers: { Authorization: `bearer ${token}`, Accept: '*/*' },
   });
   const j = await res.json<{ code: number; result?: Array<Record<string, unknown>> }>();
@@ -148,14 +207,13 @@ async function solaxHistory(
   intervalMin = 60,
 ): Promise<InverterHistoryPoint[]> {
   const token = await solaxToken(creds);
-  const base = creds.base_url ?? SOLAX_BASE;
   const params = new URLSearchParams({
     snList: deviceSn, deviceType: '1',
     startTime: String(startMs), endTime: String(endMs),
     timeInterval: String(intervalMin),
     businessType: String(SOLAX_BTYPE),
   });
-  const res = await fetch(`${base}/openapi/v2/device/history_data?${params}`, {
+  const res = await safeFetch('solax', creds.base_url ?? undefined, SOLAX_BASE, `/openapi/v2/device/history_data?${params}`, {
     headers: { Authorization: `bearer ${token}`, Accept: '*/*' },
   });
   const j = await res.json<{ code: number; result?: Array<Record<string, unknown>> }>();
@@ -163,7 +221,7 @@ async function solaxHistory(
     ts: (d.dataTime as string) ?? '',
     ac_kw: toNum(d.totalActivePower),
     dc_kw: toNum(d.MPPTTotalInputPower),
-    interval_kwh: toNum(d.dailyYield), // cumulative per interval
+    interval_kwh: toNum(d.dailyYield),
     temperature_c: toNum(d.inverterTemperature),
   }));
 }
@@ -176,11 +234,9 @@ async function solaxHistory(
 const SE_BASE = 'https://monitoringapi.solaredge.com';
 
 async function solarEdgeRealtime(creds: ManufacturerCredentials, deviceSn: string): Promise<InverterReading> {
-  const base = creds.base_url ?? SE_BASE;
   const siteId = creds.site_id;
   if (!siteId) throw new AdapterError('solaredge', 'site_id required');
-  const url = `${base}/site/${siteId}/overview?api_key=${creds.api_key}`;
-  const res = await fetch(url);
+  const res = await safeFetch('solaredge', creds.base_url ?? undefined, SE_BASE, `/site/${siteId}/overview?api_key=${creds.api_key}`);
   if (!res.ok) throw new AdapterError('solaredge', `HTTP ${res.status}`, res.status);
   type SEOverview = { lastUpdateTime: string; currentPower?: { power: number }; lifeTimeData?: { energy: number }; lastDayData?: { energy: number } };
   const j = await res.json<{ overview?: SEOverview }>();
@@ -212,8 +268,7 @@ async function huaweiToken(creds: ManufacturerCredentials): Promise<string> {
   const cached = getCachedToken(cacheKey);
   if (cached) return cached;
 
-  const base = creds.base_url ?? HUAWEI_BASE;
-  const res = await fetch(`${base}/login`, {
+  const res = await safeFetch('huawei', creds.base_url ?? undefined, HUAWEI_BASE, '/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userName: creds.username, systemCode: creds.password }),
@@ -227,8 +282,7 @@ async function huaweiToken(creds: ManufacturerCredentials): Promise<string> {
 
 async function huaweiRealtime(creds: ManufacturerCredentials, deviceSn: string): Promise<InverterReading> {
   const token = await huaweiToken(creds);
-  const base = creds.base_url ?? HUAWEI_BASE;
-  const res = await fetch(`${base}/getDevRealKpi`, {
+  const res = await safeFetch('huawei', creds.base_url ?? undefined, HUAWEI_BASE, '/getDevRealKpi', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'xsrf-token': token },
     body: JSON.stringify({ devTypeId: '1', sns: [{ sn: deviceSn }] }),
@@ -252,17 +306,20 @@ async function huaweiRealtime(creds: ManufacturerCredentials, deviceSn: string):
 
 // ─── Fronius ─────────────────────────────────────────────────────────────────
 // Docs: https://www.fronius.com/en/solar-energy/installers-partners/technical-data/all-products/system-monitoring/open-interfaces/fronius-solar-api-json-
-// Auth: Basic auth or API key in header; local + Solarweb cloud
-// base_url should point to the local IP or Solarweb cloud endpoint.
+// Auth: API key or basic auth via Fronius Solarweb cloud (https://solarweb.com).
+// base_url is required — no insecure default so credentials are never sent
+// over plaintext transport.
 
 async function froniusRealtime(creds: ManufacturerCredentials, deviceSn: string): Promise<InverterReading> {
-  const base = creds.base_url ?? 'http://fronius-local'; // local IP typically
+  if (!creds.base_url) {
+    throw new AdapterError('fronius', 'base_url is required for Fronius (use https://www.solarweb.com or a secure Fronius endpoint)');
+  }
   const authHeader: Record<string, string> = creds.api_key
     ? { Authorization: `Bearer ${creds.api_key}` }
     : creds.username
     ? { Authorization: `Basic ${btoa(`${creds.username}:${creds.password ?? ''}`)}` }
     : {};
-  const res = await fetch(`${base}/solar_api/v1/GetInverterRealtimeData.cgi?Scope=Device&DeviceId=1&DataCollection=CommonInverterData`, {
+  const res = await safeFetch('fronius', creds.base_url, '', '/solar_api/v1/GetInverterRealtimeData.cgi?Scope=Device&DeviceId=1&DataCollection=CommonInverterData', {
     headers: authHeader,
   });
   if (!res.ok) throw new AdapterError('fronius', `HTTP ${res.status}`, res.status);
@@ -294,8 +351,7 @@ async function sungrowToken(creds: ManufacturerCredentials): Promise<string> {
   const cached = getCachedToken(cacheKey);
   if (cached) return cached;
 
-  const base = creds.base_url ?? SG_BASE;
-  const res = await fetch(`${base}/openapi/login`, {
+  const res = await safeFetch('sungrow', creds.base_url ?? undefined, SG_BASE, '/openapi/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-access-key': creds.api_key! },
     body: JSON.stringify({ user_account: creds.username, user_password: creds.password, appkey: creds.client_id }),
@@ -310,10 +366,9 @@ async function sungrowToken(creds: ManufacturerCredentials): Promise<string> {
 
 async function sungrowRealtime(creds: ManufacturerCredentials, deviceSn: string): Promise<InverterReading> {
   const token = await sungrowToken(creds);
-  const base = creds.base_url ?? SG_BASE;
   const siteId = creds.site_id;
   if (!siteId) throw new AdapterError('sungrow', 'site_id required');
-  const res = await fetch(`${base}/openapi/getPsDetailWithPsType?ps_id=${siteId}`, {
+  const res = await safeFetch('sungrow', creds.base_url ?? undefined, SG_BASE, `/openapi/getPsDetailWithPsType?ps_id=${siteId}`, {
     headers: { Token: token, 'x-access-key': creds.api_key! },
   });
   if (!res.ok) throw new AdapterError('sungrow', `HTTP ${res.status}`, res.status);
@@ -341,12 +396,11 @@ async function sungrowRealtime(creds: ManufacturerCredentials, deviceSn: string)
 const VICTRON_BASE = 'https://vrmapi.victronenergy.com/v2';
 
 async function victronRealtime(creds: ManufacturerCredentials, deviceSn: string): Promise<InverterReading> {
-  const base = creds.base_url ?? VICTRON_BASE;
   const siteId = creds.site_id;
   if (!siteId) throw new AdapterError('victron', 'site_id (VRM installation ID) required');
   const token = creds.token ?? creds.api_key;
   if (!token) throw new AdapterError('victron', 'token required');
-  const res = await fetch(`${base}/installations/${siteId}/overview`, {
+  const res = await safeFetch('victron', creds.base_url ?? undefined, VICTRON_BASE, `/installations/${siteId}/overview`, {
     headers: { 'X-Authorization': `Token ${token}` },
   });
   if (!res.ok) throw new AdapterError('victron', `HTTP ${res.status}`, res.status);
