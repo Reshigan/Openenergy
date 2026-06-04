@@ -270,6 +270,7 @@ import ippCommissioningTestRoutes, { ippCommissioningTestSlaSweep } from './rout
 import ippIeCertRoutes, { ippIeCertSlaSweep } from './routes/ipp-ie-cert';
 import ippTpaRoutes, { ippTpaSlaSweep } from './routes/ipp-tpa';
 import ippPpaVariationRoutes, { ippPpaVariationSlaSweep } from './routes/ipp-ppa-variation';
+import ippChangeOfControlRoutes, { ippChangeOfControlSlaSweep } from './routes/ipp-change-of-control';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -868,6 +869,8 @@ app.route('/api/ipp-ie-cert', ippIeCertRoutes);
 app.route('/api/ipp-tpa', ippTpaRoutes);
 // W155: ERA §35 PPA variation; INVERTED SLA; approve_variation crosses EVERY tier
 app.route('/api/ipp-ppa-variation', ippPpaVariationRoutes);
+// W156: ERA §11 change of control; INVERTED SLA; grant_approval crosses EVERY tier
+app.route('/api/ipp-change-of-control', ippChangeOfControlRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2240,6 +2243,10 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       // W155: approve_variation crosses EVERY tier; reject_variation + file_appeal cross major/material.
       await safe('ipp_ppavar_sla_sweep', async () => {
         await ippPpaVariationSlaSweep(env as never);
+      });
+      // W156: grant_approval crosses EVERY tier; reject_change + file_appeal cross major/material; impose_conditions crosses significant+.
+      await safe('ipp_coc_sla_sweep', async () => {
+        await ippChangeOfControlSlaSweep(env as never);
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

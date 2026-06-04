@@ -53,6 +53,7 @@ import { IppCommissioningTestTab } from '../ipp/IppCommissioningTestTab';
 import { IppIeCertTab } from '../ipp/IppIeCertTab';
 import { IppTpaTab } from '../ipp/IppTpaTab';
 import { IppPpaVariationTab } from '../ipp/IppPpaVariationTab';
+import { IppChangeOfControlTab } from '../ipp/IppChangeOfControlTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -96,6 +97,7 @@ export function IppWorkstationPage() {
         { key: 'ie-cert', label: 'IE certifications (W153)', group: 'Documents', body: () => <IppIeCertTab /> },
         { key: 'tpa-wheeling', label: 'TPA wheeling (W154)', group: 'Documents', body: () => <IppTpaTab /> },
         { key: 'ppa-variation', label: 'PPA variations (W155)', group: 'Documents', body: () => <IppPpaVariationTab /> },
+        { key: 'change-of-control', label: 'Change of control (W156)', group: 'Documents', body: () => <IppChangeOfControlTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },

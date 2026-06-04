@@ -1675,6 +1675,14 @@ export type EventType =
   | 'ipp_ppavar.amend_ppa' | 'ipp_ppavar.reject_variation' | 'ipp_ppavar.file_appeal'
   | 'ipp_ppavar.determine_appeal' | 'ipp_ppavar.withdraw'
   | 'ipp_ppavar.sla_breached' | 'ipp_ppavar.flag_sla_breach'
+  // ─── IPP Change of Control & Ownership (W156) ────────────────────────────
+  | 'ipp_coc.created' | 'ipp_coc.commence_completeness' | 'ipp_coc.submit_foreign_screen'
+  | 'ipp_coc.commence_competition' | 'ipp_coc.commence_technical'
+  | 'ipp_coc.open_public_participation' | 'ipp_coc.close_public_participation'
+  | 'ipp_coc.issue_evaluation' | 'ipp_coc.grant_approval' | 'ipp_coc.impose_conditions'
+  | 'ipp_coc.transfer_control' | 'ipp_coc.reject_change' | 'ipp_coc.file_appeal'
+  | 'ipp_coc.determine_appeal' | 'ipp_coc.withdraw'
+  | 'ipp_coc.sla_breached' | 'ipp_coc.flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -1935,6 +1943,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ipp_ie: 'ipp',
   ipp_tpa: 'ipp',
   ipp_ppavar: 'ipp',
+  ipp_coc: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
