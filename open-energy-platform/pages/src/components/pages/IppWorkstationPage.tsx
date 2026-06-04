@@ -42,6 +42,7 @@ import IppProgressClaimTab from '../ippProgressClaim/IppProgressClaimTab';
 import IppTqTab from '../ippTq/IppTqTab';
 import { IppDiaryTab } from '../ipp/IppDiaryTab';
 import { IppSiteInstructionTab } from '../ipp/IppSiteInstructionTab';
+import { IppDlpDefectTab } from '../ipp/IppDlpDefectTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -74,6 +75,7 @@ export function IppWorkstationPage() {
         { key: 'change-orders', label: 'Change orders', group: 'Documents', body: () => <IppChangeOrderChainTab /> },
         { key: 'technical-queries', label: 'Technical queries', group: 'Documents', body: () => <IppTqTab /> },
         { key: 'site-instructions', label: 'Site instructions (W144)', group: 'Documents', body: () => <IppSiteInstructionTab /> },
+        { key: 'dlp-defects', label: 'DLP defects (W145)', group: 'Documents', body: () => <IppDlpDefectTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },

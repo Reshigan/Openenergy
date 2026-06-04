@@ -1608,6 +1608,12 @@ export type EventType =
   | 'ipp_si.ie_verify' | 'ipp_si.close_instruction' | 'ipp_si.dispute_instruction'
   | 'ipp_si.resolve_dispute' | 'ipp_si.supersede_instruction' | 'ipp_si.void_instruction'
   | 'ipp_si.flag_sla_breach'
+  // ─── W145 IPP DLP Defects Register ──────────────────────────────────────────
+  | 'ipp_dlp.notify_defect' | 'ipp_dlp.acknowledge_receipt' | 'ipp_dlp.start_rectification'
+  | 'ipp_dlp.request_extension' | 'ipp_dlp.grant_extension' | 'ipp_dlp.submit_rectified'
+  | 'ipp_dlp.ie_accept' | 'ipp_dlp.ie_reject' | 'ipp_dlp.close_defect'
+  | 'ipp_dlp.dispute_rectification' | 'ipp_dlp.resolve_dispute' | 'ipp_dlp.waive_defect'
+  | 'ipp_dlp.cancel_defect' | 'ipp_dlp.flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -1857,6 +1863,7 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   ipp_tq: 'ipp',
   ipp_diary: 'ipp',
   ipp_si: 'ipp',
+  ipp_dlp: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

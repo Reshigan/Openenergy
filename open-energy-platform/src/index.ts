@@ -259,6 +259,7 @@ import ippProgressClaimRoutes, { ippProgressClaimSlaSweep } from './routes/ipp-p
 import ippTqRoutes, { ippTqSlaSweep } from './routes/ipp-tq';
 import ippDiaryRoutes, { ippDiarySlaSweep } from './routes/ipp-diary';
 import ippSiteInstructionRoutes, { ippSiteInstructionSlaSweep } from './routes/ipp-site-instruction';
+import ippDlpDefectRoutes, { ippDlpDefectSlaSweep } from './routes/ipp-dlp-defect';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -834,6 +835,9 @@ app.route('/api/ipp-diary', ippDiaryRoutes);
 // W144 Site/Engineer's Instructions — JBCC cl.18 + NEC4 PMI + OHSA s.8
 // SIGNATURE: issue_instruction when safety_directive EVERY tier; dispute_instruction when variation+value>250k
 app.route('/api/ipp-site-instruction', ippSiteInstructionRoutes);
+// W145 DLP Defects Register — JBCC Cl.19/32 + NEC4 Cl.43 + REIPPPP QMP
+// SIGNATURE: ie_reject → escalated_to_ncr EVERY tier; notify_defect crosses when safety/structural
+app.route('/api/ipp-dlp-defect', ippDlpDefectRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2158,6 +2162,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_site_instruction_sla_sweep', async () => {
         const result = await ippSiteInstructionSlaSweep(env as never);
         console.log('ipp_site_instruction_sla_sweep', JSON.stringify(result));
+      });
+      // W145 — IPP DLP Defects SLA sweep (URGENT SLA: critical 24h tightest).
+      // ie_reject → escalated_to_ncr EVERY tier (SIGNATURE); SLA breach crosses on critical/structural/safety.
+      await safe('ipp_dlp_defect_sla_sweep', async () => {
+        const result = await ippDlpDefectSlaSweep(env as never);
+        console.log('ipp_dlp_defect_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
