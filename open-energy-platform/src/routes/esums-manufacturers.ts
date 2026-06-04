@@ -58,6 +58,7 @@ type CredRow = {
   base_url: string | null;
   site_id: string | null;
   extra_config: string | null;
+  tariff_rate_zar_per_kwh: number | null;
   status: string;
   last_tested_at: string | null;
   last_error: string | null;
@@ -151,13 +152,16 @@ mr.post('/credentials', async (c) => {
   const now = nowIso();
   const id = randomId('mfrc_');
 
+  const tariffRatePost = (b.tariff_rate_zar_per_kwh != null && b.tariff_rate_zar_per_kwh !== '')
+    ? Number(b.tariff_rate_zar_per_kwh) : null;
+
   try {
     await c.env.DB.prepare(`
       INSERT INTO manufacturer_credentials
         (id, participant_id, manufacturer, auth_type,
          client_id, client_secret, api_key, token, username, password,
-         base_url, site_id, extra_config, status, created_at, updated_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+         base_url, site_id, extra_config, tariff_rate_zar_per_kwh, status, created_at, updated_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
       ON CONFLICT(participant_id, manufacturer) DO UPDATE SET
         auth_type = excluded.auth_type,
         client_id = excluded.client_id,
@@ -169,6 +173,7 @@ mr.post('/credentials', async (c) => {
         base_url = excluded.base_url,
         site_id = excluded.site_id,
         extra_config = excluded.extra_config,
+        tariff_rate_zar_per_kwh = excluded.tariff_rate_zar_per_kwh,
         status = 'active',
         updated_at = excluded.updated_at
     `).bind(
@@ -182,6 +187,7 @@ mr.post('/credentials', async (c) => {
       (b.base_url as string) || null,
       (b.site_id as string) || null,
       (b.extra_config as string) || null,
+      tariffRatePost,
       'active', now, now,
     ).run();
   } catch (e: unknown) {
@@ -221,13 +227,17 @@ mr.put('/credentials/:id', async (c) => {
   }
 
   const now = nowIso();
+  const tariffRatePut = b.tariff_rate_zar_per_kwh !== undefined
+    ? ((b.tariff_rate_zar_per_kwh != null && b.tariff_rate_zar_per_kwh !== '') ? Number(b.tariff_rate_zar_per_kwh) : null)
+    : existing.tariff_rate_zar_per_kwh;
   await c.env.DB.prepare(`
     UPDATE manufacturer_credentials SET
       client_id = ?, client_secret = ?,
       api_key = ?, token = ?,
       username = ?, password = ?,
       base_url = ?, site_id = ?,
-      extra_config = ?, status = ?, updated_at = ?
+      extra_config = ?, tariff_rate_zar_per_kwh = ?,
+      status = ?, updated_at = ?
     WHERE id = ? AND participant_id = ?
   `).bind(
     b.client_id !== undefined ? b.client_id : existing.client_id,
@@ -239,6 +249,7 @@ mr.put('/credentials/:id', async (c) => {
     b.base_url !== undefined ? b.base_url : existing.base_url,
     b.site_id !== undefined ? b.site_id : existing.site_id,
     b.extra_config !== undefined ? b.extra_config : existing.extra_config,
+    tariffRatePut,
     b.status !== undefined ? b.status : existing.status,
     now, id, user.id,
   ).run();
@@ -304,10 +315,13 @@ mr.get('/stations', async (c) => {
     SELECT ss.*, s.name AS site_name, s.installed_capacity_kw,
            snap.ac_kw, snap.dc_kw, snap.daily_kwh, snap.total_kwh,
            snap.battery_soc, snap.temperature_c, snap.online AS snapshot_online,
-           snap.ts AS snapshot_ts
+           snap.ts AS snapshot_ts,
+           mc.tariff_rate_zar_per_kwh
     FROM solax_stations ss
     LEFT JOIN om_sites s ON s.id = ss.site_id
     LEFT JOIN station_telemetry_snapshot snap ON snap.station_id = ss.id
+    LEFT JOIN manufacturer_credentials mc
+      ON mc.participant_id = ss.participant_id AND mc.manufacturer = ss.manufacturer
     WHERE ss.participant_id = ?
   `;
   const binds: unknown[] = [user.id];

@@ -12,6 +12,7 @@ interface Credential {
   auth_type: string;
   base_url: string | null;
   site_id: string | null;
+  tariff_rate_zar_per_kwh: number | null;
   status: 'active' | 'inactive' | 'error';
   has_secret: boolean;
   has_password: boolean;
@@ -42,6 +43,7 @@ interface Station {
   temperature_c: number | null;
   snapshot_online: number | null;
   snapshot_ts: string | null;
+  tariff_rate_zar_per_kwh: number | null;
 }
 
 interface CredListResponse { data: Credential[]; supported: string[]; tech_map: Record<string, string> }
@@ -100,6 +102,12 @@ function kw(v: number | null, decimals = 1): string {
 function kwh(v: number | null): string {
   if (v === null || v === undefined) return '—';
   return `${Number(v).toFixed(1)} kWh`;
+}
+
+function zarFromKwh(kwhVal: number | null, rate: number | null): string {
+  if (kwhVal === null || kwhVal === undefined || rate === null || rate === undefined) return '—';
+  const zar = kwhVal * rate;
+  return `R ${zar >= 1000 ? zar.toLocaleString('en-ZA', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : zar.toFixed(2)}`;
 }
 
 // ─── Status pill ──────────────────────────────────────────────────────────────
@@ -224,18 +232,18 @@ function CredModal({
   onClose: () => void;
 }) {
   const [form, setForm] = useState<Record<string, string>>({
-    manufacturer:  initial?.manufacturer ?? prefillManufacturer ?? '',
-    auth_type:     initial?.auth_type ?? 'oauth2_client_creds',
-    base_url:      initial?.base_url ?? '',
-    site_id:       initial?.site_id ?? '',
-    client_id:     '',
-    client_secret: '',
-    api_key:       '',
-    token:         '',
-    username:      '',
-    password:      '',
-    // Custom adapter fields
-    adapter_notes: '',
+    manufacturer:            initial?.manufacturer ?? prefillManufacturer ?? '',
+    auth_type:               initial?.auth_type ?? 'oauth2_client_creds',
+    base_url:                initial?.base_url ?? '',
+    site_id:                 initial?.site_id ?? '',
+    tariff_rate_zar_per_kwh: initial?.tariff_rate_zar_per_kwh != null ? String(initial.tariff_rate_zar_per_kwh) : '',
+    client_id:               '',
+    client_secret:           '',
+    api_key:                 '',
+    token:                   '',
+    username:                '',
+    password:                '',
+    adapter_notes:           '',
   });
   const [isCustom, setIsCustom] = useState(() => {
     const m = initial?.manufacturer ?? prefillManufacturer ?? '';
@@ -384,6 +392,24 @@ function CredModal({
           <Field label="API base URL (https:// — leave blank to use manufacturer default)" name="base_url" value={form.base_url} onChange={v => set('base_url', v)} placeholder="https://…" />
           <Field label="Site / Plant ID (required by some manufacturers)" name="site_id" value={form.site_id} onChange={v => set('site_id', v)} />
 
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Tariff rate (ZAR / kWh)
+              <span className="ml-1 text-gray-400 font-normal">— used to show ZAR revenue in the stations table</span>
+            </label>
+            <input
+              type="number"
+              name="tariff_rate_zar_per_kwh"
+              value={form.tariff_rate_zar_per_kwh}
+              onChange={e => set('tariff_rate_zar_per_kwh', e.target.value)}
+              placeholder="e.g. 1.28"
+              min="0"
+              step="0.01"
+              autoComplete="off"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
           {error && <div className="text-xs text-red-600 bg-red-50 border border-red-100 rounded px-3 py-2">{error}</div>}
         </form>
 
@@ -427,6 +453,7 @@ function Field({ label, name, value, onChange, type = 'text', placeholder }: {
 
 function StationRow({ s }: { s: Station }) {
   const online = s.snapshot_online === 1 || s.online_status === 1;
+  const rate = s.tariff_rate_zar_per_kwh;
   return (
     <tr className="border-t border-gray-100 hover:bg-gray-50/50">
       <td className="px-3 py-2 text-xs font-mono text-gray-700">{s.device_sn}</td>
@@ -438,6 +465,12 @@ function StationRow({ s }: { s: Station }) {
       </td>
       <td className="px-3 py-2 text-xs text-right tabular-nums text-gray-600">
         {s.daily_kwh !== null ? kwh(s.daily_kwh) : '—'}
+      </td>
+      <td className="px-3 py-2 text-xs text-right tabular-nums text-emerald-700 font-medium">
+        {zarFromKwh(s.daily_kwh, rate)}
+      </td>
+      <td className="px-3 py-2 text-xs text-right tabular-nums text-emerald-600">
+        {zarFromKwh(s.total_kwh, rate)}
       </td>
       <td className="px-3 py-2 text-xs text-right tabular-nums text-gray-500">
         {s.temperature_c !== null ? `${Number(s.temperature_c).toFixed(0)} °C` : '—'}
@@ -705,8 +738,8 @@ export function InverterIntegrationsTab() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
-                  {['Serial number', 'Manufacturer', 'Plant', 'Site', 'AC output', 'Daily yield', 'Temp', 'Status', 'Last data'].map(h => (
-                    <th key={h} className="px-3 py-2 text-left text-xs font-medium text-gray-500">{h}</th>
+                  {['Serial number', 'Manufacturer', 'Plant', 'Site', 'AC output', 'Daily yield', 'Daily (ZAR)', 'Total (ZAR)', 'Temp', 'Status', 'Last data'].map(h => (
+                    <th key={h} className={`px-3 py-2 text-xs font-medium ${h.includes('ZAR') ? 'text-emerald-600 text-right' : 'text-left text-gray-500'}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
