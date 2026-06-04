@@ -1718,6 +1718,14 @@ export type EventType =
   | 'eco_evt_raise_queries' | 'eco_evt_submit_responses' | 'eco_evt_certify_compliant'
   | 'eco_evt_identify_non_compliance' | 'eco_evt_commence_corrective_action'
   | 'eco_evt_refer_to_enforcement' | 'eco_evt_flag_sla_breach'
+  // W162 IPP LTA Drawdown Certificate
+  | 'ipp_lta.created' | 'ipp_lta.sla_breached'
+  | 'lta_evt_schedule_site_inspection' | 'lta_evt_complete_site_inspection'
+  | 'lta_evt_issue_draft_certificate' | 'lta_evt_submit_borrower_comments'
+  | 'lta_evt_issue_final_certificate' | 'lta_evt_approve_certificate'
+  | 'lta_evt_qualify_certificate' | 'lta_evt_resolve_conditions'
+  | 'lta_evt_refuse_certificate' | 'lta_evt_raise_appeal'
+  | 'lta_evt_determine_appeal' | 'lta_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -1988,6 +1996,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   cd_evt: 'ipp',
   ipp_eco: 'ipp',
   eco_evt: 'ipp',
+  ipp_lta: 'ipp',
+  lta_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

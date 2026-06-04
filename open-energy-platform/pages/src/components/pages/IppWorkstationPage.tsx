@@ -59,6 +59,7 @@ import { IppFmTab } from '../ipp/IppFmTab';
 import { IppAnnualReportTab } from '../ipp/IppAnnualReportTab';
 import { IppContractorDefaultTab } from '../ipp/IppContractorDefaultTab';
 import { IppEcoReportTab } from '../ipp/IppEcoReportTab';
+import { IppLtaCertificateTab } from '../ipp/IppLtaCertificateTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -108,6 +109,7 @@ export function IppWorkstationPage() {
         { key: 'annual-report', label: 'Annual compliance report (W159)', group: 'Documents', body: () => <IppAnnualReportTab /> },
         { key: 'contractor-default', label: 'Contractor default (W160)', group: 'Documents', body: () => <IppContractorDefaultTab /> },
         { key: 'eco-report', label: 'ECO audit report (W161)', group: 'Documents', body: () => <IppEcoReportTab /> },
+        { key: 'lta-certificate', label: 'LTA drawdown cert (W162)', group: 'Documents', body: () => <IppLtaCertificateTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },
