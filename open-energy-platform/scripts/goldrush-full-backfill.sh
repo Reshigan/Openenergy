@@ -178,6 +178,12 @@ for station in "${STATIONS[@]}"; do
     error_field=$(echo "$response" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['results'][0].get('error',''))" 2>/dev/null || true)
 
     if [[ -n "$error_field" ]]; then
+      if echo "$error_field" | grep -q "D1_RESET_DO"; then
+        # Transient D1 Durable-Object eviction — back off and retry the same chunk
+        echo "D1_RESET_DO (transient) — waiting 20s then retrying chunk"
+        sleep 20
+        continue  # don't advance cursor, don't increment consecutive_empty
+      fi
       echo "ERROR from server: $error_field"
       sleep 5
       consecutive_empty=$((consecutive_empty + 1))

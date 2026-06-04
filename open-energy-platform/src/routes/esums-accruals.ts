@@ -197,36 +197,36 @@ export async function backfillStationHistory(
     return { hourKey: hk, kwhDelta: Math.max(0, total - prevTotal), totalYield: total };
   });
 
-  // Upsert one accrual row per hour. ON CONFLICT ensures idempotency.
+  // Build cumulative sums first, then batch-upsert in a single D1 round-trip.
+  // Individual .run() per row was hitting the DO-eviction budget for 168+ rows.
   const uniqueDays = new Set<string>();
   let cumulative = 0;
-  let daysWritten = 0;
+  const now = new Date().toISOString();
 
-  for (const pt of hourPoints) {
+  const stmts = hourPoints.map(pt => {
     const kwhDelta = pt.kwhDelta;
     cumulative += kwhDelta;
     const carbonTco2e = kwhDelta * (carbonIntensity / 1_000_000);
     const revenueZar = kwhDelta * tariffRate;
     const savingsZar = kwhDelta * customerRate;
-    const periodHour = pt.hourKey + ':00:00Z'; // "2026-06-04T17:00:00Z"
-    const now = new Date().toISOString();
-    const id = crypto.randomUUID();
+    const periodHour = pt.hourKey + ':00:00Z';
     uniqueDays.add(pt.hourKey.slice(0, 10));
-
-    await env.DB
+    return env.DB
       .prepare(`INSERT INTO site_accruals (id, station_id, site_id, participant_id, period_hour, kwh_delta, cumulative_kwh, carbon_tco2e, revenue_zar, savings_zar, tariff_rate_used, customer_tariff_rate_used, carbon_intensity_used, is_backfill, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
         ON CONFLICT(station_id, period_hour) DO UPDATE SET
           kwh_delta = excluded.kwh_delta, cumulative_kwh = excluded.cumulative_kwh,
           carbon_tco2e = excluded.carbon_tco2e, revenue_zar = excluded.revenue_zar,
           savings_zar = excluded.savings_zar, updated_at = excluded.updated_at`)
-      .bind(id, stationId, station.site_id ?? null, station.participant_id,
+      .bind(crypto.randomUUID(), stationId, station.site_id ?? null, station.participant_id,
         periodHour, kwhDelta, cumulative, carbonTco2e, revenueZar, savingsZar,
-        tariffRate, customerRate, carbonIntensity, now, now)
-      .run();
+        tariffRate, customerRate, carbonIntensity, now, now);
+  });
 
-    daysWritten++;
+  if (stmts.length > 0) {
+    await env.DB.batch(stmts);
   }
+  const daysWritten = stmts.length;
 
   const more = clampedStart > fullStartMs;
   return {
