@@ -1,0 +1,201 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// Onboarding — per-role step tracking for new participants.
+//
+// Endpoints (all require auth):
+//   GET  /state         — current step, data, completion flags
+//   POST /step          — advance to next step, merging supplied data
+//   POST /complete      — mark onboarding complete
+//   POST /skip          — skip onboarding entirely
+//
+// Step sequences are role-specific (see ONBOARDING_STEPS). The esums_owner
+// role is enforced at application level (not via a DB CHECK constraint).
+// ═══════════════════════════════════════════════════════════════════════════
+
+import { Hono } from 'hono';
+import type { HonoEnv } from '../utils/types';
+import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { fireCascade } from '../utils/cascade';
+import { AppError, ErrorCode } from '../utils/types';
+
+const onboarding = new Hono<HonoEnv>();
+onboarding.use('*', authMiddleware);
+
+// ── Step sequences per role ────────────────────────────────────────────────
+const ONBOARDING_STEPS: Record<string, string[]> = {
+  esums_owner:   ['welcome', 'site_setup', 'device_config', 'data_sources', 'alerts', 'complete'],
+  ipp_developer: ['welcome', 'company_profile', 'first_project', 'compliance', 'complete'],
+  trader:        ['welcome', 'entity', 'risk_limits', 'complete'],
+  lender:        ['welcome', 'fund_setup', 'coverage', 'complete'],
+  offtaker:      ['welcome', 'entity', 'ppa_prefs', 'complete'],
+  carbon_fund:   ['welcome', 'registry', 'methodology', 'complete'],
+  grid_operator: ['welcome', 'authority', 'services', 'complete'],
+  regulator:     ['welcome', 'body', 'jurisdiction', 'complete'],
+  support:       ['welcome', 'org', 'sla', 'complete'],
+  admin:         ['welcome', 'complete'],
+};
+
+// ── GET /state ─────────────────────────────────────────────────────────────
+onboarding.get('/state', async (c) => {
+  const user = getCurrentUser(c);
+
+  const row = await c.env.DB.prepare(
+    `SELECT onboarding_step, onboarding_data, onboarding_completed, onboarding_skipped
+       FROM participants WHERE id = ?`,
+  )
+    .bind(user.id)
+    .first<{
+      onboarding_step: string | null;
+      onboarding_data: string | null;
+      onboarding_completed: number;
+      onboarding_skipped: number;
+    }>();
+
+  if (!row) {
+    throw new AppError(ErrorCode.NOT_FOUND, 'Participant not found', 404);
+  }
+
+  let data: Record<string, unknown> = {};
+  try {
+    data = JSON.parse(row.onboarding_data || '{}');
+  } catch {
+    data = {};
+  }
+
+  return c.json({
+    success: true,
+    data: {
+      step: row.onboarding_step || 'welcome',
+      data,
+      completed: Boolean(row.onboarding_completed),
+      skipped: Boolean(row.onboarding_skipped),
+      role: user.role,
+    },
+  });
+});
+
+// ── POST /step ─────────────────────────────────────────────────────────────
+onboarding.post('/step', async (c) => {
+  const user = getCurrentUser(c);
+
+  let body: { step?: unknown; data?: unknown };
+  try {
+    body = await c.req.json();
+  } catch {
+    throw new AppError(ErrorCode.VALIDATION_ERROR, 'Request body must be valid JSON', 400);
+  }
+
+  const { step, data: incomingData } = body;
+
+  if (typeof step !== 'string' || !step) {
+    throw new AppError(ErrorCode.VALIDATION_ERROR, 'step is required and must be a string', 400);
+  }
+
+  const steps = ONBOARDING_STEPS[user.role];
+  if (!steps) {
+    throw new AppError(ErrorCode.VALIDATION_ERROR, `No onboarding steps configured for role: ${user.role}`, 400);
+  }
+
+  if (!steps.includes(step)) {
+    throw new AppError(
+      ErrorCode.VALIDATION_ERROR,
+      `Invalid step "${step}" for role "${user.role}". Valid steps: ${steps.join(', ')}`,
+      400,
+    );
+  }
+
+  // Determine next step in sequence
+  const currentIdx = steps.indexOf(step);
+  const nextStep = currentIdx < steps.length - 1 ? steps[currentIdx + 1] : null;
+
+  // Read current onboarding_data from DB and merge
+  const existing = await c.env.DB.prepare(
+    `SELECT onboarding_data FROM participants WHERE id = ?`,
+  )
+    .bind(user.id)
+    .first<{ onboarding_data: string | null }>();
+
+  let mergedData: Record<string, unknown> = {};
+  try {
+    mergedData = JSON.parse(existing?.onboarding_data || '{}');
+  } catch {
+    mergedData = {};
+  }
+
+  if (incomingData && typeof incomingData === 'object' && !Array.isArray(incomingData)) {
+    mergedData = { ...mergedData, ...(incomingData as Record<string, unknown>) };
+  }
+
+  const isComplete = step === 'complete' || nextStep === null;
+  const savedStep = nextStep ?? step;
+
+  await c.env.DB.prepare(
+    `UPDATE participants
+        SET onboarding_step = ?,
+            onboarding_data = ?,
+            onboarding_completed = ?
+      WHERE id = ?`,
+  )
+    .bind(savedStep, JSON.stringify(mergedData), isComplete ? 1 : 0, user.id)
+    .run();
+
+  return c.json({
+    success: true,
+    data: {
+      ok: true,
+      next_step: nextStep,
+    },
+  });
+});
+
+// ── POST /complete ─────────────────────────────────────────────────────────
+onboarding.post('/complete', async (c) => {
+  const user = getCurrentUser(c);
+
+  await c.env.DB.prepare(
+    `UPDATE participants
+        SET onboarding_completed = 1,
+            onboarding_step = 'complete'
+      WHERE id = ?`,
+  )
+    .bind(user.id)
+    .run();
+
+  await fireCascade({
+    event: 'onboarding.completed',
+    actor_id: user.id,
+    entity_type: 'participant',
+    entity_id: user.id,
+    data: { role: user.role },
+    env: c.env,
+  });
+
+  return c.json({ success: true, data: { ok: true } });
+});
+
+// ── POST /skip ─────────────────────────────────────────────────────────────
+onboarding.post('/skip', async (c) => {
+  const user = getCurrentUser(c);
+
+  await c.env.DB.prepare(
+    `UPDATE participants
+        SET onboarding_completed = 1,
+            onboarding_step = 'complete',
+            onboarding_skipped = 1
+      WHERE id = ?`,
+  )
+    .bind(user.id)
+    .run();
+
+  await fireCascade({
+    event: 'onboarding.skipped',
+    actor_id: user.id,
+    entity_type: 'participant',
+    entity_id: user.id,
+    data: { role: user.role },
+    env: c.env,
+  });
+
+  return c.json({ success: true, data: { ok: true } });
+});
+
+export default onboarding;

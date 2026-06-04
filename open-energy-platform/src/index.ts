@@ -277,8 +277,10 @@ import esumsOmIntelRoutes from './routes/esums-om-intel';
 import esumsOmAnalysisRoutes from './routes/esums-om-analysis';
 import { portalAdmin as esumsOmPortalAdmin, portalPublic as esumsOmPortalPublic } from './routes/esums-om-portal';
 import esumsIngestRoutes from './routes/esums-ingest';
+import esumsDataSourcesRoutes from './routes/esums-data-sources';
 import { runFaultEngine } from './utils/esums-fault-engine';
 import platformFeaturesRoutes from './routes/platform-features';
+import onboardingRoutes from './routes/onboarding';
 import {
   mfa as mfaRoutes,
   kyc as kycRoutes,
@@ -849,6 +851,7 @@ app.route('/api/esums-ingest', esumsIngestRoutes);
 app.route('/api/esums', esumsOmRoutes);
 app.route('/api/esums', esumsOmIntelRoutes);
 app.route('/api/esums', esumsOmAnalysisRoutes);
+app.route('/api/esums/data-sources', esumsDataSourcesRoutes);
 // Public status page MUST be mounted BEFORE the catch-all platform router.
 // platformFeaturesRoutes is mounted at /api and applies authMiddleware to
 // every request that passes through it, including those that don't match
@@ -891,6 +894,7 @@ app.route('/api/bulk',                bulkOpsRoutes);
 app.route('/api/ux-state',            uxStateRoutes);
 app.route('/api/documents',           documentsRoutes);
 app.route('/api/print-packs',         printPacksRoutes);
+app.route('/api/onboarding', onboardingRoutes);
 // platformFeaturesRoutes is the catch-all for /api — it must remain LAST
 // so all specific /api/* mounts above are tried first.
 app.route('/api', platformFeaturesRoutes);

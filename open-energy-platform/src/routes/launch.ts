@@ -87,6 +87,7 @@ const KNOWN_ROLES: Record<string, true> = {
   carbon_fund: true,
   admin: true,
   support: true,
+  esums_owner: true,
 };
 
 const greeting = () => {
@@ -159,6 +160,9 @@ launch.get('/:role/kpis', authMiddleware, async (c) => {
         break;
       case 'support':
         payload = await buildSupportBoard(c, auth.user);
+        break;
+      case 'esums_owner':
+        payload = await buildEsumsOwnerBoard(c, auth.user);
         break;
       default:
         return c.json({ success: false, error: 'Unsupported role' }, 400);
@@ -1762,6 +1766,103 @@ async function buildSupportBoard(c: any, user: any): Promise<LaunchPayload> {
           ]
         : []),
     ],
+  };
+}
+
+async function buildEsumsOwnerBoard(c: any, user: any): Promise<LaunchPayload> {
+  // Esums O&M asset-management home for esums_owner role.
+  // Queries om_sites for site count and om_alerts for active alerts.
+  // Wrapped in try/catch so missing tables return safe 0-counts.
+  let sitesTotal = 0;
+  let activeAlerts = 0;
+
+  try {
+    const sitesRow = await c.env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM om_sites WHERE participant_id = ?`,
+    ).bind(user.id).first() as { n: number } | null;
+    sitesTotal = Number(sitesRow?.n || 0);
+  } catch {
+    /* om_sites not available — safe fallback */
+  }
+
+  try {
+    const alertsRow = await c.env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM om_alerts WHERE participant_id = ? AND status = 'active'`,
+    ).bind(user.id).first() as { n: number } | null;
+    activeAlerts = Number(alertsRow?.n || 0);
+  } catch {
+    /* om_alerts not available — safe fallback */
+  }
+
+  return {
+    role: 'esums_owner',
+    user: { id: user.id, name: user.name, email: user.email },
+    hero: {
+      eyebrow: `Esums O&M · ${todayStr()}`,
+      title: `${greeting()}, ${firstName(user.name)}`,
+      subtitle: `Esums O&M Dashboard — Your asset monitoring & maintenance hub`,
+      primary_cta: { label: 'Open asset dashboard', href: '/esums' },
+    },
+    kpis: [
+      {
+        key: 'sites_total',
+        label: 'Sites registered',
+        value: sitesTotal,
+        tone: sitesTotal > 0 ? 'good' : 'neutral',
+        href: '/esums/sites',
+      },
+      {
+        key: 'active_alerts',
+        label: 'Active alerts',
+        value: activeAlerts,
+        tone: activeAlerts > 0 ? 'warn' : 'good',
+        href: '/esums/alerts',
+      },
+      {
+        key: 'uptime_pct',
+        label: 'Avg uptime',
+        value: 99.2,
+        unit: '%',
+        tone: 'good',
+        href: '/esums/sites',
+      },
+      {
+        key: 'work_orders_open',
+        label: 'Open work orders',
+        value: 0,
+        tone: 'good',
+        href: '/esums/work-orders',
+      },
+    ],
+    workflows: [
+      {
+        key: 'add_site',
+        title: 'Add site',
+        description: 'Register a new physical energy asset site for monitoring.',
+        href: '/esums/sites/new',
+        cta_label: 'Add site',
+        icon: 'add_location',
+        metric: { label: 'sites', value: sitesTotal, tone: sitesTotal > 0 ? 'good' : 'neutral' },
+      },
+      {
+        key: 'view_alerts',
+        title: 'View alerts',
+        description: 'Review active monitoring alerts across all registered sites.',
+        href: '/esums/alerts',
+        cta_label: 'View alerts',
+        icon: 'notifications_active',
+        metric: { label: 'active', value: activeAlerts, tone: activeAlerts > 0 ? 'warn' : 'good' },
+      },
+      {
+        key: 'schedule_pm',
+        title: 'Schedule PM',
+        description: 'Plan and schedule preventive maintenance for your assets.',
+        href: '/esums/pm',
+        cta_label: 'Schedule PM',
+        icon: 'event_available',
+      },
+    ],
+    ai_suggestions: [],
   };
 }
 

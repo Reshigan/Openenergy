@@ -109,6 +109,7 @@ const TimeAxisPrototype   = React.lazy(() => import('./ux-alternatives/time-axis
 const CommandLensPrototype= React.lazy(() => import('./ux-alternatives/command-lens/CommandLens'));
 const CockpitGridPrototype= React.lazy(() => import('./ux-alternatives/cockpit-grid/CockpitGrid'));
 
+import { OnboardingWizard } from './components/onboarding/OnboardingWizard';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { AiAssistantDock } from './components/AiAssistantDock';
 import { OnboardingTour } from './components/OnboardingTour';
@@ -256,6 +257,11 @@ function getNavigationForRole(role: string) {
       return [
         ...baseNav.filter((n) => ['/cockpit', '/esg', '/intelligence', '/reports'].includes(n.path)),
         ...regulatorNav,
+      ];
+    case 'esums_owner':
+      return [
+        ...esumsOmNav,
+        { path: '/settings', label: 'Settings', icon: SettingsIcon },
       ];
     default:
       return [...baseNav.slice(0, 5), { path: '/reports', label: 'Reports', icon: ChartIcon }];
@@ -965,6 +971,7 @@ function RegisterPage() {
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                 className="input"
               >
+                <option value="esums_owner">Asset Owner (Esums O&amp;M)</option>
                 <option value="ipp_developer">IPP Developer</option>
                 <option value="trader">Trader</option>
                 <option value="carbon_fund">Carbon Fund Manager</option>
@@ -1270,13 +1277,35 @@ function TradingPage() {
 }
 
 // LaunchRedirect — when a signed-in user hits /launch (no role) or the legacy
-// /cockpit URL, resolve their role from AuthContext and bounce them to the
-// canonical /launch/:role. Anonymous users were already kicked to /login by
-// the wrapping ProtectedRoute.
+// /cockpit URL, check onboarding state then route to either /onboard (first
+// visit) or /launch/:role (returning user). Anonymous users were already
+// kicked to /login by the wrapping ProtectedRoute.
 function LaunchRedirect() {
   const { user } = useAuth();
-  const target = user?.role ? `/launch/${user.role}` : '/launch/admin';
-  return <Navigate to={target} replace />;
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) return;
+    api.get('/onboarding/state')
+      .then((r: any) => {
+        const completed = r?.data?.completed ?? r?.data?.data?.completed ?? true;
+        if (!completed) {
+          navigate('/onboard', { replace: true });
+        } else {
+          navigate(`/launch/${user.role}`, { replace: true });
+        }
+      })
+      .catch(() => {
+        // If the check fails, fall through to the launch board
+        navigate(`/launch/${user.role}`, { replace: true });
+      });
+  }, [user, navigate]);
+
+  return (
+    <div className="min-h-screen bg-[#f5f7fa] flex items-center justify-center">
+      <span className="text-[#6b7685] text-sm">Loading…</span>
+    </div>
+  );
 }
 
 // App Router
@@ -1286,6 +1315,7 @@ function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/sso-landing" element={<SsoLanding />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/onboard" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       {/* Public stakeholder portals — token-authenticated, no JWT */}

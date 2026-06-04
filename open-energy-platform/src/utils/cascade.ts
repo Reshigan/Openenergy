@@ -1599,7 +1599,11 @@ export type EventType =
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
-  | 'rbac.profile_updated' | 'rbac.user_updated';
+  | 'rbac.profile_updated' | 'rbac.user_updated'
+  // ─── Onboarding ─────────────────────────────────────────────────────────
+  | 'onboarding.completed' | 'onboarding.skipped'
+  // ─── Esums data sources ──────────────────────────────────────────────────
+  | 'esums.data_source.created';
 
 interface CascadeContext {
   event: EventType;

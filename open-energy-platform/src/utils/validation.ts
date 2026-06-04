@@ -13,7 +13,7 @@ export const RegisterSchema = z.object({
     .regex(/[0-9]/, 'Password must contain at least one number'),
   name: z.string().min(2, 'Name must be at least 2 characters'),
   company_name: z.string().optional(),
-  role: z.enum(['admin', 'ipp_developer', 'trader', 'carbon_fund', 'offtaker', 'lender', 'grid_operator', 'regulator']),
+  role: z.enum(['admin', 'ipp_developer', 'trader', 'carbon_fund', 'offtaker', 'lender', 'grid_operator', 'regulator', 'esums_owner']),
 });
 
 export const LoginSchema = z.object({
