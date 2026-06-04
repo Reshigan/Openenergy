@@ -18,6 +18,7 @@
 // ════════════════════════════════════════════════════════════════════════
 
 export type Manufacturer =
+  // ── Solar inverters ──────────────────────────────────────────────────────
   | 'solax'
   | 'solaredge'
   | 'huawei'
@@ -25,7 +26,20 @@ export type Manufacturer =
   | 'sungrow'
   | 'victron'
   | 'growatt'
-  | 'sma';
+  | 'sma'
+  // ── Wind turbines (SCADA / API — adapters stub until OEM endpoint confirmed)
+  | 'vestas'
+  | 'siemens_gamesa'
+  | 'goldwind'
+  | 'envision'
+  // ── Hydro & run-of-river (OPC-UA SCADA — adapter stub)
+  | 'andritz'
+  | 'voith'
+  | 'hydro_scada'
+  // ── Waste-to-energy & biomass (DCS SCADA — adapter stub)
+  | 'babcock'
+  | 'covanta'
+  | 'waste_scada';
 
 export interface ManufacturerCredentials {
   manufacturer: Manufacturer;
@@ -85,14 +99,28 @@ export class AdapterError extends Error {
 //   4. Hostname must end with one of the per-manufacturer allowed suffixes.
 
 const BASE_URL_ALLOWLIST: Record<Manufacturer, string[]> = {
-  solax:     ['solaxcloud.com'],
-  solaredge: ['solaredge.com'],
-  huawei:    ['fusionsolar.huawei.com', 'huawei.com'],
-  fronius:   ['solarweb.com', 'fronius.com'],
-  sungrow:   ['isolarcloud.eu', 'isolarcloud.com.au', 'isolarcloud.com'],
-  victron:   ['victronenergy.com'],
-  growatt:   ['growatt.com'],
-  sma:       ['sunnyportal.com', 'sma.de'],
+  // Solar
+  solax:         ['solaxcloud.com'],
+  solaredge:     ['solaredge.com'],
+  huawei:        ['fusionsolar.huawei.com', 'huawei.com'],
+  fronius:       ['solarweb.com', 'fronius.com'],
+  sungrow:       ['isolarcloud.eu', 'isolarcloud.com.au', 'isolarcloud.com'],
+  victron:       ['victronenergy.com'],
+  growatt:       ['growatt.com'],
+  sma:           ['sunnyportal.com', 'sma.de'],
+  // Wind
+  vestas:        ['vestas.com', 'rdsims.vestas.com'],
+  siemens_gamesa:['siemensgamesa.com', 'siemens-gamesa.com'],
+  goldwind:      ['goldwindscada.com', 'goldwind.com'],
+  envision:      ['envisioniot.com', 'envision-group.com'],
+  // Hydro / run-of-river
+  andritz:       ['andritz.com'],
+  voith:         ['voith.com'],
+  hydro_scada:   [], // allow any https host — validated at the SCADA-adapter layer
+  // Waste-to-energy / biomass
+  babcock:       ['babcock.com'],
+  covanta:       ['covanta.com'],
+  waste_scada:   [], // allow any https host — validated at the SCADA-adapter layer
 };
 
 // IPv4 + IPv6 literal patterns (covers RFC1918, loopback, link-local, ::1, etc.)
@@ -117,12 +145,16 @@ export function validateBaseUrl(manufacturer: Manufacturer, rawUrl: string): voi
   }
 
   const allowed = BASE_URL_ALLOWLIST[manufacturer] ?? [];
-  const permitted = allowed.some(s => hostname === s || hostname.endsWith(`.${s}`));
-  if (!permitted) {
-    throw new AdapterError(
-      manufacturer,
-      `base_url hostname '${hostname}' is not in the allowed list for ${manufacturer} (allowed: ${allowed.join(', ')})`,
-    );
+  // Empty allowlist = open (used for generic SCADA types where the host is customer-supplied
+  // but scheme + IP checks above still apply).
+  if (allowed.length > 0) {
+    const permitted = allowed.some(s => hostname === s || hostname.endsWith(`.${s}`));
+    if (!permitted) {
+      throw new AdapterError(
+        manufacturer,
+        `base_url hostname '${hostname}' is not in the allowed list for ${manufacturer} (allowed: ${allowed.join(', ')})`,
+      );
+    }
   }
 }
 
@@ -428,14 +460,29 @@ export async function getRealtimeReading(
   deviceSn: string,
 ): Promise<InverterReading> {
   switch (creds.manufacturer) {
+    // Solar
     case 'solax':      return solaxRealtime(creds, deviceSn);
     case 'solaredge':  return solarEdgeRealtime(creds, deviceSn);
     case 'huawei':     return huaweiRealtime(creds, deviceSn);
     case 'fronius':    return froniusRealtime(creds, deviceSn);
     case 'sungrow':    return sungrowRealtime(creds, deviceSn);
     case 'victron':    return victronRealtime(creds, deviceSn);
+    // Stubs — wind / hydro / waste SCADA adapters not yet implemented
+    case 'vestas':
+    case 'siemens_gamesa':
+    case 'goldwind':
+    case 'envision':
+      throw new AdapterError(creds.manufacturer, 'Wind SCADA adapter not yet implemented — credentials stored, awaiting OEM SCADA endpoint');
+    case 'andritz':
+    case 'voith':
+    case 'hydro_scada':
+      throw new AdapterError(creds.manufacturer, 'Hydro SCADA adapter not yet implemented — credentials stored, awaiting OPC-UA endpoint');
+    case 'babcock':
+    case 'covanta':
+    case 'waste_scada':
+      throw new AdapterError(creds.manufacturer, 'Waste-to-energy SCADA adapter not yet implemented — credentials stored, awaiting DCS endpoint');
     default:
-      throw new AdapterError(creds.manufacturer as Manufacturer, 'Adapter not yet implemented');
+      throw new AdapterError(creds.manufacturer as Manufacturer, 'Unknown manufacturer');
   }
 }
 
@@ -461,6 +508,28 @@ function toNum(v: unknown): number | null {
   return isNaN(n) ? null : n;
 }
 
+export const SOLAR_MANUFACTURERS: Manufacturer[] = ['solax', 'solaredge', 'huawei', 'fronius', 'sungrow', 'victron', 'growatt', 'sma'];
+export const WIND_MANUFACTURERS: Manufacturer[] = ['vestas', 'siemens_gamesa', 'goldwind', 'envision'];
+export const HYDRO_MANUFACTURERS: Manufacturer[] = ['andritz', 'voith', 'hydro_scada'];
+export const WASTE_MANUFACTURERS: Manufacturer[] = ['babcock', 'covanta', 'waste_scada'];
+
 export const SUPPORTED_MANUFACTURERS: Manufacturer[] = [
-  'solax', 'solaredge', 'huawei', 'fronius', 'sungrow', 'victron',
+  ...SOLAR_MANUFACTURERS, ...WIND_MANUFACTURERS, ...HYDRO_MANUFACTURERS, ...WASTE_MANUFACTURERS,
 ];
+
+export const MANUFACTURER_TECH: Record<Manufacturer, 'solar' | 'wind' | 'hydro' | 'waste'> = {
+  solax: 'solar', solaredge: 'solar', huawei: 'solar', fronius: 'solar',
+  sungrow: 'solar', victron: 'solar', growatt: 'solar', sma: 'solar',
+  vestas: 'wind', siemens_gamesa: 'wind', goldwind: 'wind', envision: 'wind',
+  andritz: 'hydro', voith: 'hydro', hydro_scada: 'hydro',
+  babcock: 'waste', covanta: 'waste', waste_scada: 'waste',
+};
+
+// Whether a live adapter exists (false = credentials stored but polling will error)
+export const ADAPTER_LIVE: Record<Manufacturer, boolean> = {
+  solax: true, solaredge: true, huawei: true, fronius: true,
+  sungrow: true, victron: true, growatt: false, sma: false,
+  vestas: false, siemens_gamesa: false, goldwind: false, envision: false,
+  andritz: false, voith: false, hydro_scada: false,
+  babcock: false, covanta: false, waste_scada: false,
+};

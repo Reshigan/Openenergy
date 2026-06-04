@@ -27,6 +27,7 @@ import {
   getRealtimeReading,
   validateBaseUrl,
   SUPPORTED_MANUFACTURERS,
+  MANUFACTURER_TECH,
   type Manufacturer,
   type ManufacturerCredentials,
 } from '../utils/inverter-adapters';
@@ -101,7 +102,11 @@ mr.get('/credentials', async (c) => {
   const rows = await c.env.DB.prepare(
     'SELECT * FROM manufacturer_credentials WHERE participant_id = ? ORDER BY manufacturer ASC',
   ).bind(user.id).all<CredRow>();
-  return c.json({ data: rows.results.map(redactCred), supported: SUPPORTED_MANUFACTURERS });
+  return c.json({
+    data: rows.results.map(redactCred),
+    supported: SUPPORTED_MANUFACTURERS,
+    tech_map: MANUFACTURER_TECH,
+  });
 });
 
 // ─── POST /credentials ────────────────────────────────────────────────────────
@@ -110,11 +115,14 @@ mr.post('/credentials', async (c) => {
   const user = getCurrentUser(c);
   const b = await c.req.json<Record<string, unknown>>();
 
-  const manufacturer = String(b.manufacturer ?? '').toLowerCase() as Manufacturer;
-  if (!SUPPORTED_MANUFACTURERS.includes(manufacturer)) {
+  // Accept any valid manufacturer slug — either a known type or a custom name.
+  // Unknown manufacturers are stored and displayed as "custom" in the UI.
+  // SSRF protection is enforced by base_url validation below, not the name.
+  const manufacturer = String(b.manufacturer ?? '').toLowerCase().trim();
+  if (!manufacturer || !/^[a-z0-9_-]{1,64}$/.test(manufacturer)) {
     throw new AppError(
       ErrorCode.VALIDATION_ERROR,
-      `manufacturer must be one of: ${SUPPORTED_MANUFACTURERS.join(', ')}`,
+      'manufacturer must be a lowercase alphanumeric slug (a-z 0-9 _ -), max 64 chars',
       400,
     );
   }
@@ -124,10 +132,14 @@ mr.post('/credentials', async (c) => {
     throw new AppError(ErrorCode.VALIDATION_ERROR, 'auth_type must be oauth2_client_creds | api_key | basic | token', 400);
   }
 
-  // Validate base_url against per-manufacturer allowlist (SSRF prevention)
+  // Validate base_url: known manufacturers use the strict hostname allowlist;
+  // custom manufacturer slugs get scheme + IP checks only (no suffix constraint).
   if (b.base_url) {
     try {
-      validateBaseUrl(manufacturer, String(b.base_url));
+      const knownMfr = SUPPORTED_MANUFACTURERS.includes(manufacturer as Manufacturer)
+        ? (manufacturer as Manufacturer)
+        : 'hydro_scada'; // open-allowlist type — applies https + IP checks, no suffix constraint
+      validateBaseUrl(knownMfr, String(b.base_url));
     } catch (e: unknown) {
       throw new AppError(ErrorCode.VALIDATION_ERROR, String((e as Error).message), 400);
     }
@@ -192,10 +204,13 @@ mr.put('/credentials/:id', async (c) => {
     .bind(id, user.id).first<CredRow>();
   if (!existing) throw new AppError(ErrorCode.NOT_FOUND, 'Credential not found', 404);
 
-  // Validate updated base_url against allowlist (SSRF prevention)
+  // Validate updated base_url (SSRF prevention)
   if (b.base_url) {
     try {
-      validateBaseUrl(existing.manufacturer as Manufacturer, String(b.base_url));
+      const knownMfr = SUPPORTED_MANUFACTURERS.includes(existing.manufacturer as Manufacturer)
+        ? (existing.manufacturer as Manufacturer)
+        : 'hydro_scada';
+      validateBaseUrl(knownMfr, String(b.base_url));
     } catch (e: unknown) {
       throw new AppError(ErrorCode.VALIDATION_ERROR, String((e as Error).message), 400);
     }

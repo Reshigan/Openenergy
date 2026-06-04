@@ -26,6 +26,7 @@ import { EsgDisclosureChainTab } from '../carbon/EsgDisclosureChainTab';
 import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
 import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
 import { DataSourcesTab } from '../esums/DataSourcesTab';
+import { InverterIntegrationsTab } from '../esums/InverterIntegrationsTab';
 
 export function EsumsOmPage() {
   const tabs: TabSpec[] = [
@@ -329,6 +330,14 @@ export function EsumsOmPage() {
         { key: 'last_poll_at', label: 'Last poll', date: true },
         { key: 'last_status', label: 'Status', render: (r) => <StatusPill status={String(r.last_status)} /> },
       ],
+    },
+    {
+      key: 'integrations',
+      label: 'Integrations',
+      endpoint: '',
+      description: 'Connect inverters and generation assets from solar, wind, hydro and waste-to-energy manufacturers. Manages credentials, live telemetry snapshots and custom adapter stubs for new OEMs.',
+      columns: [],
+      customContent: <InverterIntegrationsTab />,
     },
     {
       key: 'data_sources',
