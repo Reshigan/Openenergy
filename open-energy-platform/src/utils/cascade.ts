@@ -1760,6 +1760,14 @@ export type EventType =
   | 'ccc_evt_commence_arbitration' | 'ccc_evt_agree_ccc'
   | 'ccc_evt_reject_ccc' | 'ccc_evt_refer_to_nersa'
   | 'ccc_evt_flag_sla_breach'
+  // ─── W167: IPP O&M Contract Renewal ─────────────────────────────────────
+  | 'ipp_omc.created' | 'ipp_omc.sla_breached'
+  | 'omc_evt_commence_market_sounding' | 'omc_evt_issue_tender'
+  | 'omc_evt_close_bids' | 'omc_evt_complete_evaluation'
+  | 'omc_evt_select_preferred_bidder' | 'omc_evt_obtain_lender_consent'
+  | 'omc_evt_obtain_nersa_acknowledgement' | 'omc_evt_execute_contract'
+  | 'omc_evt_declare_renewal_failed' | 'omc_evt_trigger_novation'
+  | 'omc_evt_execute_novation' | 'omc_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2040,6 +2048,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   gcc_evt: 'ipp',
   ipp_ccc: 'ipp',
   ccc_evt: 'ipp',
+  ipp_omc: 'ipp',
+  omc_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

@@ -64,6 +64,7 @@ import { IppLandAmendmentTab } from '../ipp/IppLandAmendmentTab';
 import { IppCommunityTrustTab } from '../ipp/IppCommunityTrustTab';
 import { IppGridComplianceTab } from '../ipp/IppGridComplianceTab';
 import { IppCccTab } from '../ipp/IppCccTab';
+import { IppOmContractTab } from '../ipp/IppOmContractTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -118,6 +119,7 @@ export function IppWorkstationPage() {
         { key: 'community-trust', label: 'Community trust disbursement (W164)', group: 'Documents', body: () => <IppCommunityTrustTab /> },
         { key: 'grid-compliance', label: 'Grid code compliance (W165)', group: 'Technical', body: () => <IppGridComplianceTab /> },
         { key: 'ccc', label: 'Connection cost contribution (W166)', group: 'Technical', body: () => <IppCccTab /> },
+        { key: 'om-contract', label: 'O&M contract renewal (W167)', group: 'Technical', body: () => <IppOmContractTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },
