@@ -1840,6 +1840,14 @@ export type EventType =
   | 'esmr_evt_request_clarification' | 'esmr_evt_submit_clarification'
   | 'esmr_evt_issue_certificate' | 'esmr_evt_withhold_certificate'
   | 'esmr_evt_declare_material_breach' | 'esmr_evt_flag_sla_breach'
+  // ─── W177: IPP IE Annual Performance Review ──────────────────────────────────
+  | 'ipp_iear.created' | 'ipp_iear.sla_breached'
+  | 'iear_evt_define_scope' | 'iear_evt_submit_data'
+  | 'iear_evt_commence_field_inspection' | 'iear_evt_commence_analysis'
+  | 'iear_evt_issue_draft_report' | 'iear_evt_submit_ipp_response'
+  | 'iear_evt_commence_final_review' | 'iear_evt_issue_report'
+  | 'iear_evt_close_review' | 'iear_evt_require_remediation'
+  | 'iear_evt_escalate_to_lenders' | 'iear_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2140,6 +2148,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   mc_evt: 'ipp',
   ipp_esmr: 'ipp',
   esmr_evt: 'ipp',
+  ipp_iear: 'ipp',
+  iear_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

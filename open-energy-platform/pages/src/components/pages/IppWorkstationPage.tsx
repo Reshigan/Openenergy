@@ -74,6 +74,7 @@ import { IppForceMajeureTab } from '../ipp/IppForceMajeureTab';
 import { IppLcReportTab } from '../ipp/IppLcReportTab';
 import { IppMilestoneCertTab } from '../ipp/IppMilestoneCertTab';
 import { IppEsmrTab } from '../ipp/IppEsmrTab';
+import { IppIearTab } from '../ipp/IppIearTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -138,6 +139,7 @@ export function IppWorkstationPage() {
         { key: 'lc-report', label: 'Local content & SED compliance (W174)', group: 'Risk', body: () => <IppLcReportTab /> },
         { key: 'milestone-cert', label: 'Milestone certification (W175)', group: 'Risk', body: () => <IppMilestoneCertTab /> },
         { key: 'esmr', label: 'DFI E&S monitoring report (W176)', group: 'Risk', body: () => <IppEsmrTab /> },
+        { key: 'iear', label: 'IE annual performance review (W177)', group: 'Risk', body: () => <IppIearTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },
