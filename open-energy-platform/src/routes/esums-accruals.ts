@@ -292,6 +292,7 @@ export async function backfillStationHistory(
 // ─────────────────────────────────────────────────────────────────────────────
 
 // GET /api/esums/accruals?period=today|week|month|ytd&participant_id=...
+// Visible to: IPP operator (owner), lender (financier), carbon fund, admin/support override.
 app.get('/', async (c) => {
   const period = c.req.query('period') ?? 'month';
   const participantId = c.req.query('participant_id');
@@ -306,9 +307,10 @@ app.get('/', async (c) => {
     case 'today':   sinceDate = now.toISOString().slice(0, 10); break;
     case 'week':    sinceDate = new Date(now.getTime() - 7 * 86400000).toISOString().slice(0, 10); break;
     case 'ytd':     sinceDate = now.getFullYear() + '-01-01'; break;
-    default:        sinceDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10); // month
+    default:        sinceDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
   }
 
+  // Match stations where the resolved participant is the operator, lender, or carbon fund
   const rows = await c.env.DB
     .prepare(`SELECT
         sa.station_id,
@@ -320,11 +322,11 @@ app.get('/', async (c) => {
         MAX(sa.period_hour)  AS last_accrual_at
       FROM site_accruals sa
       JOIN solax_stations ss ON ss.id = sa.station_id
-      WHERE sa.participant_id = ?
+      WHERE (sa.participant_id = ? OR ss.lender_participant_id = ? OR ss.carbon_participant_id = ?)
         AND sa.period_hour >= ?
       GROUP BY sa.station_id
       ORDER BY total_revenue_zar DESC`)
-    .bind(resolvedParticipant, sinceDate + 'T00:00:00Z')
+    .bind(resolvedParticipant, resolvedParticipant, resolvedParticipant, sinceDate + 'T00:00:00Z')
     .all<Record<string, unknown>>();
 
   // Fleet totals
@@ -366,12 +368,13 @@ app.get('/time-series', async (c) => {
     ? "substr(period_hour, 1, 13)"
     : "substr(period_hour, 1, 10)";
 
+  // Allow operator, lender, and carbon fund to see time-series for their stations
   const baseWhere = stationId
-    ? `sa.station_id = ? AND sa.participant_id = ? AND sa.period_hour >= ?`
-    : `sa.participant_id = ? AND sa.period_hour >= ?`;
+    ? `sa.station_id = ? AND (sa.participant_id = ? OR ss.lender_participant_id = ? OR ss.carbon_participant_id = ?) AND sa.period_hour >= ?`
+    : `(sa.participant_id = ? OR ss.lender_participant_id = ? OR ss.carbon_participant_id = ?) AND sa.period_hour >= ?`;
   const bindings = stationId
-    ? [stationId, effectiveParticipant, sinceDate + 'T00:00:00Z']
-    : [effectiveParticipant, sinceDate + 'T00:00:00Z'];
+    ? [stationId, effectiveParticipant, effectiveParticipant, effectiveParticipant, sinceDate + 'T00:00:00Z']
+    : [effectiveParticipant, effectiveParticipant, effectiveParticipant, sinceDate + 'T00:00:00Z'];
 
   const rows = await c.env.DB
     .prepare(`SELECT
@@ -381,6 +384,7 @@ app.get('/time-series', async (c) => {
         SUM(sa.revenue_zar)  AS revenue_zar,
         SUM(sa.savings_zar)  AS savings_zar
       FROM site_accruals sa
+      JOIN solax_stations ss ON ss.id = sa.station_id
       WHERE ${baseWhere}
       GROUP BY ${dateExpr}
       ORDER BY bucket ASC`)
