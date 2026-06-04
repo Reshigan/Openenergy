@@ -40,6 +40,10 @@ APP_BASE_URL = "https://oe.vantax.co.za"
 AZURE_AD_CLIENT_ID = "0a0bcbd9-afcb-44b9-b0ad-16e1da612f98"
 AZURE_AD_TENANT_ID = "998b123c-e559-479d-bbb9-cf3330469a73"
 AZURE_AD_REDIRECT_URI = "https://oe.vantax.co.za/api/auth/sso/microsoft/callback"
+# SolaX Cloud OpenAPI — EU endpoint, C&I businessType=4
+# Client secret should be set via `wrangler secret put SOLAX_CLIENT_SECRET`
+SOLAX_BASE_URL = "https://openapi-eu.solaxcloud.com"
+SOLAX_CLIENT_ID = "3299754f484a4bde8bfe810e1bd166d6"
 
 [[r2_buckets]]
 binding = "R2"

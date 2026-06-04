@@ -279,6 +279,7 @@ import { portalAdmin as esumsOmPortalAdmin, portalPublic as esumsOmPortalPublic 
 import esumsIngestRoutes from './routes/esums-ingest';
 import esumsDataSourcesRoutes from './routes/esums-data-sources';
 import esumsProjectsRoutes from './routes/esums-projects';
+import esumsOmSolaxRoutes from './routes/esums-solax';
 import { runFaultEngine } from './utils/esums-fault-engine';
 import platformFeaturesRoutes from './routes/platform-features';
 import onboardingRoutes from './routes/onboarding';
@@ -854,6 +855,7 @@ app.route('/api/esums', esumsOmIntelRoutes);
 app.route('/api/esums', esumsOmAnalysisRoutes);
 app.route('/api/esums/data-sources', esumsDataSourcesRoutes);
 app.route('/api/esums/projects', esumsProjectsRoutes);
+app.route('/api/esums/solax', esumsOmSolaxRoutes);
 // Public status page MUST be mounted BEFORE the catch-all platform router.
 // platformFeaturesRoutes is mounted at /api and applies authMiddleware to
 // every request that passes through it, including those that don't match

@@ -71,6 +71,11 @@ export interface HonoBindings {
   // D1 tables can be migrated incrementally.
   HYPERDRIVE?: HyperdriveBinding;
 
+  // ── SolaX inverter integration ───────────────────────────────────────────
+  SOLAX_BASE_URL?: string;      // defaults to https://openapi-eu.solaxcloud.com
+  SOLAX_CLIENT_ID?: string;
+  SOLAX_CLIENT_SECRET?: string;
+
   // ── Platform ──────────────────────────────────────────────────────────────
   ASSETS?: { fetch: (req: Request) => Promise<Response> };
   JWT_SECRET: string;
