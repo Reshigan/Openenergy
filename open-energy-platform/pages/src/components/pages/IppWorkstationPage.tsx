@@ -40,6 +40,8 @@ import IppMirTab from '../ippMir/IppMirTab';
 import IppSubcontractorTab from '../ippSubcontractor/IppSubcontractorTab';
 import IppProgressClaimTab from '../ippProgressClaim/IppProgressClaimTab';
 import IppTqTab from '../ippTq/IppTqTab';
+import { IppDiaryTab } from '../ipp/IppDiaryTab';
+import { IppSiteInstructionTab } from '../ipp/IppSiteInstructionTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -71,6 +73,7 @@ export function IppWorkstationPage() {
         { key: 'rfis', label: 'RFIs', group: 'Documents', body: () => <IppRfiChainTab /> },
         { key: 'change-orders', label: 'Change orders', group: 'Documents', body: () => <IppChangeOrderChainTab /> },
         { key: 'technical-queries', label: 'Technical queries', group: 'Documents', body: () => <IppTqTab /> },
+        { key: 'site-instructions', label: 'Site instructions (W144)', group: 'Documents', body: () => <IppSiteInstructionTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },
@@ -97,6 +100,7 @@ export function IppWorkstationPage() {
         { key: 'procurement', label: 'Procurement / RFPs', group: 'Construction', body: () => <ProcurementChainTab /> },
         { key: 'cod', label: 'Construction / COD', group: 'Construction', body: () => <CodChainTab /> },
         { key: 'dfr', label: 'Daily field report', group: 'Construction', body: () => <DfrChainTab /> },
+        { key: 'site_diary', label: 'Site diary (W143)', group: 'Construction', body: () => <IppDiaryTab /> },
         { key: 'punch_list', label: 'Punch list', group: 'Construction', body: () => <PunchListChainTab /> },
         { key: 'mir', label: 'Material inspections', group: 'Construction', body: () => <IppMirTab /> },
         { key: 'handover_dossier', label: 'Handover dossier', group: 'Construction', body: () => <HandoverDossierChainTab /> },

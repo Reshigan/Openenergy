@@ -1596,6 +1596,18 @@ export type EventType =
   | 'ipp_tq.escalate_tq'
   | 'ipp_tq.resolve_escalation'
   | 'ipp_tq.flag_overdue'
+  // ─── W143 IPP Daily Construction Diary ───────────────────────────────────
+  | 'ipp_diary.submit_diary' | 'ipp_diary.note_receipt' | 'ipp_diary.ie_review'
+  | 'ipp_diary.countersign' | 'ipp_diary.archive_diary' | 'ipp_diary.dispute_diary'
+  | 'ipp_diary.open_resolution' | 'ipp_diary.accept_correction'
+  | 'ipp_diary.miss_diary' | 'ipp_diary.flag_late' | 'ipp_diary.void_diary'
+  | 'ipp_diary.flag_sla_breach'
+  // ─── W144 IPP Site/Engineer's Instruction ────────────────────────────────────
+  | 'ipp_si.issue_instruction' | 'ipp_si.acknowledge_receipt' | 'ipp_si.commence_work'
+  | 'ipp_si.request_extension' | 'ipp_si.grant_extension' | 'ipp_si.complete_work'
+  | 'ipp_si.ie_verify' | 'ipp_si.close_instruction' | 'ipp_si.dispute_instruction'
+  | 'ipp_si.resolve_dispute' | 'ipp_si.supersede_instruction' | 'ipp_si.void_instruction'
+  | 'ipp_si.flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -1843,6 +1855,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   // SIGNATURE: flag_design_change EVERY tier when floor_structural_safety (structural integrity always reportable).
   // escalate_tq crosses when floor_ie_notification_required; issue_response crosses when floor_nersa_impact.
   ipp_tq: 'ipp',
+  ipp_diary: 'ipp',
+  ipp_si: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

@@ -257,6 +257,8 @@ import ippMirRoutes, { ippMirSlaSweep } from './routes/ipp-mir';
 import ippSubcontractorRoutes, { ippSubcontractorSlaSweep } from './routes/ipp-subcontractor';
 import ippProgressClaimRoutes, { ippProgressClaimSlaSweep } from './routes/ipp-progress-claim';
 import ippTqRoutes, { ippTqSlaSweep } from './routes/ipp-tq';
+import ippDiaryRoutes, { ippDiarySlaSweep } from './routes/ipp-diary';
+import ippSiteInstructionRoutes, { ippSiteInstructionSlaSweep } from './routes/ipp-site-instruction';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -825,6 +827,13 @@ app.route('/api/ipp-progress-claim', ippProgressClaimRoutes);
 // SIGNATURE: flag_design_change EVERY tier on structural safety; escalate_tq crosses on IE notification.
 // Beats Aconex (static document workflow) with full designer-response P6 lifecycle.
 app.route('/api/ipp-tq', ippTqRoutes);
+// W143 — IPP Daily Construction Diary (JBCC 6.2 cl.8.13 + NEC4 cl.25 + OHSA Const.Regs 2014).
+// URGENT SLA: critical_delay 12h | daily_operational 24h | shutdown_partial 48h | no_work 96h.
+// SIGNATURE: miss_diary EVERY tier; dispute_diary on delay+critical_delay; submit_diary on safety_incident.
+app.route('/api/ipp-diary', ippDiaryRoutes);
+// W144 Site/Engineer's Instructions — JBCC cl.18 + NEC4 PMI + OHSA s.8
+// SIGNATURE: issue_instruction when safety_directive EVERY tier; dispute_instruction when variation+value>250k
+app.route('/api/ipp-site-instruction', ippSiteInstructionRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2137,6 +2146,18 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_tq_sla_sweep', async () => {
         const result = await ippTqSlaSweep(env as never);
         console.log('ipp_tq_sla_sweep', JSON.stringify(result));
+      });
+      // W143 — IPP Daily Construction Diary SLA sweep (URGENT SLA: critical_delay 12h tightest).
+      // miss_diary EVERY tier (SIGNATURE); dispute_diary on delay+critical_delay; submit_diary on safety.
+      await safe('ipp_diary_sla_sweep', async () => {
+        const result = await ippDiarySlaSweep(env as never);
+        console.log('ipp_diary_sla_sweep', JSON.stringify(result));
+      });
+      // W144 — IPP Site/Engineer's Instruction SLA sweep (URGENT SLA: safety_directive 4h tightest).
+      // issue_instruction when safety_directive EVERY tier (OHSA s.8 SIGNATURE).
+      await safe('ipp_site_instruction_sla_sweep', async () => {
+        const result = await ippSiteInstructionSlaSweep(env as never);
+        console.log('ipp_site_instruction_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
