@@ -194,7 +194,7 @@ export async function backfillStationHistory(
   const HOUR_MS = 60 * 60 * 1000;
   const WINDOW_MS = 11 * HOUR_MS;
 
-  const fullStartMs = Date.now() - 365 * 24 * HOUR_MS;
+  const fullStartMs = Date.now() - 730 * 24 * HOUR_MS; // 2-year window; covers pre-2026 commissioning
   const endMs = chunkEndMs ?? (Date.now() - HOUR_MS);
   const startMs = chunkStartMs ?? (endMs - 7 * 24 * HOUR_MS);
   const clampedStart = Math.max(startMs, fullStartMs);
@@ -293,7 +293,7 @@ export async function backfillStationHistory(
 // Routes
 // ─────────────────────────────────────────────────────────────────────────────
 
-// GET /api/esums/accruals?period=today|week|month|ytd&participant_id=...
+// GET /api/esums/accruals?period=today|week|month|ytd|1y|all&participant_id=...
 // Visible to: IPP operator (owner), lender (financier), carbon fund, admin/support override.
 app.get('/', async (c) => {
   const period = c.req.query('period') ?? 'month';
@@ -309,6 +309,8 @@ app.get('/', async (c) => {
     case 'today':   sinceDate = now.toISOString().slice(0, 10); break;
     case 'week':    sinceDate = new Date(now.getTime() - 7 * 86400000).toISOString().slice(0, 10); break;
     case 'ytd':     sinceDate = now.getFullYear() + '-01-01'; break;
+    case '1y':      sinceDate = new Date(now.getTime() - 365 * 86400000).toISOString().slice(0, 10); break;
+    case 'all':     sinceDate = '2000-01-01'; break;
     default:        sinceDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
   }
 
@@ -363,6 +365,8 @@ app.get('/time-series', async (c) => {
   switch (period) {
     case 'week':  sinceDate = new Date(now.getTime() - 7 * 86400000).toISOString().slice(0, 10); break;
     case 'ytd':   sinceDate = now.getFullYear() + '-01-01'; break;
+    case '1y':    sinceDate = new Date(now.getTime() - 365 * 86400000).toISOString().slice(0, 10); break;
+    case 'all':   sinceDate = '2000-01-01'; break;
     default:      sinceDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
   }
 

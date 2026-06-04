@@ -244,6 +244,7 @@ function setCachedToken(key: string, token: string, expiresIn: number): void {
 // ─── SolaX ───────────────────────────────────────────────────────────────────
 
 const SOLAX_BASE = 'https://openapi-eu.solaxcloud.com';
+const SOLAX_BASE_GLOBAL = 'https://openapi.solaxcloud.com';
 const SOLAX_BTYPE = 4; // C&I
 
 async function solaxToken(creds: ManufacturerCredentials): Promise<string> {
@@ -305,18 +306,34 @@ async function solaxHistory(
     timeInterval: String(intervalMin),
     businessType: String(SOLAX_BTYPE),
   });
-  const res = await safeFetch('solax', creds.base_url ?? undefined, SOLAX_BASE, `/openapi/v2/device/history_data?${params}`, {
-    headers: { Authorization: `bearer ${token}`, Accept: '*/*' },
-  });
-  const j = await res.json<{ code: number; result?: Array<Record<string, unknown>> }>();
-  return (j.result ?? []).map((d) => ({
-    ts: (d.dataTime as string) ?? '',
-    ac_kw: toNum(d.totalActivePower),
-    dc_kw: toNum(d.MPPTTotalInputPower),
-    interval_kwh: toNum(d.dailyYield),
-    total_kwh: toNum(d.totalYield),
-    temperature_c: toNum(d.inverterTemperature),
-  }));
+  const path = `/openapi/v2/device/history_data?${params}`;
+  const headers = { Authorization: `bearer ${token}`, Accept: '*/*' };
+
+  // Try configured/EU endpoint first, then fall back to global if empty result.
+  // SA inverters registered before 2026 may live on the global server.
+  const parsePoints = (j: { code: number; result?: Array<Record<string, unknown>> }) =>
+    (j.result ?? []).map((d) => ({
+      ts: (d.dataTime as string) ?? '',
+      ac_kw: toNum(d.totalActivePower),
+      dc_kw: toNum(d.MPPTTotalInputPower),
+      interval_kwh: toNum(d.dailyYield),
+      total_kwh: toNum(d.totalYield),
+      temperature_c: toNum(d.inverterTemperature),
+    }));
+
+  const res1 = await safeFetch('solax', creds.base_url ?? undefined, SOLAX_BASE, path, { headers });
+  const j1 = await res1.json<{ code: number; result?: Array<Record<string, unknown>> }>();
+  const pts1 = parsePoints(j1);
+  if (pts1.length > 0) return pts1;
+
+  // EU returned empty — try global endpoint as fallback for pre-2026 data
+  try {
+    const res2 = await safeFetch('solax', undefined, SOLAX_BASE_GLOBAL, path, { headers });
+    const j2 = await res2.json<{ code: number; result?: Array<Record<string, unknown>> }>();
+    return parsePoints(j2);
+  } catch {
+    return pts1; // EU empty is the best we have
+  }
 }
 
 // ─── SolarEdge ───────────────────────────────────────────────────────────────
