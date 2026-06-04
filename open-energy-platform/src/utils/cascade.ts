@@ -1743,6 +1743,14 @@ export type EventType =
   | 'ctr_evt_accept_report' | 'ctr_evt_reject_report'
   | 'ctr_evt_file_appeal' | 'ctr_evt_determine_appeal'
   | 'ctr_evt_flag_sla_breach'
+  // ─── W165: IPP Grid Code Compliance Self-Assessment ──────────────────────
+  | 'ipp_gcc.created' | 'ipp_gcc.sla_breached'
+  | 'gcc_evt_commence_preparation' | 'gcc_evt_commence_testing'
+  | 'gcc_evt_complete_testing' | 'gcc_evt_draft_report'
+  | 'gcc_evt_submit_to_nersa' | 'gcc_evt_commence_nersa_review'
+  | 'gcc_evt_note_deficiency' | 'gcc_evt_commence_corrective_action'
+  | 'gcc_evt_submit_for_verification' | 'gcc_evt_certify_compliant'
+  | 'gcc_evt_issue_non_compliance' | 'gcc_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2019,6 +2027,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   lam_evt: 'ipp',
   ipp_ctr: 'ipp',
   ctr_evt: 'ipp',
+  ipp_gcc: 'ipp',
+  gcc_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

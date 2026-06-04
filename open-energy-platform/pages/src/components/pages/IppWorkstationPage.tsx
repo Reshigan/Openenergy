@@ -62,6 +62,7 @@ import { IppEcoReportTab } from '../ipp/IppEcoReportTab';
 import { IppLtaCertificateTab } from '../ipp/IppLtaCertificateTab';
 import { IppLandAmendmentTab } from '../ipp/IppLandAmendmentTab';
 import { IppCommunityTrustTab } from '../ipp/IppCommunityTrustTab';
+import { IppGridComplianceTab } from '../ipp/IppGridComplianceTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -114,6 +115,7 @@ export function IppWorkstationPage() {
         { key: 'lta-certificate', label: 'LTA drawdown cert (W162)', group: 'Documents', body: () => <IppLtaCertificateTab /> },
         { key: 'land-amendment', label: 'Land & servitude amendment (W163)', group: 'Documents', body: () => <IppLandAmendmentTab /> },
         { key: 'community-trust', label: 'Community trust disbursement (W164)', group: 'Documents', body: () => <IppCommunityTrustTab /> },
+        { key: 'grid-compliance', label: 'Grid code compliance (W165)', group: 'Technical', body: () => <IppGridComplianceTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },
