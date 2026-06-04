@@ -69,6 +69,7 @@ import { IppBfsTab } from '../ipp/IppBfsTab';
 import { IppEaAmendmentTab } from '../ipp/IppEaAmendmentTab';
 import { IppWulTab } from '../ipp/IppWulTab';
 import { IppHraTab } from '../ipp/IppHraTab';
+import { IppAelTab } from '../ipp/IppAelTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -128,6 +129,7 @@ export function IppWorkstationPage() {
         { key: 'ea-amendment', label: 'EA amendment & compliance (W169)', group: 'Environmental', body: () => <IppEaAmendmentTab /> },
         { key: 'wul', label: 'Water use licence (W170)', group: 'Environmental', body: () => <IppWulTab /> },
         { key: 'hra', label: 'Heritage resources assessment (W171)', group: 'Environmental', body: () => <IppHraTab /> },
+        { key: 'ael', label: 'Atmospheric emission licence (W172)', group: 'Environmental', body: () => <IppAelTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },
