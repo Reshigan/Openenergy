@@ -83,6 +83,7 @@ import { IppBbbeeVerificationTab } from '../ipp/IppBbbeeVerificationTab';
 import { IppLenderReportingTab } from '../ipp/IppLenderReportingTab';
 import { IppLicenceReturnsTab } from '../ipp/IppLicenceReturnsTab';
 import { IppReippppReportsTab } from '../ipp/IppReippppReportsTab';
+import { IppEquityTransferTab } from '../ipp/IppEquityTransferTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -156,6 +157,7 @@ export function IppWorkstationPage() {
         { key: 'lender-reporting', label: 'Lender reporting covenant (W183)', group: 'Risk', body: () => <IppLenderReportingTab /> },
         { key: 'licence-returns', label: 'Annual NERSA licence return (W184)', group: 'Risk', body: () => <IppLicenceReturnsTab /> },
         { key: 'reipppp-reports', label: 'REIPPPP annual progress report (W185)', group: 'Risk', body: () => <IppReippppReportsTab /> },
+        { key: 'equity-transfer', label: 'SPV equity transfer & consent (W186)', group: 'Risk', body: () => <IppEquityTransferTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },

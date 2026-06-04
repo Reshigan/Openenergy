@@ -1912,6 +1912,14 @@ export type EventType =
   | 'rpr_evt_submit_to_ipp_office' | 'rpr_evt_confirm_acknowledgement'
   | 'rpr_evt_accept_report' | 'rpr_evt_reject_report'
   | 'rpr_evt_declare_lapsed' | 'rpr_evt_flag_sla_breach'
+  // ─── W186: IPP SPV Equity Transfer & NERSA Consent ──────────────────────────
+  | 'ipp_eqt.created' | 'ipp_eqt.sla_breached'
+  | 'eqt_evt_commence_due_diligence' | 'eqt_evt_notify_regulators'
+  | 'eqt_evt_request_lender_consent' | 'eqt_evt_notify_offtaker'
+  | 'eqt_evt_commence_nersa_review' | 'eqt_evt_issue_regulatory_clearance'
+  | 'eqt_evt_track_conditions_precedent' | 'eqt_evt_submit_cp_documentation'
+  | 'eqt_evt_complete_transfer' | 'eqt_evt_reject_transfer'
+  | 'eqt_evt_declare_lapsed' | 'eqt_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2230,6 +2238,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   acr_evt: 'ipp',
   ipp_rpr: 'ipp',
   rpr_evt: 'ipp',
+  ipp_eqt: 'ipp',
+  eqt_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
