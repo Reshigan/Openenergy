@@ -95,7 +95,9 @@ export async function computeStationAccruals(
 export async function backfillStationHistory(
   stationId: string,
   env: HonoEnv['Bindings'],
-): Promise<{ days_backfilled: number; hours_backfilled?: number; kwh_total: number; error_count?: number; first_error?: string }> {
+  chunkStartMs?: number,  // start of this chunk (ms); defaults to 30 days ago
+  chunkEndMs?: number,    // end of this chunk (ms); defaults to now-1h
+): Promise<{ days_backfilled: number; hours_backfilled?: number; kwh_total: number; more_available?: boolean; next_from_ms?: number }> {
   const station = await env.DB
     .prepare(`SELECT ss.*, mc.tariff_rate_zar_per_kwh, mc.customer_tariff_rate_zar_per_kwh, mc.carbon_intensity_gco2_per_kwh,
         mc.client_id, mc.client_secret, mc.auth_type, mc.api_key, mc.token, mc.username, mc.password, mc.base_url, mc.site_id AS cred_site_id, mc.extra_config
@@ -106,7 +108,6 @@ export async function backfillStationHistory(
     .first<Record<string, unknown>>();
   if (!station) return { days_backfilled: 0, kwh_total: 0 };
 
-  // Only SolaX supports historical fetch for now
   if (station.manufacturer !== 'solax') return { days_backfilled: 0, kwh_total: 0 };
 
   const creds = {
@@ -120,7 +121,6 @@ export async function backfillStationHistory(
     extra_config: (station.extra_config as string | null) ?? null,
   };
 
-  // Inject Worker-level secret if DB credential is empty (platform default)
   if (!creds.client_id && env.SOLAX_CLIENT_ID) creds.client_id = env.SOLAX_CLIENT_ID;
   if (!creds.client_secret && env.SOLAX_CLIENT_SECRET) creds.client_secret = env.SOLAX_CLIENT_SECRET;
 
@@ -131,74 +131,55 @@ export async function backfillStationHistory(
   const carbonIntensity = (station.carbon_intensity_gco2_per_kwh as number | null) ?? SA_CARBON_INTENSITY_DEFAULT;
   const deviceSn = station.device_sn as string;
 
-  // Hourly granularity strategy — required for W71 predictive asset health
-  // (anomaly detection, RUL, fault fingerprinting need hour-level time series).
+  // Hourly granularity — W71 predictive ML needs 1-hour resolution.
   //
-  // SolaX API enforces a 12-hour max per request; we use 11-hour windows.
-  // 12 months = ~730 windows per station. With CONCURRENCY=20 batched calls
-  // that runs in ~7 seconds per station, all 10 stations parallelized in the caller.
+  // SolaX enforces a 12-hour max per history request; we use 11-hour windows.
+  // Serial requests only (no concurrency) — SolaX silently returns empty for
+  // concurrent calls against the same token.
   //
-  // Dedup: clear existing backfill rows for this station before inserting fresh data.
-  // ON CONFLICT DO UPDATE is the final idempotency guard.
-  // Always start 12 months back — the inverter was installed before the platform
-  // entry was created, so station.created_at (today for newly synced devices) is
-  // not a valid lower bound for historical data.
-  const startMs = Date.now() - 365 * 24 * 60 * 60 * 1000;
-  const endMs = Date.now() - 60 * 60 * 1000; // up to 1 hour ago
-
-  // Find the latest already-backfilled hour so we only fetch new data on re-runs.
-  const lastBackfill = await env.DB
-    .prepare('SELECT MAX(period_hour) AS max_h FROM site_accruals WHERE station_id = ? AND is_backfill = 1')
-    .bind(stationId)
-    .first<{ max_h: string | null }>();
-  const resumeFromMs = lastBackfill?.max_h
-    ? new Date(lastBackfill.max_h).getTime()
-    : startMs;
-
+  // Chunk size defaults to 30 days (~65 windows × ~600ms each ≈ 40s) so each
+  // HTTP call completes within the CF Worker wall-clock budget.
+  // Callers iterate through 12 months by passing next_from_ms from prior response.
   const HOUR_MS = 60 * 60 * 1000;
-  const WINDOW_MS = 11 * HOUR_MS; // 11h < SolaX 12h limit
-  const CONCURRENCY = 20;         // 20 concurrent window fetches per batch
+  const WINDOW_MS = 11 * HOUR_MS;
 
-  // Build the list of 11-hour windows to fetch (only what's not yet backfilled).
+  const fullStartMs = Date.now() - 365 * 24 * HOUR_MS;
+  const endMs = chunkEndMs ?? (Date.now() - HOUR_MS);
+  const startMs = chunkStartMs ?? (endMs - 30 * 24 * HOUR_MS);
+  const clampedStart = Math.max(startMs, fullStartMs);
+
   const windows: number[] = [];
-  let w = resumeFromMs;
+  let w = clampedStart;
   while (w < endMs) {
     windows.push(w);
     w += WINDOW_MS;
   }
 
-  if (windows.length === 0) return { days_backfilled: 0, kwh_total: 0 };
+  if (windows.length === 0) {
+    const more = clampedStart > fullStartMs;
+    return { days_backfilled: 0, kwh_total: 0, more_available: more, next_from_ms: more ? clampedStart - 30 * 24 * HOUR_MS : undefined };
+  }
 
-  // Collect ALL hourly data points across all windows.
-  // Map: ISO-hour-string → totalYield at that hour (for delta computation).
-  const hourTotals = new Map<string, number>(); // "2026-06-04T17" → totalYield kWh
-  let errorCount = 0;
-  let firstError = '';
+  // Collect hourly totalYield readings. Serial to avoid SolaX rate-limit on
+  // concurrent same-token requests.
+  const hourTotals = new Map<string, number>(); // "2026-06-04T17" → max totalYield kWh that hour
 
-  for (let i = 0; i < windows.length; i += CONCURRENCY) {
-    const batch = windows.slice(i, i + CONCURRENCY);
-    await Promise.all(batch.map(async (winStart) => {
-      const winEnd = Math.min(winStart + WINDOW_MS, endMs);
-      try {
-        const points = await getHistoricalData(creds, deviceSn, winStart, winEnd, 60);
-        for (const p of points) {
-          if (!p.ts || !p.total_kwh) continue;
-          // Truncate to the hour: "2026-06-04T17:42:50Z" → "2026-06-04T17"
-          const hourKey = p.ts.slice(0, 13);
-          const prev = hourTotals.get(hourKey) ?? 0;
-          if (p.total_kwh > prev) hourTotals.set(hourKey, p.total_kwh);
-        }
-      } catch (e) {
-        errorCount++;
-        if (!firstError) firstError = String(e);
+  for (const winStart of windows) {
+    const winEnd = Math.min(winStart + WINDOW_MS, endMs);
+    try {
+      const points = await getHistoricalData(creds, deviceSn, winStart, winEnd, 60);
+      for (const p of points) {
+        if (!p.ts || !p.total_kwh) continue;
+        const hourKey = p.ts.slice(0, 13); // "2026-06-04T17"
+        const prev = hourTotals.get(hourKey) ?? 0;
+        if (p.total_kwh > prev) hourTotals.set(hourKey, p.total_kwh);
       }
-    }));
-    // Early bail: if first batch produced only errors and no data, stop immediately.
-    if (i === 0 && errorCount >= CONCURRENCY && hourTotals.size === 0) break;
+    } catch { /* skip failed window */ }
   }
 
   if (hourTotals.size === 0) {
-    return { days_backfilled: 0, kwh_total: 0, error_count: errorCount, first_error: firstError || undefined };
+    const more = clampedStart > fullStartMs;
+    return { days_backfilled: 0, kwh_total: 0, more_available: more, next_from_ms: more ? startMs - 30 * 24 * HOUR_MS : undefined };
   }
 
   // Sort hour keys chronologically, compute delta = totalYield[i] − totalYield[i−1].
@@ -212,7 +193,7 @@ export async function backfillStationHistory(
 
   // Upsert one accrual row per hour. ON CONFLICT ensures idempotency.
   const uniqueDays = new Set<string>();
-  let cumulative = lastBackfill?.max_h ? 0 : 0; // running total from this batch
+  let cumulative = 0;
   let daysWritten = 0;
 
   for (const pt of hourPoints) {
@@ -241,7 +222,14 @@ export async function backfillStationHistory(
     daysWritten++;
   }
 
-  return { days_backfilled: uniqueDays.size, hours_backfilled: daysWritten, kwh_total: cumulative };
+  const more = clampedStart > fullStartMs;
+  return {
+    days_backfilled: uniqueDays.size,
+    hours_backfilled: daysWritten,
+    kwh_total: cumulative,
+    more_available: more,
+    next_from_ms: more ? startMs - 30 * 24 * HOUR_MS : undefined,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -368,17 +356,32 @@ app.post('/compute', async (c) => {
 });
 
 // POST /api/esums/accruals/backfill — pull SolaX history for all/one station
+//
+// Body params:
+//   station_id?      — limit to one station
+//   participant_id?  — admin override to target another user's stations
+//   chunk_end_ms?    — end of the 30-day window to process (default: now-1h)
+//   chunk_start_ms?  — start of the 30-day window (default: chunk_end_ms - 30d)
+//
+// Returns more_available + next_from_ms when there is older data to fetch.
+// Iterate by calling again with chunk_end_ms = next_from_ms + 30d,
+// chunk_start_ms = next_from_ms.
 app.post('/backfill', async (c) => {
   const user = getCurrentUser(c);
   if (!['admin', 'support'].includes(user.role)) {
     return c.json({ error: 'Forbidden' }, 403);
   }
 
-  const body = await c.req.json<{ station_id?: string; participant_id?: string }>().catch(() => ({ station_id: undefined, participant_id: undefined }));
+  const body = await c.req.json<{
+    station_id?: string;
+    participant_id?: string;
+    chunk_end_ms?: number;
+    chunk_start_ms?: number;
+  }>().catch(() => ({ station_id: undefined, participant_id: undefined, chunk_end_ms: undefined, chunk_start_ms: undefined }));
+
   const env = c.env;
   const stationId = body.station_id;
-  // Admin can pass participant_id to backfill another user's stations
-  const targetParticipant = (['admin', 'support'].includes(user.role) && body.participant_id)
+  const targetParticipant = (body.participant_id && ['admin', 'support'].includes(user.role))
     ? body.participant_id
     : user.id;
 
@@ -394,18 +397,16 @@ app.post('/backfill', async (c) => {
     .bind(...stationBinds)
     .all<{ id: string }>();
 
-  // Parallelize across stations — each station's 6-hour window chunks run sequentially
-  // inside, but all stations run concurrently to keep total wall-clock time low.
-  const results = await Promise.all(
-    (stations.results ?? []).map(async (st) => {
-      try {
-        const r = await backfillStationHistory(st.id, env);
-        return { station_id: st.id, ...r };
-      } catch (e) {
-        return { station_id: st.id, error: String(e) };
-      }
-    })
-  );
+  // Run stations serially within each chunk to avoid SolaX rate-limiting.
+  const results: unknown[] = [];
+  for (const st of (stations.results ?? [])) {
+    try {
+      const r = await backfillStationHistory(st.id, env, body.chunk_start_ms, body.chunk_end_ms);
+      results.push({ station_id: st.id, ...r });
+    } catch (e) {
+      results.push({ station_id: st.id, error: String(e) });
+    }
+  }
   return c.json({ stations_processed: results.length, results });
 });
 
