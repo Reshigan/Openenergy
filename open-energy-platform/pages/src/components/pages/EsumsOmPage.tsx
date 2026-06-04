@@ -369,15 +369,50 @@ export function EsumsOmPage() {
       key: 'projects',
       label: 'Projects',
       endpoint: '/esums/projects',
-      description: 'Portfolio-level grouping of sites. Each project can be pinned to its own dedicated D1 database shard (set shard_key) to isolate telemetry writes from the main database — essential for deployments with 50+ sites per project or strict ACID requirements.',
+      description: 'Portfolio-level project grouping. A project is either linked to an existing IPP project (operational O&M layer on top of a tracked development) or standalone (asset-owner / behind-the-meter / community solar with no IPP lifecycle). If you have no projects yet, a standalone default is created automatically on first open.',
       columns: [
-        { key: 'name',        label: 'Project' },
-        { key: 'description', label: 'Description' },
-        { key: 'site_count',  label: 'Sites',     align: 'right', number: true },
-        { key: 'total_capacity_kw', label: 'kW',  align: 'right', number: true },
-        { key: 'shard_key',   label: 'DB shard' },
-        { key: 'status',      label: 'Status', render: (r) => <StatusPill status={String(r.status)} /> },
-        { key: 'created_at',  label: 'Created', date: true },
+        { key: 'name',             label: 'Project' },
+        { key: 'project_type',     label: 'Type', render: (r) => (
+            <StatusPill status={r.project_type === 'ipp' ? 'ipp' : 'standalone'} />
+          )},
+        { key: 'ipp_project_name', label: 'IPP link' },
+        { key: 'site_count',       label: 'Sites',    align: 'right', number: true },
+        { key: 'total_capacity_kw', label: 'kW',      align: 'right', number: true },
+        { key: 'shard_key',        label: 'DB shard' },
+        { key: 'status',           label: 'Status', render: (r) => <StatusPill status={String(r.status)} /> },
+        { key: 'created_at',       label: 'Created', date: true },
+      ],
+      rowActions: [
+        {
+          label: 'Link IPP project',
+          tone: 'primary' as const,
+          endpoint: '/esums/projects/{id}',
+          form: {
+            title: 'Link to IPP project',
+            endpoint: '',
+            fields: [
+              { name: 'project_type', label: 'Type', type: 'select', required: true,
+                options: [
+                  { value: 'ipp',        label: 'IPP project (link to tracked development)' },
+                  { value: 'standalone', label: 'Standalone (no IPP link)' },
+                ]},
+              { name: 'ipp_project_id', label: 'IPP project ID', type: 'text' },
+            ],
+          },
+        },
+        {
+          label: 'Archive',
+          tone: 'default' as const,
+          endpoint: '/esums/projects/{id}',
+          form: {
+            title: 'Archive project',
+            endpoint: '',
+            fields: [
+              { name: 'status', label: 'Status', type: 'select', required: true,
+                options: [{ value: 'archived', label: 'Archive' }, { value: 'active', label: 'Restore' }]},
+            ],
+          },
+        },
       ],
     },
     {
