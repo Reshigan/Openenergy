@@ -161,7 +161,8 @@ jobs:
             # Skip 050 (per-statement reconcile in next step).
             # Skip 380-381 (esums_projects band — rolled back on first run
             #   due to om_sites FK conflict; handled in ESUMS reconcile step).
-            if (n <= 18 || n == 49 || (n >= 51 && n < 380) || n >= 382) print
+            # Skip 383 (manufacturer column ALTER — per-statement reconcile).
+            if (n <= 18 || n == 49 || (n >= 51 && n < 380) || (n == 382) || n >= 384) print
           }')
           for f in $files; do
             echo "::group::Applying $f"
@@ -278,6 +279,15 @@ jobs:
           attempt "CREATE esums_telemetry" "CREATE TABLE IF NOT EXISTS esums_telemetry (id TEXT PRIMARY KEY, device_id TEXT NOT NULL, site_id TEXT NOT NULL, project_id TEXT, ts TEXT NOT NULL, ac_kw REAL, dc_kw REAL, yield_kwh REAL, interval_kwh REAL, voltage_v REAL, current_a REAL, frequency_hz REAL, temperature_c REAL, irradiance_w_m2 REAL, status_code TEXT, quality TEXT NOT NULL DEFAULT 'valid');"
           attempt "INDEX esums_telemetry_device_ts" "CREATE INDEX IF NOT EXISTS idx_esums_tel_device_ts ON esums_telemetry(device_id, ts DESC);"
           attempt "INDEX esums_telemetry_site_ts" "CREATE INDEX IF NOT EXISTS idx_esums_tel_site_ts ON esums_telemetry(site_id, ts DESC);"
+          # ── 383: manufacturer column on solax_stations ───────────────────
+          attempt "ALTER solax_stations ADD manufacturer" "ALTER TABLE solax_stations ADD COLUMN manufacturer TEXT NOT NULL DEFAULT 'solax';"
+          attempt "INDEX solax_stations_manufacturer" "CREATE INDEX IF NOT EXISTS idx_solax_stations_manufacturer ON solax_stations(participant_id, manufacturer);"
+          # ── 383: manufacturer_credentials table ──────────────────────────
+          attempt "CREATE manufacturer_credentials" "CREATE TABLE IF NOT EXISTS manufacturer_credentials (id TEXT PRIMARY KEY, participant_id TEXT NOT NULL REFERENCES participants(id) ON DELETE CASCADE, manufacturer TEXT NOT NULL, auth_type TEXT NOT NULL, client_id TEXT, client_secret TEXT, api_key TEXT, token TEXT, username TEXT, password TEXT, access_token TEXT, token_expires_at TEXT, base_url TEXT, site_id TEXT, extra_config TEXT, status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','inactive','error')), last_tested_at TEXT, last_error TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);"
+          attempt "INDEX manufacturer_credentials_unique" "CREATE UNIQUE INDEX IF NOT EXISTS idx_manufacturer_creds_unique ON manufacturer_credentials(participant_id, manufacturer);"
+          attempt "INDEX manufacturer_credentials_participant" "CREATE INDEX IF NOT EXISTS idx_manufacturer_creds_participant ON manufacturer_credentials(participant_id);"
+          # ── 383: station_telemetry_snapshot table ─────────────────────────
+          attempt "CREATE station_telemetry_snapshot" "CREATE TABLE IF NOT EXISTS station_telemetry_snapshot (station_id TEXT PRIMARY KEY REFERENCES solax_stations(id) ON DELETE CASCADE, ts TEXT NOT NULL, ac_kw REAL, dc_kw REAL, daily_kwh REAL, total_kwh REAL, battery_soc REAL, temperature_c REAL, online INTEGER NOT NULL DEFAULT 0, raw_json TEXT, updated_at TEXT NOT NULL);"
           $ok || exit 1
 
       - name: Deploy Worker (oe.vantax.co.za)
