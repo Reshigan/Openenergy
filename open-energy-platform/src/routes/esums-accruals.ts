@@ -44,9 +44,9 @@ export async function computeStationAccruals(
   // This avoids needing manufacturer_credentials in D1 — falls back to env vars like
   // the backfill does, so the hourly cron works out-of-the-box.
   const snapRow = await env.DB
-    .prepare('SELECT total_kwh, updated_at FROM station_telemetry_snapshot WHERE station_id = ?')
+    .prepare('SELECT total_kwh, daily_kwh, updated_at FROM station_telemetry_snapshot WHERE station_id = ?')
     .bind(stationId)
-    .first<{ total_kwh: number | null; updated_at: string | null }>();
+    .first<{ total_kwh: number | null; daily_kwh: number | null; updated_at: string | null }>();
 
   const staleThresholdMs = 70 * 60 * 1000;
   const snapAge = snapRow?.updated_at
@@ -90,21 +90,24 @@ export async function computeStationAccruals(
   }
 
   const snap = snapRow ?? await env.DB
-    .prepare('SELECT total_kwh FROM station_telemetry_snapshot WHERE station_id = ?')
+    .prepare('SELECT daily_kwh FROM station_telemetry_snapshot WHERE station_id = ?')
     .bind(stationId)
-    .first<{ total_kwh: number | null }>();
+    .first<{ daily_kwh: number | null }>();
 
-  const currentTotalKwh = snap?.total_kwh ?? 0;
-  if (currentTotalKwh <= 0) return { kwh_delta: 0, rows_written: 0 };
+  // Use daily_kwh (resets at midnight) — avoids comparing lifetime totals against
+  // chunk-local cumulative values written by backfill, which would produce huge spurious deltas.
+  const currentDailyKwh = (snap as { daily_kwh: number | null } | null)?.daily_kwh ?? 0;
+  if (currentDailyKwh <= 0) return { kwh_delta: 0, rows_written: 0 };
 
-  // Last accrual
-  const lastAccrual = await env.DB
-    .prepare('SELECT cumulative_kwh, period_hour FROM site_accruals WHERE station_id = ? ORDER BY period_hour DESC LIMIT 1')
-    .bind(stationId)
-    .first<{ cumulative_kwh: number; period_hour: string }>();
+  // Today's prior accruals since UTC midnight — correctly accounts for both backfill and live-poll rows.
+  const todayMidnight = new Date().toISOString().slice(0, 10) + 'T00:00:00Z';
+  const priorRow = await env.DB
+    .prepare('SELECT SUM(kwh_delta) AS today_kwh FROM site_accruals WHERE station_id = ? AND period_hour >= ?')
+    .bind(stationId, todayMidnight)
+    .first<{ today_kwh: number | null }>();
+  const todayPriorKwh = priorRow?.today_kwh ?? 0;
 
-  const prevKwh = lastAccrual?.cumulative_kwh ?? 0;
-  const kwhDelta = Math.max(0, currentTotalKwh - prevKwh);
+  const kwhDelta = Math.max(0, currentDailyKwh - todayPriorKwh);
   if (kwhDelta < 0.001) return { kwh_delta: 0, rows_written: 0 };
 
   // Rate parameters (fall back to defaults)
@@ -119,7 +122,6 @@ export async function computeStationAccruals(
   const now = new Date().toISOString();
   const periodHour = now.slice(0, 13) + ':00:00Z'; // truncate to hour
   const id = crypto.randomUUID();
-  const isBackfill = lastAccrual ? 0 : 1; // first compute = backfill of all historical kWh
 
   await env.DB
     .prepare(`INSERT INTO site_accruals (id, station_id, site_id, participant_id, period_hour, kwh_delta, cumulative_kwh, carbon_tco2e, revenue_zar, savings_zar, tariff_rate_used, customer_tariff_rate_used, carbon_intensity_used, is_backfill, created_at, updated_at)
@@ -129,8 +131,8 @@ export async function computeStationAccruals(
         carbon_tco2e = excluded.carbon_tco2e, revenue_zar = excluded.revenue_zar,
         savings_zar = excluded.savings_zar, updated_at = excluded.updated_at`)
     .bind(id, stationId, station.site_id ?? null, station.participant_id,
-      periodHour, kwhDelta, currentTotalKwh, carbonTco2e, revenueZar, savingsZar,
-      tariffRate, customerRate, carbonIntensity, isBackfill, now, now)
+      periodHour, kwhDelta, currentDailyKwh, carbonTco2e, revenueZar, savingsZar,
+      tariffRate, customerRate, carbonIntensity, 0, now, now)
     .run();
 
   return { kwh_delta: kwhDelta, rows_written: 1 };
