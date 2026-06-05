@@ -87,6 +87,7 @@ import { IppEquityTransferTab } from '../ipp/IppEquityTransferTab';
 import { IppQuarterlyGenReportTab } from '../ipp/IppQuarterlyGenReportTab';
 import { IppAnnualComplianceAssessmentTab } from '../ipp/IppAnnualComplianceAssessmentTab';
 import { IppAnnualAuditTab } from '../ipp/IppAnnualAuditTab';
+import { IppEmpComplianceReportTab } from '../ipp/IppEmpComplianceReportTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -164,6 +165,7 @@ export function IppWorkstationPage() {
         { key: 'quarterly-gen-report', label: 'DMRE quarterly generation report (W187)', group: 'Risk', body: () => <IppQuarterlyGenReportTab /> },
         { key: 'annual-compliance-assessment', label: 'Annual grid code compliance self-assessment (W188)', group: 'Risk', body: () => <IppAnnualComplianceAssessmentTab /> },
         { key: 'annual-audit', label: 'Annual financial statements & audit (W189)', group: 'Risk', body: () => <IppAnnualAuditTab /> },
+        { key: 'emp-compliance-report', label: 'EMP annual compliance report (W190)', group: 'Risk', body: () => <IppEmpComplianceReportTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },

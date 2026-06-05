@@ -1944,6 +1944,15 @@ export type EventType =
   | 'aud_evt_obtain_board_approval' | 'aud_evt_submit_to_cipc'
   | 'aud_evt_complete_audit' | 'aud_evt_issue_qualified_opinion'
   | 'aud_evt_declare_lapsed' | 'aud_evt_flag_sla_breach'
+  // ─── Wave 190 — IPP EMP Annual Compliance Report ──────────────────────────
+  | 'ipp_empr.created' | 'ipp_empr.sla_breached'
+  | 'empr_evt_opened'
+  | 'empr_evt_commence_eco_data_collection' | 'empr_evt_compile_monitoring_results'
+  | 'empr_evt_conduct_incident_review' | 'empr_evt_prepare_draft_report'
+  | 'empr_evt_complete_internal_review' | 'empr_evt_obtain_eco_sign_off'
+  | 'empr_evt_submit_to_competent_authority' | 'empr_evt_commence_ca_review'
+  | 'empr_evt_accept_report' | 'empr_evt_reject_report'
+  | 'empr_evt_declare_lapsed' | 'empr_evt_sla_breached'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2270,6 +2279,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   acs_evt: 'ipp',
   ipp_aud: 'ipp',
   aud_evt: 'ipp',
+  ipp_empr: 'ipp',
+  empr_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
