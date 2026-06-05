@@ -58,6 +58,7 @@ export function OfftakerWorkstationPage() {
         { key: 'payment_security', label: 'Payment security', group: 'Security', body: () => <PaymentSecurityChainTab /> },
         { key: 'obligations', label: 'Obligations register', group: 'Security', body: () => <ObligationsTab /> },
         { key: 'slb_kpi', label: 'SLB KPI ratchet (W204)', group: 'Contracts', body: ({ onRefresh }) => <SlbKpiTab onRefresh={onRefresh} /> },
+        { key: 'green_tariff', label: 'Green tariff disclosure (W210)', group: 'Compliance', body: ({ onRefresh }) => <GreenTariffTab onRefresh={onRefresh} /> },
         { key: 'recs', label: 'RECs portfolio', group: 'Compliance', body: ({ onRefresh }) => <RecsTab onRefresh={onRefresh} /> },
         { key: 'scope2', label: 'Scope 2', group: 'Compliance', body: ({ onRefresh }) => <Scope2Tab onRefresh={onRefresh} /> },
         { key: 'rec_lifecycle', label: 'REC lifecycle', group: 'Compliance', body: () => <RecLifecycleChainTab /> },
@@ -842,6 +843,110 @@ function SlbKpiTab({ onRefresh }: { onRefresh?: () => void }) {
             ] },
             { key: 'reason', label: 'Notes / reason', type: 'textarea', required: false },
           ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── W210: Green Tariff Disclosure Tab ────────────────────────────────────────
+const GT_CLASS_TONE: Record<string, 'bad' | 'warn' | 'neutral' | 'info'> = {
+  sbti_aligned: 'bad', corporate_ppa: 'warn', utility_green_tariff: 'info', voluntary: 'neutral',
+};
+
+function GreenTariffTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [modal, setModal] = useState<null | { type: 'create' } | { type: 'action'; id: string; currentStatus: string; cls: string; period: string }>(null);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <button onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+          + New disclosure
+        </button>
+      </div>
+
+      <ListingTable
+        endpoint="/green-tariff-disclosures"
+        rowKey={(r) => r.id}
+        rowOnClick={(r) => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status, cls: r.green_tariff_class, period: r.disclosure_period })}
+        empty={{ title: 'No green tariff disclosures', description: 'GHG Protocol Scope 2 / CDP / SBTi green tariff disclosures will appear here.' }}
+        columns={[
+          { key: 'disclosure_period', label: 'Period', render: (r) => <span className="font-semibold text-[12px]">{r.disclosure_period as string}</span> },
+          { key: 'green_tariff_class', label: 'Class', render: (r) => <Pill tone={GT_CLASS_TONE[r.green_tariff_class as string] ?? 'neutral'}>{String(r.green_tariff_class).replace(/_/g, ' ')}</Pill> },
+          { key: 'match_percentage', label: 'Match %', render: (r) => r.match_percentage != null ? <span className={`font-semibold ${Number(r.match_percentage) >= 100 ? 'text-green-700' : Number(r.match_percentage) >= 75 ? 'text-amber-600' : 'text-red-600'}`}>{Number(r.match_percentage).toFixed(1)}%</span> : <span className="text-[#8fa3bd]">—</span> },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['disclosed'].includes(r.chain_status as string) ? 'good' : ['rejected', 'withdrawn'].includes(r.chain_status as string) ? 'bad' : 'warn'}>{String(r.chain_status).replace(/_/g, ' ')}</Pill> },
+          { key: 'sla_breached', label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">Breached</Pill> : <Pill tone="good">OK</Pill> },
+          { key: 'created_at', label: 'Created', render: (r) => new Date(r.created_at as string).toLocaleDateString() },
+        ]}
+      />
+
+      {modal?.type === 'create' && (
+        <ActionModal
+          title="New green tariff disclosure"
+          submitLabel="Create"
+          fields={[
+            { key: 'disclosure_period', label: 'Disclosure period (e.g. 2025, 2025-Q4)', required: true },
+            { key: 'green_tariff_class', label: 'Class', type: 'select', required: true, options: [
+              { value: 'voluntary', label: 'Voluntary (14d SLA)' },
+              { value: 'utility_green_tariff', label: 'Utility green tariff (21d SLA)' },
+              { value: 'corporate_ppa', label: 'Corporate PPA (30d SLA)' },
+              { value: 'sbti_aligned', label: 'SBTi-aligned (45d SLA)' },
+            ]} as FieldSpec,
+            { key: 'ppa_ref', label: 'PPA reference (optional)' },
+            { key: 'consumption_mwh', label: 'Total consumption (MWh)', type: 'number' },
+            { key: 'contracted_green_mwh', label: 'Contracted green MWh', type: 'number' },
+            { key: 'generation_technology', label: 'Generation technology (solar/wind/etc.)' },
+            { key: 'reason', label: 'Notes' },
+          ] as FieldSpec[]}
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/green-tariff-disclosures', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({ ...v, consumption_mwh: v.consumption_mwh ? Number(v.consumption_mwh) : undefined, contracted_green_mwh: v.contracted_green_mwh ? Number(v.contracted_green_mwh) : undefined }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); onRefresh?.();
+          }}
+        />
+      )}
+
+      {modal?.type === 'action' && (
+        <ActionModal
+          title={`Green tariff — ${modal.cls} — ${modal.period}`}
+          submitLabel="Submit action"
+          fields={[
+            { key: 'action', label: 'Action', type: 'select', required: true, options: [
+              { value: 'start_eligibility', label: 'Start eligibility check' },
+              { value: 'begin_attribute_matching', label: 'Begin attribute matching' },
+              { value: 'submit_for_review', label: 'Submit for independent review' },
+              { value: 'approve_review', label: 'Approve review' },
+              { value: 'issue_label', label: 'Issue green label' },
+              { value: 'submit_to_cdp', label: 'Submit to CDP/SBTi' },
+              { value: 'complete_disclosure', label: 'Complete disclosure' },
+              { value: 'reject', label: 'Reject' },
+              { value: 'withdraw', label: 'Withdraw' },
+            ]} as FieldSpec,
+            { key: 'matched_rec_mwh', label: 'Matched REC MWh', type: 'number' },
+            { key: 'match_percentage', label: 'Match percentage', type: 'number' },
+            { key: 'rec_serial_from', label: 'REC serial (from)' },
+            { key: 'rec_serial_to', label: 'REC serial (to)' },
+            { key: 'irec_registry', label: 'I-REC registry (I-REC/SAREC/GO)' },
+            { key: 'reviewer_name', label: 'Reviewer name' },
+            { key: 'label_certificate_number', label: 'Label certificate number' },
+            { key: 'cdp_submission_ref', label: 'CDP submission reference' },
+            { key: 'reason', label: 'Notes' },
+          ] as FieldSpec[]}
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/green-tariff-disclosures/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({ ...v, matched_rec_mwh: v.matched_rec_mwh ? Number(v.matched_rec_mwh) : undefined, match_percentage: v.match_percentage ? Number(v.match_percentage) : undefined }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); onRefresh?.();
+          }}
         />
       )}
     </div>

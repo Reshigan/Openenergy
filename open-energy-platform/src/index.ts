@@ -386,6 +386,7 @@ import carbonRegistryTransferChainRoutes, { crtSlaSweep } from './routes/carbon-
 import milestoneVarianceChainRoutes, { mvsSlaSweep } from './routes/milestone-variance-chain';
 import csatChainRoutes, { csatSlaSweep } from './routes/csat-chain';
 import publicConsultationChainRoutes, { pcSlaSweep } from './routes/public-consultation-chain';
+import greenTariffChainRoutes, { gtSlaSweep } from './routes/green-tariff-chain';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -1060,6 +1061,7 @@ app.route('/api/carbon-registry-transfers', carbonRegistryTransferChainRoutes);
 app.route('/api/milestone-variance-reports', milestoneVarianceChainRoutes);
 app.route('/api/csat-records', csatChainRoutes);
 app.route('/api/public-consultations', publicConsultationChainRoutes);
+app.route('/api/green-tariff-disclosures', greenTariffChainRoutes);
 // platformFeaturesRoutes is the catch-all for /api — it must remain LAST
 // so all specific /api/* mounts above are tried first.
 app.route('/api', platformFeaturesRoutes);
@@ -2588,6 +2590,11 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('pc_sla_sweep', async () => {
         const result = await pcSlaSweep(env as never);
         console.log('pc_sla_sweep', JSON.stringify(result));
+      });
+      // W210: Offtaker Green Tariff / PPA Labelling — INVERTED SLA sweep.
+      await safe('gt_sla_sweep', async () => {
+        const result = await gtSlaSweep(env as never);
+        console.log('gt_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
