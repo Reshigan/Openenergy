@@ -1969,6 +1969,12 @@ export type EventType =
   | 'cp_evt_document_cp' | 'cp_evt_submit_for_verification' | 'cp_evt_conditional_pass'
   | 'cp_evt_flag_outstanding' | 'cp_evt_serve_notice' | 'cp_evt_commence_cure'
   | 'cp_evt_satisfy_cp' | 'cp_evt_waive_cp' | 'cp_evt_expire_cp' | 'cp_evt_reject_cp'
+  // ─── Wave 194 — Lender Facility Amendment & Consent ──────────────────────
+  | 'facility_amendment.created' | 'facility_amendment.sla_breached'
+  | 'fam_evt_amendment_requested' | 'fam_evt_assess_eligibility' | 'fam_evt_circulate_to_lenders'
+  | 'fam_evt_record_majority_response' | 'fam_evt_escalate_to_unanimous' | 'fam_evt_obtain_consent'
+  | 'fam_evt_prepare_documentation' | 'fam_evt_execute_amendment' | 'fam_evt_record_effective_date'
+  | 'fam_evt_refuse_amendment' | 'fam_evt_lapse_amendment' | 'fam_evt_sla_breached'
   // ─── Wave 193 — IPP Licence Obligation Tracker ───────────────────────────
   | 'licence_obligation.created' | 'licence_obligation.sla_breached'
   | 'lo_evt_trigger_assessment' | 'lo_evt_gather_evidence' | 'lo_evt_submit_evidence'
@@ -2313,6 +2319,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   empr_evt: 'ipp',
   cp_tracker: 'ipp',
   cp_evt: 'ipp',
+  facility_amendment: 'lender',
+  fam_evt: 'lender',
   licence_obligation: 'ipp',
   lo_evt: 'ipp',
   station_link: 'esums',
