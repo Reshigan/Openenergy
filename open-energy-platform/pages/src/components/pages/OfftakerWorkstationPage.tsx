@@ -57,6 +57,7 @@ export function OfftakerWorkstationPage() {
         { key: 'unserved_energy_claims', label: 'USE Claims', group: 'Operations', body: () => <OfftakerUseClaimTab /> },
         { key: 'payment_security', label: 'Payment security', group: 'Security', body: () => <PaymentSecurityChainTab /> },
         { key: 'obligations', label: 'Obligations register', group: 'Security', body: () => <ObligationsTab /> },
+        { key: 'slb_kpi', label: 'SLB KPI ratchet (W204)', group: 'Contracts', body: ({ onRefresh }) => <SlbKpiTab onRefresh={onRefresh} /> },
         { key: 'recs', label: 'RECs portfolio', group: 'Compliance', body: ({ onRefresh }) => <RecsTab onRefresh={onRefresh} /> },
         { key: 'scope2', label: 'Scope 2', group: 'Compliance', body: ({ onRefresh }) => <Scope2Tab onRefresh={onRefresh} /> },
         { key: 'rec_lifecycle', label: 'REC lifecycle', group: 'Compliance', body: () => <RecLifecycleChainTab /> },
@@ -694,4 +695,155 @@ Service & administration                    R    18,500.00
 Environmental levy            1,000,000 kWh R   3,500.00
 Affordability subsidy charge  1,000,000 kWh R     950.00
 Total billed (excl VAT)                     R 3,258,550.00`;
+}
+
+// ─── W204: SLB KPI & Sustainability-Linked PPA Ratchet ───────────────────────
+type SlbModalMode = 'create' | { type: 'action'; id: string; currentStatus: string } | null;
+
+function SlbKpiTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [modal, setModal] = useState<SlbModalMode>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refresh = () => { setRefreshKey(k => k + 1); onRefresh?.(); };
+
+  const statusTone = (s: string) => {
+    if (['ratchet_applied', 'ratchet_waived'].includes(s)) return 'good' as const;
+    if (['kpi_missed', 'withdrawn'].includes(s)) return 'bad' as const;
+    if (['ratchet_disputed', 'arbitration'].includes(s)) return 'warn' as const;
+    return 'neutral' as const;
+  };
+
+  return (
+    <div>
+      <div className="flex justify-end mb-3">
+        <button
+          className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
+          onClick={() => setModal('create')}
+        >
+          + New KPI period
+        </button>
+      </div>
+
+      <ListingTable
+        key={refreshKey}
+        endpoint="/slb-kpi-ratchets"
+        rowKey={(r) => r.id}
+        empty={{ title: 'No SLB KPI periods', description: 'Track sustainability-linked PPA KPI measurements and ratchet calculations.' }}
+        columns={[
+          { key: 'kpi_period', label: 'Period', render: (r) => r.kpi_period },
+          { key: 'slb_tier', label: 'Tier', render: (r) => <Pill tone="info">{String(r.slb_tier).replace(/_/g, ' ')}</Pill> },
+          { key: 'kpi_name', label: 'KPI', render: (r) => r.kpi_name || '—' },
+          { key: 'kpi_target_value', label: 'Target', align: 'right', render: (r) => r.kpi_target_value != null ? `${r.kpi_target_value} ${r.kpi_unit || ''}` : '—' },
+          { key: 'kpi_actual_value', label: 'Actual', align: 'right', render: (r) => r.kpi_actual_value != null ? `${r.kpi_actual_value} ${r.kpi_unit || ''}` : '—' },
+          { key: 'ratchet_basis_points', label: 'Ratchet (bps)', align: 'right', render: (r) => r.ratchet_basis_points != null ? `${r.ratchet_basis_points}bps` : '—' },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={statusTone(r.chain_status)}>{String(r.chain_status).replace(/_/g, ' ')}</Pill> },
+          { key: 'sla_breached', label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">Breached</Pill> : <Pill tone="good">On track</Pill> },
+        ]}
+        rowOnClick={(r) => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status })}
+      />
+
+      {modal === 'create' && (
+        <ActionModal
+          title="New SLB KPI period"
+          submitLabel="Create"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/slb-kpi-ratchets', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                slb_tier: v.slb_tier,
+                kpi_period: v.kpi_period,
+                period_start: v.period_start,
+                period_end: v.period_end,
+                kpi_name: v.kpi_name || undefined,
+                kpi_target_value: v.kpi_target_value ? parseFloat(v.kpi_target_value) : undefined,
+                kpi_unit: v.kpi_unit || undefined,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null);
+            refresh();
+          }}
+          fields={[
+            { key: 'kpi_period', label: 'KPI period (e.g. 2026-Q2)', required: true, placeholder: '2026-Q2' },
+            { key: 'period_start', label: 'Period start', type: 'date', required: true },
+            { key: 'period_end', label: 'Period end', type: 'date', required: true },
+            {
+              key: 'slb_tier', label: 'SLB tier', type: 'select', required: true, defaultValue: 'green_finance',
+              options: [
+                { value: 'voluntary', label: 'Voluntary (30d SLA)' },
+                { value: 'green_finance', label: 'Green finance (45d SLA)' },
+                { value: 'listed', label: 'Listed / JSE (60d SLA)' },
+                { value: 'regulatory', label: 'Regulatory (90d SLA)' },
+              ],
+            },
+            { key: 'kpi_name', label: 'KPI name', required: false, placeholder: 'RE percentage' },
+            { key: 'kpi_target_value', label: 'KPI target value', type: 'number', required: false },
+            { key: 'kpi_unit', label: 'KPI unit', required: false, placeholder: '%' },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+          ]}
+        />
+      )}
+
+      {modal !== null && modal !== 'create' && (
+        <ActionModal
+          title={`Advance SLB KPI — ${modal.currentStatus.replace(/_/g, ' ')}`}
+          submitLabel="Submit action"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/slb-kpi-ratchets/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                action: v.action,
+                reason: v.reason || undefined,
+                kpi_actual_value: v.kpi_actual_value ? parseFloat(v.kpi_actual_value) : undefined,
+                kpi_data_source: v.kpi_data_source || undefined,
+                ratchet_basis_points: v.ratchet_basis_points ? parseFloat(v.ratchet_basis_points) : undefined,
+                ratchet_direction: v.ratchet_direction || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null);
+            refresh();
+          }}
+          fields={[
+            {
+              key: 'action', label: 'Action', type: 'select', required: true,
+              options: [
+                { value: 'start_measurement', label: 'Start KPI measurement' },
+                { value: 'submit_kpi_data', label: 'Submit KPI data' },
+                { value: 'request_verification', label: 'Request independent verification' },
+                { value: 'certify_kpi', label: 'Certify KPI (verifier sign-off)' },
+                { value: 'calculate_ratchet', label: 'Calculate ratchet' },
+                { value: 'agree_ratchet', label: 'Agree ratchet amount' },
+                { value: 'raise_dispute', label: 'Raise dispute on ratchet' },
+                { value: 'refer_to_arbitration', label: 'Refer to arbitration' },
+                { value: 'resolve_arbitration', label: 'Resolve arbitration' },
+                { value: 'apply_ratchet', label: 'Apply ratchet to PPA' },
+                { value: 'waive_ratchet', label: 'Waive ratchet (mutual)' },
+                { value: 'record_kpi_miss', label: 'Record KPI miss (step-up applies)' },
+                { value: 'withdraw', label: 'Withdraw' },
+              ],
+            },
+            { key: 'kpi_actual_value', label: 'KPI actual value', type: 'number', required: false },
+            { key: 'kpi_data_source', label: 'Data source', type: 'select', required: false, options: [
+              { value: 'solax_api', label: 'Solax API' },
+              { value: 'metering', label: 'Metering' },
+              { value: 'manual', label: 'Manual' },
+            ] },
+            { key: 'ratchet_basis_points', label: 'Ratchet (basis points)', type: 'number', required: false },
+            { key: 'ratchet_direction', label: 'Ratchet direction', type: 'select', required: false, options: [
+              { value: 'step_down', label: 'Step down (KPI met)' },
+              { value: 'step_up', label: 'Step up (KPI missed)' },
+              { value: 'neutral', label: 'Neutral' },
+            ] },
+            { key: 'reason', label: 'Notes / reason', type: 'textarea', required: false },
+          ]}
+        />
+      )}
+    </div>
+  );
 }

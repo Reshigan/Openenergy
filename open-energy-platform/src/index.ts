@@ -380,6 +380,7 @@ import carbonTaxChainRoutes, { ctrSlaSweep } from './routes/carbon-tax-chain';
 import fsccChainRoutes, { fsccSlaSweep } from './routes/fsca-compliance-chain';
 import greenBondChainRoutes, { gbrSlaSweep } from './routes/green-bond-chain';
 import capAdequacyChainRoutes, { capSlaSweep } from './routes/capital-adequacy-chain';
+import slbKpiChainRoutes, { slbSlaSweep } from './routes/slb-kpi-chain';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -1048,6 +1049,7 @@ app.route('/api/carbon-tax-returns', carbonTaxChainRoutes);
 app.route('/api/fsca-compliance-reports', fsccChainRoutes);
 app.route('/api/green-bond-reports', greenBondChainRoutes);
 app.route('/api/capital-adequacy-reports', capAdequacyChainRoutes);
+app.route('/api/slb-kpi-ratchets', slbKpiChainRoutes);
 // platformFeaturesRoutes is the catch-all for /api — it must remain LAST
 // so all specific /api/* mounts above are tried first.
 app.route('/api', platformFeaturesRoutes);
@@ -2546,6 +2548,11 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('cap_adequacy_sla_sweep', async () => {
         const result = await capSlaSweep(env as never);
         console.log('cap_adequacy_sla_sweep', JSON.stringify(result));
+      });
+      // W204: SLB KPI & Sustainability-Linked PPA Ratchet — INVERTED SLA sweep.
+      await safe('slb_kpi_sla_sweep', async () => {
+        const result = await slbSlaSweep(env as never);
+        console.log('slb_kpi_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
