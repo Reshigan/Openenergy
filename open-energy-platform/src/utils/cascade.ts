@@ -1920,6 +1920,14 @@ export type EventType =
   | 'eqt_evt_track_conditions_precedent' | 'eqt_evt_submit_cp_documentation'
   | 'eqt_evt_complete_transfer' | 'eqt_evt_reject_transfer'
   | 'eqt_evt_declare_lapsed' | 'eqt_evt_flag_sla_breach'
+  // ─── Wave 187 — IPP DMRE Quarterly Generation & Operations Report ─────────
+  | 'ipp_qgr.created' | 'ipp_qgr.sla_breached'
+  | 'qgr_evt_commence_operations_collection' | 'qgr_evt_compile_environmental_data'
+  | 'qgr_evt_compile_financial_data' | 'qgr_evt_tabulate_social_indicators'
+  | 'qgr_evt_conduct_internal_review' | 'qgr_evt_obtain_board_approval'
+  | 'qgr_evt_submit_to_ipp_office' | 'qgr_evt_confirm_acknowledgement'
+  | 'qgr_evt_accept_report' | 'qgr_evt_reject_report'
+  | 'qgr_evt_declare_lapsed' | 'qgr_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2240,6 +2248,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   rpr_evt: 'ipp',
   ipp_eqt: 'ipp',
   eqt_evt: 'ipp',
+  ipp_qgr: 'ipp',
+  qgr_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

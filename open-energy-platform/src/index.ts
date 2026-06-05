@@ -301,6 +301,7 @@ import ippLenderReportingRoutes, { ippLenderReportingSlaSweep } from './routes/i
 import ippLicenceReturnsRoutes, { ippLicenceReturnSlaSweep } from './routes/ipp-licence-returns';
 import ippReippppReportsRoutes, { ippReippppReportSlaSweep } from './routes/ipp-reipppp-reports';
 import ippEquityTransferRoutes, { ippEquityTransferSlaSweep } from './routes/ipp-equity-transfer';
+import ippQuarterlyGenReportRoutes, { ippQuarterlyGenReportSlaSweep } from './routes/ipp-quarterly-gen-reports';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -933,6 +934,7 @@ app.route('/api/ipp-lender-reporting', ippLenderReportingRoutes);
 app.route('/api/ipp-licence-returns', ippLicenceReturnsRoutes);
 app.route('/api/ipp-reipppp-reports', ippReippppReportsRoutes);
 app.route('/api/ipp-equity-transfer', ippEquityTransferRoutes);
+app.route('/api/ipp-quarterly-gen-reports', ippQuarterlyGenReportRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2429,6 +2431,10 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       // W186: reject_transfer ALL tiers; complete_transfer + declare_lapsed large+.
       await safe('ipp_eqt_sla_sweep', async () => {
         await ippEquityTransferSlaSweep(env as never);
+      });
+      // W187: reject_report ALL tiers; declare_lapsed + confirm_acknowledgement major+.
+      await safe('ipp_qgr_sla_sweep', async () => {
+        await ippQuarterlyGenReportSlaSweep(env as never);
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

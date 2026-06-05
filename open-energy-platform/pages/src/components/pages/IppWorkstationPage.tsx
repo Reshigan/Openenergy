@@ -84,6 +84,7 @@ import { IppLenderReportingTab } from '../ipp/IppLenderReportingTab';
 import { IppLicenceReturnsTab } from '../ipp/IppLicenceReturnsTab';
 import { IppReippppReportsTab } from '../ipp/IppReippppReportsTab';
 import { IppEquityTransferTab } from '../ipp/IppEquityTransferTab';
+import { IppQuarterlyGenReportTab } from '../ipp/IppQuarterlyGenReportTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -158,6 +159,7 @@ export function IppWorkstationPage() {
         { key: 'licence-returns', label: 'Annual NERSA licence return (W184)', group: 'Risk', body: () => <IppLicenceReturnsTab /> },
         { key: 'reipppp-reports', label: 'REIPPPP annual progress report (W185)', group: 'Risk', body: () => <IppReippppReportsTab /> },
         { key: 'equity-transfer', label: 'SPV equity transfer & consent (W186)', group: 'Risk', body: () => <IppEquityTransferTab /> },
+        { key: 'quarterly-gen-report', label: 'DMRE quarterly generation report (W187)', group: 'Risk', body: () => <IppQuarterlyGenReportTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },
