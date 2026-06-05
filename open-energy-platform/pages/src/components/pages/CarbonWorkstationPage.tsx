@@ -156,6 +156,11 @@ export function CarbonWorkstationPage() {
           body: ({ onRefresh }) => <CarbonTaxReturnsTab onRefresh={onRefresh} />,
         },
         {
+          key: 'registry_transfers',
+          label: 'Registry transfers (W206)',
+          body: ({ onRefresh }) => <CarbonRegistryTransferTab onRefresh={onRefresh} />,
+        },
+        {
           key: 'audit',
           label: 'Audit & compliance',
           body: ({ onRefresh }) => (
@@ -411,6 +416,143 @@ function CarbonTaxReturnsTab({ onRefresh }: { onRefresh: () => void }) {
           )},
         ]}
       />
+    </div>
+  );
+}
+
+// ─── W206: Carbon Registry Transfer ───────────────────────────────────────────
+type CrtModalMode = 'create' | { type: 'action'; id: string; currentStatus: string } | null;
+
+function CarbonRegistryTransferTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [modal, setModal] = useState<CrtModalMode>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refresh = () => { setRefreshKey(k => k + 1); onRefresh?.(); };
+
+  const statusTone = (s: string) => {
+    if (['ca_notified', 'completed'].includes(s)) return 'good' as const;
+    if (['aml_rejected', 'registry_rejected'].includes(s)) return 'bad' as const;
+    if (['ca_notation_required', 'transfer_in_flight'].includes(s)) return 'warn' as const;
+    return 'neutral' as const;
+  };
+
+  return (
+    <div>
+      <div className="flex justify-end mb-3">
+        <button
+          className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
+          onClick={() => setModal('create')}
+        >
+          + New transfer
+        </button>
+      </div>
+
+      <ListingTable
+        key={refreshKey}
+        endpoint="/carbon-registry-transfers"
+        rowKey={(r) => r.id}
+        empty={{ title: 'No registry transfers', description: 'Initiate a carbon credit registry transfer (domestic or international Art 6).' }}
+        columns={[
+          { key: 'transfer_type', label: 'Type', render: (r) => <Pill tone="info">{String(r.transfer_type).replace(/_/g, ' ')}</Pill> },
+          { key: 'quantity_tco2e', label: 'Quantity (tCO₂e)', align: 'right', render: (r) => r.quantity_tco2e != null ? Number(r.quantity_tco2e).toLocaleString() : '—' },
+          { key: 'source_registry', label: 'From', render: (r) => r.source_registry || '—' },
+          { key: 'destination_registry', label: 'To', render: (r) => r.destination_registry || '—' },
+          { key: 'vintage_year', label: 'Vintage', render: (r) => r.vintage_year || '—' },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={statusTone(r.chain_status)}>{String(r.chain_status).replace(/_/g, ' ')}</Pill> },
+          { key: 'sla_breached', label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">Breached</Pill> : <Pill tone="good">OK</Pill> },
+        ]}
+        rowOnClick={(r) => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status })}
+      />
+
+      {modal === 'create' && (
+        <ActionModal
+          title="New carbon registry transfer"
+          submitLabel="Submit"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/carbon-registry-transfers', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                transfer_type: v.transfer_type,
+                quantity_tco2e: parseFloat(v.quantity_tco2e),
+                vintage_year: v.vintage_year ? parseInt(v.vintage_year, 10) : undefined,
+                source_registry: v.source_registry || undefined,
+                destination_registry: v.destination_registry || undefined,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null);
+            refresh();
+          }}
+          fields={[
+            {
+              key: 'transfer_type', label: 'Transfer type', type: 'select', required: true, defaultValue: 'domestic',
+              options: [
+                { value: 'domestic', label: 'Domestic (7d SLA)' },
+                { value: 'voluntary_crossregistry', label: 'Voluntary cross-registry (14d)' },
+                { value: 'corsia', label: 'CORSIA (21d)' },
+                { value: 'international_art6', label: 'International Art 6.2 (30d)' },
+              ],
+            },
+            { key: 'quantity_tco2e', label: 'Quantity (tCO₂e)', type: 'number', required: true },
+            { key: 'vintage_year', label: 'Vintage year', type: 'number', required: false },
+            { key: 'source_registry', label: 'Source registry', required: false, placeholder: 'verra / gold_standard / dffe' },
+            { key: 'destination_registry', label: 'Destination registry', required: false },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+          ]}
+        />
+      )}
+
+      {modal !== null && modal !== 'create' && (
+        <ActionModal
+          title={`Advance transfer — ${modal.currentStatus.replace(/_/g, ' ')}`}
+          submitLabel="Submit action"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/carbon-registry-transfers/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                action: v.action,
+                reason: v.reason || undefined,
+                aml_check_ref: v.aml_check_ref || undefined,
+                registry_auth_ref: v.registry_auth_ref || undefined,
+                transfer_certificate_ref: v.transfer_certificate_ref || undefined,
+                unfccc_notification_ref: v.unfccc_notification_ref || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null);
+            refresh();
+          }}
+          fields={[
+            {
+              key: 'action', label: 'Action', type: 'select', required: true,
+              options: [
+                { value: 'submit_aml_kyc', label: 'Submit AML/KYC check' },
+                { value: 'pass_aml_kyc', label: 'AML/KYC passed' },
+                { value: 'fail_aml_kyc', label: 'AML/KYC failed (reject)' },
+                { value: 'submit_registry_review', label: 'Submit to source registry' },
+                { value: 'authorize', label: 'Registry authorizes transfer' },
+                { value: 'reject_registry', label: 'Registry rejects transfer' },
+                { value: 'initiate_transfer', label: 'Initiate transfer (units in flight)' },
+                { value: 'confirm_receipt', label: 'Destination registry confirms receipt' },
+                { value: 'flag_ca_required', label: 'Flag: corresponding adjustment required' },
+                { value: 'notify_ca', label: 'Notify UNFCCC / DNA (CA notified)' },
+                { value: 'complete_domestic', label: 'Complete domestic transfer' },
+                { value: 'cancel', label: 'Cancel transfer' },
+              ],
+            },
+            { key: 'aml_check_ref', label: 'AML/KYC check reference', required: false },
+            { key: 'registry_auth_ref', label: 'Registry authorization reference', required: false },
+            { key: 'transfer_certificate_ref', label: 'Transfer certificate reference', required: false },
+            { key: 'unfccc_notification_ref', label: 'UNFCCC notification reference', required: false },
+            { key: 'reason', label: 'Notes / reason', type: 'textarea', required: false },
+          ]}
+        />
+      )}
     </div>
   );
 }
