@@ -288,6 +288,31 @@ router.post('/', async (c) => {
     );
   }
 
+  // Prevent self-handshake — initiator and acceptor must be different participants
+  if (body.accepting_participant_id === user.id) {
+    return c.json(
+      { success: false, error: 'Initiator and acceptor must be different participants' },
+      400,
+    );
+  }
+
+  // Verify station ownership: non-admin must be station owner OR named acceptor
+  if (user.role !== 'admin') {
+    const station = await c.env.DB
+      .prepare('SELECT participant_id FROM solax_stations WHERE id = ?')
+      .bind(body.station_id)
+      .first<{ participant_id: string }>();
+    if (!station) {
+      return c.json({ success: false, error: 'Station not found' }, 404);
+    }
+    if (station.participant_id !== user.id && body.accepting_participant_id !== user.id) {
+      return c.json(
+        { success: false, error: 'You must be the station owner or the named counterparty to propose this link' },
+        403,
+      );
+    }
+  }
+
   const now = new Date();
   const nowIso = now.toISOString();
   const id = `station_link_${crypto.randomUUID()}`;
@@ -461,7 +486,7 @@ router.post('/:id/action', async (c) => {
            SET ${stationCol} = ?, updated_at = ?
            WHERE id = ?`,
         )
-        .bind(initiatingId, nowIso, row.station_id as string)
+        .bind(acceptingId, nowIso, row.station_id as string)
         .run();
     }
   }
