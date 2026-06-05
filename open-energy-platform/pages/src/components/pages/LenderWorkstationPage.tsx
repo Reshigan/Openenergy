@@ -55,6 +55,7 @@ export function LenderWorkstationPage() {
         { key: 'esap_compliance', label: 'ESAP Compliance (W195)', group: 'Risk', body: () => <LenderEsapTab /> },
         { key: 'facility_amendments', label: 'Facility Amendments', group: 'Risk', body: () => <LenderFacilityAmendmentTab /> },
         { key: 'capital_adequacy', label: 'Capital adequacy (W203)', group: 'Risk', body: ({ onRefresh }) => <CapitalAdequacyTab onRefresh={onRefresh} /> },
+        { key: 'esap_monitoring_chain', label: 'EP IV ESAP monitoring (W214)', group: 'Risk', body: ({ onRefresh }) => <EsapMonitoringTab onRefresh={onRefresh} /> },
         { key: 'strate-swift-connectors', label: 'Settlement rails', group: 'Reporting', body: () => <StrateSwiftConnectorTab /> },
         { key: 'sap-oracle-erp-connectors', label: 'ERP connectors', group: 'Reporting', body: () => <SapOracleErpConnectorTab /> },
         { key: 'government-filing-connectors', label: 'Filing connectors', group: 'Reporting', body: () => <GovernmentFilingConnectorTab /> },
@@ -222,6 +223,168 @@ function CapitalAdequacyTab({ onRefresh }: { onRefresh?: () => void }) {
             { key: 'sarb_submission_ref', label: 'SARB submission ref', required: false },
             { key: 'ba900_form_ref', label: 'BA 900 form reference', required: false },
             { key: 'reason', label: 'Notes / reason', type: 'textarea', required: false },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── W214: Lender EP IV ESAP Monitoring ───────────────────────────────────────
+const ESAP_TIER_TONE: Record<string, 'info' | 'warn' | 'bad' | 'good' | 'neutral'> = {
+  category_c: 'info',
+  category_b: 'warn',
+  category_a: 'bad',
+  critical_ps: 'bad',
+};
+
+function esapStatusTone(s: string): 'info' | 'warn' | 'bad' | 'good' | 'neutral' {
+  if (s === 'closed_satisfactory') return 'good';
+  if (s === 'non_compliant' || s === 'closed_escalated') return 'bad';
+  if (s === 'action_identified' || s === 'partial_close') return 'warn';
+  return 'info';
+}
+
+type EsapModal = null | 'create' | { type: 'action'; id: string; currentStatus: string };
+
+function EsapMonitoringTab({ onRefresh }: { onRefresh: () => void }) {
+  const [modal, setModal] = useState<EsapModal>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const bump = () => { setRefreshKey(k => k + 1); onRefresh(); };
+
+  return (
+    <div>
+      <button
+        onClick={() => setModal('create')}
+        className="mb-4 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+      >
+        Issue ESAP record
+      </button>
+      <ListingTable
+        endpoint="/esap-monitoring"
+        key={refreshKey}
+        rowKey={(r) => r.id}
+        empty={{ title: 'No ESAP monitoring records', description: 'Equator Principles IV monitoring records will appear here.' }}
+        columns={[
+          { key: 'site_name', label: 'Site', render: (r) => r.site_name || r.project_ref || '—' },
+          { key: 'esap_tier', label: 'Category', render: (r) => <Pill tone={ESAP_TIER_TONE[r.esap_tier] ?? 'neutral'}>{String(r.esap_tier).replace(/_/g, ' ')}</Pill> },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={esapStatusTone(r.chain_status)}>{String(r.chain_status).replace(/_/g, ' ')}</Pill> },
+          { key: 'finding_count_major', label: 'Major findings', align: 'right', render: (r) => r.finding_count_major ?? 0 },
+          { key: 'sla_breached', label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">Breached</Pill> : <Pill tone="good">OK</Pill> },
+          { key: 'monitoring_cycle', label: 'Cycle', render: (r) => r.monitoring_cycle || '—' },
+        ]}
+        rowOnClick={(r) => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status })}
+      />
+
+      {modal === 'create' && (
+        <ActionModal
+          title="Issue ESAP monitoring record"
+          submitLabel="Issue"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/esap-monitoring', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                project_ref: v.project_ref || undefined,
+                facility_ref: v.facility_ref || undefined,
+                loan_ref: v.loan_ref || undefined,
+                esap_tier: v.esap_tier,
+                ep_category: v.ep_category || undefined,
+                ps_triggers: v.ps_triggers || undefined,
+                monitoring_cycle: v.monitoring_cycle || undefined,
+                site_name: v.site_name || undefined,
+                site_location: v.site_location || undefined,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); bump();
+          }}
+          fields={[
+            { key: 'site_name', label: 'Site name', required: false },
+            { key: 'site_location', label: 'Site location', required: false },
+            { key: 'monitoring_cycle', label: 'Monitoring cycle', required: false, placeholder: 'Annual 2025' },
+            {
+              key: 'esap_tier', label: 'Equator category', type: 'select', required: true, defaultValue: 'category_b',
+              options: [
+                { value: 'category_c', label: 'Category C — minimal impact (21d SLA)' },
+                { value: 'category_b', label: 'Category B — limited impact (45d SLA)' },
+                { value: 'category_a', label: 'Category A — significant impact (90d SLA)' },
+                { value: 'critical_ps', label: 'Critical PS — PS6/PS7 triggered (180d SLA)' },
+              ],
+            },
+            { key: 'ep_category', label: 'EP category (A/B/C)', required: false },
+            { key: 'ps_triggers', label: 'PS triggered (JSON array)', required: false, placeholder: '["PS1","PS6"]' },
+            { key: 'project_ref', label: 'Project reference', required: false },
+            { key: 'facility_ref', label: 'Facility reference', required: false },
+            { key: 'loan_ref', label: 'Loan reference', required: false },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+          ]}
+        />
+      )}
+
+      {modal !== null && modal !== 'create' && (
+        <ActionModal
+          title={`ESAP action — ${modal.currentStatus.replace(/_/g, ' ')}`}
+          submitLabel="Submit"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/esap-monitoring/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                action: v.action,
+                auditor_name: v.auditor_name || undefined,
+                auditor_firm: v.auditor_firm || undefined,
+                visit_scheduled_date: v.visit_scheduled_date || undefined,
+                findings_summary: v.findings_summary || undefined,
+                finding_count_major: v.finding_count_major ? parseInt(v.finding_count_major, 10) : undefined,
+                finding_count_minor: v.finding_count_minor ? parseInt(v.finding_count_minor, 10) : undefined,
+                cap_reference: v.cap_reference || undefined,
+                cap_due_date: v.cap_due_date || undefined,
+                tpa_firm: v.tpa_firm || undefined,
+                tpa_outcome: v.tpa_outcome || undefined,
+                escalation_reason: v.escalation_reason || undefined,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); bump();
+          }}
+          fields={[
+            {
+              key: 'action', label: 'Action', type: 'select', required: true,
+              options: [
+                { value: 'schedule_visit', label: 'Schedule monitoring visit' },
+                { value: 'complete_visit', label: 'Complete visit — record findings' },
+                { value: 'raise_action', label: 'Raise corrective action' },
+                { value: 'submit_cap', label: 'Submit corrective action plan' },
+                { value: 'start_remediation', label: 'Start remediation' },
+                { value: 'request_tpa', label: 'Request third-party audit' },
+                { value: 'record_partial_close', label: 'Record partial close' },
+                { value: 'close_satisfactory', label: 'Close — satisfactory' },
+                { value: 'escalate', label: 'Escalate to lenders committee' },
+                { value: 'issue_non_compliance', label: 'Issue non-compliance notice' },
+                { value: 'withdraw', label: 'Withdraw (project decommissioned)' },
+              ],
+            },
+            { key: 'auditor_name', label: 'Auditor name', required: false },
+            { key: 'auditor_firm', label: 'Auditor firm', required: false },
+            { key: 'visit_scheduled_date', label: 'Visit scheduled date', required: false },
+            { key: 'findings_summary', label: 'Findings summary', type: 'textarea', required: false },
+            { key: 'finding_count_major', label: 'Major finding count', type: 'number', required: false },
+            { key: 'finding_count_minor', label: 'Minor finding count', type: 'number', required: false },
+            { key: 'cap_reference', label: 'CAP reference', required: false },
+            { key: 'cap_due_date', label: 'CAP due date', required: false },
+            { key: 'tpa_firm', label: 'TPA firm', required: false },
+            { key: 'tpa_outcome', label: 'TPA outcome', type: 'select', required: false, options: [
+              { value: 'satisfactory', label: 'Satisfactory' },
+              { value: 'conditional', label: 'Conditional' },
+              { value: 'unsatisfactory', label: 'Unsatisfactory' },
+            ]},
+            { key: 'escalation_reason', label: 'Escalation reason', type: 'textarea', required: false },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
           ]}
         />
       )}
