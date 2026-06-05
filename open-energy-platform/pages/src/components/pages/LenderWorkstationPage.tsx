@@ -1,5 +1,5 @@
-import React from 'react';
-import { WorkstationShell, ListingTable, Pill } from '../launch/WorkstationShell';
+import React, { useState } from 'react';
+import { WorkstationShell, ListingTable, Pill, ActionModal } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { CovenantCertificateTab } from '../lender/CovenantCertificateTab';
@@ -54,6 +54,7 @@ export function LenderWorkstationPage() {
         { key: 'dunning', label: 'Dunning queue', group: 'Enforcement', body: () => <DunningTab /> },
         { key: 'esap_compliance', label: 'ESAP Compliance (W195)', group: 'Risk', body: () => <LenderEsapTab /> },
         { key: 'facility_amendments', label: 'Facility Amendments', group: 'Risk', body: () => <LenderFacilityAmendmentTab /> },
+        { key: 'capital_adequacy', label: 'Capital adequacy (W203)', group: 'Risk', body: ({ onRefresh }) => <CapitalAdequacyTab onRefresh={onRefresh} /> },
         { key: 'strate-swift-connectors', label: 'Settlement rails', group: 'Reporting', body: () => <StrateSwiftConnectorTab /> },
         { key: 'sap-oracle-erp-connectors', label: 'ERP connectors', group: 'Reporting', body: () => <SapOracleErpConnectorTab /> },
         { key: 'government-filing-connectors', label: 'Filing connectors', group: 'Reporting', body: () => <GovernmentFilingConnectorTab /> },
@@ -88,5 +89,142 @@ function FacilitiesTab() {
         { key: 'updated_at', label: 'Updated', render: (r) => r.updated_at ? new Date(r.updated_at).toLocaleDateString() : '—' },
       ]}
     />
+  );
+}
+
+// ─── W203: Basel III Capital Adequacy ─────────────────────────────────────────
+type CapModalMode = 'create' | { type: 'action'; id: string; currentStatus: string } | null;
+
+function CapitalAdequacyTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [modal, setModal] = useState<CapModalMode>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refresh = () => { setRefreshKey(k => k + 1); onRefresh?.(); };
+
+  const statusTone = (s: string) => {
+    if (s === 'accepted') return 'good' as const;
+    if (['capital_breach', 'withdrawn'].includes(s)) return 'bad' as const;
+    if (['remediation_required', 'remediation', 'queries_raised'].includes(s)) return 'warn' as const;
+    return 'neutral' as const;
+  };
+
+  return (
+    <div>
+      <div className="flex justify-end mb-3">
+        <button
+          className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
+          onClick={() => setModal('create')}
+        >
+          + New report
+        </button>
+      </div>
+
+      <ListingTable
+        key={refreshKey}
+        endpoint="/capital-adequacy-reports"
+        rowKey={(r) => r.id}
+        empty={{ title: 'No capital adequacy reports', description: 'Create a SARB BA 900 Basel III capital adequacy report.' }}
+        columns={[
+          { key: 'report_period', label: 'Period', render: (r) => r.report_period },
+          { key: 'bank_tier', label: 'Tier', render: (r) => <Pill tone="info">{String(r.bank_tier).replace(/_/g, ' ')}</Pill> },
+          { key: 'cet1_ratio', label: 'CET1%', align: 'right', render: (r) => r.cet1_ratio != null ? `${Number(r.cet1_ratio).toFixed(2)}%` : '—' },
+          { key: 'total_capital_ratio', label: 'Total Cap%', align: 'right', render: (r) => r.total_capital_ratio != null ? `${Number(r.total_capital_ratio).toFixed(2)}%` : '—' },
+          { key: 'rwa_total', label: 'RWA (ZAR)', align: 'right', render: (r) => r.rwa_total != null ? Number(r.rwa_total).toLocaleString('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }) : '—' },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={statusTone(r.chain_status)}>{String(r.chain_status).replace(/_/g, ' ')}</Pill> },
+          { key: 'sla_breached', label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">Breached</Pill> : <Pill tone="good">On track</Pill> },
+          { key: 'updated_at', label: 'Updated', render: (r) => r.updated_at ? new Date(r.updated_at).toLocaleDateString() : '—' },
+        ]}
+        rowOnClick={(r) => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status })}
+      />
+
+      {modal === 'create' && (
+        <ActionModal
+          title="New capital adequacy report"
+          submitLabel="Create"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/capital-adequacy-reports', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                bank_tier: v.bank_tier,
+                report_period: v.report_period,
+                reporting_date: v.reporting_date,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null);
+            refresh();
+          }}
+          fields={[
+            { key: 'report_period', label: 'Report period (e.g. 2026-Q2)', required: true, placeholder: '2026-Q2' },
+            { key: 'reporting_date', label: 'Quarter end date', type: 'date', required: true },
+            {
+              key: 'bank_tier', label: 'Bank tier', type: 'select', required: true, defaultValue: 'mid_tier',
+              options: [
+                { value: 'smaller', label: 'Smaller (≤30d SLA)' },
+                { value: 'mid_tier', label: 'Mid-tier (45d SLA)' },
+                { value: 'large', label: 'Large (60d SLA)' },
+                { value: 'systemically_important', label: 'Systemically important (90d SLA)' },
+              ],
+            },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+          ]}
+        />
+      )}
+
+      {modal !== null && modal !== 'create' && (
+        <ActionModal
+          title={`Advance report — ${modal.currentStatus.replace(/_/g, ' ')}`}
+          submitLabel="Submit action"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/capital-adequacy-reports/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                action: v.action,
+                reason: v.reason || undefined,
+                sarb_submission_ref: v.sarb_submission_ref || undefined,
+                ba900_form_ref: v.ba900_form_ref || undefined,
+                cet1_ratio: v.cet1_ratio ? parseFloat(v.cet1_ratio) : undefined,
+                total_capital_ratio: v.total_capital_ratio ? parseFloat(v.total_capital_ratio) : undefined,
+                rwa_total: v.rwa_total ? parseFloat(v.rwa_total) : undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null);
+            refresh();
+          }}
+          fields={[
+            {
+              key: 'action', label: 'Action', type: 'select', required: true,
+              options: [
+                { value: 'start_rwa_calc', label: 'Start RWA calculation' },
+                { value: 'complete_rwa_calc', label: 'Complete RWA calculation' },
+                { value: 'complete_icaap', label: 'Complete ICAAP review' },
+                { value: 'board_approve', label: 'Board approve' },
+                { value: 'submit_to_sarb', label: 'Submit to SARB' },
+                { value: 'sarb_raises_queries', label: 'SARB raises queries' },
+                { value: 'respond_to_queries', label: 'Respond to SARB queries' },
+                { value: 'sarb_accept', label: 'SARB accept' },
+                { value: 'flag_remediation', label: 'Flag remediation required' },
+                { value: 'start_remediation', label: 'Start remediation' },
+                { value: 'refile', label: 'Refile after remediation' },
+                { value: 'declare_capital_breach', label: 'Declare capital breach' },
+                { value: 'withdraw', label: 'Withdraw filing' },
+              ],
+            },
+            { key: 'cet1_ratio', label: 'CET1 ratio (%)', type: 'number', required: false, placeholder: '12.5' },
+            { key: 'total_capital_ratio', label: 'Total capital ratio (%)', type: 'number', required: false, placeholder: '15.0' },
+            { key: 'rwa_total', label: 'Total RWA (ZAR)', type: 'number', required: false },
+            { key: 'sarb_submission_ref', label: 'SARB submission ref', required: false },
+            { key: 'ba900_form_ref', label: 'BA 900 form reference', required: false },
+            { key: 'reason', label: 'Notes / reason', type: 'textarea', required: false },
+          ]}
+        />
+      )}
+    </div>
   );
 }
