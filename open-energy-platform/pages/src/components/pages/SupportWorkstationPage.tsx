@@ -155,6 +155,11 @@ export function SupportWorkstationPage() {
             body: ({ onRefresh }) => <CsatLifecycleTab onRefresh={onRefresh} />,
           },
           {
+            key: 'sla_performance_reports',
+            label: 'SLA performance reports (W217)',
+            body: ({ onRefresh }) => <SlaPerformanceReportTab onRefresh={onRefresh} />,
+          },
+          {
             key: 'mqtt-opcua-connectors',
             label: 'MQTT/OPC-UA connectors (W123)',
             body: () => <MqttOpcuaConnectorTab />,
@@ -415,6 +420,155 @@ function FileTicketModal({ onClose, onDone }: { onClose: () => void; onDone: () 
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── W217: SLA Performance Report ─────────────────────────────────────────────
+const SPR_TIER_TONE: Record<string, 'info' | 'warn' | 'bad' | 'good' | 'neutral'> = {
+  standard: 'info',
+  enhanced: 'info',
+  critical: 'warn',
+  enterprise: 'bad',
+};
+
+function sprStatusTone(s: string): 'info' | 'warn' | 'bad' | 'good' | 'neutral' {
+  if (s === 'approved') return 'good';
+  if (s === 'disputed' || s === 'remediation_plan') return 'bad';
+  if (s === 'management_review') return 'warn';
+  return 'info';
+}
+
+type SprModal = null | 'create' | { type: 'action'; id: string; currentStatus: string };
+
+function SlaPerformanceReportTab({ onRefresh }: { onRefresh: () => void }) {
+  const [modal, setModal] = useState<SprModal>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const bump = () => { setRefreshKey(k => k + 1); onRefresh(); };
+
+  return (
+    <div>
+      <button
+        onClick={() => setModal('create')}
+        className="mb-4 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+      >
+        Open reporting period
+      </button>
+      <ListingTable
+        endpoint="/sla-performance-reports"
+        key={refreshKey}
+        rowKey={(r) => r.id}
+        empty={{ title: 'No SLA performance reports', description: 'ITIL 4 SLA performance reports will appear here.' }}
+        columns={[
+          { key: 'reporting_period', label: 'Period', render: (r) => <span className="font-mono text-[11px]">{r.reporting_period}</span> },
+          { key: 'report_tier', label: 'Tier', render: (r) => <Pill tone={SPR_TIER_TONE[r.report_tier] ?? 'neutral'}>{String(r.report_tier).replace(/_/g, ' ')}</Pill> },
+          { key: 'overall_sla_pct', label: 'SLA %', align: 'right', render: (r) => r.overall_sla_pct != null ? `${Number(r.overall_sla_pct).toFixed(1)}%` : '—' },
+          { key: 'total_incidents', label: 'Incidents', align: 'right', render: (r) => r.total_incidents ?? 0 },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={sprStatusTone(r.chain_status)}>{String(r.chain_status).replace(/_/g, ' ')}</Pill> },
+          { key: 'sla_breached', label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">Breached</Pill> : <Pill tone="good">OK</Pill> },
+        ]}
+        rowOnClick={(r) => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status })}
+      />
+
+      {modal === 'create' && (
+        <ActionModal
+          title="Open SLA performance report period"
+          submitLabel="Open"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/sla-performance-reports', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                reporting_period: v.reporting_period,
+                period_start: v.period_start,
+                period_end: v.period_end,
+                report_tier: v.report_tier,
+                target_sla_pct: v.target_sla_pct ? parseFloat(v.target_sla_pct) : undefined,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); bump();
+          }}
+          fields={[
+            { key: 'reporting_period', label: 'Reporting period', required: true, placeholder: 'Dec-2025' },
+            { key: 'period_start', label: 'Period start (ISO)', required: true, placeholder: '2025-12-01T00:00:00Z' },
+            { key: 'period_end', label: 'Period end (ISO)', required: true, placeholder: '2025-12-31T23:59:59Z' },
+            {
+              key: 'report_tier', label: 'Service tier', type: 'select', required: true, defaultValue: 'standard',
+              options: [
+                { value: 'standard', label: 'Standard — monthly (14d SLA)' },
+                { value: 'enhanced', label: 'Enhanced — board visibility (21d SLA)' },
+                { value: 'critical', label: 'Critical — mission-critical (30d SLA)' },
+                { value: 'enterprise', label: 'Enterprise — weekly deep-dive (45d SLA)' },
+              ],
+            },
+            { key: 'target_sla_pct', label: 'Target SLA %', type: 'number', required: false },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+          ] as FieldSpec[]}
+        />
+      )}
+
+      {modal !== null && modal !== 'create' && (
+        <ActionModal
+          title={`SLA report action — ${modal.currentStatus.replace(/_/g, ' ')}`}
+          submitLabel="Submit"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/sla-performance-reports/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                action: v.action,
+                total_incidents: v.total_incidents ? parseInt(v.total_incidents, 10) : undefined,
+                p1_count: v.p1_count ? parseInt(v.p1_count, 10) : undefined,
+                p2_count: v.p2_count ? parseInt(v.p2_count, 10) : undefined,
+                p1_sla_pct: v.p1_sla_pct ? parseFloat(v.p1_sla_pct) : undefined,
+                p2_sla_pct: v.p2_sla_pct ? parseFloat(v.p2_sla_pct) : undefined,
+                overall_sla_pct: v.overall_sla_pct ? parseFloat(v.overall_sla_pct) : undefined,
+                rca_triggered: v.rca_triggered === 'true',
+                rca_lead: v.rca_lead || undefined,
+                rca_findings: v.rca_findings || undefined,
+                root_causes: v.root_causes || undefined,
+                reviewer_name: v.reviewer_name || undefined,
+                remediation_plan_ref: v.remediation_plan_ref || undefined,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); bump();
+          }}
+          fields={[
+            {
+              key: 'action', label: 'Action', type: 'select', required: true,
+              options: [
+                { value: 'calculate_metrics', label: 'Calculate metrics' },
+                { value: 'initiate_rca', label: 'Initiate RCA for misses' },
+                { value: 'complete_rca', label: 'Complete RCA — findings ready' },
+                { value: 'submit_for_review', label: 'Submit for management review' },
+                { value: 'approve', label: 'Approve report' },
+                { value: 'dispute', label: 'Dispute measurements' },
+                { value: 'escalate_remediation', label: 'Escalate — remediation plan required' },
+                { value: 'withdraw', label: 'Withdraw period' },
+              ],
+            },
+            { key: 'total_incidents', label: 'Total incidents', type: 'number', required: false },
+            { key: 'p1_count', label: 'P1 count', type: 'number', required: false },
+            { key: 'p2_count', label: 'P2 count', type: 'number', required: false },
+            { key: 'p1_sla_pct', label: 'P1 SLA %', type: 'number', required: false },
+            { key: 'p2_sla_pct', label: 'P2 SLA %', type: 'number', required: false },
+            { key: 'overall_sla_pct', label: 'Overall SLA %', type: 'number', required: false },
+            { key: 'rca_triggered', label: 'RCA required?', type: 'select', required: false, options: [{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }] },
+            { key: 'rca_lead', label: 'RCA lead', required: false },
+            { key: 'rca_findings', label: 'RCA findings', type: 'textarea', required: false },
+            { key: 'root_causes', label: 'Root causes (JSON)', type: 'textarea', required: false },
+            { key: 'reviewer_name', label: 'Reviewer name', required: false },
+            { key: 'remediation_plan_ref', label: 'Remediation plan reference', required: false },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+          ] as FieldSpec[]}
+        />
+      )}
     </div>
   );
 }
