@@ -13,46 +13,63 @@ const participants = new Hono<HonoEnv>();
 // All routes require authentication
 participants.use('*', authMiddleware);
 
-// GET /api/participants — List with pagination and filtering
+// GET /api/participants — List with pagination and filtering.
+// Admin/support: full record set.
+// Any authenticated user with ?role=<X>: directory mode — returns id, name, company_name only,
+// so counterparty discovery works without exposing KYC/financial fields.
 participants.get('/', async (c) => {
   const user = getCurrentUser(c);
-  if (!['admin', 'support'].includes(user.role)) {
+  const isPrivileged = ['admin', 'support'].includes(user.role);
+  const roleFilter = c.req.query('role');
+  const directoryMode = !isPrivileged && !!roleFilter;
+
+  if (!isPrivileged && !directoryMode) {
     return c.json({ success: false, error: 'Forbidden' }, 403);
   }
+
   const page = parseInt(c.req.query('page') || '1');
-  const pageSize = Math.min(parseInt(c.req.query('pageSize') || '20'), 100);
+  const pageSize = Math.min(parseInt(c.req.query('pageSize') || '20'), 200);
   const offset = (page - 1) * pageSize;
-  const role = c.req.query('role');
   const status = c.req.query('status');
   const search = c.req.query('search');
 
-  let where = '1=1';
-  const bindings: any[] = [];
+  let where = "status = 'active'";
+  const bindings: unknown[] = [];
 
-  if (role) {
+  if (roleFilter) {
     where += ' AND role = ?';
-    bindings.push(role);
+    bindings.push(roleFilter);
   }
-  if (status) {
+  if (!directoryMode && status) {
+    where = '1=1';
+    bindings.length = 0;
+    if (roleFilter) { where += ' AND role = ?'; bindings.push(roleFilter); }
     where += ' AND status = ?';
     bindings.push(status);
   }
   if (search) {
-    where += ' AND (name LIKE ? OR email LIKE ? OR company_name LIKE ?)';
+    where += ' AND (name LIKE ? OR company_name LIKE ?)';
     const s = `%${search}%`;
-    bindings.push(s, s, s);
+    bindings.push(s, s);
   }
 
-  const totalResult = await c.env.DB.prepare(`SELECT COUNT(*) as count FROM participants WHERE ${where}`).bind(...bindings).first();
+  const totalResult = await c.env.DB
+    .prepare(`SELECT COUNT(*) as count FROM participants WHERE ${where}`)
+    .bind(...bindings)
+    .first<{ count: number }>();
   const total = Number(totalResult?.count ?? 0);
 
-  const rows = await c.env.DB.prepare(`
-    SELECT id, email, name, company_name, role, status, kyc_status, bbbee_level,
-           subscription_tier, email_verified, last_login, created_at
-    FROM participants WHERE ${where}
-    ORDER BY created_at DESC
-    LIMIT ? OFFSET ?
-  `).bind(...bindings, pageSize, offset).all();
+  const selectCols = directoryMode
+    ? 'id, name, company_name, role'
+    : 'id, email, name, company_name, role, status, kyc_status, bbbee_level, subscription_tier, email_verified, last_login, created_at';
+
+  const rows = await c.env.DB
+    .prepare(
+      `SELECT ${selectCols} FROM participants WHERE ${where}
+       ORDER BY name ASC LIMIT ? OFFSET ?`,
+    )
+    .bind(...bindings, pageSize, offset)
+    .all();
 
   return c.json({
     success: true,

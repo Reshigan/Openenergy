@@ -1946,6 +1946,15 @@ export type EventType =
   | 'aud_evt_declare_lapsed' | 'aud_evt_flag_sla_breach'
   // ─── Esums generation accrual cascade ─────────────────────────────────────
   | 'esums_accrual_computed'
+  // ─── Wave 191 — Station Participant Link ──────────────────────────────────
+  | 'station_link.created' | 'station_link.sla_breached'
+  | 'slink_evt_proposed'
+  | 'slink_evt_submit_for_review' | 'slink_evt_request_documentation'
+  | 'slink_evt_submit_documentation' | 'slink_evt_commence_technical_validation'
+  | 'slink_evt_commence_commercial_review' | 'slink_evt_commence_compliance_check'
+  | 'slink_evt_approve_link' | 'slink_evt_activate_link'
+  | 'slink_evt_reject_link' | 'slink_evt_expire_link' | 'slink_evt_suspend_link'
+  | 'slink_evt_sla_breached'
   // ─── Wave 190 — IPP EMP Annual Compliance Report ──────────────────────────
   | 'ipp_empr.created' | 'ipp_empr.sla_breached'
   | 'empr_evt_opened'
@@ -2283,6 +2292,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   aud_evt: 'ipp',
   ipp_empr: 'ipp',
   empr_evt: 'ipp',
+  station_link: 'esums',
+  slink_evt: 'esums',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',

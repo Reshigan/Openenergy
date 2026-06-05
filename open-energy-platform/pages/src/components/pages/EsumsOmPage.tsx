@@ -26,6 +26,7 @@ import { EsgDisclosureChainTab } from '../carbon/EsgDisclosureChainTab';
 import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
 import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
 import { DataSourcesTab } from '../esums/DataSourcesTab';
+import { StationParticipantLinkTab } from '../esums/StationParticipantLinkTab';
 import { InverterIntegrationsTab } from '../esums/InverterIntegrationsTab';
 
 export function EsumsOmPage() {
@@ -346,6 +347,14 @@ export function EsumsOmPage() {
       description: 'Sensor connections and data-ingest APIs — Modbus TCP, SunSpec, MQTT, REST API, OPC-UA and push-ingest endpoints. Click the interval to edit it inline. Hit Live on any row to open a short-window live graph that auto-refreshes on the source\'s polling cycle.',
       columns: [],
       customContent: <DataSourcesTab />,
+    },
+    {
+      key: 'participant_links',
+      label: 'Participant links',
+      endpoint: '',
+      description: 'Two-party onboarding handshake linking this station to downstream participant modules (lender, carbon fund, offtaker, grid operator). Activating a link enables all downstream automated flows — covenant monitoring, carbon credit minting, PPA settlement invoicing, and dispatch event routing — without requiring manual configuration per module.',
+      columns: [],
+      customContent: <StationParticipantLinkTab />,
     },
     {
       key: 'projects',
