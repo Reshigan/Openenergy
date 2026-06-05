@@ -62,6 +62,7 @@ export function TraderWorkstationPage() {
         { key: 'best-ex', label: 'Best execution', group: 'Post-trade', body: () => <BestExecutionTab /> },
         { key: 'trade-reporting', label: 'Trade reporting', group: 'Post-trade', body: () => <TradeReportingChainTab /> },
         { key: 'fsca-compliance', label: 'FSCA compliance report (W201)', group: 'Compliance', body: ({ onRefresh }) => <FscaComplianceTab onRefresh={onRefresh} /> },
+        { key: 'fsca_conduct_reports', label: 'FSCA conduct reports (W216)', group: 'Compliance', body: ({ onRefresh }) => <FscaConductReportTab onRefresh={onRefresh} /> },
         { key: 'mm-compliance', label: 'MM compliance', group: 'Compliance', body: () => <MmComplianceTab /> },
         { key: 'poslimit', label: 'Position limits', group: 'Compliance', body: () => <PoslimitChainTab /> },
         { key: 'strate-swift-connectors', label: 'Settlement rails', group: 'Compliance', body: () => <StrateSwiftConnectorTab /> },
@@ -439,3 +440,156 @@ function FscaComplianceTab({ onRefresh }: { onRefresh: () => void }) {
   );
 }
 
+// ─── W216: Trader FSCA Periodic Conduct Report ────────────────────────────────
+const FCR_TIER_TONE: Record<string, 'info' | 'warn' | 'bad' | 'good' | 'neutral'> = {
+  retail: 'info',
+  professional: 'info',
+  market_maker: 'warn',
+  systemic: 'bad',
+};
+
+function fcrStatusTone(s: string): 'info' | 'warn' | 'bad' | 'good' | 'neutral' {
+  if (s === 'accepted') return 'good';
+  if (s === 'rejected' || s === 'escalated') return 'bad';
+  if (s === 'fsca_queries') return 'warn';
+  return 'info';
+}
+
+type FcrModal = null | 'create' | { type: 'action'; id: string; currentStatus: string };
+
+function FscaConductReportTab({ onRefresh }: { onRefresh: () => void }) {
+  const [modal, setModal] = useState<FcrModal>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const bump = () => { setRefreshKey(k => k + 1); onRefresh(); };
+
+  return (
+    <div>
+      <button
+        onClick={() => setModal('create')}
+        className="mb-4 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+      >
+        Open reporting period
+      </button>
+      <ListingTable
+        endpoint="/fsca-conduct-reports"
+        key={refreshKey}
+        rowKey={(r) => r.id}
+        empty={{ title: 'No conduct reports', description: 'FSCA periodic conduct reports will appear here.' }}
+        columns={[
+          { key: 'reporting_period', label: 'Period', render: (r) => <span className="font-mono text-[11px]">{r.reporting_period} / {r.reporting_year}</span> },
+          { key: 'report_tier', label: 'Tier', render: (r) => <Pill tone={FCR_TIER_TONE[r.report_tier] ?? 'neutral'}>{String(r.report_tier).replace(/_/g, ' ')}</Pill> },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={fcrStatusTone(r.chain_status)}>{String(r.chain_status).replace(/_/g, ' ')}</Pill> },
+          { key: 'best_ex_exceptions', label: 'Best-ex exceptions', align: 'right', render: (r) => r.best_ex_exceptions ?? 0 },
+          { key: 'conduct_breaches', label: 'Conduct breaches', align: 'right', render: (r) => r.conduct_breaches ?? 0 },
+          { key: 'sla_breached', label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">Breached</Pill> : <Pill tone="good">OK</Pill> },
+        ]}
+        rowOnClick={(r) => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status })}
+      />
+
+      {modal === 'create' && (
+        <ActionModal
+          title="Open FSCA conduct report period"
+          submitLabel="Open"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/fsca-conduct-reports', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                reporting_period: v.reporting_period,
+                reporting_year: parseInt(v.reporting_year, 10),
+                is_annual: v.is_annual === 'true',
+                report_tier: v.report_tier,
+                total_notional_zar: v.total_notional_zar ? parseFloat(v.total_notional_zar) : undefined,
+                client_count: v.client_count ? parseInt(v.client_count, 10) : undefined,
+                complaint_count: v.complaint_count ? parseInt(v.complaint_count, 10) : undefined,
+                compliance_officer: v.compliance_officer || undefined,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); bump();
+          }}
+          fields={[
+            { key: 'reporting_period', label: 'Reporting period', required: true, placeholder: 'Q4-2025 / Annual-2025' },
+            { key: 'reporting_year', label: 'Reporting year', type: 'number', required: true },
+            { key: 'is_annual', label: 'Annual report?', type: 'select', required: false, options: [{ value: 'false', label: 'Quarterly' }, { value: 'true', label: 'Annual' }] },
+            {
+              key: 'report_tier', label: 'Participant tier', type: 'select', required: true, defaultValue: 'professional',
+              options: [
+                { value: 'retail', label: 'Retail — lighter requirements (30d SLA)' },
+                { value: 'professional', label: 'Professional / wholesale (45d SLA)' },
+                { value: 'market_maker', label: 'Designated market-maker (60d SLA)' },
+                { value: 'systemic', label: 'Systemic — >R1bn notional (90d SLA)' },
+              ],
+            },
+            { key: 'total_notional_zar', label: 'Total notional (ZAR)', type: 'number', required: false },
+            { key: 'client_count', label: 'Client count', type: 'number', required: false },
+            { key: 'complaint_count', label: 'Complaints received', type: 'number', required: false },
+            { key: 'compliance_officer', label: 'Compliance officer', required: false },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+          ]}
+        />
+      )}
+
+      {modal !== null && modal !== 'create' && (
+        <ActionModal
+          title={`Conduct report action — ${modal.currentStatus.replace(/_/g, ' ')}`}
+          submitLabel="Submit"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/fsca-conduct-reports/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                action: v.action,
+                compliance_officer: v.compliance_officer || undefined,
+                board_sign_off_date: v.board_sign_off_date || undefined,
+                board_signatory: v.board_signatory || undefined,
+                fsca_submission_ref: v.fsca_submission_ref || undefined,
+                fsca_acknowledgement_ref: v.fsca_acknowledgement_ref || undefined,
+                query_summary: v.query_summary || undefined,
+                query_response_ref: v.query_response_ref || undefined,
+                best_ex_exceptions: v.best_ex_exceptions ? parseInt(v.best_ex_exceptions, 10) : undefined,
+                conduct_breaches: v.conduct_breaches ? parseInt(v.conduct_breaches, 10) : undefined,
+                rejection_reason: v.rejection_reason || undefined,
+                escalation_reason: v.escalation_reason || undefined,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); bump();
+          }}
+          fields={[
+            {
+              key: 'action', label: 'Action', type: 'select', required: true,
+              options: [
+                { value: 'commence_review', label: 'Commence internal review' },
+                { value: 'approve_board', label: 'Board approval obtained' },
+                { value: 'submit_to_fsca', label: 'Submit to FSCA' },
+                { value: 'record_queries', label: 'Record FSCA queries' },
+                { value: 'respond_to_queries', label: 'Respond to queries' },
+                { value: 'accept', label: 'Accept (FSCA accepted)' },
+                { value: 'reject', label: 'Reject — must resubmit' },
+                { value: 'escalate', label: 'Escalate — material breach' },
+                { value: 'withdraw', label: 'Withdraw' },
+              ],
+            },
+            { key: 'compliance_officer', label: 'Compliance officer', required: false },
+            { key: 'board_sign_off_date', label: 'Board sign-off date', required: false },
+            { key: 'board_signatory', label: 'Board signatory', required: false },
+            { key: 'fsca_submission_ref', label: 'FSCA submission reference', required: false },
+            { key: 'fsca_acknowledgement_ref', label: 'FSCA acknowledgement reference', required: false },
+            { key: 'query_summary', label: 'Query summary', type: 'textarea', required: false },
+            { key: 'query_response_ref', label: 'Query response reference', required: false },
+            { key: 'best_ex_exceptions', label: 'Best-ex exceptions', type: 'number', required: false },
+            { key: 'conduct_breaches', label: 'Conduct breaches', type: 'number', required: false },
+            { key: 'rejection_reason', label: 'Rejection reason', type: 'textarea', required: false },
+            { key: 'escalation_reason', label: 'Escalation reason', type: 'textarea', required: false },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
