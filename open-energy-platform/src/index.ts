@@ -377,6 +377,7 @@ import printPacksRoutes from './routes/print-packs';
 import kycChainRoutes, { kycSlaSweep } from './routes/kyc-chain';
 import smartMeterChainRoutes, { smaSlaSweep } from './routes/smart-meter-chain';
 import carbonTaxChainRoutes, { ctrSlaSweep } from './routes/carbon-tax-chain';
+import fsccChainRoutes, { fsccSlaSweep } from './routes/fsca-compliance-chain';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -1042,6 +1043,7 @@ app.route('/api/onboarding', onboardingRoutes);
 app.route('/api/kyc-verifications', kycChainRoutes);
 app.route('/api/smart-meter-assets', smartMeterChainRoutes);
 app.route('/api/carbon-tax-returns', carbonTaxChainRoutes);
+app.route('/api/fsca-compliance-reports', fsccChainRoutes);
 // platformFeaturesRoutes is the catch-all for /api — it must remain LAST
 // so all specific /api/* mounts above are tried first.
 app.route('/api', platformFeaturesRoutes);
@@ -2525,6 +2527,11 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ctr_sla_sweep', async () => {
         const result = await ctrSlaSweep(env as never);
         console.log('ctr_sla_sweep', JSON.stringify(result));
+      });
+      // W201: FSCA Annual Compliance Certificate — INVERTED SLA sweep.
+      await safe('fscc_sla_sweep', async () => {
+        const result = await fsccSlaSweep(env as never);
+        console.log('fscc_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

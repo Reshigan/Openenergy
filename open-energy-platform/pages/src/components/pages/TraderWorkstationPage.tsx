@@ -61,6 +61,7 @@ export function TraderWorkstationPage() {
         { key: 'benchmark-transition', label: 'Benchmark transition', group: 'Post-trade', body: () => <BenchmarkTransitionChainTab /> },
         { key: 'best-ex', label: 'Best execution', group: 'Post-trade', body: () => <BestExecutionTab /> },
         { key: 'trade-reporting', label: 'Trade reporting', group: 'Post-trade', body: () => <TradeReportingChainTab /> },
+        { key: 'fsca-compliance', label: 'FSCA compliance report (W201)', group: 'Compliance', body: ({ onRefresh }) => <FscaComplianceTab onRefresh={onRefresh} /> },
         { key: 'mm-compliance', label: 'MM compliance', group: 'Compliance', body: () => <MmComplianceTab /> },
         { key: 'poslimit', label: 'Position limits', group: 'Compliance', body: () => <PoslimitChainTab /> },
         { key: 'strate-swift-connectors', label: 'Settlement rails', group: 'Compliance', body: () => <StrateSwiftConnectorTab /> },
@@ -329,6 +330,111 @@ function MarginTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'met' ? 'good' : r.status === 'defaulted' ? 'bad' : 'warn'}>{r.status}</Pill> },
         ]}
       />
+    </div>
+  );
+}
+
+// ── W201: FSCA Annual Compliance Certificate & Compliance Officer Report ───────
+const FSCC_STATUS_TONE: Record<string, 'good' | 'warn' | 'bad' | 'neutral'> = {
+  report_scheduled: 'neutral', data_gathering: 'neutral', drafting: 'neutral',
+  internal_review: 'warn',     co_sign_off: 'warn',       submitted: 'warn',
+  under_review: 'warn',        queries_received: 'warn',  queries_responded: 'warn',
+  filed: 'good',               refiled: 'good',           deficiency_found: 'bad',
+  remediation: 'bad',          revocation_risk: 'bad',
+};
+
+const FSP_CLASS_TONE: Record<string, 'good' | 'warn' | 'bad' | 'neutral'> = {
+  micro: 'neutral', standard: 'neutral', large: 'warn', systemic: 'bad',
+};
+
+const FSCC_ACTIONS = [
+  { label: 'Open period',   value: 'open_period' },
+  { label: 'Start drafting', value: 'start_drafting' },
+  { label: 'Submit for internal review', value: 'submit_for_internal_review' },
+  { label: 'Request CO sign-off', value: 'request_co_sign_off' },
+  { label: 'CO sign',       value: 'co_sign' },
+  { label: 'Raise FSCA queries', value: 'fsca_raises_queries' },
+  { label: 'Respond to queries', value: 'respond_to_queries' },
+  { label: 'File clean',    value: 'file_clean' },
+  { label: 'Flag deficiency', value: 'flag_deficiency' },
+  { label: 'Start remediation', value: 'start_remediation' },
+  { label: 'Refile',        value: 'refile' },
+  { label: 'Flag revocation risk', value: 'flag_revocation_risk' },
+];
+
+function FscaComplianceTab({ onRefresh }: { onRefresh: () => void }) {
+  const [creating, setCreating] = useState(false);
+  const [acting, setActing] = useState<{ id: string; status: string } | null>(null);
+
+  return (
+    <div>
+      <div className="mb-3 flex justify-end">
+        <button onClick={() => setCreating(true)}
+          className="px-3 py-1.5 bg-[#1a3a5c] text-white text-xs rounded hover:bg-[#1e4a72]">
+          + New compliance report
+        </button>
+      </div>
+
+      <ListingTable
+        endpoint="/fsca-compliance-reports"
+        rowKey={(r) => r.id}
+        empty={{ title: 'No compliance reports', description: 'Create a new annual compliance report to track your FSCA filing.' }}
+        columns={[
+          { key: 'report_year',      label: 'Year' },
+          { key: 'fsp_licence_number', label: 'FSP Licence' },
+          { key: 'fsp_class',        label: 'FSP class', render: (r) => <Pill tone={FSP_CLASS_TONE[r.fsp_class] ?? 'neutral'}>{r.fsp_class}</Pill> },
+          { key: 'chain_status',     label: 'Status', render: (r) => <Pill tone={FSCC_STATUS_TONE[r.chain_status] ?? 'neutral'}>{r.chain_status?.replace(/_/g,' ')}</Pill> },
+          { key: 'compliance_officer_name', label: 'CO' },
+          { key: 'fsca_reference',   label: 'FSCA ref' },
+          { key: 'sla_deadline',     label: 'SLA deadline', render: (r) => r.sla_deadline ? new Date(r.sla_deadline).toLocaleDateString() : '—' },
+          { key: 'sla_breached',     label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">BREACHED</Pill> : <Pill tone="good">OK</Pill> },
+          { key: 'actions',          label: '', render: (r) => (
+            <button onClick={() => setActing({ id: r.id, status: r.chain_status })}
+              className="text-[#1a3a5c] text-xs underline">Action</button>
+          )},
+        ]}
+      />
+
+      {creating && (
+        <ActionModal
+          title="New FSCA Compliance Report"
+          fields={[
+            { key: 'report_year',   type: 'number', label: 'Report year', required: true },
+            { key: 'fsp_licence_number', type: 'text', label: 'FSP licence number' },
+            { key: 'fsp_class', type: 'select', label: 'FSP class', required: true,
+              options: [
+                { value: 'micro',    label: 'Micro (< R2m revenue)' },
+                { value: 'standard', label: 'Standard (recommended)' },
+                { value: 'large',    label: 'Large (> R50m AUM)' },
+                { value: 'systemic', label: 'Systemic (> R500m AUM)' },
+              ]},
+            { key: 'reporting_period_start', type: 'date', label: 'Period start', required: true },
+            { key: 'reporting_period_end',   type: 'date', label: 'Period end',   required: true },
+            { key: 'compliance_officer_name', type: 'text', label: 'Compliance officer name' },
+            { key: 'reason', type: 'textarea', label: 'Notes' },
+          ] as FieldSpec[]}
+          onSubmit={async (v) => { await api.post('/fsca-compliance-reports', v); setCreating(false); onRefresh(); }}
+          onClose={() => setCreating(false)}
+        />
+      )}
+
+      {acting && (
+        <ActionModal
+          title={`Action — ${acting.status?.replace(/_/g,' ')}`}
+          fields={[
+            { key: 'action', type: 'select', label: 'Action', required: true,
+              options: FSCC_ACTIONS },
+            { key: 'fsca_reference', type: 'text', label: 'FSCA reference (for CO sign)' },
+            { key: 'compliance_officer_name', type: 'text', label: 'Compliance officer name (for CO sign)' },
+            { key: 'deficiency_description', type: 'textarea', label: 'Deficiency description' },
+            { key: 'remediation_plan', type: 'textarea', label: 'Remediation plan' },
+            { key: 'revocation_risk_reason', type: 'textarea', label: 'Revocation risk reason' },
+            { key: 'reason', type: 'textarea', label: 'Notes / reason', required: true },
+          ] as FieldSpec[]}
+          onSubmit={async (v) => { await api.post(`/fsca-compliance-reports/${acting.id}/action`, v); setActing(null); onRefresh(); }}
+          onClose={() => setActing(null)}
+        />
+      )}
     </div>
   );
 }
