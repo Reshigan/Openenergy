@@ -62,6 +62,7 @@ export function GridOpsWorkstationPage() {
         { key: 'mqtt-opcua-connectors', label: 'MQTT/OPC-UA connectors', group: 'Compliance', body: () => <MqttOpcuaConnectorTab /> },
         { key: 'smart-meter-assets', label: 'Smart meter assets (W199)', group: 'Compliance', body: ({ onRefresh }) => <SmartMeterAssetsTab onRefresh={onRefresh} /> },
         { key: 'substation-assets', label: 'Substation assets (W211)', group: 'Compliance', body: ({ onRefresh }) => <SubstationAssetsTab onRefresh={onRefresh} /> },
+        { key: 'eop_activations', label: 'EOP activations (W215)', group: 'Operations', body: ({ onRefresh }) => <EopActivationTab onRefresh={onRefresh} /> },
         { key: 'audit', label: 'Audit & compliance', group: 'Compliance',
           body: ({ onRefresh }) => (
             <AuditPanel
@@ -570,6 +571,169 @@ function SubstationAssetsTab({ onRefresh }: { onRefresh?: () => void }) {
             if (!res.ok) throw new Error(await res.text());
             setModal(null); onRefresh?.();
           }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── W215: Grid EOP Activation ────────────────────────────────────────────────
+const EOP_TIER_TONE: Record<string, 'info' | 'warn' | 'bad' | 'good' | 'neutral'> = {
+  n1_minor: 'info',
+  n1_significant: 'warn',
+  n2_double: 'bad',
+  black_start: 'bad',
+};
+
+function eopStatusTone(s: string): 'info' | 'warn' | 'bad' | 'good' | 'neutral' {
+  if (s === 'per_completed') return 'good';
+  if (s === 'per_outstanding' || s === 'escalated_to_regulator') return 'bad';
+  if (s === 'restoration_in_progress' || s === 'load_shedding_assessed') return 'warn';
+  return 'info';
+}
+
+type EopModal = null | 'create' | { type: 'action'; id: string; currentStatus: string };
+
+function EopActivationTab({ onRefresh }: { onRefresh: () => void }) {
+  const [modal, setModal] = useState<EopModal>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const bump = () => { setRefreshKey(k => k + 1); onRefresh(); };
+
+  return (
+    <div>
+      <button
+        onClick={() => setModal('create')}
+        className="mb-4 px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+      >
+        Log contingency event
+      </button>
+      <ListingTable
+        endpoint="/eop-activations"
+        key={refreshKey}
+        rowKey={(r) => r.id}
+        empty={{ title: 'No EOP activations', description: 'Emergency Operations Plan activations will appear here.' }}
+        columns={[
+          { key: 'eop_tier', label: 'Severity', render: (r) => <Pill tone={EOP_TIER_TONE[r.eop_tier] ?? 'neutral'}>{String(r.eop_tier).replace(/_/g, ' ')}</Pill> },
+          { key: 'contingency_type', label: 'Type', render: (r) => r.contingency_type ? String(r.contingency_type).replace(/_/g, ' ') : '—' },
+          { key: 'affected_mw', label: 'MW affected', align: 'right', render: (r) => r.affected_mw ? `${Number(r.affected_mw).toFixed(0)} MW` : '—' },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={eopStatusTone(r.chain_status)}>{String(r.chain_status).replace(/_/g, ' ')}</Pill> },
+          { key: 'sla_breached', label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">Breached</Pill> : <Pill tone="good">OK</Pill> },
+          { key: 'contingency_at', label: 'Event time', render: (r) => r.contingency_at ? new Date(r.contingency_at as string).toLocaleString() : '—' },
+        ]}
+        rowOnClick={(r) => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status })}
+      />
+
+      {modal === 'create' && (
+        <ActionModal
+          title="Log contingency / EOP event"
+          submitLabel="Log event"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/eop-activations', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                eop_tier: v.eop_tier,
+                contingency_type: v.contingency_type || undefined,
+                contingency_description: v.contingency_description,
+                affected_mw: v.affected_mw ? parseFloat(v.affected_mw) : undefined,
+                affected_region: v.affected_region || undefined,
+                load_shedding_stage: v.load_shedding_stage ? parseInt(v.load_shedding_stage, 10) : undefined,
+                ntcsa_incident_ref: v.ntcsa_incident_ref || undefined,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); bump();
+          }}
+          fields={[
+            {
+              key: 'eop_tier', label: 'Severity tier', type: 'select', required: true, defaultValue: 'n1_significant',
+              options: [
+                { value: 'n1_minor', label: 'N-1 Minor — <100MW (24h PER SLA)' },
+                { value: 'n1_significant', label: 'N-1 Significant — 100–500MW (12h SLA)' },
+                { value: 'n2_double', label: 'N-2 Double contingency — 500–1000MW (6h SLA)' },
+                { value: 'black_start', label: 'Black start — system collapse (2h SLA)' },
+              ],
+            },
+            {
+              key: 'contingency_type', label: 'Contingency type', type: 'select', required: false,
+              options: [
+                { value: 'line_trip', label: 'Line trip' },
+                { value: 'generator_trip', label: 'Generator trip' },
+                { value: 'transformer_fault', label: 'Transformer fault' },
+                { value: 'busbar_fault', label: 'Busbar fault' },
+                { value: 'under_frequency', label: 'Under-frequency event' },
+                { value: 'voltage_collapse', label: 'Voltage collapse' },
+                { value: 'protection_failure', label: 'Protection failure' },
+                { value: 'external', label: 'External cause' },
+                { value: 'other', label: 'Other' },
+              ],
+            },
+            { key: 'contingency_description', label: 'Description', type: 'textarea', required: true },
+            { key: 'affected_mw', label: 'Affected MW', type: 'number', required: false },
+            { key: 'affected_region', label: 'Affected region', required: false },
+            { key: 'load_shedding_stage', label: 'Load shedding stage (1–8)', type: 'number', required: false },
+            { key: 'ntcsa_incident_ref', label: 'NTCSA incident reference', required: false },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+          ]}
+        />
+      )}
+
+      {modal !== null && modal !== 'create' && (
+        <ActionModal
+          title={`EOP action — ${modal.currentStatus.replace(/_/g, ' ')}`}
+          submitLabel="Submit"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/eop-activations/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                action: v.action,
+                load_shedding_stage: v.load_shedding_stage ? parseInt(v.load_shedding_stage, 10) : undefined,
+                affected_mw: v.affected_mw ? parseFloat(v.affected_mw) : undefined,
+                total_outage_duration_min: v.total_outage_duration_min ? parseInt(v.total_outage_duration_min, 10) : undefined,
+                per_lead_name: v.per_lead_name || undefined,
+                root_cause: v.root_cause || undefined,
+                contributing_factors: v.contributing_factors || undefined,
+                lessons_learned: v.lessons_learned || undefined,
+                action_items: v.action_items || undefined,
+                nersa_notification_ref: v.nersa_notification_ref || undefined,
+                escalation_reason: v.escalation_reason || undefined,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); bump();
+          }}
+          fields={[
+            {
+              key: 'action', label: 'Action', type: 'select', required: true,
+              options: [
+                { value: 'activate_eop', label: 'Activate EOP' },
+                { value: 'alert_operations_centre', label: 'Alert operations centre' },
+                { value: 'assess_load_shedding', label: 'Assess load shedding requirement' },
+                { value: 'commence_restoration', label: 'Commence network restoration' },
+                { value: 'restore_normal_operations', label: 'Restore normal operations' },
+                { value: 'initiate_per', label: 'Initiate post-event review' },
+                { value: 'complete_per', label: 'Complete PER — record lessons' },
+                { value: 'escalate_to_regulator', label: 'Escalate to NERSA' },
+                { value: 'withdraw', label: 'Withdraw (false alarm / test)' },
+              ],
+            },
+            { key: 'load_shedding_stage', label: 'Load shedding stage', type: 'number', required: false },
+            { key: 'affected_mw', label: 'Affected MW', type: 'number', required: false },
+            { key: 'total_outage_duration_min', label: 'Total outage duration (min)', type: 'number', required: false },
+            { key: 'per_lead_name', label: 'PER lead name', required: false },
+            { key: 'root_cause', label: 'Root cause', type: 'textarea', required: false },
+            { key: 'contributing_factors', label: 'Contributing factors', type: 'textarea', required: false },
+            { key: 'lessons_learned', label: 'Lessons learned', type: 'textarea', required: false },
+            { key: 'action_items', label: 'Action items (JSON array)', type: 'textarea', required: false },
+            { key: 'nersa_notification_ref', label: 'NERSA notification reference', required: false },
+            { key: 'escalation_reason', label: 'Escalation reason', type: 'textarea', required: false },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+          ]}
         />
       )}
     </div>
