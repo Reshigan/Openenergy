@@ -195,6 +195,7 @@ export function IppWorkstationPage() {
         { key: 'cp-tracker', label: 'Conditions Precedent (W192)', group: 'Finance', body: () => <IppCpTrackerTab /> },
         { key: 'green-bond-reports', label: 'Green bond reports (W202)', group: 'Finance', body: ({ onRefresh }) => <GreenBondReportTab onRefresh={onRefresh} /> },
         { key: 'dscr-reports', label: 'DSCR reports (W212)', group: 'Finance', body: ({ onRefresh }) => <DscrReportTab onRefresh={onRefresh} /> },
+        { key: 'credit_insurance', label: 'Credit insurance (W218)', group: 'Finance', body: ({ onRefresh }) => <CreditInsuranceTab onRefresh={onRefresh} /> },
         { key: 'milestone-variance', label: 'Milestone variance reports (W207)', group: 'Project controls', body: ({ onRefresh }) => <MilestoneVarianceTab onRefresh={onRefresh} /> },
         { key: 'subcontractors', label: 'Subcontractors', group: 'Construction', body: () => <IppSubcontractorTab /> },
         { key: 'procurement', label: 'Procurement / RFPs', group: 'Construction', body: () => <ProcurementChainTab /> },
@@ -1176,6 +1177,201 @@ function DscrReportTab({ onRefresh }: { onRefresh?: () => void }) {
             });
             if (!res.ok) throw new Error(await res.text());
             setModal(null); onRefresh?.();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── W218: IPP Offtake Credit Insurance (ECIC/ATIDI/Lloyd's/MIGA) ─────────────
+const CI_TIER_TONE: Record<string, string> = {
+  short_term: 'bg-blue-50 text-blue-700',
+  medium_term: 'bg-purple-50 text-purple-700',
+  long_term: 'bg-amber-50 text-amber-700',
+  project_finance: 'bg-rose-50 text-rose-700',
+};
+
+function ciStatusTone(s: string): string {
+  if (['claim_paid'].includes(s)) return 'bg-green-100 text-green-800';
+  if (['lapsed', 'declined'].includes(s)) return 'bg-red-100 text-red-800';
+  if (['cancelled'].includes(s)) return 'bg-gray-100 text-gray-600';
+  if (['claim_lodged', 'claim_assessed'].includes(s)) return 'bg-orange-100 text-orange-800';
+  if (['active'].includes(s)) return 'bg-emerald-100 text-emerald-800';
+  return 'bg-slate-100 text-slate-700';
+}
+
+type CiModal = { id: string; insurance_tier: string; insurer_name?: string } | null;
+
+function CreditInsuranceTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [data, setData] = React.useState<any[]>([]);
+  const [kpis, setKpis] = React.useState<any>({});
+  const [modal, setModal] = React.useState<CiModal>(null);
+  const [createModal, setCreateModal] = React.useState(false);
+  const [refreshKey, setRefreshKey] = React.useState(0);
+
+  const bump = () => { setRefreshKey(k => k + 1); onRefresh?.(); };
+
+  React.useEffect(() => {
+    fetch('/api/credit-insurance', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+      .then(r => r.json()).then(j => { setData(j.data ?? []); setKpis(j.kpis ?? {}); });
+  }, [refreshKey]);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: 'Total', val: kpis.total ?? 0 },
+          { label: 'Active', val: kpis.active ?? 0 },
+          { label: 'Claims in progress', val: kpis.claims_in_progress ?? 0 },
+          { label: 'Lapsed / cancelled', val: kpis.lapsed_or_cancelled ?? 0 },
+        ].map(k => (
+          <div key={k.label} className="bg-white border border-gray-200 rounded-lg p-3 text-center">
+            <div className="text-2xl font-semibold text-gray-900">{k.val}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{k.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-between items-center">
+        <span className="text-sm text-gray-500">{data.length} policies</span>
+        <button
+          onClick={() => setCreateModal(true)}
+          className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700"
+        >+ New policy application</button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <thead className="bg-gray-50">
+            <tr>
+              {['Insurer', 'Tier', 'Type', 'Cover (ZAR)', 'Status', 'SLA deadline', ''].map(h => (
+                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-100">
+            {data.map((row: any) => (
+              <tr key={row.id} className="hover:bg-gray-50">
+                <td className="px-3 py-2 font-medium text-gray-900">{row.insurer_name ?? row.policy_ref ?? row.id.slice(0, 8)}</td>
+                <td className="px-3 py-2">
+                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${CI_TIER_TONE[row.insurance_tier] ?? 'bg-gray-100 text-gray-700'}`}>
+                    {row.insurance_tier?.replace(/_/g, ' ')}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-gray-600">{row.insurance_type?.replace(/_/g, ' ') ?? '—'}</td>
+                <td className="px-3 py-2 text-gray-700">{row.cover_amount_zar ? `R${Number(row.cover_amount_zar).toLocaleString()}` : '—'}</td>
+                <td className="px-3 py-2">
+                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${ciStatusTone(row.chain_status)}`}>
+                    {row.chain_status?.replace(/_/g, ' ')}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-gray-500 text-xs">{row.sla_deadline ? new Date(row.sla_deadline).toLocaleDateString() : '—'}</td>
+                <td className="px-3 py-2">
+                  <button onClick={() => setModal({ id: row.id, insurance_tier: row.insurance_tier, insurer_name: row.insurer_name })}
+                    className="text-xs text-blue-600 hover:underline">Action</button>
+                </td>
+              </tr>
+            ))}
+            {data.length === 0 && (
+              <tr><td colSpan={7} className="px-3 py-8 text-center text-gray-400">No credit insurance policies found</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {createModal && (
+        <ActionModal
+          title="New credit insurance application"
+          submitLabel="Submit application"
+          fields={[
+            { key: 'insurance_tier', label: 'Insurance tier', type: 'select', required: true, options: [
+              { value: 'short_term', label: 'Short-term (1-3 years)' },
+              { value: 'medium_term', label: 'Medium-term (3-7 years)' },
+              { value: 'long_term', label: 'Long-term (7-15 years)' },
+              { value: 'project_finance', label: 'Project finance (15-25 years)' },
+            ]} as FieldSpec,
+            { key: 'insurance_type', label: 'Insurance type', type: 'select', options: [
+              { value: 'political_risk', label: 'Political risk' },
+              { value: 'credit_risk', label: 'Credit risk' },
+              { value: 'comprehensive', label: 'Comprehensive' },
+              { value: 'miga_guarantee', label: 'MIGA guarantee' },
+              { value: 'ecic_cover', label: 'ECIC cover' },
+              { value: 'atidi_cover', label: 'ATIDI cover' },
+              { value: 'lloyds_syndicate', label: "Lloyd's syndicate" },
+            ]} as FieldSpec,
+            { key: 'insurer_name', label: 'Insurer name' },
+            { key: 'cover_amount_zar', label: 'Cover amount (ZAR)', type: 'number' },
+            { key: 'cover_period_years', label: 'Cover period (years)', type: 'number' },
+            { key: 'project_ref', label: 'Project reference' },
+            { key: 'reason', label: 'Application notes' },
+          ] as FieldSpec[]}
+          onClose={() => setCreateModal(false)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/credit-insurance', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                ...v,
+                cover_amount_zar: v.cover_amount_zar ? Number(v.cover_amount_zar) : undefined,
+                cover_period_years: v.cover_period_years ? Number(v.cover_period_years) : undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setCreateModal(false); bump();
+          }}
+        />
+      )}
+
+      {modal && (
+        <ActionModal
+          title={`Credit insurance — ${modal.insurance_tier?.replace(/_/g, ' ')} — ${modal.insurer_name ?? modal.id.slice(0, 8)}`}
+          submitLabel="Submit action"
+          fields={[
+            { key: 'action', label: 'Action', type: 'select', required: true, options: [
+              { value: 'commence_underwriting', label: 'Commence underwriting' },
+              { value: 'issue_terms', label: 'Issue terms / term-sheet' },
+              { value: 'commence_negotiation', label: 'Commence negotiation' },
+              { value: 'bind_policy', label: 'Bind policy' },
+              { value: 'activate', label: 'Activate / renew policy' },
+              { value: 'flag_renewal', label: 'Flag renewal due' },
+              { value: 'lodge_claim', label: 'Lodge claim' },
+              { value: 'complete_assessment', label: 'Complete claim assessment' },
+              { value: 'pay_claim', label: 'Pay claim' },
+              { value: 'lapse', label: 'Lapse (unpaid premium)' },
+              { value: 'cancel', label: 'Cancel policy' },
+              { value: 'decline', label: 'Decline application / claim' },
+            ]} as FieldSpec,
+            { key: 'terms_ref', label: 'Terms reference' },
+            { key: 'policy_ref', label: 'Policy reference' },
+            { key: 'premium_rate_pct', label: 'Premium rate (%)', type: 'number' },
+            { key: 'annual_premium_zar', label: 'Annual premium (ZAR)', type: 'number' },
+            { key: 'cover_amount_zar', label: 'Cover amount (ZAR)', type: 'number' },
+            { key: 'policy_inception', label: 'Policy inception date' },
+            { key: 'policy_expiry', label: 'Policy expiry date' },
+            { key: 'renewal_due_date', label: 'Renewal due date' },
+            { key: 'claim_event', label: 'Claim trigger event description' },
+            { key: 'claim_amount_zar', label: 'Claim amount (ZAR)', type: 'number' },
+            { key: 'claim_paid_amount_zar', label: 'Claim paid amount (ZAR)', type: 'number' },
+            { key: 'claim_decline_reason', label: 'Decline reason' },
+            { key: 'reason', label: 'Notes' },
+          ] as FieldSpec[]}
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/credit-insurance/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                ...v,
+                premium_rate_pct: v.premium_rate_pct ? Number(v.premium_rate_pct) : undefined,
+                annual_premium_zar: v.annual_premium_zar ? Number(v.annual_premium_zar) : undefined,
+                cover_amount_zar: v.cover_amount_zar ? Number(v.cover_amount_zar) : undefined,
+                claim_amount_zar: v.claim_amount_zar ? Number(v.claim_amount_zar) : undefined,
+                claim_paid_amount_zar: v.claim_paid_amount_zar ? Number(v.claim_paid_amount_zar) : undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); bump();
           }}
         />
       )}

@@ -394,6 +394,7 @@ import esapMonitoringChainRoutes, { esapSlaSweep } from './routes/esap-monitorin
 import eopActivationChainRoutes, { eopSlaSweep } from './routes/eop-activation-chain';
 import fscaConductReportChainRoutes, { fcrSlaSweep } from './routes/fsca-conduct-report-chain';
 import slaPerformanceReportChainRoutes, { sprSlaSweep } from './routes/sla-performance-report-chain';
+import creditInsuranceChainRoutes, { ciSlaSweep } from './routes/credit-insurance-chain';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -1076,6 +1077,7 @@ app.route('/api/esap-monitoring', esapMonitoringChainRoutes);
 app.route('/api/eop-activations', eopActivationChainRoutes);
 app.route('/api/fsca-conduct-reports', fscaConductReportChainRoutes);
 app.route('/api/sla-performance-reports', slaPerformanceReportChainRoutes);
+app.route('/api/credit-insurance', creditInsuranceChainRoutes);
 // platformFeaturesRoutes is the catch-all for /api — it must remain LAST
 // so all specific /api/* mounts above are tried first.
 app.route('/api', platformFeaturesRoutes);
@@ -2644,6 +2646,11 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('spr_sla_sweep', async () => {
         const result = await sprSlaSweep(env as never);
         console.log('spr_sla_sweep', JSON.stringify(result));
+      });
+      // W218: IPP Credit Insurance — INVERTED SLA sweep.
+      await safe('ci_sla_sweep', async () => {
+        const result = await ciSlaSweep(env as never);
+        console.log('ci_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
