@@ -164,6 +164,7 @@ export function IppWorkstationPage() {
         { key: 'licence-returns', label: 'Annual NERSA licence return (W184)', group: 'Risk', body: () => <IppLicenceReturnsTab /> },
         { key: 'licence-obligations', label: 'Licence Obligations (W193)', group: 'Regulatory', body: () => <IppLicenceObligationTab /> },
         { key: 'force_majeure', label: 'Force Majeure (W194)', group: 'Operations', body: () => <IppForceMajeureTab /> },
+        { key: 'export_curtailments', label: 'Grid export curtailments (W221)', group: 'Operations', body: ({ onRefresh }) => <ExportCurtailmentTab onRefresh={onRefresh} /> },
         { key: 'reipppp-reports', label: 'REIPPPP annual progress report (W185)', group: 'Risk', body: () => <IppReippppReportsTab /> },
         { key: 'equity-transfer', label: 'SPV equity transfer & consent (W186)', group: 'Risk', body: () => <IppEquityTransferTab /> },
         { key: 'quarterly-gen-report', label: 'DMRE quarterly generation report (W187)', group: 'Risk', body: () => <IppQuarterlyGenReportTab /> },
@@ -1368,6 +1369,212 @@ function CreditInsuranceTab({ onRefresh }: { onRefresh?: () => void }) {
                 cover_amount_zar: v.cover_amount_zar ? Number(v.cover_amount_zar) : undefined,
                 claim_amount_zar: v.claim_amount_zar ? Number(v.claim_amount_zar) : undefined,
                 claim_paid_amount_zar: v.claim_paid_amount_zar ? Number(v.claim_paid_amount_zar) : undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); bump();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── W221: Grid Export Curtailment & Compensation Claim ────────────────────────
+const EC_TIER_TONE: Record<string, string> = {
+  minor:       'bg-blue-50 text-blue-700',
+  moderate:    'bg-purple-50 text-purple-700',
+  significant: 'bg-amber-50 text-amber-700',
+  systemic:    'bg-rose-50 text-rose-700',
+};
+
+function ecStatusTone(s: string): string {
+  if (['settled'].includes(s)) return 'bg-green-100 text-green-800';
+  if (['rejected', 'withdrawn', 'cancelled'].includes(s)) return 'bg-red-100 text-red-800';
+  if (['disputed', 'arbitration'].includes(s)) return 'bg-orange-100 text-orange-800';
+  if (['claim_submitted', 'under_review'].includes(s)) return 'bg-blue-100 text-blue-800';
+  return 'bg-slate-100 text-slate-700';
+}
+
+type EcModal = { id: string; curtailment_tier: string; deemed_energy_mwh?: number } | null;
+
+function ExportCurtailmentTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [data, setData] = React.useState<any[]>([]);
+  const [kpis, setKpis] = React.useState<any>({});
+  const [modal, setModal] = React.useState<EcModal>(null);
+  const [createModal, setCreateModal] = React.useState(false);
+  const [refreshKey, setRefreshKey] = React.useState(0);
+
+  const bump = () => { setRefreshKey(k => k + 1); onRefresh?.(); };
+
+  React.useEffect(() => {
+    fetch('/api/export-curtailments', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+      .then(r => r.json()).then(j => { setData(j.data ?? []); setKpis(j.kpis ?? {}); });
+  }, [refreshKey]);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: 'Total claims', val: kpis.total ?? 0 },
+          { label: 'Active', val: kpis.active ?? 0 },
+          { label: 'Settled', val: kpis.settled ?? 0 },
+          { label: 'Disputed', val: kpis.disputed ?? 0 },
+        ].map(k => (
+          <div key={k.label} className="bg-white border border-gray-200 rounded-lg p-3 text-center">
+            <div className="text-2xl font-semibold text-gray-900">{k.val}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{k.label}</div>
+          </div>
+        ))}
+      </div>
+      {(kpis.total_deemed_mwh > 0 || kpis.total_claim_zar > 0) && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+            <div className="text-xl font-semibold text-amber-800">{kpis.total_deemed_mwh?.toLocaleString()} MWh</div>
+            <div className="text-xs text-amber-600 mt-0.5">Total deemed energy</div>
+          </div>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+            <div className="text-xl font-semibold text-green-800">R{kpis.total_claim_zar?.toLocaleString()}</div>
+            <div className="text-xs text-green-600 mt-0.5">Total claim value</div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-between items-center">
+        <span className="text-sm text-gray-500">{data.length} curtailment claims</span>
+        <button
+          onClick={() => setCreateModal(true)}
+          className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700"
+        >+ Log curtailment event</button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <thead className="bg-gray-50">
+            <tr>
+              {['Tier', 'Type', 'Duration (h)', 'Deemed MWh', 'Claim (ZAR)', 'Status', ''].map(h => (
+                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-100">
+            {data.map((row: any) => (
+              <tr key={row.id} className="hover:bg-gray-50">
+                <td className="px-3 py-2">
+                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${EC_TIER_TONE[row.curtailment_tier] ?? 'bg-gray-100 text-gray-700'}`}>
+                    {row.curtailment_tier}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-gray-600">{row.curtailment_type?.replace(/_/g, ' ') ?? '—'}</td>
+                <td className="px-3 py-2 text-gray-700">{row.curtailment_duration_h ?? '—'}</td>
+                <td className="px-3 py-2 text-gray-700">{row.deemed_energy_mwh ? `${row.deemed_energy_mwh} MWh` : '—'}</td>
+                <td className="px-3 py-2 text-gray-700">{row.claim_amount_zar ? `R${Number(row.claim_amount_zar).toLocaleString()}` : '—'}</td>
+                <td className="px-3 py-2">
+                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${ecStatusTone(row.chain_status)}`}>
+                    {row.chain_status?.replace(/_/g, ' ')}
+                  </span>
+                </td>
+                <td className="px-3 py-2">
+                  <button onClick={() => setModal({ id: row.id, curtailment_tier: row.curtailment_tier, deemed_energy_mwh: row.deemed_energy_mwh })}
+                    className="text-xs text-blue-600 hover:underline">Action</button>
+                </td>
+              </tr>
+            ))}
+            {data.length === 0 && (
+              <tr><td colSpan={7} className="px-3 py-8 text-center text-gray-400">No curtailment claims found</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {createModal && (
+        <ActionModal
+          title="Log grid export curtailment event"
+          submitLabel="Log event"
+          fields={[
+            { key: 'curtailment_tier', label: 'Curtailment tier', type: 'select', required: true, options: [
+              { value: 'minor', label: 'Minor (<500 MWh)' },
+              { value: 'moderate', label: 'Moderate (500–2000 MWh)' },
+              { value: 'significant', label: 'Significant (2000–10000 MWh)' },
+              { value: 'systemic', label: 'Systemic (>10000 MWh)' },
+            ]} as FieldSpec,
+            { key: 'curtailment_type', label: 'Curtailment type', type: 'select', options: [
+              { value: 'network_congestion', label: 'Network congestion' },
+              { value: 'load_management', label: 'Load management' },
+              { value: 'emergency_curtailment', label: 'Emergency curtailment' },
+              { value: 'planned_maintenance', label: 'Planned maintenance' },
+              { value: 'frequency_deviation', label: 'Frequency deviation' },
+              { value: 'voltage_violation', label: 'Voltage violation' },
+            ]} as FieldSpec,
+            { key: 'site_id', label: 'Site ID' },
+            { key: 'so_curtailment_ref', label: 'SO curtailment reference' },
+            { key: 'ppa_ref', label: 'PPA reference (W22)' },
+            { key: 'curtailment_start', label: 'Curtailment start (ISO 8601)' },
+            { key: 'curtailment_end', label: 'Curtailment end (ISO 8601)' },
+            { key: 'curtailment_duration_h', label: 'Duration (hours)', type: 'number' },
+            { key: 'available_capacity_mw', label: 'Available capacity (MW)', type: 'number' },
+            { key: 'reason', label: 'Notes' },
+          ] as FieldSpec[]}
+          onClose={() => setCreateModal(false)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/export-curtailments', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                ...v,
+                curtailment_duration_h: v.curtailment_duration_h ? Number(v.curtailment_duration_h) : undefined,
+                available_capacity_mw: v.available_capacity_mw ? Number(v.available_capacity_mw) : undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setCreateModal(false); bump();
+          }}
+        />
+      )}
+
+      {modal && (
+        <ActionModal
+          title={`Curtailment claim — ${modal.curtailment_tier} — ${modal.deemed_energy_mwh ?? '?'}MWh`}
+          submitLabel="Submit action"
+          fields={[
+            { key: 'action', label: 'Action', type: 'select', required: true, options: [
+              { value: 'log_notification', label: 'Log SO notification' },
+              { value: 'calculate_energy', label: 'Calculate deemed energy' },
+              { value: 'prepare_claim', label: 'Prepare compensation claim' },
+              { value: 'submit_claim', label: 'Submit claim to SO/offtaker' },
+              { value: 'acknowledge_review', label: 'Acknowledge under review' },
+              { value: 'raise_dispute', label: 'Raise dispute' },
+              { value: 'refer_to_arbitration', label: 'Refer to NERSA arbitration' },
+              { value: 'settle', label: 'Settle claim' },
+              { value: 'reject', label: 'Reject claim' },
+              { value: 'withdraw', label: 'Withdraw claim' },
+              { value: 'cancel', label: 'Cancel (duplicate/admin error)' },
+            ]} as FieldSpec,
+            { key: 'actual_generation_mwh', label: 'Actual generation during period (MWh)', type: 'number' },
+            { key: 'deemed_energy_mwh', label: 'Deemed energy loss (MWh)', type: 'number' },
+            { key: 'irradiance_ghi_kwh_m2', label: 'Irradiance GHI (kWh/m²)', type: 'number' },
+            { key: 'tariff_rate_per_mwh', label: 'Tariff rate (R/MWh)', type: 'number' },
+            { key: 'claim_amount_zar', label: 'Claim amount (ZAR)', type: 'number' },
+            { key: 'compensation_paid_zar', label: 'Compensation paid (ZAR)', type: 'number' },
+            { key: 'settlement_ref', label: 'Settlement reference' },
+            { key: 'dispute_grounds', label: 'Dispute grounds', type: 'textarea' },
+            { key: 'arbitration_ref', label: 'Arbitration reference' },
+            { key: 'rejection_reason', label: 'Rejection reason' },
+            { key: 'reason', label: 'Notes' },
+          ] as FieldSpec[]}
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/export-curtailments/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                ...v,
+                actual_generation_mwh: v.actual_generation_mwh ? Number(v.actual_generation_mwh) : undefined,
+                deemed_energy_mwh: v.deemed_energy_mwh ? Number(v.deemed_energy_mwh) : undefined,
+                irradiance_ghi_kwh_m2: v.irradiance_ghi_kwh_m2 ? Number(v.irradiance_ghi_kwh_m2) : undefined,
+                tariff_rate_per_mwh: v.tariff_rate_per_mwh ? Number(v.tariff_rate_per_mwh) : undefined,
+                claim_amount_zar: v.claim_amount_zar ? Number(v.claim_amount_zar) : undefined,
+                compensation_paid_zar: v.compensation_paid_zar ? Number(v.compensation_paid_zar) : undefined,
               }),
             });
             if (!res.ok) throw new Error(await res.text());
