@@ -1944,6 +1944,8 @@ export type EventType =
   | 'aud_evt_obtain_board_approval' | 'aud_evt_submit_to_cipc'
   | 'aud_evt_complete_audit' | 'aud_evt_issue_qualified_opinion'
   | 'aud_evt_declare_lapsed' | 'aud_evt_flag_sla_breach'
+  // ─── Esums generation accrual cascade ─────────────────────────────────────
+  | 'esums_accrual_computed'
   // ─── Wave 190 — IPP EMP Annual Compliance Report ──────────────────────────
   | 'ipp_empr.created' | 'ipp_empr.sla_breached'
   | 'empr_evt_opened'

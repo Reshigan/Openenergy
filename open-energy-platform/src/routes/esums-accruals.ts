@@ -17,6 +17,8 @@ import { Hono } from 'hono';
 import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { getHistoricalData, getRealtimeReading } from '../utils/inverter-adapters';
+import { fireCascade } from '../utils/cascade';
+import type { EventType } from '../utils/cascade';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -134,6 +136,81 @@ export async function computeStationAccruals(
       periodHour, kwhDelta, currentDailyKwh, carbonTco2e, revenueZar, savingsZar,
       tariffRate, customerRate, carbonIntensity, 0, now, now)
     .run();
+
+  // ── Integration bridges: fan out to downstream modules if participant links set ──
+
+  const carbonParticipantId = station.carbon_participant_id as string | null;
+  const offtakerParticipantId = station.offtaker_participant_id as string | null;
+  const lenderParticipantId = station.lender_participant_id as string | null;
+
+  // Carbon credit bridge — upsert a monthly esums_carbon_credits record
+  if (carbonParticipantId && carbonTco2e > 0) {
+    const periodStart = periodHour.slice(0, 7) + '-01'; // first day of current month
+    const monthEnd = new Date(new Date(periodHour).getFullYear(), new Date(periodHour).getMonth() + 1, 0)
+      .toISOString().slice(0, 10);
+    const creditId = `ecc_${stationId}_${periodStart}`;
+    await env.DB
+      .prepare(`INSERT INTO esums_carbon_credits
+          (id, station_id, participant_id, period_start, period_end,
+           kwh_generated, carbon_tco2e, carbon_intensity_gco2_per_kwh,
+           tariff_rate_zar_per_kwh, revenue_zar, status, created_at, updated_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,'provisional',?,?)
+        ON CONFLICT(id) DO UPDATE SET
+          kwh_generated = kwh_generated + excluded.kwh_generated,
+          carbon_tco2e  = carbon_tco2e  + excluded.carbon_tco2e,
+          revenue_zar   = revenue_zar   + excluded.revenue_zar,
+          updated_at = excluded.updated_at`)
+      .bind(creditId, stationId, carbonParticipantId, periodStart, monthEnd,
+        kwhDelta, carbonTco2e, carbonIntensity, tariffRate, revenueZar, now, now)
+      .run().catch(() => { /* non-fatal — table may not exist yet */ });
+  }
+
+  // Settlement invoice bridge — upsert a monthly esums_settlement_invoices record
+  if (offtakerParticipantId && revenueZar > 0) {
+    const periodStart = periodHour.slice(0, 7) + '-01';
+    const monthEnd = new Date(new Date(periodHour).getFullYear(), new Date(periodHour).getMonth() + 1, 0)
+      .toISOString().slice(0, 10);
+    const invoiceId = `esi_${stationId}_${periodStart}`;
+    const vatRate = 15;
+    const grossRevenue = revenueZar;
+    const vatAmount = Math.round(grossRevenue * (vatRate / 100) * 100) / 100;
+    const total = Math.round((grossRevenue + vatAmount) * 100) / 100;
+    await env.DB
+      .prepare(`INSERT INTO esums_settlement_invoices
+          (id, station_id, from_participant_id, to_participant_id,
+           period_start, period_end, kwh_delivered,
+           tariff_rate_zar_per_kwh, gross_revenue_zar, vat_rate_pct,
+           vat_amount_zar, total_zar, status, created_at, updated_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'draft',?,?)
+        ON CONFLICT(id) DO UPDATE SET
+          kwh_delivered      = kwh_delivered      + excluded.kwh_delivered,
+          gross_revenue_zar  = gross_revenue_zar  + excluded.gross_revenue_zar,
+          vat_amount_zar     = vat_amount_zar     + excluded.vat_amount_zar,
+          total_zar          = total_zar          + excluded.total_zar,
+          updated_at = excluded.updated_at`)
+      .bind(invoiceId, stationId, station.participant_id as string, offtakerParticipantId,
+        periodStart, monthEnd, kwhDelta, tariffRate, grossRevenue, vatRate, vatAmount, total, now, now)
+      .run().catch(() => { /* non-fatal */ });
+  }
+
+  // Cascade event — fans out to action queues, audit, notifications, webhooks
+  await fireCascade({
+    event: 'esums_accrual_computed' as EventType,
+    actor_id: 'system',
+    entity_type: 'esums_station',
+    entity_id: stationId,
+    data: {
+      period_hour: periodHour,
+      kwh_delta: kwhDelta,
+      carbon_tco2e: carbonTco2e,
+      revenue_zar: revenueZar,
+      savings_zar: savingsZar,
+      lender_participant_id: lenderParticipantId,
+      carbon_participant_id: carbonParticipantId,
+      offtaker_participant_id: offtakerParticipantId,
+    },
+    env,
+  }).catch(() => { /* non-fatal */ });
 
   return { kwh_delta: kwhDelta, rows_written: 1 };
 }

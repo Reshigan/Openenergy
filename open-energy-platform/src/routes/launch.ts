@@ -1777,12 +1777,14 @@ async function buildEsumsOwnerBoard(c: any, user: any): Promise<LaunchPayload> {
   let activeAlerts = 0;
 
   try {
-    const sitesRow = await c.env.DB.prepare(
-      `SELECT COUNT(*) AS n FROM om_sites WHERE participant_id = ?`,
-    ).bind(user.id).first() as { n: number } | null;
-    sitesTotal = Number(sitesRow?.n || 0);
+    // Query both om_sites (legacy O&M) and solax_stations (Esums IoT) for full picture
+    const [omRow, solaxRow] = await Promise.all([
+      c.env.DB.prepare(`SELECT COUNT(*) AS n FROM om_sites WHERE participant_id = ?`).bind(user.id).first() as Promise<{ n: number } | null>,
+      c.env.DB.prepare(`SELECT COUNT(*) AS n FROM solax_stations WHERE participant_id = ? AND status = 'active'`).bind(user.id).first() as Promise<{ n: number } | null>,
+    ]);
+    sitesTotal = Number(omRow?.n || 0) + Number(solaxRow?.n || 0);
   } catch {
-    /* om_sites not available — safe fallback */
+    /* tables may not exist — safe fallback */
   }
 
   try {
