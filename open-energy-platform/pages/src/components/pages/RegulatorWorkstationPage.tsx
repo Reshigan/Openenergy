@@ -84,6 +84,9 @@ export function RegulatorWorkstationPage() {
         { key: 'public-consultations', label: 'Public consultations (W209)',
           body: ({ onRefresh }) => <PublicConsultationTab onRefresh={onRefresh} />,
         },
+        { key: 'market_conduct_exams', label: 'Market conduct exams (W220)',
+          body: ({ onRefresh }) => <MarketConductExamTab onRefresh={onRefresh} />,
+        },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel
@@ -360,6 +363,194 @@ function PublicConsultationTab({ onRefresh }: { onRefresh: () => void }) {
               submissions_count: v.submissions_count ? Number(v.submissions_count) : undefined,
             });
             setModal(null); onRefresh();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── W220: Regulator Market Conduct Examination ────────────────────────────────
+const MCE_TIER_TONE: Record<string, string> = {
+  routine:        'bg-blue-50 text-blue-700',
+  thematic:       'bg-purple-50 text-purple-700',
+  targeted:       'bg-amber-50 text-amber-700',
+  major_systemic: 'bg-rose-50 text-rose-700',
+};
+
+function mceStatusTone(s: string): string {
+  if (['closed_satisfactory'].includes(s)) return 'bg-green-100 text-green-800';
+  if (['enforcement_action'].includes(s)) return 'bg-red-100 text-red-800';
+  if (['withdrawn'].includes(s)) return 'bg-gray-100 text-gray-600';
+  if (['remedial_action_required'].includes(s)) return 'bg-orange-100 text-orange-800';
+  if (['report_issued'].includes(s)) return 'bg-emerald-100 text-emerald-800';
+  return 'bg-slate-100 text-slate-700';
+}
+
+type MceModal = { id: string; exam_tier: string; examination_ref?: string } | null;
+
+function MarketConductExamTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [data, setData] = React.useState<any[]>([]);
+  const [kpis, setKpis] = React.useState<any>({});
+  const [modal, setModal] = React.useState<MceModal>(null);
+  const [createModal, setCreateModal] = React.useState(false);
+  const [refreshKey, setRefreshKey] = React.useState(0);
+
+  const bump = () => { setRefreshKey(k => k + 1); onRefresh?.(); };
+
+  React.useEffect(() => {
+    fetch('/api/market-conduct-exams', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+      .then(r => r.json()).then(j => { setData(j.data ?? []); setKpis(j.kpis ?? {}); });
+  }, [refreshKey]);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: 'Total', val: kpis.total ?? 0 },
+          { label: 'Active', val: kpis.active ?? 0 },
+          { label: 'Enforcement', val: kpis.enforcement ?? 0 },
+          { label: 'Closed satisfactory', val: kpis.closed_satisfactory ?? 0 },
+        ].map(k => (
+          <div key={k.label} className="bg-white border border-gray-200 rounded-lg p-3 text-center">
+            <div className="text-2xl font-semibold text-gray-900">{k.val}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{k.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-between items-center">
+        <span className="text-sm text-gray-500">{data.length} conduct examinations</span>
+        <button
+          onClick={() => setCreateModal(true)}
+          className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700"
+        >+ Schedule examination</button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <thead className="bg-gray-50">
+            <tr>
+              {['Ref', 'Tier', 'Type', 'Subject licence', 'Status', 'SLA deadline', ''].map(h => (
+                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-100">
+            {data.map((row: any) => (
+              <tr key={row.id} className="hover:bg-gray-50">
+                <td className="px-3 py-2 font-mono text-xs text-gray-700">{row.examination_ref ?? row.id.slice(0, 8)}</td>
+                <td className="px-3 py-2">
+                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${MCE_TIER_TONE[row.exam_tier] ?? 'bg-gray-100 text-gray-700'}`}>
+                    {row.exam_tier?.replace(/_/g, ' ')}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-gray-600">{row.exam_type?.replace(/_/g, ' ') ?? '—'}</td>
+                <td className="px-3 py-2 text-gray-500 text-xs">{row.subject_licence_class ?? '—'}</td>
+                <td className="px-3 py-2">
+                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${mceStatusTone(row.chain_status)}`}>
+                    {row.chain_status?.replace(/_/g, ' ')}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-gray-500 text-xs">{row.sla_deadline ? new Date(row.sla_deadline).toLocaleDateString() : '—'}</td>
+                <td className="px-3 py-2">
+                  <button onClick={() => setModal({ id: row.id, exam_tier: row.exam_tier, examination_ref: row.examination_ref })}
+                    className="text-xs text-blue-600 hover:underline">Action</button>
+                </td>
+              </tr>
+            ))}
+            {data.length === 0 && (
+              <tr><td colSpan={7} className="px-3 py-8 text-center text-gray-400">No conduct examinations found</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {createModal && (
+        <ActionModal
+          title="Schedule market conduct examination"
+          submitLabel="Schedule"
+          fields={[
+            { key: 'exam_tier', label: 'Tier', type: 'select', required: true, options: [
+              { value: 'routine', label: 'Routine (30d)' },
+              { value: 'thematic', label: 'Thematic (45d)' },
+              { value: 'targeted', label: 'Targeted (60d)' },
+              { value: 'major_systemic', label: 'Major / systemic (90d)' },
+            ]} as FieldSpec,
+            { key: 'exam_type', label: 'Examination type', type: 'select', options: [
+              { value: 'pricing_conduct', label: 'Pricing conduct' },
+              { value: 'transparency', label: 'Transparency obligations' },
+              { value: 'consumer_protection', label: 'Consumer protection' },
+              { value: 'market_integrity', label: 'Market integrity' },
+              { value: 'cross_cutting', label: 'Cross-cutting' },
+              { value: 'ad_hoc', label: 'Ad hoc' },
+            ]} as FieldSpec,
+            { key: 'examination_ref', label: 'NERSA/FSCA examination reference' },
+            { key: 'subject_participant_id', label: 'Subject participant ID' },
+            { key: 'subject_licence_class', label: 'Subject licence class' },
+            { key: 'reason', label: 'Basis for examination' },
+          ] as FieldSpec[]}
+          onClose={() => setCreateModal(false)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/market-conduct-exams', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify(v),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setCreateModal(false); bump();
+          }}
+        />
+      )}
+
+      {modal && (
+        <ActionModal
+          title={`Conduct exam — ${modal.exam_tier?.replace(/_/g, ' ')} — ${modal.examination_ref ?? modal.id.slice(0, 8)}`}
+          submitLabel="Submit action"
+          fields={[
+            { key: 'action', label: 'Action', type: 'select', required: true, options: [
+              { value: 'issue_notice', label: 'Issue examination notice' },
+              { value: 'request_documents', label: 'Request documents' },
+              { value: 'documents_received', label: 'Documents received' },
+              { value: 'commence_on_site', label: 'Commence on-site review' },
+              { value: 'issue_preliminary_findings', label: 'Issue preliminary findings' },
+              { value: 'file_subject_response', label: 'File subject response' },
+              { value: 'draft_final_report', label: 'Draft final report' },
+              { value: 'issue_final_report', label: 'Issue final report' },
+              { value: 'order_remedial_action', label: 'Order remedial action' },
+              { value: 'commence_enforcement', label: 'Commence enforcement' },
+              { value: 'close_satisfactory', label: 'Close — satisfactory' },
+              { value: 'withdraw', label: 'Withdraw examination' },
+            ]} as FieldSpec,
+            { key: 'notice_ref', label: 'Notice reference' },
+            { key: 'document_request_ref', label: 'Document request reference' },
+            { key: 'document_deadline', label: 'Document submission deadline' },
+            { key: 'on_site_start_date', label: 'On-site start date' },
+            { key: 'on_site_end_date', label: 'On-site end date' },
+            { key: 'on_site_lead_examiner', label: 'Lead examiner' },
+            { key: 'preliminary_findings_ref', label: 'Preliminary findings reference' },
+            { key: 'response_deadline', label: 'Response deadline' },
+            { key: 'subject_response_ref', label: 'Subject response reference' },
+            { key: 'final_report_ref', label: 'Final report reference' },
+            { key: 'findings_summary', label: 'Findings summary', type: 'textarea' },
+            { key: 'adverse_findings_count', label: 'Adverse findings count', type: 'number' },
+            { key: 'remedial_action_ref', label: 'Remedial action reference' },
+            { key: 'remedial_action_deadline', label: 'Remedial action deadline' },
+            { key: 'enforcement_ref', label: 'Enforcement reference' },
+            { key: 'reason', label: 'Notes' },
+          ] as FieldSpec[]}
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/market-conduct-exams/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                ...v,
+                adverse_findings_count: v.adverse_findings_count ? Number(v.adverse_findings_count) : undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); bump();
           }}
         />
       )}

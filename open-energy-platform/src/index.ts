@@ -396,6 +396,7 @@ import fscaConductReportChainRoutes, { fcrSlaSweep } from './routes/fsca-conduct
 import slaPerformanceReportChainRoutes, { sprSlaSweep } from './routes/sla-performance-report-chain';
 import creditInsuranceChainRoutes, { ciSlaSweep } from './routes/credit-insurance-chain';
 import wheelingAccessChainRoutes, { wheelSlaSweep } from './routes/wheeling-access-chain';
+import marketConductExamChainRoutes, { mceSlaSweep } from './routes/market-conduct-exam-chain';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -1080,6 +1081,7 @@ app.route('/api/fsca-conduct-reports', fscaConductReportChainRoutes);
 app.route('/api/sla-performance-reports', slaPerformanceReportChainRoutes);
 app.route('/api/credit-insurance', creditInsuranceChainRoutes);
 app.route('/api/wheeling-access', wheelingAccessChainRoutes);
+app.route('/api/market-conduct-exams', marketConductExamChainRoutes);
 // platformFeaturesRoutes is the catch-all for /api — it must remain LAST
 // so all specific /api/* mounts above are tried first.
 app.route('/api', platformFeaturesRoutes);
@@ -2658,6 +2660,11 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('wheel_sla_sweep', async () => {
         const result = await wheelSlaSweep(env as never);
         console.log('wheel_sla_sweep', JSON.stringify(result));
+      });
+      // W220: Regulator Market Conduct Examination — INVERTED SLA sweep.
+      await safe('mce_sla_sweep', async () => {
+        const result = await mceSlaSweep(env as never);
+        console.log('mce_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
