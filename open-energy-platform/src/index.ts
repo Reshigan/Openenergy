@@ -400,6 +400,7 @@ import marketConductExamChainRoutes, { mceSlaSweep } from './routes/market-condu
 import exportCurtailmentChainRoutes, { ecSlaSweep } from './routes/export-curtailment-chain';
 import crossBorderTradeChainRoutes, { cbtSlaSweep } from './routes/cross-border-trade-chain';
 import cpClearanceChainRoutes, { cpSlaSweep } from './routes/cp-clearance-chain';
+import gtiaChainRoutes, { gtiaSlaSweep } from './routes/gtia-chain';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -1088,6 +1089,7 @@ app.route('/api/market-conduct-exams', marketConductExamChainRoutes);
 app.route('/api/export-curtailments', exportCurtailmentChainRoutes);
 app.route('/api/cross-border-trades', crossBorderTradeChainRoutes);
 app.route('/api/cp-clearances', cpClearanceChainRoutes);
+app.route('/api/gtia', gtiaChainRoutes);
 // platformFeaturesRoutes is the catch-all for /api — it must remain LAST
 // so all specific /api/* mounts above are tried first.
 app.route('/api', platformFeaturesRoutes);
@@ -2686,6 +2688,11 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('cp_sla_sweep', async () => {
         const result = await cpSlaSweep(env as never);
         console.log('cp_sla_sweep', JSON.stringify(result));
+      });
+      // W224: IPP GTIA — INVERTED SLA sweep.
+      await safe('gtia_sla_sweep', async () => {
+        const result = await gtiaSlaSweep(env as never);
+        console.log('gtia_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
