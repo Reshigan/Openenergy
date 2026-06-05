@@ -63,6 +63,7 @@ export function TraderWorkstationPage() {
         { key: 'trade-reporting', label: 'Trade reporting', group: 'Post-trade', body: () => <TradeReportingChainTab /> },
         { key: 'fsca-compliance', label: 'FSCA compliance report (W201)', group: 'Compliance', body: ({ onRefresh }) => <FscaComplianceTab onRefresh={onRefresh} /> },
         { key: 'fsca_conduct_reports', label: 'FSCA conduct reports (W216)', group: 'Compliance', body: ({ onRefresh }) => <FscaConductReportTab onRefresh={onRefresh} /> },
+        { key: 'cross_border_trades', label: 'Cross-border pre-approvals (W222)', group: 'Compliance', body: ({ onRefresh }) => <CrossBorderTradeTab onRefresh={onRefresh} /> },
         { key: 'mm-compliance', label: 'MM compliance', group: 'Compliance', body: () => <MmComplianceTab /> },
         { key: 'poslimit', label: 'Position limits', group: 'Compliance', body: () => <PoslimitChainTab /> },
         { key: 'strate-swift-connectors', label: 'Settlement rails', group: 'Compliance', body: () => <StrateSwiftConnectorTab /> },
@@ -588,6 +589,190 @@ function FscaConductReportTab({ onRefresh }: { onRefresh: () => void }) {
             { key: 'escalation_reason', label: 'Escalation reason', type: 'textarea', required: false },
             { key: 'reason', label: 'Notes', type: 'textarea', required: false },
           ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── W222: Trader Cross-Border Transaction & Regulatory Pre-Approval ──────────
+const CBT_TIER_TONE: Record<string, string> = {
+  small:    'bg-blue-50 text-blue-700',
+  standard: 'bg-purple-50 text-purple-700',
+  large:    'bg-amber-50 text-amber-700',
+  systemic: 'bg-rose-50 text-rose-700',
+};
+
+function cbtStatusTone(s: string): string {
+  if (['trade_executed'].includes(s)) return 'bg-green-100 text-green-800';
+  if (['fsca_rejected', 'sarb_rejected'].includes(s)) return 'bg-red-100 text-red-800';
+  if (['withdrawn', 'expired'].includes(s)) return 'bg-gray-100 text-gray-600';
+  if (['fully_approved'].includes(s)) return 'bg-emerald-100 text-emerald-800';
+  if (['fsca_approved'].includes(s)) return 'bg-blue-100 text-blue-800';
+  return 'bg-slate-100 text-slate-700';
+}
+
+type CbtModal = { id: string; cbt_tier: string; counterparty_jurisdiction?: string; notional_zar?: number } | null;
+
+function CrossBorderTradeTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [data, setData] = React.useState<any[]>([]);
+  const [kpis, setKpis] = React.useState<any>({});
+  const [modal, setModal] = React.useState<CbtModal>(null);
+  const [createModal, setCreateModal] = React.useState(false);
+  const [refreshKey, setRefreshKey] = React.useState(0);
+
+  const bump = () => { setRefreshKey(k => k + 1); onRefresh?.(); };
+
+  React.useEffect(() => {
+    fetch('/api/cross-border-trades', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+      .then(r => r.json()).then(j => { setData(j.data ?? []); setKpis(j.kpis ?? {}); });
+  }, [refreshKey]);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: 'Total', val: kpis.total ?? 0 },
+          { label: 'Pending approval', val: kpis.pending_approval ?? 0 },
+          { label: 'Fully approved', val: kpis.approved ?? 0 },
+          { label: 'Executed', val: kpis.executed ?? 0 },
+        ].map(k => (
+          <div key={k.label} className="bg-white border border-gray-200 rounded-lg p-3 text-center">
+            <div className="text-2xl font-semibold text-gray-900">{k.val}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{k.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-between items-center">
+        <span className="text-sm text-gray-500">{data.length} cross-border pre-approvals</span>
+        <button onClick={() => setCreateModal(true)}
+          className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700">
+          + New pre-approval request
+        </button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <thead className="bg-gray-50">
+            <tr>
+              {['Tier', 'Jurisdiction', 'Trade type', 'Notional (ZAR)', 'Status', 'SLA deadline', ''].map(h => (
+                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-100">
+            {data.map((row: any) => (
+              <tr key={row.id} className="hover:bg-gray-50">
+                <td className="px-3 py-2">
+                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${CBT_TIER_TONE[row.cbt_tier] ?? 'bg-gray-100 text-gray-700'}`}>
+                    {row.cbt_tier}
+                  </span>
+                </td>
+                <td className="px-3 py-2 font-mono text-xs text-gray-700">{row.counterparty_jurisdiction ?? '—'}</td>
+                <td className="px-3 py-2 text-gray-600">{row.trade_type?.replace(/_/g, ' ') ?? '—'}</td>
+                <td className="px-3 py-2 text-gray-700">{row.notional_zar ? `R${Number(row.notional_zar).toLocaleString()}` : '—'}</td>
+                <td className="px-3 py-2">
+                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${cbtStatusTone(row.chain_status)}`}>
+                    {row.chain_status?.replace(/_/g, ' ')}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-gray-500 text-xs">{row.sla_deadline ? new Date(row.sla_deadline).toLocaleDateString() : '—'}</td>
+                <td className="px-3 py-2">
+                  <button onClick={() => setModal({ id: row.id, cbt_tier: row.cbt_tier, counterparty_jurisdiction: row.counterparty_jurisdiction, notional_zar: row.notional_zar })}
+                    className="text-xs text-blue-600 hover:underline">Action</button>
+                </td>
+              </tr>
+            ))}
+            {data.length === 0 && (
+              <tr><td colSpan={7} className="px-3 py-8 text-center text-gray-400">No cross-border pre-approvals found</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {createModal && (
+        <ActionModal
+          title="New cross-border pre-approval request"
+          submitLabel="Submit request"
+          fields={[
+            { key: 'cbt_tier', label: 'Tier', type: 'select', required: true, options: [
+              { value: 'small', label: 'Small (<R10M)' },
+              { value: 'standard', label: 'Standard (R10M–R100M)' },
+              { value: 'large', label: 'Large (R100M–R1B)' },
+              { value: 'systemic', label: 'Systemic (>R1B)' },
+            ]} as FieldSpec,
+            { key: 'counterparty_jurisdiction', label: 'Counterparty jurisdiction (ISO 3166)' },
+            { key: 'counterparty_type', label: 'Counterparty type', type: 'select', options: [
+              { value: 'non_resident_firm', label: 'Non-resident firm' },
+              { value: 'foreign_gov', label: 'Foreign government entity' },
+              { value: 'multilateral', label: 'Multilateral institution' },
+              { value: 'sadc_member', label: 'SADC member state entity' },
+              { value: 'eu_firm', label: 'EU-regulated firm' },
+              { value: 'other', label: 'Other' },
+            ]} as FieldSpec,
+            { key: 'trade_type', label: 'Trade type', type: 'select', options: [
+              { value: 'spot_energy', label: 'Spot energy' },
+              { value: 'forward_contract', label: 'Forward contract' },
+              { value: 'option', label: 'Option' },
+              { value: 'swap', label: 'Swap' },
+              { value: 'emissions_credit', label: 'Emissions credit' },
+            ]} as FieldSpec,
+            { key: 'notional_zar', label: 'Notional value (ZAR)', type: 'number' },
+            { key: 'underlying_trade_ref', label: 'Underlying trade reference (W44)' },
+            { key: 'reason', label: 'Transaction rationale' },
+          ] as FieldSpec[]}
+          onClose={() => setCreateModal(false)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/cross-border-trades', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({ ...v, notional_zar: v.notional_zar ? Number(v.notional_zar) : undefined }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setCreateModal(false); bump();
+          }}
+        />
+      )}
+
+      {modal && (
+        <ActionModal
+          title={`Cross-border pre-approval — ${modal.cbt_tier} — ${modal.counterparty_jurisdiction} — R${modal.notional_zar?.toLocaleString() ?? '?'}`}
+          submitLabel="Submit action"
+          fields={[
+            { key: 'action', label: 'Action', type: 'select', required: true, options: [
+              { value: 'submit_fsca_application', label: 'Submit FSCA application' },
+              { value: 'submit_sarb_application', label: 'Submit SARB ExCon application' },
+              { value: 'fsca_review_commenced', label: 'FSCA review commenced' },
+              { value: 'sarb_review_commenced', label: 'SARB review commenced' },
+              { value: 'fsca_grant_approval', label: 'FSCA grants approval' },
+              { value: 'obtain_full_approval', label: 'Obtain full approval (FSCA + SARB)' },
+              { value: 'execute_trade', label: 'Execute trade' },
+              { value: 'fsca_reject', label: 'FSCA rejects' },
+              { value: 'sarb_reject', label: 'SARB rejects' },
+              { value: 'withdraw', label: 'Withdraw application' },
+              { value: 'expire', label: 'Mark approval expired' },
+            ]} as FieldSpec,
+            { key: 'fsca_application_ref', label: 'FSCA application reference' },
+            { key: 'fsca_approval_ref', label: 'FSCA approval reference' },
+            { key: 'fsca_rejection_reason', label: 'FSCA rejection reason' },
+            { key: 'sarb_application_ref', label: 'SARB ExCon application reference' },
+            { key: 'sarb_approval_ref', label: 'SARB approval reference' },
+            { key: 'sarb_rejection_reason', label: 'SARB rejection reason' },
+            { key: 'trade_executed_at', label: 'Trade execution timestamp (ISO 8601)' },
+            { key: 'trade_settlement_date', label: 'Settlement date' },
+            { key: 'reason', label: 'Notes' },
+          ] as FieldSpec[]}
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/cross-border-trades/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify(v),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); bump();
+          }}
         />
       )}
     </div>
