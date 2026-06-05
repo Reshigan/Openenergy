@@ -428,6 +428,53 @@ app.get('/', async (c) => {
   return c.json({ period, since: sinceDate, totals, stations: rows.results ?? [] });
 });
 
+// GET /api/esums/accruals/rows — per-hour rows in standard { success, data } format for UI table
+app.get('/rows', async (c) => {
+  const user = getCurrentUser(c);
+  const participantId = c.req.query('participant_id');
+  const stationId = c.req.query('station_id');
+  const period = c.req.query('period') ?? 'month';
+  const limit = Math.min(parseInt(c.req.query('limit') ?? '200'), 500);
+
+  const resolvedParticipant = (participantId && ['admin', 'support'].includes(user.role))
+    ? participantId
+    : user.id;
+
+  const now = new Date();
+  let sinceDate: string;
+  switch (period) {
+    case 'today': sinceDate = now.toISOString().slice(0, 10); break;
+    case 'week':  sinceDate = new Date(now.getTime() - 7   * 86400000).toISOString().slice(0, 10); break;
+    case '3m':    sinceDate = new Date(now.getTime() - 90  * 86400000).toISOString().slice(0, 10); break;
+    case '6m':    sinceDate = new Date(now.getTime() - 180 * 86400000).toISOString().slice(0, 10); break;
+    case 'ytd':   sinceDate = now.getFullYear() + '-01-01'; break;
+    case '1y':    sinceDate = new Date(now.getTime() - 365 * 86400000).toISOString().slice(0, 10); break;
+    case 'all':   sinceDate = '2000-01-01'; break;
+    default:      sinceDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  }
+
+  let where = `(sa.participant_id = ? OR ss.lender_participant_id = ? OR ss.carbon_participant_id = ?) AND sa.period_hour >= ?`;
+  const binds: (string | number)[] = [resolvedParticipant, resolvedParticipant, resolvedParticipant, sinceDate + 'T00:00:00Z'];
+  if (stationId) { where += ` AND sa.station_id = ?`; binds.push(stationId); }
+
+  const rows = await c.env.DB
+    .prepare(`
+      SELECT sa.id, sa.station_id, ss.plant_name AS station_name,
+        sa.period_hour, sa.kwh_delta, sa.cumulative_kwh,
+        sa.carbon_tco2e, sa.revenue_zar, sa.savings_zar,
+        sa.tariff_rate_used, sa.is_backfill
+      FROM site_accruals sa
+      JOIN solax_stations ss ON ss.id = sa.station_id
+      WHERE ${where}
+      ORDER BY sa.period_hour DESC
+      LIMIT ?
+    `)
+    .bind(...binds, limit)
+    .all<Record<string, unknown>>();
+
+  return c.json({ success: true, data: rows.results ?? [] });
+});
+
 // GET /api/esums/accruals/time-series?station_id=...&granularity=daily&period=month&participant_id=...
 app.get('/time-series', async (c) => {
   const stationId = c.req.query('station_id');
@@ -963,6 +1010,73 @@ creditApp.get('/', async (c) => {
     .first<Record<string, unknown>>();
 
   return c.json({ success: true, data: rows.results, summary });
+});
+
+// PATCH /:id — lifecycle: verify | retire
+creditApp.patch('/:id', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const body = await c.req.json<{ action: string; notes?: string; registry_ref?: string }>();
+  const { action, notes, registry_ref } = body;
+
+  const VALID_ACTIONS = ['verify', 'retire'] as const;
+  type CreditAction = typeof VALID_ACTIONS[number];
+  if (!VALID_ACTIONS.includes(action as CreditAction)) {
+    return c.json({ success: false, error: `Unknown action: ${action}` }, 400);
+  }
+
+  const isAdmin = ['admin', 'support'].includes(user.role);
+  const isCarbonFund = user.role === 'carbon_fund';
+  if (!isAdmin && !isCarbonFund) {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+
+  const row = await c.env.DB
+    .prepare(`SELECT * FROM esums_carbon_credits WHERE id = ?`)
+    .bind(id)
+    .first<Record<string, unknown>>();
+  if (!row) return c.json({ success: false, error: 'Not found' }, 404);
+
+  const current = row.status as string;
+  const TRANSITIONS: Record<string, string[]> = { verify: ['provisional'], retire: ['verified'] };
+  const NEXT: Record<string, string> = { verify: 'verified', retire: 'retired' };
+
+  if (!TRANSITIONS[action].includes(current)) {
+    return c.json({ success: false, error: `Cannot ${action} credit in status '${current}'` }, 422);
+  }
+
+  const now = new Date().toISOString();
+  const extraFields: string[] = [];
+  const extraBinds: (string | null)[] = [];
+  if (registry_ref) { extraFields.push('registry_ref = ?'); extraBinds.push(registry_ref); }
+  if (notes) { extraFields.push('notes = ?'); extraBinds.push(notes); }
+  if (action === 'retire') { extraFields.push('retired_at = ?'); extraBinds.push(now); }
+
+  const setClause = ['status = ?', 'updated_at = ?', ...extraFields].join(', ');
+  await c.env.DB
+    .prepare(`UPDATE esums_carbon_credits SET ${setClause} WHERE id = ?`)
+    .bind(NEXT[action], now, ...extraBinds, id)
+    .run();
+
+  await fireCascade({
+    event: `esums_credit_${action}` as EventType,
+    actor_id: user.id,
+    entity_type: 'esums_carbon_credit',
+    entity_id: id,
+    data: {
+      action,
+      from_status: current,
+      to_status: NEXT[action],
+      station_id: row.station_id,
+      period_start: row.period_start,
+      carbon_tco2e: row.carbon_tco2e,
+      registry_ref: registry_ref ?? null,
+      notes: notes ?? null,
+    },
+    env: c.env,
+  }).catch(() => {});
+
+  return c.json({ success: true, data: { id, status: NEXT[action] } });
 });
 
 export const esumsCreditRoutes = creditApp;
