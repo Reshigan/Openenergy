@@ -194,6 +194,7 @@ export function IppWorkstationPage() {
         { key: 'progress-claims', label: 'Progress claims', group: 'Finance', body: () => <IppProgressClaimTab /> },
         { key: 'cp-tracker', label: 'Conditions Precedent (W192)', group: 'Finance', body: () => <IppCpTrackerTab /> },
         { key: 'green-bond-reports', label: 'Green bond reports (W202)', group: 'Finance', body: ({ onRefresh }) => <GreenBondReportTab onRefresh={onRefresh} /> },
+        { key: 'dscr-reports', label: 'DSCR reports (W212)', group: 'Finance', body: ({ onRefresh }) => <DscrReportTab onRefresh={onRefresh} /> },
         { key: 'milestone-variance', label: 'Milestone variance reports (W207)', group: 'Project controls', body: ({ onRefresh }) => <MilestoneVarianceTab onRefresh={onRefresh} /> },
         { key: 'subcontractors', label: 'Subcontractors', group: 'Construction', body: () => <IppSubcontractorTab /> },
         { key: 'procurement', label: 'Procurement / RFPs', group: 'Construction', body: () => <ProcurementChainTab /> },
@@ -1062,6 +1063,120 @@ function MilestoneVarianceTab({ onRefresh }: { onRefresh?: () => void }) {
             { key: 'critical_delay_description', label: 'Critical delay description', type: 'textarea', required: false },
             { key: 'reason', label: 'Notes / reason', type: 'textarea', required: false },
           ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── W212: DSCR Report Tab ────────────────────────────────────────────────────
+const DSCR_TIER_TONE: Record<string, 'bad' | 'warn' | 'neutral' | 'info'> = {
+  systemically_important: 'bad', large: 'warn', standard: 'info', emerging: 'neutral',
+};
+
+function DscrReportTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [modal, setModal] = useState<null | { type: 'create' } | { type: 'action'; id: string; currentStatus: string; tier: string; period: string }>(null);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <button onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+          + New DSCR report
+        </button>
+      </div>
+
+      <ListingTable
+        endpoint="/dscr-reports"
+        rowKey={(r) => r.id}
+        rowOnClick={(r) => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status, tier: r.dscr_tier, period: r.reporting_period })}
+        empty={{ title: 'No DSCR reports', description: 'Quarterly DSCR reports submitted to DFIs will appear here.' }}
+        columns={[
+          { key: 'reporting_period', label: 'Period', render: (r) => <span className="font-semibold text-[12px]">{r.reporting_period as string}</span> },
+          { key: 'dscr_tier', label: 'Tier', render: (r) => <Pill tone={DSCR_TIER_TONE[r.dscr_tier as string] ?? 'neutral'}>{String(r.dscr_tier).replace(/_/g, ' ')}</Pill> },
+          { key: 'dscr_value', label: 'DSCR', render: (r) => r.dscr_value != null ? <span className={`font-semibold ${Number(r.dscr_value) >= 1.4 ? 'text-green-700' : Number(r.dscr_value) >= 1.2 ? 'text-amber-600' : 'text-red-600'}`}>{Number(r.dscr_value).toFixed(2)}x</span> : <span className="text-[#8fa3bd]">—</span> },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['accepted'].includes(r.chain_status as string) ? 'good' : ['covenant_breach'].includes(r.chain_status as string) ? 'bad' : 'warn'}>{String(r.chain_status).replace(/_/g, ' ')}</Pill> },
+          { key: 'dfi_name', label: 'DFI', render: (r) => r.dfi_name ?? <span className="text-[#8fa3bd]">—</span> },
+          { key: 'sla_breached', label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">Breached</Pill> : <Pill tone="good">OK</Pill> },
+          { key: 'created_at', label: 'Created', render: (r) => new Date(r.created_at as string).toLocaleDateString() },
+        ]}
+      />
+
+      {modal?.type === 'create' && (
+        <ActionModal
+          title="New DSCR report"
+          submitLabel="Create"
+          fields={[
+            { key: 'reporting_period', label: 'Reporting period (e.g. 2025-Q1)', required: true },
+            { key: 'dscr_tier', label: 'IPP tier', type: 'select', required: true, options: [
+              { value: 'emerging', label: 'Emerging (<50MW, 21d SLA)' },
+              { value: 'standard', label: 'Standard (50-300MW, 30d SLA)' },
+              { value: 'large', label: 'Large (>300MW, 45d SLA)' },
+              { value: 'systemically_important', label: 'Systemically important (60d SLA)' },
+            ]} as FieldSpec,
+            { key: 'dfi_name', label: 'DFI name (IDC/DBSA/Nedbank/etc.)' },
+            { key: 'dfi_reference', label: 'DFI loan reference' },
+            { key: 'minimum_dscr_covenant', label: 'Minimum DSCR covenant (default 1.20)', type: 'number' },
+            { key: 'reason', label: 'Notes' },
+          ] as FieldSpec[]}
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/dscr-reports', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({ ...v, minimum_dscr_covenant: v.minimum_dscr_covenant ? Number(v.minimum_dscr_covenant) : undefined }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); onRefresh?.();
+          }}
+        />
+      )}
+
+      {modal?.type === 'action' && (
+        <ActionModal
+          title={`DSCR — ${modal.tier} — ${modal.period}`}
+          submitLabel="Submit action"
+          fields={[
+            { key: 'action', label: 'Action', type: 'select', required: true, options: [
+              { value: 'start_calculation', label: 'Start calculation' },
+              { value: 'submit_to_ie', label: 'Submit to Independent Engineer' },
+              { value: 'ie_certify', label: 'IE certify' },
+              { value: 'submit_to_dfi', label: 'Submit to DFI' },
+              { value: 'raise_dfi_query', label: 'DFI raises query' },
+              { value: 'respond_to_queries', label: 'Respond to DFI queries' },
+              { value: 'accept', label: 'DFI accepts report' },
+              { value: 'flag_breach', label: 'Flag covenant breach' },
+              { value: 'withdraw', label: 'Withdraw report' },
+            ]} as FieldSpec,
+            { key: 'net_revenue_zar', label: 'Net revenue (ZAR)', type: 'number' },
+            { key: 'operating_costs_zar', label: 'Operating costs (ZAR)', type: 'number' },
+            { key: 'debt_service_zar', label: 'Debt service (ZAR)', type: 'number' },
+            { key: 'dscr_value', label: 'DSCR value (e.g. 1.35)', type: 'number' },
+            { key: 'ie_name', label: 'Independent Engineer name' },
+            { key: 'ie_certification_ref', label: 'IE certification reference' },
+            { key: 'dfi_query_details', label: 'DFI query details', type: 'textarea' },
+            { key: 'ipp_response_summary', label: 'IPP query response summary', type: 'textarea' },
+            { key: 'breach_dscr', label: 'Breach DSCR value', type: 'number' },
+            { key: 'cure_period_days', label: 'Cure period (days)', type: 'number' },
+            { key: 'reason', label: 'Notes' },
+          ] as FieldSpec[]}
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/dscr-reports/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                ...v,
+                net_revenue_zar: v.net_revenue_zar ? Number(v.net_revenue_zar) : undefined,
+                operating_costs_zar: v.operating_costs_zar ? Number(v.operating_costs_zar) : undefined,
+                debt_service_zar: v.debt_service_zar ? Number(v.debt_service_zar) : undefined,
+                dscr_value: v.dscr_value ? Number(v.dscr_value) : undefined,
+                breach_dscr: v.breach_dscr ? Number(v.breach_dscr) : undefined,
+                cure_period_days: v.cure_period_days ? Number(v.cure_period_days) : undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); onRefresh?.();
+          }}
         />
       )}
     </div>
