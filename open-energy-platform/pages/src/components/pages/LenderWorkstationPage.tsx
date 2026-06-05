@@ -42,6 +42,7 @@ export function LenderWorkstationPage() {
       tabs={[
         { key: 'facilities', label: 'Facilities', group: 'Origination', body: () => <FacilitiesTab /> },
         { key: 'credit_origination', label: 'Credit origination', group: 'Origination', body: () => <CreditOriginationChainTab /> },
+        { key: 'cp_clearances', label: 'CP clearance (W223)', group: 'Origination', body: ({ onRefresh }) => <CpClearanceTab onRefresh={onRefresh} /> },
         { key: 'drawdown', label: 'Drawdowns / UoP', group: 'Monitoring', body: () => <DrawdownChainTab /> },
         { key: 'covenant_cert', label: 'Covenant certificates', group: 'Monitoring', body: () => <CovenantCertificateTab /> },
         { key: 'dscr_monitoring', label: 'DSCR monitoring', group: 'Monitoring', body: () => <DscrMonitoringChainTab /> },
@@ -384,6 +385,141 @@ function EsapMonitoringTab({ onRefresh }: { onRefresh: () => void }) {
               { value: 'unsatisfactory', label: 'Unsatisfactory' },
             ]},
             { key: 'escalation_reason', label: 'Escalation reason', type: 'textarea', required: false },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+          ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── W223: Lender CP Clearance ────────────────────────────────────────────────
+const CP_TIER_TONE: Record<string, 'neutral' | 'info' | 'warn' | 'bad'> = {
+  minor: 'neutral', standard: 'info', major: 'warn', systemic: 'bad',
+};
+
+function cpStatusTone(s: string): 'good' | 'bad' | 'warn' | 'neutral' | 'info' {
+  if (s === 'drawdown_authorized') return 'good';
+  if (s === 'cp_defaulted' || s === 'expired') return 'bad';
+  if (s === 'under_lender_review' || s === 'cps_submitted') return 'info';
+  if (s === 'cps_satisfied' || s === 'cps_partially_waived') return 'warn';
+  return 'neutral';
+}
+
+type CpModal = 'create' | { type: 'action'; id: string; currentStatus: string } | null;
+
+function CpClearanceTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [modal, setModal] = useState<CpModal>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refresh = () => { setRefreshKey(k => k + 1); onRefresh?.(); };
+
+  return (
+    <div>
+      <div className="flex justify-end mb-3">
+        <button
+          className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
+          onClick={() => setModal('create')}
+        >
+          + New CP register
+        </button>
+      </div>
+
+      <ListingTable
+        key={refreshKey}
+        endpoint="/api/cp-clearances"
+        rowKey={(r) => r.id}
+        empty={{ title: 'No CP registers', description: 'Open a conditions precedent register to begin tracking financial close.' }}
+        columns={[
+          { key: 'borrower_name', label: 'Borrower', render: (r) => String(r.borrower_name ?? r.id).slice(0, 24) },
+          { key: 'cp_tier', label: 'Tier', render: (r) => <Pill tone={CP_TIER_TONE[String(r.cp_tier)] ?? 'neutral'}>{String(r.cp_tier).replace(/_/g, ' ')}</Pill> },
+          { key: 'cp_count_total', label: 'CPs', align: 'right', render: (r) => r.cp_count_total != null ? `${r.cp_count_satisfied ?? 0}/${r.cp_count_total}` : '—' },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={cpStatusTone(String(r.chain_status))}>{String(r.chain_status).replace(/_/g, ' ')}</Pill> },
+          { key: 'sla_breached', label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">Breached</Pill> : <Pill tone="good">On track</Pill> },
+          { key: 'updated_at', label: 'Updated', render: (r) => r.updated_at ? new Date(String(r.updated_at)).toLocaleDateString() : '—' },
+        ]}
+        rowOnClick={(r) => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status })}
+      />
+
+      {modal === 'create' && (
+        <ActionModal
+          title="New CP clearance register"
+          submitLabel="Create"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/cp-clearances', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                cp_tier: v.cp_tier,
+                borrower_name: v.borrower_name || undefined,
+                facility_ref: v.facility_ref || undefined,
+                project_ref: v.project_ref || undefined,
+                cp_count_total: v.cp_count_total ? Number(v.cp_count_total) : undefined,
+                closing_deadline: v.closing_deadline || undefined,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null);
+            refresh();
+          }}
+          fields={[
+            { key: 'borrower_name', label: 'Borrower name', required: true },
+            { key: 'cp_tier', label: 'CP tier', type: 'select', required: true, defaultValue: 'standard', options: [
+              { value: 'minor', label: 'Minor (<R50M, 7d SLA)' },
+              { value: 'standard', label: 'Standard (R50M–R500M, 14d SLA)' },
+              { value: 'major', label: 'Major (R500M–R5B, 21d SLA)' },
+              { value: 'systemic', label: 'Systemic (>R5B, 30d SLA)' },
+            ]},
+            { key: 'facility_ref', label: 'Facility reference (W53)', required: false },
+            { key: 'project_ref', label: 'Project reference', required: false },
+            { key: 'cp_count_total', label: 'Total CP count', type: 'number', required: false },
+            { key: 'closing_deadline', label: 'Long-stop date', type: 'date', required: false },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+          ]}
+        />
+      )}
+
+      {modal !== null && modal !== 'create' && (
+        <ActionModal
+          title="CP clearance action"
+          submitLabel="Submit"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/cp-clearances/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                action: v.action,
+                cp_count_satisfied: v.cp_count_satisfied ? Number(v.cp_count_satisfied) : undefined,
+                cp_count_waived: v.cp_count_waived ? Number(v.cp_count_waived) : undefined,
+                cp_count_failed: v.cp_count_failed ? Number(v.cp_count_failed) : undefined,
+                cp_failed_reason: v.cp_failed_reason || undefined,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null);
+            refresh();
+          }}
+          fields={[
+            { key: 'action', label: 'Action', type: 'select', required: true, options: [
+              { value: 'submit_register', label: 'Submit register to borrower' },
+              { value: 'agree_cp_list', label: 'Agree CP list' },
+              { value: 'commence_satisfaction', label: 'Commence satisfaction period' },
+              { value: 'submit_evidence', label: 'Submit evidence package' },
+              { value: 'commence_review', label: 'Commence lender review' },
+              { value: 'clear_cps', label: 'Clear CPs — all satisfied' },
+              { value: 'waive_cps', label: 'Waive remaining CPs' },
+              { value: 'authorize_drawdown', label: 'Authorize drawdown (financial close)' },
+              { value: 'declare_cp_default', label: 'Declare CP default' },
+              { value: 'withdraw', label: 'Withdraw deal' },
+              { value: 'expire', label: 'Expire (long-stop missed)' },
+            ]},
+            { key: 'cp_count_satisfied', label: 'CPs satisfied count', type: 'number', required: false },
+            { key: 'cp_count_waived', label: 'CPs waived count', type: 'number', required: false },
+            { key: 'cp_count_failed', label: 'CPs failed count', type: 'number', required: false },
+            { key: 'cp_failed_reason', label: 'CP failure reason', type: 'textarea', required: false },
             { key: 'reason', label: 'Notes', type: 'textarea', required: false },
           ]}
         />

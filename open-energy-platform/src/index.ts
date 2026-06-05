@@ -399,6 +399,7 @@ import wheelingAccessChainRoutes, { wheelSlaSweep } from './routes/wheeling-acce
 import marketConductExamChainRoutes, { mceSlaSweep } from './routes/market-conduct-exam-chain';
 import exportCurtailmentChainRoutes, { ecSlaSweep } from './routes/export-curtailment-chain';
 import crossBorderTradeChainRoutes, { cbtSlaSweep } from './routes/cross-border-trade-chain';
+import cpClearanceChainRoutes, { cpSlaSweep } from './routes/cp-clearance-chain';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -1086,6 +1087,7 @@ app.route('/api/wheeling-access', wheelingAccessChainRoutes);
 app.route('/api/market-conduct-exams', marketConductExamChainRoutes);
 app.route('/api/export-curtailments', exportCurtailmentChainRoutes);
 app.route('/api/cross-border-trades', crossBorderTradeChainRoutes);
+app.route('/api/cp-clearances', cpClearanceChainRoutes);
 // platformFeaturesRoutes is the catch-all for /api — it must remain LAST
 // so all specific /api/* mounts above are tried first.
 app.route('/api', platformFeaturesRoutes);
@@ -2679,6 +2681,11 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('cbt_sla_sweep', async () => {
         const result = await cbtSlaSweep(env as never);
         console.log('cbt_sla_sweep', JSON.stringify(result));
+      });
+      // W223: Lender CP Clearance — INVERTED SLA sweep.
+      await safe('cp_sla_sweep', async () => {
+        const result = await cpSlaSweep(env as never);
+        console.log('cp_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
