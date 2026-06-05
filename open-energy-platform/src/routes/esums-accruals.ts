@@ -606,3 +606,363 @@ app.get('/solax-probe', async (c) => {
 });
 
 export default app;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Materialize: rebuild invoices + credits + holdings from site_accruals ledger
+//
+// Principle: site_accruals is the immutable ledger. Financial aggregations are
+// materialized views always derivable from it. This function is idempotent.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function materializeFinancials(
+  participantId: string,
+  env: HonoEnv['Bindings'],
+  stationId?: string,
+): Promise<{ invoices: number; credits: number; holdings: number }> {
+  const stationClause = stationId ? 'AND sa.station_id = ?' : '';
+
+  const invoiceResult = await env.DB.prepare(`
+    INSERT OR REPLACE INTO esums_settlement_invoices (
+      id, station_id, from_participant_id, to_participant_id,
+      period_start, period_end, kwh_delivered,
+      tariff_rate_zar_per_kwh, gross_revenue_zar, vat_rate_pct,
+      vat_amount_zar, total_zar, status, invoice_number,
+      issued_at, created_at, updated_at
+    )
+    SELECT
+      'esi_' || sa.station_id || '_' || strftime('%Y-%m-01', sa.period_hour),
+      sa.station_id,
+      sa.participant_id,
+      ss.offtaker_participant_id,
+      strftime('%Y-%m-01', sa.period_hour),
+      date(strftime('%Y-%m-01', sa.period_hour), '+1 month', '-1 day'),
+      ROUND(SUM(sa.kwh_delta), 3),
+      MAX(sa.tariff_rate_used),
+      ROUND(SUM(sa.revenue_zar), 2),
+      15,
+      ROUND(SUM(sa.revenue_zar) * 0.15, 2),
+      ROUND(SUM(sa.revenue_zar) * 1.15, 2),
+      CASE WHEN strftime('%Y-%m', sa.period_hour) < strftime('%Y-%m', 'now') THEN 'issued' ELSE 'draft' END,
+      CASE WHEN strftime('%Y-%m', sa.period_hour) < strftime('%Y-%m', 'now')
+           THEN 'INV-NXT-' || strftime('%Y%m', sa.period_hour) || '-' || upper(substr(sa.station_id, -6, 4))
+           ELSE NULL END,
+      CASE WHEN strftime('%Y-%m', sa.period_hour) < strftime('%Y-%m', 'now')
+           THEN date(strftime('%Y-%m-01', sa.period_hour), '+1 month') ELSE NULL END,
+      datetime('now'), datetime('now')
+    FROM site_accruals sa
+    JOIN solax_stations ss ON ss.id = sa.station_id
+    WHERE sa.participant_id = ?
+      AND ss.offtaker_participant_id IS NOT NULL AND ss.offtaker_participant_id != ''
+      AND sa.kwh_delta > 0 ${stationClause}
+    GROUP BY sa.station_id, strftime('%Y-%m', sa.period_hour)
+    HAVING SUM(sa.kwh_delta) > 0
+  `).bind(...(stationId ? [participantId, stationId] : [participantId])).run();
+
+  const creditResult = await env.DB.prepare(`
+    INSERT OR REPLACE INTO esums_carbon_credits (
+      id, station_id, participant_id, period_start, period_end,
+      kwh_generated, carbon_tco2e, carbon_intensity_gco2_per_kwh,
+      tariff_rate_zar_per_kwh, revenue_zar, status, created_at, updated_at
+    )
+    SELECT
+      'ecc_' || sa.station_id || '_' || strftime('%Y-%m-01', sa.period_hour),
+      sa.station_id,
+      ss.carbon_participant_id,
+      strftime('%Y-%m-01', sa.period_hour),
+      date(strftime('%Y-%m-01', sa.period_hour), '+1 month', '-1 day'),
+      ROUND(SUM(sa.kwh_delta), 3),
+      ROUND(SUM(sa.carbon_tco2e), 6),
+      MAX(sa.carbon_intensity_used),
+      MAX(sa.tariff_rate_used),
+      ROUND(SUM(sa.revenue_zar), 2),
+      CASE WHEN strftime('%Y-%m', sa.period_hour) < strftime('%Y-%m', 'now') THEN 'verified' ELSE 'provisional' END,
+      datetime('now'), datetime('now')
+    FROM site_accruals sa
+    JOIN solax_stations ss ON ss.id = sa.station_id
+    WHERE sa.participant_id = ?
+      AND ss.carbon_participant_id IS NOT NULL AND ss.carbon_participant_id != ''
+      AND sa.carbon_tco2e > 0 ${stationClause}
+    GROUP BY sa.station_id, strftime('%Y-%m', sa.period_hour)
+    HAVING SUM(sa.carbon_tco2e) > 0
+  `).bind(...(stationId ? [participantId, stationId] : [participantId])).run();
+
+  const holdingResult = await env.DB.prepare(`
+    INSERT OR REPLACE INTO carbon_holdings (
+      id, participant_id, project_id, credit_type, quantity,
+      vintage_year, acquisition_date, cost_basis, status
+    )
+    SELECT
+      'ch_' || ss.carbon_participant_id || '_goldrush_' || strftime('%Y', sa.period_hour),
+      ss.carbon_participant_id,
+      'cp_goldrush_fleet',
+      'VER',
+      ROUND(SUM(sa.carbon_tco2e), 6),
+      CAST(strftime('%Y', sa.period_hour) AS INTEGER),
+      date(strftime('%Y', sa.period_hour) || '-12-31'),
+      0.0,
+      'available'
+    FROM site_accruals sa
+    JOIN solax_stations ss ON ss.id = sa.station_id
+    WHERE sa.participant_id = ?
+      AND ss.carbon_participant_id IS NOT NULL AND ss.carbon_participant_id != ''
+      AND sa.carbon_tco2e > 0 ${stationClause}
+    GROUP BY ss.carbon_participant_id, strftime('%Y', sa.period_hour)
+    HAVING SUM(sa.carbon_tco2e) > 0
+  `).bind(...(stationId ? [participantId, stationId] : [participantId])).run();
+
+  return {
+    invoices: invoiceResult.meta.changes,
+    credits: creditResult.meta.changes,
+    holdings: holdingResult.meta.changes,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// /api/esums/settlement-invoices — invoice list + lifecycle
+// ─────────────────────────────────────────────────────────────────────────────
+
+const invoiceApp = new Hono<HonoEnv>();
+invoiceApp.use('*', authMiddleware);
+
+// POST /materialize — rebuild all invoices + credits + holdings from ledger
+invoiceApp.post('/materialize', async (c) => {
+  const user = getCurrentUser(c);
+  const participantId = c.req.query('participant_id');
+  const stationId = c.req.query('station_id') ?? undefined;
+
+  const resolvedParticipant = (participantId && ['admin', 'support'].includes(user.role))
+    ? participantId
+    : user.id;
+
+  const result = await materializeFinancials(resolvedParticipant, c.env, stationId);
+
+  await fireCascade({
+    event: 'esums_financials_materialized' as EventType,
+    actor_id: user.id,
+    entity_type: 'esums_station',
+    entity_id: stationId ?? resolvedParticipant,
+    data: { participant_id: resolvedParticipant, station_id: stationId ?? null, ...result },
+    env: c.env,
+  }).catch(() => {});
+
+  return c.json({ success: true, data: result });
+});
+
+// GET / — list invoices visible to caller
+invoiceApp.get('/', async (c) => {
+  const user = getCurrentUser(c);
+  const participantId = c.req.query('participant_id');
+  const status = c.req.query('status');
+  const period = c.req.query('period'); // e.g. '2026-04'
+  const limit = Math.min(parseInt(c.req.query('limit') ?? '50'), 200);
+
+  const resolvedParticipant = (participantId && ['admin', 'support'].includes(user.role))
+    ? participantId
+    : user.id;
+
+  let where = `(esi.from_participant_id = ? OR esi.to_participant_id = ?)`;
+  const binds: (string | number)[] = [resolvedParticipant, resolvedParticipant];
+
+  if (status) { where += ` AND esi.status = ?`; binds.push(status); }
+  if (period) { where += ` AND strftime('%Y-%m', esi.period_start) = ?`; binds.push(period); }
+
+  const rows = await c.env.DB
+    .prepare(`
+      SELECT esi.*,
+        ss.plant_name AS station_name,
+        fp.company_name AS from_name,
+        tp.company_name AS to_name
+      FROM esums_settlement_invoices esi
+      JOIN solax_stations ss ON ss.id = esi.station_id
+      LEFT JOIN participants fp ON fp.id = esi.from_participant_id
+      LEFT JOIN participants tp ON tp.id = esi.to_participant_id
+      WHERE ${where}
+      ORDER BY esi.period_start DESC, esi.station_id
+      LIMIT ?
+    `)
+    .bind(...binds, limit)
+    .all();
+
+  return c.json({ success: true, data: rows.results });
+});
+
+// GET /:id — single invoice
+invoiceApp.get('/:id', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+
+  const row = await c.env.DB
+    .prepare(`
+      SELECT esi.*, ss.plant_name AS station_name,
+        fp.company_name AS from_name, tp.company_name AS to_name
+      FROM esums_settlement_invoices esi
+      JOIN solax_stations ss ON ss.id = esi.station_id
+      LEFT JOIN participants fp ON fp.id = esi.from_participant_id
+      LEFT JOIN participants tp ON tp.id = esi.to_participant_id
+      WHERE esi.id = ?
+    `)
+    .bind(id)
+    .first<Record<string, unknown>>();
+
+  if (!row) return c.json({ success: false, error: 'Not found' }, 404);
+
+  const allowed = ['admin', 'support'].includes(user.role)
+    || row.from_participant_id === user.id
+    || row.to_participant_id === user.id;
+  if (!allowed) return c.json({ success: false, error: 'Forbidden' }, 403);
+
+  return c.json({ success: true, data: row });
+});
+
+// PATCH /:id — lifecycle transitions
+// Actions: issue | acknowledge | dispute | pay | void
+invoiceApp.patch('/:id', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const body = await c.req.json<{ action: string; notes?: string; payment_ref?: string }>();
+  const { action, notes, payment_ref } = body;
+
+  const VALID_ACTIONS = ['issue', 'acknowledge', 'dispute', 'pay', 'void'] as const;
+  type InvoiceAction = typeof VALID_ACTIONS[number];
+  if (!VALID_ACTIONS.includes(action as InvoiceAction)) {
+    return c.json({ success: false, error: `Unknown action: ${action}` }, 400);
+  }
+
+  const row = await c.env.DB
+    .prepare(`SELECT * FROM esums_settlement_invoices WHERE id = ?`)
+    .bind(id)
+    .first<Record<string, unknown>>();
+  if (!row) return c.json({ success: false, error: 'Not found' }, 404);
+
+  const current = row.status as string;
+  const fromId = row.from_participant_id as string;
+  const toId = row.to_participant_id as string;
+  const isAdmin = ['admin', 'support'].includes(user.role);
+
+  // Guard: who can do what
+  const guards: Record<string, { allowedStatuses: string[]; allowedRoles: string[] }> = {
+    issue:       { allowedStatuses: ['draft'],                  allowedRoles: ['admin', 'support', fromId] },
+    acknowledge: { allowedStatuses: ['issued'],                 allowedRoles: ['admin', 'support', toId] },
+    dispute:     { allowedStatuses: ['issued', 'acknowledged'], allowedRoles: ['admin', 'support', toId] },
+    pay:         { allowedStatuses: ['issued', 'acknowledged'], allowedRoles: ['admin', 'support'] },
+    void:        { allowedStatuses: ['draft', 'issued'],        allowedRoles: ['admin', 'support', fromId] },
+  };
+
+  const guard = guards[action];
+  if (!guard.allowedStatuses.includes(current)) {
+    return c.json({ success: false, error: `Cannot ${action} invoice in status '${current}'` }, 422);
+  }
+  if (!isAdmin && !guard.allowedRoles.includes(user.id)) {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+
+  const nextStatus: Record<string, string> = {
+    issue: 'issued', acknowledge: 'issued', dispute: 'disputed', pay: 'paid', void: 'voided',
+  };
+  const now = new Date().toISOString();
+
+  // Build update fields
+  const extraFields: string[] = [];
+  const extraBinds: (string | null)[] = [];
+  if (action === 'issue') {
+    extraFields.push('issued_at = ?', 'invoice_number = COALESCE(invoice_number, ?)');
+    const monthStr = (row.period_start as string).slice(0, 7).replace('-', '');
+    const inv = `INV-NXT-${monthStr}-${(row.station_id as string).slice(-4).toUpperCase()}`;
+    extraBinds.push(now, inv);
+  }
+  if (action === 'pay') {
+    extraFields.push('paid_at = ?', 'notes = COALESCE(?, notes)');
+    extraBinds.push(now, payment_ref ?? null);
+  }
+  if (notes && action !== 'pay') {
+    extraFields.push('notes = ?');
+    extraBinds.push(notes);
+  }
+
+  const setClause = [`status = ?`, `updated_at = ?`, ...extraFields].join(', ');
+  await c.env.DB
+    .prepare(`UPDATE esums_settlement_invoices SET ${setClause} WHERE id = ?`)
+    .bind(nextStatus[action], now, ...extraBinds, id)
+    .run();
+
+  await fireCascade({
+    event: `esums_invoice_${action}` as EventType,
+    actor_id: user.id,
+    entity_type: 'esums_invoice',
+    entity_id: id,
+    data: {
+      action,
+      from_status: current,
+      to_status: nextStatus[action],
+      station_id: row.station_id,
+      from_participant_id: fromId,
+      to_participant_id: toId,
+      period_start: row.period_start,
+      total_zar: row.total_zar,
+      notes: notes ?? null,
+    },
+    env: c.env,
+  }).catch(() => {});
+
+  return c.json({ success: true, data: { id, status: nextStatus[action] } });
+});
+
+export const esumsInvoiceRoutes = invoiceApp;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// /api/esums/carbon-credits — carbon credit list
+// ─────────────────────────────────────────────────────────────────────────────
+
+const creditApp = new Hono<HonoEnv>();
+creditApp.use('*', authMiddleware);
+
+// GET / — list credits visible to caller
+creditApp.get('/', async (c) => {
+  const user = getCurrentUser(c);
+  const participantId = c.req.query('participant_id');
+  const status = c.req.query('status');
+  const stationId = c.req.query('station_id');
+  const limit = Math.min(parseInt(c.req.query('limit') ?? '100'), 500);
+
+  const resolvedParticipant = (participantId && ['admin', 'support'].includes(user.role))
+    ? participantId
+    : user.id;
+
+  // Visible to: the credit participant (carbon fund), the station owner (IPP), admin
+  let where = `(ecc.participant_id = ? OR ss.participant_id = ?)`;
+  const binds: (string | number)[] = [resolvedParticipant, resolvedParticipant];
+
+  if (status) { where += ` AND ecc.status = ?`; binds.push(status); }
+  if (stationId) { where += ` AND ecc.station_id = ?`; binds.push(stationId); }
+
+  const rows = await c.env.DB
+    .prepare(`
+      SELECT ecc.*, ss.plant_name AS station_name
+      FROM esums_carbon_credits ecc
+      JOIN solax_stations ss ON ss.id = ecc.station_id
+      WHERE ${where}
+      ORDER BY ecc.period_start DESC, ecc.station_id
+      LIMIT ?
+    `)
+    .bind(...binds, limit)
+    .all();
+
+  const summary = await c.env.DB
+    .prepare(`
+      SELECT
+        SUM(ecc.kwh_generated)  AS total_kwh,
+        SUM(ecc.carbon_tco2e)   AS total_tco2e,
+        COUNT(*)                AS total_periods,
+        SUM(CASE WHEN ecc.status = 'verified' THEN ecc.carbon_tco2e ELSE 0 END) AS verified_tco2e,
+        SUM(CASE WHEN ecc.status = 'provisional' THEN ecc.carbon_tco2e ELSE 0 END) AS provisional_tco2e
+      FROM esums_carbon_credits ecc
+      JOIN solax_stations ss ON ss.id = ecc.station_id
+      WHERE ${where}
+    `)
+    .bind(...binds)
+    .first<Record<string, unknown>>();
+
+  return c.json({ success: true, data: rows.results, summary });
+});
+
+export const esumsCreditRoutes = creditApp;

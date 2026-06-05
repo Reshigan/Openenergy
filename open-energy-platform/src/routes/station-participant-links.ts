@@ -19,6 +19,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { materializeFinancials } from './esums-accruals';
 import {
   StationLinkStatus,
   StationLinkAction,
@@ -476,7 +477,9 @@ router.post('/:id/action', async (c) => {
     )
     .run();
 
-  // On activate_link → update the station's participant reference column
+  // On activate_link → update the station's participant reference column,
+  // then catch-up-materialize financial records for this station.
+  // This bridges historical accruals into invoices/credits immediately on link.
   if (action === 'activate_link') {
     const stationCol = stationColumnForLinkType(linkType);
     if (stationCol) {
@@ -488,6 +491,18 @@ router.post('/:id/action', async (c) => {
         )
         .bind(acceptingId, nowIso, row.station_id as string)
         .run();
+    }
+
+    // Bridge: materialize historical invoices/credits for this station
+    if (linkType === 'offtaker' || linkType === 'carbon_fund') {
+      const stationOwner = await c.env.DB
+        .prepare(`SELECT participant_id FROM solax_stations WHERE id = ?`)
+        .bind(row.station_id as string)
+        .first<{ participant_id: string }>();
+      if (stationOwner) {
+        materializeFinancials(stationOwner.participant_id, c.env, row.station_id as string)
+          .catch(() => { /* non-fatal — next cron cycle will retry */ });
+      }
     }
   }
 

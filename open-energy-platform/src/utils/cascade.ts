@@ -1944,8 +1944,11 @@ export type EventType =
   | 'aud_evt_obtain_board_approval' | 'aud_evt_submit_to_cipc'
   | 'aud_evt_complete_audit' | 'aud_evt_issue_qualified_opinion'
   | 'aud_evt_declare_lapsed' | 'aud_evt_flag_sla_breach'
-  // ─── Esums generation accrual cascade ─────────────────────────────────────
+  // ─── Esums generation accrual cascade + financial bridge ─────────────────
   | 'esums_accrual_computed'
+  | 'esums_invoice_issue' | 'esums_invoice_acknowledge' | 'esums_invoice_dispute'
+  | 'esums_invoice_pay' | 'esums_invoice_void'
+  | 'esums_financials_materialized'
   // ─── Wave 191 — Station Participant Link ──────────────────────────────────
   | 'station_link.created' | 'station_link.sla_breached'
   | 'slink_evt_proposed'
@@ -2325,6 +2328,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   lo_evt: 'ipp',
   station_link: 'esums',
   slink_evt: 'esums',
+  esums_invoice: 'esums',
+  esums_financials: 'esums',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
