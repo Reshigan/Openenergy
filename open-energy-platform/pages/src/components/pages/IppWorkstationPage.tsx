@@ -193,6 +193,7 @@ export function IppWorkstationPage() {
         { key: 'bonds', label: 'Bonds', group: 'Finance', body: () => <BondRegistryTab /> },
         { key: 'progress-claims', label: 'Progress claims', group: 'Finance', body: () => <IppProgressClaimTab /> },
         { key: 'cp-tracker', label: 'Conditions Precedent (W192)', group: 'Finance', body: () => <IppCpTrackerTab /> },
+        { key: 'green-bond-reports', label: 'Green bond reports (W202)', group: 'Finance', body: ({ onRefresh }) => <GreenBondReportTab onRefresh={onRefresh} /> },
         { key: 'subcontractors', label: 'Subcontractors', group: 'Construction', body: () => <IppSubcontractorTab /> },
         { key: 'procurement', label: 'Procurement / RFPs', group: 'Construction', body: () => <ProcurementChainTab /> },
         { key: 'cod', label: 'Construction / COD', group: 'Construction', body: () => <CodChainTab /> },
@@ -807,6 +808,121 @@ function InvitePartnersTab() {
           </table>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── W202: Green Bond Allocation & Climate Finance Report ──────────────────────
+const GBR_STATUS_TONE: Record<string, 'good' | 'warn' | 'bad' | 'neutral'> = {
+  period_open: 'neutral', data_gathering: 'neutral', impact_calculation: 'neutral',
+  external_review: 'warn', board_approval: 'warn', submitted_jse: 'warn',
+  under_review: 'warn', queries_raised: 'warn', queries_responded: 'warn',
+  approved: 'good', published: 'good', deficiency_noted: 'bad',
+  remediation: 'bad', rejected: 'bad',
+};
+
+const GBR_ACTIONS = [
+  { value: 'open_period', label: 'Open period' },
+  { value: 'start_data_gathering', label: 'Start data gathering' },
+  { value: 'complete_impact_calc', label: 'Complete impact calculation' },
+  { value: 'submit_for_external_review', label: 'Submit for external review' },
+  { value: 'complete_external_review', label: 'Complete external review' },
+  { value: 'board_approve', label: 'Board approve' },
+  { value: 'submit_to_jse', label: 'Submit to JSE' },
+  { value: 'jse_raises_queries', label: 'JSE raises queries' },
+  { value: 'respond_to_queries', label: 'Respond to queries' },
+  { value: 'jse_approve', label: 'JSE approve' },
+  { value: 'publish', label: 'Publish' },
+  { value: 'note_deficiency', label: 'Note deficiency' },
+  { value: 'start_remediation', label: 'Start remediation' },
+  { value: 'refile', label: 'Refile' },
+  { value: 'reject', label: 'Reject' },
+];
+
+function GreenBondReportTab({ onRefresh }: { onRefresh: () => void }) {
+  const [creating, setCreating] = useState(false);
+  const [acting, setActing] = useState<{ id: string; status: string } | null>(null);
+
+  return (
+    <div>
+      <div className="mb-3 flex justify-end">
+        <button onClick={() => setCreating(true)}
+          className="px-3 py-1.5 bg-[#1a3a5c] text-white text-xs rounded hover:bg-[#1e4a72]">
+          + New green bond report
+        </button>
+      </div>
+
+      <ListingTable
+        endpoint="/green-bond-reports"
+        rowKey={(r) => r.id}
+        empty={{ title: 'No green bond reports', description: 'Create a report to track green bond allocation & impact.' }}
+        columns={[
+          { key: 'report_year',     label: 'Year' },
+          { key: 'bond_isin',       label: 'ISIN' },
+          { key: 'bond_class',      label: 'Class' },
+          { key: 'issuance_size_zar', label: 'Issuance', align: 'right', render: (r) => r.issuance_size_zar ? `R${(Number(r.issuance_size_zar)/1_000_000).toFixed(0)}m` : '—' },
+          { key: 'chain_status',    label: 'Status', render: (r) => <Pill tone={GBR_STATUS_TONE[r.chain_status] ?? 'neutral'}>{r.chain_status?.replace(/_/g,' ')}</Pill> },
+          { key: 'kwh_generated',   label: 'kWh gen', align: 'right', render: (r) => r.kwh_generated ? Number(r.kwh_generated).toLocaleString() : '—' },
+          { key: 'carbon_avoided_tco2e', label: 'CO₂ avoided', align: 'right', render: (r) => r.carbon_avoided_tco2e ? `${Number(r.carbon_avoided_tco2e).toFixed(1)} tCO₂e` : '—' },
+          { key: 'sla_deadline',    label: 'SLA', render: (r) => r.sla_deadline ? new Date(r.sla_deadline).toLocaleDateString() : '—' },
+          { key: 'sla_breached',    label: '', render: (r) => r.sla_breached ? <Pill tone="bad">SLA</Pill> : null },
+          { key: 'actions',         label: '', render: (r) => (
+            <button onClick={() => setActing({ id: r.id, status: r.chain_status })}
+              className="text-[#1a3a5c] text-xs underline">Action</button>
+          )},
+        ]}
+      />
+
+      {creating && (
+        <ActionModal
+          title="New Green Bond Report"
+          fields={[
+            { key: 'report_year',   type: 'number', label: 'Report year', required: true },
+            { key: 'bond_isin',     type: 'text',   label: 'Bond ISIN' },
+            { key: 'bond_class',    type: 'select', label: 'Bond class', required: true,
+              options: [
+                { value: 'project',     label: 'Project bond' },
+                { value: 'corporate',   label: 'Corporate green bond' },
+                { value: 'sovereign',   label: 'Sovereign / municipal' },
+                { value: 'securitised', label: 'Securitised' },
+              ]},
+            { key: 'issuance_size_zar', type: 'number', label: 'Issuance size (ZAR)', required: true },
+            { key: 'reporting_period_start', type: 'date', label: 'Period start', required: true },
+            { key: 'reporting_period_end',   type: 'date', label: 'Period end',   required: true },
+            { key: 'reason', type: 'textarea', label: 'Notes' },
+          ] as FieldSpec[]}
+          onSubmit={async (v) => { await api.post('/green-bond-reports', v); setCreating(false); onRefresh(); }}
+          onClose={() => setCreating(false)}
+        />
+      )}
+
+      {acting && (
+        <ActionModal
+          title={`Action — ${acting.status?.replace(/_/g,' ')}`}
+          fields={[
+            { key: 'action', type: 'select', label: 'Action', required: true, options: GBR_ACTIONS },
+            { key: 'external_reviewer',        type: 'text',     label: 'External reviewer name' },
+            { key: 'review_type',              type: 'select',   label: 'Review type',
+              options: [
+                { value: 'second_party',  label: 'Second-party opinion' },
+                { value: 'certification', label: 'Certification (CBI)' },
+                { value: 'verification',  label: 'Third-party verification' },
+                { value: 'rating',        label: 'Green bond rating' },
+              ]},
+            { key: 'review_ref',               type: 'text',     label: 'Review reference' },
+            { key: 'board_resolution_ref',     type: 'text',     label: 'Board resolution ref' },
+            { key: 'jse_submission_ref',       type: 'text',     label: 'JSE submission ref' },
+            { key: 'kwh_generated',            type: 'number',   label: 'kWh generated' },
+            { key: 'carbon_avoided_tco2e',     type: 'number',   label: 'CO₂ avoided (tCO₂e)' },
+            { key: 'green_capex_deployed_zar', type: 'number',   label: 'Green capex deployed (R)' },
+            { key: 'deficiency_description',   type: 'textarea', label: 'Deficiency description' },
+            { key: 'rejection_reason',         type: 'textarea', label: 'Rejection reason' },
+            { key: 'reason',                   type: 'textarea', label: 'Notes / reason', required: true },
+          ] as FieldSpec[]}
+          onSubmit={async (v) => { await api.post(`/green-bond-reports/${acting.id}/action`, v); setActing(null); onRefresh(); }}
+          onClose={() => setActing(null)}
+        />
+      )}
     </div>
   );
 }

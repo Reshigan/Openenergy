@@ -378,6 +378,7 @@ import kycChainRoutes, { kycSlaSweep } from './routes/kyc-chain';
 import smartMeterChainRoutes, { smaSlaSweep } from './routes/smart-meter-chain';
 import carbonTaxChainRoutes, { ctrSlaSweep } from './routes/carbon-tax-chain';
 import fsccChainRoutes, { fsccSlaSweep } from './routes/fsca-compliance-chain';
+import greenBondChainRoutes, { gbrSlaSweep } from './routes/green-bond-chain';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -1044,6 +1045,7 @@ app.route('/api/kyc-verifications', kycChainRoutes);
 app.route('/api/smart-meter-assets', smartMeterChainRoutes);
 app.route('/api/carbon-tax-returns', carbonTaxChainRoutes);
 app.route('/api/fsca-compliance-reports', fsccChainRoutes);
+app.route('/api/green-bond-reports', greenBondChainRoutes);
 // platformFeaturesRoutes is the catch-all for /api — it must remain LAST
 // so all specific /api/* mounts above are tried first.
 app.route('/api', platformFeaturesRoutes);
@@ -2532,6 +2534,11 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('fscc_sla_sweep', async () => {
         const result = await fsccSlaSweep(env as never);
         console.log('fscc_sla_sweep', JSON.stringify(result));
+      });
+      // W202: Green Bond Allocation & Climate Finance Report — INVERTED SLA sweep.
+      await safe('gbr_sla_sweep', async () => {
+        const result = await gbrSlaSweep(env as never);
+        console.log('gbr_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
