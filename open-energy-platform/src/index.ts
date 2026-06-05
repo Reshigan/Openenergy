@@ -307,6 +307,10 @@ import ippAnnualAuditRoutes, { ippAnnualAuditSlaSweep } from './routes/ipp-annua
 import ippEmpComplianceReportRoutes, { ippEmpComplianceReportSlaSweep } from './routes/ipp-emp-compliance-reports';
 import ippCpTrackerRoutes, { ippCpTrackerSlaSweep } from './routes/ipp-cp-tracker';
 import ippLicenceObligationRoutes, { ippLicenceObligationSlaSweep } from './routes/ipp-licence-obligations';
+import { ippForceMajeureRoutes as ippForceMajeureChainRoutes, ippForceMajeureSlaSweep as ippForceMajeureChainSlaSweep } from './routes/ipp-force-majeure-chain';
+import { esapComplianceRoutes, esapComplianceSlaSweep } from './routes/esap-compliance-chain';
+import { protectionRelayRoutes, protectionRelaySlaSweep } from './routes/protection-relay-chain';
+import { unservedEnergyRoutes, unservedEnergySlaSweep } from './routes/unserved-energy-chain';
 import stationParticipantLinkRoutes, { stationParticipantLinkSlaSweep } from './routes/station-participant-links';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
@@ -946,6 +950,10 @@ app.route('/api/ipp-annual-audits', ippAnnualAuditRoutes);
 app.route('/api/ipp-emp-compliance-reports', ippEmpComplianceReportRoutes);
 app.route('/api/ipp-cp-tracker', ippCpTrackerRoutes);
 app.route('/api/ipp-licence-obligations', ippLicenceObligationRoutes);
+app.route('/api/ipp-force-majeure-chain', ippForceMajeureChainRoutes);
+app.route('/api/esap-compliance', esapComplianceRoutes);
+app.route('/api/protection-relay-tests', protectionRelayRoutes);
+app.route('/api/unserved-energy-claims', unservedEnergyRoutes);
 app.route('/api/station-participant-links', stationParticipantLinkRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
@@ -2469,6 +2477,26 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_licence_obligation_sla_sweep', async () => {
         const result = await ippLicenceObligationSlaSweep(env as never);
         console.log('ipp_licence_obligation_sla_sweep', JSON.stringify(result));
+      });
+      // W194: IPP Force Majeure Notification & Relief — URGENT SLA sweep.
+      await safe('ipp_force_majeure_chain_sla_sweep', async () => {
+        const result = await ippForceMajeureChainSlaSweep(env as never);
+        console.log('ipp_force_majeure_chain_sla_sweep', JSON.stringify(result));
+      });
+      // W195: ESAP Compliance Monitoring — INVERTED SLA sweep.
+      await safe('esap_compliance_sla_sweep', async () => {
+        const result = await esapComplianceSlaSweep(env as never);
+        console.log('esap_compliance_sla_sweep', JSON.stringify(result));
+      });
+      // W196: Grid Protection Relay & Anti-Islanding — URGENT SLA sweep.
+      await safe('protection_relay_sla_sweep', async () => {
+        const result = await protectionRelaySlaSweep(env as never);
+        console.log('protection_relay_sla_sweep', JSON.stringify(result));
+      });
+      // W197: Offtaker Unserved Energy Compensation Claim — URGENT SLA sweep.
+      await safe('unserved_energy_sla_sweep', async () => {
+        const result = await unservedEnergySlaSweep(env as never);
+        console.log('unserved_energy_sla_sweep', JSON.stringify(result));
       });
       // W191: station participant link SLA — expire unactioned proposals.
       await safe('station_link_sla_sweep', async () => {

@@ -1982,7 +1982,15 @@ export type EventType =
   // ─── Onboarding ─────────────────────────────────────────────────────────
   | 'onboarding.completed' | 'onboarding.skipped'
   // ─── Esums data sources ──────────────────────────────────────────────────
-  | 'esums.data_source.created';
+  | 'esums.data_source.created'
+  // ─── W194 IPP Force Majeure ───────────────────────────────────────────────
+  | 'ipp_force_majeure'
+  // ─── W195 ESAP Compliance ────────────────────────────────────────────────
+  | 'esap_compliance'
+  // ─── W196 Protection Relay Test ──────────────────────────────────────────
+  | 'protection_relay_test'
+  // ─── W197 Unserved Energy Claim ──────────────────────────────────────────
+  | 'unserved_energy_claim';
 
 interface CascadeContext {
   event: EventType;
@@ -2313,6 +2321,18 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   meter: 'grid',
   scenario: 'carbon',
   ai: 'platform',
+  // W194 IPP Force Majeure chain
+  force_majeure: 'ipp',
+  fm_chain_evt: 'ipp',
+  // W195 ESAP Compliance chain
+  esap_compliance: 'lender',
+  esap_evt: 'lender',
+  // W196 Protection Relay Test chain
+  protection_relay: 'esums',
+  prt_evt: 'esums',
+  // W197 Unserved Energy Claim chain
+  unserved_energy: 'offtaker',
+  uec_evt: 'offtaker',
 };
 
 function auditEntityTypeFor(event: string): string {

@@ -28,6 +28,7 @@ import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
 import { DataSourcesTab } from '../esums/DataSourcesTab';
 import { StationParticipantLinkTab } from '../esums/StationParticipantLinkTab';
 import { InverterIntegrationsTab } from '../esums/InverterIntegrationsTab';
+import { ProtectionRelayTestTab } from '../esums/ProtectionRelayTestTab';
 
 export function EsumsOmPage() {
   const tabs: TabSpec[] = [
@@ -355,6 +356,14 @@ export function EsumsOmPage() {
       description: 'Two-party onboarding handshake linking this station to downstream participant modules (lender, carbon fund, offtaker, grid operator). Activating a link enables all downstream automated flows — covenant monitoring, carbon credit minting, PPA settlement invoicing, and dispatch event routing — without requiring manual configuration per module.',
       columns: [],
       customContent: <StationParticipantLinkTab />,
+    },
+    {
+      key: 'protection_relay_tests',
+      label: 'Protection Tests',
+      endpoint: '',
+      description: 'NRS 097-2-3 + NERSA Grid Code Chapter 3 protection relay and anti-islanding compliance test lifecycle. 12-state P6 chain: test_scheduled → pre_test_inspection → site_ready → test_executing → preliminary_results → certified_pass (terminal +) or minor_deficiency → rectification → retest loop, or test_failed → rectification_required → rectification_complete → retest_scheduled. URGENT SLA polarity (safety_critical 3d / transmission 7d / distribution 14d / embedded 21d / routine 30d). failed_final (mandatory safety disconnect) crosses regulator for ALL protection classes; test_failed and SLA breach cross for safety_critical + transmission.',
+      columns: [],
+      customContent: <ProtectionRelayTestTab />,
     },
     {
       key: 'projects',

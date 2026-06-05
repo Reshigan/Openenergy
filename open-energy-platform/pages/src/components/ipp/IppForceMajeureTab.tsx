@@ -1,134 +1,209 @@
 import { useState, useEffect } from 'react';
 
-interface ForceMajeureCase {
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface FmChainRecord {
   id: string;
-  participant_id: string;
-  project_id: string;
-  project_name?: string | null;
-  fm_severity_tier: 'minor' | 'moderate' | 'material' | 'major' | 'critical';
-  fm_category:
-    | 'natural_disaster'
-    | 'grid_unavailability'
-    | 'political_event'
-    | 'change_in_law'
-    | 'pandemic'
-    | 'civil_unrest';
-  relief_type:
-    | 'time_extension'
-    | 'cost_relief'
-    | 'time_and_cost'
-    | 'tariff_adjustment'
-    | 'termination_right';
+  ppa_id: string;
+  fm_category: string;
   chain_status: string;
-  counterparty_name: string | null;
-  ie_firm_name: string | null;
-  estimated_relief_zar: number | null;
-  fm_notice_issued_at: string | null;
-  ie_report_issued_at: string | null;
-  fm_resolved_at: string | null;
-  sla_due_at: string;
-  sla_breached: number;
+  affected_capacity_mw: number;
+  relief_amount_zar: number | null;
+  actor_id: string | null;
   created_at: string;
-  updated_at: string;
+  // detail fields (GET /:id)
+  notice_date?: string | null;
+  fm_start_date?: string | null;
+  fm_end_date?: string | null;
+  quantum_basis?: string | null;
+  sla_deadline?: string | null;
+  sla_breached?: number;
+  regulator_notified?: number;
+  reason?: string | null;
+  updated_at?: string;
+  timeline?: AuditEvent[];
 }
 
+interface AuditEvent {
+  id: string;
+  event: string;
+  actor_id: string | null;
+  created_at: string;
+  data?: string | null;
+}
+
+interface FmKpis {
+  active_events: number | null;
+  relief_claimed_zar: number | null;
+  avg_duration_days: number | null;
+  disputed_count: number | null;
+}
+
+// ─── Status meta ──────────────────────────────────────────────────────────────
+
 const STATUS_COLORS: Record<string, string> = {
-  fm_identified:               'bg-gray-100 text-gray-500',
-  fm_notice_issued:            'bg-blue-100 text-blue-700',
-  counterparty_acknowledgment: 'bg-cyan-100 text-cyan-700',
-  ie_assessment_requested:     'bg-indigo-100 text-indigo-700',
-  ie_assessment_in_progress:   'bg-purple-100 text-purple-700',
-  ie_report_issued:            'bg-sky-100 text-sky-700',
-  relief_quantified:           'bg-teal-100 text-teal-700',
-  negotiation_in_progress:     'bg-yellow-100 text-yellow-800',
-  relief_agreed:               'bg-green-100 text-green-700',
-  relief_refused:              'bg-red-100 text-red-700',
-  arbitration_commenced:       'bg-orange-100 text-orange-700',
+  fm_submitted:          'bg-slate-100 text-slate-600',
+  notice_verified:       'bg-blue-100 text-blue-700',
+  mitigation_assessed:   'bg-cyan-100 text-cyan-700',
+  period_active:         'bg-orange-100 text-orange-700',
+  relief_period_running: 'bg-amber-100 text-amber-800',
+  relief_claimed:        'bg-indigo-100 text-indigo-700',
+  quantum_assessed:      'bg-purple-100 text-purple-700',
+  relief_granted:        'bg-green-100 text-green-700',
+  relief_denied:         'bg-red-100 text-red-700',
+  disputed:              'bg-yellow-100 text-yellow-800',
+  fm_lapsed:             'bg-gray-100 text-gray-400',
+  cancelled:             'bg-gray-100 text-gray-400',
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  fm_identified:               'FM Identified',
-  fm_notice_issued:            'FM Notice Issued',
-  counterparty_acknowledgment: 'Counterparty Acknowledgment',
-  ie_assessment_requested:     'IE Assessment Requested',
-  ie_assessment_in_progress:   'IE Assessment In Progress',
-  ie_report_issued:            'IE Report Issued',
-  relief_quantified:           'Relief Quantified',
-  negotiation_in_progress:     'Negotiation In Progress',
-  relief_agreed:               'Relief Agreed',
-  relief_refused:              'Relief Refused',
-  arbitration_commenced:       'Arbitration Commenced',
+  fm_submitted:          'FM Submitted',
+  notice_verified:       'Notice Verified',
+  mitigation_assessed:   'Mitigation Assessed',
+  period_active:         'Period Active',
+  relief_period_running: 'Relief Period Running',
+  relief_claimed:        'Relief Claimed',
+  quantum_assessed:      'Quantum Assessed',
+  relief_granted:        'Relief Granted',
+  relief_denied:         'Relief Denied',
+  disputed:              'Disputed',
+  fm_lapsed:             'FM Lapsed',
+  cancelled:             'Cancelled',
 };
 
-const TIER_COLORS: Record<string, string> = {
-  minor:    '#6b7280',
-  moderate: '#3b82f6',
-  material: '#f59e0b',
-  major:    '#ef4444',
-  critical: '#7c3aed',
+// ─── Category meta ────────────────────────────────────────────────────────────
+
+const CATEGORY_COLORS: Record<string, string> = {
+  extreme_weather:   'bg-red-100 text-red-700',
+  severe_storm:      'bg-orange-100 text-orange-700',
+  network_fault:     'bg-blue-100 text-blue-700',
+  regulatory_action: 'bg-purple-100 text-purple-700',
+  general:           'bg-gray-100 text-gray-600',
 };
 
-const FM_CATEGORY_LABELS: Record<string, string> = {
-  natural_disaster:    'Natural Disaster',
-  grid_unavailability: 'Grid Unavailability',
-  political_event:     'Political Event',
-  change_in_law:       'Change in Law',
-  pandemic:            'Pandemic',
-  civil_unrest:        'Civil Unrest',
+const CATEGORY_LABELS: Record<string, string> = {
+  extreme_weather:   'Extreme Weather',
+  severe_storm:      'Severe Storm',
+  network_fault:     'Network Fault',
+  regulatory_action: 'Regulatory Action',
+  general:           'General',
 };
 
-const RELIEF_TYPE_LABELS: Record<string, string> = {
-  time_extension:    'Time Extension',
-  cost_relief:       'Cost Relief',
-  time_and_cost:     'Time & Cost',
-  tariff_adjustment: 'Tariff Adjustment',
-  termination_right: 'Termination Right',
+// SLA days per category (URGENT — tighter for more severe)
+const SLA_DAYS: Record<string, number> = {
+  extreme_weather:   2,
+  severe_storm:      3,
+  network_fault:     7,
+  regulatory_action: 14,
+  general:           21,
 };
 
-const TERMINAL_STATUSES = new Set(['relief_agreed', 'relief_refused', 'arbitration_commenced']);
+const CATEGORIES = Object.keys(CATEGORY_LABELS) as string[];
+const STATUSES   = Object.keys(STATUS_LABELS) as string[];
 
-const STATUSES = Object.keys(STATUS_LABELS);
-const TIERS = ['minor', 'moderate', 'material', 'major', 'critical'] as const;
-const FM_CATEGORIES = Object.keys(FM_CATEGORY_LABELS);
+// ─── Action definitions ───────────────────────────────────────────────────────
 
-const PAGE_SIZE = 20;
+const HARD_TERMINALS = new Set([
+  'relief_granted', 'relief_denied', 'disputed', 'fm_lapsed', 'cancelled',
+]);
+
+interface ActionDef {
+  name: string;
+  label: string;
+  variant?: 'danger' | 'warn' | 'success';
+}
+
+function getActions(status: string): ActionDef[] {
+  if (HARD_TERMINALS.has(status)) return [];
+  switch (status) {
+    case 'fm_submitted':
+      return [
+        { name: 'verify_notice',   label: 'Verify Notice',  variant: 'success' },
+        { name: 'deny_relief',     label: 'Deny Relief',    variant: 'danger'  },
+        { name: 'raise_dispute',   label: 'Raise Dispute',  variant: 'warn'    },
+        { name: 'lapse_event',     label: 'Lapse Event',    variant: 'warn'    },
+      ];
+    case 'notice_verified':
+      return [
+        { name: 'assess_mitigation', label: 'Assess Mitigation', variant: 'success' },
+        { name: 'deny_relief',       label: 'Deny Relief',       variant: 'danger'  },
+        { name: 'raise_dispute',     label: 'Raise Dispute',     variant: 'warn'    },
+        { name: 'lapse_event',       label: 'Lapse Event',       variant: 'warn'    },
+      ];
+    case 'mitigation_assessed':
+      return [
+        { name: 'activate_period', label: 'Activate FM Period', variant: 'success' },
+        { name: 'deny_relief',     label: 'Deny Relief',        variant: 'danger'  },
+        { name: 'raise_dispute',   label: 'Raise Dispute',      variant: 'warn'    },
+        { name: 'lapse_event',     label: 'Lapse Event',        variant: 'warn'    },
+      ];
+    case 'period_active':
+      return [
+        { name: 'run_relief_period', label: 'Run Relief Period', variant: 'success' },
+        { name: 'deny_relief',       label: 'Deny Relief',       variant: 'danger'  },
+        { name: 'raise_dispute',     label: 'Raise Dispute',     variant: 'warn'    },
+        { name: 'lapse_event',       label: 'Lapse Event',       variant: 'warn'    },
+      ];
+    case 'relief_period_running':
+      return [
+        { name: 'submit_relief_claim', label: 'Submit Relief Claim', variant: 'success' },
+        { name: 'deny_relief',         label: 'Deny Relief',         variant: 'danger'  },
+        { name: 'raise_dispute',       label: 'Raise Dispute',       variant: 'warn'    },
+        { name: 'lapse_event',         label: 'Lapse Event',         variant: 'warn'    },
+      ];
+    case 'relief_claimed':
+      return [
+        { name: 'assess_quantum', label: 'Assess Quantum', variant: 'success' },
+        { name: 'deny_relief',    label: 'Deny Relief',    variant: 'danger'  },
+        { name: 'raise_dispute',  label: 'Raise Dispute',  variant: 'warn'    },
+      ];
+    case 'quantum_assessed':
+      return [
+        { name: 'grant_relief', label: 'Grant Relief', variant: 'success' },
+        { name: 'deny_relief',  label: 'Deny Relief',  variant: 'danger'  },
+        { name: 'raise_dispute',label: 'Raise Dispute',variant: 'warn'    },
+      ];
+    default:
+      return [];
+  }
+}
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
+function fmtDate(d: string | null | undefined): { text: string; isPast: boolean } {
+  if (!d) return { text: '—', isPast: false };
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return { text: '—', isPast: false };
+  return {
+    text: dt.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' }),
+    isPast: dt < new Date(),
+  };
+}
+
+function fmtZar(v: number | null | undefined): string {
+  if (v == null) return '—';
+  if (v >= 1_000_000_000) return `R ${(v / 1_000_000_000).toFixed(1)}B`;
+  if (v >= 1_000_000)     return `R ${(v / 1_000_000).toFixed(2)}M`;
+  if (v >= 1_000)         return `R ${(v / 1_000).toFixed(1)}K`;
+  return `R ${v.toLocaleString('en-ZA')}`;
+}
 
 const sel = 'border rounded px-2 py-1 text-xs text-gray-700 bg-white';
+const PAGE_SIZE = 20;
 
-function fmtDate(d?: string | null): string {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
-}
+// ─── KPI chip ─────────────────────────────────────────────────────────────────
 
-function fmtZar(amount: number | null | undefined): string {
-  if (amount == null) return '—';
-  if (amount >= 1_000_000_000) return `R ${(amount / 1_000_000_000).toFixed(1)}B`;
-  if (amount >= 1_000_000) return `R ${(amount / 1_000_000).toFixed(1)}M`;
-  if (amount >= 1_000) return `R ${(amount / 1_000).toFixed(1)}K`;
-  return `R ${amount.toLocaleString('en-ZA')}`;
-}
-
-function hasRegulatorFlag(row: ForceMajeureCase): boolean {
-  if (row.chain_status === 'arbitration_commenced') return true;
-  if (row.chain_status === 'relief_refused') return true;
-  if (
-    row.chain_status === 'relief_agreed' &&
-    (row.fm_severity_tier === 'major' || row.fm_severity_tier === 'critical')
-  ) return true;
-  return false;
-}
-
-type KpiChipProps = { label: string; value: string | number; mode?: 'alert' | 'good' | 'danger' | 'neutral' };
-function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
+type KpiMode = 'neutral' | 'good' | 'alert' | 'danger';
+function KpiChip({ label, value, mode = 'neutral' }: { label: string; value: string | number; mode?: KpiMode }) {
   const border =
-    mode === 'danger'  ? 'border-red-200 bg-red-50'       :
-    mode === 'alert'   ? 'border-orange-200 bg-orange-50' :
-    mode === 'good'    ? 'border-green-200 bg-green-50'   :
+    mode === 'danger' ? 'border-red-200 bg-red-50'       :
+    mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
+    mode === 'good'   ? 'border-green-200 bg-green-50'   :
     'border-gray-200 bg-white';
   const text =
-    mode === 'danger'  ? 'text-red-700'    :
-    mode === 'alert'   ? 'text-orange-700' :
-    mode === 'good'    ? 'text-green-700'  :
+    mode === 'danger' ? 'text-red-700'    :
+    mode === 'alert'  ? 'text-orange-700' :
+    mode === 'good'   ? 'text-green-700'  :
     'text-gray-900';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
@@ -138,18 +213,43 @@ function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
   );
 }
 
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export function IppForceMajeureTab() {
-  const [items, setItems]                   = useState<ForceMajeureCase[]>([]);
-  const [loading, setLoading]               = useState(false);
-  const [error, setError]                   = useState<string | null>(null);
+  const [items, setItems]             = useState<FmChainRecord[]>([]);
+  const [kpis, setKpis]               = useState<FmKpis | null>(null);
+  const [loading, setLoading]         = useState(false);
+  const [error, setError]             = useState<string | null>(null);
   const [filterStatus, setFilterStatus]     = useState('');
-  const [filterTier, setFilterTier]         = useState('');
   const [filterCategory, setFilterCategory] = useState('');
-  const [page, setPage]                     = useState(1);
+  const [page, setPage]               = useState(1);
+
+  // Create form
+  const [showCreate, setShowCreate]           = useState(false);
+  const [creating, setCreating]               = useState(false);
+  const [createError, setCreateError]         = useState<string | null>(null);
+  const [formPpaId, setFormPpaId]             = useState('');
+  const [formCategory, setFormCategory]       = useState(CATEGORIES[0]);
+  const [formCapacity, setFormCapacity]       = useState('');
+  const [formNoticeDate, setFormNoticeDate]   = useState('');
+  const [formReason, setFormReason]           = useState('');
+
+  // Detail drawer
+  const [detailItem, setDetailItem]         = useState<FmChainRecord | null>(null);
+  const [detailLoading, setDetailLoading]   = useState(false);
+
+  // Action modal
+  const [actionItem, setActionItem]         = useState<FmChainRecord | null>(null);
+  const [selectedAction, setSelectedAction] = useState('');
+  const [actionReason, setActionReason]     = useState('');
+  const [actionRelief, setActionRelief]     = useState('');
+  const [actionLoading, setActionLoading]   = useState(false);
+  const [actionError, setActionError]       = useState<string | null>(null);
+
+  const token = () => localStorage.getItem('token');
 
   async function load(
     status   = filterStatus,
-    tier     = filterTier,
     category = filterCategory,
   ) {
     setLoading(true);
@@ -157,15 +257,18 @@ export function IppForceMajeureTab() {
     try {
       const params = new URLSearchParams();
       if (status)   params.set('status', status);
-      if (tier)     params.set('tier', tier);
-      if (category) params.set('category', category);
-      const res = await fetch(`/api/ipp-force-majeure?${params}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      if (category) params.set('fm_category', category);
+      const res = await fetch(`/api/ipp-force-majeure-chain?${params}`, {
+        headers: { Authorization: `Bearer ${token()}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      const d = json?.data ?? json;
-      setItems(d?.items ?? d ?? []);
+      const json = await res.json() as {
+        success: boolean;
+        data: FmChainRecord[];
+        kpis: FmKpis;
+      };
+      setItems(json.data ?? []);
+      if (json.kpis) setKpis(json.kpis);
       setPage(1);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load');
@@ -176,31 +279,161 @@ export function IppForceMajeureTab() {
 
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Derived KPIs
-  const total       = items.length;
-  const active      = items.filter(i => !TERMINAL_STATUSES.has(i.chain_status)).length;
-  const breached    = items.filter(i => i.sla_breached === 1).length;
-  const arbitration = items.filter(i => i.chain_status === 'arbitration_commenced').length;
+  async function openDetail(item: FmChainRecord) {
+    setDetailItem(item);
+    setDetailLoading(true);
+    try {
+      const res = await fetch(`/api/ipp-force-majeure-chain/${item.id}`, {
+        headers: { Authorization: `Bearer ${token()}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json() as { success: boolean; data: FmChainRecord };
+      setDetailItem(json.data);
+    } catch {
+      // keep the list-level data
+    } finally {
+      setDetailLoading(false);
+    }
+  }
 
-  // Pagination
+  // KPI helpers
+  const activeEvents     = kpis?.active_events ?? items.filter(i => !HARD_TERMINALS.has(i.chain_status)).length;
+  const reliefClaimedZar = kpis?.relief_claimed_zar ?? null;
+  const avgDuration      = kpis?.avg_duration_days != null ? `${kpis.avg_duration_days.toFixed(1)} days` : '—';
+  const disputedCount    = kpis?.disputed_count ?? items.filter(i => i.chain_status === 'disputed').length;
+
   const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
   const pageItems  = items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  // ─── Create handler ─────────────────────────────────────────────────────────
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!formPpaId.trim() || !formCategory || !formCapacity || !formNoticeDate) return;
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const body: Record<string, unknown> = {
+        ppa_id:               formPpaId.trim(),
+        fm_category:          formCategory,
+        affected_capacity_mw: parseFloat(formCapacity),
+        notice_date:          formNoticeDate,
+      };
+      if (formReason.trim()) body.reason = formReason.trim();
+
+      const res = await fetch('/api/ipp-force-majeure-chain', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token()}`,
+        },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(j.error ?? `HTTP ${res.status}`);
+      }
+      setShowCreate(false);
+      setFormPpaId('');
+      setFormCategory(CATEGORIES[0]);
+      setFormCapacity('');
+      setFormNoticeDate('');
+      setFormReason('');
+      await load();
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'Failed to create');
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  // ─── Action handlers ────────────────────────────────────────────────────────
+
+  function openActionPicker(item: FmChainRecord) {
+    const actions = getActions(item.chain_status);
+    if (actions.length === 0) return;
+    setActionItem(item);
+    setSelectedAction(actions[0].name);
+    setActionReason('');
+    setActionRelief('');
+    setActionError(null);
+  }
+
+  function closeAction() {
+    setActionItem(null);
+    setSelectedAction('');
+    setActionReason('');
+    setActionRelief('');
+    setActionError(null);
+  }
+
+  async function submitAction() {
+    if (!actionItem || !selectedAction) return;
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      const body: Record<string, unknown> = { action: selectedAction };
+      if (actionReason.trim()) body.reason = actionReason.trim();
+      if (actionRelief.trim()) body.relief_amount_zar = parseFloat(actionRelief);
+
+      const res = await fetch(`/api/ipp-force-majeure-chain/${actionItem.id}/action`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token()}`,
+        },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(j.error ?? `HTTP ${res.status}`);
+      }
+      closeAction();
+      if (detailItem?.id === actionItem.id) setDetailItem(null);
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Action failed');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  const modalActions       = actionItem ? getActions(actionItem.chain_status) : [];
+  const actionLabelCurrent = modalActions.find(a => a.name === selectedAction)?.label ?? 'Confirm';
+
+  // ─── Render ──────────────────────────────────────────────────────────────────
+
   return (
     <div className="p-4 space-y-4">
+
       {/* KPI bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiChip label="Total"         value={total} />
-        <KpiChip label="Active"        value={active}      mode={active > 0 ? 'alert' : 'neutral'} />
-        <KpiChip label="SLA Breached"  value={breached}    mode={breached > 0 ? 'danger' : 'neutral'} />
-        <KpiChip label="Arbitration"   value={arbitration} mode={arbitration > 0 ? 'danger' : 'neutral'} />
+        <KpiChip
+          label="Active Events"
+          value={activeEvents}
+          mode={activeEvents > 0 ? 'alert' : 'neutral'}
+        />
+        <KpiChip
+          label="Relief Claimed"
+          value={reliefClaimedZar != null ? fmtZar(reliefClaimedZar) : '—'}
+          mode={reliefClaimedZar && reliefClaimedZar > 0 ? 'alert' : 'neutral'}
+        />
+        <KpiChip
+          label="Avg Duration"
+          value={avgDuration}
+        />
+        <KpiChip
+          label="Disputed"
+          value={disputedCount}
+          mode={disputedCount > 0 ? 'danger' : 'neutral'}
+        />
       </div>
 
       {/* Filter row */}
       <div className="flex flex-wrap gap-2 items-center">
         <select
           value={filterStatus}
-          onChange={e => { setFilterStatus(e.target.value); load(e.target.value, filterTier, filterCategory); }}
+          onChange={e => { setFilterStatus(e.target.value); load(e.target.value, filterCategory); }}
           className={sel}
         >
           <option value="">All statuses</option>
@@ -209,30 +442,118 @@ export function IppForceMajeureTab() {
           ))}
         </select>
         <select
-          value={filterTier}
-          onChange={e => { setFilterTier(e.target.value); load(filterStatus, e.target.value, filterCategory); }}
-          className={sel}
-        >
-          <option value="">All tiers</option>
-          {TIERS.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-        </select>
-        <select
           value={filterCategory}
-          onChange={e => { setFilterCategory(e.target.value); load(filterStatus, filterTier, e.target.value); }}
+          onChange={e => { setFilterCategory(e.target.value); load(filterStatus, e.target.value); }}
           className={sel}
         >
           <option value="">All categories</option>
-          {FM_CATEGORIES.map(c => (
-            <option key={c} value={c}>{FM_CATEGORY_LABELS[c]}</option>
+          {CATEGORIES.map(c => (
+            <option key={c} value={c}>{CATEGORY_LABELS[c] ?? c}</option>
           ))}
         </select>
         <button
           onClick={() => load()}
-          className="ml-auto px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
+          className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
         >
           Refresh
         </button>
+        <button
+          onClick={() => setShowCreate(v => !v)}
+          className="ml-auto px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+        >
+          + Submit FM Notice
+        </button>
       </div>
+
+      {/* Create form */}
+      {showCreate && (
+        <form
+          onSubmit={handleCreate}
+          className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3"
+        >
+          <div className="text-sm font-semibold text-blue-800">New Force Majeure Notification</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">PPA ID *</label>
+              <input
+                type="text"
+                value={formPpaId}
+                onChange={e => setFormPpaId(e.target.value)}
+                placeholder="e.g. ppa-001"
+                required
+                className="w-full border rounded px-2 py-1 text-xs"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">FM Category *</label>
+              <select
+                value={formCategory}
+                onChange={e => setFormCategory(e.target.value)}
+                required
+                className="w-full border rounded px-2 py-1 text-xs bg-white"
+              >
+                {CATEGORIES.map(c => (
+                  <option key={c} value={c}>{CATEGORY_LABELS[c]} (SLA: {SLA_DAYS[c]}d)</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">Affected Capacity (MW) *</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={formCapacity}
+                onChange={e => setFormCapacity(e.target.value)}
+                placeholder="e.g. 50.0"
+                required
+                className="w-full border rounded px-2 py-1 text-xs"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">Notice Date *</label>
+              <input
+                type="date"
+                value={formNoticeDate}
+                onChange={e => setFormNoticeDate(e.target.value)}
+                required
+                className="w-full border rounded px-2 py-1 text-xs"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs text-gray-600 mb-1">Description (optional)</label>
+              <textarea
+                value={formReason}
+                onChange={e => setFormReason(e.target.value)}
+                placeholder="Brief description of the force majeure event"
+                rows={2}
+                className="w-full border rounded px-2 py-1 text-xs"
+              />
+            </div>
+          </div>
+          {createError && (
+            <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">
+              {createError}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={creating}
+              className="px-4 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50"
+            >
+              {creating ? 'Submitting…' : 'Submit Notice'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCreate(false)}
+              className="px-3 py-1.5 bg-white border rounded text-xs text-gray-600 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* Error */}
       {error && (
@@ -249,65 +570,61 @@ export function IppForceMajeureTab() {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b text-left text-xs text-gray-500">
-                <th className="pb-2 pr-4">ID</th>
-                <th className="pb-2 pr-4">Project</th>
-                <th className="pb-2 pr-4">FM Category</th>
-                <th className="pb-2 pr-4">Relief Type</th>
-                <th className="pb-2 pr-4">Estimated Relief</th>
-                <th className="pb-2 pr-4">Severity</th>
-                <th className="pb-2 pr-4">Status</th>
-                <th className="pb-2 pr-4">Counterparty</th>
-                <th className="pb-2 pr-4">SLA Due</th>
-                <th className="pb-2 pr-4">SLA Breached</th>
+                <th className="pb-2 pr-3">PPA ID</th>
+                <th className="pb-2 pr-3">Category</th>
+                <th className="pb-2 pr-3">Status</th>
+                <th className="pb-2 pr-3 text-right">Capacity (MW)</th>
+                <th className="pb-2 pr-3 text-right">Relief Claimed</th>
+                <th className="pb-2 pr-3">Actor</th>
+                <th className="pb-2 pr-3">Created</th>
+                <th className="pb-2 pr-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {pageItems.map(item => {
-                const overdue   = !!(item.sla_breached || (item.sla_due_at && new Date(item.sla_due_at) < new Date()));
-                const regulator = hasRegulatorFlag(item);
-                const tierColor = TIER_COLORS[item.fm_severity_tier] ?? '#6b7280';
+                const actions = getActions(item.chain_status);
                 return (
-                  <tr key={item.id} className="border-b hover:bg-gray-50">
-                    <td className="py-2 pr-4 text-xs font-mono text-gray-600">{item.id.slice(0, 12)}</td>
-                    <td className="py-2 pr-4 text-xs text-gray-700">{item.project_name ?? item.project_id?.slice(0, 12) ?? '—'}</td>
-                    <td className="py-2 pr-4 text-xs text-gray-700">
-                      {FM_CATEGORY_LABELS[item.fm_category] ?? item.fm_category}
+                  <tr
+                    key={item.id}
+                    className="border-b hover:bg-gray-50 cursor-pointer"
+                    onClick={() => openDetail(item)}
+                  >
+                    <td className="py-2 pr-3 text-xs font-mono text-gray-700">
+                      {item.ppa_id}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-gray-700">
-                      {RELIEF_TYPE_LABELS[item.relief_type] ?? item.relief_type}
-                    </td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-gray-700">
-                      {fmtZar(item.estimated_relief_zar)}
-                    </td>
-                    <td className="py-2 pr-4">
-                      <span
-                        className="px-1.5 py-0.5 rounded text-xs text-white font-medium"
-                        style={{ backgroundColor: tierColor }}
-                      >
-                        {item.fm_severity_tier.charAt(0).toUpperCase() + item.fm_severity_tier.slice(1)}
+                    <td className="py-2 pr-3">
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${CATEGORY_COLORS[item.fm_category] ?? 'bg-gray-100 text-gray-500'}`}>
+                        {CATEGORY_LABELS[item.fm_category] ?? item.fm_category}
                       </span>
                     </td>
-                    <td className="py-2 pr-4">
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
-                          {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
-                        </span>
-                        {regulator && (
-                          <span className="px-1 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">
-                            REGULATOR
-                          </span>
-                        )}
-                      </div>
+                    <td className="py-2 pr-3">
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                        {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
+                      </span>
                     </td>
-                    <td className="py-2 pr-4 text-xs text-gray-700">{item.counterparty_name ?? '—'}</td>
-                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
-                      {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_at)}
+                    <td className="py-2 pr-3 text-xs text-right tabular-nums text-gray-700">
+                      {item.affected_capacity_mw != null ? `${item.affected_capacity_mw} MW` : '—'}
                     </td>
-                    <td className="py-2 pr-4">
-                      {item.sla_breached === 1 ? (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">Yes</span>
-                      ) : (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-400">No</span>
+                    <td className="py-2 pr-3 text-xs text-right tabular-nums text-gray-700">
+                      {fmtZar(item.relief_amount_zar)}
+                    </td>
+                    <td className="py-2 pr-3 text-xs text-gray-500 max-w-[120px] truncate" title={item.actor_id ?? ''}>
+                      {item.actor_id ?? '—'}
+                    </td>
+                    <td className="py-2 pr-3 text-xs text-gray-500">
+                      {fmtDate(item.created_at).text}
+                    </td>
+                    <td
+                      className="py-2 pr-3"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      {actions.length > 0 && (
+                        <button
+                          onClick={() => openActionPicker(item)}
+                          className="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+                        >
+                          Actions
+                        </button>
                       )}
                     </td>
                   </tr>
@@ -315,7 +632,7 @@ export function IppForceMajeureTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={8} className="py-10 text-center text-gray-400 text-sm">
                     No force majeure records found
                   </td>
                 </tr>
@@ -335,9 +652,7 @@ export function IppForceMajeureTab() {
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-gray-500">
-            Page {page} of {totalPages}
-          </span>
+          <span className="text-xs text-gray-500">Page {page} of {totalPages}</span>
           <button
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
@@ -347,6 +662,243 @@ export function IppForceMajeureTab() {
           </button>
         </div>
       )}
+
+      {/* ─── Detail drawer ──────────────────────────────────────────────────── */}
+      {detailItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/30">
+          <div className="bg-white h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b">
+              <div>
+                <div className="text-sm font-semibold text-gray-800">Force Majeure Event</div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  {CATEGORY_LABELS[detailItem.fm_category] ?? detailItem.fm_category}
+                  {detailItem.ppa_id && <> &nbsp;&middot;&nbsp; PPA {detailItem.ppa_id}</>}
+                </div>
+              </div>
+              <button
+                onClick={() => setDetailItem(null)}
+                className="text-gray-400 hover:text-gray-700 text-lg leading-none"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="flex-1 p-5 space-y-5">
+              {detailLoading && (
+                <div className="text-xs text-gray-400 text-center py-4">Loading details&hellip;</div>
+              )}
+
+              {/* Status badges */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                  {STATUS_LABELS[detailItem.chain_status] ?? detailItem.chain_status.replace(/_/g, ' ')}
+                </span>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${CATEGORY_COLORS[detailItem.fm_category] ?? 'bg-gray-100 text-gray-500'}`}>
+                  {CATEGORY_LABELS[detailItem.fm_category] ?? detailItem.fm_category}
+                </span>
+                {detailItem.sla_breached === 1 && (
+                  <span className="px-2 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">SLA Breached</span>
+                )}
+                {detailItem.regulator_notified === 1 && (
+                  <span className="px-2 py-0.5 rounded text-xs bg-orange-100 text-orange-700 font-semibold">Regulator Notified</span>
+                )}
+              </div>
+
+              {/* Core fields */}
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
+                <div>
+                  <div className="text-gray-400 mb-0.5">PPA ID</div>
+                  <div className="font-mono text-gray-700">{detailItem.ppa_id}</div>
+                </div>
+                <div>
+                  <div className="text-gray-400 mb-0.5">Affected Capacity</div>
+                  <div className="text-gray-800 tabular-nums">
+                    {detailItem.affected_capacity_mw != null ? `${detailItem.affected_capacity_mw} MW` : '—'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-gray-400 mb-0.5">Notice Date</div>
+                  <div className="text-gray-800">{fmtDate(detailItem.notice_date).text}</div>
+                </div>
+                <div>
+                  <div className="text-gray-400 mb-0.5">FM Start Date</div>
+                  <div className="text-gray-800">{fmtDate(detailItem.fm_start_date).text}</div>
+                </div>
+                <div>
+                  <div className="text-gray-400 mb-0.5">FM End Date</div>
+                  <div className="text-gray-800">{fmtDate(detailItem.fm_end_date).text}</div>
+                </div>
+                <div>
+                  <div className="text-gray-400 mb-0.5">Relief Amount</div>
+                  <div className="text-gray-800 tabular-nums">{fmtZar(detailItem.relief_amount_zar)}</div>
+                </div>
+                {detailItem.quantum_basis && (
+                  <div className="col-span-2">
+                    <div className="text-gray-400 mb-0.5">Quantum Basis</div>
+                    <div className="text-gray-700">{detailItem.quantum_basis}</div>
+                  </div>
+                )}
+                <div>
+                  <div className="text-gray-400 mb-0.5">SLA Deadline</div>
+                  <div className={`tabular-nums ${fmtDate(detailItem.sla_deadline).isPast ? 'text-red-600 font-medium' : 'text-gray-800'}`}>
+                    {fmtDate(detailItem.sla_deadline).text}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-gray-400 mb-0.5">Actor</div>
+                  <div className="text-gray-700 break-all">{detailItem.actor_id ?? '—'}</div>
+                </div>
+                <div>
+                  <div className="text-gray-400 mb-0.5">Created</div>
+                  <div className="text-gray-600">{fmtDate(detailItem.created_at).text}</div>
+                </div>
+                <div>
+                  <div className="text-gray-400 mb-0.5">Updated</div>
+                  <div className="text-gray-600">{fmtDate(detailItem.updated_at).text}</div>
+                </div>
+              </div>
+
+              {/* Reason / notes */}
+              {detailItem.reason && (
+                <div>
+                  <div className="text-xs text-gray-400 mb-1">Reason / Notes</div>
+                  <div className="text-xs text-gray-700 bg-gray-50 rounded p-2 border whitespace-pre-wrap">
+                    {detailItem.reason}
+                  </div>
+                </div>
+              )}
+
+              {/* Timeline */}
+              {detailItem.timeline && detailItem.timeline.length > 0 && (
+                <div>
+                  <div className="text-xs font-semibold text-gray-700 mb-2">Timeline</div>
+                  <ol className="relative border-l border-gray-200 space-y-3 pl-4">
+                    {detailItem.timeline.map(ev => (
+                      <li key={ev.id} className="text-xs">
+                        <div className="absolute -left-1 mt-1 w-2 h-2 rounded-full bg-blue-400 border border-white" />
+                        <span className="font-medium text-gray-700">
+                          {ev.event.replace('fm_evt_', '').replace(/_/g, ' ')}
+                        </span>
+                        <span className="text-gray-400 ml-2">{fmtDate(ev.created_at).text}</span>
+                        {ev.actor_id && (
+                          <span className="text-gray-400 ml-2">by {ev.actor_id}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+
+              {/* Advance state machine */}
+              {!HARD_TERMINALS.has(detailItem.chain_status) && (
+                <div className="border-t pt-4">
+                  <div className="text-xs font-semibold text-gray-700 mb-2">Advance State Machine</div>
+                  <button
+                    onClick={() => {
+                      setDetailItem(null);
+                      openActionPicker(detailItem);
+                    }}
+                    className="px-4 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    Open Action Picker
+                  </button>
+                </div>
+              )}
+
+              {HARD_TERMINALS.has(detailItem.chain_status) && (
+                <div className="border-t pt-4">
+                  <div className="text-xs text-gray-400 italic">
+                    This event is in a terminal state — no further actions are available.
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Action modal ────────────────────────────────────────────────────── */}
+      {actionItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+            <div className="text-sm font-semibold text-gray-800 mb-1">Force Majeure Action</div>
+            <div className="text-xs text-gray-500 mb-4">
+              {CATEGORY_LABELS[actionItem.fm_category] ?? actionItem.fm_category}
+              {' '}&mdash;{' '}
+              {STATUS_LABELS[actionItem.chain_status] ?? actionItem.chain_status}
+            </div>
+
+            <div className="mb-3">
+              <label className="block text-xs text-gray-600 mb-1">Action *</label>
+              <select
+                value={selectedAction}
+                onChange={e => setSelectedAction(e.target.value)}
+                className="w-full border rounded px-2 py-1 text-xs bg-white"
+              >
+                {modalActions.map(a => (
+                  <option key={a.name} value={a.name}>{a.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {(selectedAction === 'grant_relief' || selectedAction === 'assess_quantum') && (
+              <div className="mb-3">
+                <label className="block text-xs text-gray-600 mb-1">Relief Amount (ZAR)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={actionRelief}
+                  onChange={e => setActionRelief(e.target.value)}
+                  placeholder="e.g. 5000000"
+                  className="w-full border rounded px-2 py-1 text-xs"
+                />
+              </div>
+            )}
+
+            <div className="mb-3">
+              <label className="block text-xs text-gray-600 mb-1">Reason (optional)</label>
+              <textarea
+                value={actionReason}
+                onChange={e => setActionReason(e.target.value)}
+                placeholder="Brief justification or reference"
+                rows={2}
+                className="w-full border rounded px-2 py-1 text-xs"
+              />
+            </div>
+
+            {actionError && (
+              <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1 mb-3">
+                {actionError}
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={closeAction}
+                className="px-3 py-1.5 text-xs border rounded bg-white text-gray-600 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitAction}
+                disabled={actionLoading || !selectedAction}
+                className={`px-4 py-1.5 text-xs rounded text-white disabled:opacity-50 ${
+                  modalActions.find(a => a.name === selectedAction)?.variant === 'danger'
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : modalActions.find(a => a.name === selectedAction)?.variant === 'warn'
+                    ? 'bg-amber-500 hover:bg-amber-600'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {actionLoading ? 'Submitting…' : actionLabelCurrent}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+export default IppForceMajeureTab;

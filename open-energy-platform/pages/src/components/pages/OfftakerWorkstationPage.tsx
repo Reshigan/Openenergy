@@ -4,6 +4,7 @@ import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
 import { CurtailmentClaimTab } from '../offtaker/CurtailmentClaimTab';
+import { OfftakerUseClaimTab } from '../offtaker/OfftakerUseClaimTab';
 import { ObligationsTab } from '../offtaker/ObligationsTab';
 import { PaymentSecurityChainTab } from '../offtaker/PaymentSecurityChainTab';
 import { PpaChangeInLawChainTab } from '../offtaker/PpaChangeInLawChainTab';
@@ -53,6 +54,7 @@ export function OfftakerWorkstationPage() {
         { key: 'budgets', label: 'Budget vs actual', group: 'Operations', body: ({ onRefresh }) => <BudgetsTab onRefresh={onRefresh} /> },
         { key: 'bills', label: 'Bill upload & AI', group: 'Operations', body: ({ onRefresh }) => <BillUploadTab onRefresh={onRefresh} /> },
         { key: 'curtailment_claim', label: 'Curtailment claims', group: 'Operations', body: () => <CurtailmentClaimTab /> },
+        { key: 'unserved_energy_claims', label: 'USE Claims', group: 'Operations', body: () => <OfftakerUseClaimTab /> },
         { key: 'payment_security', label: 'Payment security', group: 'Security', body: () => <PaymentSecurityChainTab /> },
         { key: 'obligations', label: 'Obligations register', group: 'Security', body: () => <ObligationsTab /> },
         { key: 'recs', label: 'RECs portfolio', group: 'Compliance', body: ({ onRefresh }) => <RecsTab onRefresh={onRefresh} /> },

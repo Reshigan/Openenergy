@@ -143,3 +143,142 @@ export function crossesIntoRegulator(
 export function slaBreachCrossesIntoRegulator(tier: FmSeverityTier): boolean {
   return MAJOR_PLUS.includes(tier);
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Wave 194 — IPP Force Majeure Notification & Relief (PPA-based chain)
+//
+// When an extraordinary event beyond a generator's control prevents or
+// materially impairs power delivery under a PPA, the IPP must formally
+// notify the offtaker and regulator, substantiate the event, and prosecute
+// a relief claim for the affected capacity and associated revenue loss.
+//
+// Regulatory: PPA force majeure clause + ERA 4/2006 s34 + REIPPPP Schedule 4
+// Primary actor: ipp_developer (submits), admin (adjudicates)
+// Secondary: offtaker / regulator (acknowledge)
+//
+// SLA polarity — URGENT (more severe / time-critical categories get LESS time)
+// Mounted at /api/ipp-force-majeure-chain.
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type ForceMajeureStatus =
+  | 'fm_submitted'
+  | 'notice_verified'
+  | 'mitigation_assessed'
+  | 'period_active'
+  | 'relief_period_running'
+  | 'relief_claimed'
+  | 'quantum_assessed'
+  | 'relief_granted'    // TERMINAL +
+  | 'relief_denied'     // TERMINAL -
+  | 'disputed'          // TERMINAL
+  | 'fm_lapsed'         // TERMINAL
+  | 'cancelled';        // TERMINAL
+
+export type ForceMajeureAction =
+  | 'verify_notice'
+  | 'assess_mitigation'
+  | 'activate_period'
+  | 'run_relief_period'
+  | 'submit_relief_claim'
+  | 'assess_quantum'
+  | 'grant_relief'
+  | 'deny_relief'
+  | 'raise_dispute'
+  | 'lapse_event';
+
+// URGENT SLA keyed on fm_category — more severe/time-critical gets LESS time
+export type FmEventCategory =
+  | 'extreme_weather'
+  | 'severe_storm'
+  | 'network_fault'
+  | 'regulatory_action'
+  | 'general';
+
+export const FM_CHAIN_SLA_DAYS: Record<FmEventCategory, number> = {
+  extreme_weather:   2,
+  severe_storm:      3,
+  network_fault:     7,
+  regulatory_action: 14,
+  general:           21,
+};
+
+export function deriveFmChainSla(category: FmEventCategory): number {
+  return FM_CHAIN_SLA_DAYS[category];
+}
+
+export const FM_CHAIN_HARD_TERMINALS = new Set<ForceMajeureStatus>([
+  'relief_granted',
+  'relief_denied',
+  'disputed',
+  'fm_lapsed',
+  'cancelled',
+]);
+
+export const FM_CHAIN_VALID_TRANSITIONS: Record<ForceMajeureAction, { from: ForceMajeureStatus[] }> = {
+  verify_notice:       { from: ['fm_submitted'] },
+  assess_mitigation:   { from: ['notice_verified'] },
+  activate_period:     { from: ['mitigation_assessed'] },
+  run_relief_period:   { from: ['period_active'] },
+  submit_relief_claim: { from: ['relief_period_running'] },
+  assess_quantum:      { from: ['relief_claimed'] },
+  grant_relief:        { from: ['quantum_assessed'] },
+  deny_relief: {
+    from: [
+      'fm_submitted', 'notice_verified', 'mitigation_assessed',
+      'period_active', 'relief_period_running', 'relief_claimed',
+      'quantum_assessed',
+    ],
+  },
+  raise_dispute: {
+    from: [
+      'fm_submitted', 'notice_verified', 'mitigation_assessed',
+      'period_active', 'relief_period_running', 'relief_claimed',
+      'quantum_assessed',
+    ],
+  },
+  lapse_event: {
+    from: [
+      'fm_submitted', 'notice_verified', 'mitigation_assessed',
+      'period_active', 'relief_period_running',
+    ],
+  },
+};
+
+export const FM_CHAIN_STATE_TRANSITIONS: Record<ForceMajeureAction, ForceMajeureStatus> = {
+  verify_notice:       'notice_verified',
+  assess_mitigation:   'mitigation_assessed',
+  activate_period:     'period_active',
+  run_relief_period:   'relief_period_running',
+  submit_relief_claim: 'relief_claimed',
+  assess_quantum:      'quantum_assessed',
+  grant_relief:        'relief_granted',
+  deny_relief:         'relief_denied',
+  raise_dispute:       'disputed',
+  lapse_event:         'fm_lapsed',
+};
+
+// Tiers where relief_granted crosses into regulator
+const RELIEF_GRANTED_CATEGORIES: FmEventCategory[] = [
+  'extreme_weather',
+  'severe_storm',
+  'network_fault',
+];
+
+export function fmChainCrossesIntoRegulator(
+  action: ForceMajeureAction,
+  category: FmEventCategory,
+): boolean {
+  switch (action) {
+    case 'activate_period':
+      return true; // ALL tiers — any active FM period is reportable to NERSA
+    case 'grant_relief':
+      return RELIEF_GRANTED_CATEGORIES.includes(category);
+    default:
+      return false;
+  }
+}
+
+// SLA breach crosses ALL tiers for force majeure events
+export function fmChainSlaBreachCrossesIntoRegulator(_category: FmEventCategory): boolean {
+  return true;
+}

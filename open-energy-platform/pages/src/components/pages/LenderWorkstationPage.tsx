@@ -17,6 +17,7 @@ import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConn
 import { SapOracleErpConnectorTab } from '../sapOracleErpConnector/SapOracleErpConnectorTab';
 import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/GovernmentFilingConnectorTab';
 import StageGateTab from '../stageGate/StageGateTab';
+import { LenderEsapTab } from '../lender/LenderEsapTab';
 
 export function LenderWorkstationPage() {
   const kpis = useWorkstationKpis('lender');
@@ -50,6 +51,7 @@ export function LenderWorkstationPage() {
         { key: 'loan_restructure', label: 'Loan restructure & A&E', group: 'Portfolio', body: () => <LoanRestructureChainTab /> },
         { key: 'loan_default', label: 'Default & enforcement', group: 'Enforcement', body: () => <LoanDefaultChainTab /> },
         { key: 'dunning', label: 'Dunning queue', group: 'Enforcement', body: () => <DunningTab /> },
+        { key: 'esap_compliance', label: 'ESAP Compliance (W195)', group: 'Risk', body: () => <LenderEsapTab /> },
         { key: 'strate-swift-connectors', label: 'Settlement rails', group: 'Reporting', body: () => <StrateSwiftConnectorTab /> },
         { key: 'sap-oracle-erp-connectors', label: 'ERP connectors', group: 'Reporting', body: () => <SapOracleErpConnectorTab /> },
         { key: 'government-filing-connectors', label: 'Filing connectors', group: 'Reporting', body: () => <GovernmentFilingConnectorTab /> },

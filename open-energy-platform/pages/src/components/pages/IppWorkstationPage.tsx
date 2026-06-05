@@ -163,6 +163,7 @@ export function IppWorkstationPage() {
         { key: 'lender-reporting', label: 'Lender reporting covenant (W183)', group: 'Risk', body: () => <IppLenderReportingTab /> },
         { key: 'licence-returns', label: 'Annual NERSA licence return (W184)', group: 'Risk', body: () => <IppLicenceReturnsTab /> },
         { key: 'licence-obligations', label: 'Licence Obligations (W193)', group: 'Regulatory', body: () => <IppLicenceObligationTab /> },
+        { key: 'force_majeure', label: 'Force Majeure (W194)', group: 'Operations', body: () => <IppForceMajeureTab /> },
         { key: 'reipppp-reports', label: 'REIPPPP annual progress report (W185)', group: 'Risk', body: () => <IppReippppReportsTab /> },
         { key: 'equity-transfer', label: 'SPV equity transfer & consent (W186)', group: 'Risk', body: () => <IppEquityTransferTab /> },
         { key: 'quarterly-gen-report', label: 'DMRE quarterly generation report (W187)', group: 'Risk', body: () => <IppQuarterlyGenReportTab /> },
