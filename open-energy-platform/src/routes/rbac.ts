@@ -46,7 +46,7 @@ const INVITABLE_BY: Record<string, string[]> = {
   admin:        [...ALL_ROLES],
   support:      ['support'],
   trader:       ['trader'],
-  ipp_developer: ['ipp_developer'],
+  ipp_developer: ['lender', 'offtaker', 'carbon_fund', 'ipp_developer'],
   lender:       ['lender'],
   offtaker:     ['offtaker'],
   carbon_fund:  ['carbon_fund'],
@@ -204,9 +204,12 @@ rbac.get('/invitations/:token', async (c) => {
   const token = c.req.param('token');
   const inv = await c.env.DB.prepare(`
     SELECT i.id, i.email, i.role, i.organization, i.note, i.status, i.expires_at,
-           p.name as invited_by_name, p.company_name as invited_by_company
+           i.project_id, i.deal_terms,
+           p.name as invited_by_name, p.company_name as invited_by_company,
+           pp.project_name, pp.technology, pp.capacity_mw, pp.location
     FROM rbac_invitations i
     LEFT JOIN participants p ON p.id = i.invited_by
+    LEFT JOIN ipp_projects pp ON pp.id = i.project_id
     WHERE i.token = ?
   `).bind(token).first<any>();
 
@@ -307,7 +310,7 @@ rbac.get('/me/invitations', async (c) => {
 rbac.post('/me/invitations', async (c) => {
   const user = getCurrentUser(c);
   const body = await c.req.json<any>().catch(() => ({}));
-  const { role, email, organization, note, expires_hours = 72 } = body;
+  const { role, email, organization, note, expires_hours = 72, project_id, deal_terms } = body;
 
   if (!role) return c.json({ success: false, error: 'role required' }, 400);
 
@@ -319,21 +322,34 @@ rbac.post('/me/invitations', async (c) => {
     }, 403);
   }
 
+  // Validate project ownership if project_id supplied
+  if (project_id) {
+    const proj = await c.env.DB.prepare(
+      `SELECT id FROM ipp_projects WHERE id = ? AND developer_id = ?`
+    ).bind(project_id, user.id).first();
+    if (!proj) return c.json({ success: false, error: 'Project not found or not owned by you' }, 404);
+  }
+
   const id = genId();
   const token = genToken();
   const expiresAt = new Date(Date.now() + expires_hours * 3_600_000).toISOString();
 
   await c.env.DB.prepare(`
-    INSERT INTO rbac_invitations (id, token, invited_by, email, role, organization, note, expires_at)
-    VALUES (?,?,?,?,?,?,?,?)
-  `).bind(id, token, user.id, email ?? null, role, organization ?? null, note ?? null, expiresAt).run();
+    INSERT INTO rbac_invitations (id, token, invited_by, email, role, organization, note, expires_at, project_id, deal_terms)
+    VALUES (?,?,?,?,?,?,?,?,?,?)
+  `).bind(
+    id, token, user.id, email ?? null, role,
+    organization ?? null, note ?? null, expiresAt,
+    project_id ?? null,
+    deal_terms != null ? JSON.stringify(deal_terms) : null,
+  ).run();
 
   await fireCascade({
     event: 'rbac.invitation_created',
     actor_id: user.id,
     entity_type: 'rbac_invitations',
     entity_id: id,
-    data: { id, role, email, expires_at: expiresAt },
+    data: { id, role, email, project_id, expires_at: expiresAt },
     env: c.env,
   });
 
@@ -343,6 +359,7 @@ rbac.post('/me/invitations', async (c) => {
       id,
       token,
       role,
+      project_id: project_id ?? null,
       expires_at: expiresAt,
       invite_url: `/register?token=${token}`,
     },
@@ -566,6 +583,70 @@ rbac.get('/invitations', async (c) => {
   return c.json({ success: true, data: rows });
 });
 
+// ─── Role scaffold: seeds chain records on invite-based account creation ──────
+
+async function seedRoleScaffold(
+  db: any,
+  participantId: string,
+  role: string,
+  invId: string,
+  companyName: string | null,
+): Promise<void> {
+  const inv = await db.prepare(
+    `SELECT invited_by, project_id, deal_terms FROM rbac_invitations WHERE id = ?`
+  ).bind(invId).first() as any;
+  if (!inv?.project_id) return;
+
+  const projectId = inv.project_id;
+  const dealTerms = inv.deal_terms ? JSON.parse(inv.deal_terms) : {};
+
+  if (role === 'lender') {
+    const covenants = [
+      { code: 'DSCR_6M',       name: 'Debt Service Cover Ratio (6-month)',  type: 'financial',    op: 'gte', threshold: 1.25, freq: 'semi_annual' },
+      { code: 'LLCR',          name: 'Loan Life Cover Ratio',               type: 'financial',    op: 'gte', threshold: 1.15, freq: 'annual'     },
+      { code: 'DEBT_EQUITY',   name: 'Debt-to-Equity Ratio',                type: 'financial',    op: 'lte', threshold: 70,   freq: 'annual'     },
+      { code: 'AVAILABILITY',  name: 'Plant Availability (%)',               type: 'operational',  op: 'gte', threshold: 95,   freq: 'quarterly'  },
+      { code: 'INSURANCE_MIN', name: 'Minimum Insurance Coverage',          type: 'insurance',    op: 'gte', threshold: 1,    freq: 'annual'     },
+    ];
+    for (const cov of covenants) {
+      const covId = 'cov_' + genId();
+      await db.prepare(`
+        INSERT OR IGNORE INTO covenants
+          (id, project_id, lender_participant_id, covenant_code, covenant_name,
+           covenant_type, operator, threshold, measurement_frequency, status, created_at)
+        VALUES (?,?,?,?,?,?,?,?,?,'active',datetime('now'))
+      `).bind(covId, projectId, participantId, cov.code, cov.name, cov.type, cov.op, cov.threshold, cov.freq).run();
+    }
+  }
+
+  if (role === 'offtaker') {
+    const project = await db.prepare(
+      `SELECT project_name, capacity_mw FROM ipp_projects WHERE id = ?`
+    ).bind(projectId).first() as any;
+    if (!project) return;
+
+    const ppaId = 'ppa_' + genId();
+    const yr = new Date().getFullYear();
+    const ppaNumber = `PPA-${yr}-${genId().slice(0, 6).toUpperCase()}`;
+    const offtakerName = companyName ?? 'Offtaker';
+    const capMw = dealTerms?.capacity_mw ?? project.capacity_mw ?? 0;
+    const tier = capMw >= 100 ? 'utility' : capMw >= 20 ? 'medium' : capMw >= 5 ? 'small' : 'micro';
+
+    await db.prepare(`
+      INSERT OR IGNORE INTO oe_ppa_contract_chain
+        (id, ppa_number, project_id, participant_id, offtaker_id, project_name, offtaker_name,
+         capacity_mw, capacity_tier, chain_status, created_by, created_at, updated_at)
+      VALUES (?,?,?,?,?,?,?,?,?,'draft',?,datetime('now'),datetime('now'))
+    `).bind(
+      ppaId, ppaNumber, projectId,
+      inv.invited_by,   // IPP developer who sent the invitation
+      participantId,    // new offtaker
+      project.project_name, offtakerName,
+      capMw, tier, participantId,
+    ).run();
+  }
+}
+
 // ─── Approval helper ──────────────────────────────────────────────────────────
 
 async function approveRegistration(
@@ -619,6 +700,8 @@ async function approveRegistration(
       SET status = 'accepted', accepted_by = ?, accepted_at = datetime('now')
       WHERE id = ?
     `).bind(participantId, invId).run();
+    // Seed role-appropriate chain records (covenants, PPA shell, etc.)
+    await seedRoleScaffold(c.env.DB, participantId, role, invId, reg.company_name ?? null);
   }
 
   await fireCascade({

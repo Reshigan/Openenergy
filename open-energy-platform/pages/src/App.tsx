@@ -1,5 +1,5 @@
 import React, { useState, useEffect, ReactNode } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Sparkles, ShieldCheck, Zap, Leaf, Activity, ArrowRight } from 'lucide-react';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './lib/useAuth';
@@ -849,32 +849,98 @@ function SsoLanding() {
 }
 
 // Register Page
+const ROLE_LABELS: Record<string, string> = {
+  ipp_developer: 'IPP Developer',
+  trader: 'Energy Trader',
+  carbon_fund: 'Carbon Fund Manager',
+  offtaker: 'Offtaker / Corporate Buyer',
+  lender: 'Lender / Investor',
+  esums_owner: 'Asset Owner (Esums O&M)',
+};
+
 function RegisterPage() {
-  const { register } = useAuth();
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get('token');
+
+  const [invite, setInvite] = useState<any>(null);
+  const [inviteError, setInviteError] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(!!inviteToken);
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    name: '',
+    full_name: '',
     company_name: '',
-    role: 'ipp_developer',
+    requested_role: 'ipp_developer',
+    motivation: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  // Fetch invite context when token present
+  useEffect(() => {
+    if (!inviteToken) return;
+    (async () => {
+      try {
+        const res = await api.get(`/rbac/invitations/${inviteToken}`);
+        const inv = res.data.data;
+        setInvite(inv);
+        setFormData(prev => ({
+          ...prev,
+          email: inv.email || prev.email,
+          requested_role: inv.role,
+        }));
+      } catch (err: any) {
+        setInviteError(err?.response?.data?.error || 'Invitation link is invalid or expired.');
+      } finally {
+        setInviteLoading(false);
+      }
+    })();
+  }, [inviteToken]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      await register(formData);
-      navigate('/login', { state: { registered: true } });
+      const payload: Record<string, unknown> = {
+        email: formData.email,
+        password: formData.password,
+        full_name: formData.full_name,
+        company_name: formData.company_name || undefined,
+        requested_role: invite ? invite.role : formData.requested_role,
+        motivation: formData.motivation || undefined,
+      };
+      if (inviteToken) payload.invitation_token = inviteToken;
+
+      const res = await api.post('/rbac/registrations', payload);
+      if (!res.data.success) throw new Error(res.data.error || 'Registration failed');
+
+      if (inviteToken && res.data.data?.participant_id) {
+        // Auto-login for invite-based registrations (account is immediately active)
+        await login(formData.email, formData.password);
+        // navigate is handled by login success (AuthContext sets user → ProtectedRoute redirects)
+        navigate(`/launch/${invite?.role ?? formData.requested_role}`, { replace: true });
+      } else {
+        setSubmitted(true);
+      }
     } catch (err: any) {
-      setError(err.message || 'Registration failed');
+      setError(err?.response?.data?.error || err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
   };
+
+  if (inviteLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #061528 0%, #0f2540 50%, #1a3a5c 100%)' }}>
+        <p className="text-white/60 text-sm">Verifying invitation…</p>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -894,106 +960,170 @@ function RegisterPage() {
         </div>
 
         <div className="card p-8">
-          <h2 className="text-2xl font-semibold text-center mb-6">Create Account</h2>
-
-          {error && (
-            <div role="alert" aria-live="polite" className="alert-error mb-4">{error}</div>
+          {/* Invite context banner */}
+          {invite && (
+            <div className="mb-6 rounded-lg border border-[#1a3a5c]/30 bg-[#dbecfb]/60 p-4">
+              <p className="text-[11px] font-mono uppercase tracking-[0.15em] text-[#1a3a5c] mb-1">You've been invited</p>
+              <p className="text-sm font-semibold text-[#0f2540]">
+                {invite.invited_by_company || invite.invited_by_name} has invited you to join as{' '}
+                <span className="text-[#1a3a5c]">{ROLE_LABELS[invite.role] ?? invite.role}</span>
+              </p>
+              {invite.project_name && (
+                <p className="text-xs text-[#3d4756] mt-1">
+                  Project: <span className="font-medium">{invite.project_name}</span>
+                  {invite.capacity_mw ? ` · ${invite.capacity_mw} MW` : ''}
+                  {invite.technology ? ` · ${invite.technology}` : ''}
+                </p>
+              )}
+              {invite.note && (
+                <p className="text-xs text-[#3d4756] mt-1 italic">"{invite.note}"</p>
+              )}
+            </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-            <div>
-              <label className="label" htmlFor="register-name">Full Name</label>
-              <input
-                id="register-name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="input"
-                placeholder="John Smith"
-                required
-              />
-            </div>
-            <div>
-              <label className="label" htmlFor="register-company">Company Name</label>
-              <input
-                id="register-company"
-                name="company_name"
-                type="text"
-                autoComplete="organization"
-                value={formData.company_name}
-                onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                className="input"
-                placeholder="Acme Energy (Pty) Ltd"
-              />
-            </div>
-            <div>
-              <label className="label" htmlFor="register-email">Email</label>
-              <input
-                id="register-email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                aria-invalid={Boolean(error)}
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="input"
-                placeholder="you@company.co.za"
-                required
-              />
-            </div>
-            <div>
-              <label className="label" htmlFor="register-password">Password</label>
-              <input
-                id="register-password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                aria-describedby="register-password-hint"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="input"
-                placeholder="••••••••"
-                required
-                minLength={8}
-              />
-              <p id="register-password-hint" className="text-[11px] text-[#3d4756] mt-1">
-                Minimum 8 characters.
-              </p>
-            </div>
-            <div>
-              <label className="label" htmlFor="register-role">Role</label>
-              <select
-                id="register-role"
-                name="role"
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                className="input"
-              >
-                <option value="esums_owner">Asset Owner (Esums O&amp;M)</option>
-                <option value="ipp_developer">IPP Developer</option>
-                <option value="trader">Trader</option>
-                <option value="carbon_fund">Carbon Fund Manager</option>
-                <option value="offtaker">Offtaker</option>
-                <option value="lender">Lender / Investor</option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              className="btn-primary w-full"
-              disabled={loading}
-            >
-              {loading ? 'Creating account...' : 'Create Account'}
-            </button>
-          </form>
+          {inviteError && (
+            <div role="alert" className="alert-error mb-4">{inviteError}</div>
+          )}
 
-          <p className="text-center text-sm mt-6" style={{ color: '#3d4756' }}>
-            Already have an account?{' '}
-            <Link to="/login" className="font-semibold hover:underline" style={{ color: '#1a3a5c' }}>
-              Sign in
-            </Link>
-          </p>
+          {submitted ? (
+            <div className="text-center py-4">
+              <div className="text-4xl mb-3">✓</div>
+              <h2 className="text-xl font-semibold text-[#0f2540] mb-2">Registration submitted</h2>
+              <p className="text-sm text-[#3d4756]">
+                Your account is under review. You will be notified once approved.
+              </p>
+              <Link to="/login" className="btn-primary mt-6 inline-block">Back to login</Link>
+            </div>
+          ) : (
+            <>
+              <h2 className="text-2xl font-semibold text-center mb-6">
+                {invite ? 'Accept invitation' : 'Create Account'}
+              </h2>
+
+              {error && (
+                <div role="alert" aria-live="polite" className="alert-error mb-4">{error}</div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                <div>
+                  <label className="label" htmlFor="register-name">Full Name</label>
+                  <input
+                    id="register-name"
+                    name="name"
+                    type="text"
+                    autoComplete="name"
+                    value={formData.full_name}
+                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                    className="input"
+                    placeholder="John Smith"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="label" htmlFor="register-company">Company Name</label>
+                  <input
+                    id="register-company"
+                    name="company_name"
+                    type="text"
+                    autoComplete="organization"
+                    value={formData.company_name}
+                    onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+                    className="input"
+                    placeholder="Acme Energy (Pty) Ltd"
+                  />
+                </div>
+                <div>
+                  <label className="label" htmlFor="register-email">Email</label>
+                  <input
+                    id="register-email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    aria-invalid={Boolean(error)}
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="input"
+                    placeholder="you@company.co.za"
+                    required
+                    readOnly={!!(invite?.email)}
+                  />
+                </div>
+                <div>
+                  <label className="label" htmlFor="register-password">Password</label>
+                  <input
+                    id="register-password"
+                    name="password"
+                    type="password"
+                    autoComplete="new-password"
+                    aria-describedby="register-password-hint"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="input"
+                    placeholder="••••••••"
+                    required
+                    minLength={8}
+                  />
+                  <p id="register-password-hint" className="text-[11px] text-[#3d4756] mt-1">
+                    Minimum 8 characters, including uppercase, lowercase, and a number.
+                  </p>
+                </div>
+                <div>
+                  <label className="label">Role</label>
+                  {invite ? (
+                    <div className="input flex items-center gap-2 bg-[#f5f8fb] cursor-default">
+                      <span className="px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-[#dbecfb] text-[#1a3a5c]">
+                        {ROLE_LABELS[invite.role] ?? invite.role}
+                      </span>
+                      <span className="text-xs text-[#6b7685]">set by invitation</span>
+                    </div>
+                  ) : (
+                    <select
+                      id="register-role"
+                      name="role"
+                      value={formData.requested_role}
+                      onChange={(e) => setFormData({ ...formData, requested_role: e.target.value })}
+                      className="input"
+                    >
+                      <option value="ipp_developer">IPP Developer</option>
+                      <option value="trader">Energy Trader</option>
+                      <option value="carbon_fund">Carbon Fund Manager</option>
+                      <option value="offtaker">Offtaker / Corporate Buyer</option>
+                      <option value="lender">Lender / Investor</option>
+                      <option value="esums_owner">Asset Owner (Esums O&amp;M)</option>
+                    </select>
+                  )}
+                </div>
+                {!invite && (
+                  <div>
+                    <label className="label" htmlFor="register-motivation">Why are you joining? <span className="text-[#6b7685] font-normal">(optional)</span></label>
+                    <textarea
+                      id="register-motivation"
+                      name="motivation"
+                      rows={2}
+                      value={formData.motivation}
+                      onChange={(e) => setFormData({ ...formData, motivation: e.target.value })}
+                      className="input resize-none"
+                      placeholder="Brief description of your organisation and use case…"
+                    />
+                  </div>
+                )}
+                <button
+                  type="submit"
+                  className="btn-primary w-full"
+                  disabled={loading || !!inviteError}
+                >
+                  {loading ? (invite ? 'Joining…' : 'Submitting…') : (invite ? 'Join platform' : 'Request access')}
+                </button>
+              </form>
+
+              <p className="text-center text-sm mt-6" style={{ color: '#3d4756' }}>
+                Already have an account?{' '}
+                <Link to="/login" className="font-semibold hover:underline" style={{ color: '#1a3a5c' }}>
+                  Sign in
+                </Link>
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>
