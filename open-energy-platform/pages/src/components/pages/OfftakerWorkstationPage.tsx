@@ -49,6 +49,7 @@ export function OfftakerWorkstationPage() {
         { key: 'change_in_law', label: 'PPA change-in-law', group: 'Contracts', body: () => <PpaChangeInLawChainTab /> },
         { key: 'ppa_nomination', label: 'PPA nominations', group: 'Contracts', body: () => <PpaNominationChainTab /> },
         { key: 'ppa_annual_recon', label: 'PPA annual reconciliation', group: 'Contracts', body: () => <PpaAnnualReconChainTab /> },
+        { key: 'wheeling_access', label: 'Wheeling access (W219)', group: 'Contracts', body: ({ onRefresh }) => <WheelingAccessTab onRefresh={onRefresh} /> },
         { key: 'sites', label: 'Sites & groups', group: 'Operations', body: ({ onRefresh }) => <SitesTab onRefresh={onRefresh} /> },
         { key: 'tariffs', label: 'Tariffs', group: 'Operations', body: () => <TariffsTab /> },
         { key: 'budgets', label: 'Budget vs actual', group: 'Operations', body: ({ onRefresh }) => <BudgetsTab onRefresh={onRefresh} /> },
@@ -946,6 +947,186 @@ function GreenTariffTab({ onRefresh }: { onRefresh?: () => void }) {
             });
             if (!res.ok) throw new Error(await res.text());
             setModal(null); onRefresh?.();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── W219: Offtaker Wheeling Access Application ────────────────────────────────
+const WHEEL_TIER_TONE: Record<string, string> = {
+  small_embedded:      'bg-blue-50 text-blue-700',
+  medium_distributed:  'bg-purple-50 text-purple-700',
+  large_industrial:    'bg-amber-50 text-amber-700',
+  bulk_transmission:   'bg-rose-50 text-rose-700',
+};
+
+function wheelStatusTone(s: string): string {
+  if (['active'].includes(s)) return 'bg-emerald-100 text-emerald-800';
+  if (['terminated', 'expired'].includes(s)) return 'bg-red-100 text-red-800';
+  if (['withdrawn'].includes(s)) return 'bg-gray-100 text-gray-600';
+  if (['renewal_due'].includes(s)) return 'bg-orange-100 text-orange-800';
+  if (['agreement_signed'].includes(s)) return 'bg-green-100 text-green-800';
+  return 'bg-slate-100 text-slate-700';
+}
+
+type WheelModal = { id: string; wheel_tier: string; requested_capacity_mw?: number } | null;
+
+function WheelingAccessTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [data, setData] = React.useState<any[]>([]);
+  const [kpis, setKpis] = React.useState<any>({});
+  const [modal, setModal] = React.useState<WheelModal>(null);
+  const [createModal, setCreateModal] = React.useState(false);
+  const [refreshKey, setRefreshKey] = React.useState(0);
+
+  const bump = () => { setRefreshKey(k => k + 1); onRefresh?.(); };
+
+  React.useEffect(() => {
+    fetch('/api/wheeling-access', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+      .then(r => r.json()).then(j => { setData(j.data ?? []); setKpis(j.kpis ?? {}); });
+  }, [refreshKey]);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: 'Total', val: kpis.total ?? 0 },
+          { label: 'Active', val: kpis.active ?? 0 },
+          { label: 'In progress', val: kpis.in_progress ?? 0 },
+          { label: 'Renewal due', val: kpis.renewal_due ?? 0 },
+        ].map(k => (
+          <div key={k.label} className="bg-white border border-gray-200 rounded-lg p-3 text-center">
+            <div className="text-2xl font-semibold text-gray-900">{k.val}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{k.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-between items-center">
+        <span className="text-sm text-gray-500">{data.length} wheeling access applications</span>
+        <button
+          onClick={() => setCreateModal(true)}
+          className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700"
+        >+ New access application</button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <thead className="bg-gray-50">
+            <tr>
+              {['Tier', 'Capacity (MW)', 'Voltage (kV)', 'IPP ref', 'Status', 'SLA deadline', ''].map(h => (
+                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-100">
+            {data.map((row: any) => (
+              <tr key={row.id} className="hover:bg-gray-50">
+                <td className="px-3 py-2">
+                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${WHEEL_TIER_TONE[row.wheel_tier] ?? 'bg-gray-100 text-gray-700'}`}>
+                    {row.wheel_tier?.replace(/_/g, ' ')}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-gray-700">{row.requested_capacity_mw ?? '—'}</td>
+                <td className="px-3 py-2 text-gray-600">{row.voltage_level_kv ? `${row.voltage_level_kv} kV` : '—'}</td>
+                <td className="px-3 py-2 text-gray-500 text-xs">{row.ipp_ref ?? '—'}</td>
+                <td className="px-3 py-2">
+                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${wheelStatusTone(row.chain_status)}`}>
+                    {row.chain_status?.replace(/_/g, ' ')}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-gray-500 text-xs">{row.sla_deadline ? new Date(row.sla_deadline).toLocaleDateString() : '—'}</td>
+                <td className="px-3 py-2">
+                  <button onClick={() => setModal({ id: row.id, wheel_tier: row.wheel_tier, requested_capacity_mw: row.requested_capacity_mw })}
+                    className="text-xs text-blue-600 hover:underline">Action</button>
+                </td>
+              </tr>
+            ))}
+            {data.length === 0 && (
+              <tr><td colSpan={7} className="px-3 py-8 text-center text-gray-400">No wheeling access applications found</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {createModal && (
+        <ActionModal
+          title="New wheeling access application"
+          submitLabel="Submit application"
+          fields={[
+            { key: 'wheel_tier', label: 'Tier', type: 'select', required: true, options: [
+              { value: 'small_embedded', label: 'Small embedded (<1 MW)' },
+              { value: 'medium_distributed', label: 'Medium distributed (1–10 MW)' },
+              { value: 'large_industrial', label: 'Large industrial (10–100 MW)' },
+              { value: 'bulk_transmission', label: 'Bulk transmission (>100 MW)' },
+            ]} as FieldSpec,
+            { key: 'requested_capacity_mw', label: 'Requested capacity (MW)', type: 'number' },
+            { key: 'wheeling_distance_km', label: 'Wheeling distance (km)', type: 'number' },
+            { key: 'voltage_level_kv', label: 'Voltage level (kV)', type: 'number' },
+            { key: 'ipp_ref', label: 'IPP / generator reference' },
+            { key: 'gca_ref', label: 'GCA reference (W28)' },
+            { key: 'ppa_ref', label: 'PPA reference (W22)' },
+            { key: 'wheeling_route_description', label: 'Wheeling route description', type: 'textarea' },
+            { key: 'reason', label: 'Application notes' },
+          ] as FieldSpec[]}
+          onClose={() => setCreateModal(false)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/wheeling-access', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                ...v,
+                requested_capacity_mw: v.requested_capacity_mw ? Number(v.requested_capacity_mw) : undefined,
+                wheeling_distance_km: v.wheeling_distance_km ? Number(v.wheeling_distance_km) : undefined,
+                voltage_level_kv: v.voltage_level_kv ? Number(v.voltage_level_kv) : undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setCreateModal(false); bump();
+          }}
+        />
+      )}
+
+      {modal && (
+        <ActionModal
+          title={`Wheeling access — ${modal.wheel_tier?.replace(/_/g, ' ')} — ${modal.requested_capacity_mw ?? '?'}MW`}
+          submitLabel="Submit action"
+          fields={[
+            { key: 'action', label: 'Action', type: 'select', required: true, options: [
+              { value: 'commence_feasibility', label: 'Commence feasibility study' },
+              { value: 'commence_impact_assessment', label: 'Commence impact assessment' },
+              { value: 'issue_terms', label: 'Issue indicative terms' },
+              { value: 'commence_negotiation', label: 'Commence negotiation' },
+              { value: 'execute_agreement', label: 'Execute wheeling agreement' },
+              { value: 'activate', label: 'Activate wheeling' },
+              { value: 'request_modification', label: 'Request modification' },
+              { value: 'flag_renewal', label: 'Flag renewal due' },
+              { value: 'terminate', label: 'Terminate agreement' },
+              { value: 'expire', label: 'Mark as expired' },
+              { value: 'withdraw', label: 'Withdraw application' },
+            ]} as FieldSpec,
+            { key: 'feasibility_ref', label: 'Feasibility study reference' },
+            { key: 'impact_study_ref', label: 'Impact assessment reference' },
+            { key: 'network_constraints', label: 'Network constraints / findings', type: 'textarea' },
+            { key: 'indicative_terms_ref', label: 'Indicative terms reference' },
+            { key: 'agreement_ref', label: 'Wheeling agreement number' },
+            { key: 'agreement_expiry', label: 'Agreement expiry date' },
+            { key: 'wheeling_charge_tariff', label: 'Wheeling charge tariff class' },
+            { key: 'modification_description', label: 'Modification description', type: 'textarea' },
+            { key: 'renewal_due_date', label: 'Renewal due date' },
+            { key: 'termination_reason', label: 'Termination reason', type: 'textarea' },
+            { key: 'reason', label: 'Notes' },
+          ] as FieldSpec[]}
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/wheeling-access/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify(v),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); bump();
           }}
         />
       )}

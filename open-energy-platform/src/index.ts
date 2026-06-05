@@ -395,6 +395,7 @@ import eopActivationChainRoutes, { eopSlaSweep } from './routes/eop-activation-c
 import fscaConductReportChainRoutes, { fcrSlaSweep } from './routes/fsca-conduct-report-chain';
 import slaPerformanceReportChainRoutes, { sprSlaSweep } from './routes/sla-performance-report-chain';
 import creditInsuranceChainRoutes, { ciSlaSweep } from './routes/credit-insurance-chain';
+import wheelingAccessChainRoutes, { wheelSlaSweep } from './routes/wheeling-access-chain';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -1078,6 +1079,7 @@ app.route('/api/eop-activations', eopActivationChainRoutes);
 app.route('/api/fsca-conduct-reports', fscaConductReportChainRoutes);
 app.route('/api/sla-performance-reports', slaPerformanceReportChainRoutes);
 app.route('/api/credit-insurance', creditInsuranceChainRoutes);
+app.route('/api/wheeling-access', wheelingAccessChainRoutes);
 // platformFeaturesRoutes is the catch-all for /api — it must remain LAST
 // so all specific /api/* mounts above are tried first.
 app.route('/api', platformFeaturesRoutes);
@@ -2651,6 +2653,11 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ci_sla_sweep', async () => {
         const result = await ciSlaSweep(env as never);
         console.log('ci_sla_sweep', JSON.stringify(result));
+      });
+      // W219: Offtaker Wheeling Access — INVERTED SLA sweep.
+      await safe('wheel_sla_sweep', async () => {
+        const result = await wheelSlaSweep(env as never);
+        console.log('wheel_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
