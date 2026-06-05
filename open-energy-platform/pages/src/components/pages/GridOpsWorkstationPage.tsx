@@ -50,6 +50,7 @@ export function GridOpsWorkstationPage() {
       tabs={[
         { key: 'dispatch_nomination', label: 'Dispatch nominations', group: 'Operations', body: () => <DispatchNominationTab /> },
         { key: 'curtailment', label: 'Curtailment events', group: 'Operations', body: ({ onRefresh }) => <CurtailmentTab onRefresh={onRefresh} /> },
+        { key: 'demand_response', label: 'Demand response (W205)', group: 'Operations', body: ({ onRefresh }) => <DemandResponseTab onRefresh={onRefresh} /> },
         { key: 'ancillary', label: 'Ancillary services', group: 'Operations', body: ({ onRefresh }) => <AncillaryTab onRefresh={onRefresh} /> },
         { key: 'imbalance-settlement', label: 'Imbalance settlement', group: 'Operations', body: () => <ImbalanceSettlementChainTab /> },
         { key: 'wheeling_charges', label: 'Wheeling charges', group: 'Operations', body: () => <WheelingChargesTab /> },
@@ -300,6 +301,151 @@ function SmartMeterAssetsTab({ onRefresh }: { onRefresh: () => void }) {
           )},
         ]}
       />
+    </div>
+  );
+}
+
+// ─── W205: Demand-Response Programme ─────────────────────────────────────────
+type DrModalMode = 'create' | { type: 'action'; id: string; currentStatus: string } | null;
+
+function DemandResponseTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [modal, setModal] = useState<DrModalMode>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refresh = () => { setRefreshKey(k => k + 1); onRefresh?.(); };
+
+  const statusTone = (s: string) => {
+    if (s === 'settled') return 'good' as const;
+    if (['non_performance', 'cancelled'].includes(s)) return 'bad' as const;
+    if (['settlement_disputed', 'load_shed'].includes(s)) return 'warn' as const;
+    return 'neutral' as const;
+  };
+
+  return (
+    <div>
+      <div className="flex justify-end mb-3">
+        <button
+          className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
+          onClick={() => setModal('create')}
+        >
+          + Register DR event
+        </button>
+      </div>
+
+      <ListingTable
+        key={refreshKey}
+        endpoint="/demand-response-events"
+        rowKey={(r) => r.id}
+        empty={{ title: 'No demand-response events', description: 'Register a DR programme activation event.' }}
+        columns={[
+          { key: 'event_date', label: 'Date', render: (r) => r.event_date },
+          { key: 'dr_programme', label: 'Programme', render: (r) => <Pill tone="info">{String(r.dr_programme).replace(/_/g, ' ')}</Pill> },
+          { key: 'requested_mw', label: 'Requested MW', align: 'right', render: (r) => r.requested_mw != null ? `${r.requested_mw} MW` : '—' },
+          { key: 'actual_mw_shed', label: 'Actual MW', align: 'right', render: (r) => r.actual_mw_shed != null ? `${r.actual_mw_shed} MW` : '—' },
+          { key: 'incentive_amount_zar', label: 'Incentive', align: 'right', render: (r) => r.incentive_amount_zar != null ? Number(r.incentive_amount_zar).toLocaleString('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }) : '—' },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={statusTone(r.chain_status)}>{String(r.chain_status).replace(/_/g, ' ')}</Pill> },
+          { key: 'sla_breached', label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">Breached</Pill> : <Pill tone="good">OK</Pill> },
+        ]}
+        rowOnClick={(r) => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status })}
+      />
+
+      {modal === 'create' && (
+        <ActionModal
+          title="Register demand-response event"
+          submitLabel="Register"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/demand-response-events', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                dr_programme: v.dr_programme,
+                event_date: v.event_date,
+                requested_mw: v.requested_mw ? parseFloat(v.requested_mw) : undefined,
+                notification_type: v.notification_type || undefined,
+                incentive_rate_per_mw: v.incentive_rate_per_mw ? parseFloat(v.incentive_rate_per_mw) : undefined,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null);
+            refresh();
+          }}
+          fields={[
+            { key: 'event_date', label: 'Event date', type: 'date', required: true },
+            {
+              key: 'dr_programme', label: 'DR programme', type: 'select', required: true, defaultValue: 'day_ahead',
+              options: [
+                { value: 'frequency_response', label: 'Frequency response (2h SLA)' },
+                { value: 'real_time', label: 'Real-time (4h SLA)' },
+                { value: 'day_ahead', label: 'Day-ahead (24h SLA)' },
+                { value: 'interruptible_tariff', label: 'Interruptible tariff (48h SLA)' },
+              ],
+            },
+            { key: 'requested_mw', label: 'Requested MW curtailment', type: 'number', required: false },
+            {
+              key: 'notification_type', label: 'Notification type', type: 'select', required: false,
+              options: [
+                { value: 'day_ahead', label: 'Day-ahead' },
+                { value: 'real_time', label: 'Real-time' },
+                { value: 'test', label: 'Test activation' },
+              ],
+            },
+            { key: 'incentive_rate_per_mw', label: 'Incentive rate (ZAR/MW)', type: 'number', required: false },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+          ]}
+        />
+      )}
+
+      {modal !== null && modal !== 'create' && (
+        <ActionModal
+          title={`Advance DR event — ${modal.currentStatus.replace(/_/g, ' ')}`}
+          submitLabel="Submit action"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/demand-response-events/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                action: v.action,
+                reason: v.reason || undefined,
+                actual_mw_shed: v.actual_mw_shed ? parseFloat(v.actual_mw_shed) : undefined,
+                performance_pct: v.performance_pct ? parseFloat(v.performance_pct) : undefined,
+                incentive_amount_zar: v.incentive_amount_zar ? parseFloat(v.incentive_amount_zar) : undefined,
+                settlement_ref: v.settlement_ref || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null);
+            refresh();
+          }}
+          fields={[
+            {
+              key: 'action', label: 'Action', type: 'select', required: true,
+              options: [
+                { value: 'send_notification', label: 'Send notification to participant' },
+                { value: 'acknowledge', label: 'Participant acknowledges' },
+                { value: 'activate', label: 'Issue activation instruction' },
+                { value: 'confirm_load_shed', label: 'Confirm load shed started' },
+                { value: 'close_metering', label: 'Close metering window' },
+                { value: 'verify_performance', label: 'Verify performance (independent)' },
+                { value: 'calculate_settlement', label: 'Calculate incentive settlement' },
+                { value: 'agree_settlement', label: 'Agree settlement amount' },
+                { value: 'dispute_settlement', label: 'Raise settlement dispute' },
+                { value: 'resolve_dispute', label: 'Resolve dispute' },
+                { value: 'post_settlement', label: 'Post incentive payment' },
+                { value: 'record_non_performance', label: 'Record non-performance' },
+                { value: 'cancel', label: 'Cancel activation' },
+              ],
+            },
+            { key: 'actual_mw_shed', label: 'Actual MW shed (metered)', type: 'number', required: false },
+            { key: 'performance_pct', label: 'Performance % (actual/requested)', type: 'number', required: false },
+            { key: 'incentive_amount_zar', label: 'Incentive amount (ZAR)', type: 'number', required: false },
+            { key: 'settlement_ref', label: 'Settlement reference', required: false },
+            { key: 'reason', label: 'Notes / reason', type: 'textarea', required: false },
+          ]}
+        />
+      )}
     </div>
   );
 }
