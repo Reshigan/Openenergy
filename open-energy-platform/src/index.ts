@@ -374,6 +374,9 @@ import rbacRoutes from './routes/rbac';
 import { fireCascade } from './utils/cascade';
 import { computeDisclosure, evaluateBreaches } from './utils/disclosure';
 import printPacksRoutes from './routes/print-packs';
+import kycChainRoutes, { kycSlaSweep } from './routes/kyc-chain';
+import smartMeterChainRoutes, { smaSlaSweep } from './routes/smart-meter-chain';
+import carbonTaxChainRoutes, { ctrSlaSweep } from './routes/carbon-tax-chain';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -1036,6 +1039,9 @@ app.route('/api/ux-state',            uxStateRoutes);
 app.route('/api/documents',           documentsRoutes);
 app.route('/api/print-packs',         printPacksRoutes);
 app.route('/api/onboarding', onboardingRoutes);
+app.route('/api/kyc-verifications', kycChainRoutes);
+app.route('/api/smart-meter-assets', smartMeterChainRoutes);
+app.route('/api/carbon-tax-returns', carbonTaxChainRoutes);
 // platformFeaturesRoutes is the catch-all for /api — it must remain LAST
 // so all specific /api/* mounts above are tried first.
 app.route('/api', platformFeaturesRoutes);
@@ -2504,6 +2510,21 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       // W191: station participant link SLA — expire unactioned proposals.
       await safe('station_link_sla_sweep', async () => {
         await stationParticipantLinkSlaSweep(env as never);
+      });
+      // W198: KYC/FICA Verification — INVERTED SLA sweep.
+      await safe('kyc_sla_sweep', async () => {
+        const result = await kycSlaSweep(env as never);
+        console.log('kyc_sla_sweep', JSON.stringify(result));
+      });
+      // W199: Smart Meter Asset Commissioning — URGENT SLA sweep.
+      await safe('sma_sla_sweep', async () => {
+        const result = await smaSlaSweep(env as never);
+        console.log('sma_sla_sweep', JSON.stringify(result));
+      });
+      // W200: Carbon Tax Return & SARS Filing — INVERTED SLA sweep.
+      await safe('ctr_sla_sweep', async () => {
+        const result = await ctrSlaSweep(env as never);
+        console.log('ctr_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

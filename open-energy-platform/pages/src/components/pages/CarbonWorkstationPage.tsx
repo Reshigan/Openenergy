@@ -151,6 +151,11 @@ export function CarbonWorkstationPage() {
           body: () => <EsgDisclosureChainTab />,
         },
         {
+          key: 'carbon_tax_returns',
+          label: 'Carbon tax returns (W200)',
+          body: ({ onRefresh }) => <CarbonTaxReturnsTab onRefresh={onRefresh} />,
+        },
+        {
           key: 'audit',
           label: 'Audit & compliance',
           body: ({ onRefresh }) => (
@@ -307,6 +312,105 @@ function CertificatesTab({ onRefresh }: { onRefresh: () => void }) {
           }}
         />
       )}
+    </div>
+  );
+}
+
+const CTR_STATUS_TONE: Record<string, 'info' | 'warn' | 'bad' | 'good'> = {
+  payment_made: 'good', submitted: 'good',
+  disputed: 'bad', under_sars_review: 'warn',
+  assessment_issued: 'warn', period_open: 'info',
+};
+const TAX_CLASS_TONE: Record<string, 'info' | 'warn' | 'bad' | 'good'> = {
+  micro: 'good', standard: 'info', large: 'warn', major: 'bad',
+};
+const CTR_ACTIONS = [
+  { value: 'open_data_collection', label: 'Open data collection' },
+  { value: 'calculate_emissions', label: 'Calculate emissions' },
+  { value: 'apply_allowances', label: 'Apply allowances' },
+  { value: 'prepare_return', label: 'Prepare return' },
+  { value: 'approve_internally', label: 'Approve internally' },
+  { value: 'submit_to_sars', label: 'Submit to SARS' },
+  { value: 'acknowledge_receipt', label: 'Acknowledge receipt' },
+  { value: 'commence_review', label: 'Commence review' },
+  { value: 'issue_assessment', label: 'Issue assessment' },
+  { value: 'record_payment', label: 'Record payment' },
+  { value: 'raise_dispute', label: 'Raise dispute' },
+];
+
+function CarbonTaxReturnsTab({ onRefresh }: { onRefresh: () => void }) {
+  const [filing, setFiling] = useState(false);
+  const [actionRow, setActionRow] = useState<Record<string, unknown> | null>(null);
+
+  const createFields: FieldSpec[] = [
+    { key: 'participant_id', label: 'Participant ID', required: true },
+    { key: 'tax_class', label: 'Tax class', type: 'select', options: [
+      { value: 'micro', label: 'Micro <25k tCO2e (14d SLA)' },
+      { value: 'standard', label: 'Standard <100k tCO2e (30d SLA)' },
+      { value: 'large', label: 'Large <500k tCO2e (60d SLA)' },
+      { value: 'major', label: 'Major ≥500k tCO2e (90d SLA)' },
+    ]},
+    { key: 'tax_period', label: 'Tax period', required: true, placeholder: 'Q1-2025' },
+    { key: 'fiscal_year', label: 'Fiscal year', type: 'number', required: true },
+    { key: 'scope1_tco2e', label: 'Scope 1 (tCO2e)', type: 'number' },
+    { key: 'scope2_tco2e', label: 'Scope 2 (tCO2e)', type: 'number' },
+    { key: 'process_emissions_tco2e', label: 'Process emissions (tCO2e)', type: 'number' },
+  ];
+
+  const formatZAR = (v: unknown) =>
+    v != null ? new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(Number(v)) : '—';
+
+  return (
+    <div>
+      <Header onCreate={() => setFiling(true)} label="Open return period" />
+      {filing && (
+        <ActionModal
+          title="Open carbon tax return period"
+          fields={createFields}
+          onClose={() => setFiling(false)}
+          onSubmit={async (v) => {
+            await api.post('/carbon-tax-returns', v);
+            setFiling(false); onRefresh();
+          }}
+        />
+      )}
+      {actionRow && (
+        <ActionModal
+          title={`Return action: ${String(actionRow.tax_period || '')} (${String(actionRow.tax_class || '')})`}
+          fields={[
+            { key: 'action', label: 'Action', type: 'select', required: true, options: CTR_ACTIONS },
+            { key: 'sars_submission_ref', label: 'SARS submission ref' },
+            { key: 'sars_assessment_ref', label: 'SARS assessment ref' },
+            { key: 'assessment_amount', label: 'Assessment amount (ZAR)', type: 'number' },
+            { key: 'net_tax_payable', label: 'Net tax payable (ZAR)', type: 'number' },
+            { key: 'payment_reference', label: 'Payment reference' },
+            { key: 'paid_amount', label: 'Paid amount (ZAR)', type: 'number' },
+            { key: 'dispute_reason', label: 'Dispute reason', type: 'textarea' },
+            { key: 'reason', label: 'Reason / note', type: 'textarea' },
+          ] as FieldSpec[]}
+          onClose={() => setActionRow(null)}
+          onSubmit={async (v) => {
+            await api.post(`/carbon-tax-returns/${String(actionRow.id)}/action`, v);
+            setActionRow(null); onRefresh();
+          }}
+        />
+      )}
+      <ListingTable
+        endpoint="/carbon-tax-returns"
+        rowKey={(r) => r.id}
+        columns={[
+          { key: 'tax_period', label: 'Period', render: (r) => <span className="font-mono text-[11px]">{String(r.tax_period || '')} FY{r.fiscal_year}</span> },
+          { key: 'tax_class', label: 'Class', render: (r) => <Pill tone={TAX_CLASS_TONE[String(r.tax_class)] ?? 'info'}>{String(r.tax_class || '')}</Pill> },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={CTR_STATUS_TONE[String(r.chain_status)] ?? 'info'}>{String(r.chain_status || '').replace(/_/g, ' ')}</Pill> },
+          { key: 'total_emissions_tco2e', label: 'tCO2e', align: 'right' as const, render: (r) => r.total_emissions_tco2e != null ? Number(r.total_emissions_tco2e).toFixed(1) : '—' },
+          { key: 'net_tax_payable', label: 'Net payable', align: 'right' as const, render: (r) => formatZAR(r.net_tax_payable) },
+          { key: 'sla_deadline', label: 'SLA', render: (r) => r.sla_deadline ? String(r.sla_deadline) : '—' },
+          { key: 'sla_breached', label: 'Breach', render: (r) => r.sla_breached ? <Pill tone="bad">BREACH</Pill> : <Pill tone="good">OK</Pill> },
+          { key: 'actions', label: '', render: (r) => (
+            <button onClick={() => setActionRow(r)} className="text-[11px] text-[#1a3a5c] underline">Action</button>
+          )},
+        ]}
+      />
     </div>
   );
 }

@@ -59,6 +59,7 @@ export function GridOpsWorkstationPage() {
         { key: 'planned_outage', label: 'Planned outages', group: 'Compliance', body: () => <PlannedOutageChainTab /> },
         { key: 'scada-connectors', label: 'SCADA data', group: 'Compliance', body: () => <ScadaConnectorTab /> },
         { key: 'mqtt-opcua-connectors', label: 'MQTT/OPC-UA connectors', group: 'Compliance', body: () => <MqttOpcuaConnectorTab /> },
+        { key: 'smart-meter-assets', label: 'Smart meter assets (W199)', group: 'Compliance', body: ({ onRefresh }) => <SmartMeterAssetsTab onRefresh={onRefresh} /> },
         { key: 'audit', label: 'Audit & compliance', group: 'Compliance',
           body: ({ onRefresh }) => (
             <AuditPanel
@@ -205,6 +206,100 @@ function AncillaryTab({ onRefresh }: { onRefresh: () => void }) {
           }}
         />
       )}
+    </div>
+  );
+}
+
+const SMA_STATUS_TONE: Record<string, 'info' | 'warn' | 'bad' | 'good'> = {
+  operational: 'good', decommissioned: 'bad', fault_detected: 'bad',
+  replacement_pending: 'warn', commissioning: 'info', data_quality_pass: 'info',
+};
+const METER_CLASS_TONE: Record<string, 'info' | 'warn' | 'bad' | 'good'> = {
+  hv_bulk: 'bad', bulk: 'warn', prepaid: 'info', post_paid: 'good',
+};
+const SMA_ACTIONS = [
+  { value: 'confirm_fat', label: 'Confirm FAT' },
+  { value: 'confirm_delivery', label: 'Confirm delivery' },
+  { value: 'schedule_installation', label: 'Schedule installation' },
+  { value: 'confirm_installed', label: 'Confirm installed' },
+  { value: 'start_commissioning', label: 'Start commissioning' },
+  { value: 'confirm_communication', label: 'Confirm communication' },
+  { value: 'pass_data_quality', label: 'Pass data quality' },
+  { value: 'go_live', label: 'Go live' },
+  { value: 'report_fault', label: 'Report fault' },
+  { value: 'schedule_replacement', label: 'Schedule replacement' },
+  { value: 'decommission', label: 'Decommission' },
+  { value: 'return_to_service', label: 'Return to service' },
+];
+
+function SmartMeterAssetsTab({ onRefresh }: { onRefresh: () => void }) {
+  const [filing, setFiling] = useState(false);
+  const [actionRow, setActionRow] = useState<Record<string, unknown> | null>(null);
+
+  const createFields: FieldSpec[] = [
+    { key: 'meter_serial', label: 'Meter serial', required: true },
+    { key: 'meter_class', label: 'Meter class', type: 'select', options: [
+      { value: 'hv_bulk', label: 'HV Bulk (7d SLA)' },
+      { value: 'bulk', label: 'Bulk (14d SLA)' },
+      { value: 'prepaid', label: 'Prepaid (21d SLA)' },
+      { value: 'post_paid', label: 'Post-paid (30d SLA)' },
+    ]},
+    { key: 'site_id', label: 'Site ID', required: true },
+    { key: 'owner_id', label: 'Owner participant ID' },
+    { key: 'make_model', label: 'Make / model' },
+    { key: 'communication_tech', label: 'Comms technology', type: 'select', options: [
+      { value: 'gprs', label: 'GPRS' }, { value: 'plc', label: 'PLC' },
+      { value: 'rf_mesh', label: 'RF Mesh' }, { value: 'fibre', label: 'Fibre' },
+      { value: 'nb_iot', label: 'NB-IoT' },
+    ]},
+  ];
+
+  return (
+    <div>
+      <Header onCreate={() => setFiling(true)} label="Register meter" />
+      {filing && (
+        <ActionModal
+          title="Register smart meter asset"
+          fields={createFields}
+          onClose={() => setFiling(false)}
+          onSubmit={async (v) => {
+            await api.post('/smart-meter-assets', v);
+            setFiling(false); onRefresh();
+          }}
+        />
+      )}
+      {actionRow && (
+        <ActionModal
+          title={`Meter action: ${String(actionRow.meter_serial || '')}`}
+          fields={[
+            { key: 'action', label: 'Action', type: 'select', required: true, options: SMA_ACTIONS },
+            { key: 'reason', label: 'Reason', type: 'textarea' },
+            { key: 'fault_code', label: 'Fault code' },
+            { key: 'data_quality_score', label: 'Data quality score (0-100)', type: 'number' },
+          ] as FieldSpec[]}
+          onClose={() => setActionRow(null)}
+          onSubmit={async (v) => {
+            await api.post(`/smart-meter-assets/${String(actionRow.id)}/action`, v);
+            setActionRow(null); onRefresh();
+          }}
+        />
+      )}
+      <ListingTable
+        endpoint="/smart-meter-assets"
+        rowKey={(r) => r.id}
+        columns={[
+          { key: 'meter_serial', label: 'Serial', render: (r) => <span className="font-mono text-[11px]">{String(r.meter_serial || '')}</span> },
+          { key: 'meter_class', label: 'Class', render: (r) => <Pill tone={METER_CLASS_TONE[String(r.meter_class)] ?? 'info'}>{String(r.meter_class || '').replace(/_/g, ' ')}</Pill> },
+          { key: 'site_id', label: 'Site', render: (r) => <span className="font-mono text-[11px]">{String(r.site_id || '').slice(0, 16)}…</span> },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={SMA_STATUS_TONE[String(r.chain_status)] ?? 'info'}>{String(r.chain_status || '').replace(/_/g, ' ')}</Pill> },
+          { key: 'sla_deadline', label: 'SLA', render: (r) => r.sla_deadline ? String(r.sla_deadline) : '—' },
+          { key: 'sla_breached', label: 'Breach', render: (r) => r.sla_breached ? <Pill tone="bad">BREACH</Pill> : <Pill tone="good">OK</Pill> },
+          { key: 'data_quality_score', label: 'DQ score', render: (r) => r.data_quality_score != null ? String(r.data_quality_score) : '—' },
+          { key: 'actions', label: '', render: (r) => (
+            <button onClick={() => setActionRow(r)} className="text-[11px] text-[#1a3a5c] underline">Action</button>
+          )},
+        ]}
+      />
     </div>
   );
 }

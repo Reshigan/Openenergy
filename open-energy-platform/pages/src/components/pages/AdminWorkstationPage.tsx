@@ -92,6 +92,9 @@ export function AdminWorkstationPage() {
         { key: 'fault-fingerprint-ml', label: 'Fault Fingerprint ML (W129)',
           body: () => <FaultFingerprintMlTab />,
         },
+        { key: 'kyc-verifications', label: 'KYC / FICA (W198)',
+          body: ({ onRefresh }) => <KycVerificationsTab onRefresh={onRefresh} />,
+        },
       ]}
     />
   );
@@ -254,6 +257,100 @@ function PiiAccessTab() {
           { key: 'access_type', label: 'Type', render: (r) => <Pill tone={r.access_type === 'impersonation' ? 'bad' : 'info'}>{(r.access_type || '').replace(/_/g, ' ')}</Pill> },
           { key: 'subject_id', label: 'Subject', render: (r) => <span className="font-mono text-[11px]">{(r.subject_id || '').slice(0, 16)}…</span> },
           { key: 'justification', label: 'Justification', render: (r) => <span className="block truncate max-w-md" title={r.justification || ''}>{r.justification || '—'}</span> },
+        ]}
+      />
+    </div>
+  );
+}
+
+const RISK_TONE: Record<string, 'info' | 'warn' | 'bad' | 'good'> = {
+  standard: 'good', medium: 'info', high_risk: 'warn', pep: 'bad',
+};
+const KYC_STATUS_TONE: Record<string, 'info' | 'warn' | 'bad' | 'good'> = {
+  verified: 'good', rejected: 'bad', lapsed: 'bad', suspended: 'warn',
+  compliance_review: 'info', enhanced_due_diligence: 'warn',
+};
+
+const KYC_ACTIONS = [
+  { value: 'submit_documents', label: 'Submit documents' },
+  { value: 'request_more_documents', label: 'Request more documents' },
+  { value: 'confirm_documents_received', label: 'Confirm documents received' },
+  { value: 'run_screening', label: 'Run screening' },
+  { value: 'trigger_edd', label: 'Trigger EDD' },
+  { value: 'complete_edd', label: 'Complete EDD' },
+  { value: 'start_review', label: 'Start review' },
+  { value: 'approve_conditionally', label: 'Approve conditionally' },
+  { value: 'lift_conditions', label: 'Lift conditions' },
+  { value: 'verify', label: 'Verify' },
+  { value: 'reject', label: 'Reject' },
+  { value: 'suspend', label: 'Suspend' },
+  { value: 'reinstate', label: 'Reinstate' },
+  { value: 'mark_lapsed', label: 'Mark lapsed' },
+];
+
+function KycVerificationsTab({ onRefresh }: { onRefresh: () => void }) {
+  const [filing, setFiling] = useState(false);
+  const [actionRow, setActionRow] = useState<Record<string, unknown> | null>(null);
+
+  const createFields: FieldSpec[] = [
+    { key: 'participant_id', label: 'Participant ID', required: true, placeholder: 'id_...' },
+    { key: 'entity_type', label: 'Entity type', type: 'select', options: [
+      { value: 'company', label: 'Company' },
+      { value: 'individual', label: 'Individual' },
+      { value: 'trust', label: 'Trust' },
+      { value: 'fund', label: 'Fund' },
+      { value: 'foreign_entity', label: 'Foreign entity' },
+    ]},
+    { key: 'risk_level', label: 'Risk level', type: 'select', options: [
+      { value: 'standard', label: 'Standard (5d SLA)' },
+      { value: 'medium', label: 'Medium (10d SLA)' },
+      { value: 'high_risk', label: 'High risk (20d SLA)' },
+      { value: 'pep', label: 'PEP (30d SLA)' },
+    ]},
+  ];
+
+  return (
+    <div>
+      <Header onCreate={() => setFiling(true)} label="Create KYC record" />
+      {filing && (
+        <ActionModal
+          title="Open KYC verification"
+          fields={createFields}
+          onClose={() => setFiling(false)}
+          onSubmit={async (v) => {
+            await api.post('/kyc-verifications', v);
+            setFiling(false); onRefresh();
+          }}
+        />
+      )}
+      {actionRow && (
+        <ActionModal
+          title={`KYC action on ${String(actionRow.id || '').slice(0, 20)}…`}
+          fields={[
+            { key: 'action', label: 'Action', type: 'select', required: true, options: KYC_ACTIONS },
+            { key: 'reason', label: 'Reason / note', type: 'textarea' },
+          ] as FieldSpec[]}
+          onClose={() => setActionRow(null)}
+          onSubmit={async (v) => {
+            await api.post(`/kyc-verifications/${String(actionRow.id)}/action`, v);
+            setActionRow(null); onRefresh();
+          }}
+        />
+      )}
+      <ListingTable
+        endpoint="/kyc-verifications"
+        rowKey={(r) => r.id}
+        columns={[
+          { key: 'id', label: 'ID', render: (r) => <span className="font-mono text-[11px]">{String(r.id || '').slice(0, 16)}…</span> },
+          { key: 'participant_id', label: 'Participant', render: (r) => <span className="font-mono text-[11px]">{String(r.participant_id || '').slice(0, 16)}…</span> },
+          { key: 'entity_type', label: 'Type', render: (r) => <Pill tone="info">{String(r.entity_type || '')}</Pill> },
+          { key: 'risk_level', label: 'Risk', render: (r) => <Pill tone={RISK_TONE[String(r.risk_level)] ?? 'info'}>{String(r.risk_level || '')}</Pill> },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={KYC_STATUS_TONE[String(r.chain_status)] ?? 'info'}>{String(r.chain_status || '').replace(/_/g, ' ')}</Pill> },
+          { key: 'sla_deadline', label: 'SLA', render: (r) => r.sla_deadline ? String(r.sla_deadline) : '—' },
+          { key: 'sla_breached', label: 'Breach', render: (r) => r.sla_breached ? <Pill tone="bad">BREACH</Pill> : <Pill tone="good">OK</Pill> },
+          { key: 'actions', label: '', render: (r) => (
+            <button onClick={() => setActionRow(r)} className="text-[11px] text-[#1a3a5c] underline">Action</button>
+          )},
         ]}
       />
     </div>
