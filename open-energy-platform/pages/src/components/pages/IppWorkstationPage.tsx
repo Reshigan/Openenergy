@@ -88,6 +88,8 @@ import { IppQuarterlyGenReportTab } from '../ipp/IppQuarterlyGenReportTab';
 import { IppAnnualComplianceAssessmentTab } from '../ipp/IppAnnualComplianceAssessmentTab';
 import { IppAnnualAuditTab } from '../ipp/IppAnnualAuditTab';
 import { IppEmpComplianceReportTab } from '../ipp/IppEmpComplianceReportTab';
+import { IppCpTrackerTab } from '../ipp/IppCpTrackerTab';
+import { IppLicenceObligationTab } from '../ipp/IppLicenceObligationTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -160,6 +162,7 @@ export function IppWorkstationPage() {
         { key: 'bbbee-verification', label: 'BBBEE annual verification (W182)', group: 'Risk', body: () => <IppBbbeeVerificationTab /> },
         { key: 'lender-reporting', label: 'Lender reporting covenant (W183)', group: 'Risk', body: () => <IppLenderReportingTab /> },
         { key: 'licence-returns', label: 'Annual NERSA licence return (W184)', group: 'Risk', body: () => <IppLicenceReturnsTab /> },
+        { key: 'licence-obligations', label: 'Licence Obligations (W193)', group: 'Regulatory', body: () => <IppLicenceObligationTab /> },
         { key: 'reipppp-reports', label: 'REIPPPP annual progress report (W185)', group: 'Risk', body: () => <IppReippppReportsTab /> },
         { key: 'equity-transfer', label: 'SPV equity transfer & consent (W186)', group: 'Risk', body: () => <IppEquityTransferTab /> },
         { key: 'quarterly-gen-report', label: 'DMRE quarterly generation report (W187)', group: 'Risk', body: () => <IppQuarterlyGenReportTab /> },
@@ -188,6 +191,7 @@ export function IppWorkstationPage() {
         { key: 'insurance_claims', label: 'Insurance claims', group: 'Finance', body: () => <InsuranceClaimChainTab /> },
         { key: 'bonds', label: 'Bonds', group: 'Finance', body: () => <BondRegistryTab /> },
         { key: 'progress-claims', label: 'Progress claims', group: 'Finance', body: () => <IppProgressClaimTab /> },
+        { key: 'cp-tracker', label: 'Conditions Precedent (W192)', group: 'Finance', body: () => <IppCpTrackerTab /> },
         { key: 'subcontractors', label: 'Subcontractors', group: 'Construction', body: () => <IppSubcontractorTab /> },
         { key: 'procurement', label: 'Procurement / RFPs', group: 'Construction', body: () => <ProcurementChainTab /> },
         { key: 'cod', label: 'Construction / COD', group: 'Construction', body: () => <CodChainTab /> },

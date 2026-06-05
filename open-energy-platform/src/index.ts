@@ -305,6 +305,8 @@ import ippQuarterlyGenReportRoutes, { ippQuarterlyGenReportSlaSweep } from './ro
 import ippAnnualComplianceAssessmentRoutes, { ippAnnualComplianceAssessmentSlaSweep } from './routes/ipp-annual-compliance-assessments';
 import ippAnnualAuditRoutes, { ippAnnualAuditSlaSweep } from './routes/ipp-annual-audits';
 import ippEmpComplianceReportRoutes, { ippEmpComplianceReportSlaSweep } from './routes/ipp-emp-compliance-reports';
+import ippCpTrackerRoutes, { ippCpTrackerSlaSweep } from './routes/ipp-cp-tracker';
+import ippLicenceObligationRoutes, { ippLicenceObligationSlaSweep } from './routes/ipp-licence-obligations';
 import stationParticipantLinkRoutes, { stationParticipantLinkSlaSweep } from './routes/station-participant-links';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
@@ -942,6 +944,8 @@ app.route('/api/ipp-quarterly-gen-reports', ippQuarterlyGenReportRoutes);
 app.route('/api/ipp-annual-compliance-assessments', ippAnnualComplianceAssessmentRoutes);
 app.route('/api/ipp-annual-audits', ippAnnualAuditRoutes);
 app.route('/api/ipp-emp-compliance-reports', ippEmpComplianceReportRoutes);
+app.route('/api/ipp-cp-tracker', ippCpTrackerRoutes);
+app.route('/api/ipp-licence-obligations', ippLicenceObligationRoutes);
 app.route('/api/station-participant-links', stationParticipantLinkRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
@@ -2455,6 +2459,16 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       // W190: reject_report ALL tiers; declare_lapsed + accept_report major+.
       await safe('ipp_empr_sla_sweep', async () => {
         await ippEmpComplianceReportSlaSweep(env as never);
+      });
+      // W192: IPP CP tracker SLA sweep.
+      await safe('ipp_cp_tracker_sla_sweep', async () => {
+        const result = await ippCpTrackerSlaSweep(env as never);
+        console.log('ipp_cp_tracker_sla_sweep', JSON.stringify(result));
+      });
+      // W193: IPP licence obligation SLA sweep.
+      await safe('ipp_licence_obligation_sla_sweep', async () => {
+        const result = await ippLicenceObligationSlaSweep(env as never);
+        console.log('ipp_licence_obligation_sla_sweep', JSON.stringify(result));
       });
       // W191: station participant link SLA — expire unactioned proposals.
       await safe('station_link_sla_sweep', async () => {

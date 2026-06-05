@@ -218,12 +218,17 @@ export function validateOpenBaseUrl(rawUrl: string): void {
   assertNotMetadata(hostname, 'base_url');
 }
 
-// Checked fetch: validates base URL then fetches with redirect: 'manual'
-// so a malicious upstream redirect can't pivot to an internal service.
+// Checked fetch: when a user-supplied base URL is provided, validates it and
+// blocks redirects (redirect: 'manual') so a malicious upstream redirect can't
+// pivot to an internal service.  For hardcoded default bases (base === undefined)
+// redirects are followed normally — Solax EU→global fallback requires this.
 function safeFetch(manufacturer: Manufacturer, base: string | undefined, defaultBase: string, path: string, init?: RequestInit): Promise<Response> {
   const resolvedBase = base ?? defaultBase;
-  if (base) validateBaseUrl(manufacturer, base);
-  return fetch(`${resolvedBase}${path}`, { ...init, redirect: 'manual' });
+  if (base) {
+    validateBaseUrl(manufacturer, base);
+    return fetch(`${resolvedBase}${path}`, { ...init, redirect: 'manual' });
+  }
+  return fetch(`${resolvedBase}${path}`, init);
 }
 
 // ─── Token cache (per-isolate) ────────────────────────────────────────────────

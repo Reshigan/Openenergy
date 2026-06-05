@@ -1964,6 +1964,17 @@ export type EventType =
   | 'empr_evt_submit_to_competent_authority' | 'empr_evt_commence_ca_review'
   | 'empr_evt_accept_report' | 'empr_evt_reject_report'
   | 'empr_evt_declare_lapsed' | 'empr_evt_sla_breached'
+  // ─── Wave 192 — IPP Conditions Precedent Tracker ─────────────────────────
+  | 'cp_tracker.created' | 'cp_tracker.sla_breached'
+  | 'cp_evt_document_cp' | 'cp_evt_submit_for_verification' | 'cp_evt_conditional_pass'
+  | 'cp_evt_flag_outstanding' | 'cp_evt_serve_notice' | 'cp_evt_commence_cure'
+  | 'cp_evt_satisfy_cp' | 'cp_evt_waive_cp' | 'cp_evt_expire_cp' | 'cp_evt_reject_cp'
+  // ─── Wave 193 — IPP Licence Obligation Tracker ───────────────────────────
+  | 'licence_obligation.created' | 'licence_obligation.sla_breached'
+  | 'lo_evt_trigger_assessment' | 'lo_evt_gather_evidence' | 'lo_evt_submit_evidence'
+  | 'lo_evt_commence_review' | 'lo_evt_raise_query' | 'lo_evt_resolve_query'
+  | 'lo_evt_find_compliant' | 'lo_evt_find_non_compliant' | 'lo_evt_issue_notice'
+  | 'lo_evt_commence_cure' | 'lo_evt_confirm_cured' | 'lo_evt_declare_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2292,6 +2303,10 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   aud_evt: 'ipp',
   ipp_empr: 'ipp',
   empr_evt: 'ipp',
+  cp_tracker: 'ipp',
+  cp_evt: 'ipp',
+  licence_obligation: 'ipp',
+  lo_evt: 'ipp',
   station_link: 'esums',
   slink_evt: 'esums',
   demand: 'trading',

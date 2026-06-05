@@ -528,7 +528,7 @@ function StationRow({ s }: { s: Station }) {
 
 // ─── Accruals panel ───────────────────────────────────────────────────────────
 
-type AccrualPeriod = 'today' | 'week' | 'month' | 'ytd';
+type AccrualPeriod = 'today' | 'week' | 'month' | 'ytd' | '1y' | 'all';
 
 interface AccrualTotals { kwh: number; carbon_tco2e: number; revenue_zar: number; savings_zar: number }
 interface AccrualStation {
@@ -596,6 +596,7 @@ function AccrualsPanel() {
 
   const PERIOD_LABELS: Record<AccrualPeriod, string> = {
     today: 'Today', week: '7 days', month: 'This month', ytd: 'Year to date',
+    '1y': 'Last 12 months', all: 'All time',
   };
 
   const kpiCards = [
