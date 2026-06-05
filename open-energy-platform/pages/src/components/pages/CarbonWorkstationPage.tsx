@@ -161,6 +161,12 @@ export function CarbonWorkstationPage() {
           body: ({ onRefresh }) => <CarbonRegistryTransferTab onRefresh={onRefresh} />,
         },
         {
+          key: 'methodology_amendments',
+          label: 'Methodology amendments (W213)',
+          group: 'Compliance',
+          body: ({ onRefresh }) => <MethodologyAmendmentTab onRefresh={onRefresh} />,
+        },
+        {
           key: 'audit',
           label: 'Audit & compliance',
           body: ({ onRefresh }) => (
@@ -551,6 +557,162 @@ function CarbonRegistryTransferTab({ onRefresh }: { onRefresh?: () => void }) {
             { key: 'unfccc_notification_ref', label: 'UNFCCC notification reference', required: false },
             { key: 'reason', label: 'Notes / reason', type: 'textarea', required: false },
           ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── W213: Carbon Methodology Amendment ───────────────────────────────────────
+const MA_TIER_TONE: Record<string, 'info' | 'warn' | 'bad' | 'good' | 'neutral'> = {
+  minor_parameter: 'info',
+  moderate_change: 'warn',
+  major_change: 'bad',
+  article6_itmo: 'bad',
+};
+
+function statusToneMA(s: string): 'info' | 'warn' | 'bad' | 'good' | 'neutral' {
+  if (s === 'amendment_approved') return 'good';
+  if (s === 'amendment_rejected' || s === 'withdrawn') return 'bad';
+  if (s === 'revalidation' || s === 'major_deviation') return 'warn';
+  return 'info';
+}
+
+function MethodologyAmendmentTab({ onRefresh }: { onRefresh: () => void }) {
+  const [modal, setModal] = useState<null | 'create' | { type: 'action'; id: string; currentStatus: string }>(null);
+  const [refresh, setRefresh] = useState(0);
+  const bump = () => { setRefresh(r => r + 1); onRefresh(); };
+
+  return (
+    <div>
+      <Header onCreate={() => setModal('create')} label="Report deviation" />
+      <ListingTable
+        endpoint="/methodology-amendments"
+        key={refresh}
+        rowKey={(r) => r.id}
+        empty={{ title: 'No methodology amendments', description: 'Deviations from approved methodologies will appear here.' }}
+        columns={[
+          { key: 'methodology_id', label: 'Methodology', render: (r) => <span className="font-mono text-[11px]">{r.methodology_id}</span> },
+          { key: 'amendment_tier', label: 'Tier', render: (r) => <Pill tone={MA_TIER_TONE[r.amendment_tier] ?? 'neutral'}>{String(r.amendment_tier).replace(/_/g, ' ')}</Pill> },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={statusToneMA(r.chain_status)}>{String(r.chain_status).replace(/_/g, ' ')}</Pill> },
+          { key: 'estimated_impact_tco2e', label: 'Impact tCO₂e', align: 'right', render: (r) => r.estimated_impact_tco2e ? Number(r.estimated_impact_tco2e).toFixed(1) : '—' },
+          { key: 'sla_breached', label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">Breached</Pill> : <Pill tone="good">OK</Pill> },
+          { key: 'created_at', label: 'Reported', render: (r) => new Date(r.created_at).toLocaleDateString() },
+        ]}
+        rowOnClick={(r) => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status })}
+      />
+
+      {modal === 'create' && (
+        <ActionModal
+          title="Report methodology deviation"
+          submitLabel="Submit"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/methodology-amendments', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                methodology_id: v.methodology_id,
+                methodology_version: v.methodology_version || undefined,
+                amendment_tier: v.amendment_tier,
+                deviation_type: v.deviation_type || undefined,
+                deviation_description: v.deviation_description,
+                estimated_impact_tco2e: v.estimated_impact_tco2e ? parseFloat(v.estimated_impact_tco2e) : undefined,
+                project_ref: v.project_ref || undefined,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null);
+            bump();
+          }}
+          fields={[
+            { key: 'methodology_id', label: 'Methodology ID', required: true, placeholder: 'VM0038 / AMS-I.D. / GS-SSC-EE' },
+            { key: 'methodology_version', label: 'Methodology version', required: false, placeholder: '3.0' },
+            {
+              key: 'amendment_tier', label: 'Amendment tier', type: 'select', required: true, defaultValue: 'moderate_change',
+              options: [
+                { value: 'minor_parameter', label: 'Minor parameter (14d SLA)' },
+                { value: 'moderate_change', label: 'Moderate change (30d SLA)' },
+                { value: 'major_change', label: 'Major change (60d SLA)' },
+                { value: 'article6_itmo', label: 'Article 6 ITMO (90d SLA)' },
+              ],
+            },
+            {
+              key: 'deviation_type', label: 'Deviation type', type: 'select', required: false,
+              options: [
+                { value: 'emission_factor', label: 'Emission factor' },
+                { value: 'additionality_condition', label: 'Additionality condition' },
+                { value: 'technology_change', label: 'Technology change' },
+                { value: 'monitoring_parameter', label: 'Monitoring parameter' },
+                { value: 'baseline_revision', label: 'Baseline revision' },
+                { value: 'geographic_boundary', label: 'Geographic boundary' },
+              ],
+            },
+            { key: 'deviation_description', label: 'Deviation description', type: 'textarea', required: true },
+            { key: 'estimated_impact_tco2e', label: 'Estimated impact (tCO₂e)', type: 'number', required: false },
+            { key: 'project_ref', label: 'Project reference (W37)', required: false },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+          ] as FieldSpec[]}
+        />
+      )}
+
+      {modal !== null && modal !== 'create' && (
+        <ActionModal
+          title={`Advance amendment — ${modal.currentStatus.replace(/_/g, ' ')}`}
+          submitLabel="Submit action"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/methodology-amendments/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                action: v.action,
+                materiality_rationale: v.materiality_rationale || undefined,
+                is_material: v.is_material === 'true' ? true : v.is_material === 'false' ? false : undefined,
+                amendment_description: v.amendment_description || undefined,
+                new_methodology_version: v.new_methodology_version || undefined,
+                dna_name: v.dna_name || undefined,
+                dna_notification_ref: v.dna_notification_ref || undefined,
+                validator_name: v.validator_name || undefined,
+                validator_ref: v.validator_ref || undefined,
+                validator_findings: v.validator_findings || undefined,
+                rejection_reason: v.rejection_reason || undefined,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null);
+            bump();
+          }}
+          fields={[
+            {
+              key: 'action', label: 'Action', type: 'select', required: true,
+              options: [
+                { value: 'start_materiality', label: 'Start materiality assessment' },
+                { value: 'classify_minor', label: 'Classify — minor (non-material)' },
+                { value: 'classify_major', label: 'Classify — major (material)' },
+                { value: 'submit_amendment', label: 'Submit amendment to standard body' },
+                { value: 'notify_dna', label: 'Notify DNA (Article 6)' },
+                { value: 'assign_validator', label: 'Assign validator' },
+                { value: 'start_revalidation', label: 'Start re-validation' },
+                { value: 'approve_amendment', label: 'Approve amendment' },
+                { value: 'reject_amendment', label: 'Reject amendment' },
+                { value: 'withdraw', label: 'Withdraw deviation' },
+              ],
+            },
+            { key: 'materiality_rationale', label: 'Materiality rationale', type: 'textarea', required: false },
+            { key: 'is_material', label: 'Is material?', type: 'select', required: false, options: [{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }] },
+            { key: 'amendment_description', label: 'Amendment description', type: 'textarea', required: false },
+            { key: 'new_methodology_version', label: 'New methodology version', required: false },
+            { key: 'dna_name', label: 'DNA name', required: false },
+            { key: 'dna_notification_ref', label: 'DNA notification reference', required: false },
+            { key: 'validator_name', label: 'Validator name', required: false },
+            { key: 'validator_ref', label: 'Validator reference', required: false },
+            { key: 'validator_findings', label: 'Validator findings', type: 'textarea', required: false },
+            { key: 'rejection_reason', label: 'Rejection reason', type: 'textarea', required: false },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+          ] as FieldSpec[]}
         />
       )}
     </div>
