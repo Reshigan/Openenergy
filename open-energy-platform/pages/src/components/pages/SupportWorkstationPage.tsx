@@ -150,6 +150,11 @@ export function SupportWorkstationPage() {
             body: () => <OemFcoChainTab />,
           },
           {
+            key: 'csat',
+            label: 'CSAT lifecycle (W208)',
+            body: ({ onRefresh }) => <CsatLifecycleTab onRefresh={onRefresh} />,
+          },
+          {
             key: 'mqtt-opcua-connectors',
             label: 'MQTT/OPC-UA connectors (W123)',
             body: () => <MqttOpcuaConnectorTab />,
@@ -245,6 +250,102 @@ export function SupportWorkstationPage() {
         ]}
       />
     </>
+  );
+}
+
+// ─── W208: CSAT Lifecycle ─────────────────────────────────────────────────────
+const CSAT_TIER_TONE: Record<string, 'bad' | 'warn' | 'neutral'> = {
+  p1_critical: 'bad', p2_high: 'warn', p3_medium: 'neutral', p4_low: 'neutral',
+};
+
+function CsatLifecycleTab({ onRefresh }: { onRefresh: () => void }) {
+  const [modal, setModal] = useState<null | { type: 'create' } | { type: 'action'; id: string; currentStatus: string; tier: string }>(null);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <button onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+          + New CSAT record
+        </button>
+      </div>
+
+      <ListingTable
+        endpoint="/csat-records"
+        rowKey={(r) => r.id}
+        rowOnClick={(r) => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status, tier: r.support_tier })}
+        empty={{ title: 'No CSAT records', description: 'CSAT surveys created after ticket resolution will appear here.' }}
+        columns={[
+          { key: 'ticket_id', label: 'Ticket ref', render: (r) => <span className="font-mono text-[11px]">{r.ticket_id ? String(r.ticket_id).slice(0, 14) + '…' : '—'}</span> },
+          { key: 'support_tier', label: 'Tier', render: (r) => <Pill tone={CSAT_TIER_TONE[r.support_tier as string] ?? 'neutral'}>{String(r.support_tier).replace(/_/g, ' ')}</Pill> },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['closed_satisfied'].includes(r.chain_status as string) ? 'good' : ['closed_escalated', 'no_response'].includes(r.chain_status as string) ? 'neutral' : ['escalated'].includes(r.chain_status as string) ? 'bad' : 'warn'}>{String(r.chain_status).replace(/_/g, ' ')}</Pill> },
+          { key: 'csat_score', label: 'Score', render: (r) => r.csat_score != null ? <span className={`font-semibold ${Number(r.csat_score) >= 4 ? 'text-green-700' : Number(r.csat_score) <= 2 ? 'text-red-600' : 'text-amber-600'}`}>{r.csat_score}/5</span> : <span className="text-[#8fa3bd]">—</span> },
+          { key: 'sla_breached', label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">Breached</Pill> : <Pill tone="good">OK</Pill> },
+          { key: 'created_at', label: 'Created', render: (r) => new Date(r.created_at as string).toLocaleDateString() },
+        ]}
+      />
+
+      {modal?.type === 'create' && (
+        <ActionModal
+          title="New CSAT record"
+          submitLabel="Create"
+          fields={[
+            { key: 'ticket_id', label: 'Ticket ID (reference)' },
+            { key: 'support_tier', label: 'Support tier', type: 'select', required: true, options: [
+              { value: 'p1_critical', label: 'P1 Critical (24h SLA)' },
+              { value: 'p2_high', label: 'P2 High (48h SLA)' },
+              { value: 'p3_medium', label: 'P3 Medium (72h SLA)' },
+              { value: 'p4_low', label: 'P4 Low (120h SLA)' },
+            ]} as FieldSpec,
+            { key: 'sla_met', label: 'Was SLA met?', type: 'select', options: [
+              { value: 'true', label: 'Yes' }, { value: 'false', label: 'No' },
+            ]} as FieldSpec,
+            { key: 'resolution_time_minutes', label: 'Resolution time (minutes)', type: 'number' },
+            { key: 'reason', label: 'Notes' },
+          ] as FieldSpec[]}
+          onClose={() => { setModal(null); }}
+          onSubmit={async (v) => {
+            await api.post('/csat-records', {
+              ...v,
+              sla_met: v.sla_met === 'true' ? true : v.sla_met === 'false' ? false : undefined,
+              resolution_time_minutes: v.resolution_time_minutes ? Number(v.resolution_time_minutes) : undefined,
+            });
+            setModal(null); onRefresh();
+          }}
+        />
+      )}
+
+      {modal?.type === 'action' && (
+        <ActionModal
+          title={`CSAT — ${modal.tier} — ${modal.currentStatus.replace(/_/g, ' ')}`}
+          submitLabel="Submit action"
+          fields={[
+            { key: 'action', label: 'Action', type: 'select', required: true, options: [
+              { value: 'send_survey', label: 'Send survey' },
+              { value: 'record_response', label: 'Record response' },
+              { value: 'analyse_score', label: 'Analyse score' },
+              { value: 'send_follow_up', label: 'Send follow-up' },
+              { value: 'record_follow_up_response', label: 'Record follow-up response' },
+              { value: 'escalate_to_management', label: 'Escalate to management' },
+              { value: 'close_satisfied', label: 'Close — satisfied' },
+              { value: 'close_escalated', label: 'Close — escalated' },
+              { value: 'expire_no_response', label: 'Expire (no response)' },
+            ]} as FieldSpec,
+            { key: 'csat_score', label: 'CSAT score (1–5)', type: 'number' },
+            { key: 'csat_comment', label: 'Customer comment' },
+            { key: 'escalation_reason', label: 'Escalation reason' },
+            { key: 'reason', label: 'Internal notes' },
+          ] as FieldSpec[]}
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            await api.post(`/csat-records/${modal.id}/action`, {
+              ...v,
+              csat_score: v.csat_score ? Number(v.csat_score) : undefined,
+            });
+            setModal(null); onRefresh();
+          }}
+        />
+      )}
+    </div>
   );
 }
 
