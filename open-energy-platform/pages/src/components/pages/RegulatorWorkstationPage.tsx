@@ -81,6 +81,9 @@ export function RegulatorWorkstationPage() {
         { key: 'stage-gates', label: 'Stage gates (W131)',
           body: () => <StageGateTab readOnly />,
         },
+        { key: 'public-consultations', label: 'Public consultations (W209)',
+          body: ({ onRefresh }) => <PublicConsultationTab onRefresh={onRefresh} />,
+        },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel
@@ -247,6 +250,116 @@ function EnforcementTab({ onRefresh }: { onRefresh: () => void }) {
           onSubmit={async (v) => {
             await api.post('/regulator/enforcement-events', v);
             setFiling(false); onRefresh();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── W209: Public Consultation Tab ────────────────────────────────────────────
+const PC_TIER_TONE: Record<string, 'bad' | 'warn' | 'neutral' | 'info'> = {
+  emergency: 'bad', national: 'bad', significant: 'warn', routine: 'info',
+};
+
+function PublicConsultationTab({ onRefresh }: { onRefresh: () => void }) {
+  const [modal, setModal] = useState<null | { type: 'create' } | { type: 'action'; id: string; currentStatus: string; tier: string; title: string }>(null);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <button onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+          + New consultation
+        </button>
+      </div>
+
+      <ListingTable
+        endpoint="/public-consultations"
+        rowKey={(r) => r.id}
+        rowOnClick={(r) => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status, tier: r.consultation_tier, title: r.title })}
+        empty={{ title: 'No public consultations', description: 'NERSA/DMRE public participation processes will appear here.' }}
+        columns={[
+          { key: 'title', label: 'Title', render: (r) => <span className="block truncate max-w-xs font-medium" title={r.title as string}>{r.title as string}</span> },
+          { key: 'consultation_type', label: 'Type', render: (r) => <span className="text-[11px]">{String(r.consultation_type).replace(/_/g, ' ')}</span> },
+          { key: 'consultation_tier', label: 'Tier', render: (r) => <Pill tone={PC_TIER_TONE[r.consultation_tier as string] ?? 'neutral'}>{String(r.consultation_tier)}</Pill> },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['closed'].includes(r.chain_status as string) ? 'good' : ['appealed', 'withdrawn'].includes(r.chain_status as string) ? 'bad' : 'warn'}>{String(r.chain_status).replace(/_/g, ' ')}</Pill> },
+          { key: 'sla_breached', label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">Breached</Pill> : <Pill tone="good">OK</Pill> },
+          { key: 'created_at', label: 'Created', render: (r) => new Date(r.created_at as string).toLocaleDateString() },
+        ]}
+      />
+
+      {modal?.type === 'create' && (
+        <ActionModal
+          title="New public consultation"
+          submitLabel="Create"
+          fields={[
+            { key: 'title', label: 'Title', required: true },
+            { key: 'consultation_type', label: 'Type', type: 'select', required: true, options: [
+              { value: 'tariff_determination', label: 'Tariff determination' },
+              { value: 'licence_application', label: 'Licence application' },
+              { value: 'licence_amendment', label: 'Licence amendment' },
+              { value: 'code_revision', label: 'Code revision' },
+              { value: 'policy_review', label: 'Policy review' },
+              { value: 'emergency_determination', label: 'Emergency determination' },
+            ]} as FieldSpec,
+            { key: 'consultation_tier', label: 'Tier', type: 'select', required: true, options: [
+              { value: 'emergency', label: 'Emergency (7d SLA)' },
+              { value: 'routine', label: 'Routine (30d SLA)' },
+              { value: 'significant', label: 'Significant (60d SLA)' },
+              { value: 'national', label: 'National (90d SLA)' },
+            ]} as FieldSpec,
+            { key: 'description', label: 'Description', type: 'textarea' },
+            { key: 'reference_number', label: 'NERSA reference number' },
+            { key: 'licence_ref', label: 'Licence reference (optional)' },
+            { key: 'tariff_ref', label: 'Tariff determination reference (optional)' },
+            { key: 'reason', label: 'Notes' },
+          ] as FieldSpec[]}
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            await api.post('/public-consultations', v);
+            setModal(null); onRefresh();
+          }}
+        />
+      )}
+
+      {modal?.type === 'action' && (
+        <ActionModal
+          title={`Consultation — ${modal.tier} — ${String(modal.title).slice(0, 50)}${String(modal.title).length > 50 ? '…' : ''}`}
+          submitLabel="Submit action"
+          fields={[
+            { key: 'action', label: 'Action', type: 'select', required: true, options: [
+              { value: 'publish_notice', label: 'Publish notice' },
+              { value: 'open_objection_period', label: 'Open objection period' },
+              { value: 'close_submissions', label: 'Close submissions' },
+              { value: 'start_analysis', label: 'Start analysis' },
+              { value: 'draft_determination', label: 'Draft determination' },
+              { value: 'issue_determination', label: 'Issue determination' },
+              { value: 'lodge_appeal', label: 'Lodge appeal (PAJA §6)' },
+              { value: 'resolve_appeal', label: 'Resolve appeal' },
+              { value: 'close_consultation', label: 'Close consultation' },
+              { value: 'withdraw', label: 'Withdraw' },
+            ]} as FieldSpec,
+            { key: 'gazette_number', label: 'Gazette number' },
+            { key: 'comment_deadline', label: 'Comment deadline', type: 'date' },
+            { key: 'objection_deadline', label: 'Objection deadline', type: 'date' },
+            { key: 'submissions_count', label: 'Submissions received', type: 'number' },
+            { key: 'determination_summary', label: 'Determination summary', type: 'textarea' },
+            { key: 'determination_ref', label: 'Determination reference' },
+            { key: 'appeal_grounds', label: 'Appeal grounds' },
+            { key: 'appeal_outcome', label: 'Appeal outcome', type: 'select', options: [
+              { value: 'upheld', label: 'Upheld' },
+              { value: 'dismissed', label: 'Dismissed' },
+              { value: 'settled', label: 'Settled' },
+            ]} as FieldSpec,
+            { key: 'reason', label: 'Internal notes' },
+          ] as FieldSpec[]}
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            await api.post(`/public-consultations/${modal.id}/action`, {
+              ...v,
+              submissions_count: v.submissions_count ? Number(v.submissions_count) : undefined,
+            });
+            setModal(null); onRefresh();
           }}
         />
       )}
