@@ -1936,6 +1936,14 @@ export type EventType =
   | 'acs_evt_submit_to_so' | 'acs_evt_commence_so_review'
   | 'acs_evt_accept_assessment' | 'acs_evt_issue_deficiency_notice'
   | 'acs_evt_declare_lapsed' | 'acs_evt_flag_sla_breach'
+  // ─── Wave 189 — IPP Annual Financial Statements & Independent Audit ───────
+  | 'ipp_aud.created' | 'ipp_aud.sla_breached'
+  | 'aud_evt_commence_trial_balance' | 'aud_evt_process_year_end_journals'
+  | 'aud_evt_commence_audit_fieldwork' | 'aud_evt_present_management_accounts'
+  | 'aud_evt_resolve_audit_queries' | 'aud_evt_review_draft_opinion'
+  | 'aud_evt_obtain_board_approval' | 'aud_evt_submit_to_cipc'
+  | 'aud_evt_complete_audit' | 'aud_evt_issue_qualified_opinion'
+  | 'aud_evt_declare_lapsed' | 'aud_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2260,6 +2268,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   qgr_evt: 'ipp',
   ipp_acs: 'ipp',
   acs_evt: 'ipp',
+  ipp_aud: 'ipp',
+  aud_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
