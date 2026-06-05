@@ -383,6 +383,7 @@ import capAdequacyChainRoutes, { capSlaSweep } from './routes/capital-adequacy-c
 import slbKpiChainRoutes, { slbSlaSweep } from './routes/slb-kpi-chain';
 import demandResponseChainRoutes, { drSlaSweep } from './routes/demand-response-chain';
 import carbonRegistryTransferChainRoutes, { crtSlaSweep } from './routes/carbon-registry-transfer-chain';
+import milestoneVarianceChainRoutes, { mvsSlaSweep } from './routes/milestone-variance-chain';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -1054,6 +1055,7 @@ app.route('/api/capital-adequacy-reports', capAdequacyChainRoutes);
 app.route('/api/slb-kpi-ratchets', slbKpiChainRoutes);
 app.route('/api/demand-response-events', demandResponseChainRoutes);
 app.route('/api/carbon-registry-transfers', carbonRegistryTransferChainRoutes);
+app.route('/api/milestone-variance-reports', milestoneVarianceChainRoutes);
 // platformFeaturesRoutes is the catch-all for /api — it must remain LAST
 // so all specific /api/* mounts above are tried first.
 app.route('/api', platformFeaturesRoutes);
@@ -2567,6 +2569,11 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('crt_sla_sweep', async () => {
         const result = await crtSlaSweep(env as never);
         console.log('crt_sla_sweep', JSON.stringify(result));
+      });
+      // W207: IPP Milestone & Schedule Variance Report — INVERTED SLA sweep.
+      await safe('mvs_sla_sweep', async () => {
+        const result = await mvsSlaSweep(env as never);
+        console.log('mvs_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

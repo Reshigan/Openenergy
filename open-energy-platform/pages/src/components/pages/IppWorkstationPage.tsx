@@ -194,6 +194,7 @@ export function IppWorkstationPage() {
         { key: 'progress-claims', label: 'Progress claims', group: 'Finance', body: () => <IppProgressClaimTab /> },
         { key: 'cp-tracker', label: 'Conditions Precedent (W192)', group: 'Finance', body: () => <IppCpTrackerTab /> },
         { key: 'green-bond-reports', label: 'Green bond reports (W202)', group: 'Finance', body: ({ onRefresh }) => <GreenBondReportTab onRefresh={onRefresh} /> },
+        { key: 'milestone-variance', label: 'Milestone variance reports (W207)', group: 'Project controls', body: ({ onRefresh }) => <MilestoneVarianceTab onRefresh={onRefresh} /> },
         { key: 'subcontractors', label: 'Subcontractors', group: 'Construction', body: () => <IppSubcontractorTab /> },
         { key: 'procurement', label: 'Procurement / RFPs', group: 'Construction', body: () => <ProcurementChainTab /> },
         { key: 'cod', label: 'Construction / COD', group: 'Construction', body: () => <CodChainTab /> },
@@ -921,6 +922,146 @@ function GreenBondReportTab({ onRefresh }: { onRefresh: () => void }) {
           ] as FieldSpec[]}
           onSubmit={async (v) => { await api.post(`/green-bond-reports/${acting.id}/action`, v); setActing(null); onRefresh(); }}
           onClose={() => setActing(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── W207: Milestone & Schedule Variance Report ────────────────────────────────
+type MvsModalMode = 'create' | { type: 'action'; id: string; currentStatus: string } | null;
+
+function MilestoneVarianceTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [modal, setModal] = useState<MvsModalMode>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refresh = () => { setRefreshKey(k => k + 1); onRefresh?.(); };
+
+  const statusTone = (s: string) => {
+    if (['dfi_accepted', 'remediation_accepted'].includes(s)) return 'good' as const;
+    if (['critical_delay', 'withdrawn'].includes(s)) return 'bad' as const;
+    if (['remediation_plan', 'remediation_submitted', 'dfi_queries'].includes(s)) return 'warn' as const;
+    return 'neutral' as const;
+  };
+
+  return (
+    <div>
+      <div className="flex justify-end mb-3">
+        <button
+          className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
+          onClick={() => setModal('create')}
+        >
+          + New variance report
+        </button>
+      </div>
+
+      <ListingTable
+        key={refreshKey}
+        endpoint="/milestone-variance-reports"
+        rowKey={(r) => r.id}
+        empty={{ title: 'No variance reports', description: 'Create a quarterly milestone variance report for DFI submission.' }}
+        columns={[
+          { key: 'report_period', label: 'Period', render: (r) => r.report_period },
+          { key: 'risk_tier', label: 'Risk', render: (r) => <Pill tone={r.risk_tier === 'critical' ? 'bad' : r.risk_tier === 'significant' ? 'warn' : 'neutral'}>{String(r.risk_tier)}</Pill> },
+          { key: 'overall_schedule_variance_days', label: 'Schedule Δ (days)', align: 'right', render: (r) => r.overall_schedule_variance_days != null ? `${r.overall_schedule_variance_days > 0 ? '+' : ''}${r.overall_schedule_variance_days}d` : '—' },
+          { key: 'cod_forecast_date', label: 'COD forecast', render: (r) => r.cod_forecast_date || '—' },
+          { key: 'milestones_delayed', label: 'Delayed', align: 'right', render: (r) => r.milestones_delayed != null ? String(r.milestones_delayed) : '—' },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={statusTone(r.chain_status)}>{String(r.chain_status).replace(/_/g, ' ')}</Pill> },
+          { key: 'sla_breached', label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">Breached</Pill> : <Pill tone="good">OK</Pill> },
+        ]}
+        rowOnClick={(r) => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status })}
+      />
+
+      {modal === 'create' && (
+        <ActionModal
+          title="New milestone variance report"
+          submitLabel="Create"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/milestone-variance-reports', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                risk_tier: v.risk_tier,
+                report_period: v.report_period,
+                reporting_date: v.reporting_date,
+                original_cod_date: v.original_cod_date || undefined,
+                total_milestones: v.total_milestones ? parseInt(v.total_milestones, 10) : undefined,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null);
+            refresh();
+          }}
+          fields={[
+            { key: 'report_period', label: 'Report period (e.g. 2026-Q2)', required: true, placeholder: '2026-Q2' },
+            { key: 'reporting_date', label: 'Reporting date', type: 'date', required: true },
+            {
+              key: 'risk_tier', label: 'Risk tier', type: 'select', required: true, defaultValue: 'minor',
+              options: [
+                { value: 'minor', label: 'Minor variance (14d SLA)' },
+                { value: 'moderate', label: 'Moderate variance (21d SLA)' },
+                { value: 'significant', label: 'Significant variance (30d SLA)' },
+                { value: 'critical', label: 'Critical variance (45d SLA)' },
+              ],
+            },
+            { key: 'original_cod_date', label: 'Original COD date (from financial close)', type: 'date', required: false },
+            { key: 'total_milestones', label: 'Total milestones in this period', type: 'number', required: false },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+          ]}
+        />
+      )}
+
+      {modal !== null && modal !== 'create' && (
+        <ActionModal
+          title={`Advance variance report — ${modal.currentStatus.replace(/_/g, ' ')}`}
+          submitLabel="Submit action"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/milestone-variance-reports/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                action: v.action,
+                reason: v.reason || undefined,
+                milestones_on_track: v.milestones_on_track ? parseInt(v.milestones_on_track, 10) : undefined,
+                milestones_delayed: v.milestones_delayed ? parseInt(v.milestones_delayed, 10) : undefined,
+                overall_schedule_variance_days: v.overall_schedule_variance_days ? parseInt(v.overall_schedule_variance_days, 10) : undefined,
+                cod_forecast_date: v.cod_forecast_date || undefined,
+                ie_report_ref: v.ie_report_ref || undefined,
+                critical_delay_description: v.critical_delay_description || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null);
+            refresh();
+          }}
+          fields={[
+            {
+              key: 'action', label: 'Action', type: 'select', required: true,
+              options: [
+                { value: 'submit_for_ie_review', label: 'Submit for IE review' },
+                { value: 'certify_ie', label: 'IE certifies report' },
+                { value: 'submit_to_dfi', label: 'Submit to DFI/lender panel' },
+                { value: 'dfi_raises_queries', label: 'DFI raises queries' },
+                { value: 'respond_to_dfi_queries', label: 'Respond to DFI queries' },
+                { value: 'dfi_accept', label: 'DFI accepts report' },
+                { value: 'flag_remediation_required', label: 'Flag remediation plan required' },
+                { value: 'submit_remediation_plan', label: 'Submit remediation plan' },
+                { value: 'dfi_accept_remediation', label: 'DFI accepts remediation plan' },
+                { value: 'declare_critical_delay', label: 'Declare critical-path delay' },
+                { value: 'withdraw', label: 'Withdraw report' },
+              ],
+            },
+            { key: 'milestones_on_track', label: 'Milestones on track', type: 'number', required: false },
+            { key: 'milestones_delayed', label: 'Milestones delayed', type: 'number', required: false },
+            { key: 'overall_schedule_variance_days', label: 'Schedule variance (days, negative = behind)', type: 'number', required: false },
+            { key: 'cod_forecast_date', label: 'Updated COD forecast', type: 'date', required: false },
+            { key: 'ie_report_ref', label: 'IE report reference', required: false },
+            { key: 'critical_delay_description', label: 'Critical delay description', type: 'textarea', required: false },
+            { key: 'reason', label: 'Notes / reason', type: 'textarea', required: false },
+          ]}
         />
       )}
     </div>
