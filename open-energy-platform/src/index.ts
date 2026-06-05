@@ -387,6 +387,7 @@ import milestoneVarianceChainRoutes, { mvsSlaSweep } from './routes/milestone-va
 import csatChainRoutes, { csatSlaSweep } from './routes/csat-chain';
 import publicConsultationChainRoutes, { pcSlaSweep } from './routes/public-consultation-chain';
 import greenTariffChainRoutes, { gtSlaSweep } from './routes/green-tariff-chain';
+import substationAssetChainRoutes, { sasSlaSweep } from './routes/substation-asset-chain';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -1062,6 +1063,7 @@ app.route('/api/milestone-variance-reports', milestoneVarianceChainRoutes);
 app.route('/api/csat-records', csatChainRoutes);
 app.route('/api/public-consultations', publicConsultationChainRoutes);
 app.route('/api/green-tariff-disclosures', greenTariffChainRoutes);
+app.route('/api/substation-assets', substationAssetChainRoutes);
 // platformFeaturesRoutes is the catch-all for /api — it must remain LAST
 // so all specific /api/* mounts above are tried first.
 app.route('/api', platformFeaturesRoutes);
@@ -2595,6 +2597,11 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('gt_sla_sweep', async () => {
         const result = await gtSlaSweep(env as never);
         console.log('gt_sla_sweep', JSON.stringify(result));
+      });
+      // W211: Grid Substation Asset Lifecycle — INVERTED SLA sweep.
+      await safe('sas_sla_sweep', async () => {
+        const result = await sasSlaSweep(env as never);
+        console.log('sas_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

@@ -61,6 +61,7 @@ export function GridOpsWorkstationPage() {
         { key: 'scada-connectors', label: 'SCADA data', group: 'Compliance', body: () => <ScadaConnectorTab /> },
         { key: 'mqtt-opcua-connectors', label: 'MQTT/OPC-UA connectors', group: 'Compliance', body: () => <MqttOpcuaConnectorTab /> },
         { key: 'smart-meter-assets', label: 'Smart meter assets (W199)', group: 'Compliance', body: ({ onRefresh }) => <SmartMeterAssetsTab onRefresh={onRefresh} /> },
+        { key: 'substation-assets', label: 'Substation assets (W211)', group: 'Compliance', body: ({ onRefresh }) => <SubstationAssetsTab onRefresh={onRefresh} /> },
         { key: 'audit', label: 'Audit & compliance', group: 'Compliance',
           body: ({ onRefresh }) => (
             <AuditPanel
@@ -444,6 +445,131 @@ function DemandResponseTab({ onRefresh }: { onRefresh?: () => void }) {
             { key: 'settlement_ref', label: 'Settlement reference', required: false },
             { key: 'reason', label: 'Notes / reason', type: 'textarea', required: false },
           ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── W211: Substation Asset Lifecycle Tab ─────────────────────────────────────
+const SAS_TIER_TONE: Record<string, 'bad' | 'warn' | 'neutral' | 'info'> = {
+  critical_node: 'bad', transmission: 'warn', subtransmission: 'info', distribution: 'neutral',
+};
+
+function SubstationAssetsTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [modal, setModal] = useState<null | { type: 'create' } | { type: 'action'; id: string; currentStatus: string; tier: string; name: string }>(null);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <button onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+          + Register asset
+        </button>
+      </div>
+
+      <ListingTable
+        endpoint="/substation-assets"
+        rowKey={(r) => r.id}
+        rowOnClick={(r) => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status, tier: r.asset_tier, name: r.name })}
+        empty={{ title: 'No substation assets', description: 'Grid transformer and substation asset records will appear here.' }}
+        columns={[
+          { key: 'asset_number', label: 'Asset #', render: (r) => <span className="font-mono text-[11px]">{r.asset_number as string}</span> },
+          { key: 'name', label: 'Name', render: (r) => <span className="font-medium text-[12px]">{r.name as string}</span> },
+          { key: 'asset_type', label: 'Type', render: (r) => <span className="text-[11px]">{String(r.asset_type).replace(/_/g, ' ')}</span> },
+          { key: 'asset_tier', label: 'Tier', render: (r) => <Pill tone={SAS_TIER_TONE[r.asset_tier as string] ?? 'neutral'}>{String(r.asset_tier).replace(/_/g, ' ')}</Pill> },
+          { key: 'voltage_kv', label: 'kV', render: (r) => r.voltage_kv != null ? <span>{r.voltage_kv as number} kV</span> : <span className="text-[#8fa3bd]">—</span> },
+          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['energised', 'returned_to_service'].includes(r.chain_status as string) ? 'good' : ['failed'].includes(r.chain_status as string) ? 'bad' : ['out_of_service', 'refurbishment'].includes(r.chain_status as string) ? 'warn' : 'neutral'}>{String(r.chain_status).replace(/_/g, ' ')}</Pill> },
+          { key: 'condition_score', label: 'Score', render: (r) => r.condition_score != null ? <span className={`font-semibold ${Number(r.condition_score) >= 7 ? 'text-green-700' : Number(r.condition_score) >= 4 ? 'text-amber-600' : 'text-red-600'}`}>{r.condition_score}/10</span> : <span className="text-[#8fa3bd]">—</span> },
+          { key: 'sla_breached', label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">Breached</Pill> : <Pill tone="good">OK</Pill> },
+        ]}
+      />
+
+      {modal?.type === 'create' && (
+        <ActionModal
+          title="Register substation asset"
+          submitLabel="Register"
+          fields={[
+            { key: 'asset_number', label: 'Asset number / tag', required: true },
+            { key: 'name', label: 'Asset name', required: true },
+            { key: 'asset_type', label: 'Asset type', type: 'select', required: true, options: [
+              { value: 'power_transformer', label: 'Power transformer' },
+              { value: 'auto_transformer', label: 'Auto-transformer' },
+              { value: 'circuit_breaker', label: 'Circuit breaker' },
+              { value: 'disconnector', label: 'Disconnector' },
+              { value: 'busbar', label: 'Busbar' },
+              { value: 'cable', label: 'Cable' },
+              { value: 'overhead_line', label: 'Overhead line' },
+              { value: 'reactor', label: 'Reactor' },
+              { value: 'capacitor_bank', label: 'Capacitor bank' },
+              { value: 'protection_relay', label: 'Protection relay' },
+            ]} as FieldSpec,
+            { key: 'asset_tier', label: 'Tier', type: 'select', required: true, options: [
+              { value: 'distribution', label: 'Distribution (11kV–66kV, 30d SLA)' },
+              { value: 'subtransmission', label: 'Subtransmission (88kV–132kV, 45d SLA)' },
+              { value: 'transmission', label: 'Transmission (220kV–765kV, 60d SLA)' },
+              { value: 'critical_node', label: 'Critical node (N-1, 90d SLA)' },
+            ]} as FieldSpec,
+            { key: 'location_name', label: 'Substation / location name' },
+            { key: 'voltage_kv', label: 'Rated voltage (kV)', type: 'number' },
+            { key: 'rated_mva', label: 'Rated MVA', type: 'number' },
+            { key: 'manufacturer', label: 'Manufacturer' },
+            { key: 'year_manufactured', label: 'Year manufactured', type: 'number' },
+            { key: 'reason', label: 'Notes' },
+          ] as FieldSpec[]}
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/substation-assets', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({ ...v, voltage_kv: v.voltage_kv ? Number(v.voltage_kv) : undefined, rated_mva: v.rated_mva ? Number(v.rated_mva) : undefined, year_manufactured: v.year_manufactured ? Number(v.year_manufactured) : undefined }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); onRefresh?.();
+          }}
+        />
+      )}
+
+      {modal?.type === 'action' && (
+        <ActionModal
+          title={`${modal.name} — ${modal.tier} — ${String(modal.currentStatus).replace(/_/g, ' ')}`}
+          submitLabel="Submit action"
+          fields={[
+            { key: 'action', label: 'Action', type: 'select', required: true, options: [
+              { value: 'start_commissioning', label: 'Start commissioning' },
+              { value: 'energise', label: 'Energise (put in service)' },
+              { value: 'schedule_assessment', label: 'Schedule condition assessment' },
+              { value: 'complete_assessment', label: 'Complete assessment' },
+              { value: 'plan_refurbishment', label: 'Plan refurbishment' },
+              { value: 'take_out_of_service', label: 'Take out of service' },
+              { value: 'start_refurbishment', label: 'Start refurbishment works' },
+              { value: 'return_to_service', label: 'Return to service' },
+              { value: 'initiate_decommission', label: 'Initiate decommission' },
+              { value: 'decommission', label: 'Decommission (final)' },
+              { value: 'record_failure', label: 'Record failure event' },
+            ]} as FieldSpec,
+            { key: 'condition_score', label: 'Condition score (0–10)', type: 'number' },
+            { key: 'remaining_life_years', label: 'Remaining life (years)', type: 'number' },
+            { key: 'refurbishment_type', label: 'Refurbishment type (minor/major/rewind)' },
+            { key: 'refurbishment_cost_zar', label: 'Refurbishment cost (ZAR)', type: 'number' },
+            { key: 'decommission_reason', label: 'Decommission reason', type: 'select', options: [
+              { value: 'end_of_life', label: 'End of life' },
+              { value: 'failure', label: 'Failure' },
+              { value: 'replacement', label: 'Replacement' },
+              { value: 'stranded_asset', label: 'Stranded asset' },
+            ]} as FieldSpec,
+            { key: 'failure_mode', label: 'Failure mode (if recording failure)' },
+            { key: 'reason', label: 'Notes' },
+          ] as FieldSpec[]}
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/substation-assets/${modal.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({ ...v, condition_score: v.condition_score ? Number(v.condition_score) : undefined, remaining_life_years: v.remaining_life_years ? Number(v.remaining_life_years) : undefined, refurbishment_cost_zar: v.refurbishment_cost_zar ? Number(v.refurbishment_cost_zar) : undefined }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null); onRefresh?.();
+          }}
         />
       )}
     </div>
