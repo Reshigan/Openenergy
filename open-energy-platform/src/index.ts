@@ -302,6 +302,7 @@ import ippLicenceReturnsRoutes, { ippLicenceReturnSlaSweep } from './routes/ipp-
 import ippReippppReportsRoutes, { ippReippppReportSlaSweep } from './routes/ipp-reipppp-reports';
 import ippEquityTransferRoutes, { ippEquityTransferSlaSweep } from './routes/ipp-equity-transfer';
 import ippQuarterlyGenReportRoutes, { ippQuarterlyGenReportSlaSweep } from './routes/ipp-quarterly-gen-reports';
+import ippAnnualComplianceAssessmentRoutes, { ippAnnualComplianceAssessmentSlaSweep } from './routes/ipp-annual-compliance-assessments';
 import adminPlatformRoutes from './routes/admin-platform';
 import settlementAutoRoutes from './routes/settlement-automation';
 import imbalanceRoutes from './routes/imbalance';
@@ -935,6 +936,7 @@ app.route('/api/ipp-licence-returns', ippLicenceReturnsRoutes);
 app.route('/api/ipp-reipppp-reports', ippReippppReportsRoutes);
 app.route('/api/ipp-equity-transfer', ippEquityTransferRoutes);
 app.route('/api/ipp-quarterly-gen-reports', ippQuarterlyGenReportRoutes);
+app.route('/api/ipp-annual-compliance-assessments', ippAnnualComplianceAssessmentRoutes);
 app.route('/api/admin-platform', adminPlatformRoutes);
 app.route('/api/settlement-auto', settlementAutoRoutes);
 app.route('/api/imbalance', imbalanceRoutes);
@@ -2435,6 +2437,10 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       // W187: reject_report ALL tiers; declare_lapsed + confirm_acknowledgement major+.
       await safe('ipp_qgr_sla_sweep', async () => {
         await ippQuarterlyGenReportSlaSweep(env as never);
+      });
+      // W188: issue_deficiency_notice ALL tiers; declare_lapsed + accept_assessment major+.
+      await safe('ipp_acs_sla_sweep', async () => {
+        await ippAnnualComplianceAssessmentSlaSweep(env as never);
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.

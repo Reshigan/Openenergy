@@ -85,6 +85,7 @@ import { IppLicenceReturnsTab } from '../ipp/IppLicenceReturnsTab';
 import { IppReippppReportsTab } from '../ipp/IppReippppReportsTab';
 import { IppEquityTransferTab } from '../ipp/IppEquityTransferTab';
 import { IppQuarterlyGenReportTab } from '../ipp/IppQuarterlyGenReportTab';
+import { IppAnnualComplianceAssessmentTab } from '../ipp/IppAnnualComplianceAssessmentTab';
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -160,6 +161,7 @@ export function IppWorkstationPage() {
         { key: 'reipppp-reports', label: 'REIPPPP annual progress report (W185)', group: 'Risk', body: () => <IppReippppReportsTab /> },
         { key: 'equity-transfer', label: 'SPV equity transfer & consent (W186)', group: 'Risk', body: () => <IppEquityTransferTab /> },
         { key: 'quarterly-gen-report', label: 'DMRE quarterly generation report (W187)', group: 'Risk', body: () => <IppQuarterlyGenReportTab /> },
+        { key: 'annual-compliance-assessment', label: 'Annual grid code compliance self-assessment (W188)', group: 'Risk', body: () => <IppAnnualComplianceAssessmentTab /> },
         { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },

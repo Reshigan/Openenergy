@@ -1928,6 +1928,14 @@ export type EventType =
   | 'qgr_evt_submit_to_ipp_office' | 'qgr_evt_confirm_acknowledgement'
   | 'qgr_evt_accept_report' | 'qgr_evt_reject_report'
   | 'qgr_evt_declare_lapsed' | 'qgr_evt_flag_sla_breach'
+  // ─── Wave 188 — IPP Annual Grid Code Compliance Self-Assessment ───────────
+  | 'ipp_acs.created' | 'ipp_acs.sla_breached'
+  | 'acs_evt_commence_protection_audit' | 'acs_evt_commence_metering_scada_audit'
+  | 'acs_evt_commence_reactive_power_audit' | 'acs_evt_commence_frequency_response_audit'
+  | 'acs_evt_commence_frt_pq_audit' | 'acs_evt_conduct_internal_technical_review'
+  | 'acs_evt_submit_to_so' | 'acs_evt_commence_so_review'
+  | 'acs_evt_accept_assessment' | 'acs_evt_issue_deficiency_notice'
+  | 'acs_evt_declare_lapsed' | 'acs_evt_flag_sla_breach'
   // ─── RBAC ──────────────────────────────────────────────────────────────────
   | 'rbac.registration_submitted' | 'rbac.registration_approved' | 'rbac.registration_rejected'
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
@@ -2250,6 +2258,8 @@ const AUDIT_PREFIX_MAP: Record<string, string> = {
   eqt_evt: 'ipp',
   ipp_qgr: 'ipp',
   qgr_evt: 'ipp',
+  ipp_acs: 'ipp',
+  acs_evt: 'ipp',
   demand: 'trading',
   meter: 'grid',
   scenario: 'carbon',
