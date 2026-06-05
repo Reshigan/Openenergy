@@ -307,7 +307,10 @@ app.get('/', async (c) => {
   let sinceDate: string;
   switch (period) {
     case 'today':   sinceDate = now.toISOString().slice(0, 10); break;
-    case 'week':    sinceDate = new Date(now.getTime() - 7 * 86400000).toISOString().slice(0, 10); break;
+    case 'week':    sinceDate = new Date(now.getTime() - 7   * 86400000).toISOString().slice(0, 10); break;
+    case '1m':      sinceDate = new Date(now.getTime() - 30  * 86400000).toISOString().slice(0, 10); break;
+    case '3m':      sinceDate = new Date(now.getTime() - 90  * 86400000).toISOString().slice(0, 10); break;
+    case '6m':      sinceDate = new Date(now.getTime() - 180 * 86400000).toISOString().slice(0, 10); break;
     case 'ytd':     sinceDate = now.getFullYear() + '-01-01'; break;
     case '1y':      sinceDate = new Date(now.getTime() - 365 * 86400000).toISOString().slice(0, 10); break;
     case 'all':     sinceDate = '2000-01-01'; break;
@@ -363,7 +366,11 @@ app.get('/time-series', async (c) => {
   const now = new Date();
   let sinceDate: string;
   switch (period) {
-    case 'week':  sinceDate = new Date(now.getTime() - 7 * 86400000).toISOString().slice(0, 10); break;
+    case 'today': sinceDate = now.toISOString().slice(0, 10); break;
+    case 'week':  sinceDate = new Date(now.getTime() - 7   * 86400000).toISOString().slice(0, 10); break;
+    case '1m':    sinceDate = new Date(now.getTime() - 30  * 86400000).toISOString().slice(0, 10); break;
+    case '3m':    sinceDate = new Date(now.getTime() - 90  * 86400000).toISOString().slice(0, 10); break;
+    case '6m':    sinceDate = new Date(now.getTime() - 180 * 86400000).toISOString().slice(0, 10); break;
     case 'ytd':   sinceDate = now.getFullYear() + '-01-01'; break;
     case '1y':    sinceDate = new Date(now.getTime() - 365 * 86400000).toISOString().slice(0, 10); break;
     case 'all':   sinceDate = '2000-01-01'; break;
@@ -478,6 +485,47 @@ app.post('/backfill', async (c) => {
     }
   }
   return c.json({ stations_processed: results.length, results });
+});
+
+// GET /api/esums/accruals/solax-probe?sn=X3F100J6779008&start_ms=...&end_ms=...
+// Returns raw Solax API response for diagnosis — admin only
+app.get('/solax-probe', async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin') return c.json({ error: 'Forbidden' }, 403);
+
+  const env = c.env;
+  const { sn, start_ms, end_ms, btype, interval_min, base } = c.req.query();
+  if (!sn || !start_ms || !end_ms) return c.json({ error: 'sn, start_ms, end_ms required' }, 400);
+
+  const clientId = env.SOLAX_CLIENT_ID as string | undefined;
+  const clientSecret = env.SOLAX_CLIENT_SECRET as string | undefined;
+  if (!clientId || !clientSecret) return c.json({ error: 'SOLAX credentials not configured' }, 503);
+
+  // Get token
+  const baseUrl = base === 'global' ? 'https://openapi.solaxcloud.com' : 'https://openapi-eu.solaxcloud.com';
+  const tokenRes = await fetch(`${baseUrl}/openapi/auth/oauth/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, grant_type: 'client_credentials' }),
+  });
+  const tokenJson = await tokenRes.json<{ code: number; result?: { access_token: string } }>();
+  if (!tokenJson.result?.access_token) return c.json({ error: 'Token failed', tokenJson }, 502);
+
+  const token = tokenJson.result.access_token;
+  const params = new URLSearchParams({
+    snList: sn,
+    deviceType: '1',
+    startTime: start_ms,
+    endTime: end_ms,
+    timeInterval: interval_min ?? '60',
+    businessType: btype ?? '4',
+  });
+
+  const dataRes = await fetch(`${baseUrl}/openapi/v2/device/history_data?${params}`, {
+    headers: { Authorization: `bearer ${token}`, Accept: '*/*' },
+  });
+  const raw = await dataRes.json();
+  return c.json({ base: baseUrl, sn, start_ms, end_ms, btype: btype ?? '4', raw });
 });
 
 export default app;
