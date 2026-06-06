@@ -325,6 +325,7 @@ import siemRoutes, { dispatchAllForwarders } from './routes/siem';
 import reportsRoutes from './routes/reports';
 import telemetryRoutes from './routes/telemetry';
 import monitoringRoutes from './routes/monitoring';
+import adminRevenueRoutes from './routes/admin-revenue';
 import { logger } from './utils/logger';
 import backupRoutes from './routes/backup';
 import searchRoutes from './routes/search';
@@ -1005,6 +1006,7 @@ app.route('/api/siem', siemRoutes);
 app.route('/api/reports', reportsRoutes);
 app.route('/api/telemetry', telemetryRoutes);
 app.route('/api/admin/monitoring', monitoringRoutes);
+app.route('/api/admin/revenue', adminRevenueRoutes);
 // Backup routes are deliberately mounted outside /api/admin to avoid being
 // shadowed by the admin sub-app's global authMiddleware — Hono flattens
 // sub-app middleware onto the shared router, so /api/admin/* middleware
