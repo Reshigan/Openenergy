@@ -120,7 +120,11 @@ export async function computeAndRecordFee(ctx: CascadeContext): Promise<void> {
   // Not a value-bearing transition and not on the rate card → nothing to record.
   if (!commercial && !row) return;
 
-  const value = commercial?.entity_value ?? deriveValueFromData(ctx.data);
+  // A finite commercial.entity_value (incl. 0) wins; NaN/Infinity or absent
+  // falls back to data derivation, which is itself finite-filtered. Keeps a
+  // malformed value from ever reaching fee_zar once a fee is enabled.
+  const cv = commercial?.entity_value;
+  const value = typeof cv === 'number' && isFinite(cv) ? cv : deriveValueFromData(ctx.data);
   const participant = commercial?.participant_id ?? deriveParticipantFromData(ctx.data);
   const period = commercial?.billing_period ?? currentPeriod();
 
