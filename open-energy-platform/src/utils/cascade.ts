@@ -2982,7 +2982,7 @@ const PROJECT_DEV_CACHE_PREFIX = 'cascade:project_developer:';
 const PROJECT_DEV_TTL_SECONDS = 3600;
 const PROJECT_DEV_MISSING = '__missing__';
 
-async function cachedProjectDeveloper(
+export async function cachedProjectDeveloper(
   env: { DB: any; KV: any },
   projectId: string,
 ): Promise<string | null> {
@@ -3312,38 +3312,7 @@ async function deliverWebhooks(ctx: CascadeContext): Promise<void> {
 }
 
 async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
-  const db = ctx.env.DB;
   switch (ctx.event) {
-    case 'ipp.milestone_satisfied': {
-      // If milestone is financial_close, cascade to ipp.financial_close
-      if (ctx.data?.milestone_type === 'financial_close') {
-        await fireCascade({
-          event: 'ipp.financial_close',
-          actor_id: ctx.actor_id,
-          entity_type: 'ipp_projects',
-          entity_id: (ctx.data?.project_id as string) || ctx.entity_id,
-          data: { project_name: ctx.data?.project_name },
-          env: ctx.env,
-        });
-      }
-      // Auto-queue disbursement approval for lenders
-      const lenders = await db.prepare(`SELECT id FROM participants WHERE role = 'lender'`).all();
-      for (const l of lenders.results || []) {
-        await enqueueAction(db, {
-          type: 'disbursement_approval',
-          priority: 'high',
-          actor_id: ctx.actor_id,
-          assignee_id: (l as { id: string }).id,
-          entity_type: 'project_milestones',
-          entity_id: ctx.entity_id,
-          title: `Approve disbursement for ${ctx.data?.milestone_name || 'milestone'}`,
-          description: `Milestone "${ctx.data?.milestone_name || ctx.entity_id}" satisfied; review CPs and release disbursement.`,
-          due_date: new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0],
-        });
-      }
-      break;
-    }
-    
     case 'ona.fault_detected': {
       // Calculate and store revenue impact
       const severityMultiplier = { low: 0.5, medium: 1, high: 2, critical: 5 };
@@ -3383,44 +3352,6 @@ async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
             `View Fault: ${ctx.data?.fault_description || 'Unknown'}`,
             `Revenue impact: R${dailyImpact.toLocaleString()}/day. Request disbursement adjustment if necessary.`,
             new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString().split('T')[0],
-            new Date().toISOString()
-          ).run();
-        }
-      }
-      break;
-    }
-    
-    case 'ipp.financial_close': {
-      // Notify all linked parties about FC
-      const proj = await ctx.env.DB.prepare('SELECT * FROM ipp_projects WHERE id = ?').bind(ctx.entity_id).first();
-      if (proj) {
-        // Notify grid operator if connection exists
-        const connection = await ctx.env.DB.prepare('SELECT id FROM grid_connections WHERE project_id = ?').bind(ctx.entity_id).first();
-        if (connection) {
-          const gridOps = await ctx.env.DB.prepare("SELECT id FROM participants WHERE role = 'grid_operator'").all();
-          for (const op of gridOps.results || []) {
-            await ctx.env.DB.prepare(`
-              INSERT INTO notifications (id, participant_id, type, title, body, data, created_at)
-              VALUES (?, ?, 'grid', ?, ?, ?, ?)
-            `).bind(
-              generateId(), op.id, 'FC Declared — Prepare Grid Connection',
-              `Project ${proj.project_name} has achieved Financial Close. Prepare for grid connection.`,
-              JSON.stringify({ project_id: ctx.entity_id, cod: proj.commercial_operation_date }),
-              new Date().toISOString()
-            ).run();
-          }
-        }
-        
-        // Notify offtakers with contracts
-        const contracts = await ctx.env.DB.prepare('SELECT counterparty_id FROM contract_documents WHERE project_id = ?').bind(ctx.entity_id).all();
-        for (const c of contracts.results || []) {
-          await ctx.env.DB.prepare(`
-            INSERT INTO notifications (id, participant_id, type, title, body, data, created_at)
-            VALUES (?, ?, 'contract', ?, ?, ?, ?)
-          `).bind(
-            generateId(), c.counterparty_id, 'FC Declared — COD Expected',
-            `Project ${proj.project_name} has achieved Financial Close. Expected COD: ${proj.commercial_operation_date}`,
-            JSON.stringify({ project_id: ctx.entity_id, cod: proj.commercial_operation_date }),
             new Date().toISOString()
           ).run();
         }
@@ -3620,29 +3551,6 @@ async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
         }
       }
       if (assignments.length > 0) await enqueueActions(ctx.env.DB, assignments);
-      break;
-    }
-
-    case 'ipp.insurance_expiring': {
-      const projectId = ctx.data?.project_id as string | null;
-      if (projectId) {
-        const dev = await cachedProjectDeveloper(ctx.env, projectId);
-        if (dev) {
-          await enqueueAction(ctx.env.DB, {
-            type: 'insurance_renewal',
-            priority: 'high',
-            actor_id: ctx.actor_id,
-            assignee_id: dev,
-            entity_type: 'insurance_policies',
-            entity_id: ctx.entity_id,
-            title: `Insurance renewal due: ${ctx.data?.policy_number || ctx.entity_id}`,
-            description: `Policy expires ${ctx.data?.period_end || 'soon'}. Lender covenant requires continuous cover.`,
-            due_date: typeof ctx.data?.period_end === 'string'
-              ? (ctx.data.period_end as string).slice(0, 10)
-              : daysFromNow(30),
-          });
-        }
-      }
       break;
     }
 

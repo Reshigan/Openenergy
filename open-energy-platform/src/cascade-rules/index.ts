@@ -5,10 +5,12 @@ import { registerTradingSafetyRules } from './trading-safety';
 import { registerLifecycleSequencingRules } from './lifecycle-sequencing';
 import { registerTradeSettlementRules } from './trade-settlement';
 import { registerContractLifecycleRules } from './contract-lifecycle';
+import { registerIppLifecycleRules } from './ipp-lifecycle';
 
 registerTradingSafetyRules();
 registerLifecycleSequencingRules();
 registerTradeSettlementRules();
 registerContractLifecycleRules();
+registerIppLifecycleRules();
 
-export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules };
+export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules };
