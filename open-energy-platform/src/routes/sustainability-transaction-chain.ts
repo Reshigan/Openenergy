@@ -312,6 +312,26 @@ app.post('/:id/action', async (c) => {
     return c.json({ success: false, error: 'Forbidden' }, 403);
   }
 
+  // Per-action ACL: payment + custody transitions are off-platform operations
+  // (payment gateway callback / admin settlement) — buyers/sellers must not
+  // self-approve payment confirmation or self-complete asset transfers.
+  const ACTION_ALLOWED_ACTORS: Record<TransactionAction, ('admin_support' | 'buyer' | 'seller')[]> = {
+    initiate_payment:    ['admin_support', 'buyer'],
+    cancel:              ['admin_support', 'buyer'],
+    confirm_payment:     ['admin_support'],          // payment-gateway callback only
+    begin_settlement:    ['admin_support'],          // custody operation
+    complete_settlement: ['admin_support'],          // holding transfer / retirement
+    fail_settlement:     ['admin_support'],
+    refund:              ['admin_support'],
+    sla_breach:          ['admin_support'],
+  };
+  const actorKind = isAdmin ? 'admin_support'
+    : row.buyer_id === user.id ? 'buyer'
+    : 'seller';
+  if (!ACTION_ALLOWED_ACTORS[action]?.includes(actorKind)) {
+    return c.json({ success: false, error: `Action '${action}' requires admin or support` }, 403);
+  }
+
   const currentStatus = row.chain_status as TransactionStatus;
   if (TRANSACTION_HARD_TERMINALS.has(currentStatus)) {
     return c.json({ success: false, error: `Transaction in terminal state '${currentStatus}'` }, 422);
