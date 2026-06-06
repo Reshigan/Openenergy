@@ -31,7 +31,7 @@ async function loadRiskSnapshot(
   energyType: string,
   deliveryDate: string | null,
 ): Promise<RiskSnapshot> {
-  const [participant, limit, exposure, collateral, position, mark, halt, bookSides, marginGate] = await Promise.all([
+  const [participant, limit, exposure, collateral, position, mark, halt, bookSides, marginGate, tradingBlock] = await Promise.all([
     env.DB.prepare(`SELECT status, kyc_status FROM participants WHERE id = ?`)
       .bind(participantId).first<{ status: string; kyc_status: string }>(),
     env.DB.prepare(
@@ -110,6 +110,16 @@ async function loadRiskSnapshot(
     // Treat unknown / missing rows as 'clear'.
     env.DB.prepare(`SELECT gate_status FROM margin_enforcement_state WHERE member_id = ?`)
       .bind(participantId).first<{ gate_status: string }>().catch(() => null),
+    // ── W2: regulatory trading block (FSCA kill-switch / market-abuse STOR) ──
+    // Active block keyed either on the participant id directly OR on a party id
+    // (firm_party_id / subject_party_id) linked via oe_trading_party_link.
+    // Dual-key so a block written in either namespace is enforced. COUNT>0 ⇒ blocked.
+    env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM oe_algo_trading_blocks
+        WHERE is_active = 1
+          AND ( participant_id = ?
+             OR participant_id IN (SELECT party_id FROM oe_trading_party_link WHERE participant_id = ?) )`,
+    ).bind(participantId, participantId).first().catch(() => null),
   ]);
 
   const status = participant?.status as string | undefined;
@@ -147,6 +157,7 @@ async function loadRiskSnapshot(
     bid_liquidity_mwh: Number(bookSides?.bid_liq || 0),
     ask_liquidity_mwh: Number(bookSides?.ask_liq || 0),
     margin_gate_status: (marginGate?.gate_status as 'clear' | 'warning' | 'blocked' | undefined) || 'clear',
+    trading_block_active: Number((tradingBlock as { n: number } | null)?.n || 0) > 0,
   };
 }
 
@@ -2426,3 +2437,7 @@ async function sha256OfBytes(b: Uint8Array): Promise<string> {
 }
 
 export default trading;
+
+// Test seam: loadRiskSnapshot is module-internal; this lets the W2 guard test
+// exercise dual-key block resolution without going through the authed route.
+export const __loadRiskSnapshotForTest = loadRiskSnapshot;

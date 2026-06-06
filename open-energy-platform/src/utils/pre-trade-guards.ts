@@ -37,6 +37,8 @@ export const REJECTION_CODES = [
   'INVALID_DISPLAY_SIZE',
   // ─── Wave 3 — clearing margin enforcement gate ──────────────────────────
   'MARGIN_GATE_BLOCKED',
+  // ─── W2 — regulatory trading block (FSCA kill-switch / market-abuse STOR) ──
+  'ALGO_TRADING_BLOCKED',
 ] as const;
 
 export type RejectionCode = typeof REJECTION_CODES[number];
@@ -91,6 +93,12 @@ export interface RiskSnapshot {
   //   'blocked' → overdue margin call (reject)
   // Undefined treated as 'clear' for back-compat with tests.
   margin_gate_status?: 'clear' | 'warning' | 'blocked';
+  // ─── W2 — regulatory trading block ────────────────────────────────────
+  // True when an active oe_algo_trading_blocks row resolves to this
+  // participant (FSCA algo kill-switch or market-abuse STOR freeze). Resolved
+  // by loadRiskSnapshot via direct participant_id match OR the
+  // oe_trading_party_link bridge. Undefined treated as not-blocked.
+  trading_block_active?: boolean;
 }
 
 export type GuardResult =
@@ -153,7 +161,18 @@ export function evaluateOrder(order: ProposedOrder, snapshot: RiskSnapshot): Gua
     };
   }
 
-  // 2a. Clearing margin gate — block if member has overdue margin call.
+  // 2a. Regulatory trading block — FSCA algo kill-switch or market-abuse STOR
+  // freeze. A participant-level hard stop enforced regardless of market/mark
+  // state. Resolved in loadRiskSnapshot via direct id or the party-link bridge.
+  if (snapshot.trading_block_active === true) {
+    return {
+      ok: false,
+      reason_code: 'ALGO_TRADING_BLOCKED',
+      detail: 'Trading is blocked for this account under a regulatory hold (kill-switch or market-abuse STOR). Contact compliance.',
+    };
+  }
+
+  // 2b. Clearing margin gate — block if member has overdue margin call.
   // Operationally upstream of credit/collateral checks because a margin
   // breach is a stronger signal than transient headroom.
   if (snapshot.margin_gate_status === 'blocked') {

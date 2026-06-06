@@ -310,6 +310,13 @@ function deterministicFallback(input: ExplainerInput): { human_explanation: stri
           { label: 'Contact support', action: 'contact_support' },
         ],
       };
+    case 'ALGO_TRADING_BLOCKED':
+      return {
+        human_explanation: 'Trading on this account is suspended under a regulatory hold — either an algorithmic-trading kill-switch or a market-abuse STOR freeze. New orders are blocked until compliance lifts the hold.',
+        suggested_remediations: [
+          { label: 'Contact compliance', action: 'contact_support' },
+        ],
+      };
     case 'POST_ONLY_WOULD_CROSS': {
       const opp = input.side === 'buy'
         ? Number((input.snapshot as { best_ask_zar_mwh?: number | null }).best_ask_zar_mwh ?? 0)
