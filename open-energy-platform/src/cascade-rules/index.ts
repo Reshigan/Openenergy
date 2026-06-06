@@ -6,11 +6,13 @@ import { registerLifecycleSequencingRules } from './lifecycle-sequencing';
 import { registerTradeSettlementRules } from './trade-settlement';
 import { registerContractLifecycleRules } from './contract-lifecycle';
 import { registerIppLifecycleRules } from './ipp-lifecycle';
+import { registerOnaOperationsRules } from './ona-operations';
 
 registerTradingSafetyRules();
 registerLifecycleSequencingRules();
 registerTradeSettlementRules();
 registerContractLifecycleRules();
 registerIppLifecycleRules();
+registerOnaOperationsRules();
 
-export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules };
+export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules };
