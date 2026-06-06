@@ -44,4 +44,20 @@ describe('role-actions', () => {
     expect(row.priority).toBe('normal');
     expect(row.status).toBe('pending');
   });
+
+  it('pendingCountForRole scopes by participantId when provided (backward-compat kept)', async () => {
+    // role-wide row (visible to all participants of role trader)
+    await pushRoleAction(env, { target_role: 'trader', source_event: 'e', source_entity_type: 't', source_entity_id: 'w1', title: 'Wide' });
+    // row targeted to par_alice only
+    await pushRoleAction(env, { target_role: 'trader', target_participant_id: 'par_alice', source_event: 'e', source_entity_type: 't', source_entity_id: 'a1', title: 'Alice' });
+    // row targeted to par_bob only
+    await pushRoleAction(env, { target_role: 'trader', target_participant_id: 'par_bob', source_event: 'e', source_entity_type: 't', source_entity_id: 'b1', title: 'Bob' });
+
+    // alice sees: role-wide + her own = 2 (not bob's)
+    expect(await pendingCountForRole(env, 'trader', 'par_alice')).toBe(2);
+    // bob sees: role-wide + his own = 2 (not alice's)
+    expect(await pendingCountForRole(env, 'trader', 'par_bob')).toBe(2);
+    // role-only global (backward-compat): all three rows
+    expect(await pendingCountForRole(env, 'trader')).toBe(3);
+  });
 });

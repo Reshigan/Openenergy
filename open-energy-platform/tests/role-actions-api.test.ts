@@ -66,6 +66,21 @@ describe('role-actions API — scoped reads', () => {
   });
 });
 
+describe('role-actions API — scoped count', () => {
+  it('returns pending count scoped to role-wide + own-participant rows only', async () => {
+    seedQueueRow('raq_wide', 'trader', null);
+    seedQueueRow('raq_mine', 'trader', 'par_trader');
+    seedQueueRow('raq_other', 'trader', 'par_other');
+    seedQueueRow('raq_role', 'regulator', null);
+    const token = await traderToken();
+    const res = await roleActions.request('/count', { headers: { Authorization: `Bearer ${token}` } }, env);
+    expect(res.status).toBe(200);
+    const body = await res.json() as { pending: number };
+    // raq_wide (role-wide trader) + raq_mine (par_trader) = 2; raq_other and raq_role excluded
+    expect(body.pending).toBe(2);
+  });
+});
+
 describe('role-actions API — scoped writes', () => {
   it('acknowledges an in-scope row', async () => {
     seedQueueRow('raq_mine', 'trader', 'par_trader');

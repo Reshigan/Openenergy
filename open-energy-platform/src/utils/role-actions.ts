@@ -22,8 +22,10 @@ export interface RoleActionInput {
   sla_due_at?: string;
 }
 
-function pendingCacheKey(role: string): string {
-  return `role_queue_pending:${role}`;
+export function pendingCacheKey(role: string, participantId?: string | null): string {
+  return participantId != null
+    ? `role_queue_pending:${role}:${participantId}`
+    : `role_queue_pending:${role}`;
 }
 
 export async function pushRoleAction(env: HonoBindings, input: RoleActionInput): Promise<string> {
@@ -43,14 +45,25 @@ export async function pushRoleAction(env: HonoBindings, input: RoleActionInput):
     input.priority ?? 'normal', input.sla_due_at ?? null, now, now,
   ).run();
 
-  // Invalidate the cached pending count for this role.
-  try { await env.KV.delete(pendingCacheKey(String(input.target_role))); } catch { /* best-effort */ }
+  const role = String(input.target_role);
+  // Always invalidate the role-only key (global badge count includes the new row).
+  try { await env.KV.delete(pendingCacheKey(role)); } catch { /* best-effort */ }
+  // Also invalidate the participant-scoped key when the push targets a specific participant.
+  // Role-wide rows (target_participant_id NULL) affect every participant's scoped key and
+  // cannot be enumerated; the 30s KV TTL bounds that staleness — intentional.
+  if (input.target_participant_id) {
+    try { await env.KV.delete(pendingCacheKey(role, input.target_participant_id)); } catch { /* best-effort */ }
+  }
 
   return id;
 }
 
-export async function pendingCountForRole(env: HonoBindings, role: PlatformRole | string): Promise<number> {
-  const key = pendingCacheKey(String(role));
+export async function pendingCountForRole(
+  env: HonoBindings,
+  role: PlatformRole | string,
+  participantId?: string | null,
+): Promise<number> {
+  const key = pendingCacheKey(String(role), participantId);
 
   // KV fast path.
   try {
@@ -58,9 +71,20 @@ export async function pendingCountForRole(env: HonoBindings, role: PlatformRole 
     if (cached != null) return parseInt(cached, 10) || 0;
   } catch { /* fall through to D1 */ }
 
-  const row = (await env.DB.prepare(
-    `SELECT COUNT(*) AS n FROM oe_role_action_queue WHERE target_role = ? AND status = 'pending'`,
-  ).bind(role).first()) as { n: number } | null;
+  let row: { n: number } | null;
+  if (participantId != null) {
+    // Scoped: role-wide rows + rows targeted to this participant (mirrors the list SCOPE predicate).
+    row = (await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM oe_role_action_queue
+        WHERE target_role = ? AND status = 'pending'
+          AND (target_participant_id IS NULL OR target_participant_id = ?)`,
+    ).bind(role, participantId).first()) as { n: number } | null;
+  } else {
+    // Role-only global count (backward-compat, no participant filter).
+    row = (await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM oe_role_action_queue WHERE target_role = ? AND status = 'pending'`,
+    ).bind(role).first()) as { n: number } | null;
+  }
   const count = row?.n ?? 0;
 
   try { await env.KV.put(key, String(count), { expirationTtl: 30 }); } catch { /* best-effort */ }

@@ -10,7 +10,7 @@ import { Hono } from 'hono';
 import type { Context } from 'hono';
 import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
-import { pendingCountForRole } from '../utils/role-actions';
+import { pendingCountForRole, pendingCacheKey } from '../utils/role-actions';
 
 const roleActions = new Hono<HonoEnv>();
 roleActions.use('*', authMiddleware);
@@ -43,10 +43,10 @@ roleActions.get('/', async (c) => {
   return c.json({ items: (rows.results ?? []).map(decodeRow) });
 });
 
-// GET /count — pending badge count for the caller's role (KV-cached via util).
+// GET /count — pending badge count for the caller's role, scoped to their participant id (KV-cached via util).
 roleActions.get('/count', async (c) => {
   const user = getCurrentUser(c);
-  const pending = await pendingCountForRole(c.env, user.role);
+  const pending = await pendingCountForRole(c.env, user.role, user.id);
   return c.json({ pending });
 });
 
@@ -54,14 +54,20 @@ async function transitionStatus(c: Context<HonoEnv>, next: 'acknowledged' | 'act
   const user = getCurrentUser(c);
   const id = c.req.param('id');
   const now = new Date().toISOString();
+  // actioned_by/actioned_at are only stamped on the terminal 'actioned' transition to avoid
+  // false matches on downstream WHERE actioned_by IS NOT NULL queries.
+  const actoredBy = next === 'actioned' ? user.id : null;
+  const actoredAt = next === 'actioned' ? now : null;
   const res = await c.env.DB.prepare(
     `UPDATE oe_role_action_queue
         SET status = ?, actioned_by = ?, actioned_at = ?, updated_at = ?
       WHERE id = ? AND ${SCOPE}`,
-  ).bind(next, user.id, next === 'actioned' ? now : null, now, id, user.role, user.id).run();
+  ).bind(next, actoredBy, actoredAt, now, id, user.role, user.id).run();
   const changes = (res as { meta?: { changes?: number } })?.meta?.changes ?? 0;
   if (!changes) return c.json({ error: 'not_found' }, 404);
-  try { await c.env.KV.delete(`role_queue_pending:${user.role}`); } catch { /* best-effort */ }
+  // Invalidate both the role-only key and the caller's participant-scoped key.
+  try { await c.env.KV.delete(pendingCacheKey(user.role)); } catch { /* best-effort */ }
+  try { await c.env.KV.delete(pendingCacheKey(user.role, user.id)); } catch { /* best-effort */ }
   return c.json({ id, status: next });
 }
 
