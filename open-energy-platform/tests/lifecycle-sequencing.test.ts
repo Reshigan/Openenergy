@@ -171,14 +171,24 @@ describe('#3 covenant_certificate.breach_identified → reserve cure + lender pr
   }
   const data = { borrower_party_name: 'Aurora Solar SPV', facility_name: 'Aurora Senior Facility', facility_tier: 'senior_secured', breached_covenants: 'DSCR' };
 
-  it('moves a funded reserve to cure_pending + prompts the lender', async () => {
-    seedReserve('funded');
+  it('moves a shortfall_flagged reserve to cure_pending + prompts the lender', async () => {
+    seedReserve('shortfall_flagged');
     const r = ruleById('lifecycle.covenant_breach_to_reserve_cure');
     await r.run(ctxFor(env, 'covenant_certificate.breach_identified', 'covenant_certificate', 'cov_1', data));
     expect((db.prepare(`SELECT chain_status FROM oe_reserve_account_chain WHERE id='rsa_x'`).get() as any).chain_status).toBe('cure_pending');
     const evt = db.prepare(`SELECT * FROM oe_reserve_account_chain_events WHERE reserve_account_id='rsa_x' AND to_status='cure_pending'`).get() as any;
+    expect(evt.from_status).toBe('shortfall_flagged');
     expect(evt.actor_id).toBe('system:cascade');
     expect(db.prepare(`SELECT COUNT(*) c FROM oe_role_action_queue WHERE target_role='lender' AND source_entity_id='cov_1'`).get() as any).toMatchObject({ c: 1 });
+  });
+
+  it('leaves a funded reserve untouched (open_cure is shortfall_flagged-only) but still prompts the lender', async () => {
+    seedReserve('funded');
+    const r = ruleById('lifecycle.covenant_breach_to_reserve_cure');
+    await r.run(ctxFor(env, 'covenant_certificate.breach_identified', 'covenant_certificate', 'cov_f', data));
+    expect((db.prepare(`SELECT chain_status FROM oe_reserve_account_chain WHERE id='rsa_x'`).get() as any).chain_status).toBe('funded');
+    expect(db.prepare(`SELECT COUNT(*) c FROM oe_reserve_account_chain_events WHERE reserve_account_id='rsa_x'`).get() as any).toMatchObject({ c: 0 });
+    expect(db.prepare(`SELECT COUNT(*) c FROM oe_role_action_queue WHERE target_role='lender' AND source_entity_id='cov_f'`).get() as any).toMatchObject({ c: 1 });
   });
 
   it('prompts the lender even when no matching reserve account exists', async () => {
@@ -188,7 +198,7 @@ describe('#3 covenant_certificate.breach_identified → reserve cure + lender pr
   });
 
   it('is idempotent', async () => {
-    seedReserve('funded');
+    seedReserve('shortfall_flagged');
     const r = ruleById('lifecycle.covenant_breach_to_reserve_cure');
     const ctx = ctxFor(env, 'covenant_certificate.breach_identified', 'covenant_certificate', 'cov_3', data);
     await r.run(ctx); await r.run(ctx);
@@ -301,5 +311,56 @@ describe('runCascadeRegistry — end-to-end dispatch + audit', () => {
       `SELECT COUNT(*) c FROM oe_cascade_rule_audit WHERE rule_id LIKE 'lifecycle.%' AND outcome='ran'`,
     ).get() as any;
     expect(audit.c).toBe(0);
+  });
+});
+
+// Deep-link contract: the cross_option.target_route on each prompt must point at a tab
+// key that actually exists in the SPA. These keys had no coverage and drifted to plurals;
+// pin them so a future rename is caught here, not by an operator hitting a dead tab.
+describe('cross-role prompt deep-link routes', () => {
+  let db: Database.Database;
+  let env: any;
+  beforeEach(() => { db = createTestDb({ applyMigrations: true }); env = envFor(db); registerLifecycleSequencingRules(); });
+  afterEach(() => { db.close(); });
+
+  function routeFor(sourceEntityId: string): string {
+    const row = db.prepare(
+      `SELECT cross_option_json FROM oe_role_action_queue WHERE source_entity_id=? ORDER BY created_at DESC LIMIT 1`,
+    ).get(sourceEntityId) as any;
+    expect(row).toBeTruthy();
+    return JSON.parse(row.cross_option_json).target_route as string;
+  }
+
+  it('#1 COD → lender drawdown tab', async () => {
+    await ruleById('lifecycle.cod_certified_to_ppa_and_drawdown')
+      .run(ctxFor(env, 'cod.cod_certified', 'cod_chain', 'cod_r', { project_name: 'Aurora' }));
+    expect(routeFor('cod_r')).toBe('/lender/workstation?tab=drawdown');
+  });
+
+  it('#7 licence issued → regulator levy-assessment tab', async () => {
+    await ruleById('lifecycle.licence_issued_to_levy_and_renewal')
+      .run(ctxFor(env, 'licence_application.licence_issued', 'licence_application', 'lic_r',
+        { applicant_party_id: 'p1', applicant_party_name: 'Aurora', licence_type: 'generation' }));
+    expect(routeFor('lic_r')).toBe('/regulator-suite?tab=levy-assessment');
+  });
+
+  it('#3 covenant breach → lender reserve_account tab', async () => {
+    await ruleById('lifecycle.covenant_breach_to_reserve_cure')
+      .run(ctxFor(env, 'covenant_certificate.breach_identified', 'covenant_certificate', 'cov_r',
+        { borrower_party_name: 'Aurora', facility_name: 'F' }));
+    expect(routeFor('cov_r')).toBe('/lender/workstation?tab=reserve_account');
+  });
+
+  it('#10 MRV issued → carbon retirement_chain tab', async () => {
+    await ruleById('lifecycle.mrv_issued_to_retirement_prompt')
+      .run(ctxFor(env, 'carbon.mrv_issued', 'mrv_submissions', 'mrv_r', { project_id: 'pr1' }));
+    expect(routeFor('mrv_r')).toBe('/carbon/workstation?tab=retirement_chain');
+  });
+
+  it('#4 reserve breach → lender loan_default tab', async () => {
+    await ruleById('lifecycle.reserve_breach_to_loan_default')
+      .run(ctxFor(env, 'reserve_account.breached', 'reserve_account', 'rsa_r', { borrower_name: 'Aurora' }));
+    const ld = db.prepare(`SELECT id FROM oe_loan_defaults WHERE source_entity_id='rsa_r'`).get() as any;
+    expect(routeFor(ld.id)).toBe(`/lender/workstation?tab=loan_default&id=${ld.id}`);
   });
 });

@@ -8,6 +8,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Loader2, AlertTriangle, RefreshCw, X, Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import { AiBriefPanel, BriefRole } from './AiBriefPanel';
@@ -125,7 +126,20 @@ export interface SuitePageProps {
 }
 
 export function SuitePage(props: SuitePageProps) {
-  const [activeKey, setActiveKey] = useState<string>(props.initialTab || props.tabs[0]?.key);
+  // Tab is URL-driven so cross-role deep-links (?tab=<key>) land on the right tab —
+  // param wins, then the initialTab prop, then the first tab.
+  const [params, setParams] = useSearchParams();
+  const paramTab = params.get('tab');
+  const initialKey =
+    (paramTab && props.tabs.some((t) => t.key === paramTab) ? paramTab : null)
+    || props.initialTab || props.tabs[0]?.key;
+  const [activeKey, setActiveKey] = useState<string>(initialKey);
+  const selectTab = useCallback((k: string) => {
+    setActiveKey(k);
+    const next = new URLSearchParams(params);
+    next.set('tab', k);
+    setParams(next, { replace: true });
+  }, [params, setParams]);
   const active = useMemo(
     () => props.tabs.find((t) => t.key === activeKey) || props.tabs[0],
     [props.tabs, activeKey],
@@ -155,7 +169,7 @@ export function SuitePage(props: SuitePageProps) {
       <div className="sm:hidden">
         <select
           value={active?.key || ''}
-          onChange={(e) => setActiveKey(e.target.value)}
+          onChange={(e) => selectTab(e.target.value)}
           className="w-full h-10 px-3 rounded-md border text-[13px] bg-white"
           style={{ borderColor: '#d0d5dd', color: '#0f1c2e' }}
           aria-label="Select tab"
@@ -171,7 +185,7 @@ export function SuitePage(props: SuitePageProps) {
           return (
             <button
               key={tab.key}
-              onClick={() => setActiveKey(tab.key)}
+              onClick={() => selectTab(tab.key)}
               className={`h-11 px-4 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 isActive
                   ? 'border-[#3b82c4] text-[#3b82c4]'

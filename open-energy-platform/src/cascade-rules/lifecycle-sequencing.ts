@@ -89,25 +89,28 @@ const RULES: CascadeRule[] = [
       const participantId = dstr(ctx, 'participant_id');
       const projectName = dstr(ctx, 'project_name') ?? projectId ?? 'project';
 
-      // (a) auto-activate an executed PPA for this project — no fireCascade (no recursion)
+      // (a) auto-activate an executed PPA for this project — no fireCascade (no recursion).
+      // Wrapped so any failure here never blocks the lender drawdown prompt (the reliable deliverable).
       if (projectId && participantId) {
-        const ppa = await ctx.env.DB.prepare(
-          `SELECT id FROM oe_ppa_contract_chain
-            WHERE project_id=? AND participant_id=? AND chain_status='executed' LIMIT 1`,
-        ).bind(projectId, participantId).first() as { id: string } | null;
-        if (ppa) {
-          const now = nowIso();
-          await ctx.env.DB.prepare(
-            `UPDATE oe_ppa_contract_chain SET chain_status='in_force', in_force_at=?, updated_at=? WHERE id=?`,
-          ).bind(now, now, ppa.id).run();
-          await ctx.env.DB.prepare(
-            `INSERT INTO oe_ppa_contract_chain_events (id, ppa_id, event_type, from_status, to_status, actor_id, notes, payload, created_at)
-             VALUES (?,?,?,?,?,?,?,?,?)`,
-          ).bind(
-            uid('ppaevt'), ppa.id, 'in_force', 'executed', 'in_force', SYSTEM_ACTOR,
-            `Auto-activated on COD ${dstr(ctx, 'cod_number') ?? ctx.entity_id}`, '{}', now,
-          ).run();
-        }
+        try {
+          const ppa = await ctx.env.DB.prepare(
+            `SELECT id FROM oe_ppa_contract_chain
+              WHERE project_id=? AND participant_id=? AND chain_status='executed' LIMIT 1`,
+          ).bind(projectId, participantId).first() as { id: string } | null;
+          if (ppa) {
+            const now = nowIso();
+            await ctx.env.DB.prepare(
+              `UPDATE oe_ppa_contract_chain SET chain_status='in_force', in_force_at=?, updated_at=? WHERE id=?`,
+            ).bind(now, now, ppa.id).run();
+            await ctx.env.DB.prepare(
+              `INSERT INTO oe_ppa_contract_chain_events (id, ppa_id, event_type, from_status, to_status, actor_id, notes, payload, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?)`,
+            ).bind(
+              uid('ppaevt'), ppa.id, 'in_force', 'executed', 'in_force', SYSTEM_ACTOR,
+              `Auto-activated on COD ${dstr(ctx, 'cod_number') ?? ctx.entity_id}`, '{}', now,
+            ).run();
+          }
+        } catch { /* best-effort advance — drawdown prompt below is the reliable deliverable */ }
       }
 
       // (b) prompt the lender to initiate the drawdown
@@ -118,7 +121,7 @@ const RULES: CascadeRule[] = [
           source_entity_type: 'cod_chain', source_entity_id: ctx.entity_id,
           title: `COD certified for ${projectName} — initiate drawdown`,
           body: { project_id: projectId, participant_id: participantId, capacity_mw: dnum(ctx, 'capacity_mw') },
-          cross_option: { action_label: 'Initiate drawdown', target_route: `/lender/workstation?tab=drawdowns` },
+          cross_option: { action_label: 'Initiate drawdown', target_route: `/lender/workstation?tab=drawdown` },
           priority: 'high',
         });
       }
@@ -193,7 +196,7 @@ const RULES: CascadeRule[] = [
           source_entity_type: 'licence_application', source_entity_id: ctx.entity_id,
           title: `New licensee ${licenseeName} — assess levy${mapped ? ' & confirm renewal calendar' : ''}`,
           body: { licence_ref: dstr(ctx, 'licence_ref'), renewal_created: !!mapped },
-          cross_option: { action_label: 'Open levy assessment', target_route: `/regulator/workstation?tab=levies` },
+          cross_option: { action_label: 'Open levy assessment', target_route: `/regulator-suite?tab=levy-assessment` },
           priority: 'normal',
         });
       }
@@ -210,24 +213,29 @@ const RULES: CascadeRule[] = [
       const borrowerName = dstr(ctx, 'borrower_party_name');
       const facilityName = dstr(ctx, 'facility_name') ?? 'facility';
 
+      // Best-effort advance: only a reserve already in shortfall_flagged may open a cure
+      // (reserve-account-spec open_cure: {from:['shortfall_flagged'], to:'cure_pending'}).
+      // Wrapped so any failure here never blocks the lender prompt (the reliable deliverable).
       if (borrowerName) {
-        const reserve = await ctx.env.DB.prepare(
-          `SELECT id, chain_status FROM oe_reserve_account_chain
-            WHERE borrower_name=? AND chain_status IN ('funded','shortfall_flagged') LIMIT 1`,
-        ).bind(borrowerName).first() as { id: string; chain_status: string } | null;
-        if (reserve) {
-          const now = nowIso();
-          await ctx.env.DB.prepare(
-            `UPDATE oe_reserve_account_chain SET chain_status='cure_pending', cure_pending_at=?, updated_at=? WHERE id=?`,
-          ).bind(now, now, reserve.id).run();
-          await ctx.env.DB.prepare(
-            `INSERT INTO oe_reserve_account_chain_events (id, reserve_account_id, event_type, from_status, to_status, actor_id, actor_party, notes, payload, created_at)
-             VALUES (?,?,?,?,?,?,?,?,?,?)`,
-          ).bind(
-            uid('rsaevt'), reserve.id, 'cure_pending', reserve.chain_status, 'cure_pending', SYSTEM_ACTOR, null,
-            `Cure opened on covenant breach (${dstr(ctx, 'breached_covenants') ?? 'covenant'})`, '{}', now,
-          ).run();
-        }
+        try {
+          const reserve = await ctx.env.DB.prepare(
+            `SELECT id, chain_status FROM oe_reserve_account_chain
+              WHERE borrower_name=? AND chain_status='shortfall_flagged' LIMIT 1`,
+          ).bind(borrowerName).first() as { id: string; chain_status: string } | null;
+          if (reserve) {
+            const now = nowIso();
+            await ctx.env.DB.prepare(
+              `UPDATE oe_reserve_account_chain SET chain_status='cure_pending', cure_pending_at=?, updated_at=? WHERE id=?`,
+            ).bind(now, now, reserve.id).run();
+            await ctx.env.DB.prepare(
+              `INSERT INTO oe_reserve_account_chain_events (id, reserve_account_id, event_type, from_status, to_status, actor_id, actor_party, notes, payload, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?)`,
+            ).bind(
+              uid('rsaevt'), reserve.id, 'cure_pending', reserve.chain_status, 'cure_pending', SYSTEM_ACTOR, null,
+              `Cure opened on covenant breach (${dstr(ctx, 'breached_covenants') ?? 'covenant'})`, '{}', now,
+            ).run();
+          }
+        } catch { /* best-effort advance — prompt below is the reliable deliverable */ }
       }
 
       if (!(await alreadyPushed(ctx, ctx.entity_id, 'lender'))) {
@@ -237,7 +245,7 @@ const RULES: CascadeRule[] = [
           source_entity_type: 'covenant_certificate', source_entity_id: ctx.entity_id,
           title: `Covenant breach on ${facilityName} — fund reserve cure`,
           body: { borrower_party_name: borrowerName, breached_covenants: dstr(ctx, 'breached_covenants') },
-          cross_option: { action_label: 'Open reserve account', target_route: `/lender/workstation?tab=reserve-accounts` },
+          cross_option: { action_label: 'Open reserve account', target_route: `/lender/workstation?tab=reserve_account` },
           priority: 'urgent',
         });
       }
@@ -257,7 +265,7 @@ const RULES: CascadeRule[] = [
         source_entity_type: 'mrv_submissions', source_entity_id: ctx.entity_id,
         title: `Credits verified${qty ? ` (${qty} tCO₂e)` : ''} — retire on behalf of beneficiary`,
         body: { project_id: dstr(ctx, 'project_id'), claimed_reductions_tco2e: qty },
-        cross_option: { action_label: 'Retire credits', target_route: `/carbon/workstation?tab=retirements` },
+        cross_option: { action_label: 'Retire credits', target_route: `/carbon/workstation?tab=retirement_chain` },
         priority: 'normal',
       });
     },
@@ -307,7 +315,7 @@ const RULES: CascadeRule[] = [
         source_entity_type: 'loan_default', source_entity_id: id,
         title: `Event of default — reserve breach on ${facilityName}`,
         body: { borrower_party_name: borrowerName, reserve_account_id: ctx.entity_id, default_id: id },
-        cross_option: { action_label: 'Manage default', target_route: `/lender/workstation?tab=loan-defaults&id=${id}` },
+        cross_option: { action_label: 'Manage default', target_route: `/lender/workstation?tab=loan_default&id=${id}` },
         priority: 'urgent',
       });
     },
