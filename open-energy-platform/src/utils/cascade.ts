@@ -5,6 +5,9 @@
 import { regulatorInboxSpec, computeSlaDueAt } from './regulator-inbox-spec';
 import { initialDunningCycle } from './lender-escalation-spec';
 import type { PlatformEventFields } from './platform-event';
+import { runCascadeRegistry } from './cascade-registry';
+import { computeAndRecordFee } from './fee-engine';
+import { recordPlatformEvent } from './analytics-sink';
 
 export type EventType =
   // Auth
@@ -2402,6 +2405,20 @@ export async function fireCascade(ctx: CascadeContext): Promise<void> {
   });
 
   await runStage(ctx, 'special', () => handleSpecialCascades(ctx));
+
+  // ── Ecosystem layers (additive; coexist with handleSpecialCascades) ────────
+  // Each is error-isolated so a layer failure never breaks the cascade. When
+  // env.QUEUE is provisioned (national scale) these move to a Queue consumer;
+  // until then they run inline and awaited so tests observe their effect.
+  // Auto-progressed reactions inside registry rules use actor 'system:cascade'.
+  // Skip for audit.event_appended (internal meta-event emitted by appendAudit)
+  // to prevent recursive pollution of the analytics sink — mirrors the guard
+  // on the autoAppendAudit block above.
+  if (ctx.event !== 'audit.event_appended') {
+    await runStage(ctx, 'registry', () => runCascadeRegistry(ctx)).catch(() => {});
+    await runStage(ctx, 'analytics', () => recordPlatformEvent(ctx)).catch(() => {});
+    await runStage(ctx, 'commercial', () => computeAndRecordFee(ctx)).catch(() => {});
+  }
 }
 
 // Lazy-imported to avoid circular cascade.ts ↔ audit-chain.ts dependency.
@@ -2472,7 +2489,7 @@ interface RetryOptions {
 
 async function runStage<T>(
   ctx: CascadeContext,
-  stage: 'audit' | 'notifications' | 'webhooks' | 'special',
+  stage: 'audit' | 'notifications' | 'webhooks' | 'special' | 'registry' | 'analytics' | 'commercial',
   fn: () => Promise<T>,
   opts: RetryOptions = {},
 ): Promise<T | undefined> {
@@ -2497,7 +2514,7 @@ async function runStage<T>(
 
 async function writeToDlq(
   ctx: CascadeContext,
-  stage: 'audit' | 'notifications' | 'webhooks' | 'special',
+  stage: 'audit' | 'notifications' | 'webhooks' | 'special' | 'registry' | 'analytics' | 'commercial',
   err: unknown,
   attemptCount: number,
 ): Promise<void> {
@@ -2553,7 +2570,7 @@ export async function retryDlqItem(
       entity_id: string;
       actor_id: string | null;
       payload: string;
-      stage: 'audit' | 'notifications' | 'webhooks' | 'special';
+      stage: 'audit' | 'notifications' | 'webhooks' | 'special' | 'registry' | 'analytics' | 'commercial';
       attempt_count: number;
       status: string;
     } | null;
@@ -2585,6 +2602,15 @@ export async function retryDlqItem(
         break;
       case 'special':
         await handleSpecialCascades(ctx);
+        break;
+      case 'registry':
+        await runCascadeRegistry(ctx);
+        break;
+      case 'analytics':
+        await recordPlatformEvent(ctx);
+        break;
+      case 'commercial':
+        await computeAndRecordFee(ctx);
         break;
     }
 
