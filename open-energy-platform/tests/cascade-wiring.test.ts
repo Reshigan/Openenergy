@@ -51,4 +51,39 @@ describe('fireCascade ecosystem wiring', () => {
     const row = db.prepare(`SELECT action, entity_id FROM audit_logs WHERE entity_id = 'e4'`).get() as any;
     expect(row.action).toBe('demo.fired');
   });
+
+  // Locked invariant: a throwing ecosystem layer must break neither the cascade
+  // nor the legacy stages. Force the analytics INSERT to throw on every retry.
+  it('isolates a throwing analytics layer — cascade resolves, legacy audit survives, failure lands in DLQ', async () => {
+    const realPrepare = env.DB.prepare.bind(env.DB);
+    env.DB.prepare = (sql: string) => {
+      if (sql.includes('oe_platform_events')) {
+        return { bind: () => ({ run: async () => { throw new Error('analytics sink down'); } }) } as any;
+      }
+      return realPrepare(sql);
+    };
+    await expect(
+      fireCascade({ event: 'demo.fired' as any, entity_type: 'demo', entity_id: 'e5', env }),
+    ).resolves.toBeUndefined();
+    env.DB.prepare = realPrepare;
+    const audit = db.prepare(`SELECT action FROM audit_logs WHERE entity_id = 'e5'`).get() as any;
+    expect(audit.action).toBe('demo.fired'); // earlier legacy stage committed before analytics threw
+    const dlq = db.prepare(`SELECT stage FROM cascade_dlq WHERE entity_id = 'e5' AND stage = 'analytics'`).get() as any;
+    expect(dlq?.stage).toBe('analytics'); // failure captured for replay, not silently lost
+  });
+
+  // Locked invariant: the internal audit.event_appended meta-event (emitted by
+  // appendAudit, which re-enters fireCascade) must NOT flow through the ecosystem
+  // layers — else every real event double-counts in the analytics/revenue sinks.
+  it('suppresses analytics + commercial for the audit.event_appended meta-event', async () => {
+    await fireCascade({
+      event: 'audit.event_appended' as any,
+      entity_type: 'demo', entity_id: 'e6', env,
+      commercial: { entity_value: 1_000_000, participant_id: 'par_x' },
+    });
+    const ev = db.prepare(`SELECT COUNT(*) AS n FROM oe_platform_events`).get() as any;
+    const rev = db.prepare(`SELECT COUNT(*) AS n FROM oe_platform_revenue`).get() as any;
+    expect(ev.n).toBe(0);  // analytics skipped
+    expect(rev.n).toBe(0); // commercial skipped despite commercial context present
+  });
 });

@@ -2597,6 +2597,14 @@ export async function retryDlqItem(
   if (!row) return { ok: false, error: 'DLQ row not found' };
   if (row.status !== 'pending') return { ok: false, error: `Row is ${row.status}` };
 
+  // NOTE: the DLQ row persists only event/entity_type/entity_id/actor_id/data —
+  // NOT the PlatformEventFields (commercial, chain_key, affected_roles,
+  // source_chain_status). So a replayed 'analytics' stage writes a degraded row
+  // (null chain_key/entity_value) and a replayed 'commercial' stage early-returns
+  // (no ctx.commercial → no revenue row). Non-crashing and acceptable for W1
+  // (registry empty; fees all-free so the lost revenue row is R0 anyway). W2 TODO:
+  // serialize PlatformEventFields into cascade_dlq.payload and rehydrate here for
+  // full-fidelity replay once fees are enabled and chain_key-routed rules exist.
   const ctx: CascadeContext = {
     event: row.event as EventType,
     entity_type: row.entity_type,

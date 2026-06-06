@@ -34,7 +34,9 @@ export function _resetRegistryForTests(): void {
 }
 
 function genId(): string {
-  return `cra_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`;
+  // crypto.randomUUID matches the other ecosystem layers (rev_/raq_/pev_) and
+  // removes the millisecond-collision risk of the prior Math.random()+Date.now().
+  return `cra_${crypto.randomUUID()}`;
 }
 
 async function auditOutcome(
