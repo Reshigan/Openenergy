@@ -4,6 +4,7 @@
 
 import { regulatorInboxSpec, computeSlaDueAt } from './regulator-inbox-spec';
 import { initialDunningCycle } from './lender-escalation-spec';
+import type { PlatformEventFields } from './platform-event';
 
 export type EventType =
   // Auth
@@ -2001,7 +2002,7 @@ export type EventType =
   // ─── W197 Unserved Energy Claim ──────────────────────────────────────────
   | 'unserved_energy_claim';
 
-interface CascadeContext {
+export interface CascadeContext extends PlatformEventFields {
   event: EventType;
   actor_id?: string;
   entity_type: string;
