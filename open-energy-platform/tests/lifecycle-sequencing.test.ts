@@ -27,10 +27,10 @@ function ctxFor(
 }
 
 describe('registerLifecycleSequencingRules — registration', () => {
-  it('registers exactly three rules after Task 4 (no duplicates on re-call)', () => {
+  it('registers exactly four rules after Task 5 (no duplicates on re-call)', () => {
     registerLifecycleSequencingRules();
     registerLifecycleSequencingRules(); // second call must not duplicate
-    expect(__lifecycleRulesForTest().length).toBe(3);
+    expect(__lifecycleRulesForTest().length).toBe(4);
   });
 });
 
@@ -136,6 +136,48 @@ describe('#7 licence_application.licence_issued → levy + renewal', () => {
     await r.run(ctx); await r.run(ctx);
     expect(db.prepare(`SELECT COUNT(*) c FROM oe_regulator_levies WHERE source_entity_id='lic_3'`).get() as any).toMatchObject({ c: 1 });
     expect(db.prepare(`SELECT COUNT(*) c FROM oe_licence_renewals WHERE source_entity_id='lic_3'`).get() as any).toMatchObject({ c: 1 });
+  });
+});
+
+describe('#3 covenant_certificate.breach_identified → reserve cure + lender prompt', () => {
+  let db: Database.Database;
+  let env: any;
+  beforeEach(() => { db = createTestDb({ applyMigrations: true }); env = envFor(db); registerLifecycleSequencingRules(); });
+  afterEach(() => { db.close(); });
+
+  function seedReserve(status: string) {
+    db.prepare(
+      `INSERT INTO oe_reserve_account_chain
+         (id, reserve_number, lender_name, borrower_name, target_amount_zar, reserve_tier,
+          chain_status, reserve_required_at, created_by, created_at, updated_at)
+       VALUES ('rsa_x','RSA-X','Standard Bank','Aurora Solar SPV', 50000000, 'large',
+               ?, '2026-01-01', 'seed', '2026-01-01','2026-01-01')`,
+    ).run(status);
+  }
+  const data = { borrower_party_name: 'Aurora Solar SPV', facility_name: 'Aurora Senior Facility', facility_tier: 'senior_secured', breached_covenants: 'DSCR' };
+
+  it('moves a funded reserve to cure_pending + prompts the lender', async () => {
+    seedReserve('funded');
+    const r = ruleById('lifecycle.covenant_breach_to_reserve_cure');
+    await r.run(ctxFor(env, 'covenant_certificate.breach_identified', 'covenant_certificate', 'cov_1', data));
+    expect((db.prepare(`SELECT chain_status FROM oe_reserve_account_chain WHERE id='rsa_x'`).get() as any).chain_status).toBe('cure_pending');
+    const evt = db.prepare(`SELECT * FROM oe_reserve_account_chain_events WHERE reserve_account_id='rsa_x' AND to_status='cure_pending'`).get() as any;
+    expect(evt.actor_id).toBe('system:cascade');
+    expect(db.prepare(`SELECT COUNT(*) c FROM oe_role_action_queue WHERE target_role='lender' AND source_entity_id='cov_1'`).get() as any).toMatchObject({ c: 1 });
+  });
+
+  it('prompts the lender even when no matching reserve account exists', async () => {
+    const r = ruleById('lifecycle.covenant_breach_to_reserve_cure');
+    await r.run(ctxFor(env, 'covenant_certificate.breach_identified', 'covenant_certificate', 'cov_2', data));
+    expect(db.prepare(`SELECT COUNT(*) c FROM oe_role_action_queue WHERE source_entity_id='cov_2'`).get() as any).toMatchObject({ c: 1 });
+  });
+
+  it('is idempotent', async () => {
+    seedReserve('funded');
+    const r = ruleById('lifecycle.covenant_breach_to_reserve_cure');
+    const ctx = ctxFor(env, 'covenant_certificate.breach_identified', 'covenant_certificate', 'cov_3', data);
+    await r.run(ctx); await r.run(ctx);
+    expect(db.prepare(`SELECT COUNT(*) c FROM oe_role_action_queue WHERE source_entity_id='cov_3'`).get() as any).toMatchObject({ c: 1 });
   });
 });
 

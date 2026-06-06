@@ -199,6 +199,50 @@ const RULES: CascadeRule[] = [
       }
     },
   },
+  // #3 covenant breach → open a cure on the borrower's reserve account + prompt the lender.
+  // The covenant chain carries no facility/reserve FK, so the reserve is matched
+  // best-effort by borrower name; the lender prompt is the reliable deliverable.
+  {
+    id: 'lifecycle.covenant_breach_to_reserve_cure',
+    mode: 'drive',
+    match: (ctx: CascadeContext) => ctx.event === 'covenant_certificate.breach_identified',
+    run: async (ctx: CascadeContext) => {
+      const borrowerName = dstr(ctx, 'borrower_party_name');
+      const facilityName = dstr(ctx, 'facility_name') ?? 'facility';
+
+      if (borrowerName) {
+        const reserve = await ctx.env.DB.prepare(
+          `SELECT id, chain_status FROM oe_reserve_account_chain
+            WHERE borrower_name=? AND chain_status IN ('funded','shortfall_flagged') LIMIT 1`,
+        ).bind(borrowerName).first() as { id: string; chain_status: string } | null;
+        if (reserve) {
+          const now = nowIso();
+          await ctx.env.DB.prepare(
+            `UPDATE oe_reserve_account_chain SET chain_status='cure_pending', cure_pending_at=?, updated_at=? WHERE id=?`,
+          ).bind(now, now, reserve.id).run();
+          await ctx.env.DB.prepare(
+            `INSERT INTO oe_reserve_account_chain_events (id, reserve_account_id, event_type, from_status, to_status, actor_id, actor_party, notes, payload, created_at)
+             VALUES (?,?,?,?,?,?,?,?,?,?)`,
+          ).bind(
+            uid('rsaevt'), reserve.id, 'cure_pending', reserve.chain_status, 'cure_pending', SYSTEM_ACTOR, null,
+            `Cure opened on covenant breach (${dstr(ctx, 'breached_covenants') ?? 'covenant'})`, '{}', now,
+          ).run();
+        }
+      }
+
+      if (!(await alreadyPushed(ctx, ctx.entity_id, 'lender'))) {
+        await pushRoleAction(ctx.env, {
+          target_role: 'lender',
+          source_event: ctx.event, source_chain_key: 'reserve_account',
+          source_entity_type: 'covenant_certificate', source_entity_id: ctx.entity_id,
+          title: `Covenant breach on ${facilityName} — fund reserve cure`,
+          body: { borrower_party_name: borrowerName, breached_covenants: dstr(ctx, 'breached_covenants') },
+          cross_option: { action_label: 'Open reserve account', target_route: `/lender/workstation?tab=reserve-accounts` },
+          priority: 'urgent',
+        });
+      }
+    },
+  },
   // #4 reserve breach → loan default (event of default)
   {
     id: 'lifecycle.reserve_breach_to_loan_default',
