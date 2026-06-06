@@ -407,6 +407,8 @@ import carbonBudgetChainRoutes, { carbonBudgetSlaSweep } from './routes/carbon-b
 import recDeviceRegistrationChainRoutes, { recDeviceSlaSweep } from './routes/rec-device-registration-chain';
 import recIssuanceChainRoutes, { recIssuanceSlaSweep } from './routes/rec-issuance-chain';
 import vcmOrderBookRoutes from './routes/vcm-order-book';
+import sustainabilityMarketplaceRoutes, { listingSlaSweep } from './routes/sustainability-marketplace';
+import sustainabilityTransactionChainRoutes, { transactionSlaSweep } from './routes/sustainability-transaction-chain';
 import certBundleChainRoutes, { certBundleSlaSweep } from './routes/certificate-bundle-chain';
 
 // Durable Object exports — required for Cloudflare to resolve the
@@ -1103,6 +1105,8 @@ app.route('/api/carbon/budget', carbonBudgetChainRoutes);
 app.route('/api/rec/device-registration', recDeviceRegistrationChainRoutes);
 app.route('/api/rec/issuance', recIssuanceChainRoutes);
 app.route('/api/vcm/order-book', vcmOrderBookRoutes);
+app.route('/api/sustainability/marketplace', sustainabilityMarketplaceRoutes);
+app.route('/api/sustainability/transactions', sustainabilityTransactionChainRoutes);
 app.route('/api/certificate-track/bundle', certBundleChainRoutes);
 // platformFeaturesRoutes is the catch-all for /api — it must remain LAST
 // so all specific /api/* mounts above are tried first.
@@ -2737,6 +2741,16 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('cert_bundle_sla_sweep', async () => {
         const result = await certBundleSlaSweep(env as never);
         console.log('cert_bundle_sla_sweep', JSON.stringify(result));
+      });
+      // W227: Sustainability marketplace listings — expire + SLA sweep.
+      await safe('sustainability_marketplace_sla_sweep', async () => {
+        const result = await listingSlaSweep(env as never);
+        console.log('sustainability_marketplace_sla_sweep', JSON.stringify(result));
+      });
+      // W227: Sustainability marketplace transactions — SLA breach sweep.
+      await safe('sustainability_transaction_sla_sweep', async () => {
+        const result = await transactionSlaSweep(env as never);
+        console.log('sustainability_transaction_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
