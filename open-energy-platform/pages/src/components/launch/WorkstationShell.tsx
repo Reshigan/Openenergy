@@ -9,6 +9,9 @@
 
 import React, { useCallback, useEffect, useState, ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import IncomingPanel from './IncomingPanel';
+import WizardShell from './WizardShell';
+import { actOnRoleAction, type RoleAction } from '../../lib/roleActions';
 import { ArrowLeft, RefreshCw, Search } from 'lucide-react';
 import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
@@ -195,6 +198,9 @@ export function WorkstationShell({
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [bump, setBump] = useState(0);
 
+  // Layer-C cross-role inbox: the action the operator chose to act on (drives WizardShell).
+  const [active, setActive] = useState<RoleAction | null>(null);
+
   const setTab = (k: string) => {
     setActiveTab(k);
     const next = new URLSearchParams(params);
@@ -227,6 +233,47 @@ export function WorkstationShell({
   // in that case — it's discarded.
   const roleTheme = themeFor(role ?? 'trader');
   const densityState = useDensityPreference(roleTheme);
+
+  const incomingRail = (
+    <IncomingPanel className="hidden xl:block xl:w-80 shrink-0" onAct={setActive} />
+  );
+
+  const wizard = active ? (
+    <WizardShell
+      open
+      heading={active.title}
+      finalLabel={active.cross_option?.action_label ?? 'Confirm'}
+      steps={[
+        {
+          title: 'Review',
+          render: () => (
+            <div className="space-y-1">
+              <p className="text-[#3d4756]">{active.title}</p>
+              <p className="text-[11px] text-[#9aa6b5]">
+                Source: {active.source_chain_key ?? active.source_entity_type} · {active.source_entity_id}
+              </p>
+            </div>
+          ),
+        },
+        {
+          title: 'Confirm',
+          render: () => (
+            <p className="text-[#3d4756]">
+              This marks the action complete and opens{' '}
+              <span className="text-[#0f1c2e] font-medium">{active.cross_option?.target_route}</span>.
+            </p>
+          ),
+        },
+      ]}
+      onClose={() => setActive(null)}
+      onComplete={async () => {
+        try { await actOnRoleAction(active.id, 'action'); } catch { /* surfaced on next inbox refresh */ }
+        const route = active.cross_option?.target_route;
+        setActive(null);
+        if (route) navigate(route);
+      }}
+    />
+  ) : null;
 
   if (role) {
     const effectiveDensity = densityState.density;
@@ -325,17 +372,23 @@ export function WorkstationShell({
             </div>
           )}
 
-          <TabNav
-            tabs={tabs}
-            activeTab={activeTab}
-            onSelect={setTab}
-            hasGroups={hasGroups}
-            allGroups={allGroups}
-            activeGroup={activeGroup}
-            setActiveGroup={setActiveGroup}
-          />
+          <div className="flex gap-5 items-start">
+            <div className="min-w-0 flex-1 space-y-5">
+              <TabNav
+                tabs={tabs}
+                activeTab={activeTab}
+                onSelect={setTab}
+                hasGroups={hasGroups}
+                allGroups={allGroups}
+                activeGroup={activeGroup}
+                setActiveGroup={setActiveGroup}
+              />
 
-          <div key={`${activeTab}-${bump}`}>{current.body({ onRefresh: refresh })}</div>
+              <div key={`${activeTab}-${bump}`}>{current.body({ onRefresh: refresh })}</div>
+            </div>
+            {incomingRail}
+          </div>
+          {wizard}
         </div>
       </RoleShell>
     );
@@ -384,17 +437,23 @@ export function WorkstationShell({
         )}
       </section>
 
-      <TabNav
-        tabs={tabs}
-        activeTab={activeTab}
-        onSelect={setTab}
-        hasGroups={hasGroups}
-        allGroups={allGroups}
-        activeGroup={activeGroup}
-        setActiveGroup={setActiveGroup}
-      />
+      <div className="flex gap-5 items-start">
+        <div className="min-w-0 flex-1 space-y-4">
+          <TabNav
+            tabs={tabs}
+            activeTab={activeTab}
+            onSelect={setTab}
+            hasGroups={hasGroups}
+            allGroups={allGroups}
+            activeGroup={activeGroup}
+            setActiveGroup={setActiveGroup}
+          />
 
-      <div key={`${activeTab}-${bump}`}>{current.body({ onRefresh: refresh })}</div>
+          <div key={`${activeTab}-${bump}`}>{current.body({ onRefresh: refresh })}</div>
+        </div>
+        {incomingRail}
+      </div>
+      {wizard}
     </div>
   );
 }
