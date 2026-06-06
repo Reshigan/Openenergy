@@ -2,7 +2,9 @@
 // cascade rule (index.ts imports it once at boot). Tests that reset the
 // registry call the individual register*() functions directly.
 import { registerTradingSafetyRules } from './trading-safety';
+import { registerLifecycleSequencingRules } from './lifecycle-sequencing';
 
 registerTradingSafetyRules();
+registerLifecycleSequencingRules();
 
-export { registerTradingSafetyRules };
+export { registerTradingSafetyRules, registerLifecycleSequencingRules };
