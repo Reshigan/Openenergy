@@ -16,9 +16,9 @@ CREATE TABLE IF NOT EXISTS oe_metrics_daily (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE(metric_date, chain_key)
 );
-
-CREATE INDEX IF NOT EXISTS idx_metrics_daily_date
-  ON oe_metrics_daily(metric_date);
+-- No explicit index on metric_date: the UNIQUE(metric_date, chain_key)
+-- constraint already creates an auto-index whose leading column is
+-- metric_date, which serves WHERE metric_date=? lookups.
 
 CREATE TABLE IF NOT EXISTS oe_chain_metrics (
   chain_key TEXT PRIMARY KEY,
