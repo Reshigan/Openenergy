@@ -27,10 +27,10 @@ function ctxFor(
 }
 
 describe('registerLifecycleSequencingRules — registration', () => {
-  it('registers exactly two rules after Task 3 (no duplicates on re-call)', () => {
+  it('registers exactly three rules after Task 4 (no duplicates on re-call)', () => {
     registerLifecycleSequencingRules();
     registerLifecycleSequencingRules(); // second call must not duplicate
-    expect(__lifecycleRulesForTest().length).toBe(2);
+    expect(__lifecycleRulesForTest().length).toBe(3);
   });
 });
 
@@ -136,5 +136,54 @@ describe('#7 licence_application.licence_issued → levy + renewal', () => {
     await r.run(ctx); await r.run(ctx);
     expect(db.prepare(`SELECT COUNT(*) c FROM oe_regulator_levies WHERE source_entity_id='lic_3'`).get() as any).toMatchObject({ c: 1 });
     expect(db.prepare(`SELECT COUNT(*) c FROM oe_licence_renewals WHERE source_entity_id='lic_3'`).get() as any).toMatchObject({ c: 1 });
+  });
+});
+
+describe('#1 cod.certify_cod → PPA activate + lender drawdown prompt', () => {
+  let db: Database.Database;
+  let env: any;
+  beforeEach(() => { db = createTestDb({ applyMigrations: true }); env = envFor(db); registerLifecycleSequencingRules(); });
+  afterEach(() => { db.close(); });
+
+  function seedPpa(status: string) {
+    db.prepare(
+      `INSERT INTO oe_ppa_contract_chain
+         (id, ppa_number, project_id, participant_id, offtaker_id, project_name, offtaker_name,
+          capacity_mw, capacity_tier, chain_status, executed_at, created_by, created_at, updated_at)
+       VALUES ('ppa_1','PPA-1','proj_x','party_ipp','party_off','Project X','Eskom',
+               140,'medium',?, '2026-01-01', 'seed', '2026-01-01','2026-01-01')`,
+    ).run(status);
+  }
+  const data = { participant_id: 'party_ipp', project_id: 'proj_x', project_name: 'Project X', capacity_mw: 140, capacity_tier: 'medium' };
+
+  it('advances an executed PPA to in_force, writes an event row, and prompts the lender', async () => {
+    seedPpa('executed');
+    const r = ruleById('lifecycle.cod_certified_to_ppa_and_drawdown');
+    await r.run(ctxFor(env, 'cod.certify_cod', 'cod_chain', 'cod_1', data));
+
+    const ppa = db.prepare(`SELECT * FROM oe_ppa_contract_chain WHERE id='ppa_1'`).get() as any;
+    expect(ppa.chain_status).toBe('in_force');
+    expect(ppa.in_force_at).toBeTruthy();
+    const evt = db.prepare(`SELECT * FROM oe_ppa_contract_chain_events WHERE ppa_id='ppa_1' AND to_status='in_force'`).get() as any;
+    expect(evt.actor_id).toBe('system:cascade');
+
+    const action = db.prepare(`SELECT * FROM oe_role_action_queue WHERE target_role='lender' AND source_entity_id='cod_1'`).get() as any;
+    expect(action).toBeTruthy();
+  });
+
+  it('does not force a non-executed PPA but still prompts the lender', async () => {
+    seedPpa('draft');
+    const r = ruleById('lifecycle.cod_certified_to_ppa_and_drawdown');
+    await r.run(ctxFor(env, 'cod.certify_cod', 'cod_chain', 'cod_2', data));
+    expect((db.prepare(`SELECT chain_status FROM oe_ppa_contract_chain WHERE id='ppa_1'`).get() as any).chain_status).toBe('draft');
+    expect(db.prepare(`SELECT COUNT(*) c FROM oe_role_action_queue WHERE source_entity_id='cod_2'`).get() as any).toMatchObject({ c: 1 });
+  });
+
+  it('is idempotent on the lender prompt', async () => {
+    seedPpa('executed');
+    const r = ruleById('lifecycle.cod_certified_to_ppa_and_drawdown');
+    const ctx = ctxFor(env, 'cod.certify_cod', 'cod_chain', 'cod_3', data);
+    await r.run(ctx); await r.run(ctx);
+    expect(db.prepare(`SELECT COUNT(*) c FROM oe_role_action_queue WHERE source_entity_id='cod_3'`).get() as any).toMatchObject({ c: 1 });
   });
 });

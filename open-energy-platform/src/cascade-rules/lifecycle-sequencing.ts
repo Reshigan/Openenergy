@@ -79,6 +79,51 @@ async function alreadyPushed(
 }
 
 const RULES: CascadeRule[] = [
+  // #1 COD certified → auto-activate the project PPA + prompt the lender to draw down
+  {
+    id: 'lifecycle.cod_certified_to_ppa_and_drawdown',
+    mode: 'drive',
+    match: (ctx: CascadeContext) => ctx.event === 'cod.certify_cod',
+    run: async (ctx: CascadeContext) => {
+      const projectId = dstr(ctx, 'project_id');
+      const participantId = dstr(ctx, 'participant_id');
+      const projectName = dstr(ctx, 'project_name') ?? projectId ?? 'project';
+
+      // (a) auto-activate an executed PPA for this project — no fireCascade (no recursion)
+      if (projectId && participantId) {
+        const ppa = await ctx.env.DB.prepare(
+          `SELECT id FROM oe_ppa_contract_chain
+            WHERE project_id=? AND participant_id=? AND chain_status='executed' LIMIT 1`,
+        ).bind(projectId, participantId).first() as { id: string } | null;
+        if (ppa) {
+          const now = nowIso();
+          await ctx.env.DB.prepare(
+            `UPDATE oe_ppa_contract_chain SET chain_status='in_force', in_force_at=?, updated_at=? WHERE id=?`,
+          ).bind(now, now, ppa.id).run();
+          await ctx.env.DB.prepare(
+            `INSERT INTO oe_ppa_contract_chain_events (id, ppa_id, event_type, from_status, to_status, actor_id, notes, payload, created_at)
+             VALUES (?,?,?,?,?,?,?,?,?)`,
+          ).bind(
+            uid('ppaevt'), ppa.id, 'in_force', 'executed', 'in_force', SYSTEM_ACTOR,
+            `Auto-activated on COD ${dstr(ctx, 'cod_number') ?? ctx.entity_id}`, '{}', now,
+          ).run();
+        }
+      }
+
+      // (b) prompt the lender to initiate the drawdown
+      if (!(await alreadyPushed(ctx, ctx.entity_id, 'lender'))) {
+        await pushRoleAction(ctx.env, {
+          target_role: 'lender',
+          source_event: ctx.event, source_chain_key: 'drawdown',
+          source_entity_type: 'cod_chain', source_entity_id: ctx.entity_id,
+          title: `COD certified for ${projectName} — initiate drawdown`,
+          body: { project_id: projectId, participant_id: participantId, capacity_mw: dnum(ctx, 'capacity_mw') },
+          cross_option: { action_label: 'Initiate drawdown', target_route: `/lender/workstation?tab=drawdowns` },
+          priority: 'high',
+        });
+      }
+    },
+  },
   // #7 licence issued → NERSA levy assessment + licence renewal schedule
   {
     id: 'lifecycle.licence_issued_to_levy_and_renewal',
