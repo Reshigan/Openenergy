@@ -2003,7 +2003,26 @@ export type EventType =
   // ─── W196 Protection Relay Test ──────────────────────────────────────────
   | 'protection_relay_test'
   // ─── W197 Unserved Energy Claim ──────────────────────────────────────────
-  | 'unserved_energy_claim';
+  | 'unserved_energy_claim'
+  // ─── W228 Subscription Billing (Layer B commercial) ──────────────────────
+  // billing_evt_generated + billing_evt_<InvoiceAction> for every action in
+  // subscription-billing-spec.ts. These flow through fireCascade's commercial
+  // layer (computeAndRecordFee) — platform subscription revenue is itself a
+  // value-bearing event stream. The route is unmounted until W2+; the events
+  // are first-class now so the chain type-checks and integrates with Layer B.
+  | 'billing_evt_generated'
+  | 'billing_evt_issue'
+  | 'billing_evt_acknowledge'
+  | 'billing_evt_record_payment'
+  | 'billing_evt_mark_overdue'
+  | 'billing_evt_send_dunning_1'
+  | 'billing_evt_send_dunning_2'
+  | 'billing_evt_suspend_account'
+  | 'billing_evt_reactivate'
+  | 'billing_evt_waive'
+  | 'billing_evt_write_off'
+  | 'billing_evt_cancel'
+  | 'billing_evt_sla_breach';
 
 export interface CascadeContext extends PlatformEventFields {
   event: EventType;
