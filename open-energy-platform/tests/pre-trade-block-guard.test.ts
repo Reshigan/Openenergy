@@ -94,6 +94,17 @@ describe('loadRiskSnapshot — dual-key block resolution', () => {
     const snap = await snapshotFor('par_trader');
     expect(snap.trading_block_active).toBe(false);
   });
+
+  it('does not block on a lifted (is_active = 0) row', async () => {
+    seedTrader();
+    // A block that compliance has already lifted must not re-block the trader.
+    db.prepare(
+      `INSERT INTO oe_algo_trading_blocks (id, participant_id, block_reason, source_event, is_active, lifted_at, lifted_by, created_at)
+       VALUES ('atb_lifted', 'par_trader', 'algo_kill_switch', 'test', 0, '2026-06-06', 'system:cascade', '2026-06-06')`,
+    ).run();
+    const snap = await snapshotFor('par_trader');
+    expect(snap.trading_block_active).toBe(false);
+  });
 });
 
 describe('rejection-explainer — ALGO_TRADING_BLOCKED fallback', () => {

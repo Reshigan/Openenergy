@@ -119,7 +119,7 @@ async function loadRiskSnapshot(
         WHERE is_active = 1
           AND ( participant_id = ?
              OR participant_id IN (SELECT party_id FROM oe_trading_party_link WHERE participant_id = ?) )`,
-    ).bind(participantId, participantId).first().catch(() => null),
+    ).bind(participantId, participantId).first<{ n: number }>().catch(() => null),
   ]);
 
   const status = participant?.status as string | undefined;
@@ -157,7 +157,7 @@ async function loadRiskSnapshot(
     bid_liquidity_mwh: Number(bookSides?.bid_liq || 0),
     ask_liquidity_mwh: Number(bookSides?.ask_liq || 0),
     margin_gate_status: (marginGate?.gate_status as 'clear' | 'warning' | 'blocked' | undefined) || 'clear',
-    trading_block_active: Number((tradingBlock as { n: number } | null)?.n || 0) > 0,
+    trading_block_active: Number(tradingBlock?.n || 0) > 0,
   };
 }
 
