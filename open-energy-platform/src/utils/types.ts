@@ -2,7 +2,7 @@
 // Hono Environment + Shared Types for Open Energy Platform
 // ═══════════════════════════════════════════════════════════════════════════
 
-import type { D1Database, KVNamespace, R2Bucket, DurableObjectNamespace } from '@cloudflare/workers-types';
+import type { D1Database, KVNamespace, R2Bucket, DurableObjectNamespace, Queue } from '@cloudflare/workers-types';
 import type { PlatformRole } from './platform-event';
 
 // Workers AI binding surface (subset of what we call)
@@ -79,6 +79,14 @@ export interface HonoBindings {
 
   // ── Platform ──────────────────────────────────────────────────────────────
   ASSETS?: { fetch: (req: Request) => Promise<Response> };
+
+  // ── Ecosystem cascade Queue (national-scale async fan-out) ───────────────
+  // Optional: when bound, fireCascade enqueues PlatformEvents and a Queue
+  // consumer runs the registry/fee/analytics layers off the request path.
+  // Until provisioned the layers run inline (see fireCascade). Provision:
+  //   wrangler queues create open-energy-cascade
+  // then uncomment the [[queues.producers]] + [[queues.consumers]] blocks.
+  QUEUE?: Queue;
   JWT_SECRET: string;
   AZURE_AD_CLIENT_ID?: string;
   AZURE_AD_TENANT_ID?: string;

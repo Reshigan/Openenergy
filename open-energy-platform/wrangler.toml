@@ -128,6 +128,21 @@ new_sqlite_classes = ["OrderBook"]
 # binding = "HYPERDRIVE"
 # id = "<id-returned-by-wrangler-hyperdrive-create>"
 
+# ── Ecosystem cascade Queue (national-scale async fan-out) ────────────────────
+# Optional. When provisioned, fireCascade enqueues PlatformEvents and a Queue
+# consumer runs the registry/fee/analytics layers off the request path. Until
+# then those layers run inline (see src/utils/cascade.ts). Provision with:
+#   wrangler queues create open-energy-cascade
+# then uncomment both blocks below and redeploy.
+# [[queues.producers]]
+# binding = "QUEUE"
+# queue = "open-energy-cascade"
+#
+# [[queues.consumers]]
+# queue = "open-energy-cascade"
+# max_batch_size = 50
+# max_batch_timeout = 5
+
 # Scheduled handlers — the Worker's `scheduled()` export in src/index.ts
 # dispatches by cron pattern. Each entry maps to a named job inside the
 # handler. Cloudflare runs these independently of HTTP traffic.

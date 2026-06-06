@@ -7,6 +7,7 @@ import { optionalAuth, authMiddleware, getCurrentUser } from './middleware/auth'
 import { tenantQuotaMiddleware } from './middleware/tenant-quota';
 import { AppError } from './utils/types';
 import { HonoEnv } from './utils/types';
+import './cascade-rules'; // Layer A — registers all cascade rules at boot
 
 // Route imports
 import authRoutes from './routes/auth';
