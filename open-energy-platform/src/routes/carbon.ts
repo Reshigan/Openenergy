@@ -81,14 +81,14 @@ carbon.put('/credits/:id', async (c) => {
   const user = getCurrentUser(c);
   const id = c.req.param('id');
   const existing = await c.env.DB
-    .prepare('SELECT owner_id FROM carbon_credits WHERE id = ?')
+    .prepare('SELECT participant_id AS owner_id FROM carbon_holdings WHERE id = ?')
     .bind(id).first() as { owner_id?: string } | null;
   if (!existing) return c.json({ success: false, error: 'Credit not found' }, 404);
   if (user.role !== 'admin' && existing.owner_id !== user.id) {
     return c.json({ success: false, error: 'Not authorised' }, 403);
   }
   const body = await c.req.json().catch(() => ({})) as Record<string, unknown>;
-  const editable = ['registry', 'project_name', 'methodology', 'vintage_year', 'price_cents', 'status'] as const;
+  const editable = ['credit_type', 'vintage_year', 'cost_basis', 'status'] as const;
   const sets: string[] = [];
   const binds: (string | number | null)[] = [];
   for (const k of editable) {
@@ -102,8 +102,8 @@ carbon.put('/credits/:id', async (c) => {
   sets.push('updated_at = ?');
   binds.push(new Date().toISOString());
   binds.push(id);
-  await c.env.DB.prepare(`UPDATE carbon_credits SET ${sets.join(', ')} WHERE id = ?`).bind(...binds).run();
-  const out = await c.env.DB.prepare('SELECT * FROM carbon_credits WHERE id = ?').bind(id).first();
+  await c.env.DB.prepare(`UPDATE carbon_holdings SET ${sets.join(', ')} WHERE id = ?`).bind(...binds).run();
+  const out = await c.env.DB.prepare('SELECT * FROM carbon_holdings WHERE id = ?').bind(id).first();
   return c.json({ success: true, data: out });
 });
 
@@ -114,21 +114,17 @@ carbon.delete('/credits/:id', async (c) => {
   const user = getCurrentUser(c);
   const id = c.req.param('id');
   const existing = await c.env.DB
-    .prepare('SELECT owner_id, amount_tonnes, available_quantity FROM carbon_credits WHERE id = ?')
-    .bind(id).first() as { owner_id?: string; amount_tonnes?: number; available_quantity?: number } | null;
+    .prepare('SELECT participant_id AS owner_id, status FROM carbon_holdings WHERE id = ?')
+    .bind(id).first() as { owner_id?: string; status?: string } | null;
   if (!existing) return c.json({ success: false, error: 'Credit not found' }, 404);
   if (user.role !== 'admin' && existing.owner_id !== user.id) {
     return c.json({ success: false, error: 'Not authorised' }, 403);
   }
-  const retirements = await c.env.DB
-    .prepare('SELECT COUNT(*) AS n FROM carbon_retirements WHERE credit_id = ?')
-    .bind(id).first() as { n?: number } | null;
-  const partiallyRetired = (existing.amount_tonnes ?? 0) !== (existing.available_quantity ?? 0);
-  if ((retirements?.n ?? 0) > 0 || partiallyRetired) {
-    await c.env.DB.prepare(`UPDATE carbon_credits SET status = 'archived' WHERE id = ?`).bind(id).run();
+  if (existing.status === 'retired') {
+    await c.env.DB.prepare(`UPDATE carbon_holdings SET status = 'archived' WHERE id = ?`).bind(id).run();
     return c.json({ success: true, data: { id, status: 'archived' } });
   }
-  await c.env.DB.prepare('DELETE FROM carbon_credits WHERE id = ?').bind(id).run();
+  await c.env.DB.prepare('DELETE FROM carbon_holdings WHERE id = ?').bind(id).run();
   return c.json({ success: true, data: { id, deleted: true } });
 });
 
