@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import type { D1Database, KVNamespace, R2Bucket, DurableObjectNamespace } from '@cloudflare/workers-types';
+import type { PlatformRole } from './platform-event';
 
 // Workers AI binding surface (subset of what we call)
 export interface WorkersAI {
@@ -130,7 +131,9 @@ export interface JWTPayload {
 }
 
 // Participant Role Enum
-export type ParticipantRole = 'admin' | 'ipp_developer' | 'trader' | 'carbon_fund' | 'offtaker' | 'lender' | 'grid_operator' | 'regulator' | 'support';
+// ParticipantRole is an alias of the canonical PlatformRole (single source of
+// truth: ALL_ROLES in platform-event.ts). Same 9 roles; do not re-list them here.
+export type ParticipantRole = PlatformRole;
 
 // Module Definition
 export interface Module {

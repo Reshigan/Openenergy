@@ -16,4 +16,10 @@ describe('platform-event contract', () => {
   it('isPlatformRole rejects an unknown role', () => {
     expect(isPlatformRole('wizard')).toBe(false);
   });
+
+  it('isPlatformRole rejects non-string input', () => {
+    expect(isPlatformRole(null)).toBe(false);
+    expect(isPlatformRole(123)).toBe(false);
+    expect(isPlatformRole(undefined)).toBe(false);
+  });
 });
