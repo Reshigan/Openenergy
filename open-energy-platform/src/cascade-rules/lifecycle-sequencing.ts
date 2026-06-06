@@ -78,10 +78,82 @@ async function alreadyPushed(
   return !!r;
 }
 
-// TODO(W3): consumed by later lifecycle rules (Tasks 3–6)
-void dnum; void plusYearsIso; void renewalClassFor; void DEFAULT_LICENCE_VALIDITY_YEARS; void alreadyPushed;
-
 const RULES: CascadeRule[] = [
+  // #7 licence issued → NERSA levy assessment + licence renewal schedule
+  {
+    id: 'lifecycle.licence_issued_to_levy_and_renewal',
+    mode: 'drive',
+    match: (ctx: CascadeContext) => ctx.event === 'licence_application.licence_issued',
+    run: async (ctx: CascadeContext) => {
+      const licenseeId = dstr(ctx, 'applicant_party_id');
+      const licenseeName = dstr(ctx, 'applicant_party_name');
+      if (!licenseeId || !licenseeName) return;
+      const now = nowIso();
+
+      // — levy (placeholder assessment; regulator completes the real figures) —
+      const levyExists = await ctx.env.DB.prepare(
+        `SELECT id FROM oe_regulator_levies
+          WHERE source_entity_type='licence_application' AND source_entity_id=? LIMIT 1`,
+      ).bind(ctx.entity_id).first();
+      if (!levyExists) {
+        const levyId = uid('lvy');
+        await ctx.env.DB.prepare(
+          `INSERT INTO oe_regulator_levies
+             (id, levy_number, source_event, source_entity_type, source_entity_id, source_wave,
+              licensee_id, licensee_name, sector, levy_basis, levy_tier, financial_year,
+              assessed_amount, paid_to_date, outstanding_amount, assessment_basis,
+              chain_status, assessed_at, created_by, created_at, updated_at)
+           VALUES (?,?,?,?,?,?, ?,?, 'electricity', 'turnover_based', 'micro', ?,
+                   0, 0, 0, ?, 'levy_assessed', ?, ?, ?, ?)`,
+        ).bind(
+          levyId, numberFrom('LVY', levyId), ctx.event, 'licence_application', ctx.entity_id, SOURCE_WAVE,
+          licenseeId, licenseeName, saFinancialYear(new Date()),
+          `Auto-seeded on licence issuance ${dstr(ctx, 'licence_ref') ?? ctx.entity_id} — complete turnover assessment`,
+          now, SYSTEM_ACTOR, now, now,
+        ).run();
+      }
+
+      // — renewal (only for licence_types the renewal chain supports) —
+      const mapped = renewalClassFor(dstr(ctx, 'licence_type'));
+      if (mapped) {
+        const renExists = await ctx.env.DB.prepare(
+          `SELECT id FROM oe_licence_renewals
+            WHERE source_entity_type='licence_application' AND source_entity_id=? LIMIT 1`,
+        ).bind(ctx.entity_id).first();
+        if (!renExists) {
+          const renId = uid('lren');
+          await ctx.env.DB.prepare(
+            `INSERT INTO oe_licence_renewals
+               (id, case_number, licence_id, licence_number, licence_type, licence_class, capacity_mw,
+                source_event, source_entity_type, source_entity_id, source_wave,
+                applicant_party_id, applicant_party_name, facility_name,
+                current_expiry_date, chain_status, initiated_at, created_by, created_at, updated_at)
+             VALUES (?,?,?,?,?,?,?, ?,?,?,?, ?,?,?, ?, 'renewal_initiated', ?, ?, ?, ?)`,
+          ).bind(
+            renId, numberFrom('LREN', renId),
+            dstr(ctx, 'licence_ref') ?? ctx.entity_id, dstr(ctx, 'licence_ref'),
+            mapped.type, mapped.klass, dnum(ctx, 'capacity_mw'),
+            ctx.event, 'licence_application', ctx.entity_id, SOURCE_WAVE,
+            licenseeId, licenseeName, dstr(ctx, 'facility_name'),
+            plusYearsIso(dstr(ctx, 'licence_issued_at'), DEFAULT_LICENCE_VALIDITY_YEARS),
+            now, SYSTEM_ACTOR, now, now,
+          ).run();
+        }
+      }
+
+      if (!(await alreadyPushed(ctx, ctx.entity_id, 'regulator'))) {
+        await pushRoleAction(ctx.env, {
+          target_role: 'regulator',
+          source_event: ctx.event, source_chain_key: 'levy_assessment',
+          source_entity_type: 'licence_application', source_entity_id: ctx.entity_id,
+          title: `New licensee ${licenseeName} — assess levy${mapped ? ' & confirm renewal calendar' : ''}`,
+          body: { licence_ref: dstr(ctx, 'licence_ref'), renewal_created: !!mapped },
+          cross_option: { action_label: 'Open levy assessment', target_route: `/regulator/workstation?tab=levies` },
+          priority: 'normal',
+        });
+      }
+    },
+  },
   // #4 reserve breach → loan default (event of default)
   {
     id: 'lifecycle.reserve_breach_to_loan_default',

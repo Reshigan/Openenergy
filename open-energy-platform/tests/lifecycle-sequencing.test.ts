@@ -27,10 +27,10 @@ function ctxFor(
 }
 
 describe('registerLifecycleSequencingRules — registration', () => {
-  it('registers exactly one rule after Task 2 (no duplicates on re-call)', () => {
+  it('registers exactly two rules after Task 3 (no duplicates on re-call)', () => {
     registerLifecycleSequencingRules();
     registerLifecycleSequencingRules(); // second call must not duplicate
-    expect(__lifecycleRulesForTest().length).toBe(1);
+    expect(__lifecycleRulesForTest().length).toBe(2);
   });
 });
 
@@ -81,5 +81,60 @@ describe('#4 reserve_account.breached → loan default', () => {
     await r.run(ctxFor(env, 'reserve_account.breached', 'reserve_account', 'rsa_2', { lender_name: 'x' }));
     const n = db.prepare(`SELECT COUNT(*) c FROM oe_loan_defaults`).get() as any;
     expect(n.c).toBe(0);
+  });
+});
+
+describe('#7 licence_application.licence_issued → levy + renewal', () => {
+  let db: Database.Database;
+  let env: any;
+  beforeEach(() => { db = createTestDb({ applyMigrations: true }); env = envFor(db); registerLifecycleSequencingRules(); });
+  afterEach(() => { db.close(); });
+
+  function genData(over: Record<string, unknown> = {}) {
+    return {
+      applicant_party_id: 'party_kuyasa', applicant_party_name: 'Kuyasa Energy (Pty) Ltd',
+      licence_type: 'generation', licence_class: 'standard_licence',
+      licence_ref: 'NERSA-GEN-2026-014', licence_issued_at: '2026-06-06T00:00:00.000Z',
+      facility_name: 'Kuyasa Wind 1', capacity_mw: 140, ...over,
+    };
+  }
+
+  it('creates a placeholder levy AND a renewal for a generation licence + a regulator prompt', async () => {
+    const r = ruleById('lifecycle.licence_issued_to_levy_and_renewal');
+    await r.run(ctxFor(env, 'licence_application.licence_issued', 'licence_application', 'lic_1', genData()));
+
+    const levy = db.prepare(`SELECT * FROM oe_regulator_levies WHERE source_entity_id='lic_1'`).get() as any;
+    expect(levy).toBeTruthy();
+    expect(levy.sector).toBe('electricity');
+    expect(levy.levy_basis).toBe('turnover_based');
+    expect(levy.levy_tier).toBe('micro');
+    expect(levy.assessed_amount).toBe(0);
+    expect(levy.chain_status).toBe('levy_assessed');
+    expect(levy.licensee_name).toBe('Kuyasa Energy (Pty) Ltd');
+
+    const ren = db.prepare(`SELECT * FROM oe_licence_renewals WHERE source_entity_id='lic_1'`).get() as any;
+    expect(ren).toBeTruthy();
+    expect(ren.licence_type).toBe('generation');
+    expect(ren.licence_class).toBe('generation_utility');
+    expect(ren.chain_status).toBe('renewal_initiated');
+    expect(ren.current_expiry_date.startsWith('2051-')).toBe(true); // issued 2026 + 25y
+
+    const action = db.prepare(`SELECT * FROM oe_role_action_queue WHERE target_role='regulator' AND source_entity_id='lic_1'`).get() as any;
+    expect(action).toBeTruthy();
+  });
+
+  it('skips the renewal for a transmission licence but still creates the levy', async () => {
+    const r = ruleById('lifecycle.licence_issued_to_levy_and_renewal');
+    await r.run(ctxFor(env, 'licence_application.licence_issued', 'licence_application', 'lic_2', genData({ licence_type: 'transmission' })));
+    expect(db.prepare(`SELECT COUNT(*) c FROM oe_regulator_levies WHERE source_entity_id='lic_2'`).get() as any).toMatchObject({ c: 1 });
+    expect(db.prepare(`SELECT COUNT(*) c FROM oe_licence_renewals WHERE source_entity_id='lic_2'`).get() as any).toMatchObject({ c: 0 });
+  });
+
+  it('is idempotent across both tables', async () => {
+    const r = ruleById('lifecycle.licence_issued_to_levy_and_renewal');
+    const ctx = ctxFor(env, 'licence_application.licence_issued', 'licence_application', 'lic_3', genData());
+    await r.run(ctx); await r.run(ctx);
+    expect(db.prepare(`SELECT COUNT(*) c FROM oe_regulator_levies WHERE source_entity_id='lic_3'`).get() as any).toMatchObject({ c: 1 });
+    expect(db.prepare(`SELECT COUNT(*) c FROM oe_licence_renewals WHERE source_entity_id='lic_3'`).get() as any).toMatchObject({ c: 1 });
   });
 });
