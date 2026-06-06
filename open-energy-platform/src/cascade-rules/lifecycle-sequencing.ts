@@ -78,26 +78,60 @@ async function alreadyPushed(
   return !!r;
 }
 
-// ── suppress unused-locals warnings for helpers consumed in Tasks 2–6 ──────
-// TypeScript noUnusedLocals applies to locals inside function bodies, not to
-// module-level declarations. The helpers above are module-level functions and
-// will not trigger the compiler error. The constants below are also module-level
-// so they are fine. No suppression pragmas needed.
-void (SYSTEM_ACTOR as string);
-void (SOURCE_WAVE as string);
-void (DEFAULT_LICENCE_VALIDITY_YEARS as number);
-void (dstr as unknown);
-void (dnum as unknown);
-void (uid as unknown);
-void (nowIso as unknown);
-void (numberFrom as unknown);
-void (plusYearsIso as unknown);
-void (renewalClassFor as unknown);
-void (alreadyPushed as unknown);
-void (pushRoleAction as unknown);
+// TODO(W3): consumed by later lifecycle rules (Tasks 3–6)
+void dnum; void plusYearsIso; void renewalClassFor; void DEFAULT_LICENCE_VALIDITY_YEARS; void alreadyPushed;
 
 const RULES: CascadeRule[] = [
-  // rules added in Tasks 2–6
+  // #4 reserve breach → loan default (event of default)
+  {
+    id: 'lifecycle.reserve_breach_to_loan_default',
+    mode: 'drive',
+    match: (ctx: CascadeContext) => ctx.event === 'reserve_account.breached',
+    run: async (ctx: CascadeContext) => {
+      const borrowerName = dstr(ctx, 'borrower_name');
+      if (!borrowerName) return; // cannot raise a default without a borrower
+
+      const existing = await ctx.env.DB.prepare(
+        `SELECT id FROM oe_loan_defaults
+          WHERE source_entity_type='reserve_account' AND source_entity_id=? LIMIT 1`,
+      ).bind(ctx.entity_id).first();
+      if (existing) return;
+
+      const id = uid('ldf');
+      const now = nowIso();
+      const facilityName =
+        dstr(ctx, 'facility_ref') ?? dstr(ctx, 'loan_agreement_ref') ??
+        dstr(ctx, 'reserve_number') ?? 'Unspecified facility';
+      const borrowerPartyId =
+        dstr(ctx, 'project_id') ?? dstr(ctx, 'reserve_number') ?? ctx.entity_id;
+
+      await ctx.env.DB.prepare(
+        `INSERT INTO oe_loan_defaults
+           (id, default_number, source_event, source_entity_type, source_entity_id, source_wave,
+            borrower_party_id, borrower_party_name, lender_name, facility_name, facility_tier,
+            default_type, default_event, flag_basis,
+            chain_status, default_flagged_at, created_by, created_at, updated_at)
+         VALUES (?,?,?,?,?,?, ?,?,?,?, 'senior_secured',
+                 'covenant', 'reserve_account_breach', ?,
+                 'default_flagged', ?, ?, ?, ?)`,
+      ).bind(
+        id, numberFrom('LDF', id), ctx.event, 'reserve_account', ctx.entity_id, SOURCE_WAVE,
+        borrowerPartyId, borrowerName, dstr(ctx, 'lender_name'), facilityName,
+        `Auto-raised from reserve-account breach ${dstr(ctx, 'reserve_number') ?? ctx.entity_id}`,
+        now, SYSTEM_ACTOR, now, now,
+      ).run();
+
+      await pushRoleAction(ctx.env, {
+        target_role: 'lender',
+        source_event: ctx.event, source_chain_key: 'loan_default',
+        source_entity_type: 'loan_default', source_entity_id: id,
+        title: `Event of default — reserve breach on ${facilityName}`,
+        body: { borrower_party_name: borrowerName, reserve_account_id: ctx.entity_id, default_id: id },
+        cross_option: { action_label: 'Manage default', target_route: `/lender/workstation?tab=loan-defaults&id=${id}` },
+        priority: 'urgent',
+      });
+    },
+  },
 ];
 
 export function registerLifecycleSequencingRules(): void {
