@@ -27,10 +27,24 @@ function ctxFor(
 }
 
 describe('registerLifecycleSequencingRules — registration', () => {
-  it('registers exactly four rules after Task 5 (no duplicates on re-call)', () => {
+  it('exposes all five drive rules, all mode=drive, idempotent registration', () => {
     registerLifecycleSequencingRules();
     registerLifecycleSequencingRules(); // second call must not duplicate
-    expect(__lifecycleRulesForTest().length).toBe(4);
+    const ids = __lifecycleRulesForTest().map((r) => r.id).sort();
+    expect(ids).toEqual([
+      'lifecycle.cod_certified_to_ppa_and_drawdown',
+      'lifecycle.covenant_breach_to_reserve_cure',
+      'lifecycle.licence_issued_to_levy_and_renewal',
+      'lifecycle.mrv_issued_to_retirement_prompt',
+      'lifecycle.reserve_breach_to_loan_default',
+    ]);
+    for (const r of __lifecycleRulesForTest()) expect(r.mode).toBe('drive');
+  });
+
+  it('match() is tight — a rule ignores unrelated events', () => {
+    const r = ruleById('lifecycle.reserve_breach_to_loan_default');
+    expect(r.match({ event: 'reserve_account.funded' } as any)).toBe(false);
+    expect(r.match({ event: 'reserve_account.breached' } as any)).toBe(true);
   });
 });
 
@@ -227,5 +241,27 @@ describe('#1 cod.cod_certified → PPA activate + lender drawdown prompt', () =>
     const ctx = ctxFor(env, 'cod.cod_certified', 'cod_chain', 'cod_3', data);
     await r.run(ctx); await r.run(ctx);
     expect(db.prepare(`SELECT COUNT(*) c FROM oe_role_action_queue WHERE source_entity_id='cod_3'`).get() as any).toMatchObject({ c: 1 });
+  });
+});
+
+describe('#10 carbon.mrv_issued → carbon-fund retirement prompt', () => {
+  let db: Database.Database;
+  let env: any;
+  beforeEach(() => { db = createTestDb({ applyMigrations: true }); env = envFor(db); registerLifecycleSequencingRules(); });
+  afterEach(() => { db.close(); });
+
+  it('pushes a carbon_fund retirement prompt carrying project + quantity', async () => {
+    const r = ruleById('lifecycle.mrv_issued_to_retirement_prompt');
+    await r.run(ctxFor(env, 'carbon.mrv_issued', 'mrv_submissions', 'mrv_1', { project_id: 'cproj_1', claimed_reductions_tco2e: 12500 }));
+    const action = db.prepare(`SELECT * FROM oe_role_action_queue WHERE target_role='carbon_fund' AND source_entity_id='mrv_1'`).get() as any;
+    expect(action).toBeTruthy();
+    expect(JSON.parse(action.body_json).claimed_reductions_tco2e).toBe(12500);
+  });
+
+  it('is idempotent', async () => {
+    const r = ruleById('lifecycle.mrv_issued_to_retirement_prompt');
+    const ctx = ctxFor(env, 'carbon.mrv_issued', 'mrv_submissions', 'mrv_2', { project_id: 'cproj_2', claimed_reductions_tco2e: 1 });
+    await r.run(ctx); await r.run(ctx);
+    expect(db.prepare(`SELECT COUNT(*) c FROM oe_role_action_queue WHERE source_entity_id='mrv_2'`).get() as any).toMatchObject({ c: 1 });
   });
 });

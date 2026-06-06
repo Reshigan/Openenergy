@@ -243,6 +243,25 @@ const RULES: CascadeRule[] = [
       }
     },
   },
+  // #10 MRV issued (credits verified & issued) → prompt the carbon fund to retire
+  {
+    id: 'lifecycle.mrv_issued_to_retirement_prompt',
+    mode: 'drive',
+    match: (ctx: CascadeContext) => ctx.event === 'carbon.mrv_issued',
+    run: async (ctx: CascadeContext) => {
+      if (await alreadyPushed(ctx, ctx.entity_id, 'carbon_fund')) return;
+      const qty = dnum(ctx, 'claimed_reductions_tco2e');
+      await pushRoleAction(ctx.env, {
+        target_role: 'carbon_fund',
+        source_event: ctx.event, source_chain_key: 'carbon_retirement',
+        source_entity_type: 'mrv_submissions', source_entity_id: ctx.entity_id,
+        title: `Credits verified${qty ? ` (${qty} tCO₂e)` : ''} — retire on behalf of beneficiary`,
+        body: { project_id: dstr(ctx, 'project_id'), claimed_reductions_tco2e: qty },
+        cross_option: { action_label: 'Retire credits', target_route: `/carbon/workstation?tab=retirements` },
+        priority: 'normal',
+      });
+    },
+  },
   // #4 reserve breach → loan default (event of default)
   {
     id: 'lifecycle.reserve_breach_to_loan_default',
