@@ -4,9 +4,11 @@
 import { registerTradingSafetyRules } from './trading-safety';
 import { registerLifecycleSequencingRules } from './lifecycle-sequencing';
 import { registerTradeSettlementRules } from './trade-settlement';
+import { registerContractLifecycleRules } from './contract-lifecycle';
 
 registerTradingSafetyRules();
 registerLifecycleSequencingRules();
 registerTradeSettlementRules();
+registerContractLifecycleRules();
 
-export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules };
+export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules };
