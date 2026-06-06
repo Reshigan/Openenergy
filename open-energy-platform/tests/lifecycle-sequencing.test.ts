@@ -139,7 +139,7 @@ describe('#7 licence_application.licence_issued → levy + renewal', () => {
   });
 });
 
-describe('#1 cod.certify_cod → PPA activate + lender drawdown prompt', () => {
+describe('#1 cod.cod_certified → PPA activate + lender drawdown prompt', () => {
   let db: Database.Database;
   let env: any;
   beforeEach(() => { db = createTestDb({ applyMigrations: true }); env = envFor(db); registerLifecycleSequencingRules(); });
@@ -159,7 +159,7 @@ describe('#1 cod.certify_cod → PPA activate + lender drawdown prompt', () => {
   it('advances an executed PPA to in_force, writes an event row, and prompts the lender', async () => {
     seedPpa('executed');
     const r = ruleById('lifecycle.cod_certified_to_ppa_and_drawdown');
-    await r.run(ctxFor(env, 'cod.certify_cod', 'cod_chain', 'cod_1', data));
+    await r.run(ctxFor(env, 'cod.cod_certified', 'cod_chain', 'cod_1', data));
 
     const ppa = db.prepare(`SELECT * FROM oe_ppa_contract_chain WHERE id='ppa_1'`).get() as any;
     expect(ppa.chain_status).toBe('in_force');
@@ -174,7 +174,7 @@ describe('#1 cod.certify_cod → PPA activate + lender drawdown prompt', () => {
   it('does not force a non-executed PPA but still prompts the lender', async () => {
     seedPpa('draft');
     const r = ruleById('lifecycle.cod_certified_to_ppa_and_drawdown');
-    await r.run(ctxFor(env, 'cod.certify_cod', 'cod_chain', 'cod_2', data));
+    await r.run(ctxFor(env, 'cod.cod_certified', 'cod_chain', 'cod_2', data));
     expect((db.prepare(`SELECT chain_status FROM oe_ppa_contract_chain WHERE id='ppa_1'`).get() as any).chain_status).toBe('draft');
     expect(db.prepare(`SELECT COUNT(*) c FROM oe_role_action_queue WHERE source_entity_id='cod_2'`).get() as any).toMatchObject({ c: 1 });
   });
@@ -182,7 +182,7 @@ describe('#1 cod.certify_cod → PPA activate + lender drawdown prompt', () => {
   it('is idempotent on the lender prompt', async () => {
     seedPpa('executed');
     const r = ruleById('lifecycle.cod_certified_to_ppa_and_drawdown');
-    const ctx = ctxFor(env, 'cod.certify_cod', 'cod_chain', 'cod_3', data);
+    const ctx = ctxFor(env, 'cod.cod_certified', 'cod_chain', 'cod_3', data);
     await r.run(ctx); await r.run(ctx);
     expect(db.prepare(`SELECT COUNT(*) c FROM oe_role_action_queue WHERE source_entity_id='cod_3'`).get() as any).toMatchObject({ c: 1 });
   });

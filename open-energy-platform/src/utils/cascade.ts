@@ -282,7 +282,7 @@ export type EventType =
   | 'cod.epc_signed' | 'cod.ntp_issued' | 'cod.mobilized'
   | 'cod.mechanical_complete' | 'cod.cold_commissioned'
   | 'cod.grid_synchronized' | 'cod.reliability_started'
-  | 'cod.cod_certified' | 'cod.certify_cod' | 'cod.cancelled' | 'cod.sla_breached'
+  | 'cod.cod_certified' | 'cod.cancelled' | 'cod.sla_breached'
   // Wave 21 — Lender drawdown / disbursement certification chain (SARB + REIPPPP)
   | 'drawdown.documents_submitted' | 'drawdown.ie_review_started'
   | 'drawdown.cp_passed' | 'drawdown.queried' | 'drawdown.resumed'

@@ -2,7 +2,7 @@
 // Layer A — lifecycle-sequencing rules (mode:'drive').
 // Five upstream transitions auto-sequence their downstream chains as the
 // dedicated system:cascade actor (never impersonating the affected role):
-//   #1  cod.certify_cod                        → auto-activate PPA + lender drawdown prompt
+//   #1  cod.cod_certified                      → auto-activate PPA + lender drawdown prompt
 //   #3  covenant_certificate.breach_identified → open reserve cure + lender prompt
 //   #4  reserve_account.breached               → auto-create loan default + lender prompt
 //   #7  licence_application.licence_issued      → auto-create NERSA levy + licence renewal + regulator prompt
@@ -83,7 +83,7 @@ const RULES: CascadeRule[] = [
   {
     id: 'lifecycle.cod_certified_to_ppa_and_drawdown',
     mode: 'drive',
-    match: (ctx: CascadeContext) => ctx.event === 'cod.certify_cod',
+    match: (ctx: CascadeContext) => ctx.event === 'cod.cod_certified',
     run: async (ctx: CascadeContext) => {
       const projectId = dstr(ctx, 'project_id');
       const participantId = dstr(ctx, 'participant_id');
