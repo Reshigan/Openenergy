@@ -6,6 +6,7 @@
 // live chain table — so they stay cheap as the revenue log grows.
 // ═══════════════════════════════════════════════════════════════════════════
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
@@ -15,8 +16,12 @@ const r = new Hono<HonoEnv>();
 r.use('*', authMiddleware);
 
 function requireAdmin(role: string): boolean { return role === 'admin'; }
-function period(c: any): string {
-  return c.req.query('period') || new Date().toISOString().slice(0, 7);
+// Billing period is a bound param (not injectable), but reject anything that
+// isn't a YYYY-MM string before it reaches D1 — a malformed value can only
+// match zero rows, so falling back to the current period is the honest default.
+function period(c: Context<HonoEnv>): string {
+  const q = c.req.query('period');
+  return q && /^\d{4}-\d{2}$/.test(q) ? q : new Date().toISOString().slice(0, 7);
 }
 
 // ─── Schedule (rate card) ────────────────────────────────────────────────────
@@ -50,7 +55,12 @@ r.patch('/schedule/:id', async (c) => {
     if (!(k in b)) continue;
     const v = b[k];
     if (t === 'int') { sets.push(`${k} = ?`); vals.push(v == null ? null : Number(v) ? 1 : 0); }
-    else if (t === 'num') { sets.push(`${k} = ?`); vals.push(v == null ? null : Number(v)); }
+    else if (t === 'num') {
+      // Guard the money columns: NaN/Infinity would store as NULL or a
+      // non-standard SQLite float and silently corrupt the rate card.
+      if (v != null) { const n = Number(v); if (!Number.isFinite(n)) return c.json({ success: false, error: `invalid number for ${k}` }, 400); sets.push(`${k} = ?`); vals.push(n); }
+      else { sets.push(`${k} = ?`); vals.push(null); }
+    }
     else { sets.push(`${k} = ?`); vals.push(v == null ? null : String(v)); }
   }
   if (sets.length === 0) return c.json({ success: false, error: 'no mutable fields supplied' }, 400);
