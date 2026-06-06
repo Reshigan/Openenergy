@@ -61,7 +61,7 @@ export async function wheelSlaSweep(env: any) {
 // ─── GET / ────────────────────────────────────────────────────────────────────
 app.get('/', async (c) => {
   const user = getCurrentUser(c);
-  const isAdmin = ['admin', 'offtaker', 'grid_operator', 'support'].includes(user.role);
+  const isAdmin = ['admin', 'support'].includes(user.role);
   const participantId = c.req.query('participant_id');
   const resolved = isAdmin && participantId ? participantId : user.id;
 
@@ -91,7 +91,7 @@ app.get('/:id', async (c) => {
     .bind(id).first<Record<string, unknown>>();
   if (!row) return c.json({ success: false, error: 'Not found' }, 404);
 
-  const isAdmin = ['admin', 'offtaker', 'grid_operator', 'support'].includes(user.role);
+  const isAdmin = ['admin', 'support'].includes(user.role);
   if (!isAdmin && row.participant_id !== user.id) {
     return c.json({ success: false, error: 'Forbidden' }, 403);
   }

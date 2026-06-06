@@ -246,7 +246,6 @@ router.post('/:id/action', async (c) => {
   const body = await c.req.json<{
     action: KycAction;
     reason?: string | null;
-    actor_id?: string | null;
     pep_match?: boolean;
     sanctions_match?: boolean;
     adverse_media_match?: boolean;
@@ -315,7 +314,7 @@ router.post('/:id/action', async (c) => {
        WHERE id = ?`,
     )
     .bind(
-      nextStatus, body.reason ?? null, body.actor_id ?? user.id,
+      nextStatus, body.reason ?? null, user.id,
       slaBreached, regulatorNotified,
       body.pep_match != null ? (body.pep_match ? 1 : 0) : null,
       body.sanctions_match != null ? (body.sanctions_match ? 1 : 0) : null,
@@ -350,7 +349,7 @@ router.post('/:id/action', async (c) => {
 
   await fireCascade({
     event: `kyc_evt_${action}` as EventType,
-    actor_id: body.actor_id ?? user.id,
+    actor_id: user.id,
     entity_type: 'kyc_verification',
     entity_id: id,
     data: {
