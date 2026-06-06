@@ -402,6 +402,12 @@ import crossBorderTradeChainRoutes, { cbtSlaSweep } from './routes/cross-border-
 import cpClearanceChainRoutes, { cpSlaSweep } from './routes/cp-clearance-chain';
 import gtiaChainRoutes, { gtiaSlaSweep } from './routes/gtia-chain';
 import scope3DisclosureChainRoutes, { s3SlaSweep } from './routes/scope3-disclosure-chain';
+import vcmProjectDevelopmentChainRoutes, { vcmProjectSlaSweep } from './routes/vcm-project-development-chain';
+import carbonBudgetChainRoutes, { carbonBudgetSlaSweep } from './routes/carbon-budget-chain';
+import recDeviceRegistrationChainRoutes, { recDeviceSlaSweep } from './routes/rec-device-registration-chain';
+import recIssuanceChainRoutes, { recIssuanceSlaSweep } from './routes/rec-issuance-chain';
+import vcmOrderBookRoutes from './routes/vcm-order-book';
+import certBundleChainRoutes, { certBundleSlaSweep } from './routes/certificate-bundle-chain';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -1092,6 +1098,12 @@ app.route('/api/cross-border-trades', crossBorderTradeChainRoutes);
 app.route('/api/cp-clearances', cpClearanceChainRoutes);
 app.route('/api/gtia', gtiaChainRoutes);
 app.route('/api/carbon/scope3-disclosure/chain', scope3DisclosureChainRoutes);
+app.route('/api/carbon/vcm-projects', vcmProjectDevelopmentChainRoutes);
+app.route('/api/carbon/budget', carbonBudgetChainRoutes);
+app.route('/api/rec/device-registration', recDeviceRegistrationChainRoutes);
+app.route('/api/rec/issuance', recIssuanceChainRoutes);
+app.route('/api/vcm/order-book', vcmOrderBookRoutes);
+app.route('/api/certificate-track/bundle', certBundleChainRoutes);
 // platformFeaturesRoutes is the catch-all for /api — it must remain LAST
 // so all specific /api/* mounts above are tried first.
 app.route('/api', platformFeaturesRoutes);
@@ -2700,6 +2712,31 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('s3_sla_sweep', async () => {
         const result = await s3SlaSweep(env as never);
         console.log('s3_sla_sweep', JSON.stringify(result));
+      });
+      // W226: VCM Project Development — INVERTED SLA sweep.
+      await safe('vcm_project_sla_sweep', async () => {
+        const result = await vcmProjectSlaSweep(env as never);
+        console.log('vcm_project_sla_sweep', JSON.stringify(result));
+      });
+      // W226: Carbon Budget Management & Carbon Tax Compliance — INVERTED SLA sweep.
+      await safe('carbon_budget_sla_sweep', async () => {
+        const result = await carbonBudgetSlaSweep(env as never);
+        console.log('carbon_budget_sla_sweep', JSON.stringify(result));
+      });
+      // W226: REC device registration — INVERTED SLA sweep.
+      await safe('rec_device_sla_sweep', async () => {
+        const result = await recDeviceSlaSweep(env as never);
+        console.log('rec_device_sla_sweep', JSON.stringify(result));
+      });
+      // W226: REC issuance requests — INVERTED SLA sweep.
+      await safe('rec_issuance_sla_sweep', async () => {
+        const result = await recIssuanceSlaSweep(env as never);
+        console.log('rec_issuance_sla_sweep', JSON.stringify(result));
+      });
+      // W226: Certificate bundles — INVERTED SLA sweep.
+      await safe('cert_bundle_sla_sweep', async () => {
+        const result = await certBundleSlaSweep(env as never);
+        console.log('cert_bundle_sla_sweep', JSON.stringify(result));
       });
       // Block trades — flip to 'published' once publication_delay has elapsed
       // so the market can see the print.
