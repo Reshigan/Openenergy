@@ -9,6 +9,7 @@ import {
   registerLifecycleSequencingRules,
   __lifecycleRulesForTest,
 } from '../src/cascade-rules/lifecycle-sequencing';
+import { runCascadeRegistry, _resetRegistryForTests } from '../src/utils/cascade-registry';
 
 function ruleById(id: string) {
   const r = __lifecycleRulesForTest().find((x) => x.id === id);
@@ -263,5 +264,42 @@ describe('#10 carbon.mrv_issued → carbon-fund retirement prompt', () => {
     const ctx = ctxFor(env, 'carbon.mrv_issued', 'mrv_submissions', 'mrv_2', { project_id: 'cproj_2', claimed_reductions_tco2e: 1 });
     await r.run(ctx); await r.run(ctx);
     expect(db.prepare(`SELECT COUNT(*) c FROM oe_role_action_queue WHERE source_entity_id='mrv_2'`).get() as any).toMatchObject({ c: 1 });
+  });
+});
+
+describe('runCascadeRegistry — end-to-end dispatch + audit', () => {
+  let db: Database.Database;
+  let env: any;
+  beforeEach(() => {
+    db = createTestDb({ applyMigrations: true });
+    env = envFor(db);
+    _resetRegistryForTests();
+    registerLifecycleSequencingRules();
+  });
+  afterEach(() => { db.close(); });
+
+  it('dispatching reserve_account.breached creates the loan default AND an audit row', async () => {
+    const ctx = ctxFor(env, 'reserve_account.breached', 'reserve_account', 'rac_1', {
+      borrower_name: 'Acme Wind (Pty) Ltd', facility_name: 'Senior Facility A',
+    });
+    await runCascadeRegistry(ctx);
+
+    const loanDefault = db.prepare(`SELECT * FROM oe_loan_defaults WHERE source_entity_id='rac_1'`).get() as any;
+    expect(loanDefault).toBeTruthy();
+    expect(loanDefault.chain_status).toBe('default_flagged');
+
+    const audit = db.prepare(
+      `SELECT * FROM oe_cascade_rule_audit WHERE rule_id='lifecycle.reserve_breach_to_loan_default'`,
+    ).get() as any;
+    expect(audit).toBeTruthy();
+    expect(audit.outcome).toBe('ran');
+  });
+
+  it('dispatching an unmatched event writes no audit row for the lifecycle rules', async () => {
+    await runCascadeRegistry(ctxFor(env, 'reserve_account.funded', 'reserve_account', 'rac_2', {}));
+    const audit = db.prepare(
+      `SELECT COUNT(*) c FROM oe_cascade_rule_audit WHERE rule_id LIKE 'lifecycle.%' AND outcome='ran'`,
+    ).get() as any;
+    expect(audit.c).toBe(0);
   });
 });
