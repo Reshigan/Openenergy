@@ -1254,6 +1254,7 @@ import { verifyChain } from './utils/audit-chain';
 import { runTradingSurveillanceScan } from './routes/trading-clearing-l5';
 import { buildDailyMerkleRoots } from './routes/audit-l5';
 import { runTelemetryRollupAndPurge } from './utils/telemetry-retention';
+import { rollupMetrics } from './utils/metrics-rollup';
 
 async function safe<T>(label: string, fn: () => Promise<T>): Promise<T | null> {
   try {
@@ -3867,6 +3868,9 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
         const result = await transmissionOutageWindowMonitor(env as never);
         console.log('transmission_outage_window_monitor', JSON.stringify(result));
       });
+      // Layer D — roll yesterday's platform-event stream into the daily +
+      // cumulative rollup tables the dashboards read (never the raw log).
+      await safe('metrics_rollup', () => rollupMetrics(env, yesterday));
       break;
 
     case '10 0 * * *':
