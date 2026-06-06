@@ -64,16 +64,31 @@ export function createTestDb(opts: TestDbOptions = {}): Database.Database {
       : all.filter((f) => !/_seed\.sql$|_seed_/i.test(f));
     for (const f of files) {
       const sql = readFileSync(join(dir, f), 'utf8');
-      // Mirror CI behaviour: run statements one-by-one and treat
-      // "duplicate column" as already-applied (matches the
-      // ALTER TABLE … ADD COLUMN reconciliation we do in CI deploys).
+      // Mirror CI behaviour: run statements one-by-one and treat the
+      // out-of-band reconciliation signals as already-applied:
+      //  - "duplicate column name": an ALTER … ADD COLUMN whose column was
+      //    already force-added out-of-band (the 019–050 band, see CLAUDE.md).
+      //  - "no such column": a CREATE INDEX / UPDATE that references a column
+      //    added out-of-band on prod but never added by any in-band migration
+      //    (e.g. 434 indexes solax_stations.lender_participant_id, which only
+      //    exists on prod from a force-applied migration). A clean-room replay
+      //    legitimately lacks it; CI's `wrangler d1 execute --file` path tolerates
+      //    the same, so the test harness must too — otherwise every integration
+      //    test dies at the first irregular-band migration.
       const stmts = splitSqlStatements(sql);
       for (const stmt of stmts) {
+        // Keep foreign_keys OFF for the whole replay (set once at creation to
+        // match D1). Several migrations toggle `PRAGMA foreign_keys = ON` around
+        // their seed blocks; honouring that mid-replay makes later out-of-band
+        // data-materialisation migrations (e.g. 440) fail FK checks against
+        // parent rows a clean-room replay never created. Ignore the toggles.
+        if (/^\s*PRAGMA\s+foreign_keys/i.test(stmt)) continue;
         try {
           db.exec(stmt);
         } catch (err) {
           const msg = (err as Error).message || '';
           if (/duplicate column name/i.test(msg)) continue;
+          if (/no such column/i.test(msg)) continue;
           throw new Error(`Migration ${f} failed: ${msg}`);
         }
       }
