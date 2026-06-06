@@ -3,8 +3,10 @@
 // registry call the individual register*() functions directly.
 import { registerTradingSafetyRules } from './trading-safety';
 import { registerLifecycleSequencingRules } from './lifecycle-sequencing';
+import { registerTradeSettlementRules } from './trade-settlement';
 
 registerTradingSafetyRules();
 registerLifecycleSequencingRules();
+registerTradeSettlementRules();
 
-export { registerTradingSafetyRules, registerLifecycleSequencingRules };
+export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules };
