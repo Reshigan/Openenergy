@@ -9,7 +9,7 @@
 
 import React, { useCallback, useEffect, useState, ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Search } from 'lucide-react';
 import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
@@ -40,6 +40,125 @@ export type WorkstationPanel = {
   rows: { id: string; lead?: ReactNode; text: ReactNode; meta?: ReactNode }[];
   emptyLabel?: string;
 };
+
+// Tab labels carry a trailing build-tracking code by team convention
+// (e.g. "FSCA conduct reports (W216)"). That code is engineering bookkeeping
+// with no meaning to the operator at the desk. Strip it at render time so the
+// convention can stay in source while the workstation stays in the operator's
+// language. Only a trailing "(W<digit>…)" is removed — "(VaR)", "(WACC)" etc.
+// are left intact.
+function cleanTabLabel(label: string): string {
+  return label.replace(/\s*\(W\d[^)]*\)\s*$/, '').trim() || label;
+}
+
+// Shared tab navigation. Extracted from the two render branches below so the
+// group filter, the quick-jump search, and label cleaning live in one place.
+// A workstation can accumulate dozens of tabs; once it passes the recognition
+// threshold a search box lets the operator jump straight to a tab by name
+// across every group instead of scanning four rows of pills.
+function TabNav({
+  tabs,
+  activeTab,
+  onSelect,
+  hasGroups,
+  allGroups,
+  activeGroup,
+  setActiveGroup,
+}: {
+  tabs: WorkstationTab[];
+  activeTab: string;
+  onSelect: (key: string) => void;
+  hasGroups: boolean;
+  allGroups: string[];
+  activeGroup: string | null;
+  setActiveGroup: (g: string | null) => void;
+}) {
+  const [q, setQ] = useState('');
+  const query = q.trim().toLowerCase();
+  const showSearch = tabs.length > 8;
+
+  // While searching, span every group so the operator finds the tab wherever
+  // it lives; otherwise honour the active group filter.
+  const grouped = hasGroups && activeGroup != null ? tabs.filter(t => t.group === activeGroup) : tabs;
+  const visible = query
+    ? tabs.filter(t => cleanTabLabel(t.label).toLowerCase().includes(query))
+    : grouped;
+
+  const pick = (key: string) => { onSelect(key); if (query) setQ(''); };
+
+  return (
+    <nav className="bg-white border border-[#dde4ec] rounded-lg p-1.5 w-full">
+      {showSearch && (
+        <div className="flex items-center gap-2 px-1.5 pb-2 mb-2 border-b border-[#eef2f7]">
+          <Search size={13} className="text-[#9aa6b5] shrink-0" />
+          <input
+            value={q}
+            onChange={e => setQ(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Escape') setQ('');
+              if (e.key === 'Enter' && visible.length > 0) pick(visible[0].key);
+            }}
+            placeholder={`Jump to any of ${tabs.length} tabs…`}
+            aria-label="Filter workstation tabs"
+            className="flex-1 h-7 bg-transparent text-[12px] text-[#0f1c2e] placeholder:text-[#9aa6b5] rounded px-1 outline-none focus-visible:ring-1 focus-visible:ring-[#1a3a5c]"
+          />
+          {q && (
+            <button
+              onClick={() => setQ('')}
+              aria-label="Clear tab filter"
+              className="text-[11px] font-medium text-[#6b7685] hover:text-[#0f1c2e] shrink-0"
+            >
+              clear
+            </button>
+          )}
+        </div>
+      )}
+      {hasGroups && !query && (
+        <div className="flex flex-wrap items-center gap-1 pb-2 border-b border-[#eef2f7] mb-2">
+          <button
+            onClick={() => setActiveGroup(null)}
+            className={`h-7 px-2 rounded text-[11px] font-medium ${
+              activeGroup === null ? 'bg-[#1a3a5c] text-white' : 'text-[#6b7685] hover:bg-gray-50'
+            }`}
+          >
+            All
+          </button>
+          {allGroups.map(g => (
+            <button
+              key={g}
+              onClick={() => setActiveGroup(g)}
+              className={`h-7 px-2 rounded text-[11px] font-medium ${
+                activeGroup === g ? 'bg-[#1a3a5c] text-white' : 'text-[#6b7685] hover:bg-gray-50'
+              }`}
+            >
+              {g}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="flex flex-wrap items-center gap-1">
+        {visible.length === 0 ? (
+          <span className="px-2 py-1.5 text-[12px] text-[#6b7685] italic">No tabs match “{q}”.</span>
+        ) : (
+          visible.map(t => {
+            const isActive = activeTab === t.key;
+            return (
+              <button
+                key={t.key}
+                onClick={() => pick(t.key)}
+                className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-2 ${
+                  isActive ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'
+                }`}
+              >
+                {cleanTabLabel(t.label)}
+              </button>
+            );
+          })
+        )}
+      </div>
+    </nav>
+  );
+}
 
 export function WorkstationShell({
   eyebrow,
@@ -98,10 +217,6 @@ export function WorkstationShell({
     const g = tabs.find(t => t.key === activeTab)?.group || null;
     setActiveGroup(g);
   }, [activeTab, hasGroups, tabs]);
-
-  const visibleTabs = hasGroups && activeGroup != null
-    ? tabs.filter(t => t.group === activeGroup)
-    : tabs;
 
   // KPI tone helpers
   const toneArrow: Record<string, string> = { up: '↑', down: '↓', warn: '⚠' };
@@ -210,47 +325,15 @@ export function WorkstationShell({
             </div>
           )}
 
-          <nav className="bg-white border border-[#dde4ec] rounded-lg p-1.5 w-full">
-            {hasGroups && (
-              <div className="flex flex-wrap items-center gap-1 pb-2 border-b border-[#eef2f7] mb-2">
-                <button
-                  onClick={() => setActiveGroup(null)}
-                  className={`h-7 px-2 rounded text-[11px] font-medium ${
-                    activeGroup === null ? 'bg-[#1a3a5c] text-white' : 'text-[#6b7685] hover:bg-gray-50'
-                  }`}
-                >
-                  All
-                </button>
-                {allGroups.map(g => (
-                  <button
-                    key={g}
-                    onClick={() => setActiveGroup(g)}
-                    className={`h-7 px-2 rounded text-[11px] font-medium ${
-                      activeGroup === g ? 'bg-[#1a3a5c] text-white' : 'text-[#6b7685] hover:bg-gray-50'
-                    }`}
-                  >
-                    {g}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="flex flex-wrap items-center gap-1">
-              {visibleTabs.map(t => {
-                const isActive = activeTab === t.key;
-                return (
-                  <button
-                    key={t.key}
-                    onClick={() => setTab(t.key)}
-                    className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-2 ${
-                      isActive ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                );
-              })}
-            </div>
-          </nav>
+          <TabNav
+            tabs={tabs}
+            activeTab={activeTab}
+            onSelect={setTab}
+            hasGroups={hasGroups}
+            allGroups={allGroups}
+            activeGroup={activeGroup}
+            setActiveGroup={setActiveGroup}
+          />
 
           <div key={`${activeTab}-${bump}`}>{current.body({ onRefresh: refresh })}</div>
         </div>
@@ -301,42 +384,15 @@ export function WorkstationShell({
         )}
       </section>
 
-      <nav className="bg-white border border-[#dde4ec] rounded-lg p-1.5 w-full">
-        {hasGroups && (
-          <div className="flex flex-wrap items-center gap-1 pb-2 border-b border-[#eef2f7] mb-2">
-            <button
-              onClick={() => setActiveGroup(null)}
-              className={`h-7 px-2 rounded text-[11px] font-medium ${
-                activeGroup === null ? 'bg-[#1a3a5c] text-white' : 'text-[#6b7685] hover:bg-gray-50'
-              }`}
-            >
-              All
-            </button>
-            {allGroups.map(g => (
-              <button
-                key={g}
-                onClick={() => setActiveGroup(g)}
-                className={`h-7 px-2 rounded text-[11px] font-medium ${
-                  activeGroup === g ? 'bg-[#1a3a5c] text-white' : 'text-[#6b7685] hover:bg-gray-50'
-                }`}
-              >
-                {g}
-              </button>
-            ))}
-          </div>
-        )}
-        <div className="flex flex-wrap items-center gap-1">
-          {visibleTabs.map(t => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`h-9 px-3 rounded-md text-[12px] font-semibold ${activeTab === t.key ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'}`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </nav>
+      <TabNav
+        tabs={tabs}
+        activeTab={activeTab}
+        onSelect={setTab}
+        hasGroups={hasGroups}
+        allGroups={allGroups}
+        activeGroup={activeGroup}
+        setActiveGroup={setActiveGroup}
+      />
 
       <div key={`${activeTab}-${bump}`}>{current.body({ onRefresh: refresh })}</div>
     </div>
@@ -525,7 +581,7 @@ export function ActionModal({
           {err && <div className="text-[12px] text-red-700">{err}</div>}
           {fields.map(f => (
             <label key={f.key} className="block text-[13px]">
-              <span className="text-[#6b7685]">{f.label}{f.required && ' *'}</span>
+              <span className="text-[#6b7685]">{cleanTabLabel(f.label)}{f.required && ' *'}</span>
               {f.type === 'textarea' ? (
                 <textarea value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} rows={4} placeholder={f.placeholder} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none" />
               ) : f.type === 'select' ? (
