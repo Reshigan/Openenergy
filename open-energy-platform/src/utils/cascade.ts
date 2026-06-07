@@ -2,7 +2,6 @@
 // Cascade Event System — 35+ Event Types → Notifications + Webhooks + Audit
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { regulatorInboxSpec, computeSlaDueAt } from './regulator-inbox-spec';
 import type { PlatformEventFields } from './platform-event';
 import { runCascadeRegistry } from './cascade-registry';
 import { computeAndRecordFee } from './fee-engine';
@@ -3313,54 +3312,6 @@ async function deliverWebhooks(ctx: CascadeContext): Promise<void> {
 async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
   switch (ctx.event) {
   }
-
-  // Wave 5: regulator-inbox materializer. Any event in the curated allowlist
-  // below lands a row in oe_regulator_inbox so the regulator can ack /
-  // escalate / dismiss it with an SLA. Failures here are non-fatal — the
-  // primary cascade work already completed.
-  try {
-    await materializeRegulatorInbox(ctx);
-  } catch (err) {
-    console.error('regulator-inbox materializer failed', err);
-  }
-}
-
-/**
- * Wave 5 — regulator observation loop.
- *
- * Maps a curated set of regulator-relevant cascade events into a single
- * row in oe_regulator_inbox so the regulator gets one place to ack +
- * triage them. `sla_due_at` is derived from the resolved severity (see
- * SLA_HOURS_BY_SEVERITY in regulator-inbox-spec.ts).
- *
- * The escalation cron scans rows where ack_status='pending' and
- * sla_due_at is in the past, then bumps them to 'escalated' (and, for
- * rules with on_breach='open_case', opens an enforcement case).
- */
-async function materializeRegulatorInbox(ctx: CascadeContext): Promise<void> {
-  const spec = regulatorInboxSpec(ctx.event, ctx.entity_id, ctx.data);
-  if (!spec) return;
-
-  const now = new Date();
-  const dueAt = computeSlaDueAt(spec.severity, now);
-
-  await ctx.env.DB.prepare(`
-    INSERT INTO oe_regulator_inbox
-      (id, source_event, source_entity_type, source_entity_id, severity,
-       title, body_json, ack_status, sla_due_at, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
-  `).bind(
-    generateId(),
-    ctx.event,
-    ctx.entity_type,
-    ctx.entity_id,
-    spec.severity,
-    spec.title,
-    JSON.stringify(ctx.data || {}),
-    dueAt,
-    now.toISOString(),
-    now.toISOString(),
-  ).run();
 }
 
 function generateId(): string {
