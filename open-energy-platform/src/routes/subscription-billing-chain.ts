@@ -110,28 +110,37 @@ app.get('/', async (c) => {
   const offset = (parseInt(page) - 1) * parseInt(per_page);
   const now = new Date();
 
-  let q = 'SELECT * FROM oe_subscription_invoices WHERE 1=1';
-  const params: (string | number)[] = [];
+  let whereClause = 'WHERE 1=1';
+  const whereParams: (string | number)[] = [];
 
-  if (status)  { q += ' AND chain_status = ?';           params.push(status); }
-  if (tier)    { q += ' AND subscription_tier = ?';      params.push(tier); }
-  if (period)  { q += ' AND billing_period = ?';         params.push(period); }
-  if (breached === 'true') { q += ' AND sla_breached = 1'; }
+  if (status)  { whereClause += ' AND chain_status = ?';      whereParams.push(status); }
+  if (tier)    { whereClause += ' AND subscription_tier = ?'; whereParams.push(tier); }
+  if (period)  { whereClause += ' AND billing_period = ?';    whereParams.push(period); }
+  if (breached === 'true') { whereClause += ' AND sla_breached = 1'; }
 
-  q += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-  params.push(parseInt(per_page), offset);
-
-  const rs = await c.env.DB.prepare(q).bind(...params).all<InvoiceRow>();
+  const rs = await c.env.DB
+    .prepare(`SELECT * FROM oe_subscription_invoices ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`)
+    .bind(...whereParams, parseInt(per_page), offset)
+    .all<InvoiceRow>();
   const items = (rs.results || []).map(r => decorate(r, now));
 
+  // Stats span the full filtered set (every page), not just this page's rows,
+  // so an admin reading page 1 of a large tenant sees true totals.
+  const aggRow = await c.env.DB.prepare(
+    `SELECT
+       COUNT(*) AS total,
+       COALESCE(SUM(CASE WHEN chain_status = 'paid' THEN 1 ELSE 0 END), 0) AS paid,
+       COALESCE(SUM(CASE WHEN chain_status IN ('overdue','dunning_1','dunning_2') THEN 1 ELSE 0 END), 0) AS overdue,
+       COALESCE(SUM(CASE WHEN chain_status = 'suspended' THEN 1 ELSE 0 END), 0) AS suspended,
+       COALESCE(SUM(CASE WHEN chain_status IN ('overdue','dunning_1','dunning_2') THEN net_payable_zar * 12 ELSE 0 END), 0) AS arr_at_risk
+     FROM oe_subscription_invoices ${whereClause}`,
+  ).bind(...whereParams).first<{ total: number; paid: number; overdue: number; suspended: number; arr_at_risk: number }>();
   const stats = {
-    total:       items.length,
-    paid:        items.filter(i => i.chain_status === 'paid').length,
-    overdue:     items.filter(i => ['overdue','dunning_1','dunning_2'].includes(i.chain_status)).length,
-    suspended:   items.filter(i => i.chain_status === 'suspended').length,
-    arr_at_risk: items
-      .filter(i => ['overdue','dunning_1','dunning_2'].includes(i.chain_status))
-      .reduce((s, i) => s + i.net_payable_zar * 12, 0),
+    total:       aggRow?.total ?? 0,
+    paid:        aggRow?.paid ?? 0,
+    overdue:     aggRow?.overdue ?? 0,
+    suspended:   aggRow?.suspended ?? 0,
+    arr_at_risk: aggRow?.arr_at_risk ?? 0,
   };
 
   return c.json({ success: true, data: { invoices: items, stats } });
