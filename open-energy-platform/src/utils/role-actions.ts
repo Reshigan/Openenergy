@@ -8,6 +8,14 @@
 import type { HonoBindings } from './types';
 import type { PlatformRole } from './platform-event';
 
+export type RoleActionPriority = 'low' | 'normal' | 'high' | 'urgent';
+
+/** Canonical runtime set of valid role-action priorities (single source for
+ *  the RoleActionPriority union above) so producers can validate raw input. */
+export const ROLE_ACTION_PRIORITIES: ReadonlySet<RoleActionPriority> = new Set([
+  'low', 'normal', 'high', 'urgent',
+]);
+
 export interface RoleActionInput {
   target_role: PlatformRole | string;
   target_participant_id?: string;
@@ -18,7 +26,7 @@ export interface RoleActionInput {
   title: string;
   body?: Record<string, unknown>;
   cross_option?: { action_label: string; target_route: string; prefill?: Record<string, unknown> };
-  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  priority?: RoleActionPriority;
   sla_due_at?: string;
 }
 

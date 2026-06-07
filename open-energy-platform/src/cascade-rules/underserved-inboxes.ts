@@ -9,11 +9,10 @@
 // ─────────────────────────────────────────────────────────────────────────
 import type { CascadeContext } from '../utils/cascade';
 import { registerCascadeRule, type CascadeRule } from '../utils/cascade-registry';
-import { pushRoleAction } from '../utils/role-actions';
+import { pushRoleAction, ROLE_ACTION_PRIORITIES, type RoleActionPriority } from '../utils/role-actions';
 import { dstr, dnum } from '../utils/cascade-data';
 
 const CHAIN_KEY = 'underserved_inboxes';
-const ACTION_PRIORITIES = new Set(['low', 'normal', 'high', 'urgent']);
 
 async function alreadyPushed(ctx: CascadeContext, sourceEntityId: string): Promise<boolean> {
   const r = await ctx.env.DB.prepare(
@@ -98,9 +97,9 @@ const RULES: CascadeRule[] = [
       const subject = dstr(ctx, 'subject') ?? 'New ticket';
       const ticketNo = dstr(ctx, 'ticket_number');
       const ticketPriority = dstr(ctx, 'priority');
-      const priority = (ticketPriority && ACTION_PRIORITIES.has(ticketPriority)
+      const priority = (ticketPriority && ROLE_ACTION_PRIORITIES.has(ticketPriority as RoleActionPriority)
         ? ticketPriority
-        : 'normal') as 'low' | 'normal' | 'high' | 'urgent';
+        : 'normal') as RoleActionPriority;
       await pushRoleAction(ctx.env, {
         target_role: 'support',
         source_event: ctx.event,
