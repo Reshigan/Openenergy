@@ -92,7 +92,7 @@ function Kpi({ label, value, sub }: { label: string; value: string | number; sub
   );
 }
 
-export function WheelingChargesTab() {
+export function WheelingChargesTab({ scope = 'grid' }: { scope?: 'grid' | 'offtaker' } = {}) {
   const [rows, setRows] = useState<ChargeRow[]>([]);
   const [filter, setFilter] = useState<string>('open_disputed');
   const [drillRow, setDrillRow] = useState<ChargeRow | null>(null);
@@ -160,8 +160,9 @@ export function WheelingChargesTab() {
     <div data-testid="grid-wheeling-charges-tab" style={{ padding: '16px 20px', minHeight: 600 }}>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c2733', marginTop: 0 }}>Wheeling charges</h2>
       <p style={{ fontSize: 13, color: '#557', marginTop: 4 }}>
-        Monthly transmission-charge reconciliation against active wheeling agreements. Dispute window
-        is 14 days; expired disputed rows escalate to the regulator inbox automatically.
+        {scope === 'offtaker'
+          ? 'Monthly wheeling charges billed to you against active wheeling agreements. Raise a dispute within 14 days; unresolved disputes escalate to the regulator inbox automatically.'
+          : 'Monthly transmission-charge reconciliation against active wheeling agreements. Dispute window is 14 days; expired disputed rows escalate to the regulator inbox automatically.'}
       </p>
 
       <div data-testid="grid-wheeling-charges-kpis" style={{ display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
