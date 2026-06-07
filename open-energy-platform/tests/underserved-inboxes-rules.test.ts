@@ -61,6 +61,12 @@ describe('underserved-inbox cascade rules', () => {
     expect(db.prepare(`SELECT id FROM oe_role_action_queue WHERE source_entity_id='chg3'`).get()).toBeUndefined();
   });
 
+  it('grid.wheeling_charge_issued does not push when agreement_id is absent from the payload', async () => {
+    await runCascadeRegistry(ctx('grid.wheeling_charge_issued', 'oe_grid_wheeling_charges', 'chg4',
+      { period_month: '2026-05', total_zar: 99 }));
+    expect(db.prepare(`SELECT id FROM oe_role_action_queue WHERE source_entity_id='chg4'`).get()).toBeUndefined();
+  });
+
   it('support.ticket_opened pushes a role-wide action to support with the mapped priority', async () => {
     await runCascadeRegistry(ctx('support.ticket_opened', 'support_tickets', 'tkt1',
       { id: 'tkt1', ticket_number: 'OE-2026-ABC', reporter_id: 'rep1', subject: 'Inverter offline', category: 'technical', priority: 'urgent' }));

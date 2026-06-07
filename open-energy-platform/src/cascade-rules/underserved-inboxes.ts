@@ -69,9 +69,11 @@ const RULES: CascadeRule[] = [
       if (await alreadyPushed(ctx, ctx.entity_id)) return;
       const agreementId = dstr(ctx, 'agreement_id');
       if (!agreementId) return;
+      // ctx.env.DB.first() is not generic in this context (matches offtaker-procurement.ts);
+      // type the cast as nullable so the `!offtakerId` guard below is type-sound.
       const agreement = (await ctx.env.DB.prepare(
         `SELECT offtaker_id FROM oe_wheeling_agreements WHERE id = ?`,
-      ).bind(agreementId).first()) as { offtaker_id: string } | null;
+      ).bind(agreementId).first()) as { offtaker_id: string | null } | null;
       const offtakerId = agreement?.offtaker_id;
       if (!offtakerId) return;
       const total = dnum(ctx, 'total_zar');
