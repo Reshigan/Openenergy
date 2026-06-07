@@ -50,6 +50,7 @@ import { Grid } from './components/pages/Grid';
 import { ESG } from './components/pages/ESG';
 import { Funds } from './components/pages/Funds';
 import { Marketplace } from './components/pages/Marketplace';
+import { ModulesPage } from './components/pages/ModulesPage';
 import { Admin } from './components/pages/Admin';
 import { Support } from './components/pages/Support';
 import { Pipeline } from './components/pages/Pipeline';
@@ -1473,6 +1474,7 @@ function AppRoutes() {
       <Route path="/pipeline" element={<ProtectedRoute><Layout><Pipeline /></Layout></ProtectedRoute>} />
       <Route path="/procurement" element={<ProtectedRoute><Layout><ProcurementHub /></Layout></ProtectedRoute>} />
       <Route path="/marketplace" element={<ProtectedRoute><Layout><Marketplace /></Layout></ProtectedRoute>} />
+      <Route path="/modules" element={<ProtectedRoute><Layout><ModulesPage /></Layout></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><Layout><Admin /></Layout></ProtectedRoute>} />
       <Route path="/support" element={<ProtectedRoute><Layout><Support /></Layout></ProtectedRoute>} />
       <Route path="/admin/monitoring" element={<ProtectedRoute><Layout><Monitoring /></Layout></ProtectedRoute>} />
