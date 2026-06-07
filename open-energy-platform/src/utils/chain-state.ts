@@ -77,6 +77,7 @@ export async function computeOpenTerminal(db: DB, chainKey: string): Promise<Ope
   let open = 0;
   let terminal = 0;
   for (const row of (res.results ?? [])) {
+    if (!row.status) continue; // null/empty status: not a tracked P6 entity — neither open nor terminal
     if (isTerminalStatus(row.status, chainKey)) terminal += Number(row.c) || 0;
     else open += Number(row.c) || 0;
   }

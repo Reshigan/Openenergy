@@ -92,4 +92,18 @@ describe('computeOpenTerminal', () => {
     expect(r.open_count).toBe(2);     // A (paid, not a drawdown terminal), C (funded)
     expect(r.terminal_count).toBe(1); // B (closed)
   });
+
+  it('ignores entities whose latest status is null — neither open nor terminal', async () => {
+    // admin_revenue (the fee engine) emits events with source_chain_status = NULL:
+    // it is not a P6 lifecycle entity, so it must count in NEITHER bucket — no
+    // phantom open count. Seed via raw INSERT since ev() requires a string status.
+    db.prepare(
+      `INSERT INTO oe_platform_events
+         (id, event, chain_key, entity_type, entity_id, source_chain_status, occurred_at)
+       VALUES (?, 'x.transition', ?, 'demo', ?, NULL, ?)`,
+    ).run('n1', 'admin_revenue', 'fee-1', '2026-06-01T00:00:00Z');
+
+    const r = await computeOpenTerminal(DB as any, 'admin_revenue');
+    expect(r).toEqual({ open_count: 0, terminal_count: 0 });
+  });
 });

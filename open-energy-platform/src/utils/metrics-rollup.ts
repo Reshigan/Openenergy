@@ -6,11 +6,14 @@
 // 'yesterday'. Idempotent: re-running a date upserts on UNIQUE(metric_date,
 // chain_key). Uses env.DB.batch() for the writes.
 //
-// open_count / terminal_count in oe_chain_metrics require per-chain state read
-// off the live chain tables (a W6/W7 insights deliverable, read off replicas);
-// this rollup leaves them 0 and fills the event-derivable columns.
+// open_count / terminal_count in oe_chain_metrics are derived from the event log
+// (not the live chain tables) via computeOpenTerminal: for each entity under a
+// chain_key its latest source_chain_status is bucketed open vs terminal. Entities
+// whose latest status is null/empty (non-lifecycle keys like admin_revenue and
+// the synthetic 'unattributed') count in neither bucket.
 // ═══════════════════════════════════════════════════════════════════════════
 import type { HonoEnv } from './types';
+import { computeOpenTerminal } from './chain-state';
 
 type DB = HonoEnv['Bindings']['DB'];
 
@@ -76,17 +79,24 @@ export async function rollupMetrics(
       `SELECT MAX(occurred_at) AS last_event_at FROM oe_platform_events
         WHERE COALESCE(NULLIF(chain_key, ''), 'unattributed') = ?`,
     ).bind(ck).first<any>();
+    const ot = await computeOpenTerminal(db, ck);
     snapStmts.push(
       db.prepare(
         `INSERT INTO oe_chain_metrics
            (chain_key, open_count, terminal_count, breach_count, value_total_zar, last_event_at, updated_at)
-         VALUES (?, 0, 0, ?, ?, ?, ?)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(chain_key) DO UPDATE SET
+           open_count = excluded.open_count,
+           terminal_count = excluded.terminal_count,
            breach_count = excluded.breach_count,
            value_total_zar = excluded.value_total_zar,
            last_event_at = excluded.last_event_at,
            updated_at = excluded.updated_at`,
-      ).bind(ck, Number(cum?.breach_count || 0), Number(cum?.value_total_zar || 0), last?.last_event_at ?? null, now),
+      ).bind(
+        ck, ot.open_count, ot.terminal_count,
+        Number(cum?.breach_count || 0), Number(cum?.value_total_zar || 0),
+        last?.last_event_at ?? null, now,
+      ),
     );
   }
   await db.batch(snapStmts);
