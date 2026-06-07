@@ -3317,61 +3317,6 @@ async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
     // ─── National-scale action items ──────────────────────────────────
     // Each action enqueues a pending item for the affected participant's
     // dashboard. Due dates are capped so the item ages out of the queue.
-    case 'regulator.licence_suspended':
-    case 'regulator.licence_revoked': {
-      const pid = ctx.data?.licensee_participant_id as string | null;
-      if (pid) {
-        await enqueueAction(ctx.env.DB, {
-          type: 'regulatory_action',
-          priority: 'urgent',
-          actor_id: ctx.actor_id,
-          assignee_id: pid,
-          entity_type: ctx.entity_type,
-          entity_id: ctx.entity_id,
-          title: ctx.event === 'regulator.licence_revoked' ? 'Licence revoked — cease operations' : 'Licence suspended — halt activities under this licence',
-          description: `Details: ${ctx.data?.details || 'Consult the Regulator workbench for the event record.'}`,
-          due_date: new Date().toISOString().slice(0, 10),
-        });
-      }
-      break;
-    }
-
-    case 'regulator.enforcement_finding': {
-      const pid = ctx.data?.respondent_participant_id as string | null;
-      if (pid) {
-        await enqueueAction(ctx.env.DB, {
-          type: 'enforcement_finding',
-          priority: 'urgent',
-          actor_id: ctx.actor_id,
-          assignee_id: pid,
-          entity_type: 'regulator_enforcement_cases',
-          entity_id: ctx.entity_id,
-          title: `Enforcement finding: ${ctx.data?.case_number || ctx.entity_id}`,
-          description: `Penalty: R${(ctx.data?.penalty_amount_zar as number) || 0}. Consider appeal within statutory window.`,
-          due_date: daysFromNow(30),
-        });
-      }
-      break;
-    }
-
-    case 'regulator.surveillance_escalated': {
-      const pid = ctx.data?.participant_id as string | null;
-      if (pid) {
-        await enqueueAction(ctx.env.DB, {
-          type: 'surveillance_escalation',
-          priority: 'high',
-          actor_id: ctx.actor_id,
-          assignee_id: pid,
-          entity_type: 'regulator_enforcement_cases',
-          entity_id: (ctx.data?.case_id as string) || ctx.entity_id,
-          title: `Case opened: ${ctx.data?.case_number || ctx.entity_id}`,
-          description: `Surveillance rule ${ctx.data?.rule_code || ''} escalated to enforcement. Respond to the investigating officer.`,
-          due_date: daysFromNow(14),
-        });
-      }
-      break;
-    }
-
     case 'grid.instruction_issued': {
       const pid = ctx.data?.participant_id as string | null;
       if (pid) {
