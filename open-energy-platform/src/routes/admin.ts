@@ -535,4 +535,41 @@ admin.post('/users/:id/password-reset', async (c) => {
   return c.json({ success: true, data: { email: row.email, reset_url: resetUrl } });
 });
 
+// ---------- CASCADE DEAD-LETTER QUEUE ----------
+// Admins can already SEE the DLQ backlog (monitoring.ts /cascade-dlq). These
+// two endpoints let them ACT on it — replay a failed stage or mark a row
+// handled out-of-band. Mirrors the support routes (support.ts); the underlying
+// retryDlqItem/resolveDlqItem live in utils/cascade. Admin-gated by the module
+// middleware above; both calls are audited.
+admin.post('/cascade-dlq/:id/retry', async (c) => {
+  const actor = getCurrentUser(c);
+  const id = c.req.param('id');
+  const { retryDlqItem } = await import('../utils/cascade');
+  const result = await retryDlqItem(c.env as any, id, actor.id);
+  await auditLog(c.env, actor.id, 'admin.cascade_retry', 'cascade_dlq', id, {
+    ok: result.ok,
+    error: result.error || null,
+  });
+  // The `ok` flag carries success/failure; return 200 either way so the board
+  // can surface the stage's own error message without treating it as an HTTP
+  // fault.
+  return c.json({ ok: result.ok, error: result.error || null });
+});
+
+admin.post('/cascade-dlq/:id/resolve', async (c) => {
+  const actor = getCurrentUser(c);
+  const id = c.req.param('id');
+  const body = await c.req
+    .json<{ status?: 'resolved' | 'abandoned'; note?: string }>()
+    .catch(() => ({} as { status?: 'resolved' | 'abandoned'; note?: string }));
+  const status = body.status === 'resolved' ? 'resolved' : 'abandoned';
+  const { resolveDlqItem } = await import('../utils/cascade');
+  await resolveDlqItem(c.env as any, id, actor.id, status, body.note);
+  await auditLog(c.env, actor.id, 'admin.cascade_resolve', 'cascade_dlq', id, {
+    status,
+    note: body.note || null,
+  });
+  return c.json({ ok: true, status });
+});
+
 export default admin;
