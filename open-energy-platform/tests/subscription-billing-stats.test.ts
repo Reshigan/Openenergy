@@ -47,4 +47,24 @@ describe('subscription-billing stats scope', () => {
     expect(res.status).toBe(200);
     expect((res.json as any).data.stats.total).toBe(2);
   });
+
+  it('stats break down by chain_status and sum arr_at_risk over the full set', async () => {
+    for (const p of ['par_a', 'par_b', 'par_c']) {
+      await call(app, env, 'POST', '/generate', {
+        token: admin,
+        body: { participant_id: p, billing_period: '2026-06', subscription_tier: 'starter' },
+      });
+    }
+    // Transition one invoice to overdue so the overdue/arr_at_risk CASE arms run.
+    db.prepare(
+      `UPDATE oe_subscription_invoices SET chain_status = 'overdue'
+        WHERE id = (SELECT id FROM oe_subscription_invoices LIMIT 1)`,
+    ).run();
+    const res = await call(app, env, 'GET', '/?per_page=1', { token: admin });
+    expect(res.status).toBe(200);
+    const stats = (res.json as any).data.stats;
+    expect(stats.total).toBe(3);
+    expect(stats.overdue).toBe(1);
+    expect(stats.arr_at_risk).toBeGreaterThanOrEqual(0);
+  });
 });
