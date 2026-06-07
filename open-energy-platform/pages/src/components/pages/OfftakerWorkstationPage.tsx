@@ -401,11 +401,84 @@ type MixItem = {
   rationale?: string;
 };
 
+function OptionGroup({
+  title, options, actionLabel, onAct, busyId,
+}: {
+  title: string;
+  options: OfftakerOption[];
+  actionLabel: string;
+  onAct: (opt: OfftakerOption) => void;
+  busyId: string | null;
+}) {
+  return (
+    <div>
+      <div className="text-[12px] font-semibold text-[#6b7685] mb-2">{title}</div>
+      <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto text-[#0f1c2e]">
+        <table className="w-full text-[12px]">
+          <thead className="bg-[#f4f6f8] text-[#6b7685]">
+            <tr>
+              <th className="text-left p-2">Option</th>
+              <th className="text-right p-2">MWh / yr</th>
+              <th className="text-right p-2">R/MWh</th>
+              <th className="text-right p-2">Est. saving / yr</th>
+              <th className="text-right p-2">CO₂ avoided</th>
+              <th className="text-left p-2">When</th>
+              <th className="text-right p-2" aria-label="action" />
+            </tr>
+          </thead>
+          <tbody>
+            {options.map((o) => (
+              <tr key={o.option_id} className="border-t border-[#eef1f5]">
+                <td className="p-2 font-semibold">{o.title}</td>
+                <td className="p-2 text-right">{o.annual_mwh.toLocaleString()}</td>
+                <td className="p-2 text-right">R {o.blended_price_zar_per_mwh.toLocaleString()}</td>
+                <td className="p-2 text-right">R {o.est_saving_zar.toLocaleString()} ({o.est_saving_pct}%)</td>
+                <td className="p-2 text-right">{o.co2_avoided_tco2e.toLocaleString()} t</td>
+                <td className="p-2">{o.availability === 'now' ? 'Now' : (o.cod_estimate || 'Upcoming')}</td>
+                <td className="p-2 text-right">
+                  <button
+                    onClick={() => onAct(o)}
+                    disabled={busyId !== null}
+                    className="h-8 px-3 rounded-md bg-[#1a3a5c] text-white text-[11px] font-semibold disabled:opacity-60"
+                  >
+                    {busyId === o.option_id ? '…' : actionLabel}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 type MixResult = {
   mix: MixItem[];
   savings_pct?: number;
   carbon_tco2e?: number;
   warnings?: string[];
+};
+
+type OfftakerOption = {
+  option_id: string;
+  kind: 'project' | 'listing';
+  title: string;
+  target_participant_id: string;
+  availability: 'now' | 'upcoming';
+  cod_estimate: string | null;
+  annual_mwh: number;
+  blended_price_zar_per_mwh: number;
+  est_annual_cost_zar: number;
+  est_saving_zar: number;
+  est_saving_pct: number;
+  co2_avoided_tco2e: number;
+  rationale: string;
+};
+
+type OfftakerOptions = {
+  available_now: OfftakerOption[];
+  upcoming_projects: OfftakerOption[];
 };
 
 function BillUploadTab({ onRefresh }: { onRefresh: () => void }) {
@@ -418,6 +491,9 @@ function BillUploadTab({ onRefresh }: { onRefresh: () => void }) {
   const [optimizing, setOptimizing] = useState(false);
   const [mix, setMix] = useState<MixResult | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [options, setOptions] = useState<OfftakerOptions | null>(null);
+  const [loiBusy, setLoiBusy] = useState<string | null>(null); // option_id, or '__mix__' for the whole-mix draft
+  const [loiMsg, setLoiMsg] = useState<string | null>(null);
 
   const loadBills = useCallback(async () => {
     try {
@@ -454,6 +530,8 @@ function BillUploadTab({ onRefresh }: { onRefresh: () => void }) {
       const data = r.data?.data || {};
       setLatest({ id: data.bill_id, profile: (data.structured || {}) as BillProfile });
       setMix(null);
+      setOptions(null);
+      setLoiMsg(null);
       await loadBills();
       onRefresh();
     } catch (e) {
@@ -462,6 +540,15 @@ function BillUploadTab({ onRefresh }: { onRefresh: () => void }) {
       setUploading(false);
     }
   };
+
+  const loadOptions = useCallback(async (billId: string) => {
+    try {
+      const r = await api.get('/offtaker/options', { params: { bill_id: billId } });
+      setOptions((r.data?.data || { available_now: [], upcoming_projects: [] }) as OfftakerOptions);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'failed to load options');
+    }
+  }, []);
 
   const optimize = async () => {
     if (!latest) return;
@@ -474,10 +561,63 @@ function BillUploadTab({ onRefresh }: { onRefresh: () => void }) {
       });
       const structured = (r.data?.data?.structured || {}) as MixResult;
       setMix(structured);
+      await loadOptions(latest.id);
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'optimize failed');
     } finally {
       setOptimizing(false);
+    }
+  };
+
+  const draftFromMix = async () => {
+    if (!mix?.mix?.length) return;
+    setLoiBusy('__mix__');
+    setLoiMsg(null);
+    setErr(null);
+    try {
+      const r = await api.post('/ai/offtaker/loi', { mix: mix.mix, horizon_years: 15 });
+      const n = ((r.data?.data?.drafts as unknown[]) || []).length;
+      setLoiMsg(`${n} Letter${n === 1 ? '' : 's'} of Intent drafted — each developer has been notified. Open "Letters of Intent" to send.`);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'failed to draft LOIs');
+    } finally {
+      setLoiBusy(null);
+    }
+  };
+
+  const draftOne = async (opt: OfftakerOption) => {
+    setLoiBusy(opt.option_id);
+    setLoiMsg(null);
+    setErr(null);
+    try {
+      const r = await api.post('/ai/offtaker/loi', {
+        mix: [{ project_id: opt.option_id, share_pct: 100, mwh_per_year: opt.annual_mwh, blended_price: opt.blended_price_zar_per_mwh }],
+        horizon_years: 15,
+      });
+      const n = ((r.data?.data?.drafts as unknown[]) || []).length;
+      setLoiMsg(n > 0
+        ? `LOI drafted for ${opt.title} — the developer has been notified.`
+        : `No LOI drafted for ${opt.title} (the developer may be in another tenant).`);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'failed to draft LOI');
+    } finally {
+      setLoiBusy(null);
+    }
+  };
+
+  const inquire = async (opt: OfftakerOption) => {
+    setLoiBusy(opt.option_id);
+    setLoiMsg(null);
+    setErr(null);
+    try {
+      await api.post(`/marketplace/listings/${opt.option_id}/inquire`, {
+        message: `Interested in ${opt.title} — approx ${opt.annual_mwh.toLocaleString()} MWh/yr.`,
+      });
+      setLoiMsg(`Inquiry sent for ${opt.title} — the seller has been notified.`);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'failed to send inquiry');
+    } finally {
+      setLoiBusy(null);
     }
   };
 
@@ -586,15 +726,38 @@ function BillUploadTab({ onRefresh }: { onRefresh: () => void }) {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
             <Card label="Estimated savings" value={mix.savings_pct} unit="%" />
             <Card label="Annual CO₂ avoided" value={mix.carbon_tco2e} unit="tCO₂e" />
-            <div className="rounded-xl border border-[#dde4ec] bg-white p-4">
-              <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Next step</div>
-              <div className="text-[13px] mt-1 text-[#0f1c2e]">Draft LOI from this mix — routes to each developer's action queue.</div>
+            <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex flex-col justify-between">
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Next step</div>
+                <div className="text-[13px] mt-1 text-[#0f1c2e]">Draft an LOI to every developer in this mix. Each one lands in the developer's action queue.</div>
+              </div>
+              <button
+                onClick={draftFromMix}
+                disabled={loiBusy !== null}
+                className="mt-3 h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-60"
+              >
+                {loiBusy === '__mix__' ? 'Drafting…' : 'Draft LOIs from this mix'}
+              </button>
             </div>
           </div>
+          {loiMsg && <div className="mt-2 text-[12px] text-[#0f7553]">{loiMsg}</div>}
           {mix.warnings && mix.warnings.length > 0 && (
             <ul className="mt-2 text-[12px] text-[#a16207] list-disc pl-5">
               {mix.warnings.map((w, i) => <li key={i}>{w}</li>)}
             </ul>
+          )}
+        </div>
+      )}
+
+      {/* Procurement options — available now + upcoming, each scored vs the bill */}
+      {options && (options.available_now.length > 0 || options.upcoming_projects.length > 0) && (
+        <div className="space-y-4">
+          <h3 className="text-[13px] font-semibold text-[#3d4756]">Procurement options matched to this bill</h3>
+          {options.available_now.length > 0 && (
+            <OptionGroup title="Available now · marketplace" options={options.available_now} actionLabel="Send inquiry" onAct={inquire} busyId={loiBusy} />
+          )}
+          {options.upcoming_projects.length > 0 && (
+            <OptionGroup title="Upcoming projects" options={options.upcoming_projects} actionLabel="Draft LOI" onAct={draftOne} busyId={loiBusy} />
           )}
         </div>
       )}
