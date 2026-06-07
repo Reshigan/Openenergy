@@ -150,7 +150,6 @@ export function IppWorkstationPage() {
         { key: 'wul', label: 'Water use licence (W170)', group: 'Environmental', body: () => <IppWulTab /> },
         { key: 'hra', label: 'Heritage resources assessment (W171)', group: 'Environmental', body: () => <IppHraTab /> },
         { key: 'ael', label: 'Atmospheric emission licence (W172)', group: 'Environmental', body: () => <IppAelTab /> },
-        { key: 'force-majeure', label: 'Force majeure declaration (W173)', group: 'Risk', body: () => <IppForceMajeureTab /> },
         { key: 'lc-report', label: 'Local content & SED compliance (W174)', group: 'Risk', body: () => <IppLcReportTab /> },
         { key: 'milestone-cert', label: 'Milestone certification (W175)', group: 'Risk', body: () => <IppMilestoneCertTab /> },
         { key: 'esmr', label: 'DFI E&S monitoring report (W176)', group: 'Risk', body: () => <IppEsmrTab /> },
