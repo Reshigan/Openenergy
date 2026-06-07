@@ -17,6 +17,7 @@ import { TariffIndexationTab } from '../offtaker/TariffIndexationTab';
 import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConnectorTab';
 import { SapOracleErpConnectorTab } from '../sapOracleErpConnector/SapOracleErpConnectorTab';
 import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/GovernmentFilingConnectorTab';
+import { WheelingChargesTab } from '../grid/WheelingChargesTab';
 
 export function OfftakerWorkstationPage() {
   const kpis = useWorkstationKpis('offtaker');
@@ -50,6 +51,7 @@ export function OfftakerWorkstationPage() {
         { key: 'ppa_nomination', label: 'PPA nominations', group: 'Contracts', body: () => <PpaNominationChainTab /> },
         { key: 'ppa_annual_recon', label: 'PPA annual reconciliation', group: 'Contracts', body: () => <PpaAnnualReconChainTab /> },
         { key: 'wheeling_access', label: 'Wheeling access (W219)', group: 'Contracts', body: ({ onRefresh }) => <WheelingAccessTab onRefresh={onRefresh} /> },
+        { key: 'wheeling_charges', label: 'Wheeling charges', group: 'Contracts', body: () => <WheelingChargesTab /> },
         { key: 'sites', label: 'Sites & groups', group: 'Operations', body: ({ onRefresh }) => <SitesTab onRefresh={onRefresh} /> },
         { key: 'tariffs', label: 'Tariffs', group: 'Operations', body: () => <TariffsTab /> },
         { key: 'budgets', label: 'Budget vs actual', group: 'Operations', body: ({ onRefresh }) => <BudgetsTab onRefresh={onRefresh} /> },
