@@ -103,6 +103,7 @@ export function CarbonWorkstationPage() {
         {
           key: 'retirement_chain',
           label: 'Retirement chain',
+          chainKey: 'carbon_retirement',
           body: () => <RetirementChainTab />,
         },
         {
