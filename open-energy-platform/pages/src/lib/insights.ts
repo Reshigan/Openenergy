@@ -18,11 +18,18 @@ export interface ThroughputPoint {
   regulator_crossings: number;
 }
 
+export interface ChainTotals {
+  events_30d: number;
+  value_30d_zar: number;
+  breaches_30d: number;
+  crossings_30d: number;
+}
+
 export interface ChainInsights {
   chain_key: string;
   snapshot: ChainSnapshot;
   throughput: ThroughputPoint[];
-  totals: { events_30d: number; value_30d_zar: number; breaches_30d: number; crossings_30d: number };
+  totals: ChainTotals;
   bottleneck: { status: string; open_entities: number } | null;
 }
 
@@ -37,6 +44,7 @@ export interface InsightAiCard {
 /** Per-chain rollup stats for the InsightsPanel. */
 export async function getChainInsights(chainKey: string): Promise<ChainInsights> {
   const res = await api.get<{ data: ChainInsights }>(`/insights/chain/${encodeURIComponent(chainKey)}`);
+  if (!res.data.data) throw new Error('insights: missing data envelope');
   return res.data.data;
 }
 
