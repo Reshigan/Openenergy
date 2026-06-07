@@ -10,6 +10,7 @@ import { registerOnaOperationsRules } from './ona-operations';
 import { registerEsgEventRules } from './esg-events';
 import { registerRegulatorActionRules } from './regulator-actions';
 import { registerGridDispatchRules } from './grid-dispatch';
+import { registerTraderMarginRules } from './trader-margin';
 
 registerTradingSafetyRules();
 registerLifecycleSequencingRules();
@@ -20,5 +21,6 @@ registerOnaOperationsRules();
 registerEsgEventRules();
 registerRegulatorActionRules();
 registerGridDispatchRules();
+registerTraderMarginRules();
 
-export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules, registerGridDispatchRules };
+export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules, registerGridDispatchRules, registerTraderMarginRules };

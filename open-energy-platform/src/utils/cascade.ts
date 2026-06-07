@@ -3317,26 +3317,6 @@ async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
     // ─── National-scale action items ──────────────────────────────────
     // Each action enqueues a pending item for the affected participant's
     // dashboard. Due dates are capped so the item ages out of the queue.
-    case 'trader.margin_call_issued': {
-      const pid = ctx.data?.participant_id as string | null;
-      if (pid) {
-        await enqueueAction(ctx.env.DB, {
-          type: 'margin_call',
-          priority: 'urgent',
-          actor_id: ctx.actor_id,
-          assignee_id: pid,
-          entity_type: 'margin_calls',
-          entity_id: ctx.entity_id,
-          title: 'Margin call — post collateral',
-          description: `Shortfall R${(ctx.data?.shortfall_zar as number) || 0}. Due by ${ctx.data?.due_by || 'end of next business day'}.`,
-          due_date: typeof ctx.data?.due_by === 'string'
-            ? (ctx.data.due_by as string).slice(0, 10)
-            : daysFromNow(1),
-        });
-      }
-      break;
-    }
-
     case 'lender.covenant_breach': {
       // Notify both the lender and the project developer. Both assignees
       // get the same action structure so we build the list up-front and
