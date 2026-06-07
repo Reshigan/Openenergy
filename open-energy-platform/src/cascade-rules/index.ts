@@ -15,6 +15,7 @@ import { registerLenderCovenantRules } from './lender-covenant';
 import { registerCarbonEventRules } from './carbon-events';
 import { registerRegulatorInboxRules } from './regulator-inbox';
 import { registerOfftakerProcurementRules } from './offtaker-procurement';
+import { registerUnderservedInboxRules } from './underserved-inboxes';
 
 registerTradingSafetyRules();
 registerLifecycleSequencingRules();
@@ -30,5 +31,6 @@ registerLenderCovenantRules();
 registerCarbonEventRules();
 registerRegulatorInboxRules();
 registerOfftakerProcurementRules();
+registerUnderservedInboxRules();
 
-export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules, registerGridDispatchRules, registerTraderMarginRules, registerLenderCovenantRules, registerCarbonEventRules, registerRegulatorInboxRules, registerOfftakerProcurementRules };
+export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules, registerGridDispatchRules, registerTraderMarginRules, registerLenderCovenantRules, registerCarbonEventRules, registerRegulatorInboxRules, registerOfftakerProcurementRules, registerUnderservedInboxRules };
