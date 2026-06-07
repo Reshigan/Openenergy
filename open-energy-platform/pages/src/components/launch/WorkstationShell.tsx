@@ -10,8 +10,9 @@
 import React, { useCallback, useEffect, useState, ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import IncomingPanel from './IncomingPanel';
-import WizardShell from './WizardShell';
-import { actOnRoleAction, type RoleAction } from '../../lib/roleActions';
+import InsightsPanel from './InsightsPanel';
+import CrossOptionModal from './CrossOptionModal';
+import { type RoleAction } from '../../lib/roleActions';
 import { ArrowLeft, RefreshCw, Search } from 'lucide-react';
 import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
@@ -27,6 +28,8 @@ export type WorkstationTab = {
   key: string;
   label: string;
   group?: string;
+  /** Layer-D chain_key — when set, this tab shows a per-chain InsightsPanel rail. */
+  chainKey?: string;
   body: (props: { onRefresh: () => void }) => ReactNode;
 };
 
@@ -198,7 +201,7 @@ export function WorkstationShell({
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [bump, setBump] = useState(0);
 
-  // Layer-C cross-role inbox: the action the operator chose to act on (drives WizardShell).
+  // Layer-C cross-role inbox: the action the operator chose to act on (drives CrossOptionModal).
   const [active, setActive] = useState<RoleAction | null>(null);
 
   const setTab = (k: string) => {
@@ -238,42 +241,27 @@ export function WorkstationShell({
     <IncomingPanel className="hidden xl:block xl:w-80 shrink-0" onAct={setActive} />
   );
 
-  const wizard = active ? (
-    <WizardShell
-      open
-      heading={active.title}
-      finalLabel={active.cross_option?.action_label ?? 'Confirm'}
-      steps={[
-        {
-          title: 'Review',
-          render: () => (
-            <div className="space-y-1">
-              <p className="text-[#3d4756]">{active.title}</p>
-              <p className="text-[11px] text-[#9aa6b5]">
-                Source: {active.source_chain_key ?? active.source_entity_type} · {active.source_entity_id}
-              </p>
-            </div>
-          ),
-        },
-        {
-          title: 'Confirm',
-          render: () => (
-            <p className="text-[#3d4756]">
-              This marks the action complete and opens{' '}
-              <span className="text-[#0f1c2e] font-medium">{active.cross_option?.target_route}</span>.
-            </p>
-          ),
-        },
-      ]}
-      onClose={() => setActive(null)}
-      onComplete={async () => {
-        try { await actOnRoleAction(active.id, 'action'); } catch { /* surfaced on next inbox refresh */ }
-        const route = active.cross_option?.target_route;
-        setActive(null);
-        if (route) navigate(route);
-      }}
+  // Layer-D per-feature insight rail — only when the active tab is chain-backed.
+  // `current` (the active tab) is resolved above; remount on chainKey change so
+  // the panel re-fetches cleanly for the newly selected chain.
+  const activeChainKey = current?.chainKey;
+  const insightsRail = activeChainKey ? (
+    <InsightsPanel
+      key={activeChainKey}
+      chainKey={activeChainKey}
+      label={current?.label}
+      className="hidden xl:block xl:w-80 shrink-0"
     />
   ) : null;
+
+  // Layer-C cross-role next-step sheet (self-guards to null when there's nothing to suggest).
+  const crossOption = (
+    <CrossOptionModal
+      action={active}
+      onClose={() => setActive(null)}
+      onActioned={() => setActive(null)}
+    />
+  );
 
   if (role) {
     const effectiveDensity = densityState.density;
@@ -386,9 +374,12 @@ export function WorkstationShell({
 
               <div key={`${activeTab}-${bump}`}>{current.body({ onRefresh: refresh })}</div>
             </div>
-            {incomingRail}
+            <div className="hidden xl:flex xl:flex-col gap-5 shrink-0">
+              {incomingRail}
+              {insightsRail}
+            </div>
           </div>
-          {wizard}
+          {crossOption}
         </div>
       </RoleShell>
     );
@@ -451,9 +442,12 @@ export function WorkstationShell({
 
           <div key={`${activeTab}-${bump}`}>{current.body({ onRefresh: refresh })}</div>
         </div>
-        {incomingRail}
+        <div className="hidden xl:flex xl:flex-col gap-5 shrink-0">
+          {incomingRail}
+          {insightsRail}
+        </div>
       </div>
-      {wizard}
+      {crossOption}
     </div>
   );
 }
