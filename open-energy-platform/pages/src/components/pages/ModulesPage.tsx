@@ -13,14 +13,18 @@ interface ModuleRow {
 // entry here has no first-class destination yet, so its card renders without an
 // Open affordance even when enabled.
 const MODULE_ROUTE: Record<string, string> = {
-  spot_trading: '/trading',
-  carbon_credits: '/carbon',
-  project_dev: '/projects',
-  ppa_management: '/contracts',
-  esg_tracking: '/esg',
+  bilateral_trading: '/trading',
+  exchange: '/trading',
+  carbon_market: '/carbon',
+  ipp_projects: '/projects',
+  esg_sustainability: '/esg',
   grid_wheeling: '/grid',
+  fund_management: '/funds',
+  deal_rooms: '/contracts',
   procurement: '/procurement',
-  deal_room: '/contracts',
+  intelligence: '/intelligence',
+  morning_briefing: '/briefing',
+  marketplace: '/marketplace',
 };
 
 export function ModulesPage() {
