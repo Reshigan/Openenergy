@@ -414,6 +414,7 @@ import vcmOrderBookRoutes from './routes/vcm-order-book';
 import sustainabilityMarketplaceRoutes, { listingSlaSweep } from './routes/sustainability-marketplace';
 import sustainabilityTransactionChainRoutes, { transactionSlaSweep } from './routes/sustainability-transaction-chain';
 import certBundleChainRoutes, { certBundleSlaSweep } from './routes/certificate-bundle-chain';
+import subscriptionBillingChainRoutes, { subscriptionBillingSlaSweep } from './routes/subscription-billing-chain';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -1115,6 +1116,7 @@ app.route('/api/vcm/order-book', vcmOrderBookRoutes);
 app.route('/api/sustainability/marketplace', sustainabilityMarketplaceRoutes);
 app.route('/api/sustainability/transactions', sustainabilityTransactionChainRoutes);
 app.route('/api/certificate-track/bundle', certBundleChainRoutes);
+app.route('/api/subscription/billing', subscriptionBillingChainRoutes);
 // platformFeaturesRoutes is the catch-all for /api — it must remain LAST
 // so all specific /api/* mounts above are tried first.
 app.route('/api', platformFeaturesRoutes);
@@ -3985,6 +3987,14 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('ipp_submittal_cycle_refresh', async () => {
         const result = await ippSubmittalCycleRefresh(env as never);
         console.log('ipp_submittal_cycle_refresh', JSON.stringify(result));
+      });
+      // Wave 228 - Platform subscription billing dunning sweep: mark
+      // payment_pending invoices past their SLA deadline as overdue and
+      // escalate overdue -> dunning_1 -> dunning_2 every 3 days. Runs in the
+      // daily dunning/margin cycle alongside the other revenue sweeps.
+      await safe('subscription_billing_sla_sweep', async () => {
+        const result = await subscriptionBillingSlaSweep(env);
+        console.log('subscription_billing_sla_sweep', JSON.stringify(result));
       });
       break;
 
