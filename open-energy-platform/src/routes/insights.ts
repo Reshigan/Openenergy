@@ -133,13 +133,16 @@ insights.get('/chain/:chainKey/ai', async (c) => {
   const recentBreaches = sum(recent, 'sla_breaches');
   const priorBreaches = sum(prior, 'sla_breaches');
   if (recentBreaches >= 3 && recentBreaches > priorBreaches) {
-    const pct = priorBreaches > 0 ? Math.round(((recentBreaches - priorBreaches) / priorBreaches) * 100) : 100;
+    // From a zero prior baseline a "% up" figure is meaningless (it's a brand
+    // new spike, not a multiple), so report the raw count in that case.
+    const title = priorBreaches > 0
+      ? `SLA breaches up ${Math.round(((recentBreaches - priorBreaches) / priorBreaches) * 100)}% week-over-week`
+      : `${recentBreaches} SLA breaches this week`;
     cards.push({
       key: 'breach_spike',
-      title: `SLA breaches up ${pct}% week-over-week`,
+      title,
       why: `${recentBreaches} breaches in the last 7 days vs ${priorBreaches} the week before. Review the slowest stage and re-assign or escalate before the trend compounds.`,
       confidence: 0.7,
-      accept: { label: 'Review breaches', href: `/insights?chain=${encodeURIComponent(chainKey)}` },
     });
   }
 
