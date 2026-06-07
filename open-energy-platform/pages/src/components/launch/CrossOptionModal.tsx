@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, X } from 'lucide-react';
 import { actOnRoleAction, type RoleAction } from '../../lib/roleActions';
@@ -25,6 +25,7 @@ function withPrefill(route: string, prefill?: Record<string, unknown>): string {
 export default function CrossOptionModal({ action, onClose, onActioned }: CrossOptionModalProps) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!action) return undefined;
@@ -32,6 +33,11 @@ export default function CrossOptionModal({ action, onClose, onActioned }: CrossO
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [action, onClose]);
+
+  useEffect(() => {
+    if (!action) return;
+    dialogRef.current?.querySelector<HTMLElement>('button')?.focus();
+  }, [action]);
 
   if (!action || !action.cross_option) return null;
   const co = action.cross_option;
@@ -42,15 +48,17 @@ export default function CrossOptionModal({ action, onClose, onActioned }: CrossO
     onActioned?.(action.id);
     const route = withPrefill(co.target_route, co.prefill);
     setBusy(false);
-    onClose();
     navigate(route);
+    onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0b1c30]/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0b1c30]/40 backdrop-blur-sm" onClick={onClose}>
       <div
         role="dialog" aria-modal="true" aria-label="Suggested next step"
+        ref={dialogRef}
         className="w-full sm:max-w-md bg-white border border-[#dde4ec] rounded-t-2xl sm:rounded-xl shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-start justify-between px-5 py-3 border-b border-[#eef2f7]">
           <div>
