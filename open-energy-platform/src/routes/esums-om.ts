@@ -165,13 +165,17 @@ om.post('/sites', async (c) => {
   const b = await c.req.json().catch(() => ({} as any));
   if (!b.name || !b.capacity_mw) return c.json({ success: false, error: 'name + capacity_mw required' }, 400);
   const id = genId('omsite');
+  // Only platform officers may attribute a new site to another participant
+  // (on-behalf onboarding). Non-officers are pinned to their own id so they
+  // cannot plant a site into another tenant's namespace.
+  const ownerId = OM_OFFICER_ROLES.includes(user.role) ? (b.participant_id || user.id) : user.id;
   await c.env.DB.prepare(`
     INSERT INTO om_sites (id, name, participant_id, project_id, technology, capacity_mw, capacity_kwp,
       province, latitude, longitude, commissioning_date, ppa_id, ppa_tariff_zar_mwh,
       om_contractor_id, lender_id, status)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).bind(
-    id, b.name, b.participant_id || user.id, b.project_id || null,
+    id, b.name, ownerId, b.project_id || null,
     b.technology || 'solar', Number(b.capacity_mw), b.capacity_kwp ? Number(b.capacity_kwp) : null,
     b.province || null, b.latitude ? Number(b.latitude) : null, b.longitude ? Number(b.longitude) : null,
     b.commissioning_date || null, b.ppa_id || null, b.ppa_tariff_zar_mwh ? Number(b.ppa_tariff_zar_mwh) : null,
