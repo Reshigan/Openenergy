@@ -36,6 +36,25 @@ describe('isTerminalStatus', () => {
     expect(isTerminalStatus(null)).toBe(false);
     expect(isTerminalStatus('')).toBe(false);
   });
+
+  // Registry path — registered chains classify via their spec's authoritative
+  // isTerminal(), which overrides (and corrects) the context-blind heuristic.
+  it('uses the per-chain registry over the heuristic when chainKey is supplied', () => {
+    // drawdown terminal set is exactly {closed, rejected, cancelled} (no 'paid').
+    // The heuristic includes 'paid' as a terminal token, so this proves the
+    // registry is consulted AND is more accurate than the substring fallback.
+    expect(isTerminalStatus('paid')).toBe(true);              // heuristic (wrong for drawdown)
+    expect(isTerminalStatus('paid', 'drawdown')).toBe(false); // registry (correct)
+    // a real drawdown terminal still resolves terminal via the registry.
+    expect(isTerminalStatus('closed', 'drawdown')).toBe(true);
+    expect(isTerminalStatus('funded', 'drawdown')).toBe(false); // live state — open
+  });
+
+  it('falls back to the heuristic for chains with no registry entry', () => {
+    // 'ppa_contract' is not a registered emitting chain → heuristic decides.
+    expect(isTerminalStatus('settled', 'ppa_contract')).toBe(true);
+    expect(isTerminalStatus('under_review', 'ppa_contract')).toBe(false);
+  });
 });
 
 describe('computeOpenTerminal', () => {
@@ -58,5 +77,19 @@ describe('computeOpenTerminal', () => {
   it('returns zeros for an unknown chain', async () => {
     const r = await computeOpenTerminal(DB as any, 'nope');
     expect(r).toEqual({ open_count: 0, terminal_count: 0 });
+  });
+
+  it('uses the per-chain registry end-to-end for a registered chain', async () => {
+    // drawdown's terminal set is {closed, rejected, cancelled}. 'paid' is NOT a
+    // drawdown state, yet the heuristic would mis-bucket it terminal. With the
+    // registry wired through, the latest='paid' entity is correctly counted OPEN.
+    ev('d1', 'drawdown', 'A', 'requested', '2026-06-01T00:00:00Z');
+    ev('d2', 'drawdown', 'A', 'paid',      '2026-06-02T00:00:00Z'); // heuristic→terminal, registry→open
+    ev('d3', 'drawdown', 'B', 'closed',    '2026-06-01T00:00:00Z'); // truly terminal
+    ev('d4', 'drawdown', 'C', 'funded',    '2026-06-01T00:00:00Z'); // live → open
+
+    const r = await computeOpenTerminal(DB as any, 'drawdown');
+    expect(r.open_count).toBe(2);     // A (paid, not a drawdown terminal), C (funded)
+    expect(r.terminal_count).toBe(1); // B (closed)
   });
 });

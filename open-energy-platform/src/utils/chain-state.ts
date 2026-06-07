@@ -3,16 +3,27 @@
 // open_count / terminal_count for a chain are derived from the append-only
 // oe_platform_events log, NOT from the ~80 live chain tables: for each entity
 // under a chain_key we take its latest source_chain_status and bucket it open
-// vs terminal via a token heuristic. Zero per-chain code — a new chain appears
+// vs terminal. Registered chains (those in chain-terminal-registry.ts) classify
+// via their spec's authoritative isTerminal(); the rest fall back to the
+// approximate substring heuristic in isTerminalStatus(). A new chain appears
 // automatically the moment it emits its first PlatformEvent with a chain_key.
 // ═══════════════════════════════════════════════════════════════════════════
 import type { HonoEnv } from './types';
+import { terminalClassifierFor } from './chain-terminal-registry';
 
 type DB = HonoEnv['Bindings']['DB'];
 
 // Substrings that mark a P6 terminal state across the platform's chains.
 // Matching is case-insensitive and substring-based so e.g. 'claim_paid',
 // 'force_closed', 'auto_expired', 'write_off' all resolve to terminal.
+//
+// ⚠ BEST-EFFORT FALLBACK ONLY. ~22% of status tokens are context-dependent —
+// 'paid', 'issued', 'closed', 'settled', 'rejected', 'withdrawn' are terminal
+// in some chains but intermediate/live in others — so this single global
+// heuristic is only approximate. Chains that emit `chain_key` get EXACT
+// classification via their spec's authoritative isTerminal(), registered in
+// chain-terminal-registry.ts; this heuristic applies only to chains not yet
+// registered there.
 const TERMINAL_TOKENS = [
   'settled', 'closed', 'reject', 'withdraw', 'cancel', 'expire', 'retire',
   'written_off', 'write_off', 'writeoff', 'paid', 'granted', 'refused',
@@ -20,9 +31,22 @@ const TERMINAL_TOKENS = [
   'cleared', 'dismissed', 'resolved', 'void', 'abandoned',
 ] as const;
 
-/** True when `status` names a P6 terminal state. Null/empty → open (false). */
-export function isTerminalStatus(status: string | null | undefined): boolean {
+/**
+ * True when `status` names a P6 terminal state. Null/empty → open (false).
+ *
+ * When `chainKey` is supplied AND that chain is in the terminal registry, the
+ * chain's authoritative spec isTerminal() decides (exact). Otherwise it falls
+ * back to the approximate substring heuristic above.
+ */
+export function isTerminalStatus(
+  status: string | null | undefined,
+  chainKey?: string,
+): boolean {
   if (!status) return false;
+  if (chainKey) {
+    const classifier = terminalClassifierFor(chainKey);
+    if (classifier) return classifier(status);
+  }
   const s = status.toLowerCase();
   return TERMINAL_TOKENS.some((t) => s.includes(t));
 }
@@ -53,7 +77,7 @@ export async function computeOpenTerminal(db: DB, chainKey: string): Promise<Ope
   let open = 0;
   let terminal = 0;
   for (const row of (res.results ?? [])) {
-    if (isTerminalStatus(row.status)) terminal += Number(row.c) || 0;
+    if (isTerminalStatus(row.status, chainKey)) terminal += Number(row.c) || 0;
     else open += Number(row.c) || 0;
   }
   return { open_count: open, terminal_count: terminal };
