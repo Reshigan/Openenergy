@@ -15,6 +15,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { buildOfftakerOptions } from '../utils/offtaker-options';
 
 const offtaker = new Hono<HonoEnv>();
 
@@ -188,6 +189,38 @@ offtaker.delete('/delivery-points/:id', async (c) => {
     env: c.env,
   });
   return c.json({ success: true, data: { id, deleted: true } });
+});
+
+// ─── GET /offtaker/options ──────────────────────────────────────────────────
+// Procurement options for the calling offtaker: marketplace listings available
+// now + upcoming IPP projects, each scored vs the bill profile. Reads the named
+// bill (?bill_id=) or the latest one; falls back to demo defaults so the view is
+// never blank. Mirrors the bill-profile read in POST /api/ai/offtaker/optimize.
+offtaker.get('/options', async (c) => {
+  const user = getCurrentUser(c);
+  const billId = c.req.query('bill_id');
+
+  let profile: Record<string, unknown> | undefined;
+  try {
+    if (billId) {
+      const row = await c.env.DB.prepare(
+        `SELECT ai_result_json FROM offtaker_bills WHERE id = ? AND offtaker_id = ?`,
+      ).bind(billId, user.id).first<{ ai_result_json: string }>();
+      if (row?.ai_result_json) { try { profile = JSON.parse(row.ai_result_json); } catch { /* ignore */ } }
+    }
+    if (!profile) {
+      const row = await c.env.DB.prepare(
+        `SELECT ai_result_json FROM offtaker_bills WHERE offtaker_id = ? ORDER BY created_at DESC LIMIT 1`,
+      ).bind(user.id).first<{ ai_result_json: string }>();
+      if (row?.ai_result_json) { try { profile = JSON.parse(row.ai_result_json); } catch { /* ignore */ } }
+    }
+  } catch { /* offtaker_bills may not exist until a first upload — fall to defaults */ }
+
+  const annual_kwh = Number(profile?.annual_kwh ?? 1_200_000);
+  const avg_tariff_zar_per_kwh = Number(profile?.avg_tariff_zar_per_kwh ?? 2.15);
+
+  const options = await buildOfftakerOptions(c.env, user.id, { annual_kwh, avg_tariff_zar_per_kwh });
+  return c.json({ success: true, data: options });
 });
 
 export default offtaker;
