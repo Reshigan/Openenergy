@@ -430,10 +430,10 @@ function OptionGroup({
             {options.map((o) => (
               <tr key={o.option_id} className="border-t border-[#eef1f5]">
                 <td className="p-2 font-semibold">{o.title}</td>
-                <td className="p-2 text-right">{o.annual_mwh.toLocaleString()}</td>
-                <td className="p-2 text-right">R {o.blended_price_zar_per_mwh.toLocaleString()}</td>
-                <td className="p-2 text-right">R {o.est_saving_zar.toLocaleString()} ({o.est_saving_pct}%)</td>
-                <td className="p-2 text-right">{o.co2_avoided_tco2e.toLocaleString()} t</td>
+                <td className="p-2 text-right">{Number(o.annual_mwh || 0).toLocaleString()}</td>
+                <td className="p-2 text-right">R {Number(o.blended_price_zar_per_mwh || 0).toLocaleString()}</td>
+                <td className="p-2 text-right">R {Number(o.est_saving_zar || 0).toLocaleString()} ({Number(o.est_saving_pct || 0)}%)</td>
+                <td className="p-2 text-right">{Number(o.co2_avoided_tco2e || 0).toLocaleString()} t</td>
                 <td className="p-2">{o.availability === 'now' ? 'Now' : (o.cod_estimate || 'Upcoming')}</td>
                 <td className="p-2 text-right">
                   <button
@@ -753,6 +753,7 @@ function BillUploadTab({ onRefresh }: { onRefresh: () => void }) {
       {options && (options.available_now.length > 0 || options.upcoming_projects.length > 0) && (
         <div className="space-y-4">
           <h3 className="text-[13px] font-semibold text-[#3d4756]">Procurement options matched to this bill</h3>
+          {loiMsg && <div className="text-[12px] text-[#0f7553]">{loiMsg}</div>}
           {options.available_now.length > 0 && (
             <OptionGroup title="Available now · marketplace" options={options.available_now} actionLabel="Send inquiry" onAct={inquire} busyId={loiBusy} />
           )}
