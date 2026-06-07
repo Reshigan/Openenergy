@@ -12,7 +12,7 @@
 import { Hono } from 'hono';
 import type { HonoEnv } from '../utils/types';
 import { authMiddleware } from '../middleware/auth';
-import { computeOpenTerminal } from '../utils/chain-state';
+import { computeOpenTerminal, isTerminalStatus } from '../utils/chain-state';
 
 const insights = new Hono<HonoEnv>();
 insights.use('*', authMiddleware);
@@ -59,7 +59,9 @@ insights.get('/chain/:chainKey', async (c) => {
   );
 
   // Snapshot prefers the live open/terminal read (always current); the cumulative
-  // value/breach/last_event come from the nightly snapshot if present.
+  // value/breach/last_event come from the nightly snapshot if present. When no
+  // nightly snapshot row exists yet, value_total_zar falls back to the trailing-30d
+  // total (best-effort, not lifetime).
   const snapshot = {
     open_count: openTerminal.open_count,
     terminal_count: openTerminal.terminal_count,
@@ -68,8 +70,13 @@ insights.get('/chain/:chainKey', async (c) => {
     last_event_at: (snapRow?.last_event_at as string | null) ?? null,
   };
 
-  // Bottleneck = the open (non-terminal) status holding the most entities right now.
-  const bn = await c.env.DB.prepare(
+  // Bottleneck = the OPEN (non-terminal) status holding the most entities right
+  // now. We fetch the full non-null status histogram (ordered by count) and pick
+  // the first non-terminal one, classified by the chain's authoritative
+  // isTerminalStatus (registry-exact for registered chains, heuristic otherwise).
+  // TODO(W7): this is a second windowed scan over the same event subset as
+  // computeOpenTerminal — collapse into a single histogram read off the replica.
+  const hist = await c.env.DB.prepare(
     `WITH latest AS (
        SELECT entity_id, source_chain_status,
               ROW_NUMBER() OVER (PARTITION BY entity_id ORDER BY occurred_at DESC, id DESC) AS rn
@@ -78,8 +85,9 @@ insights.get('/chain/:chainKey', async (c) => {
      )
      SELECT source_chain_status AS status, COUNT(*) AS c
        FROM latest WHERE rn = 1 AND source_chain_status IS NOT NULL
-      GROUP BY source_chain_status ORDER BY c DESC LIMIT 1`,
-  ).bind(chainKey).first<{ status: string; c: number }>();
+      GROUP BY source_chain_status ORDER BY c DESC`,
+  ).bind(chainKey).all<{ status: string; c: number }>();
+  const bn = (hist.results ?? []).find((r) => !isTerminalStatus(r.status, chainKey)) ?? null;
 
   return c.json({
     success: true,
@@ -113,7 +121,10 @@ insights.get('/chain/:chainKey/ai', async (c) => {
   const cards: AiCard[] = [];
   if (daily.length === 0) return c.json({ success: true, data: cards });
 
-  // Split into recent 7d vs prior 7d for delta-based anomaly cards.
+  // Split into the last 7 ROWS vs the prior 7 rows (not calendar windows). Daily
+  // rows are unique per day, so for a chain emitting daily this is 7d vs prior 7d;
+  // a sparse chain's windows span more days, and a chain with ≤7 rows has an empty
+  // prior window — the guards below (>=3, priorX>0) degrade safely in that case.
   const recent = daily.slice(-7);
   const prior = daily.slice(-14, -7);
   const sum = (rows: DailyRow[], k: keyof DailyRow) =>
@@ -144,11 +155,11 @@ insights.get('/chain/:chainKey/ai', async (c) => {
 
   const recentValue = sum(recent, 'value_total_zar');
   const priorValue = sum(prior, 'value_total_zar');
-  if (priorValue > 0 && recentValue < priorValue * 0.5 && recentValue >= 0) {
+  if (priorValue > 0 && recentValue < priorValue * 0.5) {
     cards.push({
       key: 'throughput_drop',
       title: 'Value processed dropped sharply',
-      why: `R${Math.round(recentValue).toLocaleString()} flowed through this chain in the last 7 days vs R${Math.round(priorValue).toLocaleString()} the prior week. Check for a stuck stage or a stalled counterparty.`,
+      why: `R${Math.round(recentValue).toLocaleString('en-ZA')} flowed through this chain in the last 7 days vs R${Math.round(priorValue).toLocaleString('en-ZA')} the prior week. Check for a stuck stage or a stalled counterparty.`,
       confidence: 0.6,
     });
   }

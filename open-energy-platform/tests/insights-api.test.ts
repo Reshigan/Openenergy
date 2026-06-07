@@ -85,6 +85,7 @@ describe('insights API — chain stats', () => {
     expect(body.data.snapshot.open_count).toBe(1);
     expect(body.data.snapshot.terminal_count).toBe(1);
     expect(body.data.throughput.length).toBe(2);
+    expect(body.data.bottleneck).toEqual({ status: 'under_review', open_entities: 1 });
   });
 
   it('401s without a token', async () => {
@@ -103,6 +104,27 @@ describe('insights API — AI cards', () => {
     const body = await res.json() as any;
     const keys = (body.data as Array<{ key: string }>).map(c => c.key);
     expect(keys).toContain('breach_spike');
+  });
+
+  it('emits a throughput_drop card when recent value collapses vs the prior window', async () => {
+    daily('2026-05-30', 'tp', 5, 10000, 0, 0); // prior window (oldest of 8 rows)
+    for (const d of ['05-31','06-01','06-02','06-03','06-04','06-05','06-06']) {
+      daily(`2026-${d}`, 'tp', 1, 0, 0, 0);     // recent 7 rows, zero value
+    }
+    const res = await app().request('/chain/tp/ai', { headers: { Authorization: `Bearer ${await token()}` } }, env);
+    expect(res.status).toBe(200);
+    const body = await res.json() as any;
+    const keys = (body.data as Array<{ key: string }>).map(c => c.key);
+    expect(keys).toContain('throughput_drop');
+  });
+
+  it('emits a regulator_attention card when recent regulator crossings reach the threshold', async () => {
+    daily('2026-06-06', 'rg', 5, 0, 0, 3);
+    const res = await app().request('/chain/rg/ai', { headers: { Authorization: `Bearer ${await token()}` } }, env);
+    expect(res.status).toBe(200);
+    const body = await res.json() as any;
+    const keys = (body.data as Array<{ key: string }>).map(c => c.key);
+    expect(keys).toContain('regulator_attention');
   });
 
   it('returns an empty array for a chain with no metrics', async () => {
