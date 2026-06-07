@@ -134,6 +134,34 @@ describe('buildOfftakerOptions', () => {
     const opts = await buildOfftakerOptions(env, 'off1', { annual_kwh: 1_000_000, avg_tariff_zar_per_kwh: 0 });
     expect(opts.upcoming_projects[0].est_saving_pct).toBe(0);
   });
+
+  it('falls back to demand MWh and the default price when project volume/price are NULL', async () => {
+    seedParticipant('dev4', 'ipp_developer');
+    db.prepare(
+      `INSERT INTO ipp_projects (id, project_name, developer_id, structure_type, technology, capacity_mw, location, status, ppa_volume_mwh, ppa_price_per_mwh)
+       VALUES ('p4','No Terms','dev4','build_own_operate','solar',50,'WC','development',NULL,NULL)`,
+    ).run();
+    const opts = await buildOfftakerOptions(env, 'off1', { annual_kwh: 1_000_000, avg_tariff_zar_per_kwh: 2.0 });
+    const o = opts.upcoming_projects[0];
+    // NULL volume → offered falls back to demand 1000 MWh → covered 1000
+    expect(o.annual_mwh).toBe(1000);
+    // NULL price → fallback 1850 ZAR/MWh → cost 1,850,000 ; current 1000*1000*2.0 = 2,000,000 ; saving 150,000
+    expect(o.blended_price_zar_per_mwh).toBe(1850);
+    expect(o.est_saving_zar).toBe(150_000);
+  });
+
+  it('reports a negative saving when the option is pricier than the current tariff (no clamp)', async () => {
+    seedParticipant('dev5', 'ipp_developer');
+    db.prepare(
+      `INSERT INTO ipp_projects (id, project_name, developer_id, structure_type, technology, capacity_mw, location, status, ppa_volume_mwh, ppa_price_per_mwh)
+       VALUES ('p5','Premium Green','dev5','build_own_operate','solar',20,'GP','development',1000,3000)`,
+    ).run();
+    const opts = await buildOfftakerOptions(env, 'off1', { annual_kwh: 1_000_000, avg_tariff_zar_per_kwh: 2.0 });
+    const o = opts.upcoming_projects[0];
+    // covered 1000 ; option 1000*3000 = 3,000,000 ; current 1000*1000*2.0 = 2,000,000 ; saving -1,000,000 → -50%
+    expect(o.est_saving_zar).toBe(-1_000_000);
+    expect(o.est_saving_pct).toBe(-50);
+  });
 });
 ```
 
