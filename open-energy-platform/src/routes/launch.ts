@@ -1653,7 +1653,7 @@ async function buildAdminBoard(c: any, user: any): Promise<LaunchPayload> {
               title: `${cascadeDlq + settlementDlq} item${(cascadeDlq + settlementDlq) === 1 ? '' : 's'} stuck in DLQ`,
               why: 'Cascade + settlement DLQ items represent failed automation. Drain or escalate before they block downstream consumers.',
               confidence: 0.92,
-              accept: { label: 'Open monitoring', href: '/admin/monitoring' },
+              accept: { label: 'Drain cascade DLQ', href: '/admin-platform/workstation?tab=cascade-dlq' },
               dismiss: { label: 'Dismiss' },
             } as AiSuggestion,
           ]

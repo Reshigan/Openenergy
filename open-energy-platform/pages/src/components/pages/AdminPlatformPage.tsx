@@ -281,7 +281,7 @@ export function AdminPlatformPage() {
       label: 'Cascade DLQ',
       endpoint: '/admin/monitoring/cascade-dlq',
       params: { status: 'pending' },
-      description: 'Pending cascade DLQ items — retry or resolve from the Support console.',
+      description: 'Pending cascade DLQ items. Retry or resolve from the admin workstation Cascade DLQ tab.',
       columns: [
         { key: 'event', label: 'Event' },
         { key: 'entity_type', label: 'Entity type' },
