@@ -2421,9 +2421,7 @@ export async function fireCascade(ctx: CascadeContext): Promise<void> {
     /* runStage already persisted to DLQ; nothing else to do. */
   });
 
-  await runStage(ctx, 'special', () => handleSpecialCascades(ctx));
-
-  // ── Ecosystem layers (additive; coexist with handleSpecialCascades) ────────
+  // ── Ecosystem layers (additive) ─────────────────────────────────────────────
   // Each is error-isolated so a layer failure never breaks the cascade. When
   // env.QUEUE is provisioned (national scale) these move to a Queue consumer;
   // until then they run inline and awaited so tests observe their effect.
@@ -2626,7 +2624,9 @@ export async function retryDlqItem(
         await deliverWebhooks(ctx);
         break;
       case 'special':
-        await handleSpecialCascades(ctx);
+        // Legacy DLQ rows recorded under the old special stage replay through
+        // the registry; the original handler was removed in W5.
+        await runCascadeRegistry(ctx);
         break;
       case 'registry':
         await runCascadeRegistry(ctx);
@@ -3306,11 +3306,6 @@ async function deliverWebhooks(ctx: CascadeContext): Promise<void> {
     } catch (err) {
       console.error(`Webhook delivery failed to ${url}:`, err);
     }
-  }
-}
-
-async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
-  switch (ctx.event) {
   }
 }
 
