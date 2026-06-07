@@ -20,13 +20,19 @@ function dnum(ctx: CascadeContext, key: string): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
-async function alreadyPushed(
-  ctx: CascadeContext, sourceEntityId: string, targetRole: string,
-): Promise<boolean> {
+// Best-effort dedup keyed on (source_entity_id, source_event) ONLY — never the
+// target role. Each source entity has exactly one logical target (one LOI → one
+// IPP; one inquiry → one seller), so if the resolved role drifts between firings
+// (e.g. the seller's participant role is edited) we must still treat it as the
+// same push, not a fresh one. NOTE: this is check-then-insert with no DB UNIQUE
+// guard, so a genuine double-fire (DLQ replay racing the original) can still slip
+// through. Hard idempotency would need a UNIQUE index on oe_role_action_queue —
+// a platform-wide Layer-C change affecting every producer, out of scope here.
+async function alreadyPushed(ctx: CascadeContext, sourceEntityId: string): Promise<boolean> {
   const r = await ctx.env.DB.prepare(
     `SELECT id FROM oe_role_action_queue
-      WHERE source_entity_id = ? AND source_event = ? AND target_role = ? LIMIT 1`,
-  ).bind(sourceEntityId, ctx.event, targetRole).first();
+      WHERE source_entity_id = ? AND source_event = ? LIMIT 1`,
+  ).bind(sourceEntityId, ctx.event).first();
   return !!r;
 }
 
@@ -40,7 +46,7 @@ const RULES: CascadeRule[] = [
     run: async (ctx: CascadeContext) => {
       const ipp = dstr(ctx, 'counterparty_id');
       if (!ipp) return;
-      if (await alreadyPushed(ctx, ctx.entity_id, 'ipp_developer')) return;
+      if (await alreadyPushed(ctx, ctx.entity_id)) return;
       const name = dstr(ctx, 'project_name') ?? 'a project';
       await pushRoleAction(ctx.env, {
         target_role: 'ipp_developer',
@@ -71,11 +77,11 @@ const RULES: CascadeRule[] = [
     run: async (ctx: CascadeContext) => {
       const seller = dstr(ctx, 'seller_id');
       if (!seller) return;
+      if (await alreadyPushed(ctx, ctx.entity_id)) return;
       const row = (await ctx.env.DB.prepare(
         `SELECT role FROM participants WHERE id = ?`,
       ).bind(seller).first()) as { role: string } | null;
       const role = row?.role ?? 'ipp_developer';
-      if (await alreadyPushed(ctx, ctx.entity_id, role)) return;
       const listingId = dstr(ctx, 'listing_id');
       await pushRoleAction(ctx.env, {
         target_role: role,

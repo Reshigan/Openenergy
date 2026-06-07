@@ -27,7 +27,7 @@ describe('offtaker-procurement cascade rules', () => {
       project_name: 'Karoo Solar', annual_mwh: 5000, blended_price: 1200,
     }));
     const row = db.prepare(
-      `SELECT target_role, target_participant_id, title, cross_option_json, priority, source_chain_key
+      `SELECT target_role, target_participant_id, title, body_json, cross_option_json, priority, source_chain_key
          FROM oe_role_action_queue WHERE source_entity_id = 'loi_1'`,
     ).get() as any;
     expect(row.target_role).toBe('ipp_developer');
@@ -36,6 +36,10 @@ describe('offtaker-procurement cascade rules', () => {
     expect(row.priority).toBe('high');
     expect(row.source_chain_key).toBe('offtaker_procurement');
     expect(JSON.parse(row.cross_option_json).target_route).toBe('/lois/loi_1');
+    const body = JSON.parse(row.body_json);
+    expect(body.project_id).toBe('p1');
+    expect(body.annual_mwh).toBe(5000);
+    expect(body.blended_price).toBe(1200);
     const audit = db.prepare(
       `SELECT outcome FROM oe_cascade_rule_audit WHERE rule_id = 'offtaker_procurement.loi_to_ipp' ORDER BY created_at DESC LIMIT 1`,
     ).get() as any;
@@ -71,11 +75,28 @@ describe('offtaker-procurement cascade rules', () => {
       listing_id: 'l1', seller_id: 'sell1',
     }));
     const row = db.prepare(
-      `SELECT target_role, target_participant_id, cross_option_json FROM oe_role_action_queue WHERE source_entity_id = 'mi_1'`,
+      `SELECT target_role, target_participant_id, priority, body_json, cross_option_json FROM oe_role_action_queue WHERE source_entity_id = 'mi_1'`,
     ).get() as any;
     expect(row.target_role).toBe('offtaker');
     expect(row.target_participant_id).toBe('sell1');
+    expect(row.priority).toBe('normal');
+    expect(JSON.parse(row.body_json).listing_id).toBe('l1');
     expect(JSON.parse(row.cross_option_json).target_route).toBe('/marketplace?listing=l1');
+  });
+
+  it('stays idempotent on a marketplace inquiry even if the seller role changes between firings', async () => {
+    db.prepare(
+      `INSERT INTO participants (id, email, password_hash, name, role, status)
+       VALUES ('sell9','s9@t.co','x','Seller9','offtaker','active')`,
+    ).run();
+    const c = ctx('marketplace.inquired', 'marketplace_inquiries', 'mi_9', { listing_id: 'l9', seller_id: 'sell9' });
+    await runCascadeRegistry(c);
+    // Role drifts (participant edited). Dedup keys on (source_entity_id, source_event),
+    // NOT the resolved role, so the second firing must still be a no-op.
+    db.prepare(`UPDATE participants SET role = 'trader' WHERE id = 'sell9'`).run();
+    await runCascadeRegistry(c);
+    const n = db.prepare(`SELECT COUNT(*) AS n FROM oe_role_action_queue WHERE source_entity_id = 'mi_9'`).get() as any;
+    expect(n.n).toBe(1);
   });
 
   it('marketplace.inquired falls back to ipp_developer when the seller role is unknown', async () => {
