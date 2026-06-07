@@ -431,8 +431,16 @@ function OptionGroup({
               <tr key={o.option_id} className="border-t border-[#eef1f5]">
                 <td className="p-2 font-semibold">{o.title}</td>
                 <td className="p-2 text-right">{Number(o.annual_mwh || 0).toLocaleString()}</td>
-                <td className="p-2 text-right">R {Number(o.blended_price_zar_per_mwh || 0).toLocaleString()}</td>
-                <td className="p-2 text-right">R {Number(o.est_saving_zar || 0).toLocaleString()} ({Number(o.est_saving_pct || 0)}%)</td>
+                <td className="p-2 text-right">
+                  {o.blended_price_zar_per_mwh == null
+                    ? <span className="text-[#6b7685]">Contact seller</span>
+                    : `${o.price_basis === 'indicative' ? '~R ' : 'R '}${Number(o.blended_price_zar_per_mwh).toLocaleString()}`}
+                </td>
+                <td className="p-2 text-right">
+                  {o.est_saving_zar == null
+                    ? <span className="text-[#6b7685]">—</span>
+                    : `R ${Number(o.est_saving_zar).toLocaleString()} (${Number(o.est_saving_pct ?? 0)}%)`}
+                </td>
                 <td className="p-2 text-right">{Number(o.co2_avoided_tco2e || 0).toLocaleString()} t</td>
                 <td className="p-2">{o.availability === 'now' ? 'Now' : (o.cod_estimate || 'Upcoming')}</td>
                 <td className="p-2 text-right">
@@ -468,10 +476,12 @@ type OfftakerOption = {
   availability: 'now' | 'upcoming';
   cod_estimate: string | null;
   annual_mwh: number;
-  blended_price_zar_per_mwh: number;
-  est_annual_cost_zar: number;
-  est_saving_zar: number;
-  est_saving_pct: number;
+  price_basis: 'listed' | 'indicative' | 'contact_seller';
+  // null ⇒ withheld (contact_seller); cost/saving null in lockstep.
+  blended_price_zar_per_mwh: number | null;
+  est_annual_cost_zar: number | null;
+  est_saving_zar: number | null;
+  est_saving_pct: number | null;
   co2_avoided_tco2e: number;
   rationale: string;
 };
@@ -591,7 +601,7 @@ function BillUploadTab({ onRefresh }: { onRefresh: () => void }) {
     setErr(null);
     try {
       const r = await api.post('/ai/offtaker/loi', {
-        mix: [{ project_id: opt.option_id, share_pct: 100, mwh_per_year: opt.annual_mwh, blended_price: opt.blended_price_zar_per_mwh }],
+        mix: [{ project_id: opt.option_id, share_pct: 100, mwh_per_year: opt.annual_mwh, blended_price: opt.blended_price_zar_per_mwh ?? null }],
         horizon_years: 15,
       });
       const n = ((r.data?.data?.drafts as unknown[]) || []).length;

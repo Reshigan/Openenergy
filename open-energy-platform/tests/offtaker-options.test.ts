@@ -36,6 +36,9 @@ describe('buildOfftakerOptions', () => {
     expect(opts.upcoming_projects).toHaveLength(1);
     const o = opts.upcoming_projects[0];
     expect(o.kind).toBe('project');
+    // A not-yet-operating project carries a modelled price → shown as an
+    // indicative band, never a raw contracted figure.
+    expect(o.price_basis).toBe('indicative');
     expect(o.target_participant_id).toBe('dev1');
     expect(o.availability).toBe('upcoming');
     expect(o.cod_estimate).toBe('construction');
@@ -47,7 +50,7 @@ describe('buildOfftakerOptions', () => {
     expect(o.co2_avoided_tco2e).toBe(Math.round(5000 * 0.95));
   });
 
-  it('caps covered MWh at the offtaker demand and marks commercial_operations as now', async () => {
+  it('hides the price of an operating project (signed PPA) as contact_seller, no fabricated saving', async () => {
     seedParticipant('dev2', 'ipp_developer');
     db.prepare(
       `INSERT INTO ipp_projects (id, project_name, developer_id, structure_type, technology, capacity_mw, location, status, ppa_volume_mwh, ppa_price_per_mwh)
@@ -58,6 +61,15 @@ describe('buildOfftakerOptions', () => {
     expect(o.availability).toBe('now');
     expect(o.cod_estimate).toBeNull();
     expect(o.annual_mwh).toBe(2000); // capped at demand 2000 MWh, not 50000
+    // commercial_operations ⇒ PPA is contracted/confidential. We must not leak
+    // the 900 raw price, nor invent a saving against it.
+    expect(o.price_basis).toBe('contact_seller');
+    expect(o.blended_price_zar_per_mwh).toBeNull();
+    expect(o.est_annual_cost_zar).toBeNull();
+    expect(o.est_saving_zar).toBeNull();
+    expect(o.est_saving_pct).toBeNull();
+    // CO₂ is price-independent (function of covered MWh) so it still computes.
+    expect(o.co2_avoided_tco2e).toBe(Math.round(2000 * 0.95));
   });
 
   it('buckets active energy listings under available_now', async () => {
@@ -72,6 +84,9 @@ describe('buildOfftakerOptions', () => {
     expect(o.kind).toBe('listing');
     expect(o.target_participant_id).toBe('sell1');
     expect(o.availability).toBe('now');
+    // A marketplace listing is a public offer — its price is shown verbatim.
+    expect(o.price_basis).toBe('listed');
+    expect(o.blended_price_zar_per_mwh).toBe(1500);
   });
 
   it('excludes non-energy listings and non-active listings', async () => {
@@ -124,5 +139,22 @@ describe('buildOfftakerOptions', () => {
     // covered 1000 ; option 1000*3000 = 3,000,000 ; current 1000*1000*2.0 = 2,000,000 ; saving -1,000,000 → -50%
     expect(o.est_saving_zar).toBe(-1_000_000);
     expect(o.est_saving_pct).toBe(-50);
+  });
+
+  it('rounds an indicative project price to a band — the raw contracted figure never leaks', async () => {
+    seedParticipant('dev6', 'ipp_developer');
+    db.prepare(
+      `INSERT INTO ipp_projects (id, project_name, developer_id, structure_type, technology, capacity_mw, location, status, ppa_volume_mwh, ppa_price_per_mwh)
+       VALUES ('p6','Odd Price','dev6','build_own_operate','solar',30,'FS','construction',1000,1234)`,
+    ).run();
+    const opts = await buildOfftakerOptions(env, 'off1', { annual_kwh: 2_000_000, avg_tariff_zar_per_kwh: 2.0 });
+    const o = opts.upcoming_projects[0];
+    expect(o.price_basis).toBe('indicative');
+    // 1234 banded to nearest R50 = 1250. The exact 1234 must NOT appear.
+    expect(o.blended_price_zar_per_mwh).toBe(1250);
+    expect(o.blended_price_zar_per_mwh).not.toBe(1234);
+    // Saving is computed off the band: covered 1000 ; 1000*1250 = 1,250,000 ;
+    // current 1000*1000*2.0 = 2,000,000 ; saving 750,000.
+    expect(o.est_saving_zar).toBe(750_000);
   });
 });

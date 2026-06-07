@@ -257,7 +257,7 @@ sharing. Return JSON: { mix:[{project_id,project_name,share_pct,mwh_per_year,ble
 ai.post('/offtaker/loi', async (c) => {
   const user = getCurrentUser(c);
   const body = (await c.req.json().catch(() => ({}))) as {
-    mix?: Array<{ project_id: string; share_pct: number; mwh_per_year: number; blended_price: number }>;
+    mix?: Array<{ project_id: string; share_pct: number; mwh_per_year: number; blended_price?: number | null }>;
     horizon_years?: number;
     notes?: string;
   };
@@ -307,12 +307,20 @@ ai.post('/offtaker/loi', async (c) => {
       }
     }
 
+    // Price may be withheld (an operating project on a signed PPA surfaces as
+    // "contact seller"): draft the LOI with price-to-be-negotiated rather than
+    // emitting "R null/MWh".
+    const hasPrice = typeof item.blended_price === 'number' && Number.isFinite(item.blended_price);
+    const priceClause = hasPrice
+      ? `at an indicative blended price of R${item.blended_price}/MWh`
+      : 'at a blended price to be negotiated';
+
     const aiResult = await ask(c.env, {
       intent: 'offtaker.loi_draft',
       role: user.role,
       prompt: `Draft a Letter of Intent from ${user.name} to ${project.developer_name || 'the IPP'}
 for ${item.mwh_per_year.toLocaleString()} MWh/year of ${project.technology} energy
-at an indicative blended price of R${item.blended_price}/MWh over ${body.horizon_years ?? 15} years.
+${priceClause} over ${body.horizon_years ?? 15} years.
 Include conditionality on financial close, non-binding nature, and a 30-day response window.`,
       context: { project, item, notes: body.notes },
       max_tokens: 900,
@@ -331,7 +339,7 @@ Include conditionality on financial close, non-binding nature, and a 30-day resp
       aiResult.text,
       body.horizon_years ?? 15,
       item.mwh_per_year,
-      item.blended_price,
+      item.blended_price ?? null,
     ).run();
 
     // Fire a contract.created cascade so the IPP sees this as an action item.
@@ -347,7 +355,7 @@ Include conditionality on financial close, non-binding nature, and a 30-day resp
         counterparty_id: project.developer_id,
         creator_id: user.id,
         annual_mwh: item.mwh_per_year,
-        blended_price: item.blended_price,
+        blended_price: item.blended_price ?? null,
         horizon_years: body.horizon_years ?? 15,
       },
       env: c.env,
@@ -363,7 +371,7 @@ Include conditionality on financial close, non-binding nature, and a 30-day resp
       project.developer_id,
       loiId,
       `LOI received for ${project.project_name}`,
-      `${user.name} has sent a Letter of Intent covering ${Math.round(item.mwh_per_year).toLocaleString()} MWh/year at ~R${item.blended_price}/MWh over ${body.horizon_years ?? 15} years.`,
+      `${user.name} has sent a Letter of Intent covering ${Math.round(item.mwh_per_year).toLocaleString()} MWh/year ${hasPrice ? `at ~R${item.blended_price}/MWh` : 'at a price to be negotiated'} over ${body.horizon_years ?? 15} years.`,
     ).run();
 
     drafts.push({ loi_id: loiId, project_id: project.id, project_name: project.project_name, body_md: aiResult.text, fallback: aiResult.fallback });
