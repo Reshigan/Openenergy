@@ -58,7 +58,38 @@ function genId(prefix: string) {
 }
 
 function canMutate(role: string) {
-  return ['admin', 'support', 'asset_owner', 'ipp', 'om_contractor', 'trader'].includes(role);
+  // 'ipp_developer' is the *suffixed* JWT role this platform issues to the
+  // asset-owning IPP personas (ipp → ipp_developer). 'ipp' is kept for any
+  // legacy/unsuffixed tokens. Both must be allowed or the wind asset-owner
+  // 403s on every fault / WO / telemetry write while its sites list fine.
+  return ['admin', 'support', 'asset_owner', 'ipp', 'ipp_developer', 'om_contractor', 'trader'].includes(role);
+}
+
+// Platform staff who may mutate any site's O&M data. Mirrors the officer set
+// the read paths use, minus 'regulator' (read-only — never reaches canMutate).
+const OM_OFFICER_ROLES = ['admin', 'support'];
+
+// Tenancy guard for site-keyed writes. canMutate() is a *role* gate; on its own
+// it would let any qualifying role mutate ANY site once we widen the allow-list.
+// This resolves the site's owner and confirms the caller owns it (participant_id)
+// or services it (om_contractor_id) — the same scope the GET routes enforce.
+// Returns null when allowed, or a ready-to-return JSON error Response (404 if the
+// site is missing, 403 if it exists but the caller isn't its owner/contractor).
+async function assertSiteOwnership(
+  c: { env: HonoEnv['Bindings']; json: (b: any, s?: any) => Response },
+  user: { id: string; role: string },
+  siteId: string | null | undefined,
+): Promise<Response | null> {
+  if (OM_OFFICER_ROLES.includes(user.role)) return null;
+  if (!siteId) return c.json({ success: false, error: 'site_id required' }, 400);
+  const site = await c.env.DB.prepare(
+    `SELECT participant_id, om_contractor_id FROM om_sites WHERE id = ?`,
+  ).bind(siteId).first<{ participant_id: string | null; om_contractor_id: string | null }>();
+  if (!site) return c.json({ success: false, error: 'site not found' }, 404);
+  if (site.participant_id !== user.id && site.om_contractor_id !== user.id) {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
+  return null;
 }
 
 const TARIFF_FALLBACK = 1500; // R/MWh — used when PPA tariff is unknown
@@ -158,6 +189,8 @@ om.put('/sites/:id', async (c) => {
   const user = getCurrentUser(c);
   if (!canMutate(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
+  const denied = await assertSiteOwnership(c, user, id);
+  if (denied) return denied;
   const b = await c.req.json().catch(() => ({} as any));
   // Numeric fields must be non-negative
   const POSITIVE_FIELDS = ['capacity_mw', 'ppa_tariff_zar_mwh', 'latitude', 'longitude', 'panel_count', 'inverter_count'];
@@ -204,6 +237,8 @@ om.post('/devices', async (c) => {
   if (!canMutate(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const b = await c.req.json().catch(() => ({} as any));
   if (!b.site_id || !b.device_type) return c.json({ success: false, error: 'site_id + device_type required' }, 400);
+  const denied = await assertSiteOwnership(c, user, b.site_id);
+  if (denied) return denied;
   const id = genId('omdev');
   await c.env.DB.prepare(`
     INSERT INTO om_devices (id, site_id, device_type, manufacturer, model, serial_number,
@@ -223,6 +258,10 @@ om.put('/devices/:id', async (c) => {
   const user = getCurrentUser(c);
   if (!canMutate(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
+  const dev = await c.env.DB.prepare(`SELECT site_id FROM om_devices WHERE id = ?`).bind(id).first<{ site_id: string }>();
+  if (!dev) return c.json({ success: false, error: 'not found' }, 404);
+  const denied = await assertSiteOwnership(c, user, dev.site_id);
+  if (denied) return denied;
   const b = await c.req.json().catch(() => ({} as any));
   const fields = ['device_type', 'manufacturer', 'model', 'firmware_version',
                   'status', 'rated_kw', 'location_in_plant', 'last_seen_at'];
@@ -242,19 +281,24 @@ om.post('/telemetry', async (c) => {
   const raw = Array.isArray(body?.readings) ? body.readings : [body];
 
   // Resolve site_id + project_id for each reading, group by project shard
+  const isOfficer = OM_OFFICER_ROLES.includes(user.role);
   type Enriched = TelemetryReading & { _shard?: string | null };
   const enriched: Enriched[] = [];
   for (const r of raw) {
     if (!r.device_id || !r.ts) continue;
     const dev = await c.env.DB.prepare(`
-      SELECT d.site_id, s.project_id,
+      SELECT d.site_id, s.project_id, s.participant_id, s.om_contractor_id,
              ep.shard_key
       FROM om_devices d
       JOIN om_sites s ON s.id = d.site_id
       LEFT JOIN esums_projects ep ON ep.id = s.project_id
       WHERE d.id = ?
-    `).bind(r.device_id).first<{ site_id: string; project_id: string | null; shard_key: string | null }>();
+    `).bind(r.device_id).first<{ site_id: string; project_id: string | null; participant_id: string | null; om_contractor_id: string | null; shard_key: string | null }>();
     if (!dev) continue;
+    // Tenancy: a non-officer may only push telemetry for devices on a site it
+    // owns or services. Foreign readings are dropped (not a hard 403) so a mixed
+    // batch from a shared gateway still lands its in-scope rows.
+    if (!isOfficer && dev.participant_id !== user.id && dev.om_contractor_id !== user.id) continue;
 
     enriched.push({
       id: genId('omt'),
@@ -368,6 +412,8 @@ om.post('/faults', async (c) => {
   if (!canMutate(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const b = await c.req.json().catch(() => ({} as any));
   if (!b.site_id || !b.category || !b.severity) return c.json({ success: false, error: 'site_id + category + severity required' }, 400);
+  const denied = await assertSiteOwnership(c, user, b.site_id);
+  if (denied) return denied;
   const id = genId('omflt');
   // Compute initial hourly loss rate from device capacity × tariff
   let hourlyLoss = Number(b.hourly_loss_zar || 0);
@@ -426,6 +472,10 @@ om.post('/faults/:id/acknowledge', async (c) => {
   const user = getCurrentUser(c);
   if (!canMutate(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
+  const fault = await c.env.DB.prepare(`SELECT site_id FROM om_faults WHERE id = ?`).bind(id).first<{ site_id: string }>();
+  if (!fault) return c.json({ success: false, error: 'not found' }, 404);
+  const denied = await assertSiteOwnership(c, user, fault.site_id);
+  if (denied) return denied;
   await c.env.DB.prepare(`UPDATE om_faults SET status = 'acknowledged', updated_at = datetime('now') WHERE id = ? AND status = 'open'`).bind(id).run();
   return c.json({ success: true });
 });
@@ -437,6 +487,8 @@ om.post('/faults/:id/resolve', async (c) => {
   const b = await c.req.json().catch(() => ({} as any));
   const row = await c.env.DB.prepare(`SELECT * FROM om_faults WHERE id = ?`).bind(id).first<any>();
   if (!row) return c.json({ success: false, error: 'not found' }, 404);
+  const denied = await assertSiteOwnership(c, user, row.site_id);
+  if (denied) return denied;
   const elapsedH = (Date.now() - new Date(row.detected_at).getTime()) / 3_600_000;
   const computedTotal = Math.round(Math.max(Number(row.total_loss_zar || 0), Number(row.hourly_loss_zar || 0) * elapsedH));
   await c.env.DB.prepare(`
@@ -487,6 +539,8 @@ om.post('/work-orders', async (c) => {
   if (!b.site_id || !b.category || !b.priority || !b.title) {
     return c.json({ success: false, error: 'site_id + category + priority + title required' }, 400);
   }
+  const denied = await assertSiteOwnership(c, user, b.site_id);
+  if (denied) return denied;
   const id = genId('omwo');
   const woNumber = b.wo_number || `WO-${new Date().getFullYear()}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
   // SLA defaults by priority
@@ -548,6 +602,8 @@ om.post('/work-orders/:id/transition', async (c) => {
   const to = String(b.to || '');
   const row = await c.env.DB.prepare(`SELECT * FROM om_work_orders WHERE id = ?`).bind(id).first<any>();
   if (!row) return c.json({ success: false, error: 'not found' }, 404);
+  const denied = await assertSiteOwnership(c, user, row.site_id);
+  if (denied) return denied;
   const allowed = WO_TRANSITIONS[row.status] || [];
   if (!allowed.includes(to)) {
     return c.json({ success: false, error: `cannot transition from ${row.status} to ${to}` }, 400);
@@ -591,7 +647,10 @@ om.post('/work-orders/:id/photo', async (c) => {
   const id = c.req.param('id');
   const b = await c.req.json().catch(() => ({} as any));
   if (!b.r2_key) return c.json({ success: false, error: 'r2_key required' }, 400);
-  const row = await c.env.DB.prepare(`SELECT photos FROM om_work_orders WHERE id = ?`).bind(id).first<{ photos: string }>();
+  const row = await c.env.DB.prepare(`SELECT site_id, photos FROM om_work_orders WHERE id = ?`).bind(id).first<{ site_id: string; photos: string }>();
+  if (!row) return c.json({ success: false, error: 'not found' }, 404);
+  const denied = await assertSiteOwnership(c, user, row.site_id);
+  if (denied) return denied;
   const list = row?.photos ? JSON.parse(row.photos) : [];
   list.push({ r2_key: b.r2_key, label: b.label || null, by: user.id, at: new Date().toISOString() });
   await c.env.DB.prepare(`UPDATE om_work_orders SET photos = ? WHERE id = ?`).bind(JSON.stringify(list), id).run();
@@ -606,6 +665,10 @@ om.post('/work-orders/:id/part', async (c) => {
   const id = c.req.param('id');
   const b = await c.req.json().catch(() => ({} as any));
   if (!b.part_id || !b.qty) return c.json({ success: false, error: 'part_id + qty required' }, 400);
+  const wo = await c.env.DB.prepare(`SELECT site_id FROM om_work_orders WHERE id = ?`).bind(id).first<{ site_id: string }>();
+  if (!wo) return c.json({ success: false, error: 'not found' }, 404);
+  const denied = await assertSiteOwnership(c, user, wo.site_id);
+  if (denied) return denied;
   const part = await c.env.DB.prepare(`SELECT * FROM om_parts WHERE id = ?`).bind(b.part_id).first<any>();
   if (!part) return c.json({ success: false, error: 'part not found' }, 404);
   const qty = Number(b.qty);
@@ -729,6 +792,8 @@ om.post('/maintenance', async (c) => {
   if (!canMutate(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const b = await c.req.json().catch(() => ({} as any));
   if (!b.site_id || !b.task_type || !b.next_due_at) return c.json({ success: false, error: 'site_id + task_type + next_due_at required' }, 400);
+  const denied = await assertSiteOwnership(c, user, b.site_id);
+  if (denied) return denied;
   const id = genId('ommnt');
   await c.env.DB.prepare(`
     INSERT INTO om_maintenance
@@ -751,6 +816,8 @@ om.post('/maintenance/:id/complete', async (c) => {
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(`SELECT * FROM om_maintenance WHERE id = ?`).bind(id).first<any>();
   if (!row) return c.json({ success: false, error: 'not found' }, 404);
+  const denied = await assertSiteOwnership(c, user, row.site_id);
+  if (denied) return denied;
   // Roll next_due forward by frequency_days (if set)
   const nextDue = row.frequency_days
     ? new Date(Date.now() + Number(row.frequency_days) * 86_400_000).toISOString().slice(0, 10)
@@ -783,6 +850,8 @@ om.post('/sites/:id/ingest-keys', async (c) => {
   const user = getCurrentUser(c);
   if (!canMutate(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const siteId = c.req.param('id');
+  const denied = await assertSiteOwnership(c, user, siteId);
+  if (denied) return denied;
   const b = await c.req.json().catch(() => ({} as any));
   const label = (b.label || 'gateway').toString().slice(0, 80);
   const scope = ['write_telemetry', 'write_faults', 'full'].includes(b.scope) ? b.scope : 'write_telemetry';
@@ -820,6 +889,10 @@ om.post('/ingest-keys/:id/revoke', async (c) => {
   const user = getCurrentUser(c);
   if (!canMutate(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
+  const key = await c.env.DB.prepare(`SELECT site_id FROM om_ingest_keys WHERE id = ?`).bind(id).first<{ site_id: string }>();
+  if (!key) return c.json({ success: false, error: 'not found' }, 404);
+  const denied = await assertSiteOwnership(c, user, key.site_id);
+  if (denied) return denied;
   await c.env.DB.prepare(`UPDATE om_ingest_keys SET revoked = 1 WHERE id = ?`).bind(id).run();
   await fireCascade({
     event: 'esums.ingest_key_revoked',
