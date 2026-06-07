@@ -3312,27 +3312,6 @@ async function deliverWebhooks(ctx: CascadeContext): Promise<void> {
 
 async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
   switch (ctx.event) {
-
-    // ─── National-scale action items ──────────────────────────────────
-    // Each action enqueues a pending item for the affected participant's
-    // dashboard. Due dates are capped so the item ages out of the queue.
-    case 'carbon.mrv_verified': {
-      const pid = ctx.data?.submitted_by as string | null;
-      if (pid) {
-        await enqueueAction(ctx.env.DB, {
-          type: 'mrv_followup',
-          priority: 'normal',
-          actor_id: ctx.actor_id,
-          assignee_id: pid,
-          entity_type: 'mrv_verifications',
-          entity_id: ctx.entity_id,
-          title: `MRV verified: ${ctx.data?.opinion || 'positive'}`,
-          description: `Verified ${ctx.data?.verified_reductions_tco2e ?? '—'} tCO₂e. Request issuance with your chosen registry.`,
-          due_date: daysFromNow(30),
-        });
-      }
-      break;
-    }
   }
 
   // Wave 5: regulator-inbox materializer. Any event in the curated allowlist
@@ -3384,74 +3363,6 @@ async function materializeRegulatorInbox(ctx: CascadeContext): Promise<void> {
   ).run();
 }
 
-/** Days-from-now helper for action_queue.due_date (YYYY-MM-DD). */
-function daysFromNow(days: number): string {
-  return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-}
-
 function generateId(): string {
   return 'id_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
-}
-
-interface EnqueueActionInput {
-  type: string;
-  priority: 'low' | 'normal' | 'high' | 'urgent';
-  actor_id?: string;
-  assignee_id: string;
-  entity_type: string;
-  entity_id: string;
-  title: string;
-  description?: string;
-  due_date?: string | null;
-}
-
-async function enqueueAction(db: any, input: EnqueueActionInput): Promise<void> {
-  await enqueueActions(db, [input]);
-}
-
-/**
- * Batched variant — inserts many action_queue rows in a single
- * env.DB.batch() round-trip. Used by cascade special handlers that
- * assign the same event to multiple participants (covenant breach →
- * lender + developer; ancillary award → N winners; enforcement
- * finding → several investigators).
- *
- * Fallback to per-row INSERTs if batch() fails so forward progress is
- * preserved.
- */
-async function enqueueActions(db: any, inputs: EnqueueActionInput[]): Promise<void> {
-  if (inputs.length === 0) return;
-  const now = new Date().toISOString();
-  const stmts = inputs.map((input) =>
-    db.prepare(`
-      INSERT INTO action_queue
-        (id, type, priority, actor_id, assignee_id, entity_type, entity_id, title, description, status, due_date, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
-    `).bind(
-      generateId(),
-      input.type,
-      input.priority,
-      input.actor_id || null,
-      input.assignee_id,
-      input.entity_type,
-      input.entity_id,
-      input.title,
-      input.description || null,
-      input.due_date || null,
-      now,
-      now,
-    ),
-  );
-  try {
-    if (typeof db.batch === 'function') {
-      await db.batch(stmts);
-      return;
-    }
-  } catch (err) {
-    console.warn('action_queue_batch_failed', (err as Error).message);
-  }
-  // Fallback: sequential.
-  for (const stmt of stmts) {
-    try { await stmt.run(); } catch (err) { console.error('Action queue enqueue failed:', err); }
-  }
 }

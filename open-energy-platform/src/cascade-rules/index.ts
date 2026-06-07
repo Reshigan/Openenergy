@@ -12,6 +12,7 @@ import { registerRegulatorActionRules } from './regulator-actions';
 import { registerGridDispatchRules } from './grid-dispatch';
 import { registerTraderMarginRules } from './trader-margin';
 import { registerLenderCovenantRules } from './lender-covenant';
+import { registerCarbonEventRules } from './carbon-events';
 
 registerTradingSafetyRules();
 registerLifecycleSequencingRules();
@@ -24,5 +25,6 @@ registerRegulatorActionRules();
 registerGridDispatchRules();
 registerTraderMarginRules();
 registerLenderCovenantRules();
+registerCarbonEventRules();
 
-export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules, registerGridDispatchRules, registerTraderMarginRules, registerLenderCovenantRules };
+export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules, registerGridDispatchRules, registerTraderMarginRules, registerLenderCovenantRules, registerCarbonEventRules };
