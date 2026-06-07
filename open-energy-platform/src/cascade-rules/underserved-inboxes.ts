@@ -10,18 +10,10 @@
 import type { CascadeContext } from '../utils/cascade';
 import { registerCascadeRule, type CascadeRule } from '../utils/cascade-registry';
 import { pushRoleAction } from '../utils/role-actions';
+import { dstr, dnum } from '../utils/cascade-data';
 
 const CHAIN_KEY = 'underserved_inboxes';
 const ACTION_PRIORITIES = new Set(['low', 'normal', 'high', 'urgent']);
-
-function dstr(ctx: CascadeContext, key: string): string | null {
-  const v = (ctx.data as Record<string, unknown> | undefined)?.[key];
-  return typeof v === 'string' && v.length > 0 ? v : null;
-}
-function dnum(ctx: CascadeContext, key: string): number | null {
-  const v = (ctx.data as Record<string, unknown> | undefined)?.[key];
-  return typeof v === 'number' && Number.isFinite(v) ? v : null;
-}
 
 async function alreadyPushed(ctx: CascadeContext, sourceEntityId: string): Promise<boolean> {
   const r = await ctx.env.DB.prepare(

@@ -16,20 +16,11 @@
 import type { CascadeContext } from '../utils/cascade';
 import { registerCascadeRule, type CascadeRule } from '../utils/cascade-registry';
 import { pushRoleAction } from '../utils/role-actions';
+import { dstr, dnum } from '../utils/cascade-data';
 
 const SYSTEM_ACTOR = 'system:cascade';
 const SOURCE_WAVE = 'W3';
 const DEFAULT_LICENCE_VALIDITY_YEARS = 25;
-
-// ── data accessors ──────────────────────────────────────────────────────────
-function dstr(ctx: CascadeContext, key: string): string | null {
-  const v = (ctx.data as Record<string, unknown> | undefined)?.[key];
-  return typeof v === 'string' && v.length > 0 ? v : null;
-}
-function dnum(ctx: CascadeContext, key: string): number | null {
-  const v = (ctx.data as Record<string, unknown> | undefined)?.[key];
-  return typeof v === 'number' && Number.isFinite(v) ? v : null;
-}
 function uid(prefix: string): string {
   return `${prefix}_${crypto.randomUUID()}`;
 }

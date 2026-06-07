@@ -9,16 +9,7 @@
 import type { CascadeContext } from '../utils/cascade';
 import { registerCascadeRule, type CascadeRule } from '../utils/cascade-registry';
 import { pushRoleAction } from '../utils/role-actions';
-
-function dstr(ctx: CascadeContext, key: string): string | null {
-  const v = (ctx.data as Record<string, unknown> | undefined)?.[key];
-  return typeof v === 'string' && v.length > 0 ? v : null;
-}
-
-function dnum(ctx: CascadeContext, key: string): number | null {
-  const v = (ctx.data as Record<string, unknown> | undefined)?.[key];
-  return typeof v === 'number' && Number.isFinite(v) ? v : null;
-}
+import { dstr, dnum } from '../utils/cascade-data';
 
 // Best-effort dedup keyed on (source_entity_id, source_event) ONLY — never the
 // target role. Each source entity has exactly one logical target (one LOI → one
