@@ -3317,42 +3317,6 @@ async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
     // ─── National-scale action items ──────────────────────────────────
     // Each action enqueues a pending item for the affected participant's
     // dashboard. Due dates are capped so the item ages out of the queue.
-    case 'grid.instruction_issued': {
-      const pid = ctx.data?.participant_id as string | null;
-      if (pid) {
-        await enqueueAction(ctx.env.DB, {
-          type: 'dispatch_acknowledge',
-          priority: 'urgent',
-          actor_id: ctx.actor_id,
-          assignee_id: pid,
-          entity_type: 'dispatch_instructions',
-          entity_id: ctx.entity_id,
-          title: `Acknowledge dispatch: ${ctx.data?.instruction_number || ''}`,
-          description: `${ctx.data?.instruction_type || 'Action required'} — target ${ctx.data?.target_mw ?? 0} MW effective ${ctx.data?.effective_from || 'now'}.`,
-          due_date: daysFromNow(1),
-        });
-      }
-      break;
-    }
-
-    case 'grid.instruction_non_compliant': {
-      const pid = ctx.data?.participant_id as string | null;
-      if (pid) {
-        await enqueueAction(ctx.env.DB, {
-          type: 'non_compliance',
-          priority: 'urgent',
-          actor_id: ctx.actor_id,
-          assignee_id: pid,
-          entity_type: 'dispatch_instructions',
-          entity_id: ctx.entity_id,
-          title: 'Dispatch non-compliance — review and respond',
-          description: `Penalty assessed: R${(ctx.data?.penalty_amount_zar as number) || 0}. Provide evidence or appeal.`,
-          due_date: daysFromNow(7),
-        });
-      }
-      break;
-    }
-
     case 'trader.margin_call_issued': {
       const pid = ctx.data?.participant_id as string | null;
       if (pid) {

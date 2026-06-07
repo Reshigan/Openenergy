@@ -9,6 +9,7 @@ import { registerIppLifecycleRules } from './ipp-lifecycle';
 import { registerOnaOperationsRules } from './ona-operations';
 import { registerEsgEventRules } from './esg-events';
 import { registerRegulatorActionRules } from './regulator-actions';
+import { registerGridDispatchRules } from './grid-dispatch';
 
 registerTradingSafetyRules();
 registerLifecycleSequencingRules();
@@ -18,5 +19,6 @@ registerIppLifecycleRules();
 registerOnaOperationsRules();
 registerEsgEventRules();
 registerRegulatorActionRules();
+registerGridDispatchRules();
 
-export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules };
+export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules, registerGridDispatchRules };
