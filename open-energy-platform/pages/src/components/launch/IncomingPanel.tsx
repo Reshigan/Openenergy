@@ -21,7 +21,7 @@ function ago(iso: string): string {
 }
 
 export interface IncomingPanelProps {
-  /** Called when the user acts on a card; host decides how to handle it (open WizardShell / navigate). */
+  /** Called when the user acts on a card; host decides how to handle it (opens the CrossOptionModal next-step sheet). */
   onAct?: (action: RoleAction) => void;
   className?: string;
 }
