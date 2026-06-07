@@ -3313,43 +3313,6 @@ async function deliverWebhooks(ctx: CascadeContext): Promise<void> {
 
 async function handleSpecialCascades(ctx: CascadeContext): Promise<void> {
   switch (ctx.event) {
-    case 'esg.decarbonisation_completed': {
-      // Recalculate ESG score
-      const participantId = ctx.data?.participant_id;
-      if (participantId) {
-        // Calculate new score based on updated emissions
-        const emissions = await ctx.env.DB.prepare(`
-          SELECT SUM(value) as total FROM esg_data 
-          WHERE participant_id = ? AND metric_id IN ('esg_met_001','esg_met_002','esg_met_003')
-        `).bind(participantId).first();
-        
-        const totalEmissions = Number(emissions?.total ?? 0);
-        const prevEmissions = Number(ctx.data?.previous_emissions ?? 0);
-
-        // Update or create score record
-        const existing = await ctx.env.DB.prepare('SELECT id FROM esg_reports WHERE participant_id = ? ORDER BY created_at DESC LIMIT 1').bind(participantId).first();
-        if (existing) {
-          await ctx.env.DB.prepare(`
-            UPDATE esg_reports SET total_ghg_emissions_tco2e = ?, updated_at = ? WHERE id = ?
-          `).bind(totalEmissions, new Date().toISOString(), existing.id).run();
-        }
-
-        // Intelligence item if significant change
-        if (prevEmissions && Math.abs(totalEmissions - prevEmissions) > 500) {
-          const reduction = prevEmissions - totalEmissions;
-          await ctx.env.DB.prepare(`
-            INSERT INTO intelligence_items (id, participant_id, type, severity, title, description, created_at)
-            VALUES (?, ?, 'esg', 'info', ?, ?, ?)
-          `).bind(
-            generateId(), participantId,
-            `Scope ${ctx.data?.scope || 'unknown'} Emissions Reduced`,
-            `Emissions reduced by ${reduction.toLocaleString()} tCO₂e`,
-            new Date().toISOString()
-          ).run();
-        }
-      }
-      break;
-    }
 
     // ─── National-scale action items ──────────────────────────────────
     // Each action enqueues a pending item for the affected participant's
