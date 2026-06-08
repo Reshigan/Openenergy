@@ -2070,7 +2070,21 @@ export type EventType =
   | 'ccr_evt_confirm_cure'
   | 'ccr_evt_trigger_default'
   | 'ccr_evt_cancel'
-  | 'ccr_evt_sla_breach';
+  | 'ccr_evt_sla_breach'
+  | 'isda_evt_opened'
+  | 'isda_evt_term_sheet_issued'
+  | 'isda_evt_counterparty_review'
+  | 'isda_evt_negotiation_opened'
+  | 'isda_evt_credit_terms_agreed'
+  | 'isda_evt_legal_review'
+  | 'isda_evt_regulatory_notification'
+  | 'isda_evt_executed'
+  | 'isda_evt_activated'
+  | 'isda_evt_amendment_requested'
+  | 'isda_evt_amendment_approved'
+  | 'isda_evt_terminated'
+  | 'isda_evt_suspended'
+  | 'isda_evt_sla_breach';
 
 export interface CascadeContext extends PlatformEventFields {
   event: EventType;

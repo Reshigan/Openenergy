@@ -234,6 +234,7 @@ import { subscriptionBillingSlaSweep } from '../routes/subscription-billing-chai
 import { virtualPpaSettlementSlaSweep } from '../routes/virtual-ppa-settlement-chain';
 import { cbtSedSlaSweep } from '../routes/cbt-sed-chain';
 import { constructionCostReportSlaSweep } from '../routes/construction-cost-report-chain';
+import { isdaAgreementSlaSweep } from '../routes/isda-agreement-chain';
 
 type Env = HonoEnv['Bindings'];
 
@@ -469,6 +470,7 @@ const SWEEPS: Array<[string, SweepFn]> = [
   ['vppa_settlement_sla', virtualPpaSettlementSlaSweep as unknown as SweepFn],
   ['cbt_sed_sla', cbtSedSlaSweep as unknown as SweepFn],
   ['construction_cost_report_sla', constructionCostReportSlaSweep as unknown as SweepFn],
+  ['isda_agreement_sla', isdaAgreementSlaSweep as unknown as SweepFn],
 ];
 
 /**

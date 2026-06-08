@@ -64,6 +64,7 @@ export function TraderWorkstationPage() {
         { key: 'fsca-compliance', label: 'FSCA compliance report (W201)', group: 'Compliance', chainKey: 'fsca_compliance_report', body: ({ onRefresh }) => <FscaComplianceTab onRefresh={onRefresh} /> },
         { key: 'fsca_conduct_reports', label: 'FSCA conduct reports (W216)', group: 'Compliance', chainKey: 'fsca_conduct_report', body: ({ onRefresh }) => <FscaConductReportTab onRefresh={onRefresh} /> },
         { key: 'cross_border_trades', label: 'Cross-border pre-approvals (W222)', group: 'Compliance', chainKey: 'cross_border_trade', body: ({ onRefresh }) => <CrossBorderTradeTab onRefresh={onRefresh} /> },
+        { key: 'isda_agreements', label: 'ISDA agreements (W232)', group: 'Compliance', chainKey: 'isda_agreement', body: ({ onRefresh }) => <IsdaAgreementTab onRefresh={onRefresh} /> },
         { key: 'mm-compliance', label: 'MM compliance', group: 'Compliance', chainKey: 'oe_mm_obligations', body: () => <MmComplianceTab /> },
         { key: 'poslimit', label: 'Position limits', group: 'Compliance', chainKey: 'poslimit_case', body: () => <PoslimitChainTab /> },
         { key: 'strate-swift-connectors', label: 'Settlement rails', group: 'Compliance', body: () => <StrateSwiftConnectorTab /> },
@@ -772,6 +773,223 @@ function CrossBorderTradeTab({ onRefresh }: { onRefresh?: () => void }) {
             });
             if (!res.ok) throw new Error(await res.text());
             setModal(null); bump();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── W232: ISDA Agreement & CSA Tab ──────────────────────────────────────────
+
+type IsdaRow = {
+  id: string;
+  counterparty_name: string;
+  counterparty_type: string;
+  counterparty_tier: string;
+  agreement_type: string;
+  chain_status: string;
+  vm_csa_included: number;
+  umr_applicable: number;
+  sla_deadline: string | null;
+  updated_at: string;
+};
+
+type IsdaStats = {
+  total: number;
+  active: number;
+  negotiating: number;
+  terminated: number;
+  sla_breached: number;
+};
+
+const ISDA_TRANSITIONS: Record<string, string[]> = {
+  draft: ['issue_term_sheet'],
+  term_sheet_issued: ['submit_for_counterparty_review'],
+  counterparty_review: ['open_negotiation', 'terminate'],
+  negotiation: ['agree_credit_terms', 'terminate'],
+  credit_terms_agreed: ['submit_for_legal_review'],
+  legal_review: ['notify_regulators', 'terminate'],
+  regulatory_notification: ['execute_agreement', 'terminate'],
+  executed: ['activate'],
+  active: ['request_amendment', 'terminate', 'suspend'],
+  amendment_requested: ['approve_amendment', 'terminate'],
+  terminated: [],
+  suspended: ['activate', 'terminate'],
+};
+
+const ISDA_ACTION_LABELS: Record<string, string> = {
+  issue_term_sheet: 'Issue term sheet',
+  submit_for_counterparty_review: 'Submit for counterparty review',
+  open_negotiation: 'Open negotiation',
+  agree_credit_terms: 'Agree credit terms',
+  submit_for_legal_review: 'Submit for legal review',
+  notify_regulators: 'Notify regulators',
+  execute_agreement: 'Execute agreement',
+  activate: 'Activate',
+  request_amendment: 'Request amendment',
+  approve_amendment: 'Approve amendment',
+  terminate: 'Terminate',
+  suspend: 'Suspend',
+};
+
+const ISDA_DESTRUCTIVE = new Set(['terminate', 'suspend']);
+
+function isdaStatusTone(s: string): 'good' | 'bad' | 'warn' | 'info' | 'neutral' {
+  if (s === 'active') return 'good';
+  if (s === 'terminated' || s === 'suspended') return 'bad';
+  if (['negotiation', 'legal_review', 'regulatory_notification'].includes(s)) return 'warn';
+  if (['executed', 'credit_terms_agreed'].includes(s)) return 'info';
+  return 'neutral';
+}
+
+function IsdaAgreementTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [data, setData] = React.useState<{ agreements: IsdaRow[]; stats: IsdaStats } | null>(null);
+  const [refreshKey, setRefreshKey] = React.useState(0);
+  const [creating, setCreating] = React.useState(false);
+  const [actionTarget, setActionTarget] = React.useState<IsdaRow | null>(null);
+
+  const bump = () => { setRefreshKey(k => k + 1); onRefresh?.(); };
+
+  React.useEffect(() => {
+    fetch('/api/trader/isda-agreement', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    })
+      .then(r => r.json())
+      .then((j: { data: { agreements: IsdaRow[]; stats: IsdaStats } }) => setData(j.data))
+      .catch(() => null);
+  }, [refreshKey]);
+
+  if (!data) return <div className="p-6 text-[13px] text-[var(--oe-outline)]">Loading…</div>;
+
+  const { agreements, stats } = data;
+
+  const statCards = [
+    { label: 'Total', value: stats.total },
+    { label: 'Active', value: stats.active },
+    { label: 'Negotiating', value: stats.negotiating },
+    { label: 'Terminated', value: stats.terminated },
+    { label: 'SLA breached', value: stats.sla_breached },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-3 flex-wrap">
+        {statCards.map(s => (
+          <div key={s.label} className="flex-1 min-w-[100px] rounded-xl border border-[var(--oe-surface-container)] bg-[var(--oe-surface-container-lowest)] px-4 py-3">
+            <div className="text-[11px] text-[var(--oe-outline)] uppercase tracking-wide">{s.label}</div>
+            <div className="text-[22px] font-semibold text-[var(--oe-on-surface)]">{s.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          onClick={() => setCreating(true)}
+          className="px-3 py-1.5 rounded-lg bg-[var(--oe-primary)] text-white text-[12px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)]"
+        >
+          + New ISDA agreement
+        </button>
+      </div>
+
+      <table className="w-full text-[12px]">
+        <thead>
+          <tr className="border-b border-[var(--oe-surface-container)]">
+            {['Counterparty', 'Type', 'Tier', 'VM CSA', 'UMR', 'Status', 'SLA deadline', ''].map(h => (
+              <th key={h} className="text-left py-2 px-2 text-[var(--oe-outline)] font-medium">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {agreements.map(row => {
+            const overdue = row.sla_deadline && row.sla_deadline < new Date().toISOString() && !['active', 'executed', 'terminated', 'suspended'].includes(row.chain_status);
+            return (
+              <tr key={row.id} className="border-b border-[var(--oe-surface-container-low)] hover:bg-[var(--oe-surface-container-lowest)]">
+                <td className="py-2 px-2 font-medium text-[var(--oe-on-surface)]">{row.counterparty_name}</td>
+                <td className="py-2 px-2 text-[var(--oe-on-surface-variant)]">{row.agreement_type.replace(/_/g, ' ')}</td>
+                <td className="py-2 px-2 text-[var(--oe-on-surface-variant)]">{row.counterparty_tier.replace(/_/g, ' ')}</td>
+                <td className="py-2 px-2">{row.vm_csa_included ? <Pill tone="info">Yes</Pill> : <span className="text-[var(--oe-outline)]">—</span>}</td>
+                <td className="py-2 px-2">{row.umr_applicable ? <Pill tone="warn">Applicable</Pill> : <span className="text-[var(--oe-outline)]">—</span>}</td>
+                <td className="py-2 px-2"><Pill tone={isdaStatusTone(row.chain_status)}>{row.chain_status.replace(/_/g, ' ')}</Pill></td>
+                <td className="py-2 px-2">
+                  {row.sla_deadline
+                    ? <span className={overdue ? 'text-red-600 font-medium' : 'text-[var(--oe-on-surface-variant)]'}>{new Date(row.sla_deadline).toLocaleDateString()}</span>
+                    : <span className="text-[var(--oe-outline)]">—</span>}
+                </td>
+                <td className="py-2 px-2">
+                  {(ISDA_TRANSITIONS[row.chain_status] ?? []).length > 0 && (
+                    <button
+                      onClick={() => setActionTarget(row)}
+                      className="text-[var(--oe-primary)] hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--oe-primary)] rounded"
+                    >
+                      Action
+                    </button>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+          {agreements.length === 0 && (
+            <tr><td colSpan={8} className="py-8 text-center text-[var(--oe-outline)]">No ISDA agreements</td></tr>
+          )}
+        </tbody>
+      </table>
+
+      {creating && (
+        <ActionModal
+          title="New ISDA Agreement"
+          fields={[
+            { key: 'counterparty_id', label: 'Counterparty ID', required: true },
+            { key: 'counterparty_name', label: 'Counterparty name', required: true },
+            { key: 'counterparty_type', label: 'Counterparty type', type: 'select', required: true,
+              options: ['domestic_bank','foreign_bank','broker_dealer','ccpcentral','corporate','sfp'].map(v => ({ value: v, label: v.replace(/_/g, ' ') })) },
+            { key: 'agreement_type', label: 'Agreement type', type: 'select', required: true,
+              options: ['isda_2002','isda_1992','isda_2002_with_csa','isda_2002_with_vm_csa'].map(v => ({ value: v, label: v.replace(/_/g, ' ').toUpperCase() })) },
+            { key: 'average_notional_zar', label: 'Avg. notional (ZAR)', type: 'number' },
+            { key: 'vm_csa_included', label: 'VM CSA included?', type: 'select',
+              options: [{ value: '0', label: 'No' }, { value: '1', label: 'Yes' }] },
+            { key: 'umr_applicable', label: 'UMR applicable (SARB D3/2023)?', type: 'select',
+              options: [{ value: '0', label: 'No' }, { value: '1', label: 'Yes' }] },
+          ]}
+          submitLabel="Open agreement"
+          onClose={() => setCreating(false)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/trader/isda-agreement', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                ...v,
+                vm_csa_included: Number(v.vm_csa_included ?? 0),
+                umr_applicable: Number(v.umr_applicable ?? 0),
+                average_notional_zar: v.average_notional_zar ? Number(v.average_notional_zar) : undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setCreating(false); bump();
+          }}
+        />
+      )}
+
+      {actionTarget && (
+        <ActionModal
+          title={`Action — ${actionTarget.counterparty_name}`}
+          fields={[
+            { key: 'action', label: 'Action', type: 'select', required: true,
+              options: (ISDA_TRANSITIONS[actionTarget.chain_status] ?? []).map(a => ({ value: a, label: ISDA_ACTION_LABELS[a] ?? a })) },
+            { key: 'reason_code', label: 'Reason code' },
+            { key: 'reason_detail', label: 'Reason detail', type: 'textarea' },
+          ]}
+          submitLabel="Submit"
+          cta={ISDA_DESTRUCTIVE.has(actionTarget.chain_status) ? 'danger' : 'primary'}
+          onClose={() => setActionTarget(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/trader/isda-agreement/${actionTarget.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify(v),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setActionTarget(null); bump();
           }}
         />
       )}
