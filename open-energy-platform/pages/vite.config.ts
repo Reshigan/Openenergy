@@ -8,19 +8,32 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    // Single-bundle build. We previously tried a manualChunks split
-    // (recharts / jspdf / lucide / react / misc) which dropped the main
-    // chunk from 1.9 MB → 834 KB, but it hit a top-level
-    // `React.createContext` race in vendor-misc that left prod blank
-    // until the rollback. Re-introducing the split requires explicitly
-    // bundling each React-dependent package (qrcode.react, recharts,
-    // lucide-react, …) into the same chunk as react itself — not
-    // letting any of them fall into a catch-all.
-    //
-    // Until that's done carefully, ship a single bundle. The 1.9 MB / gzip
-    // 503 KB main is acceptable for now; the chunk split can come back
-    // as a follow-up with a real e2e test that proves no createContext
-    // race.
+    chunkSizeWarningLimit: 2500,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // Stable vendor chunk — keep react, react-dom, react-router, recharts,
+          // lucide and framer-motion together since they share createContext and
+          // cannot safely be split across chunks (createContext race = blank prod).
+          if (
+            id.includes('node_modules/react/') ||
+            id.includes('node_modules/react-dom/') ||
+            id.includes('node_modules/react-router') ||
+            id.includes('node_modules/scheduler/') ||
+            id.includes('node_modules/recharts/') ||
+            id.includes('node_modules/lucide-react/') ||
+            id.includes('node_modules/framer-motion/') ||
+            id.includes('node_modules/qrcode.react/')
+          ) {
+            return 'vendor-react';
+          }
+          // All other node_modules in a shared vendor chunk
+          if (id.includes('node_modules')) {
+            return 'vendor-other';
+          }
+        },
+      },
+    },
   },
   server: {
     port: 3000,

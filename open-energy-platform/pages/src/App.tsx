@@ -8,67 +8,68 @@ import { FioriShell } from './components/FioriShell';
 import { LogoMark, LogoBanner } from './components/Logo';
 import { OEIcon, type IconName } from './components/OEIcon';
 import { LtmLogo } from './components/LtmLogo';
-import { DesignGallery } from './components/pages/DesignGallery';
-import { NotFoundPage } from './components/pages/NotFoundPage';
-import { SearchPage } from './components/pages/SearchPage';
-import { NotificationsPage } from './components/pages/NotificationsPage';
-import { SchedulePage } from './components/pages/SchedulePage';
-import { RoleLaunchBoard } from './components/launch/RoleLaunchBoard';
-import { LenderWorkoutPage } from './components/pages/LenderWorkoutPage';
-import { LenderAuditPage } from './components/pages/LenderAuditPage';
-import { CarbonWorkstationPage } from './components/pages/CarbonWorkstationPage';
-import { GridOpsWorkstationPage } from './components/pages/GridOpsWorkstationPage';
-import { RegulatorWorkstationPage } from './components/pages/RegulatorWorkstationPage';
-import { AdminWorkstationPage } from './components/pages/AdminWorkstationPage';
-import { SupportWorkstationPage } from './components/pages/SupportWorkstationPage';
-import { TraderWorkstationPage } from './components/pages/TraderWorkstationPage';
-import { IppWorkstationPage } from './components/pages/IppWorkstationPage';
-import { OfftakerWorkstationPage } from './components/pages/OfftakerWorkstationPage';
-import { LenderWorkstationPage } from './components/pages/LenderWorkstationPage';
-import { OrderDetailPage } from './components/pages/OrderDetailPage';
-import { InvoiceDetailPage } from './components/pages/InvoiceDetailPage';
-import { ProjectOperationsPage } from './components/pages/ProjectOperationsPage';
-import { SettlementDlqPage } from './components/pages/SettlementDlqPage';
-import { SupportTicketDetailPage } from './components/pages/SupportTicketDetailPage';
-import { TenantDetailPage } from './components/pages/TenantDetailPage';
-import { VintageDetailPage } from './components/pages/VintageDetailPage';
-import { LicenceActionDetailPage } from './components/pages/LicenceActionDetailPage';
-import { GridOutageDetailPage } from './components/pages/GridOutageDetailPage';
-import { BillingRunDetailPage } from './components/pages/BillingRunDetailPage';
-import SignaturePreview from './components/signature/__preview__/SignaturePreview';
+// Page components — all lazy so each route only pays for its chunk on first visit.
+const DesignGallery         = React.lazy(() => import('./components/pages/DesignGallery').then(m => ({ default: m.DesignGallery })));
+const NotFoundPage          = React.lazy(() => import('./components/pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
+const SearchPage            = React.lazy(() => import('./components/pages/SearchPage').then(m => ({ default: m.SearchPage })));
+const NotificationsPage     = React.lazy(() => import('./components/pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
+const SchedulePage          = React.lazy(() => import('./components/pages/SchedulePage').then(m => ({ default: m.SchedulePage })));
+const RoleLaunchBoard       = React.lazy(() => import('./components/launch/RoleLaunchBoard').then(m => ({ default: m.RoleLaunchBoard })));
+const LenderWorkoutPage     = React.lazy(() => import('./components/pages/LenderWorkoutPage').then(m => ({ default: m.LenderWorkoutPage })));
+const LenderAuditPage       = React.lazy(() => import('./components/pages/LenderAuditPage').then(m => ({ default: m.LenderAuditPage })));
+const CarbonWorkstationPage = React.lazy(() => import('./components/pages/CarbonWorkstationPage').then(m => ({ default: m.CarbonWorkstationPage })));
+const GridOpsWorkstationPage= React.lazy(() => import('./components/pages/GridOpsWorkstationPage').then(m => ({ default: m.GridOpsWorkstationPage })));
+const RegulatorWorkstationPage = React.lazy(() => import('./components/pages/RegulatorWorkstationPage').then(m => ({ default: m.RegulatorWorkstationPage })));
+const AdminWorkstationPage  = React.lazy(() => import('./components/pages/AdminWorkstationPage').then(m => ({ default: m.AdminWorkstationPage })));
+const SupportWorkstationPage= React.lazy(() => import('./components/pages/SupportWorkstationPage').then(m => ({ default: m.SupportWorkstationPage })));
+const TraderWorkstationPage = React.lazy(() => import('./components/pages/TraderWorkstationPage').then(m => ({ default: m.TraderWorkstationPage })));
+const IppWorkstationPage    = React.lazy(() => import('./components/pages/IppWorkstationPage').then(m => ({ default: m.IppWorkstationPage })));
+const OfftakerWorkstationPage = React.lazy(() => import('./components/pages/OfftakerWorkstationPage').then(m => ({ default: m.OfftakerWorkstationPage })));
+const LenderWorkstationPage = React.lazy(() => import('./components/pages/LenderWorkstationPage').then(m => ({ default: m.LenderWorkstationPage })));
+const OrderDetailPage       = React.lazy(() => import('./components/pages/OrderDetailPage').then(m => ({ default: m.OrderDetailPage })));
+const InvoiceDetailPage     = React.lazy(() => import('./components/pages/InvoiceDetailPage').then(m => ({ default: m.InvoiceDetailPage })));
+const ProjectOperationsPage = React.lazy(() => import('./components/pages/ProjectOperationsPage').then(m => ({ default: m.ProjectOperationsPage })));
+const SettlementDlqPage     = React.lazy(() => import('./components/pages/SettlementDlqPage').then(m => ({ default: m.SettlementDlqPage })));
+const SupportTicketDetailPage = React.lazy(() => import('./components/pages/SupportTicketDetailPage').then(m => ({ default: m.SupportTicketDetailPage })));
+const TenantDetailPage      = React.lazy(() => import('./components/pages/TenantDetailPage').then(m => ({ default: m.TenantDetailPage })));
+const VintageDetailPage     = React.lazy(() => import('./components/pages/VintageDetailPage').then(m => ({ default: m.VintageDetailPage })));
+const LicenceActionDetailPage = React.lazy(() => import('./components/pages/LicenceActionDetailPage').then(m => ({ default: m.LicenceActionDetailPage })));
+const GridOutageDetailPage  = React.lazy(() => import('./components/pages/GridOutageDetailPage').then(m => ({ default: m.GridOutageDetailPage })));
+const BillingRunDetailPage  = React.lazy(() => import('./components/pages/BillingRunDetailPage').then(m => ({ default: m.BillingRunDetailPage })));
+const SignaturePreview       = React.lazy(() => import('./components/signature/__preview__/SignaturePreview'));
 
-// Import page components
-import { NationalDashboard } from './components/pages/NationalDashboard';
-import { Cockpit } from './components/pages/Cockpit';
-import { Contracts } from './components/pages/Contracts';
-import { ContractDetail } from './components/pages/ContractDetail';
-import { Trading } from './components/pages/Trading';
-import { Carbon } from './components/pages/Carbon';
-import { ProcurementHub } from './components/pages/ProcurementHub';
-import { Projects } from './components/pages/Projects';
-import { ProjectDetail } from './components/pages/ProjectDetail';
-import { ProjectLifecycle } from './components/pages/ProjectLifecycle';
-import { Grid } from './components/pages/Grid';
-import { ESG } from './components/pages/ESG';
-import { Funds } from './components/pages/Funds';
-import { FundDetail } from './components/pages/FundDetail';
-import { Marketplace } from './components/pages/Marketplace';
-import { ModulesPage } from './components/pages/ModulesPage';
-import { Admin } from './components/pages/Admin';
-import { Support } from './components/pages/Support';
-import { Pipeline } from './components/pages/Pipeline';
-import { Reports } from './components/pages/Reports';
-import { Lois } from './components/pages/Lois';
-import { LoiDetail } from './components/pages/LoiDetail';
-import { Intelligence } from './components/pages/Intelligence';
-import { Settlement } from './components/pages/Settlement';
-import { Popia } from './components/pages/Popia';
-import { Briefing } from './components/pages/Briefing';
-import { Monitoring } from './components/pages/Monitoring';
-import ForgotPassword from './components/pages/ForgotPassword';
-import ResetPassword from './components/pages/ResetPassword';
-import Security from './components/pages/Security';
-import Settings from './components/pages/Settings';
+// Core page components
+const NationalDashboard     = React.lazy(() => import('./components/pages/NationalDashboard').then(m => ({ default: m.NationalDashboard })));
+const Cockpit               = React.lazy(() => import('./components/pages/Cockpit').then(m => ({ default: m.Cockpit })));
+const Contracts             = React.lazy(() => import('./components/pages/Contracts').then(m => ({ default: m.Contracts })));
+const ContractDetail        = React.lazy(() => import('./components/pages/ContractDetail').then(m => ({ default: m.ContractDetail })));
+const Trading               = React.lazy(() => import('./components/pages/Trading').then(m => ({ default: m.Trading })));
+const Carbon                = React.lazy(() => import('./components/pages/Carbon').then(m => ({ default: m.Carbon })));
+const ProcurementHub        = React.lazy(() => import('./components/pages/ProcurementHub').then(m => ({ default: m.ProcurementHub })));
+const Projects              = React.lazy(() => import('./components/pages/Projects').then(m => ({ default: m.Projects })));
+const ProjectDetail         = React.lazy(() => import('./components/pages/ProjectDetail').then(m => ({ default: m.ProjectDetail })));
+const ProjectLifecycle      = React.lazy(() => import('./components/pages/ProjectLifecycle').then(m => ({ default: m.ProjectLifecycle })));
+const Grid                  = React.lazy(() => import('./components/pages/Grid').then(m => ({ default: m.Grid })));
+const ESG                   = React.lazy(() => import('./components/pages/ESG').then(m => ({ default: m.ESG })));
+const Funds                 = React.lazy(() => import('./components/pages/Funds').then(m => ({ default: m.Funds })));
+const FundDetail            = React.lazy(() => import('./components/pages/FundDetail').then(m => ({ default: m.FundDetail })));
+const Marketplace           = React.lazy(() => import('./components/pages/Marketplace').then(m => ({ default: m.Marketplace })));
+const ModulesPage           = React.lazy(() => import('./components/pages/ModulesPage').then(m => ({ default: m.ModulesPage })));
+const Admin                 = React.lazy(() => import('./components/pages/Admin').then(m => ({ default: m.Admin })));
+const Support               = React.lazy(() => import('./components/pages/Support').then(m => ({ default: m.Support })));
+const Pipeline              = React.lazy(() => import('./components/pages/Pipeline').then(m => ({ default: m.Pipeline })));
+const Reports               = React.lazy(() => import('./components/pages/Reports').then(m => ({ default: m.Reports })));
+const Lois                  = React.lazy(() => import('./components/pages/Lois').then(m => ({ default: m.Lois })));
+const LoiDetail             = React.lazy(() => import('./components/pages/LoiDetail').then(m => ({ default: m.LoiDetail })));
+const Intelligence          = React.lazy(() => import('./components/pages/Intelligence').then(m => ({ default: m.Intelligence })));
+const Settlement            = React.lazy(() => import('./components/pages/Settlement').then(m => ({ default: m.Settlement })));
+const Popia                 = React.lazy(() => import('./components/pages/Popia').then(m => ({ default: m.Popia })));
+const Briefing              = React.lazy(() => import('./components/pages/Briefing').then(m => ({ default: m.Briefing })));
+const Monitoring            = React.lazy(() => import('./components/pages/Monitoring').then(m => ({ default: m.Monitoring })));
+const ForgotPassword        = React.lazy(() => import('./components/pages/ForgotPassword'));
+const ResetPassword         = React.lazy(() => import('./components/pages/ResetPassword'));
+const Security              = React.lazy(() => import('./components/pages/Security'));
+const Settings              = React.lazy(() => import('./components/pages/Settings'));
 
 // National-scale workbenches — code-split so the initial bundle stays small.
 // Each suite page pulls in a significant amount of form-builder code; users
@@ -113,7 +114,7 @@ const TimeAxisPrototype   = React.lazy(() => import('./ux-alternatives/time-axis
 const CommandLensPrototype= React.lazy(() => import('./ux-alternatives/command-lens/CommandLens'));
 const CockpitGridPrototype= React.lazy(() => import('./ux-alternatives/cockpit-grid/CockpitGrid'));
 
-import { OnboardingWizard } from './components/onboarding/OnboardingWizard';
+const OnboardingWizard      = React.lazy(() => import('./components/onboarding/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
 import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { AiAssistantDock } from './components/AiAssistantDock';
 import { OnboardingTour } from './components/OnboardingTour';
@@ -1445,6 +1446,13 @@ function LaunchRedirect() {
 // App Router
 function AppRoutes() {
   return (
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-ionex-canvas">
+          <div className="spinner" />
+        </div>
+      }
+    >
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/sso-landing" element={<SsoLanding />} />
@@ -1561,6 +1569,7 @@ function AppRoutes() {
       <Route path="/" element={<Navigate to="/launch" replace />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </React.Suspense>
   );
 }
 
