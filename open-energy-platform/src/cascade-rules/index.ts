@@ -16,6 +16,7 @@ import { registerCarbonEventRules } from './carbon-events';
 import { registerRegulatorInboxRules } from './regulator-inbox';
 import { registerOfftakerProcurementRules } from './offtaker-procurement';
 import { registerUnderservedInboxRules } from './underserved-inboxes';
+import { registerPpaDeliveryShortfallRules } from './ppa-delivery-shortfall';
 
 registerTradingSafetyRules();
 registerLifecycleSequencingRules();
@@ -32,5 +33,6 @@ registerCarbonEventRules();
 registerRegulatorInboxRules();
 registerOfftakerProcurementRules();
 registerUnderservedInboxRules();
+registerPpaDeliveryShortfallRules();
 
-export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules, registerGridDispatchRules, registerTraderMarginRules, registerLenderCovenantRules, registerCarbonEventRules, registerRegulatorInboxRules, registerOfftakerProcurementRules, registerUnderservedInboxRules };
+export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules, registerGridDispatchRules, registerTraderMarginRules, registerLenderCovenantRules, registerCarbonEventRules, registerRegulatorInboxRules, registerOfftakerProcurementRules, registerUnderservedInboxRules, registerPpaDeliveryShortfallRules };
