@@ -641,6 +641,7 @@ export function ActionModal({
     return init;
   });
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const dialogRef = React.useRef<HTMLDivElement>(null);
   const update = (k: string, v: string) => setValues(prev => ({ ...prev, [k]: v }));
@@ -675,7 +676,11 @@ export function ActionModal({
       }
     }
     setSaving(true); setErr(null);
-    try { await onSubmit(values); } catch (e: unknown) { setErr(e instanceof Error ? e.message : 'Failed'); setSaving(false); }
+    try {
+      await onSubmit(values);
+      setSaved(true);
+      setTimeout(() => onClose(), 600);
+    } catch (e: unknown) { setErr(e instanceof Error ? e.message : 'Failed'); setSaving(false); }
   };
   const btnCls = cta === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-[#1a3a5c] hover:bg-[#0f1c2e]';
   return (
@@ -686,7 +691,7 @@ export function ActionModal({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={motionTransition('snap')}
-      className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center sm:p-4"
+      className="fixed inset-0 z-50 bg-[#0f1c2e]/60 backdrop-blur-[2px] flex items-end sm:items-center justify-center sm:p-4"
       onClick={onClose}
     >
       <motion.div
@@ -727,8 +732,8 @@ export function ActionModal({
           ))}
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c]">Cancel</button>
-            <button type="button" onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1a3a5c] ${btnCls}`}>
-              {saving ? 'Saving…' : submitLabel}
+            <button type="button" onClick={submit} disabled={saving || saved} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1a3a5c] transition-colors ${saved ? 'bg-green-600' : btnCls}`}>
+              {saved ? '✓ Done' : saving ? 'Saving…' : submitLabel}
             </button>
           </div>
         </div>
