@@ -163,7 +163,7 @@ app.onError((err, c) => {
     const id = `errlog_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
     const write = c.env.DB.prepare(
       `INSERT INTO error_log (id, req_id, source, severity, route, method, status, participant_id, tenant_id, error_name, error_message, error_stack, user_agent, ip, url) VALUES (?, ?, 'server', 'error', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).bind(id, reqId, c.req.path, c.req.method, status, auth?.user?.id || null, auth?.tenant_id || null, (err as Error).name || null, (err.message || '').slice(0, 2000), ((err as Error).stack || '').slice(0, 8000), (c.req.header('User-Agent') || '').slice(0, 500) || null, c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || null, c.req.url.slice(0, 1000)).run();
+    ).bind(id, reqId, c.req.path, c.req.method, status, auth?.user?.id || null, auth?.tenant_id || null, (err as Error).name || null, (err.message || '').slice(0, 2000), ((err as Error).stack || '').split('\n').slice(0, 5).join('\n').slice(0, 1000), (c.req.header('User-Agent') || '').slice(0, 500) || null, c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || null, c.req.url.slice(0, 1000)).run();
     c.executionCtx?.waitUntil?.(Promise.resolve(write).catch(() => {}));
   } catch { /* swallow — never fail the error handler */ }
 

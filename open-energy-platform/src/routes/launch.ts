@@ -288,48 +288,38 @@ async function buildTraderBoard(c: any, user: any): Promise<LaunchPayload> {
     .first()
     .catch(() => ({}));
 
-  const marginRow = await c.env.DB.prepare(
-    `SELECT COALESCE(SUM(amount_zar), 0) AS m FROM margin_reservations
-      WHERE participant_id = ? AND status = 'reserved'`,
-  )
-    .bind(user.id)
-    .first()
-    .catch(() => ({ m: 0 } as any));
+  const [marginRow, exceptionsOpen, fees24hRow, allocPendingRow] = await Promise.all([
+    c.env.DB.prepare(
+      `SELECT COALESCE(SUM(amount_zar), 0) AS m FROM margin_reservations
+        WHERE participant_id = ? AND status = 'reserved'`,
+    ).bind(user.id).first().catch(() => ({ m: 0 } as any)),
 
-  // L4 trader surfaces — open trade exceptions filed against this trader's
-  // fills, plus 24h fees ledger sum. Both wrapped in .catch so older
-  // deploys without migration 054 keep working.
-  const exceptionsOpen = await c.env.DB.prepare(
-    `SELECT COUNT(*) AS c FROM trade_exceptions e
-       INNER JOIN trade_matches m ON m.id = e.match_id
-       INNER JOIN trade_orders bo ON bo.id = m.buy_order_id
-       INNER JOIN trade_orders so ON so.id = m.sell_order_id
-      WHERE e.status IN ('open','investigating')
-        AND (bo.participant_id = ? OR so.participant_id = ?)`,
-  )
-    .bind(user.id, user.id)
-    .first()
-    .catch(() => null as any);
+    // L4 trader surfaces — open trade exceptions filed against this trader's
+    // fills, plus 24h fees ledger sum. Both wrapped in .catch so older
+    // deploys without migration 054 keep working.
+    c.env.DB.prepare(
+      `SELECT COUNT(*) AS c FROM trade_exceptions e
+         INNER JOIN trade_matches m ON m.id = e.match_id
+         INNER JOIN trade_orders bo ON bo.id = m.buy_order_id
+         INNER JOIN trade_orders so ON so.id = m.sell_order_id
+        WHERE e.status IN ('open','investigating')
+          AND (bo.participant_id = ? OR so.participant_id = ?)`,
+    ).bind(user.id, user.id).first().catch(() => null as any),
 
-  const fees24hRow = await c.env.DB.prepare(
-    `SELECT COALESCE(SUM(amount_zar), 0) AS s FROM trade_fees
-      WHERE participant_id = ?
-        AND calculated_at >= datetime('now','-1 day')`,
-  )
-    .bind(user.id)
-    .first()
-    .catch(() => null as any);
+    c.env.DB.prepare(
+      `SELECT COALESCE(SUM(amount_zar), 0) AS s FROM trade_fees
+        WHERE participant_id = ?
+          AND calculated_at >= datetime('now','-1 day')`,
+    ).bind(user.id).first().catch(() => null as any),
 
-  const allocPendingRow = await c.env.DB.prepare(
-    `SELECT COUNT(*) AS c FROM trade_matches m
-       INNER JOIN trade_orders o ON (o.id = m.buy_order_id OR o.id = m.sell_order_id)
-      WHERE o.participant_id = ?
-        AND NOT EXISTS (SELECT 1 FROM trade_allocations a WHERE a.match_id = m.id AND a.order_id = o.id)
-        AND m.matched_at >= datetime('now','-30 days')`,
-  )
-    .bind(user.id)
-    .first()
-    .catch(() => null as any);
+    c.env.DB.prepare(
+      `SELECT COUNT(*) AS c FROM trade_matches m
+         INNER JOIN trade_orders o ON (o.id = m.buy_order_id OR o.id = m.sell_order_id)
+        WHERE o.participant_id = ?
+          AND NOT EXISTS (SELECT 1 FROM trade_allocations a WHERE a.match_id = m.id AND a.order_id = o.id)
+          AND m.matched_at >= datetime('now','-30 days')`,
+    ).bind(user.id).first().catch(() => null as any),
+  ]);
 
   const rejections = Number((r as any)?.rejections_24h || 0);
   const openOrders = Number((r as any)?.open_orders || 0);
@@ -605,28 +595,24 @@ async function buildIppDeveloperBoard(c: any, user: any): Promise<LaunchPayload>
     .first()
     .catch(() => ({}));
 
-  const milestonesDue = await c.env.DB.prepare(`
-    SELECT COUNT(*) AS c FROM ipp_epc_milestones m
-      INNER JOIN ipp_epc_contracts e ON e.id = m.epc_contract_id
-      INNER JOIN ipp_projects p ON p.id = e.project_id
-      WHERE p.developer_id = ?
-        AND m.target_date <= date('now','+14 days')
-        AND COALESCE(m.completed_at, '') = ''
-  `)
-    .bind(user.id)
-    .first()
-    .catch(() => null as any);
+  const [milestonesDue, envExpiring] = await Promise.all([
+    c.env.DB.prepare(`
+      SELECT COUNT(*) AS c FROM ipp_epc_milestones m
+        INNER JOIN ipp_epc_contracts e ON e.id = m.epc_contract_id
+        INNER JOIN ipp_projects p ON p.id = e.project_id
+        WHERE p.developer_id = ?
+          AND m.target_date <= date('now','+14 days')
+          AND COALESCE(m.completed_at, '') = ''
+    `).bind(user.id).first().catch(() => null as any),
 
-  const envExpiring = await c.env.DB.prepare(`
-    SELECT COUNT(*) AS c FROM ipp_environmental_authorisations a
-      INNER JOIN ipp_projects p ON p.id = a.project_id
-      WHERE p.developer_id = ?
-        AND a.expiry_date IS NOT NULL
-        AND date(a.expiry_date) <= date('now','+90 days')
-  `)
-    .bind(user.id)
-    .first()
-    .catch(() => null as any);
+    c.env.DB.prepare(`
+      SELECT COUNT(*) AS c FROM ipp_environmental_authorisations a
+        INNER JOIN ipp_projects p ON p.id = a.project_id
+        WHERE p.developer_id = ?
+          AND a.expiry_date IS NOT NULL
+          AND date(a.expiry_date) <= date('now','+90 days')
+    `).bind(user.id).first().catch(() => null as any),
+  ]);
 
   const total = Number(r?.projects_total || 0);
   const dev = Number(r?.projects_development || 0);

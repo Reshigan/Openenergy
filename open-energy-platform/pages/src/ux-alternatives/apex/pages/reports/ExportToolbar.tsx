@@ -98,7 +98,6 @@ function ScheduleDropdown({ onClose }: { onClose: () => void }) {
   }, [onClose]);
 
   function handleSave() {
-    console.log('schedule report', { freq, email });
     setSaved(true);
     setTimeout(onClose, 900);
   }
@@ -221,8 +220,8 @@ function ScheduleDropdown({ onClose }: { onClose: () => void }) {
 export function ExportToolbar({ reportId, reportLabel }: ExportToolbarProps) {
   const [scheduleOpen, setScheduleOpen] = useState(false);
 
-  function handleExport(format: ExportFormat) {
-    console.log('export', format, { reportId, reportLabel });
+  function handleExport(_format: ExportFormat) {
+    // export implementation pending
   }
 
   return (

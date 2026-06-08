@@ -60,20 +60,12 @@ async function auditOutcome(
 }
 
 export async function runCascadeRegistry(ctx: CascadeContext): Promise<void> {
-  for (const rule of REGISTRY) {
-    let matched = false;
-    try {
-      matched = rule.match(ctx);
-    } catch {
-      matched = false;
-    }
-    if (!matched) continue;
-
-    try {
-      await rule.run(ctx);
-      await auditOutcome(ctx, rule, 'ran');
-    } catch (e) {
-      await auditOutcome(ctx, rule, 'error', (e as Error).message);
-    }
-  }
+  const matched = REGISTRY.filter(rule => {
+    try { return rule.match(ctx); } catch { return false; }
+  });
+  await Promise.allSettled(matched.map(rule =>
+    rule.run(ctx)
+      .then(() => auditOutcome(ctx, rule, 'ran'))
+      .catch((e: unknown) => auditOutcome(ctx, rule, 'error', (e as Error).message)),
+  ));
 }

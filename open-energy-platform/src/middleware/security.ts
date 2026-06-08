@@ -179,8 +179,10 @@ export async function corsMiddleware(c: Context<HonoEnv>, next: Next) {
 export async function strictCors(c: Context<HonoEnv>, next: Next) {
   const origin = c.req.header('Origin');
   
+  const env = (c.env as unknown as { ENVIRONMENT?: string })?.ENVIRONMENT;
+  const isLocalAllowed = env !== 'production';
   if (origin !== 'https://oe.vantax.co.za' && origin !== 'https://www.oe.vantax.co.za') {
-    if (!origin?.startsWith('http://localhost')) {
+    if (!isLocalAllowed || !origin?.startsWith('http://localhost')) {
       return c.json({ success: false, error: 'Origin not allowed' }, 403);
     }
   }
