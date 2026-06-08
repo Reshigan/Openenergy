@@ -641,7 +641,7 @@ export function ActionModal({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={motionTransition('snap')}
-      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center sm:p-4"
       onClick={onClose}
     >
       <motion.div
@@ -652,7 +652,7 @@ export function ActionModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="action-modal-title"
-        className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full sm:max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">

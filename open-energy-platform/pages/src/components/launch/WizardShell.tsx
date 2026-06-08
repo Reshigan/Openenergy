@@ -48,10 +48,11 @@ export default function WizardShell({
   const step = steps[i];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0b1c30]/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-[#0b1c30]/40 backdrop-blur-sm" onClick={onClose}>
       <div
         ref={dialogRef} role="dialog" aria-modal="true" aria-label={heading}
-        className="w-full max-w-lg rounded-xl bg-white border border-[#dde4ec] shadow-2xl"
+        className="w-full sm:max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-xl bg-white border border-[#dde4ec] shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-center justify-between px-5 py-3 border-b border-[#eef2f7]">
           <div>
