@@ -215,6 +215,11 @@ function RoleQueueDepth({ rows }: { rows: QueueDepth[] }) {
             <div className="w-28 text-[11px] text-[#1a3a5c] font-medium truncate capitalize">{r.role.replace(/_/g, ' ')}</div>
             <div className="flex-1 h-2 rounded-full bg-[#e8edf2] overflow-hidden">
               <div
+                role="progressbar"
+                aria-label={`${r.role.replace(/_/g, ' ')} queue depth`}
+                aria-valuenow={r.pending}
+                aria-valuemin={0}
+                aria-valuemax={max}
                 className="h-full rounded-full bg-[#1a3a5c]"
                 style={{ width: `${(r.pending / max) * 100}%` }}
               />

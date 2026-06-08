@@ -211,6 +211,7 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
   const [modalForm, setModalForm] = useState<{ form: FormSpec; rowId?: string; title: string } | null>(null);
   const [detailRow, setDetailRow] = useState<Record<string, unknown> | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [confirmPending, setConfirmPending] = useState<{ action: RowAction; row: Record<string, unknown>; message: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -230,8 +231,8 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
 
   useEffect(() => { void load(); }, [load]);
 
-  const handleRowAction = useCallback(async (action: RowAction, row: Record<string, unknown>) => {
-    if (action.confirm && !window.confirm(action.confirm)) return;
+  const executeRowAction = useCallback(async (action: RowAction, row: Record<string, unknown>) => {
+    setConfirmPending(null);
     const rowId = String(row.id ?? '');
     const url = templateUrl(action.endpoint, row);
     if (action.form) {
@@ -266,8 +267,47 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
     }
   }, [load]);
 
+  const handleRowAction = useCallback((action: RowAction, row: Record<string, unknown>) => {
+    if (action.confirm) {
+      setConfirmPending({ action, row, message: action.confirm });
+      return;
+    }
+    void executeRowAction(action, row);
+  }, [executeRowAction]);
+
   return (
     <div className="space-y-3">
+      {confirmPending && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-dialog-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+        >
+          <div className="bg-white rounded-xl border border-[#dde4ec] shadow-xl p-6 max-w-sm w-full mx-4">
+            <h2 id="confirm-dialog-title" className="text-[15px] font-display font-semibold text-[#0f1c2e] mb-2">
+              Confirm action
+            </h2>
+            <p className="text-[13px] text-[#6b7685] mb-5">{confirmPending.message}</p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmPending(null)}
+                className="rounded-md border border-[#dde4ec] bg-white px-4 py-2 text-[13px] font-medium text-[#0f1c2e] hover:bg-[#eef3f8]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void executeRowAction(confirmPending.action, confirmPending.row)}
+                className="rounded-md bg-red-700 px-4 py-2 text-[13px] font-semibold text-white hover:bg-red-800"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {(tab.description || tab.create) && (
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           {tab.description && (
