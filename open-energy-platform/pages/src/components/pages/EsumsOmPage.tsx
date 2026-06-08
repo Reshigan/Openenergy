@@ -12,6 +12,7 @@ import { EsumsOmCockpit } from '../widgets/EsumsOmCockpit';
 import { EsumsOmOpportunities } from '../widgets/EsumsOmOpportunities';
 import { PredictiveAssetHealthChainTab } from '../esums/PredictiveAssetHealthChainTab';
 import { CommissioningTab } from '../esums/CommissioningTab';
+import { SmartMeterChainTab } from '../esums/SmartMeterChainTab';
 import { WarrantyClaimChainTab } from '../esums/WarrantyClaimChainTab';
 import { VendorEscalationChainTab } from '../esums/VendorEscalationChainTab';
 import { WoChainTab } from '../esums/WoChainTab';
@@ -63,6 +64,14 @@ export function EsumsOmPage() {
       description: 'Site onboarding workflow — planned → registered → devices → ingestion → first telemetry → energised → in O&M. P6-grade audit chain with SLA gates per stage.',
       columns: [],
       customContent: <CommissioningTab />,
+    },
+    {
+      key: 'smart_meter',
+      label: 'Smart-meter chain',
+      endpoint: '',
+      description: 'NRS 047 smart meter lifecycle from purchase order through FAT, delivery, installation, commissioning, comms test and data-quality validation to operational service.',
+      columns: [],
+      customContent: <SmartMeterChainTab />,
     },
     {
       key: 'warranty_claims',
