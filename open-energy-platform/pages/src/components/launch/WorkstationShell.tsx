@@ -113,7 +113,7 @@ function TabNav({
             <button type="button"
               onClick={() => setQ('')}
               aria-label="Clear tab filter"
-              className="text-[11px] font-medium text-[#6b7685] hover:text-[#0f1c2e] shrink-0"
+              className="text-[11px] font-medium text-[#6b7685] hover:text-[#0f1c2e] shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c] focus-visible:rounded"
             >
               clear
             </button>
@@ -124,8 +124,8 @@ function TabNav({
         <div className="flex flex-wrap items-center gap-1 pb-2 border-b border-[#eef2f7] mb-2">
           <button type="button"
             onClick={() => setActiveGroup(null)}
-            className={`h-7 px-2 rounded text-[11px] font-medium ${
-              activeGroup === null ? 'bg-[#1a3a5c] text-white' : 'text-[#6b7685] hover:bg-gray-50'
+            className={`h-7 px-2 rounded text-[11px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+              activeGroup === null ? 'bg-[#1a3a5c] text-white focus-visible:ring-white/80' : 'text-[#6b7685] hover:bg-gray-50 focus-visible:ring-[#1a3a5c]'
             }`}
           >
             All
@@ -134,8 +134,8 @@ function TabNav({
             <button type="button"
               key={g}
               onClick={() => setActiveGroup(g)}
-              className={`h-7 px-2 rounded text-[11px] font-medium ${
-                activeGroup === g ? 'bg-[#1a3a5c] text-white' : 'text-[#6b7685] hover:bg-gray-50'
+              className={`h-7 px-2 rounded text-[11px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+                activeGroup === g ? 'bg-[#1a3a5c] text-white focus-visible:ring-white/80' : 'text-[#6b7685] hover:bg-gray-50 focus-visible:ring-[#1a3a5c]'
               }`}
             >
               {g}
@@ -157,8 +157,8 @@ function TabNav({
                 aria-selected={isActive}
                 aria-controls={`panel-${t.key}`}
                 onClick={() => pick(t.key)}
-                className={`h-9 px-3 rounded-md text-[13px] font-semibold inline-flex items-center gap-2 ${
-                  isActive ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'
+                className={`h-9 px-3 rounded-md text-[13px] font-semibold inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+                  isActive ? 'bg-[#1a3a5c] text-white focus-visible:ring-white/80' : 'text-[#3d4756] hover:bg-[#eef2f7] focus-visible:ring-[#1a3a5c]'
                 }`}
               >
                 {cleanTabLabel(t.label)}
@@ -305,21 +305,21 @@ export function WorkstationShell({
                 {backHref && (
                   <button type="button"
                     onClick={() => navigate(backHref)}
-                    className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20"
+                    className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
                   >
                     <ArrowLeft size={12} /> {backLabel || 'Back'}
                   </button>
                 )}
                 <button type="button"
                   onClick={refresh}
-                  className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20"
+                  className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
                 >
                   <RefreshCw size={12} /> Refresh
                 </button>
                 {role && (
                   <button type="button"
                     onClick={() => setPaletteOpen(true)}
-                    className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20"
+                    className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
                     aria-label="What can I do here"
                   >
                     <HelpCircle size={12} /> What can I do?
@@ -432,11 +432,11 @@ export function WorkstationShell({
           </div>
           <div className="flex flex-wrap gap-2">
             {backHref && (
-              <button type="button" onClick={() => navigate(backHref)} className="h-9 px-3 rounded-md border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/20">
+              <button type="button" onClick={() => navigate(backHref)} className="h-9 px-3 rounded-md border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80">
                 <ArrowLeft size={12} /> {backLabel || 'Back'}
               </button>
             )}
-            <button type="button" onClick={refresh} className="h-9 px-3 rounded-md border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/20">
+            <button type="button" onClick={refresh} className="h-9 px-3 rounded-md border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80">
               <RefreshCw size={12} /> Refresh
             </button>
           </div>
@@ -573,7 +573,9 @@ export function ListingTable({
               <tr
                 key={rowKey(r)}
                 onClick={clickHandler}
-                className={`border-t border-[#e5ebf2] hover:bg-[#f8fafc] ${clickable ? 'cursor-pointer' : ''}`}
+                onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); clickHandler(e as unknown as React.MouseEvent); } } : undefined}
+                tabIndex={clickable ? 0 : undefined}
+                className={`border-t border-[#e5ebf2] hover:bg-[#f8fafc] ${clickable ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#1a3a5c]' : ''}`}
               >
                 {columns.map(col => (
                   <td key={col.key} className={`px-4 py-2 ${col.align === 'right' ? 'text-right' : ''}`}>
@@ -640,7 +642,32 @@ export function ActionModal({
   });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const dialogRef = React.useRef<HTMLDivElement>(null);
   const update = (k: string, v: string) => setValues(prev => ({ ...prev, [k]: v }));
+
+  // Focus management: trap Tab inside the modal; Esc closes
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return () => {};
+    const focusable = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const els = () => Array.from(dialog.querySelectorAll<HTMLElement>(focusable)).filter(el => !el.hasAttribute('disabled'));
+    // Move initial focus to first element
+    els()[0]?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key !== 'Tab') return;
+      const list = els();
+      if (!list.length) return;
+      const first = list[0], last = list[list.length - 1];
+      if (e.shiftKey ? document.activeElement === first : document.activeElement === last) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   const submit = async () => {
     for (const f of fields) {
       if (f.required && !values[f.key]) {
@@ -670,12 +697,13 @@ export function ActionModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="action-modal-title"
+        ref={dialogRef}
         className="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full sm:max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
           <h3 id="action-modal-title" className="text-[16px] font-semibold text-[#0f1c2e]">{title}</h3>
-          <button type="button" onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e]">×</button>
+          <button type="button" onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c] focus-visible:rounded">×</button>
         </div>
         <div className="p-5 space-y-3">
           <div role="alert" aria-live="assertive" className="text-[12px] text-red-700 min-h-[1em]">
@@ -685,21 +713,21 @@ export function ActionModal({
             <label key={f.key} className="block text-[13px]">
               <span className="text-[#6b7685]">{cleanTabLabel(f.label)}{f.required && ' *'}</span>
               {f.type === 'textarea' ? (
-                <textarea value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} rows={4} placeholder={f.placeholder} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none" />
+                <textarea value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} rows={4} placeholder={f.placeholder} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c]" />
               ) : f.type === 'select' ? (
-                <select value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg">
+                <select value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c]">
                   <option value="">— select —</option>
                   {(f.options || []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               ) : (
-                <input type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'} value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} placeholder={f.placeholder} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg" />
+                <input type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'} value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} placeholder={f.placeholder} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c]" />
               )}
               {f.helperText && <span className="block mt-1 text-[10px] text-[#6b7685]">{f.helperText}</span>}
             </label>
           ))}
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
-            <button type="button" onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${btnCls}`}>
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c]">Cancel</button>
+            <button type="button" onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1a3a5c] ${btnCls}`}>
               {saving ? 'Saving…' : submitLabel}
             </button>
           </div>
