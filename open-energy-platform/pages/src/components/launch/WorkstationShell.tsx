@@ -711,6 +711,12 @@ export function ActionModal({
           <button type="button" onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c] focus-visible:rounded">×</button>
         </div>
         <div className="p-5 space-y-3">
+          {cta === 'danger' && (
+            <div role="alert" className="flex gap-2 items-start px-3 py-2.5 rounded-lg bg-red-50 border border-red-200 text-[12px] text-red-800">
+              <span className="shrink-0 mt-0.5" aria-hidden="true">⚠</span>
+              <span>This action is irreversible. Review carefully before confirming.</span>
+            </div>
+          )}
           <div role="alert" aria-live="assertive" className="text-[12px] text-red-700 min-h-[1em]">
             {err ?? ''}
           </div>
