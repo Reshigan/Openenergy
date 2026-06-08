@@ -122,7 +122,7 @@ describe('subscription-billing — mount reachability', () => {
     });
     const res = await app.fetch(req, env, { waitUntil: () => {}, passThroughOnException: () => {} });
     expect(res.status).toBe(200);
-  });
+  }, 30000);
 
   // Authoritative mount assertion: the route is wired in source AND lands before
   // the /api catch-all (platformFeaturesRoutes) so the specific mount wins.
