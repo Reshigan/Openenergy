@@ -11,6 +11,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { InlineHelp } from '../InlineHelp';
 
 type CommissioningStatus =
   | 'planned' | 'site_registered' | 'devices_registered' | 'ingestion_wired'
@@ -160,6 +161,10 @@ export function CommissioningTab() {
   return (
     <div data-testid="esums-commissioning-tab" style={{ padding: '16px 20px', minHeight: 600 }}>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c2733', marginTop: 0 }}>Site commissioning chain</h2>
+      <InlineHelp helpKey="esums.commissioning.intro" title="How commissioning works">
+        Each site moves through fixed stages with an SLA per stage. Click a row to open its timeline and advance it.
+        Miss an SLA and the site is flagged to its owner and the regulator.
+      </InlineHelp>
       <p style={{ fontSize: 13, color: '#557', marginTop: 4 }}>
         Site onboarding workflow — planned → site registered → devices registered → ingestion wired →
         first telemetry OK → energised → in O&M. SLA windows: 14d / 14d / 7d / 30d per stage.

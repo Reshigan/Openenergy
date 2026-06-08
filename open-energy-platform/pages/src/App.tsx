@@ -1322,7 +1322,7 @@ function GlobalOnboardingTourWrapper() {
   const { user } = useAuth();
   if (!user) return null;
   const baseSteps = [
-    { key: 'welcome', title: `Welcome to Consolidated Energy Cockpit, ${user.email.split('@')[0]}.`, body: 'This quick tour points out a couple of things to try first.' },
+    { key: 'welcome', title: `Welcome, ${user.email.split('@')[0]}.`, body: 'A couple of things to try first: your setup checklist on the home board, and the "What can I do?" search in any workstation.' },
     { key: 'ai-dock', title: 'Ask the assistant anything', body: 'The blue dock in the corner answers questions about any surface and can propose one-click actions you confirm before they run.' },
     { key: 'workstation', title: 'Workstations are role-specific', body: `Your default workstation lives at /${user.role}/workstation — listings, KPIs and one-click actions are tailored to your role.` },
   ];
