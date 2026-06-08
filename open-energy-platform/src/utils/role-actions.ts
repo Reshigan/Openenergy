@@ -6,7 +6,7 @@
 // hammer D1 at national scale; the cache is invalidated on every push.
 // ═══════════════════════════════════════════════════════════════════════════
 import type { HonoBindings } from './types';
-import type { PlatformRole } from './platform-event';
+import { isPlatformRole, type PlatformRole } from './platform-event';
 
 export type RoleActionPriority = 'low' | 'normal' | 'high' | 'urgent';
 
@@ -37,6 +37,10 @@ export function pendingCacheKey(role: string, participantId?: string | null): st
 }
 
 export async function pushRoleAction(env: HonoBindings, input: RoleActionInput): Promise<string> {
+  if (!isPlatformRole(input.target_role)) {
+    console.error(`pushRoleAction: invalid target_role "${input.target_role}" — skipping insert`);
+    return '';
+  }
   const id = `raq_${crypto.randomUUID()}`;
   const now = new Date().toISOString();
   await env.DB.prepare(

@@ -174,7 +174,7 @@ launch.get('/:role/kpis', authMiddleware, async (c) => {
     return c.json({ success: true, data: payload });
   } catch (err) {
     console.error('Launch board error:', err);
-    return c.json({ success: false, error: 'Failed to build launch board', details: String(err) }, 500);
+    return c.json({ success: false, error: 'Failed to build launch board' }, 500);
   }
 });
 
