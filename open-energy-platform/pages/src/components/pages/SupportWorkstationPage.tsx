@@ -38,7 +38,7 @@ export function SupportWorkstationPage() {
             body: ({ onRefresh }) => (
               <div className="space-y-3">
                 <div className="flex justify-end">
-                  <button onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+                  <button type="button" onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
                     + File ticket
                   </button>
                 </div>
@@ -57,8 +57,8 @@ export function SupportWorkstationPage() {
                     { key: '_actions', label: '', render: (r) => (
                       (r.status !== 'resolved' && r.status !== 'closed') ? (
                         <div className="flex gap-1">
-                          <button onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Transition</button>
-                          <button onClick={() => setEscalating(r)} className="px-2 py-1 text-[11px] bg-amber-600 text-white rounded">Escalate</button>
+                          <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Transition</button>
+                          <button type="button" onClick={() => setEscalating(r)} className="px-2 py-1 text-[11px] bg-amber-600 text-white rounded">Escalate</button>
                         </div>
                       ) : null
                     ) },
@@ -214,7 +214,7 @@ export function SupportWorkstationPage() {
             body: ({ onRefresh }) => (
               <div className="space-y-3">
                 <div className="flex justify-end">
-                  <button onClick={() => setLoggingAccess(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+                  <button type="button" onClick={() => setLoggingAccess(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
                     + Log access
                   </button>
                 </div>
@@ -280,7 +280,7 @@ function CsatLifecycleTab({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
           + New CSAT record
         </button>
       </div>
@@ -388,7 +388,7 @@ function FileTicketModal({ onClose, onDone }: { onClose: () => void; onDone: () 
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
           <h3 className="text-[16px] font-semibold text-[#0f1c2e]">File a ticket</h3>
-          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
           {err && <div className="text-[12px] text-red-700">{err}</div>}
@@ -424,8 +424,8 @@ function FileTicketModal({ onClose, onDone }: { onClose: () => void; onDone: () 
             </label>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
-            <button onClick={submit} disabled={saving} className="px-4 py-2 bg-[#1a3a5c] text-white rounded-lg disabled:opacity-50">
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-[#1a3a5c] text-white rounded-lg disabled:opacity-50">
               {saving ? 'Filing…' : 'File ticket'}
             </button>
           </div>
@@ -459,7 +459,7 @@ function SlaPerformanceReportTab({ onRefresh }: { onRefresh: () => void }) {
 
   return (
     <div>
-      <button
+      <button type="button"
         onClick={() => setModal('create')}
         className="mb-4 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
       >

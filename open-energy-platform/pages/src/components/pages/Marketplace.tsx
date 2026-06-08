@@ -202,10 +202,10 @@ export function Marketplace() {
       subtitle="Capacity, RECs and carbon credits — list, inquire, transact."
       actions={
         <>
-          <button onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
+          <button type="button" onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
             <RefreshCw className="w-4 h-4" />
           </button>
-          <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light">
+          <button type="button" onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light">
             <Plus className="w-4 h-4" /> Create listing
           </button>
         </>
@@ -226,7 +226,7 @@ export function Marketplace() {
           { k: 'mine', label: 'My listings' },
           { k: 'inquiries', label: 'My inquiries' },
         ] as Array<{ k: Tab; label: string }>).map(t => (
-          <button
+          <button type="button"
             key={t.k}
             onClick={() => setTab(t.k)}
             className={`pb-3 border-b-2 transition-colors ${tab === t.k ? 'border-ionex-brand text-ionex-brand font-semibold' : 'border-transparent text-ionex-text-mute hover:text-gray-900'}`}
@@ -355,11 +355,11 @@ function ListingCard({ listing, isMine, onOpen, onInquire }: {
         </div>
       </div>
       <div className="p-4 border-t border-ionex-border-100 flex gap-2">
-        <button onClick={onOpen} className="flex-1 px-3 py-2 border border-ionex-border-200 rounded-lg text-sm hover:bg-gray-50">
+        <button type="button" onClick={onOpen} className="flex-1 px-3 py-2 border border-ionex-border-200 rounded-lg text-sm hover:bg-gray-50">
           View details
         </button>
         {!isMine && listing.status === 'active' && (
-          <button onClick={onInquire} className="flex-1 px-3 py-2 bg-ionex-brand text-white rounded-lg text-sm hover:bg-ionex-brand-light">
+          <button type="button" onClick={onInquire} className="flex-1 px-3 py-2 bg-ionex-brand text-white rounded-lg text-sm hover:bg-ionex-brand-light">
             Inquire
           </button>
         )}
@@ -412,7 +412,7 @@ function ListingDetailModal({ listing, isMine, inquiries, inquiriesLoading, onCl
             <h2 className="text-xl font-bold mt-2">{listing.title}</h2>
             {listing.seller_company && <p className="text-sm text-ionex-text-mute">by {listing.seller_company}</p>}
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
+          <button type="button" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
         </div>
         <div className="p-5 space-y-4">
           {listing.description && <p className="text-gray-700 whitespace-pre-wrap">{listing.description}</p>}
@@ -442,12 +442,12 @@ function ListingDetailModal({ listing, isMine, inquiries, inquiriesLoading, onCl
           </div>
 
           {!isMine && listing.status === 'active' && (
-            <button onClick={onInquire} className="w-full py-3 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light">
+            <button type="button" onClick={onInquire} className="w-full py-3 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light">
               Inquire about this listing
             </button>
           )}
           {isMine && listing.status === 'active' && (
-            <button onClick={onWithdraw} className="w-full py-3 border border-red-300 text-red-700 rounded-lg hover:bg-red-50">
+            <button type="button" onClick={onWithdraw} className="w-full py-3 border border-red-300 text-red-700 rounded-lg hover:bg-red-50">
               Withdraw listing
             </button>
           )}
@@ -474,13 +474,13 @@ function ListingDetailModal({ listing, isMine, inquiries, inquiriesLoading, onCl
                     {inq.message && <p className="text-sm text-gray-700 mt-2">“{inq.message}”</p>}
                     {inq.status === 'pending' && (
                       <div className="flex gap-2 mt-3">
-                        <button
+                        <button type="button"
                           onClick={() => onRespond(inq.id, 'accepted')}
                           className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
                         >
                           Accept
                         </button>
-                        <button
+                        <button type="button"
                           onClick={() => onRespond(inq.id, 'rejected')}
                           className="flex-1 px-3 py-2 border border-red-300 text-red-700 rounded-lg text-sm hover:bg-red-50"
                         >
@@ -550,7 +550,7 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
           <h2 className="text-xl font-bold">Create listing</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
+          <button type="button" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
         </div>
         <div className="p-5 space-y-4">
           {err && <ErrorBanner message={err} />}
@@ -594,8 +594,8 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
           </div>
         </div>
         <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
-          <button
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+          <button type="button"
             onClick={submit}
             disabled={submitting}
             className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50"
@@ -635,7 +635,7 @@ function InquireModal({ listing, onClose, onSent }: { listing: Listing; onClose:
             <h2 className="text-xl font-bold">Inquire</h2>
             <p className="text-sm text-ionex-text-mute">{listing.title}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
+          <button type="button" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
         </div>
         <div className="p-5 space-y-3">
           {err && <ErrorBanner message={err} />}
@@ -650,8 +650,8 @@ function InquireModal({ listing, onClose, onSent }: { listing: Listing; onClose:
           </Field>
         </div>
         <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
-          <button
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+          <button type="button"
             onClick={submit}
             disabled={submitting}
             className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50"

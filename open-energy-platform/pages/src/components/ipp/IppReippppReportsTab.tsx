@@ -383,13 +383,13 @@ export function IppReippppReportsTab() {
             <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
           ))}
         </select>
-        <button
+        <button type="button"
           onClick={() => load()}
           className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
         >
           Refresh
         </button>
-        <button
+        <button type="button"
           onClick={() => setShowCreate(v => !v)}
           className="ml-auto px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
         >
@@ -617,7 +617,7 @@ export function IppReippppReportsTab() {
                     </td>
                     <td className="py-2 pr-3">
                       {actions.length > 0 && (
-                        <button
+                        <button type="button"
                           onClick={() => openActionPicker(item)}
                           className="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
                         >
@@ -643,7 +643,7 @@ export function IppReippppReportsTab() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center gap-2 pt-1">
-          <button
+          <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
             className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
@@ -653,7 +653,7 @@ export function IppReippppReportsTab() {
           <span className="text-xs text-gray-500">
             Page {page} of {totalPages}
           </span>
-          <button
+          <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
             className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
@@ -714,13 +714,13 @@ export function IppReippppReportsTab() {
             )}
 
             <div className="flex gap-2 justify-end">
-              <button
+              <button type="button"
                 onClick={closeAction}
                 className="px-3 py-1.5 text-xs border rounded bg-white text-gray-600 hover:bg-gray-50"
               >
                 Cancel
               </button>
-              <button
+              <button type="button"
                 onClick={submitAction}
                 disabled={actionLoading || !actionName}
                 className="px-4 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"

@@ -138,7 +138,7 @@ export default function Security() {
           <div className={`mb-3 rounded-lg border px-3 py-2 text-[13px] ${mfaMsg.kind === 'ok' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>{mfaMsg.text}</div>
         )}
         {!mfaEnabled && !mfaSetup && (
-          <button className="btn btn-primary" onClick={startMfaSetup}>Enable MFA</button>
+          <button type="button" className="btn btn-primary" onClick={startMfaSetup}>Enable MFA</button>
         )}
         {!mfaEnabled && mfaSetup && (
           <div className="flex flex-col md:flex-row gap-6 items-start">
@@ -155,7 +155,7 @@ export default function Security() {
               </p>
               <div className="flex gap-2">
                 <input value={mfaCode} onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ''))} maxLength={6} className="input font-mono tracking-[0.4em] text-center" placeholder="123456" />
-                <button className="btn btn-primary" onClick={confirmMfa} disabled={mfaCode.length !== 6}>Confirm</button>
+                <button type="button" className="btn btn-primary" onClick={confirmMfa} disabled={mfaCode.length !== 6}>Confirm</button>
               </div>
             </div>
           </div>
@@ -164,7 +164,7 @@ export default function Security() {
           <div className="flex flex-col gap-3">
             <p className="text-[13px]" style={{ color: '#6b7685' }}>Two-factor authentication is active on this account. You'll be challenged for a 6-digit code at every login.</p>
             <div>
-              <button className="btn btn-secondary" onClick={disableMfa}>Disable MFA</button>
+              <button type="button" className="btn btn-secondary" onClick={disableMfa}>Disable MFA</button>
             </div>
           </div>
         )}
@@ -207,7 +207,7 @@ export default function Security() {
         <div className="flex items-center gap-2 mb-3">
           <Laptop size={18} className="text-slate-700" />
           <h2 className="text-[16px] font-semibold">Active sessions</h2>
-          <button className="ml-auto btn btn-secondary" onClick={loadSessions}><RefreshCcw size={14} /> Refresh</button>
+          <button type="button" className="ml-auto btn btn-secondary" onClick={loadSessions}><RefreshCcw size={14} /> Refresh</button>
         </div>
         {sessions.length === 0 && <div className="text-[13px] text-gray-500">No sessions recorded yet.</div>}
         <div className="divide-y">
@@ -221,7 +221,7 @@ export default function Security() {
                 </div>
               </div>
               {!s.revoked_at && (
-                <button className="btn btn-secondary text-red-600" onClick={() => revokeSession(s.id)}>Revoke</button>
+                <button type="button" className="btn btn-secondary text-red-600" onClick={() => revokeSession(s.id)}>Revoke</button>
               )}
             </div>
           ))}

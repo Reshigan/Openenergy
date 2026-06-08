@@ -183,7 +183,7 @@ export function SuitePage(props: SuitePageProps) {
         {props.tabs.map((tab) => {
           const isActive = tab.key === active?.key;
           return (
-            <button
+            <button type="button"
               key={tab.key}
               onClick={() => selectTab(tab.key)}
               className={`h-11 px-4 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
@@ -316,14 +316,14 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
             </p>
           )}
           <div className="flex items-center gap-2">
-            <button
+            <button type="button"
               onClick={() => void load()}
               className="h-9 px-3 rounded-md text-[12px] font-semibold border border-[#d0d5dd] bg-white text-[#6b7685] hover:bg-[#f5f6fa] inline-flex items-center gap-1.5"
             >
               <RefreshCw size={12} /> Refresh
             </button>
             {tab.create && (
-              <button
+              <button type="button"
                 onClick={() => setModalForm({ form: tab.create!, title: tab.create!.title })}
                 className="h-9 px-3 rounded-md text-[12px] font-semibold bg-[#3b82c4] text-white hover:bg-[#0956a3] inline-flex items-center gap-1"
               >
@@ -400,7 +400,7 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
                             {tab.rowActions
                               .filter((a) => (a.show ? a.show(row) : true))
                               .map((a, idx) => (
-                                <button
+                                <button type="button"
                                   key={idx}
                                   onClick={(e) => { e.stopPropagation(); void handleRowAction(a, row); }}
                                   className={`h-8 px-2.5 rounded-md text-[11px] font-semibold border transition-colors ${
@@ -456,7 +456,7 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
                       {tab.rowActions
                         .filter((a) => (a.show ? a.show(row) : true))
                         .map((a, idx) => (
-                          <button
+                          <button type="button"
                             key={idx}
                             onClick={(e) => { e.stopPropagation(); void handleRowAction(a, row); }}
                             className={`flex-1 min-w-[calc(50%-4px)] h-9 px-3 rounded-md text-[12px] font-semibold border transition-colors ${
@@ -612,7 +612,7 @@ function FormModal({
       >
         <div className="px-5 py-3.5 border-b border-[#dde4ec] flex items-center justify-between">
           <h2 className="text-[15px] font-semibold text-[#0f1c2e]">{title}</h2>
-          <button onClick={onClose} className="p-1.5 rounded hover:bg-[#f5f6fa]">
+          <button type="button" onClick={onClose} className="p-1.5 rounded hover:bg-[#f5f6fa]">
             <X size={16} />
           </button>
         </div>
@@ -630,13 +630,13 @@ function FormModal({
         </div>
 
         <div className="px-5 py-3 border-t border-[#dde4ec] flex items-center justify-end gap-2">
-          <button
+          <button type="button"
             onClick={onClose}
             className="h-9 px-4 rounded-md text-[13px] font-semibold border border-[#d0d5dd] bg-white text-[#6b7685] hover:bg-[#f5f6fa]"
           >
             Cancel
           </button>
-          <button
+          <button type="button"
             onClick={submit}
             disabled={submitting}
             className="h-9 px-4 rounded-md text-[13px] font-semibold bg-[#3b82c4] text-white hover:bg-[#0956a3] disabled:opacity-50 inline-flex items-center gap-1.5"
@@ -828,7 +828,7 @@ function DetailDrawer({
       >
         <div className="px-5 py-3.5 border-b border-[#dde4ec] flex items-center justify-between sticky top-0 bg-white z-10">
           <h2 className="text-[15px] font-semibold text-[#0f1c2e]">Record detail</h2>
-          <button onClick={onClose} className="p-1.5 rounded hover:bg-[#f5f6fa]">
+          <button type="button" onClick={onClose} className="p-1.5 rounded hover:bg-[#f5f6fa]">
             <X size={16} />
           </button>
         </div>

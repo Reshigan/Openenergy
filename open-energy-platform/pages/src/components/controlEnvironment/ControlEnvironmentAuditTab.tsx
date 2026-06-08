@@ -662,7 +662,7 @@ export function ControlEnvironmentAuditTab({ regulatorView }: Props = {}) {
           </p>
         </div>
         {!regulatorView && (
-          <button
+          <button type="button"
             onClick={() => setShowPropose(true)}
             className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#1a3a5c]"
           >
@@ -716,7 +716,7 @@ export function ControlEnvironmentAuditTab({ regulatorView }: Props = {}) {
       {/* Row 1: action / priority pills */}
       <div className="mb-2 flex flex-wrap gap-1.5">
         {FILTERS_ACTION.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -733,7 +733,7 @@ export function ControlEnvironmentAuditTab({ regulatorView }: Props = {}) {
       {/* Row 2: lifecycle stages */}
       <div className="mb-2 flex flex-wrap gap-1.5">
         {FILTERS_LIFECYCLE.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -750,7 +750,7 @@ export function ControlEnvironmentAuditTab({ regulatorView }: Props = {}) {
       {/* Row 3: classifications */}
       <div className="mb-2 flex flex-wrap gap-1.5">
         {FILTERS_CLASSIFICATION.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -767,7 +767,7 @@ export function ControlEnvironmentAuditTab({ regulatorView }: Props = {}) {
       {/* Row 4: frameworks */}
       <div className="mb-3 flex flex-wrap gap-1.5">
         {FILTERS_FRAMEWORK.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -942,7 +942,7 @@ function Drawer({
           ? 'bg-[#a06200] text-white hover:bg-[#c97a00]'
           : 'bg-white border border-[#d8dde6] text-[#1a3a5c] hover:bg-[#f3f5f9]';
     return (
-      <button
+      <button type="button"
         key={action}
         onClick={() => onAct(action, row)}
         className={`rounded px-3 py-1.5 text-[11px] font-semibold ${cls}`}
@@ -971,7 +971,7 @@ function Drawer({
               {row.framework_control_ref ? <> {'•'} <span className="font-mono">{row.framework_control_ref}</span></> : null}
             </p>
           </div>
-          <button onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
         </div>
 
         {/* 4 scoring indexes */}
@@ -1222,8 +1222,8 @@ function ProposeModal({
           </div>
         </div>
         <div className="mt-3 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Cancel</button>
-          <button onClick={submit} className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#1a3a5c]">Define</button>
+          <button type="button" onClick={onClose} className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Cancel</button>
+          <button type="button" onClick={submit} className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#1a3a5c]">Define</button>
         </div>
       </div>
     </div>

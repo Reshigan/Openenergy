@@ -204,7 +204,7 @@ export function IppDlpDefectTab() {
       <div className="flex flex-wrap gap-2 items-center justify-between">
         <div className="flex flex-wrap gap-1">
           {FILTER_OPTIONS.map(f => (
-            <button key={f.key}
+            <button type="button" key={f.key}
               onClick={() => setFilter(f.key)}
               className={`px-3 py-1 rounded text-xs font-medium border transition-colors ${
                 filter === f.key ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-400'
@@ -220,7 +220,7 @@ export function IppDlpDefectTab() {
             <option value="1y">12 months</option>
             <option value="all">All time</option>
           </select>
-          <button onClick={() => setShowCreate(true)}
+          <button type="button" onClick={() => setShowCreate(true)}
             className="px-3 py-1 bg-indigo-600 text-white rounded text-xs font-medium hover:bg-indigo-700">
             + Log Defect
           </button>
@@ -290,7 +290,7 @@ export function IppDlpDefectTab() {
                   <h3 className="text-lg font-semibold text-gray-900">{selected.defect_ref ?? 'DFR'}</h3>
                   <p className="text-sm text-gray-500">{selected.project_name ?? selected.project_id}</p>
                 </div>
-                <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+                <button type="button" onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600">✕</button>
               </div>
 
               <div className="flex gap-2 flex-wrap">
@@ -333,7 +333,7 @@ export function IppDlpDefectTab() {
                   <div className="text-xs text-gray-500 mb-2">Actions</div>
                   <div className="flex flex-wrap gap-2">
                     {availableActions.map(action => (
-                      <button key={action}
+                      <button type="button" key={action}
                         disabled={actionLoading}
                         onClick={() => {
                           if (action === 'grant_extension') {
@@ -430,8 +430,8 @@ export function IppDlpDefectTab() {
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-900">Cancel</button>
-              <button onClick={createDefect} disabled={!form.project_id || !form.description}
+              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-900">Cancel</button>
+              <button type="button" onClick={createDefect} disabled={!form.project_id || !form.description}
                 className="px-4 py-1.5 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">
                 Log Defect
               </button>

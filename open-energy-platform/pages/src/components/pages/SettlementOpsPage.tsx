@@ -34,7 +34,7 @@ export function SettlementOpsPage() {
           ['fees', 'Late fees', CircleDollarSign],
           ['rates', 'Prime rate', Percent],
         ] as const).map(([k, label, Icon]) => (
-          <button key={k} onClick={() => setTab(k)}
+          <button type="button" key={k} onClick={() => setTab(k)}
             className={`h-9 px-3 text-[12px] font-semibold inline-flex items-center gap-1.5 border-b-2 -mb-px ${
               tab === k ? 'border-[#1a3a5c] text-[#1a3a5c]' : 'border-transparent text-[#6b7685] hover:text-[#0f1c2e]'
             }`}>
@@ -102,7 +102,7 @@ function FeesTab() {
           <option value="waived">Waived</option>
           <option value="settled">Settled</option>
         </select>
-        <button onClick={load} className="h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1"><RefreshCw size={11}/>Refresh</button>
+        <button type="button" onClick={load} className="h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1"><RefreshCw size={11}/>Refresh</button>
       </div>
       {err && <div className="text-[12px] text-[#c0392b]"><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
       {ack && <div className="text-[12px] text-[#1a8a5b]"><CheckCircle2 size={13} className="inline mr-1"/>{ack}</div>}
@@ -135,8 +135,8 @@ function FeesTab() {
                 <td className="py-1.5 text-right whitespace-nowrap">
                   {f.status === 'pending' && (
                     <>
-                      <button disabled={busy} onClick={() => waive(f.id)} className="text-[11px] text-[#6b7685] underline mr-2">Waive</button>
-                      <button disabled={busy} onClick={() => charge(f.id)} className="text-[11px] text-[#1a3a5c] underline">Charge</button>
+                      <button type="button" disabled={busy} onClick={() => waive(f.id)} className="text-[11px] text-[#6b7685] underline mr-2">Waive</button>
+                      <button type="button" disabled={busy} onClick={() => charge(f.id)} className="text-[11px] text-[#1a3a5c] underline">Charge</button>
                     </>
                   )}
                 </td>
@@ -219,7 +219,7 @@ function RatesTab() {
         </div>
         {err && <div className="text-[12px] text-[#c0392b] mt-2"><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
         {ack && <div className="text-[12px] text-[#1a8a5b] mt-2"><CheckCircle2 size={13} className="inline mr-1"/>{ack}</div>}
-        <button disabled={busy || !form.rate_pct} onClick={submit}
+        <button type="button" disabled={busy || !form.rate_pct} onClick={submit}
                 className="mt-3 h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
           {busy ? 'Saving…' : 'Record rate'}
         </button>

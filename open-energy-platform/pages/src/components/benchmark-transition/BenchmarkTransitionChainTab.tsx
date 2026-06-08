@@ -522,7 +522,7 @@ export function BenchmarkTransitionChainTab() {
 
       <div className="mb-3 flex flex-wrap gap-1.5">
         {FILTERS.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -665,7 +665,7 @@ function Drawer({
                 </div>
               )}
             </div>
-            <button onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">&times;</button>
+            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">&times;</button>
           </div>
         </header>
 
@@ -735,7 +735,7 @@ function Drawer({
             <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
             <div className="flex flex-wrap gap-2">
               {primary && (
-                <button
+                <button type="button"
                   onClick={() => onAct(primary, row)}
                   className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a3a5c]"
                 >
@@ -745,7 +745,7 @@ function Drawer({
               {secondary.map((a) => {
                 const danger = DESTRUCTIVE.includes(a);
                 return (
-                  <button
+                  <button type="button"
                     key={a}
                     onClick={() => onAct(a, row)}
                     className={

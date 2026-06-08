@@ -105,8 +105,8 @@ function OrdersTab({ onRefresh }: { onRefresh: () => void }) {
           { key: '_actions', label: '', render: (r) => (
             (r.status === 'open' || r.status === 'partially_filled') ? (
               <div className="flex gap-1">
-                <button onClick={() => setAmending(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Amend</button>
-                <button onClick={() => setCancelling(r)} className="px-2 py-1 text-[11px] bg-red-600 text-white rounded">Cancel</button>
+                <button type="button" onClick={() => setAmending(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Amend</button>
+                <button type="button" onClick={() => setCancelling(r)} className="px-2 py-1 text-[11px] bg-red-600 text-white rounded">Cancel</button>
               </div>
             ) : null
           ) },
@@ -185,7 +185,7 @@ function ExplainButton({ id }: { id: string }) {
   };
   return (
     <>
-      <button onClick={() => { setOpen(true); if (!data) void load(); }} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">AI: why?</button>
+      <button type="button" onClick={() => { setOpen(true); if (!data) void load(); }} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">AI: why?</button>
       {open && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setOpen(false)}>
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -222,7 +222,7 @@ function ExceptionsTab({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
           + File exception
         </button>
       </div>
@@ -238,7 +238,7 @@ function ExceptionsTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'resolved' ? 'good' : r.status === 'rejected' ? 'bad' : 'warn'}>{r.status}</Pill> },
           { key: '_actions', label: '', render: (r) => (
             r.status !== 'resolved' && r.status !== 'rejected' ? (
-              <button onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Transition</button>
+              <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Transition</button>
             ) : null
           ) },
         ]}
@@ -314,7 +314,7 @@ function MarginTab({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button onClick={runScan} disabled={running} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
+        <button type="button" onClick={runScan} disabled={running} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
           {running ? 'Running…' : 'Run margin scan'}
         </button>
       </div>
@@ -371,7 +371,7 @@ function FscaComplianceTab({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div>
       <div className="mb-3 flex justify-end">
-        <button onClick={() => setCreating(true)}
+        <button type="button" onClick={() => setCreating(true)}
           className="px-3 py-1.5 bg-[#1a3a5c] text-white text-xs rounded hover:bg-[#1e4a72]">
           + New compliance report
         </button>
@@ -391,7 +391,7 @@ function FscaComplianceTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'sla_deadline',     label: 'SLA deadline', render: (r) => r.sla_deadline ? new Date(r.sla_deadline).toLocaleDateString() : '—' },
           { key: 'sla_breached',     label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">BREACHED</Pill> : <Pill tone="good">OK</Pill> },
           { key: 'actions',          label: '', render: (r) => (
-            <button onClick={() => setActing({ id: r.id, status: r.chain_status })}
+            <button type="button" onClick={() => setActing({ id: r.id, status: r.chain_status })}
               className="text-[#1a3a5c] text-xs underline">Action</button>
           )},
         ]}
@@ -465,7 +465,7 @@ function FscaConductReportTab({ onRefresh }: { onRefresh: () => void }) {
 
   return (
     <div>
-      <button
+      <button type="button"
         onClick={() => setModal('create')}
         className="mb-4 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
       >
@@ -646,7 +646,7 @@ function CrossBorderTradeTab({ onRefresh }: { onRefresh?: () => void }) {
 
       <div className="flex justify-between items-center">
         <span className="text-sm text-gray-500">{data.length} cross-border pre-approvals</span>
-        <button onClick={() => setCreateModal(true)}
+        <button type="button" onClick={() => setCreateModal(true)}
           className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700">
           + New pre-approval request
         </button>
@@ -679,7 +679,7 @@ function CrossBorderTradeTab({ onRefresh }: { onRefresh?: () => void }) {
                 </td>
                 <td className="px-3 py-2 text-gray-500 text-xs">{row.sla_deadline ? new Date(row.sla_deadline).toLocaleDateString() : '—'}</td>
                 <td className="px-3 py-2">
-                  <button onClick={() => setModal({ id: row.id, cbt_tier: row.cbt_tier, counterparty_jurisdiction: row.counterparty_jurisdiction, notional_zar: row.notional_zar })}
+                  <button type="button" onClick={() => setModal({ id: row.id, cbt_tier: row.cbt_tier, counterparty_jurisdiction: row.counterparty_jurisdiction, notional_zar: row.notional_zar })}
                     className="text-xs text-blue-600 hover:underline">Action</button>
                 </td>
               </tr>

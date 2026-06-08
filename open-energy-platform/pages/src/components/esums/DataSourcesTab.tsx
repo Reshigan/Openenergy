@@ -118,14 +118,14 @@ function LiveModal({ source, onClose }: { source: DataSource; onClose: () => voi
               {source.source_type} · polling every {source.polling_interval_sec}s · last point {lastTs}
             </p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
         </div>
 
         {/* Window selector */}
         <div className="flex items-center gap-2 px-6 py-3 border-b border-gray-50 bg-gray-50/60">
           <span className="text-xs text-gray-500 mr-1">Window:</span>
           {[15, 30, 60, 180, 360, 1440].map(m => (
-            <button
+            <button type="button"
               key={m}
               onClick={() => setMinutes(m)}
               className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
@@ -170,7 +170,7 @@ function LiveModal({ source, onClose }: { source: DataSource; onClose: () => voi
         </div>
 
         <div className="px-6 py-3 border-t border-gray-100 flex justify-end">
-          <button onClick={onClose} className="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-900">Close</button>
+          <button type="button" onClick={onClose} className="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-900">Close</button>
         </div>
       </div>
     </div>
@@ -204,7 +204,7 @@ function IntervalEditor({ source, onSaved }: { source: DataSource; onSaved: () =
         className="w-20 px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:border-blue-400"
       />
       <span className="text-xs text-gray-400">s</span>
-      <button
+      <button type="button"
         onClick={save} disabled={saving}
         className="px-2.5 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
       >
@@ -299,7 +299,7 @@ export function DataSourcesTab() {
                   {editingInterval === src.id
                     ? <IntervalEditor source={src} onSaved={() => { setEditingInterval(null); load(); }} />
                     : (
-                      <button
+                      <button type="button"
                         onClick={() => setEditingInterval(src.id)}
                         className="text-xs text-blue-600 hover:text-blue-800 underline-offset-2 hover:underline"
                         title="Click to edit"
@@ -322,25 +322,25 @@ export function DataSourcesTab() {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-2">
-                    <button
+                    <button type="button"
                       onClick={() => setLiveSource(src)}
                       className="px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
                       title="Open live graph for this data source"
                     >
                       Live
                     </button>
-                    <button
+                    <button type="button"
                       onClick={() => runAction(src.id, 'test', 'Test')}
                       className="px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
                     >
                       Test
                     </button>
                     {src.status !== 'active'
-                      ? <button onClick={() => runAction(src.id, 'activate', 'Activate')}
+                      ? <button type="button" onClick={() => runAction(src.id, 'activate', 'Activate')}
                           className="px-2.5 py-1 text-xs font-medium text-green-700 bg-green-50 rounded hover:bg-green-100 transition-colors">
                           Activate
                         </button>
-                      : <button onClick={() => runAction(src.id, 'deactivate', 'Deactivate')}
+                      : <button type="button" onClick={() => runAction(src.id, 'deactivate', 'Deactivate')}
                           className="px-2.5 py-1 text-xs font-medium text-gray-500 bg-gray-100 rounded hover:bg-gray-200 transition-colors">
                           Deactivate
                         </button>

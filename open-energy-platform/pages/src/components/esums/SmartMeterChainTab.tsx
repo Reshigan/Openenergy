@@ -145,7 +145,7 @@ export function SmartMeterChainTab() {
             and data-quality validation to operational service. URGENT SLA by class (HV bulk 7d &rarr; post-paid 30d).
           </p>
         </div>
-        <button onClick={() => setCreating((v) => !v)}
+        <button type="button" onClick={() => setCreating((v) => !v)}
           style={{ flexShrink: 0, padding: '8px 14px', background: '#1c2733', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
           {creating ? 'Cancel' : '+ Add meter'}
         </button>
@@ -182,7 +182,7 @@ export function SmartMeterChainTab() {
               <option value="hv_bulk">HV bulk (7d)</option>
             </select>
           </label>
-          <button onClick={() => void create()}
+          <button type="button" onClick={() => void create()}
             style={{ padding: '8px 14px', background: '#1f6b3a', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Create</button>
         </div>
       )}
@@ -196,7 +196,7 @@ export function SmartMeterChainTab() {
 
       <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
         {FILTERS.map((f) => (
-          <button key={f.key} onClick={() => setFilter(f.key)}
+          <button type="button" key={f.key} onClick={() => setFilter(f.key)}
             style={{ padding: '6px 12px', borderRadius: 999, border: '1px solid #e3e7ec',
               background: filter === f.key ? '#1c2733' : '#fff', color: filter === f.key ? '#fff' : '#1c2733',
               fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{f.label}</button>
@@ -242,7 +242,7 @@ export function SmartMeterChainTab() {
 
       {drill && (
         <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 560, background: '#fff', borderLeft: '1px solid #e3e7ec', boxShadow: '-4px 0 16px rgba(0,0,0,0.08)', zIndex: 50, padding: 20, overflowY: 'auto' }}>
-          <button onClick={() => setDrill(null)} style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', fontSize: 18, cursor: 'pointer' }}>&times;</button>
+          <button type="button" onClick={() => setDrill(null)} style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', fontSize: 18, cursor: 'pointer' }}>&times;</button>
           <h3 style={{ marginTop: 0, fontSize: 17 }}>{drill.meter_serial}</h3>
           <div style={{ fontSize: 12, color: '#557' }}>{drill.id} &middot; {drill.meter_class} &middot; site {drill.site_id}</div>
           <div style={{ marginTop: 12, fontSize: 12 }}>
@@ -265,7 +265,7 @@ export function SmartMeterChainTab() {
 
           <div style={{ marginTop: 18, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {ACTIONS.filter((a) => a.from.includes(drill.chain_status)).map((a) => (
-              <button key={a.action} onClick={() => void act(a.action, drill.id)}
+              <button type="button" key={a.action} onClick={() => void act(a.action, drill.id)}
                 style={{ padding: '6px 12px', background: a.danger ? '#9b1f1f' : '#1a3a5c', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}>{a.label}</button>
             ))}
           </div>

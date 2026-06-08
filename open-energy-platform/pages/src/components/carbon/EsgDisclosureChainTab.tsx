@@ -403,7 +403,7 @@ export function EsgDisclosureChainTab() {
 
       <div className="flex flex-wrap gap-1.5">
         {FILTER_ROW_ACTION.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
@@ -418,7 +418,7 @@ export function EsgDisclosureChainTab() {
 
       <div className="flex flex-wrap gap-1.5">
         {FILTER_ROW_STATE.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
@@ -573,7 +573,7 @@ function EsgDrawer({
               )}
             </div>
           </div>
-          <button onClick={onClose} className="text-[#6b7685] hover:text-[#0f1c2e]">✕</button>
+          <button type="button" onClick={onClose} className="text-[#6b7685] hover:text-[#0f1c2e]">✕</button>
         </div>
 
         <div className="p-5 space-y-4 text-[13px]">
@@ -844,7 +844,7 @@ function FlagPill({ on, label }: { on: boolean; label: string }) {
 function ActionBtn({ label, onClick, tone = 'neutral' }: { label: string; onClick: () => void; tone?: 'neutral' | 'good' | 'bad' }) {
   const bg = tone === 'good' ? 'bg-emerald-700' : tone === 'bad' ? 'bg-red-700' : 'bg-[#1a3a5c]';
   return (
-    <button onClick={onClick} className={`px-3 py-1.5 ${bg} text-white text-[12px] rounded-md hover:opacity-90`}>
+    <button type="button" onClick={onClick} className={`px-3 py-1.5 ${bg} text-white text-[12px] rounded-md hover:opacity-90`}>
       {label}
     </button>
   );

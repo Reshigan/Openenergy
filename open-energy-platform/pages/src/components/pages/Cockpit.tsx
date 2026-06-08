@@ -156,7 +156,7 @@ export function Cockpit() {
               {heroSubtitleFor(role)}
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
-              <button
+              <button type="button"
                 onClick={() => navigate(primaryActionFor(role).path)}
                 className="h-10 px-5 rounded text-[13px] font-semibold text-white inline-flex items-center gap-2 transition-all hover:brightness-110"
                 style={{
@@ -168,7 +168,7 @@ export function Cockpit() {
                 {primaryActionFor(role).label}
                 <ArrowRight size={14} />
               </button>
-              <button
+              <button type="button"
                 onClick={() => navigate('/marketplace')}
                 className="h-10 px-5 rounded text-[13px] font-semibold text-white border border-white/35 hover:bg-white/10 transition-colors inline-flex items-center gap-2"
               >
@@ -296,7 +296,7 @@ export function Cockpit() {
             </div>
             <div className="flex gap-1 rounded p-0.5" style={{ background: 'var(--oe-surface-container)' }}>
               {['6M', '1Y', 'YTD'].map((r, i) => (
-                <button
+                <button type="button"
                   key={r}
                   className="h-7 px-3 rounded text-[12px] font-semibold transition-colors"
                   style={{

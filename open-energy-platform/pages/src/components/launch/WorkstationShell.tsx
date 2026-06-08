@@ -110,7 +110,7 @@ function TabNav({
             className="flex-1 h-7 bg-transparent text-[12px] text-[#0f1c2e] placeholder:text-[#9aa6b5] rounded px-1 outline-none focus-visible:ring-1 focus-visible:ring-[#1a3a5c]"
           />
           {q && (
-            <button
+            <button type="button"
               onClick={() => setQ('')}
               aria-label="Clear tab filter"
               className="text-[11px] font-medium text-[#6b7685] hover:text-[#0f1c2e] shrink-0"
@@ -122,7 +122,7 @@ function TabNav({
       )}
       {hasGroups && !query && (
         <div className="flex flex-wrap items-center gap-1 pb-2 border-b border-[#eef2f7] mb-2">
-          <button
+          <button type="button"
             onClick={() => setActiveGroup(null)}
             className={`h-7 px-2 rounded text-[11px] font-medium ${
               activeGroup === null ? 'bg-[#1a3a5c] text-white' : 'text-[#6b7685] hover:bg-gray-50'
@@ -131,7 +131,7 @@ function TabNav({
             All
           </button>
           {allGroups.map(g => (
-            <button
+            <button type="button"
               key={g}
               onClick={() => setActiveGroup(g)}
               className={`h-7 px-2 rounded text-[11px] font-medium ${
@@ -150,7 +150,7 @@ function TabNav({
           visible.map(t => {
             const isActive = activeTab === t.key;
             return (
-              <button
+              <button type="button"
                 key={t.key}
                 id={`tab-${t.key}`}
                 role="tab"
@@ -303,21 +303,21 @@ export function WorkstationShell({
                   />
                 ) : null}
                 {backHref && (
-                  <button
+                  <button type="button"
                     onClick={() => navigate(backHref)}
                     className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20"
                   >
                     <ArrowLeft size={12} /> {backLabel || 'Back'}
                   </button>
                 )}
-                <button
+                <button type="button"
                   onClick={refresh}
                   className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20"
                 >
                   <RefreshCw size={12} /> Refresh
                 </button>
                 {role && (
-                  <button
+                  <button type="button"
                     onClick={() => setPaletteOpen(true)}
                     className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20"
                     aria-label="What can I do here"
@@ -432,11 +432,11 @@ export function WorkstationShell({
           </div>
           <div className="flex flex-wrap gap-2">
             {backHref && (
-              <button onClick={() => navigate(backHref)} className="h-9 px-3 rounded-md border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/20">
+              <button type="button" onClick={() => navigate(backHref)} className="h-9 px-3 rounded-md border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/20">
                 <ArrowLeft size={12} /> {backLabel || 'Back'}
               </button>
             )}
-            <button onClick={refresh} className="h-9 px-3 rounded-md border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/20">
+            <button type="button" onClick={refresh} className="h-9 px-3 rounded-md border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/20">
               <RefreshCw size={12} /> Refresh
             </button>
           </div>
@@ -675,7 +675,7 @@ export function ActionModal({
       >
         <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
           <h3 id="action-modal-title" className="text-[16px] font-semibold text-[#0f1c2e]">{title}</h3>
-          <button onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e]">×</button>
+          <button type="button" onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e]">×</button>
         </div>
         <div className="p-5 space-y-3">
           <div role="alert" aria-live="assertive" className="text-[12px] text-red-700 min-h-[1em]">
@@ -698,8 +698,8 @@ export function ActionModal({
             </label>
           ))}
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
-            <button onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${btnCls}`}>
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button" onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${btnCls}`}>
               {saving ? 'Saving…' : submitLabel}
             </button>
           </div>

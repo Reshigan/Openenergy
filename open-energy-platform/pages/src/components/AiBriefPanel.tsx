@@ -92,7 +92,7 @@ export function AiBriefPanel({ role, accentFrom = '#3b82c4', accentTo = '#1f9b95
         </div>
         <div className="flex items-center gap-2">
           {brief && (
-            <button
+            <button type="button"
               onClick={() => setOpen((v) => !v)}
               className="h-8 w-8 rounded-md border flex items-center justify-center"
               style={{ borderColor: '#d0d5dd', color: '#6b7685' }}
@@ -101,7 +101,7 @@ export function AiBriefPanel({ role, accentFrom = '#3b82c4', accentTo = '#1f9b95
               {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
           )}
-          <button
+          <button type="button"
             onClick={load}
             disabled={loading}
             className="h-9 px-3.5 rounded-lg text-[13px] font-semibold text-white inline-flex items-center gap-2 disabled:opacity-60"

@@ -133,15 +133,15 @@ export function AuditPanel({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <button onClick={runVerify} disabled={verifying}
+        <button type="button" onClick={runVerify} disabled={verifying}
           className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
           {verifying ? 'Verifying…' : 'Verify chain integrity'}
         </button>
-        <button onClick={runExport} disabled={exporting}
+        <button type="button" onClick={runExport} disabled={exporting}
           className="h-9 px-3 rounded-md bg-white border border-[#dde4ec] text-[12px] font-semibold disabled:opacity-50">
           {exporting ? 'Generating…' : 'Generate certified export (last 90 days)'}
         </button>
-        <button onClick={() => setShowEvents(true)}
+        <button type="button" onClick={() => setShowEvents(true)}
           className="h-9 px-3 rounded-md bg-white border border-[#dde4ec] text-[12px] font-semibold inline-flex items-center gap-2">
           <ListTree size={14} /> View chain events
         </button>
@@ -193,7 +193,7 @@ export function AuditPanel({
           <textarea value={reconCsv} onChange={(e) => setReconCsv(e.target.value)} rows={5}
             className="w-full px-3 py-2 border border-[#dde4ec] rounded-lg text-[12px] font-mono"
             placeholder={reconHint} />
-          <button onClick={runRecon} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+          <button type="button" onClick={runRecon} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
             Run reconciliation
           </button>
           {reconResult && (

@@ -348,7 +348,7 @@ function MilestonesTab({ onRefresh }: { onRefresh: () => void }) {
                   <td className="px-4 py-2"><Pill tone={m.status === 'satisfied' ? 'good' : m.status === 'overdue' ? 'bad' : 'warn'}>{m.status}</Pill></td>
                   <td className="px-4 py-2">
                     {m.status !== 'satisfied' && (
-                      <button onClick={() => setSatisfying(m)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Satisfy</button>
+                      <button type="button" onClick={() => setSatisfying(m)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Satisfy</button>
                     )}
                   </td>
                 </tr>
@@ -405,7 +405,7 @@ function InsuranceTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'period_end', label: 'Expires', render: (r) => r.period_end },
           { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'active' ? 'good' : 'bad'}>{r.status}</Pill> },
           { key: '_actions', label: '', render: (r) => (
-            <button onClick={() => setClaiming(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">File claim</button>
+            <button type="button" onClick={() => setClaiming(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">File claim</button>
           ) },
         ]}
       />
@@ -466,8 +466,8 @@ function CommunityTab({ onRefresh }: { onRefresh: () => void }) {
           </select>
         </label>
         <div className="flex gap-2">
-          <button onClick={() => setRegistering(true)} className="h-9 px-3 rounded-md bg-white border border-[#dde4ec] text-[12px] font-semibold">+ Register stakeholder</button>
-          <button onClick={() => setLogging(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">+ Log engagement</button>
+          <button type="button" onClick={() => setRegistering(true)} className="h-9 px-3 rounded-md bg-white border border-[#dde4ec] text-[12px] font-semibold">+ Register stakeholder</button>
+          <button type="button" onClick={() => setLogging(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">+ Log engagement</button>
         </div>
       </div>
       {summary && (
@@ -703,7 +703,7 @@ function InvitePartnersTab() {
             <p className="text-xs font-semibold text-[#0f2540] mb-1">Invitation created</p>
             <div className="flex items-center gap-2 font-mono text-xs text-[#1a3a5c] bg-white rounded border border-[#dde4ec] px-2 py-1.5 break-all">
               {window.location.origin}{sent.invite_url}
-              <button
+              <button type="button"
                 onClick={() => copyUrl(sent.invite_url)}
                 className="ml-auto shrink-0 text-[10px] uppercase tracking-wide font-bold text-[#1a3a5c] hover:underline"
               >
@@ -840,7 +840,7 @@ function InvitePartnersTab() {
                   <td className="px-4 py-2 text-[#6b7685]">{inv.expires_at ? new Date(inv.expires_at).toLocaleDateString() : '—'}</td>
                   <td className="px-4 py-2 text-right">
                     {inv.status === 'pending' && inv.token && (
-                      <button
+                      <button type="button"
                         onClick={() => copyUrl(`/register?token=${inv.token}`)}
                         className="text-[10px] uppercase tracking-wide font-bold text-[#1a3a5c] hover:underline"
                       >
@@ -892,7 +892,7 @@ function GreenBondReportTab({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div>
       <div className="mb-3 flex justify-end">
-        <button onClick={() => setCreating(true)}
+        <button type="button" onClick={() => setCreating(true)}
           className="px-3 py-1.5 bg-[#1a3a5c] text-white text-xs rounded hover:bg-[#1e4a72]">
           + New green bond report
         </button>
@@ -913,7 +913,7 @@ function GreenBondReportTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'sla_deadline',    label: 'SLA', render: (r) => r.sla_deadline ? new Date(r.sla_deadline).toLocaleDateString() : '—' },
           { key: 'sla_breached',    label: '', render: (r) => r.sla_breached ? <Pill tone="bad">SLA</Pill> : null },
           { key: 'actions',         label: '', render: (r) => (
-            <button onClick={() => setActing({ id: r.id, status: r.chain_status })}
+            <button type="button" onClick={() => setActing({ id: r.id, status: r.chain_status })}
               className="text-[#1a3a5c] text-xs underline">Action</button>
           )},
         ]}
@@ -992,7 +992,7 @@ function MilestoneVarianceTab({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button
+        <button type="button"
           className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
           onClick={() => setModal('create')}
         >
@@ -1124,7 +1124,7 @@ function DscrReportTab({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
           + New DSCR report
         </button>
       </div>
@@ -1278,7 +1278,7 @@ function CreditInsuranceTab({ onRefresh }: { onRefresh?: () => void }) {
 
       <div className="flex justify-between items-center">
         <span className="text-sm text-gray-500">{data.length} policies</span>
-        <button
+        <button type="button"
           onClick={() => setCreateModal(true)}
           className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700"
         >+ New policy application</button>
@@ -1311,7 +1311,7 @@ function CreditInsuranceTab({ onRefresh }: { onRefresh?: () => void }) {
                 </td>
                 <td className="px-3 py-2 text-gray-500 text-xs">{row.sla_deadline ? new Date(row.sla_deadline).toLocaleDateString() : '—'}</td>
                 <td className="px-3 py-2">
-                  <button onClick={() => setModal({ id: row.id, insurance_tier: row.insurance_tier, insurer_name: row.insurer_name })}
+                  <button type="button" onClick={() => setModal({ id: row.id, insurance_tier: row.insurance_tier, insurer_name: row.insurer_name })}
                     className="text-xs text-blue-600 hover:underline">Action</button>
                 </td>
               </tr>
@@ -1484,7 +1484,7 @@ function ExportCurtailmentTab({ onRefresh }: { onRefresh?: () => void }) {
 
       <div className="flex justify-between items-center">
         <span className="text-sm text-gray-500">{data.length} curtailment claims</span>
-        <button
+        <button type="button"
           onClick={() => setCreateModal(true)}
           className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700"
         >+ Log curtailment event</button>
@@ -1517,7 +1517,7 @@ function ExportCurtailmentTab({ onRefresh }: { onRefresh?: () => void }) {
                   </span>
                 </td>
                 <td className="px-3 py-2">
-                  <button onClick={() => setModal({ id: row.id, curtailment_tier: row.curtailment_tier, deemed_energy_mwh: row.deemed_energy_mwh })}
+                  <button type="button" onClick={() => setModal({ id: row.id, curtailment_tier: row.curtailment_tier, deemed_energy_mwh: row.deemed_energy_mwh })}
                     className="text-xs text-blue-600 hover:underline">Action</button>
                 </td>
               </tr>
@@ -1651,7 +1651,7 @@ function GtiaTab({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button
+        <button type="button"
           className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
           onClick={() => setModal('create')}
         >

@@ -372,7 +372,7 @@ function DisbursementsTab() {
       </div>
       <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
         <div className="text-[13px] text-[#3d4756]">Disbursement requests against active facilities. Approving fires a cascade event into Settlement.</div>
-        <button onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1"><Plus size={14} /> Request</button>
+        <button type="button" onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1"><Plus size={14} /> Request</button>
       </div>
       <Card title="Disbursement queue">
         {items.length === 0 ? <EmptyMsg>No disbursements yet.</EmptyMsg> : (
@@ -400,7 +400,7 @@ function DisbursementsTab() {
                     <td className="px-4 py-2"><StatusPill status={d.status} /></td>
                     <td className="px-4 py-2 text-right">
                       {d.status === 'pending' && (
-                        <button onClick={() => approve(d.id)} className="text-[12px] text-[#1a8a5b] hover:underline font-semibold">Approve</button>
+                        <button type="button" onClick={() => approve(d.id)} className="text-[12px] text-[#1a8a5b] hover:underline font-semibold">Approve</button>
                       )}
                     </td>
                   </tr>

@@ -85,7 +85,7 @@ export function AiInlineCard({ title, why, confidence, accept, dismiss }: AiInli
             </a>
           ) : null}
           {dismiss ? (
-            <button
+            <button type="button"
               onClick={dismiss.onClick}
               style={{
                 padding: '8px 14px',

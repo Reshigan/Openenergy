@@ -134,7 +134,7 @@ export function IppOmHandoverTab() {
   if (!loaded) {
     return (
       <div className="p-6">
-        <button onClick={() => load()} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">
+        <button type="button" onClick={() => load()} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">
           Load O&M Handover Packs
         </button>
       </div>
@@ -160,16 +160,16 @@ export function IppOmHandoverTab() {
       )}
 
       <div className="flex flex-wrap gap-2 items-center">
-        <button onClick={() => { setFilterStatus(''); load('', filterTier); }} className={`px-3 py-1 rounded text-xs border ${!filterStatus ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>All</button>
+        <button type="button" onClick={() => { setFilterStatus(''); load('', filterTier); }} className={`px-3 py-1 rounded text-xs border ${!filterStatus ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>All</button>
         {['compilation','om_review','deficiencies_raised','accepted','conditional_acceptance','rejected'].map(s => (
-          <button key={s} onClick={() => { setFilterStatus(s); load(s, filterTier); }} className={`px-3 py-1 rounded text-xs border ${filterStatus === s ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>{s.replace(/_/g, ' ')}</button>
+          <button type="button" key={s} onClick={() => { setFilterStatus(s); load(s, filterTier); }} className={`px-3 py-1 rounded text-xs border ${filterStatus === s ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>{s.replace(/_/g, ' ')}</button>
         ))}
         <span className="ml-1 text-gray-300">|</span>
         {['minor','moderate','significant','major','material'].map(t => (
-          <button key={t} onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>{t}</button>
+          <button type="button" key={t} onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>{t}</button>
         ))}
-        <button onClick={() => setShowCreate(true)} className="ml-auto px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700">+ New Pack</button>
-        <button onClick={() => load(filterStatus, filterTier)} className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border">Refresh</button>
+        <button type="button" onClick={() => setShowCreate(true)} className="ml-auto px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700">+ New Pack</button>
+        <button type="button" onClick={() => load(filterStatus, filterTier)} className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border">Refresh</button>
       </div>
 
       {loading ? <div className="text-sm text-gray-400 py-4">Loading…</div> : (
@@ -216,7 +216,7 @@ export function IppOmHandoverTab() {
                 <h2 className="text-lg font-bold">{CATEGORY_LABELS[selected.category]}</h2>
                 <div className="text-xs text-gray-500 mt-1">{selected.capacity_tier} · {selected.capacity_mw} MW</div>
               </div>
-              <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+              <button type="button" onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600">✕</button>
             </div>
             <div className="text-sm font-medium text-gray-800 mb-3">{selected.title}</div>
 
@@ -232,7 +232,7 @@ export function IppOmHandoverTab() {
               <div className="space-y-2">
                 <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Actions</div>
                 {ACTION_MAP[selected.chain_status].map(a => (
-                  <button key={a.action} disabled={actionPending}
+                  <button type="button" key={a.action} disabled={actionPending}
                     onClick={() => doAction(selected.id, a.action)}
                     className={`w-full text-left px-3 py-2 rounded border text-sm ${a.danger ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-gray-200 text-gray-700 hover:bg-indigo-50 hover:border-indigo-300'}`}>
                     {a.label}
@@ -259,8 +259,8 @@ export function IppOmHandoverTab() {
               <textarea placeholder="Description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="w-full border rounded px-3 py-2 text-sm" rows={2} />
             </div>
             <div className="flex gap-2 mt-4">
-              <button onClick={createHandover} disabled={!form.title || !form.capacity_mw} className="px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50">Create</button>
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded text-sm">Cancel</button>
+              <button type="button" onClick={createHandover} disabled={!form.title || !form.capacity_mw} className="px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50">Create</button>
+              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded text-sm">Cancel</button>
             </div>
           </div>
         </div>

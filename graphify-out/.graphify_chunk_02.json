@@ -1,0 +1,65 @@
+{
+  "nodes": [
+    {
+      "id": "ltm_energy_group",
+      "label": "LTM Energy Group",
+      "type": "Organization",
+      "file": "open-energy-platform/pages/public/ltm-energy-logo.png",
+      "summary": "Energy company named LTM Energy Group with tagline 'Managed Energy Solutions'. Logo features dark olive/forest green color scheme with a red Greek eta (η) symbol in a rounded square icon."
+    },
+    {
+      "id": "ltm_energy_logo",
+      "label": "LTM Energy Group Logo",
+      "type": "Asset/Logo",
+      "file": "open-energy-platform/pages/public/ltm-energy-logo.png",
+      "summary": "Corporate logo image: rounded square icon containing a red cursive Greek letter eta (η) on white background with green metallic border, followed by bold dark green 'LTM' wordmark, 'ENERGY GROUP' subtitle, and a dark green banner reading 'MANAGED ENERGY SOLUTIONS' in white uppercase text."
+    },
+    {
+      "id": "ltm_tagline",
+      "label": "Managed Energy Solutions",
+      "type": "Tagline",
+      "file": "open-energy-platform/pages/public/ltm-energy-logo.png",
+      "summary": "LTM Energy Group's tagline displayed in a dark green banner: 'MANAGED ENERGY SOLUTIONS'"
+    },
+    {
+      "id": "ltm_eta_symbol",
+      "label": "Eta (η) Symbol",
+      "type": "BrandElement",
+      "file": "open-energy-platform/pages/public/ltm-energy-logo.png",
+      "summary": "Red cursive Greek letter eta (η) inside a rounded square with green metallic border. Eta (η) commonly denotes efficiency in engineering/energy contexts."
+    }
+  ],
+  "edges": [
+    {
+      "source": "ltm_energy_logo",
+      "target": "ltm_energy_group",
+      "label": "represents",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "ltm_energy_group",
+      "target": "ltm_tagline",
+      "label": "has_tagline",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "ltm_energy_logo",
+      "target": "ltm_eta_symbol",
+      "label": "contains_brand_element",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "ltm_eta_symbol",
+      "target": "ltm_energy_group",
+      "label": "symbolizes_efficiency_for",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "ltm_energy_logo",
+      "target": "ltm_energy_group",
+      "label": "used_as_partner_logo_in_platform",
+      "confidence": "INFERRED"
+    }
+  ],
+  "hyperedges": []
+}

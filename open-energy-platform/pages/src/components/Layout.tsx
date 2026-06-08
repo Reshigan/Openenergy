@@ -306,13 +306,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* Right side actions */}
         <div className="flex items-center gap-2">
           <LocalePicker compact/>
-          <button className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+          <button type="button" className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
             <BellIcon size={18} />
           </button>
-          <button className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+          <button type="button" className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
             <HelpIcon size={18} />
           </button>
-          <button className="p-1.5 bg-ionex-accent rounded-lg hover:bg-ionex-accent-deep transition-colors">
+          <button type="button" className="p-1.5 bg-ionex-accent rounded-lg hover:bg-ionex-accent-deep transition-colors">
             <UserIcon size={20} primary="#062640" />
           </button>
         </div>
@@ -325,7 +325,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         ${sidebarCollapsed ? 'w-[56px]' : 'w-[240px]'}
       `}>
         {/* Toggle button */}
-        <button
+        <button type="button"
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           className="absolute top-3 -right-3 w-6 h-6 bg-ionex-surface border border-ionex-border rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-shadow z-10"
         >
@@ -351,7 +351,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* Bottom pills - Tools + Support */}
         <div className="p-2 border-t border-ionex-border">
           <div className="flex gap-2">
-            <button 
+            <button type="button" 
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className={`
                 flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-[13px]
@@ -362,7 +362,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <ToolsIcon size={16} />
               {!sidebarCollapsed && <span>Tools</span>}
             </button>
-            <button className={`
+            <button type="button" className={`
               flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-[13px]
               bg-ionex-surface-alt text-ionex-text-sub border border-ionex-border
               hover:bg-ionex-border/30 transition-colors

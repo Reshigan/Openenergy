@@ -15,7 +15,7 @@ import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorT
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
     <div className="flex justify-end mb-3">
-      <button onClick={onCreate} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+      <button type="button" onClick={onCreate} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
         + {label}
       </button>
     </div>
@@ -375,7 +375,7 @@ function SmartMeterAssetsTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'sla_breached', label: 'Breach', render: (r) => r.sla_breached ? <Pill tone="bad">BREACH</Pill> : <Pill tone="good">OK</Pill> },
           { key: 'data_quality_score', label: 'DQ score', render: (r) => r.data_quality_score != null ? String(r.data_quality_score) : '—' },
           { key: 'actions', label: '', render: (r) => (
-            <button onClick={() => setActionRow(r)} className="text-[11px] text-[#1a3a5c] underline">Action</button>
+            <button type="button" onClick={() => setActionRow(r)} className="text-[11px] text-[#1a3a5c] underline">Action</button>
           )},
         ]}
       />
@@ -402,7 +402,7 @@ function DemandResponseTab({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button
+        <button type="button"
           className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
           onClick={() => setModal('create')}
         >
@@ -539,7 +539,7 @@ function SubstationAssetsTab({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
           + Register asset
         </button>
       </div>
@@ -677,7 +677,7 @@ function EopActivationTab({ onRefresh }: { onRefresh: () => void }) {
 
   return (
     <div>
-      <button
+      <button type="button"
         onClick={() => setModal('create')}
         className="mb-4 px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700"
       >

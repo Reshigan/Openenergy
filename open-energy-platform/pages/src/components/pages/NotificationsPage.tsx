@@ -75,7 +75,7 @@ export function NotificationsPage() {
         <>
           <div className="inline-flex items-center gap-1 bg-white border border-[#dde4ec] rounded-lg p-1">
             {(['unread', 'read', 'all'] as const).map((s) => (
-              <button
+              <button type="button"
                 key={s}
                 onClick={() => setStatus(s)}
                 className={`h-8 px-3 rounded-md text-[12px] font-semibold ${status === s ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'}`}
@@ -84,7 +84,7 @@ export function NotificationsPage() {
               </button>
             ))}
           </div>
-          <button
+          <button type="button"
             onClick={markAll}
             disabled={unread === 0}
             className="h-9 px-3 rounded-md bg-white border border-[#dde4ec] text-[12px] font-semibold inline-flex items-center gap-2 disabled:opacity-50"
@@ -121,7 +121,7 @@ export function NotificationsPage() {
                   </div>
                 </div>
                 {!n.read && (
-                  <button
+                  <button type="button"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); void markOne(n.id); }}
                     className="text-[11px] text-[#3b82c4] hover:underline"
                   >

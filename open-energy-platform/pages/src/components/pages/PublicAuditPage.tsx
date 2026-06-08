@@ -67,7 +67,7 @@ export function PublicAuditPage() {
             ['proof', 'Generate proof', FileSearch],
             ['verify', 'Verify proof', CheckCircle2],
           ] as const).map(([key, label, Icon]) => (
-            <button
+            <button type="button"
               key={key}
               onClick={() => setTab(key)}
               className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-1.5 ${
@@ -169,7 +169,7 @@ function ProofPanel() {
                  placeholder="audit_xxxxxxxxxx"
                  value={evtId} onChange={(e) => setEvtId(e.target.value)}/>
         </label>
-        <button disabled={!evtId || busy} onClick={run}
+        <button type="button" disabled={!evtId || busy} onClick={run}
                 className="h-9 px-4 rounded bg-[#0f1c2e] text-white text-[12px] font-semibold disabled:opacity-50">
           {busy ? 'Computing…' : 'Generate proof'}
         </button>
@@ -267,7 +267,7 @@ function VerifyPanel() {
           )}
         </div>
       )}
-      <button disabled={!leaf || !root || !pathJson || busy} onClick={run}
+      <button type="button" disabled={!leaf || !root || !pathJson || busy} onClick={run}
               className="h-9 px-4 rounded bg-[#0f1c2e] text-white text-[12px] font-semibold disabled:opacity-50">
         {busy ? 'Verifying…' : 'Verify'}
       </button>

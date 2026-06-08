@@ -59,7 +59,7 @@ export function PublicLegalPage() {
             ['decisions', 'Decisions', CheckCircle2],
             ['submit', 'Submit request', Send],
           ] as const).map(([key, label, Icon]) => (
-            <button
+            <button type="button"
               key={key}
               onClick={() => setTab(key)}
               className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-1.5 ${
@@ -275,7 +275,7 @@ function SubmitForm() {
       </div>
       {ack && <div className="text-[12px] flex items-center gap-1 text-[#1a8a5b]"><CheckCircle2 size={14}/> {ack}</div>}
       {err && <div className="text-[12px] flex items-center gap-1 text-[#c0392b]"><AlertCircle size={14}/> {err}</div>}
-      <button disabled={busy} onClick={submit}
+      <button type="button" disabled={busy} onClick={submit}
               className="h-9 px-4 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1 disabled:opacity-50">
         <Send size={13}/> {busy ? 'Submitting…' : 'Submit request'}
       </button>

@@ -41,7 +41,7 @@ export function BulkOpsPage() {
       {err && <div className="text-[12px] text-[#c0392b] mb-3"><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
       <div className="flex flex-wrap gap-2 mb-4">
         {entities.map((e) => (
-          <button key={e.key} onClick={() => setActive(e.key)}
+          <button type="button" key={e.key} onClick={() => setActive(e.key)}
             className={`h-8 px-3 rounded text-[12px] font-semibold ${
               active === e.key ? 'bg-[#1a3a5c] text-white' : 'border border-[#dde4ec] text-[#0f1c2e]'
             }`}>{e.key}</button>
@@ -97,7 +97,7 @@ function ExportPanel({ def }: { def: Entity }) {
           <input type="number" min={1} max={10000} className="ml-2 h-8 px-2 rounded border border-[#dde4ec] text-[12px] w-24 font-mono"
                  value={limit} onChange={(e) => setLimit(Number(e.target.value))}/>
         </label>
-        <button onClick={download} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Download</button>
+        <button type="button" onClick={download} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Download</button>
       </div>
     </div>
   );
@@ -130,7 +130,7 @@ function ImportPanel({ def }: { def: Entity }) {
       <div className="text-[13px] font-semibold text-[#0f1c2e] mb-2 inline-flex items-center gap-1"><Upload size={13}/> Import CSV</div>
       <div className="text-[11px] text-[#6b7685] mb-2">Required header columns: {def.import_columns.join(', ')}</div>
       <input ref={fileRef} type="file" accept=".csv,text/csv,text/plain" className="text-[12px]"/>
-      <button disabled={busy} onClick={submit} className="ml-2 h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
+      <button type="button" disabled={busy} onClick={submit} className="ml-2 h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
         {busy ? 'Importing…' : 'Import'}
       </button>
       {err && <div className="text-[12px] text-[#c0392b] mt-2"><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
@@ -187,7 +187,7 @@ function UpdatePanel({ def }: { def: Entity }) {
       </div>
       {err && <div className="text-[12px] text-[#c0392b] mt-2"><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
       {ack && <div className="text-[12px] text-[#1a8a5b] mt-2"><CheckCircle2 size={13} className="inline mr-1"/>{ack}</div>}
-      <button disabled={busy} onClick={submit} className="mt-2 h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
+      <button type="button" disabled={busy} onClick={submit} className="mt-2 h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
         {busy ? 'Updating…' : 'Apply'}
       </button>
     </div>

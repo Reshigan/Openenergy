@@ -247,7 +247,7 @@ function IssuanceTab() {
     <div className="space-y-4">
       <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
         <div className="text-[13px] text-[#3d4756]">{pipeline.length} projects across the registry pipeline.</div>
-        <button className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1"><Plus size={14} /> Register project</button>
+        <button type="button" className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1"><Plus size={14} /> Register project</button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
@@ -317,7 +317,7 @@ function RetirementTab() {
           <div className="font-display font-semibold text-[14px] text-[#0f1c2e]">Retire carbon credits</div>
           <div className="text-[12px] text-[#3d4756] mt-1">Generate a verifiable retirement certificate stored in the platform vault.</div>
         </div>
-        <button onClick={() => setShowModal(true)} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold inline-flex items-center gap-2">
+        <button type="button" onClick={() => setShowModal(true)} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold inline-flex items-center gap-2">
           <Award size={14} /> Retire credits
         </button>
       </div>
@@ -444,7 +444,7 @@ function NavTab() {
           <div className="font-display font-semibold text-[14px] text-[#0f1c2e] flex items-center gap-2"><Sparkles size={14} /> AI NAV computation</div>
           <div className="text-[12px] text-[#3d4756] mt-1">Rebuilds the methodology / vintage breakdown using live market prices.</div>
         </div>
-        <button onClick={compute} disabled={computing} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold inline-flex items-center gap-2 disabled:opacity-50">
+        <button type="button" onClick={compute} disabled={computing} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold inline-flex items-center gap-2 disabled:opacity-50">
           {computing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Compute now
         </button>
       </div>

@@ -132,7 +132,7 @@ export function DunningTab() {
       {/* Filter pills */}
       <div className="flex gap-2 flex-wrap">
         {(['open', 'all', 'issued', 'acknowledged', 'overdue', 'cured'] as const).map((s) => (
-          <button
+          <button type="button"
             key={s}
             data-testid={`lender-dunning-filter-${s}`}
             onClick={() => setFilter(s)}
@@ -141,7 +141,7 @@ export function DunningTab() {
             {s === 'open' ? 'Open' : s === 'all' ? 'All' : STATUS_TONE[s as Status].label}
           </button>
         ))}
-        <button onClick={load} className="h-7 px-3 rounded-full text-[11px] font-semibold border border-[#d8dee6] bg-white text-[#1a3a5c] ml-auto">
+        <button type="button" onClick={load} className="h-7 px-3 rounded-full text-[11px] font-semibold border border-[#d8dee6] bg-white text-[#1a3a5c] ml-auto">
           Refresh
         </button>
       </div>
@@ -168,7 +168,7 @@ export function DunningTab() {
           const cy = CYCLE_TONE[r.cycle] || CYCLE_TONE[1];
           const cure = cureTone(r.cure_deadline_at, r.status);
           return (
-            <button
+            <button type="button"
               key={r.id}
               data-testid={`lender-dunning-row-${r.id}`}
               onClick={() => setDrillId(r.id)}
@@ -208,7 +208,7 @@ export function DunningTab() {
               </div>
               <div className="text-[14px] font-bold text-[#a8385c]">{drillRow.title}</div>
             </div>
-            <button onClick={() => setDrillId(null)} className="text-[11px] text-[#6b7685] hover:text-[#1a3a5c]">Close ×</button>
+            <button type="button" onClick={() => setDrillId(null)} className="text-[11px] text-[#6b7685] hover:text-[#1a3a5c]">Close ×</button>
           </div>
           <div className="grid grid-cols-2 gap-3 text-[12px]">
             <Field label="Status" value={STATUS_TONE[drillRow.status].label} />
@@ -247,7 +247,7 @@ export function DunningTab() {
               />
               <div className="flex gap-2 flex-wrap">
                 {drillRow.status === 'issued' && (
-                  <button
+                  <button type="button"
                     data-testid="lender-dunning-ack"
                     disabled={busy}
                     onClick={() => run('ack', { note })}
@@ -256,7 +256,7 @@ export function DunningTab() {
                     Acknowledge
                   </button>
                 )}
-                <button
+                <button type="button"
                   data-testid="lender-dunning-cure"
                   disabled={busy || !evidence}
                   onClick={() => run('cure', { evidence_r2_key: evidence, note })}
@@ -264,7 +264,7 @@ export function DunningTab() {
                 >
                   Mark cured
                 </button>
-                <button
+                <button type="button"
                   data-testid="lender-dunning-withdraw"
                   disabled={busy || !note}
                   onClick={() => run('withdraw', { reason: note })}

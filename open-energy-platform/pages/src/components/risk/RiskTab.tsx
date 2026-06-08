@@ -124,13 +124,13 @@ export function RiskTab() {
         <Kpi label="VaR 99%" value={v99 ? ZAR(v99.var_amount_zar) : '—'} accent="red" mono testId="risk-var-99" />
         <Kpi label="ES 95%" value={v95 ? ZAR(v95.es_amount_zar) : '—'} mono />
         <div className="flex gap-2">
-          <button onClick={recompute} disabled={running} className="h-9 px-3 rounded bg-[#2a64a8] text-white text-[12px] font-semibold disabled:opacity-50">
+          <button type="button" onClick={recompute} disabled={running} className="h-9 px-3 rounded bg-[#2a64a8] text-white text-[12px] font-semibold disabled:opacity-50">
             {running ? 'Computing…' : 'Recompute'}
           </button>
-          <button onClick={explain} className="h-9 px-3 rounded bg-[#2a64a8] text-white text-[12px] font-semibold" data-testid="risk-explain">
+          <button type="button" onClick={explain} className="h-9 px-3 rounded bg-[#2a64a8] text-white text-[12px] font-semibold" data-testid="risk-explain">
             AI: explain VaR
           </button>
-          <button onClick={() => setBuilderOpen(true)} className="h-9 px-3 rounded bg-[#2a64a8] text-white text-[12px] font-semibold" data-testid="risk-new-scenario">
+          <button type="button" onClick={() => setBuilderOpen(true)} className="h-9 px-3 rounded bg-[#2a64a8] text-white text-[12px] font-semibold" data-testid="risk-new-scenario">
             + Scenario
           </button>
         </div>

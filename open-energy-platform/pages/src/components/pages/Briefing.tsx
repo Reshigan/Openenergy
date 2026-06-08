@@ -160,13 +160,13 @@ export function Briefing() {
       subtitle={dateLabel}
       actions={
         <>
-          <button onClick={markAllRead} className="flex items-center gap-2 px-3 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50 text-sm">
+          <button type="button" onClick={markAllRead} className="flex items-center gap-2 px-3 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50 text-sm">
             <CheckCheck size={14} /> Mark all read
           </button>
-          <button onClick={sendBriefing} disabled={sending} className="flex items-center gap-2 px-3 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand/90 disabled:opacity-50 text-sm">
+          <button type="button" onClick={sendBriefing} disabled={sending} className="flex items-center gap-2 px-3 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand/90 disabled:opacity-50 text-sm">
             <Send size={14} /> {sending ? 'Queuing…' : sent ? 'Queued' : 'Send to inbox'}
           </button>
-          <button onClick={fetchBriefing} className="flex items-center gap-2 px-3 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50 text-sm">
+          <button type="button" onClick={fetchBriefing} className="flex items-center gap-2 px-3 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50 text-sm">
             <RefreshCw size={14} /> Refresh
           </button>
         </>

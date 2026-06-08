@@ -62,9 +62,9 @@ export function VariationOrdersPage() {
           <option value="rejected">Rejected</option>
           <option value="withdrawn">Withdrawn</option>
         </select>
-        <button onClick={load} className="h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1"><RefreshCw size={11}/>Refresh</button>
+        <button type="button" onClick={load} className="h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1"><RefreshCw size={11}/>Refresh</button>
         <div className="ml-auto"/>
-        <button onClick={() => setRaising(true)} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[11px] font-semibold inline-flex items-center gap-1">
+        <button type="button" onClick={() => setRaising(true)} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[11px] font-semibold inline-flex items-center gap-1">
           <Plus size={12}/> Raise VO
         </button>
       </div>
@@ -100,7 +100,7 @@ export function VariationOrdersPage() {
                 <td className="py-1.5"><span className="px-2 py-0.5 rounded bg-[#eef2f7] text-[10px] uppercase font-bold">{v.status}</span></td>
                 <td className="py-1.5">{v.lender_decision || '—'}</td>
                 <td className="py-1.5">{v.offtaker_decision || '—'}</td>
-                <td className="py-1.5 text-right"><button onClick={() => setSelected(v)} className="text-[11px] text-[#1a3a5c] underline">Open</button></td>
+                <td className="py-1.5 text-right"><button type="button" onClick={() => setSelected(v)} className="text-[11px] text-[#1a3a5c] underline">Open</button></td>
               </tr>
             ))}
             {rows.length === 0 && <tr><td colSpan={10} className="py-2 italic text-[#6b7685]">No variation orders.</td></tr>}
@@ -143,7 +143,7 @@ function RaiseModal({ onClose, onCreated }: { onClose: () => void; onCreated: ()
       <div className="bg-white rounded-lg max-w-xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-4 border-b border-[#dde4ec] flex items-center justify-between">
           <div className="font-semibold text-[#0f1c2e]">Raise variation order</div>
-          <button onClick={onClose} aria-label="Close dialog"><X size={16}/></button>
+          <button type="button" onClick={onClose} aria-label="Close dialog"><X size={16}/></button>
         </div>
         <div className="p-4 space-y-3">
           <label className="block text-[11px] font-semibold text-[#3a4658]">Project ID
@@ -177,8 +177,8 @@ function RaiseModal({ onClose, onCreated }: { onClose: () => void; onCreated: ()
           {err && <div className="text-[12px] text-[#c0392b]"><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
         </div>
         <div className="p-4 border-t border-[#dde4ec] flex justify-end gap-2">
-          <button onClick={onClose} className="h-8 px-3 text-[12px]">Cancel</button>
-          <button disabled={busy} onClick={submit} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
+          <button type="button" onClick={onClose} className="h-8 px-3 text-[12px]">Cancel</button>
+          <button type="button" disabled={busy} onClick={submit} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
             {busy ? 'Submitting…' : 'Raise VO'}
           </button>
         </div>
@@ -232,7 +232,7 @@ function VoDetail({ vo, onClose, onChanged }: { vo: VO; onClose: () => void; onC
             <div className="text-[11px] text-[#6b7685]">project={vo.project_id} · raised by {vo.raised_by} on {new Date(vo.raised_at).toLocaleDateString('en-ZA')}</div>
             <div className="mt-1"><span className="px-2 py-0.5 rounded bg-[#eef2f7] text-[10px] uppercase font-bold">{vo.status}</span></div>
           </div>
-          <button onClick={onClose} aria-label="Close dialog"><X size={16}/></button>
+          <button type="button" onClick={onClose} aria-label="Close dialog"><X size={16}/></button>
         </div>
         <div className="p-4 space-y-3 text-[12px]">
           <div><span className="text-[#6b7685]">Category:</span> <span className="font-semibold">{vo.category}</span></div>
@@ -262,18 +262,18 @@ function VoDetail({ vo, onClose, onChanged }: { vo: VO; onClose: () => void; onC
         </div>
         <div className="p-4 border-t border-[#dde4ec] flex flex-wrap justify-end gap-2">
           {['raised', 'lender_review', 'offtaker_review'].includes(vo.status) && (
-            <button disabled={busy} onClick={withdraw} className="h-8 px-3 text-[12px] text-[#c0392b]">Withdraw</button>
+            <button type="button" disabled={busy} onClick={withdraw} className="h-8 px-3 text-[12px] text-[#c0392b]">Withdraw</button>
           )}
           {canDecideLender && (
             <>
-              <button disabled={busy} onClick={() => decide('lender', 'rejected')} className="h-8 px-3 rounded border border-[#c0392b] text-[#c0392b] text-[12px] font-semibold">Lender · reject</button>
-              <button disabled={busy} onClick={() => decide('lender', 'approved')} className="h-8 px-3 rounded bg-[#1a8a5b] text-white text-[12px] font-semibold">Lender · approve</button>
+              <button type="button" disabled={busy} onClick={() => decide('lender', 'rejected')} className="h-8 px-3 rounded border border-[#c0392b] text-[#c0392b] text-[12px] font-semibold">Lender · reject</button>
+              <button type="button" disabled={busy} onClick={() => decide('lender', 'approved')} className="h-8 px-3 rounded bg-[#1a8a5b] text-white text-[12px] font-semibold">Lender · approve</button>
             </>
           )}
           {canDecideOfftaker && (
             <>
-              <button disabled={busy} onClick={() => decide('offtaker', 'rejected')} className="h-8 px-3 rounded border border-[#c0392b] text-[#c0392b] text-[12px] font-semibold">Offtaker · reject</button>
-              <button disabled={busy} onClick={() => decide('offtaker', 'approved')} className="h-8 px-3 rounded bg-[#1a8a5b] text-white text-[12px] font-semibold">Offtaker · approve</button>
+              <button type="button" disabled={busy} onClick={() => decide('offtaker', 'rejected')} className="h-8 px-3 rounded border border-[#c0392b] text-[#c0392b] text-[12px] font-semibold">Offtaker · reject</button>
+              <button type="button" disabled={busy} onClick={() => decide('offtaker', 'approved')} className="h-8 px-3 rounded bg-[#1a8a5b] text-white text-[12px] font-semibold">Offtaker · approve</button>
             </>
           )}
         </div>

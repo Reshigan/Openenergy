@@ -113,7 +113,7 @@ function CapitalAdequacyTab({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button
+        <button type="button"
           className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
           onClick={() => setModal('create')}
         >
@@ -255,7 +255,7 @@ function EsapMonitoringTab({ onRefresh }: { onRefresh: () => void }) {
 
   return (
     <div>
-      <button
+      <button type="button"
         onClick={() => setModal('create')}
         className="mb-4 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
       >
@@ -416,7 +416,7 @@ function CpClearanceTab({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button
+        <button type="button"
           className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
           onClick={() => setModal('create')}
         >

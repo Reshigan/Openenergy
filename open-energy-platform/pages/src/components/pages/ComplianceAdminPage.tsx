@@ -43,7 +43,7 @@ export function ComplianceAdminPage() {
           { k: 'incidents',    label: 'Incidents',     icon: <ShieldAlert size={13} /> },
           { k: 'maintenance',  label: 'Maintenance',   icon: <Calendar    size={13} /> },
         ] as Array<{ k: Tab; label: string; icon: React.ReactNode }>).map((t) => (
-          <button key={t.k} onClick={() => setTab(t.k)}
+          <button type="button" key={t.k} onClick={() => setTab(t.k)}
             className={`h-10 px-3 text-[12px] font-semibold inline-flex items-center gap-1 border-b-2 transition-colors ${tab === t.k ? 'border-[#3b82c4] text-[#3b82c4]' : 'border-transparent text-[#6b7685] hover:text-[#0f1c2e]'}`}>
             {t.icon} {t.label}
           </button>
@@ -114,7 +114,7 @@ function SarTab() {
     <div className="mt-3 space-y-3">
       <div className="flex flex-wrap gap-1 text-[11px]">
         {['all', 'open', 'in_progress', 'fulfilled', 'rejected', 'escalated'].map((s) => (
-          <button key={s} onClick={() => setFilter(s)}
+          <button type="button" key={s} onClick={() => setFilter(s)}
                   className={`h-7 px-2.5 rounded-full font-semibold border ${filter === s ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white border-[#dde4ec]'}`}>
             {s.replace(/_/g, ' ')}
           </button>
@@ -137,8 +137,8 @@ function SarTab() {
                 <td className="text-right space-x-2">
                   {!['fulfilled', 'rejected'].includes(s.status) && (
                     <>
-                      <button onClick={() => respond(s.id, 'fulfilled')} className="text-[11px] text-[#1a8a5b] font-semibold">Fulfil</button>
-                      <button onClick={() => respond(s.id, 'rejected')}  className="text-[11px] text-[#c0392b] font-semibold">Reject</button>
+                      <button type="button" onClick={() => respond(s.id, 'fulfilled')} className="text-[11px] text-[#1a8a5b] font-semibold">Fulfil</button>
+                      <button type="button" onClick={() => respond(s.id, 'rejected')}  className="text-[11px] text-[#c0392b] font-semibold">Reject</button>
                     </>
                   )}
                 </td>
@@ -171,7 +171,7 @@ function KycReviewTab() {
         <div className="p-3 flex gap-2 items-center">
           <input value={screenName} onChange={(e) => setScreenName(e.target.value)} placeholder="Full legal name"
                  className="h-9 flex-1 px-3 rounded border border-[#dde4ec] text-[12px]" />
-          <button onClick={screen} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Screen</button>
+          <button type="button" onClick={screen} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Screen</button>
         </div>
         {screenResult && (
           <div className="p-3 border-t border-[#eef2f7] text-[12px]">
@@ -232,7 +232,7 @@ function DevicesTab() {
               <td className="font-mono text-[10px]">{new Date(k.created_at).toLocaleDateString()}</td>
               <td className="text-right">
                 {!k.revoked_at && (
-                  <button onClick={async () => { await api.post(`/auth-deep/webauthn/credentials/${k.id}/revoke`, {}); void load(); }}
+                  <button type="button" onClick={async () => { await api.post(`/auth-deep/webauthn/credentials/${k.id}/revoke`, {}); void load(); }}
                           className="text-[11px] text-[#c0392b]">Revoke</button>
                 )}
               </td>
@@ -250,7 +250,7 @@ function DevicesTab() {
               <td className="font-mono text-[10px]">{new Date(d.expires_at).toLocaleDateString()}</td>
               <td className="text-right">
                 {d.revoked !== 1 && (
-                  <button onClick={async () => { await api.post(`/auth-deep/devices/${d.id}/revoke`, {}); void load(); }}
+                  <button type="button" onClick={async () => { await api.post(`/auth-deep/devices/${d.id}/revoke`, {}); void load(); }}
                           className="text-[11px] text-[#c0392b]">Revoke</button>
                 )}
               </td>
@@ -283,7 +283,7 @@ function LockoutsTab() {
               <td className="font-mono text-[11px]">{r.ip}</td>
               <td className="text-right font-mono">{r.attempts}</td>
               <td className="font-mono text-[10px]">{r.locked_until ? new Date(r.locked_until).toLocaleString() : '—'}</td>
-              <td className="text-right"><button onClick={() => clear(r.participant_id)} className="text-[11px] text-[#1a8a5b] inline-flex items-center gap-1"><Unlock size={11} /> Clear</button></td>
+              <td className="text-right"><button type="button" onClick={() => clear(r.participant_id)} className="text-[11px] text-[#1a8a5b] inline-flex items-center gap-1"><Unlock size={11} /> Clear</button></td>
             </tr>
           ))}
           {!rows.length && <tr><td colSpan={5} className="text-[#6b7685] italic py-3">No active lockouts — good.</td></tr>}
@@ -359,7 +359,7 @@ function IncidentsTab() {
                  className="h-9 px-2 rounded border border-[#dde4ec] text-[12px] font-mono" />
           <input placeholder="Body (optional)" value={draft.body} onChange={(e) => setDraft({ ...draft, body: e.target.value })}
                  className="h-9 px-2 rounded border border-[#dde4ec] text-[12px] md:col-span-3" />
-          <button onClick={create} className="h-9 px-3 rounded bg-[#c0392b] text-white text-[12px] font-semibold">Open incident</button>
+          <button type="button" onClick={create} className="h-9 px-3 rounded bg-[#c0392b] text-white text-[12px] font-semibold">Open incident</button>
         </div>
       </Section>
       <Section title={`Incidents (last 30 days)`}>
@@ -378,9 +378,9 @@ function IncidentsTab() {
               <td className="text-right space-x-2">
                 {!['resolved', 'postmortem_published'].includes(r.status) && (
                   <>
-                    <button onClick={() => update(r.id, 'identified')} className="text-[11px]">→ Identified</button>
-                    <button onClick={() => update(r.id, 'monitoring')} className="text-[11px]">→ Monitoring</button>
-                    <button onClick={() => update(r.id, 'resolved')}   className="text-[11px] widget-tone-good-text font-semibold">Resolve</button>
+                    <button type="button" onClick={() => update(r.id, 'identified')} className="text-[11px]">→ Identified</button>
+                    <button type="button" onClick={() => update(r.id, 'monitoring')} className="text-[11px]">→ Monitoring</button>
+                    <button type="button" onClick={() => update(r.id, 'resolved')}   className="text-[11px] widget-tone-good-text font-semibold">Resolve</button>
                   </>
                 )}
               </td>
@@ -420,7 +420,7 @@ function MaintenanceTab() {
                  className="h-9 px-2 rounded border border-[#dde4ec] text-[12px] font-mono md:col-span-2" />
           <input type="datetime-local" value={draft.starts_at} onChange={(e) => setDraft({ ...draft, starts_at: e.target.value })} className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]" />
           <input type="datetime-local" value={draft.ends_at}   onChange={(e) => setDraft({ ...draft, ends_at: e.target.value })}   className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]" />
-          <button onClick={create} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold md:col-span-2">Schedule</button>
+          <button type="button" onClick={create} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold md:col-span-2">Schedule</button>
         </div>
       </Section>
       <Section title="Upcoming + recent maintenance">

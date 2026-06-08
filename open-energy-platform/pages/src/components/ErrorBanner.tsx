@@ -13,7 +13,7 @@ export function ErrorBanner({ message = 'Something went wrong', onRetry, onDismi
       <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
       <p className="text-sm text-red-700 flex-1">{message}</p>
       {onRetry && (
-        <button
+        <button type="button"
           onClick={onRetry}
           className="flex items-center gap-1 px-3 py-1 text-sm text-red-700 hover:bg-red-100 rounded"
         >
@@ -22,7 +22,7 @@ export function ErrorBanner({ message = 'Something went wrong', onRetry, onDismi
         </button>
       )}
       {onDismiss && (
-        <button onClick={onDismiss} className="p-1 hover:bg-red-100 rounded">
+        <button type="button" onClick={onDismiss} className="p-1 hover:bg-red-100 rounded">
           <X className="w-4 h-4 text-red-600" />
         </button>
       )}

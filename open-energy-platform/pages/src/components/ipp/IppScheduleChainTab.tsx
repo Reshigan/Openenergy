@@ -549,7 +549,7 @@ export function IppScheduleChainTab() {
 
       <div className="mb-3 flex flex-wrap gap-1.5">
         {FILTERS.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -709,7 +709,7 @@ function Drawer({
                 {' '}{'•'} CP float {fmtDays(cpFloat)}
               </div>
             </div>
-            <button
+            <button type="button"
               onClick={onClose}
               className="rounded border border-[#d8dde6] bg-white px-2 py-1 text-[12px] text-[#445] hover:bg-[#f3f5f9]"
             >
@@ -954,7 +954,7 @@ function ActionButton({
 }) {
   const bg = tone === 'danger' ? '#7a0e0e' : tone === 'warn' ? '#a06200' : '#1a3a5c';
   return (
-    <button
+    <button type="button"
       onClick={onClick}
       className="rounded px-3 py-1.5 text-[11px] font-semibold text-white hover:opacity-90"
       style={{ background: bg }}

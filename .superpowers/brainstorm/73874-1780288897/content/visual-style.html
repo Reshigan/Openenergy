@@ -1,0 +1,206 @@
+<h2>Visual Style — Which palette and density?</h2>
+<p class="subtitle">Same sidebar layout — three different visual personalities. All professional, just different character.</p>
+
+<div class="cards">
+  <div class="card" data-choice="dark-dense" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#060e1a;padding:0;font-family:-apple-system,system-ui,sans-serif;font-size:11px;min-height:240px;display:flex;overflow:hidden;">
+      <!-- Sidebar -->
+      <div style="width:160px;background:#0a1220;border-right:1px solid #141f30;padding:12px 0;flex-shrink:0;">
+        <div style="padding:0 12px 10px;border-bottom:1px solid #141f30;margin-bottom:10px;">
+          <div style="color:#7e57c2;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Open Energy</div>
+          <div style="color:#475569;font-size:9px;margin-top:2px;">IPP Developer</div>
+        </div>
+        <div style="padding:0 8px;margin-bottom:8px;">
+          <div style="color:#334155;font-size:8px;font-weight:700;letter-spacing:0.08em;padding:0 4px 4px;text-transform:uppercase;">Project</div>
+          <div style="color:#e2e8f0;font-size:10px;padding:5px 8px;background:#1a2d45;border-radius:4px;margin-bottom:1px;display:flex;justify-content:space-between;align-items:center;"><span>Schedule</span><span style="background:#7e57c2;color:white;font-size:8px;padding:1px 5px;border-radius:8px;">P6</span></div>
+          <div style="color:#64748b;font-size:10px;padding:5px 8px;margin-bottom:1px;">Cost / EVM</div>
+          <div style="color:#64748b;font-size:10px;padding:5px 8px;margin-bottom:1px;">Documents</div>
+          <div style="color:#64748b;font-size:10px;padding:5px 8px;">WBS</div>
+        </div>
+        <div style="padding:0 8px;margin-bottom:8px;">
+          <div style="color:#334155;font-size:8px;font-weight:700;letter-spacing:0.08em;padding:0 4px 4px;text-transform:uppercase;">Compliance</div>
+          <div style="color:#64748b;font-size:10px;padding:5px 8px;margin-bottom:1px;">Stage Gates</div>
+          <div style="color:#64748b;font-size:10px;padding:5px 8px;display:flex;justify-content:space-between;align-items:center;"><span>NCR</span><span style="background:#dc2626;color:white;font-size:8px;padding:1px 5px;border-radius:8px;">3</span></div>
+        </div>
+      </div>
+      <!-- Main -->
+      <div style="flex:1;padding:12px;background:#060e1a;">
+        <!-- KPI row -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;">
+          <div style="background:#0d1c2e;border:1px solid #141f30;border-radius:6px;padding:8px;">
+            <div style="color:#475569;font-size:8px;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:3px;">SPI</div>
+            <div style="color:#22c55e;font-size:14px;font-weight:700;">0.97</div>
+          </div>
+          <div style="background:#0d1c2e;border:1px solid #141f30;border-radius:6px;padding:8px;">
+            <div style="color:#475569;font-size:8px;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:3px;">CPI</div>
+            <div style="color:#f59e0b;font-size:14px;font-weight:700;">0.89</div>
+          </div>
+          <div style="background:#0d1c2e;border:1px solid #141f30;border-radius:6px;padding:8px;">
+            <div style="color:#475569;font-size:8px;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:3px;">EAC</div>
+            <div style="color:#e2e8f0;font-size:14px;font-weight:700;">R890M</div>
+          </div>
+        </div>
+        <!-- Table skeleton -->
+        <div style="background:#0d1c2e;border:1px solid #141f30;border-radius:6px;overflow:hidden;">
+          <div style="background:#0f2238;padding:6px 10px;display:flex;gap:8px;">
+            <div style="color:#334155;font-size:9px;font-weight:600;text-transform:uppercase;">TASK</div>
+            <div style="color:#334155;font-size:9px;font-weight:600;text-transform:uppercase;margin-left:auto;">STATUS</div>
+          </div>
+          <div style="padding:4px 10px;border-bottom:1px solid #141f30;display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#94a3b8;font-size:9px;">Procurement Package</span>
+            <span style="background:#1a3a5c;color:#60a5fa;font-size:8px;padding:1px 6px;border-radius:3px;">active</span>
+          </div>
+          <div style="padding:4px 10px;border-bottom:1px solid #141f30;display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#94a3b8;font-size:9px;">Foundation Works</span>
+            <span style="background:#1a2e1a;color:#22c55e;font-size:8px;padding:1px 6px;border-radius:3px;">done</span>
+          </div>
+          <div style="padding:4px 10px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#94a3b8;font-size:9px;">Turbine Installation</span>
+            <span style="background:#2d1a1a;color:#dc2626;font-size:8px;padding:1px 6px;border-radius:3px;">delayed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Dark Command Centre</h3>
+      <p>Deep navy/charcoal throughout. Bloomberg-grade density. Monochromatic with color only for status signals. Every pixel earns its place. Feels like mission control.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="dark-light" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc;padding:0;font-family:-apple-system,system-ui,sans-serif;font-size:11px;min-height:240px;display:flex;overflow:hidden;">
+      <!-- Sidebar -->
+      <div style="width:160px;background:#1e293b;border-right:none;padding:12px 0;flex-shrink:0;">
+        <div style="padding:0 12px 10px;border-bottom:1px solid #334155;margin-bottom:10px;">
+          <div style="color:#7e57c2;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Open Energy</div>
+          <div style="color:#64748b;font-size:9px;margin-top:2px;">IPP Developer</div>
+        </div>
+        <div style="padding:0 8px;margin-bottom:8px;">
+          <div style="color:#475569;font-size:8px;font-weight:700;letter-spacing:0.08em;padding:0 4px 4px;text-transform:uppercase;">Project</div>
+          <div style="color:#f1f5f9;font-size:10px;padding:5px 8px;background:#334155;border-radius:4px;margin-bottom:1px;border-left:3px solid #7e57c2;display:flex;justify-content:space-between;align-items:center;"><span>Schedule</span><span style="background:#7e57c2;color:white;font-size:8px;padding:1px 5px;border-radius:8px;">P6</span></div>
+          <div style="color:#94a3b8;font-size:10px;padding:5px 8px;margin-bottom:1px;">Cost / EVM</div>
+          <div style="color:#94a3b8;font-size:10px;padding:5px 8px;margin-bottom:1px;">Documents</div>
+          <div style="color:#94a3b8;font-size:10px;padding:5px 8px;">WBS</div>
+        </div>
+        <div style="padding:0 8px;">
+          <div style="color:#475569;font-size:8px;font-weight:700;letter-spacing:0.08em;padding:0 4px 4px;text-transform:uppercase;">Compliance</div>
+          <div style="color:#94a3b8;font-size:10px;padding:5px 8px;margin-bottom:1px;">Stage Gates</div>
+          <div style="color:#94a3b8;font-size:10px;padding:5px 8px;display:flex;justify-content:space-between;"><span>NCR</span><span style="background:#dc2626;color:white;font-size:8px;padding:1px 5px;border-radius:8px;">3</span></div>
+        </div>
+      </div>
+      <!-- Main (light) -->
+      <div style="flex:1;padding:12px;background:#f8fafc;">
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div>
+            <div style="color:#0f172a;font-size:12px;font-weight:700;">Schedule</div>
+            <div style="color:#64748b;font-size:9px;">Cosmos Wind Farm · Phase 2</div>
+          </div>
+          <div style="background:#7e57c2;color:white;font-size:9px;padding:4px 10px;border-radius:4px;">+ New Task</div>
+        </div>
+        <!-- KPI row -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;">
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:6px;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+            <div style="color:#64748b;font-size:8px;margin-bottom:3px;">SPI</div>
+            <div style="color:#16a34a;font-size:14px;font-weight:700;">0.97</div>
+          </div>
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:6px;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+            <div style="color:#64748b;font-size:8px;margin-bottom:3px;">CPI</div>
+            <div style="color:#d97706;font-size:14px;font-weight:700;">0.89</div>
+          </div>
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:6px;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+            <div style="color:#64748b;font-size:8px;margin-bottom:3px;">EAC</div>
+            <div style="color:#0f172a;font-size:14px;font-weight:700;">R890M</div>
+          </div>
+        </div>
+        <!-- Table -->
+        <div style="background:white;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+          <div style="background:#f1f5f9;padding:6px 10px;border-bottom:1px solid #e2e8f0;">
+            <span style="color:#64748b;font-size:9px;font-weight:600;text-transform:uppercase;">Tasks</span>
+          </div>
+          <div style="padding:6px 10px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#334155;font-size:9px;">Procurement Package</span>
+            <span style="background:#eff6ff;color:#3b82f6;font-size:8px;padding:1px 6px;border-radius:10px;border:1px solid #bfdbfe;">active</span>
+          </div>
+          <div style="padding:6px 10px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#334155;font-size:9px;">Foundation Works</span>
+            <span style="background:#f0fdf4;color:#16a34a;font-size:8px;padding:1px 6px;border-radius:10px;border:1px solid #bbf7d0;">done</span>
+          </div>
+          <div style="padding:6px 10px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#334155;font-size:9px;">Turbine Installation</span>
+            <span style="background:#fef2f2;color:#dc2626;font-size:8px;padding:1px 6px;border-radius:10px;border:1px solid #fecaca;">delayed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Dark Sidebar + Light Content</h3>
+      <p>Dark nav rail for structure, white/light-gray content area for data. High contrast between chrome and content. Figma, Linear, VS Code style. Best readability for dense tables.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="refined-dark" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0b1623;padding:0;font-family:-apple-system,system-ui,sans-serif;font-size:11px;min-height:240px;display:flex;overflow:hidden;">
+      <!-- Sidebar — more refined, gradient -->
+      <div style="width:160px;background:linear-gradient(180deg,#0e1f35 0%,#0b1623 100%);border-right:1px solid rgba(126,87,194,0.15);padding:12px 0;flex-shrink:0;">
+        <div style="padding:0 12px 10px;border-bottom:1px solid rgba(126,87,194,0.1);margin-bottom:10px;">
+          <div style="background:linear-gradient(135deg,#7e57c2,#9c6fe4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:11px;font-weight:800;letter-spacing:-0.01em;">Open Energy</div>
+          <div style="color:#4a6080;font-size:9px;margin-top:2px;">IPP Developer</div>
+        </div>
+        <div style="padding:0 8px;margin-bottom:10px;">
+          <div style="color:#2a4060;font-size:8px;font-weight:700;letter-spacing:0.1em;padding:0 4px 6px;text-transform:uppercase;">Project</div>
+          <div style="color:#c4d4e8;font-size:10px;padding:6px 10px;background:rgba(126,87,194,0.15);border-radius:6px;margin-bottom:2px;border:1px solid rgba(126,87,194,0.25);display:flex;justify-content:space-between;align-items:center;"><span>Schedule</span><div style="width:6px;height:6px;background:#7e57c2;border-radius:50%;"></div></div>
+          <div style="color:#4a6080;font-size:10px;padding:6px 10px;margin-bottom:2px;border-radius:6px;">Cost / EVM</div>
+          <div style="color:#4a6080;font-size:10px;padding:6px 10px;margin-bottom:2px;border-radius:6px;">Documents</div>
+          <div style="color:#4a6080;font-size:10px;padding:6px 10px;border-radius:6px;">WBS</div>
+        </div>
+        <div style="padding:0 8px;">
+          <div style="color:#2a4060;font-size:8px;font-weight:700;letter-spacing:0.1em;padding:0 4px 6px;text-transform:uppercase;">Compliance</div>
+          <div style="color:#4a6080;font-size:10px;padding:6px 10px;margin-bottom:2px;border-radius:6px;">Stage Gates</div>
+          <div style="color:#4a6080;font-size:10px;padding:6px 10px;border-radius:6px;display:flex;justify-content:space-between;"><span>NCR</span><span style="background:rgba(220,38,38,0.2);color:#f87171;font-size:8px;padding:1px 6px;border-radius:8px;">3</span></div>
+        </div>
+      </div>
+      <!-- Main — elevated cards -->
+      <div style="flex:1;padding:12px;background:#0b1623;">
+        <div style="color:#c4d4e8;font-size:12px;font-weight:600;margin-bottom:4px;">Schedule</div>
+        <div style="color:#2a4060;font-size:9px;margin-bottom:10px;">Cosmos Wind Farm · Phase 2</div>
+        <!-- KPI row -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;">
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px;backdrop-filter:blur(10px);">
+            <div style="color:#2a4060;font-size:8px;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.06em;">SPI</div>
+            <div style="color:#4ade80;font-size:14px;font-weight:700;">0.97</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px;">
+            <div style="color:#2a4060;font-size:8px;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.06em;">CPI</div>
+            <div style="color:#fbbf24;font-size:14px;font-weight:700;">0.89</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px;">
+            <div style="color:#2a4060;font-size:8px;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.06em;">EAC</div>
+            <div style="color:#c4d4e8;font-size:14px;font-weight:700;">R890M</div>
+          </div>
+        </div>
+        <!-- Table -->
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;overflow:hidden;">
+          <div style="padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#8db0d0;font-size:9px;">Procurement Package</span>
+            <span style="background:rgba(96,165,250,0.1);color:#60a5fa;font-size:8px;padding:1px 6px;border-radius:10px;">active</span>
+          </div>
+          <div style="padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#8db0d0;font-size:9px;">Foundation Works</span>
+            <span style="background:rgba(74,222,128,0.1);color:#4ade80;font-size:8px;padding:1px 6px;border-radius:10px;">done</span>
+          </div>
+          <div style="padding:5px 10px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#8db0d0;font-size:9px;">Turbine Installation</span>
+            <span style="background:rgba(248,113,113,0.1);color:#f87171;font-size:8px;padding:1px 6px;border-radius:10px;">delayed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Refined Dark (Elevated)</h3>
+      <p>Deep dark throughout but with glass-morphism card elevations, subtle purple gradients, and softer borders. Current palette taken up a notch. Feels premium, not utilitarian.</p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:20px;">Click your preferred visual direction. Visit <strong>http://localhost:57782</strong> to see the comparison.</p>

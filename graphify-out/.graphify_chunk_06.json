@@ -1,0 +1,97 @@
+{
+  "nodes": [
+    {
+      "id": "oe-icon-512",
+      "label": "Open Energy Platform App Icon (512px)",
+      "type": "icon",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-512.png",
+      "summary": "512x512 PNG application icon for the Open Energy Platform. Features three interlocking arc/ring shapes suggesting interconnection or energy flow — one large steel-blue arc (top-left), one teal/green arc (center-right), and one dark navy arc (bottom). The arcs converge around a small filled circle at their intersection point, evoking a node or connection hub. Background is a very light grey-blue. No visible text. Style is clean, modern, flat/semi-flat."
+    },
+    {
+      "id": "oe-icon-color-steel-blue",
+      "label": "Steel Blue Arc",
+      "type": "design_element",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-512.png",
+      "summary": "Largest arc in the icon; steel/cornflower blue (#5B8FD4 approx), positioned top-left and curving around the center."
+    },
+    {
+      "id": "oe-icon-color-teal",
+      "label": "Teal/Green Arc",
+      "type": "design_element",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-512.png",
+      "summary": "Mid-size arc in teal/emerald green (#2EADA0 approx), positioned center-right."
+    },
+    {
+      "id": "oe-icon-color-navy",
+      "label": "Dark Navy Arc",
+      "type": "design_element",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-512.png",
+      "summary": "Smaller arc in dark navy/indigo (#1B3A6B approx), positioned bottom-right, giving depth and contrast."
+    },
+    {
+      "id": "oe-icon-hub-dot",
+      "label": "Central Hub Dot",
+      "type": "design_element",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-512.png",
+      "summary": "Small filled circle at the convergence point of all three arcs, rendered in mid-blue. Represents a connection node or energy exchange point."
+    },
+    {
+      "id": "open-energy-platform",
+      "label": "Open Energy Platform",
+      "type": "product",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-512.png",
+      "summary": "South African energy exchange platform (power trading, carbon, IPP lifecycle, settlement, regulatory compliance) deployed at oe.vantax.co.za."
+    }
+  ],
+  "edges": [
+    {
+      "source": "oe-icon-512",
+      "target": "open-energy-platform",
+      "label": "is_icon_of",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "oe-icon-512",
+      "target": "oe-icon-color-steel-blue",
+      "label": "contains_element",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-icon-512",
+      "target": "oe-icon-color-teal",
+      "label": "contains_element",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-icon-512",
+      "target": "oe-icon-color-navy",
+      "label": "contains_element",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-icon-512",
+      "target": "oe-icon-hub-dot",
+      "label": "contains_element",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-icon-color-steel-blue",
+      "target": "oe-icon-hub-dot",
+      "label": "converges_at",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-icon-color-teal",
+      "target": "oe-icon-hub-dot",
+      "label": "converges_at",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-icon-color-navy",
+      "target": "oe-icon-hub-dot",
+      "label": "converges_at",
+      "confidence": "EXTRACTED"
+    }
+  ],
+  "hyperedges": []
+}

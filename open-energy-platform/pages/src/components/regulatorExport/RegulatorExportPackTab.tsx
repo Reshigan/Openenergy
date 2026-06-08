@@ -600,7 +600,7 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
           </p>
         </div>
         {!regulatorView && (
-          <button
+          <button type="button"
             onClick={() => setShowPropose(true)}
             className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#1a3a5c]"
           >
@@ -652,7 +652,7 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
       {/* Row 1: action / priority pills */}
       <div className="mb-2 flex flex-wrap gap-1.5">
         {FILTERS_ACTION.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -669,7 +669,7 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
       {/* Row 2: lifecycle stages + tiers */}
       <div className="mb-2 flex flex-wrap gap-1.5">
         {FILTERS_LIFECYCLE.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -686,7 +686,7 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
       {/* Row 3: regulator targets */}
       <div className="mb-3 flex flex-wrap gap-1.5">
         {FILTERS_TARGETS.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -863,7 +863,7 @@ function Drawer({
           ? 'bg-[#a06200] text-white hover:bg-[#c97a00]'
           : 'bg-white border border-[#d8dde6] text-[#1a3a5c] hover:bg-[#f3f5f9]';
     return (
-      <button
+      <button type="button"
         key={action}
         onClick={() => onAct(action, row)}
         className={`rounded px-3 py-1.5 text-[11px] font-semibold ${cls}`}
@@ -885,7 +885,7 @@ function Drawer({
               {row.title || 'Regulator export pack'} {'•'} {row.reporting_period_start} {'→'} {row.reporting_period_end}
             </p>
           </div>
-          <button onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
         </div>
 
         {/* Scoring */}
@@ -1071,8 +1071,8 @@ function ProposeModal({
           </div>
         </div>
         <div className="mt-3 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Cancel</button>
-          <button onClick={submit} className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#1a3a5c]">Propose</button>
+          <button type="button" onClick={onClose} className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Cancel</button>
+          <button type="button" onClick={submit} className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#1a3a5c]">Propose</button>
         </div>
       </div>
     </div>

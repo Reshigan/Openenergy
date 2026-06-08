@@ -68,7 +68,7 @@ export function PaiaAdminPage() {
           <option value="fulfilled">Fulfilled</option>
           <option value="rejected">Rejected</option>
         </select>
-        <button onClick={load} className="h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1"><RefreshCw size={11}/>Refresh</button>
+        <button type="button" onClick={load} className="h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1"><RefreshCw size={11}/>Refresh</button>
       </div>
       {err && <div className="text-[12px] text-[#c0392b] mb-2"><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
       <div className="overflow-x-auto">
@@ -95,7 +95,7 @@ export function PaiaAdminPage() {
                   <td className="py-1.5">{r.request_type}</td>
                   <td className="py-1.5 font-mono">{r.assigned_to || '—'}</td>
                   <td className="py-1.5"><span className="px-2 py-0.5 rounded bg-[#eef2f7] text-[10px] uppercase font-bold">{r.status}</span></td>
-                  <td className="py-1.5 text-right"><button onClick={() => setSelected(r)} className="text-[11px] text-[#1a3a5c] underline">Open</button></td>
+                  <td className="py-1.5 text-right"><button type="button" onClick={() => setSelected(r)} className="text-[11px] text-[#1a3a5c] underline">Open</button></td>
                 </tr>
               );
             })}
@@ -158,7 +158,7 @@ function SarDetail({ sar, onClose, onChanged }: { sar: Sar; onClose: () => void;
             <div className="text-[11px] text-[#6b7685]">{sar.subject_email} · {sar.request_type}</div>
             <div className="mt-1"><span className="px-2 py-0.5 rounded bg-[#eef2f7] text-[10px] uppercase font-bold">{sar.status}</span></div>
           </div>
-          <button onClick={onClose} aria-label="Close dialog"><X size={16}/></button>
+          <button type="button" onClick={onClose} aria-label="Close dialog"><X size={16}/></button>
         </div>
         <div className="p-4 space-y-3 text-[12px]">
           <div><span className="text-[#6b7685]">Received:</span> {new Date(sar.received_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}</div>
@@ -171,7 +171,7 @@ function SarDetail({ sar, onClose, onChanged }: { sar: Sar; onClose: () => void;
           )}
           {!sar.assigned_to && (
             <div className="border-t pt-3 border-[#eef2f7]">
-              <button disabled={busy} onClick={assign} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
+              <button type="button" disabled={busy} onClick={assign} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
                 Assign to me
               </button>
             </div>
@@ -197,15 +197,15 @@ function SarDetail({ sar, onClose, onChanged }: { sar: Sar; onClose: () => void;
         <div className="p-4 border-t border-[#dde4ec] flex justify-end gap-2">
           {!['fulfilled', 'rejected'].includes(sar.status) && (
             <>
-              <button disabled={busy || !rejReason} onClick={() => respond('rejected')} className="h-8 px-3 rounded border border-[#c0392b] text-[#c0392b] text-[12px] font-semibold disabled:opacity-40">
+              <button type="button" disabled={busy || !rejReason} onClick={() => respond('rejected')} className="h-8 px-3 rounded border border-[#c0392b] text-[#c0392b] text-[12px] font-semibold disabled:opacity-40">
                 Reject
               </button>
-              <button disabled={busy || !respSummary} onClick={() => respond('fulfilled')} className="h-8 px-3 rounded bg-[#1a8a5b] text-white text-[12px] font-semibold disabled:opacity-40">
+              <button type="button" disabled={busy || !respSummary} onClick={() => respond('fulfilled')} className="h-8 px-3 rounded bg-[#1a8a5b] text-white text-[12px] font-semibold disabled:opacity-40">
                 Fulfil
               </button>
             </>
           )}
-          <button onClick={onClose} className="h-8 px-3 text-[12px]">Close</button>
+          <button type="button" onClick={onClose} className="h-8 px-3 text-[12px]">Close</button>
         </div>
       </div>
     </div>

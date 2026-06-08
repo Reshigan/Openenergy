@@ -34,7 +34,7 @@ export function ComplianceSettingsPage() {
           { k: 'popia',     label: 'POPIA data rights',  icon: <ShieldCheck size={13} /> },
           ...(isAdmin ? [{ k: 'regulator' as Tab, label: 'Regulator packs', icon: <FileText size={13} /> }] : []),
         ] as Array<{ k: Tab; label: string; icon: React.ReactNode }>).map((t) => (
-          <button key={t.k} onClick={() => setTab(t.k)}
+          <button type="button" key={t.k} onClick={() => setTab(t.k)}
             className={`h-10 px-4 text-[12px] font-semibold inline-flex items-center gap-1 border-b-2 transition-colors ${tab === t.k ? 'border-[#3b82c4] text-[#3b82c4]' : 'border-transparent text-[#6b7685] hover:text-[#0f1c2e]'}`}>
             {t.icon} {t.label}
           </button>
@@ -107,7 +107,7 @@ function MfaTab() {
         </p>
 
         {!state?.verified && !otpauth && (
-          <button onClick={enroll} disabled={busy}
+          <button type="button" onClick={enroll} disabled={busy}
                   className="mt-3 h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
             {busy ? 'Enrolling…' : 'Enable MFA'}
           </button>
@@ -128,7 +128,7 @@ function MfaTab() {
                 <div className="text-[11px] text-[#6b7685] uppercase tracking-wider font-bold">2. Enter the 6-digit code</div>
                 <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="123 456" autoComplete="one-time-code"
                        className="mt-1 h-9 w-32 px-2 rounded border border-[#dde4ec] font-mono text-[15px] tracking-widest" />
-                <button onClick={verify} disabled={busy || code.length < 6}
+                <button type="button" onClick={verify} disabled={busy || code.length < 6}
                         className="ml-2 h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
                   {busy ? 'Verifying…' : 'Verify'}
                 </button>
@@ -151,7 +151,7 @@ function MfaTab() {
                 <code key={c} className="block bg-white border border-[#dde4ec] px-2 py-1 rounded text-center">{c}</code>
               ))}
             </div>
-            <button onClick={() => setRecoveryCodes(null)}
+            <button type="button" onClick={() => setRecoveryCodes(null)}
                     className="mt-2 h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">
               I've saved them
             </button>
@@ -162,7 +162,7 @@ function MfaTab() {
           <div className="mt-3 space-y-2 text-[12px] text-[#3d4756]">
             <div>Recovery codes remaining: <strong>{state.recovery_codes_remaining}</strong></div>
             <div>Last used: <strong>{state.last_used_at ? new Date(state.last_used_at).toLocaleString() : 'never'}</strong></div>
-            <button onClick={reset} className="h-8 px-3 rounded bg-white border border-[#c0392b] text-[#c0392b] text-[12px] font-semibold inline-flex items-center gap-1">
+            <button type="button" onClick={reset} className="h-8 px-3 rounded bg-white border border-[#c0392b] text-[#c0392b] text-[12px] font-semibold inline-flex items-center gap-1">
               <Trash2 size={12} /> Disable MFA
             </button>
           </div>
@@ -217,8 +217,8 @@ function KycTab({ isAdmin }: { isAdmin: boolean }) {
     <div className="mt-3 space-y-3">
       {isAdmin && (
         <div className="flex gap-2 text-[12px]">
-          <button onClick={() => setAdminView(false)} className={`h-8 px-2.5 rounded-full text-[11px] font-semibold border ${!adminView ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white border-[#dde4ec]'}`}>My submissions</button>
-          <button onClick={() => setAdminView(true)}  className={`h-8 px-2.5 rounded-full text-[11px] font-semibold border ${adminView ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white border-[#dde4ec]'}`}>Pending review queue</button>
+          <button type="button" onClick={() => setAdminView(false)} className={`h-8 px-2.5 rounded-full text-[11px] font-semibold border ${!adminView ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white border-[#dde4ec]'}`}>My submissions</button>
+          <button type="button" onClick={() => setAdminView(true)}  className={`h-8 px-2.5 rounded-full text-[11px] font-semibold border ${adminView ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white border-[#dde4ec]'}`}>Pending review queue</button>
         </div>
       )}
       {!adminView && (
@@ -244,7 +244,7 @@ function KycTab({ isAdmin }: { isAdmin: boolean }) {
       <section className="widget-card">
         <header className="widget-card-header">
           <div className="widget-card-title">{adminView ? 'Pending submissions' : 'My submissions'}</div>
-          <button onClick={load} className="text-[11px] inline-flex items-center gap-1 text-[#3b82c4]"><RefreshCw size={11} /> Refresh</button>
+          <button type="button" onClick={load} className="text-[11px] inline-flex items-center gap-1 text-[#3b82c4]"><RefreshCw size={11} /> Refresh</button>
         </header>
         <div className="p-3 overflow-x-auto">
           <table className="w-full text-[12px]">
@@ -274,8 +274,8 @@ function KycTab({ isAdmin }: { isAdmin: boolean }) {
                     <td className="text-right space-x-2">
                       {r.status === 'pending' && (
                         <>
-                          <button onClick={() => decide(r.id, 'approved')} className="text-[11px] text-[#1a8a5b] font-semibold">Approve</button>
-                          <button onClick={() => decide(r.id, 'rejected')} className="text-[11px] text-[#c0392b] font-semibold">Reject</button>
+                          <button type="button" onClick={() => decide(r.id, 'approved')} className="text-[11px] text-[#1a8a5b] font-semibold">Approve</button>
+                          <button type="button" onClick={() => decide(r.id, 'rejected')} className="text-[11px] text-[#c0392b] font-semibold">Reject</button>
                         </>
                       )}
                     </td>
@@ -330,7 +330,7 @@ function PopiaTab() {
             <span className="text-[14px] font-semibold text-[#0f1c2e]">Section 23 — Right of access</span>
           </div>
           <p className="text-[12px] text-[#3d4756] mt-2">Download all personal information we hold about you in a portable JSON archive. Ready within seconds.</p>
-          <button onClick={requestExport} disabled={busy}
+          <button type="button" onClick={requestExport} disabled={busy}
                   className="mt-3 h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
             {busy ? 'Generating…' : 'Request data export'}
           </button>
@@ -340,7 +340,7 @@ function PopiaTab() {
                 <span className="font-mono text-[10px]">{new Date(e.requested_at).toLocaleString()}</span>
                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${e.status === 'ready' ? 'widget-tone-good' : 'widget-tone-info'}`}>{e.status}</span>
                 {e.status === 'ready' && (
-                  <button onClick={() => download(e.id)} className="ml-auto text-[#3b82c4]">Download</button>
+                  <button type="button" onClick={() => download(e.id)} className="ml-auto text-[#3b82c4]">Download</button>
                 )}
               </li>
             ))}
@@ -353,7 +353,7 @@ function PopiaTab() {
             <span className="text-[14px] font-semibold text-[#0f1c2e]">Section 24 — Right to erasure</span>
           </div>
           <p className="text-[12px] text-[#3d4756] mt-2">Request deletion of your account. 30-day cooling-off before execution. Audit chains are preserved per POPIA s.14(2)(d) (legal obligation).</p>
-          <button onClick={requestErasure} disabled={busy}
+          <button type="button" onClick={requestErasure} disabled={busy}
                   className="mt-3 h-9 px-3 rounded bg-white border border-[#c0392b] text-[#c0392b] text-[12px] font-semibold disabled:opacity-50">
             Request erasure
           </button>
@@ -365,7 +365,7 @@ function PopiaTab() {
                 {d.status === 'cooling_off' && (
                   <>
                     <span className="text-[10px] text-[#6b7685]">deletes {new Date(d.scheduled_for).toLocaleDateString()}</span>
-                    <button onClick={() => cancelErasure(d.id)} className="ml-auto text-[#3b82c4]">Cancel</button>
+                    <button type="button" onClick={() => cancelErasure(d.id)} className="ml-auto text-[#3b82c4]">Cancel</button>
                   </>
                 )}
               </li>
@@ -415,7 +415,7 @@ function RegulatorTab() {
             <select value={quarter} onChange={(e) => setQuarter(Number(e.target.value))} className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]">
               <option value={1}>Q1</option><option value={2}>Q2</option><option value={3}>Q3</option><option value={4}>Q4</option>
             </select>
-            <button onClick={generateNersa} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Generate</button>
+            <button type="button" onClick={generateNersa} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Generate</button>
           </div>
           <ul className="divide-y divide-[#eef2f7] text-[11px]">
             {nersa.map((r) => (
@@ -442,7 +442,7 @@ function RegulatorTab() {
               <option value="carbon_tax">Carbon tax</option>
             </select>
             <input value={sarsLabel} onChange={(e) => setSarsLabel(e.target.value)} placeholder={sarsType === 'vat201' ? '2026/02' : '2026'} className="h-9 w-28 px-2 rounded border border-[#dde4ec] text-[12px] font-mono" />
-            <button onClick={generateSars} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Generate</button>
+            <button type="button" onClick={generateSars} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Generate</button>
           </div>
           <ul className="divide-y divide-[#eef2f7] text-[11px]">
             {sars.map((r) => (

@@ -305,7 +305,7 @@ function FilterChip({
       ? { background: '#1a3a5c', color: '#fff', borderColor: '#1a3a5c' }
       : { background: '#fff', color: '#0f1c2e', borderColor: '#dde4ec' };
   return (
-    <button
+    <button type="button"
       onClick={onClick}
       role="tab"
       aria-selected={active}

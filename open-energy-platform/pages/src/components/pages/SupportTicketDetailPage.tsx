@@ -123,18 +123,18 @@ export function SupportTicketDetailPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => navigate('/support/workstation')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={() => navigate('/support/workstation')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
             <ArrowLeft size={12} /> Workstation
           </button>
-          <button onClick={() => void load()} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={() => void load()} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
             <RefreshCw size={12} /> Refresh
           </button>
           {isAgent && ticket.status !== 'resolved' && ticket.status !== 'closed' && (
             <>
-              <button onClick={() => setTransitioning(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+              <button type="button" onClick={() => setTransitioning(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
                 Transition
               </button>
-              <button onClick={() => setEscalating(true)} className="h-9 px-3 rounded-md bg-amber-600 text-white text-[12px] font-semibold">
+              <button type="button" onClick={() => setEscalating(true)} className="h-9 px-3 rounded-md bg-amber-600 text-white text-[12px] font-semibold">
                 Escalate
               </button>
             </>
@@ -216,14 +216,14 @@ export function SupportTicketDetailPage() {
               <div className="flex items-center gap-2 text-[11px] text-[#6b7685]">
                 Visibility:
                 {(['public', 'internal'] as const).map(v => (
-                  <button key={v} onClick={() => setReplyVisibility(v)}
+                  <button type="button" key={v} onClick={() => setReplyVisibility(v)}
                     className={`px-2 py-0.5 rounded ${replyVisibility === v ? 'bg-[#1a3a5c] text-white' : 'border border-[#dde4ec] text-[#3d4756]'}`}>
                     {v}
                   </button>
                 ))}
               </div>
             ) : <div />}
-            <button onClick={postComment} disabled={posting || !reply.trim()} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1 disabled:opacity-50">
+            <button type="button" onClick={postComment} disabled={posting || !reply.trim()} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1 disabled:opacity-50">
               <Send size={12} /> {posting ? 'Posting…' : 'Post'}
             </button>
           </div>

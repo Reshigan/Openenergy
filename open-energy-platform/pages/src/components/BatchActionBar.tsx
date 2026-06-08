@@ -23,7 +23,7 @@ export function BatchActionBar({ selectedCount, onClear, actions }: BatchActionB
       </div>
       <div className="h-6 w-px bg-gray-700" />
       {actions.map((action, i) => (
-        <button
+        <button type="button"
           key={i}
           onClick={action.onClick}
           className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
@@ -37,7 +37,7 @@ export function BatchActionBar({ selectedCount, onClear, actions }: BatchActionB
         </button>
       ))}
       <div className="h-6 w-px bg-gray-700" />
-      <button onClick={onClear} className="p-1 hover:bg-gray-700 rounded">
+      <button type="button" onClick={onClear} className="p-1 hover:bg-gray-700 rounded">
         <X className="w-5 h-5" />
       </button>
     </div>

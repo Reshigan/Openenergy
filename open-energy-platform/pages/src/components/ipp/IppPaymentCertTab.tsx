@@ -138,7 +138,7 @@ export function IppPaymentCertTab() {
   if (!loaded) {
     return (
       <div className="p-6">
-        <button onClick={() => load()} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">
+        <button type="button" onClick={() => load()} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">
           Load Payment Certificates
         </button>
       </div>
@@ -182,18 +182,18 @@ export function IppPaymentCertTab() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2 items-center">
-        <button onClick={() => { setFilterStatus(''); load('', filterTier); }} className={`px-3 py-1 rounded text-xs border ${!filterStatus ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>All</button>
+        <button type="button" onClick={() => { setFilterStatus(''); load('', filterTier); }} className={`px-3 py-1 rounded text-xs border ${!filterStatus ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>All</button>
         {['submitted','assessed','certified','disputed','paid','lapsed'].map(s => (
-          <button key={s} onClick={() => { setFilterStatus(s); load(s, filterTier); }} className={`px-3 py-1 rounded text-xs border ${filterStatus === s ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>
+          <button type="button" key={s} onClick={() => { setFilterStatus(s); load(s, filterTier); }} className={`px-3 py-1 rounded text-xs border ${filterStatus === s ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>
             {s}
           </button>
         ))}
         <span className="ml-2 text-gray-300">|</span>
         {['minor','moderate','significant','major','material'].map(t => (
-          <button key={t} onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>{t}</button>
+          <button type="button" key={t} onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>{t}</button>
         ))}
-        <button onClick={() => setShowCreate(true)} className="ml-auto px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700">+ New Cert</button>
-        <button onClick={() => load(filterStatus, filterTier)} className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border">Refresh</button>
+        <button type="button" onClick={() => setShowCreate(true)} className="ml-auto px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700">+ New Cert</button>
+        <button type="button" onClick={() => load(filterStatus, filterTier)} className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border">Refresh</button>
       </div>
 
       {/* Table */}
@@ -252,7 +252,7 @@ export function IppPaymentCertTab() {
                 <h2 className="text-lg font-bold">{selected.cert_number}</h2>
                 <div className="text-xs text-gray-500 mt-1">{TYPE_LABELS[selected.claim_type] ?? selected.claim_type} · {selected.value_tier}</div>
               </div>
-              <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+              <button type="button" onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600">✕</button>
             </div>
 
             {selected.description && (
@@ -275,7 +275,7 @@ export function IppPaymentCertTab() {
               <div className="space-y-2">
                 <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Actions</div>
                 {ACTION_MAP[selected.chain_status].map(a => (
-                  <button key={a.action} disabled={actionPending}
+                  <button type="button" key={a.action} disabled={actionPending}
                     onClick={() => doAction(selected.id, a.action)}
                     className={`w-full text-left px-3 py-2 rounded border text-sm hover:bg-indigo-50 hover:border-indigo-300 ${a.danger ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-gray-200 text-gray-700'}`}>
                     {a.label}
@@ -314,9 +314,9 @@ export function IppPaymentCertTab() {
                 className="w-full border rounded px-3 py-2 text-sm" rows={2} />
             </div>
             <div className="flex gap-2 mt-4">
-              <button onClick={createCert} disabled={!form.claimed_value_zar}
+              <button type="button" onClick={createCert} disabled={!form.claimed_value_zar}
                 className="px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50">Create</button>
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded text-sm">Cancel</button>
+              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded text-sm">Cancel</button>
             </div>
           </div>
         </div>

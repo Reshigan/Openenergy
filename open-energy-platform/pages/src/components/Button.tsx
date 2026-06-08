@@ -48,7 +48,7 @@ export function Button({
   const isDisabled = disabled || loading;
   
   return (
-    <button
+    <button type="button"
       disabled={isDisabled}
       className={`
         inline-flex items-center justify-center gap-2

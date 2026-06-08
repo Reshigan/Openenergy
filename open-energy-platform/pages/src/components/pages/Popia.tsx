@@ -197,7 +197,7 @@ export function Popia() {
       title="POPIA"
       subtitle="Consent, data-subject access and right-to-erasure — Sections 23 and 24."
       actions={
-        <button onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
+        <button type="button" onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
           <RefreshCw className="w-4 h-4" />
         </button>
       }
@@ -211,7 +211,7 @@ export function Popia() {
           { k: 'objection' as Tab, label: 'Objection (Section 11(3))' },
           ...(isPrivileged ? [{ k: 'breach' as Tab, label: 'Breach register (Section 22)' }] : []),
         ]).map(t => (
-          <button
+          <button type="button"
             key={t.k}
             onClick={() => setTab(t.k)}
             className={`pb-3 border-b-2 transition-colors ${tab === t.k ? 'border-ionex-brand text-ionex-brand font-semibold' : 'border-transparent text-ionex-text-mute hover:text-gray-900'}`}
@@ -254,7 +254,7 @@ export function Popia() {
       {!loading && !error && tab === 'dsar' && (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <button onClick={requestDsar} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light">
+            <button type="button" onClick={requestDsar} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light">
               Request my data (Section 23)
             </button>
             <p className="text-sm text-ionex-text-mute">A copy of your profile, consents, contracts, invoices, notifications and audit trail.</p>
@@ -276,7 +276,7 @@ export function Popia() {
                       <Td>{new Date(r.requested_at).toLocaleDateString()}</Td>
                       <Td>{r.processed_at ? new Date(r.processed_at).toLocaleDateString() : '—'}</Td>
                       <Td>
-                        <button onClick={() => exportDsar(r.id)} className="px-2 py-1 text-xs bg-ionex-brand text-white rounded flex items-center gap-1">
+                        <button type="button" onClick={() => exportDsar(r.id)} className="px-2 py-1 text-xs bg-ionex-brand text-white rounded flex items-center gap-1">
                           <Download className="w-3 h-3" /> Export
                         </button>
                       </Td>
@@ -292,7 +292,7 @@ export function Popia() {
       {!loading && !error && tab === 'erasure' && (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <button onClick={() => setShowErasure(true)} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2">
+            <button type="button" onClick={() => setShowErasure(true)} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2">
               <Trash2 className="w-4 h-4" /> Request erasure (Section 24)
             </button>
             <p className="text-sm text-ionex-text-mute">Submit for DPO review. Regulatory retention periods may prevent immediate deletion.</p>
@@ -324,7 +324,7 @@ export function Popia() {
       {!loading && !error && tab === 'objection' && (
         <div className="space-y-4">
           <div className="flex items-center gap-3 flex-wrap">
-            <button onClick={() => setShowObjection(true)} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light flex items-center gap-2">
+            <button type="button" onClick={() => setShowObjection(true)} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light flex items-center gap-2">
               <Ban className="w-4 h-4" /> Raise objection (Section 11(3))
             </button>
             <p className="text-sm text-ionex-text-mute">Object to a specific processing purpose. Reviewed by the DPO.</p>
@@ -356,7 +356,7 @@ export function Popia() {
       {!loading && !error && tab === 'correction' && (
         <div className="space-y-4">
           <div className="flex items-center gap-3 flex-wrap">
-            <button onClick={() => setShowCorrection(true)} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light flex items-center gap-2">
+            <button type="button" onClick={() => setShowCorrection(true)} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light flex items-center gap-2">
               <FileEdit className="w-4 h-4" /> Request correction (Section 24)
             </button>
             <p className="text-sm text-ionex-text-mute">Name, company or email corrections with DPO audit trail.</p>
@@ -389,7 +389,7 @@ export function Popia() {
       {!loading && !error && tab === 'breach' && isPrivileged && (
         <div className="space-y-4">
           <div className="flex items-center gap-3 flex-wrap">
-            <button onClick={() => setShowBreach(true)} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2">
+            <button type="button" onClick={() => setShowBreach(true)} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4" /> Record breach (Section 22)
             </button>
             <p className="text-sm text-ionex-text-mute">Security compromise register. Notifications to the Information Regulator are required without undue delay.</p>
@@ -439,7 +439,7 @@ export function Popia() {
 
 function Toggle({ enabled, onChange, disabled }: { enabled: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
   return (
-    <button
+    <button type="button"
       onClick={() => !disabled && onChange(!enabled)}
       disabled={disabled}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${enabled ? 'bg-ionex-brand' : 'bg-gray-300'} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
@@ -478,7 +478,7 @@ function ErasureModal({ onClose, onSubmitted }: { onClose: () => void; onSubmitt
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">Request erasure (Section 24)</h3>
-          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
           {err && <ErrorBanner message={err} />}
@@ -497,8 +497,8 @@ function ErasureModal({ onClose, onSubmitted }: { onClose: () => void; onSubmitt
           </label>
         </div>
         <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
-          <button onClick={submit} disabled={saving || !confirmation} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+          <button type="button" onClick={submit} disabled={saving || !confirmation} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
             {saving ? 'Submitting…' : 'Submit request'}
           </button>
         </div>
@@ -536,7 +536,7 @@ function ObjectionModal({ onClose, onSubmitted }: { onClose: () => void; onSubmi
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
           <h3 id="obj-title" className="text-lg font-semibold text-gray-900">Raise objection (Section 11(3))</h3>
-          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
           {err && <ErrorBanner message={err} />}
@@ -564,8 +564,8 @@ function ObjectionModal({ onClose, onSubmitted }: { onClose: () => void; onSubmi
           </label>
         </div>
         <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
-          <button onClick={submit} disabled={saving || !processingPurpose.trim()} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50">
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+          <button type="button" onClick={submit} disabled={saving || !processingPurpose.trim()} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50">
             {saving ? 'Submitting…' : 'Submit objection'}
           </button>
         </div>
@@ -605,7 +605,7 @@ function CorrectionModal({ onClose, onSubmitted }: { onClose: () => void; onSubm
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
           <h3 id="cor-title" className="text-lg font-semibold text-gray-900">Request correction (Section 24)</h3>
-          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
           {err && <ErrorBanner message={err} />}
@@ -644,8 +644,8 @@ function CorrectionModal({ onClose, onSubmitted }: { onClose: () => void; onSubm
           </label>
         </div>
         <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
-          <button onClick={submit} disabled={saving || !requestedValue.trim()} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50">
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+          <button type="button" onClick={submit} disabled={saving || !requestedValue.trim()} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50">
             {saving ? 'Submitting…' : 'Submit correction'}
           </button>
         </div>
@@ -699,7 +699,7 @@ function BreachModal({ onClose, onSubmitted }: { onClose: () => void; onSubmitte
       <div className="bg-white rounded-xl shadow-xl max-w-xl w-full" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
           <h3 id="brch-title" className="text-lg font-semibold text-gray-900">Record breach (Section 22)</h3>
-          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
           {err && <ErrorBanner message={err} />}
@@ -779,8 +779,8 @@ function BreachModal({ onClose, onSubmitted }: { onClose: () => void; onSubmitte
           </div>
         </div>
         <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
-          <button onClick={submit} disabled={saving || !description.trim()} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+          <button type="button" onClick={submit} disabled={saving || !description.trim()} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
             {saving ? 'Recording…' : 'Record breach'}
           </button>
         </div>

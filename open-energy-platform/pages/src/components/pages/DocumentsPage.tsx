@@ -44,7 +44,7 @@ export function DocumentsPage() {
           ['envelopes', 'Envelopes', Inbox],
           ['templates', 'Templates', FileText],
         ] as const).map(([k, label, Icon]) => (
-          <button key={k} onClick={() => setTab(k)}
+          <button type="button" key={k} onClick={() => setTab(k)}
             className={`h-9 px-3 text-[12px] font-semibold inline-flex items-center gap-1.5 border-b-2 -mb-px ${
               tab === k ? 'border-[#1a3a5c] text-[#1a3a5c]' : 'border-transparent text-[#6b7685] hover:text-[#0f1c2e]'
             }`}>
@@ -82,7 +82,7 @@ function TemplatesTab() {
             <div className="text-[11px] uppercase tracking-wider text-[#6b7685]">{t.category}{t.jurisdiction ? ` · ${t.jurisdiction}` : ''}</div>
             <div className="font-semibold text-[#0f1c2e] text-[14px]">{t.display_name}</div>
             <div className="text-[11px] text-[#6b7685] font-mono">{t.template_key} · v{t.version}</div>
-            <button onClick={() => setRaising(t)}
+            <button type="button" onClick={() => setRaising(t)}
               className="mt-3 h-8 px-3 rounded bg-[#1a3a5c] text-white text-[11px] font-semibold inline-flex items-center gap-1">
               <Plus size={12}/> Raise envelope
             </button>
@@ -133,7 +133,7 @@ function RaiseEnvelopeModal({ template, onClose, onCreated }: { template: Templa
             <div className="text-[11px] uppercase text-[#6b7685]">Raise envelope</div>
             <div className="font-semibold text-[#0f1c2e]">{template.display_name}</div>
           </div>
-          <button onClick={onClose} aria-label="Close"><X size={16}/></button>
+          <button type="button" onClick={onClose} aria-label="Close"><X size={16}/></button>
         </div>
         <div className="p-4 space-y-3">
           <div className="text-[12px] font-semibold text-[#0f1c2e]">Variables</div>
@@ -161,8 +161,8 @@ function RaiseEnvelopeModal({ template, onClose, onCreated }: { template: Templa
           {ack && <div className="text-[12px] text-[#1a8a5b] inline-flex items-center gap-1"><CheckCircle2 size={13}/> {ack}</div>}
         </div>
         <div className="p-4 border-t border-[#dde4ec] flex justify-end gap-2">
-          <button onClick={onClose} className="h-8 px-3 text-[12px] text-[#3a4658]">Cancel</button>
-          <button disabled={busy} onClick={submit}
+          <button type="button" onClick={onClose} className="h-8 px-3 text-[12px] text-[#3a4658]">Cancel</button>
+          <button type="button" disabled={busy} onClick={submit}
                   className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
             {busy ? 'Creating…' : 'Create envelope'}
           </button>
@@ -215,7 +215,7 @@ function EnvelopesTab() {
                   <td className="py-1.5"><span className="px-2 py-0.5 rounded bg-[#eef2f7] text-[10px] uppercase font-bold">{e.status}</span></td>
                   <td className="py-1.5">{signed}/{sigCount}</td>
                   <td className="py-1.5 text-right">
-                    <button onClick={() => setSelected(e)} className="text-[11px] text-[#1a3a5c] underline">Open</button>
+                    <button type="button" onClick={() => setSelected(e)} className="text-[11px] text-[#1a3a5c] underline">Open</button>
                   </td>
                 </tr>
               );
@@ -288,7 +288,7 @@ function EnvelopeDetail({ envelope, onClose, onChanged }: { envelope: Envelope; 
             <div className="font-mono text-[12px] text-[#0f1c2e]">{envelope.id}</div>
             <div className="text-[10px] text-[#6b7685] font-mono break-all">hash: {envelope.document_hash}</div>
           </div>
-          <button onClick={onClose} aria-label="Close"><X size={16}/></button>
+          <button type="button" onClick={onClose} aria-label="Close"><X size={16}/></button>
         </div>
         <div className="p-4 space-y-3">
           <div>
@@ -326,8 +326,8 @@ function EnvelopeDetail({ envelope, onClose, onChanged }: { envelope: Envelope; 
           {ack && <div className="text-[12px] text-[#1a8a5b]"><CheckCircle2 size={13} className="inline mr-1"/>{ack}</div>}
         </div>
         <div className="p-4 border-t border-[#dde4ec] flex justify-end gap-2">
-          <button onClick={cancel} className="h-8 px-3 text-[12px] text-[#c0392b]">Cancel envelope</button>
-          <button disabled={busy || envelope.status === 'completed' || envelope.status === 'cancelled'} onClick={sign}
+          <button type="button" onClick={cancel} className="h-8 px-3 text-[12px] text-[#c0392b]">Cancel envelope</button>
+          <button type="button" disabled={busy || envelope.status === 'completed' || envelope.status === 'cancelled'} onClick={sign}
                   className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-40 inline-flex items-center gap-1">
             <Send size={12}/> {busy ? 'Signing…' : 'Sign'}
           </button>

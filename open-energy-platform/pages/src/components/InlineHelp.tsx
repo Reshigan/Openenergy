@@ -30,7 +30,7 @@ export function InlineHelp({ helpKey, title, children, tone = 'info' }: Props) {
         {title && <div className="font-semibold text-[13px] mb-0.5">{title}</div>}
         <div className="leading-relaxed">{children}</div>
       </div>
-      <button onClick={() => void dismiss()} aria-label="Dismiss" className="flex-none opacity-60 hover:opacity-100">
+      <button type="button" onClick={() => void dismiss()} aria-label="Dismiss" className="flex-none opacity-60 hover:opacity-100">
         <X size={13}/>
       </button>
     </div>

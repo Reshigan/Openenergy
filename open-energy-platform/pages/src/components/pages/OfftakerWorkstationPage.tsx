@@ -108,7 +108,7 @@ function SitesTab({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button onClick={() => setCreating(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setCreating(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
           + New site group
         </button>
       </div>
@@ -196,7 +196,7 @@ function BudgetsTab({ onRefresh }: { onRefresh: () => void }) {
           <span className="text-[#6b7685]">Period (YYYY-MM)</span>
           <input value={period} onChange={(e) => setPeriod(e.target.value)} placeholder="2026-05" className="mt-1 h-9 px-3 border border-[#dde4ec] rounded-md text-[13px]" />
         </label>
-        <button onClick={() => setCreating(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setCreating(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
           + Set budget
         </button>
       </div>
@@ -268,8 +268,8 @@ function RecsTab({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end gap-2">
-        <button onClick={() => setTransferring(true)} className="h-9 px-3 rounded-md bg-white border border-[#dde4ec] text-[12px] font-semibold">Transfer certificate</button>
-        <button onClick={() => setRetiring(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">Retire certificate</button>
+        <button type="button" onClick={() => setTransferring(true)} className="h-9 px-3 rounded-md bg-white border border-[#dde4ec] text-[12px] font-semibold">Transfer certificate</button>
+        <button type="button" onClick={() => setRetiring(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">Retire certificate</button>
       </div>
       {err && <div className="text-[12px] text-red-700">{err}</div>}
       {portfolio && (
@@ -333,7 +333,7 @@ function Scope2Tab({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
           + New disclosure
         </button>
       </div>
@@ -465,7 +465,7 @@ function OptionGroup({
                 <td className="p-2 text-right">{Number(o.co2_avoided_tco2e || 0).toLocaleString()} t</td>
                 <td className="p-2">{o.availability === 'now' ? 'Now' : (o.cod_estimate || 'Upcoming')}</td>
                 <td className="p-2 text-right">
-                  <button
+                  <button type="button"
                     onClick={() => onAct(o)}
                     disabled={busyId !== null}
                     className="h-8 px-3 rounded-md bg-[#1a3a5c] text-white text-[11px] font-semibold disabled:opacity-60"
@@ -692,14 +692,14 @@ function BillUploadTab({ onRefresh }: { onRefresh: () => void }) {
         className="w-full h-32 px-3 py-2 border border-[#dde4ec] rounded-md text-[12px] font-mono bg-white text-[#0f1c2e]"
       />
       <div className="flex justify-end gap-2">
-        <button
+        <button type="button"
           onClick={upload}
           disabled={uploading}
           className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-60"
         >
           {uploading ? 'Analysing…' : 'Analyse bill'}
         </button>
-        <button
+        <button type="button"
           onClick={optimize}
           disabled={!latest || optimizing}
           className="h-9 px-4 rounded-md bg-[#0f7553] text-white text-[12px] font-semibold disabled:opacity-60"
@@ -762,7 +762,7 @@ function BillUploadTab({ onRefresh }: { onRefresh: () => void }) {
                 <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Next step</div>
                 <div className="text-[13px] mt-1 text-[#0f1c2e]">Draft an LOI to every developer in this mix. Each one lands in the developer's action queue.</div>
               </div>
-              <button
+              <button type="button"
                 onClick={draftFromMix}
                 disabled={loiBusy !== null}
                 className="mt-3 h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-60"
@@ -913,7 +913,7 @@ function SlbKpiTab({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button
+        <button type="button"
           className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
           onClick={() => setModal('create')}
         >
@@ -1056,7 +1056,7 @@ function GreenTariffTab({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
           + New disclosure
         </button>
       </div>
@@ -1200,7 +1200,7 @@ function WheelingAccessTab({ onRefresh }: { onRefresh?: () => void }) {
 
       <div className="flex justify-between items-center">
         <span className="text-sm text-gray-500">{data.length} wheeling access applications</span>
-        <button
+        <button type="button"
           onClick={() => setCreateModal(true)}
           className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700"
         >+ New access application</button>
@@ -1233,7 +1233,7 @@ function WheelingAccessTab({ onRefresh }: { onRefresh?: () => void }) {
                 </td>
                 <td className="px-3 py-2 text-gray-500 text-xs">{row.sla_deadline ? new Date(row.sla_deadline).toLocaleDateString() : '—'}</td>
                 <td className="px-3 py-2">
-                  <button onClick={() => setModal({ id: row.id, wheel_tier: row.wheel_tier, requested_capacity_mw: row.requested_capacity_mw })}
+                  <button type="button" onClick={() => setModal({ id: row.id, wheel_tier: row.wheel_tier, requested_capacity_mw: row.requested_capacity_mw })}
                     className="text-xs text-blue-600 hover:underline">Action</button>
                 </td>
               </tr>

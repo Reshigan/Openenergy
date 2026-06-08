@@ -19,7 +19,7 @@ const formatZAR = (v: number) =>
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
     <div className="flex justify-end mb-3">
-      <button onClick={onCreate} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+      <button type="button" onClick={onCreate} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
         + {label}
       </button>
     </div>
@@ -360,7 +360,7 @@ function KycVerificationsTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'sla_deadline', label: 'SLA', render: (r) => r.sla_deadline ? String(r.sla_deadline) : '—' },
           { key: 'sla_breached', label: 'Breach', render: (r) => r.sla_breached ? <Pill tone="bad">BREACH</Pill> : <Pill tone="good">OK</Pill> },
           { key: 'actions', label: '', render: (r) => (
-            <button onClick={() => setActionRow(r)} className="text-[11px] text-[#1a3a5c] underline">Action</button>
+            <button type="button" onClick={() => setActionRow(r)} className="text-[11px] text-[#1a3a5c] underline">Action</button>
           )},
         ]}
       />
@@ -473,7 +473,7 @@ function CascadeDlqTab() {
           choose <em>abandoned</em> (won't replay) or <em>resolved</em>, with an optional note for
           the audit trail. Both actions are admin-audited.
         </p>
-        <button
+        <button type="button"
           onClick={() => void load()}
           className="shrink-0 h-8 px-3 rounded-md border border-[#dde4ec] bg-white text-[12px] font-medium text-[#3d4756] hover:bg-[#f8fafc]"
         >
@@ -528,14 +528,14 @@ function CascadeDlqTab() {
                       </td>
                       <td className="px-4 py-2">
                         <div className="flex items-center justify-end gap-3 whitespace-nowrap">
-                          <button
+                          <button type="button"
                             onClick={() => void retry(r.id)}
                             disabled={rowBusy}
                             className="text-[11px] font-semibold text-[#1a3a5c] hover:underline disabled:opacity-40"
                           >
                             {rowBusy && !isResolving ? 'Retrying…' : 'Retry'}
                           </button>
-                          <button
+                          <button type="button"
                             onClick={() => (isResolving ? setResolving(null) : openResolve(r.id))}
                             disabled={rowBusy}
                             className="text-[11px] font-medium text-[#6b7685] hover:text-[#3d4756] hover:underline disabled:opacity-40"
@@ -557,7 +557,7 @@ function CascadeDlqTab() {
                             <span className="text-[11px] uppercase tracking-wide text-[#6b7685]">Mark</span>
                             <div className="inline-flex rounded-md border border-[#dde4ec] overflow-hidden">
                               {(['abandoned', 'resolved'] as const).map((s) => (
-                                <button
+                                <button type="button"
                                   key={s}
                                   onClick={() => setResolveStatus(s)}
                                   className={`px-3 h-8 text-[11px] font-medium ${resolveStatus === s ? 'bg-[#1a3a5c] text-white' : 'bg-white text-[#3d4756] hover:bg-[#eef2f7]'}`}
@@ -572,7 +572,7 @@ function CascadeDlqTab() {
                               placeholder="Optional note for the audit trail"
                               className="flex-1 min-w-[200px] h-8 px-2 rounded-md border border-[#dde4ec] bg-white text-[12px] text-[#0f1c2e] placeholder:text-[#9aa6b4]"
                             />
-                            <button
+                            <button type="button"
                               onClick={() => void submitResolve(r.id)}
                               disabled={rowBusy}
                               className="h-8 px-3 rounded-md bg-[#1a3a5c] text-white text-[11px] font-semibold disabled:opacity-40"
@@ -702,13 +702,13 @@ function SubscriptionBillingTab() {
           each row's current state.
         </p>
         <div className="flex shrink-0 items-center gap-2">
-          <button
+          <button type="button"
             onClick={() => setGenerating(true)}
             className="h-8 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold hover:bg-[#16324f]"
           >
             Generate invoice
           </button>
-          <button
+          <button type="button"
             onClick={() => void load()}
             className="h-8 px-3 rounded-md border border-[#dde4ec] bg-white text-[12px] font-medium text-[#3d4756] hover:bg-[#f8fafc]"
           >
@@ -781,7 +781,7 @@ function SubscriptionBillingTab() {
                             <span className="text-[11px] text-[#9aa6b4]">Terminal</span>
                           ) : (
                             actions.map((a) => (
-                              <button
+                              <button type="button"
                                 key={a}
                                 onClick={() => void act(r.id, a)}
                                 disabled={rowBusy}

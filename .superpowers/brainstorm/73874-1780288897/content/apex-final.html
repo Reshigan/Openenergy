@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Apex — Final</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/*
+  Apex — Final
+  ─────────────────────────────────────────────────────────────
+  · Zero emoji anywhere — fully custom SVG icon set
+  · Accent: #0b1f3a navy-ink gradient (no purple)
+  · Fonts: DM Sans UI · JetBrains Mono numbers
+  · Real OE three-ring logo
+  · Gradients: sidebar wash, active item, logo, title text,
+    button fill, KPI tint, progress bars, outer mesh
+  ─────────────────────────────────────────────────────────────
+*/
+:root{
+  --n0:#07182e;--n1:#0b1f3a;--n2:#162d52;--n3:#1e3d6e;
+  --canvas:#fff;
+  --surf:#f7f9fc;--surf2:#f1f4f8;
+  --b1:#e2e8f0;--b2:#edf1f6;
+  --t1:#0a1628;--t2:#445570;--t3:#8698b0;
+  --grn:#0b7040;--grn-bg:#e6f6ed;
+  --amb:#8c5a09;--amb-bg:#fdf2da;
+  --ros:#b02929;--ros-bg:#fceaea;
+  --blu:#1549a0;--blu-bg:#e9f0fd;
+  --e:cubic-bezier(.23,1,.32,1);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+body{
+  font-family:'DM Sans',system-ui,sans-serif;
+  background:
+    radial-gradient(ellipse at 18% 60%,rgba(7,24,46,.10) 0%,transparent 55%),
+    radial-gradient(ellipse at 82% 15%,rgba(14,54,102,.07) 0%,transparent 45%),
+    radial-gradient(ellipse at 50% 90%,rgba(10,22,40,.08) 0%,transparent 50%),
+    linear-gradient(145deg,#d3dae5 0%,#c8d2e0 40%,#d6dde8 100%);
+  padding:44px 32px 80px;min-height:100vh;
+}
+.lede{margin-bottom:48px}
+.eye{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#8698b0;margin-bottom:10px}
+.lede h1{font-size:26px;font-weight:800;letter-spacing:-.025em;color:var(--t1);margin-bottom:6px}
+.lede p{font-size:13.5px;color:var(--t2);line-height:1.65;max-width:520px}
+
+/* ── shell ── */
+.shell{
+  width:100%;max-width:1260px;height:560px;display:flex;overflow:hidden;
+  border-radius:18px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.7),0 1px 2px rgba(0,0,0,.06),0 8px 24px rgba(7,24,46,.08),0 32px 72px rgba(7,24,46,.12);
+}
+
+/* ════ SIDEBAR ════ */
+.sb{
+  width:232px;flex-shrink:0;
+  background:linear-gradient(180deg,rgba(255,255,255,.97) 0%,rgba(247,249,252,.98) 50%,rgba(241,244,248,.99) 100%);
+  border-right:1px solid rgba(226,232,240,.8);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+/* head */
+.sb-head{padding:18px 16px 14px;border-bottom:1px solid rgba(226,232,240,.7)}
+.sb-mark{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.sb-name-block{}
+.sb-name{
+  font-size:14.5px;font-weight:800;letter-spacing:-.03em;
+  background:linear-gradient(135deg,var(--n0) 20%,var(--n3) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.sb-env{font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3)}
+/* role */
+.sb-role{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 9px;background:white;
+  border:1px solid var(--b1);border-radius:8px;cursor:pointer;
+  box-shadow:0 1px 2px rgba(7,24,46,.04);
+  transition:border-color 100ms;
+}
+.sb-role:hover{border-color:rgba(11,31,58,.22)}
+.sb-ri{
+  width:18px;height:18px;border-radius:5px;
+  background:linear-gradient(145deg,#07182e,#1a3d6e);
+  display:flex;align-items:center;justify-content:center;
+  font-size:7.5px;font-weight:800;color:white;flex-shrink:0;letter-spacing:.04em;
+}
+.sb-rn{font-size:10.5px;font-weight:600;color:var(--t1);flex:1}
+/* search */
+.sb-srch{padding:8px 10px 4px}
+.sb-si{
+  display:flex;align-items:center;gap:7px;
+  background:rgba(255,255,255,.8);border:1px solid var(--b1);
+  border-radius:7px;padding:6px 10px;cursor:text;
+  transition:border-color 100ms,background 100ms;
+}
+.sb-si:hover{background:white;border-color:rgba(11,31,58,.2)}
+.sb-sh{font-size:11px;color:var(--t3);flex:1}
+.sb-kbd{
+  font-size:9px;color:var(--t3);background:var(--surf2);
+  border:1px solid var(--b1);border-radius:4px;
+  padding:1px 5px;font-family:'JetBrains Mono',monospace;
+}
+/* nav body */
+.sb-body{flex:1;overflow-y:auto;padding:6px 0 12px}
+.sb-body::-webkit-scrollbar{width:3px}
+.sb-body::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+/* section */
+.sb-sec{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px 4px;cursor:pointer;
+}
+.sb-sec:hover .sb-sl{color:var(--t2)}
+.sb-sl{font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--t3);transition:color 100ms}
+.sb-sc{display:flex;align-items:center;gap:4px}
+.sb-al{font-size:9px;font-weight:700;background:var(--ros-bg);color:var(--ros);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace}
+.sb-ch{color:var(--t3);display:flex;align-items:center;transition:transform 120ms var(--e)}
+.sb-sec.col .sb-ch{transform:rotate(-90deg)}
+.sb-sb.col{display:none}
+/* items */
+.sb-it{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:5.5px 14px 5.5px 14px;cursor:pointer;
+  transition:background 70ms;
+}
+.sb-it:hover .sb-il{color:var(--t1)}
+.sb-it.on{background:linear-gradient(90deg,var(--n1) 0%,var(--n3) 100%)}
+.sb-it.on .sb-il{color:white;font-weight:600}
+.sb-il{font-size:11.5px;color:var(--t2);display:flex;align-items:center;gap:8px;transition:color 80ms}
+.sb-ico{opacity:.55;flex-shrink:0;width:14px;display:flex;align-items:center}
+.sb-it.on .sb-ico{opacity:.9}
+.bps{display:flex;gap:3px}
+.bp{font-size:8.5px;font-weight:700;padding:1px 5px;border-radius:3px}
+.bp-n{background:rgba(11,31,58,.08);color:var(--n1)}
+.bp-b{background:var(--blu-bg);color:var(--blu)}
+.bp-a{background:var(--ros-bg);color:var(--ros)}
+.bp-am{background:var(--amb-bg);color:var(--amb)}
+.sb-it.on .bp-n{background:rgba(255,255,255,.18);color:rgba(255,255,255,.9)}
+/* divider */
+.sb-dv{height:1px;background:var(--b2);margin:6px 14px}
+/* footer */
+.sb-ft{
+  border-top:1px solid rgba(226,232,240,.7);
+  padding:11px 15px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(247,249,252,.7);flex-shrink:0;
+}
+.sf-u{display:flex;align-items:center;gap:8px}
+.sf-av{
+  width:28px;height:28px;border-radius:8px;flex-shrink:0;
+  background:linear-gradient(145deg,#07182e,#1a3d6e);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:800;color:white;
+  box-shadow:0 2px 4px rgba(7,24,46,.25);
+}
+.sf-un{font-size:11.5px;font-weight:600;color:var(--t1)}
+.sf-ue{font-size:10px;color:var(--t3)}
+.sf-ac{display:flex;gap:2px}
+.sf-btn{
+  width:27px;height:27px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--t3);cursor:pointer;
+  transition:background 80ms,color 80ms;
+}
+.sf-btn:hover{background:var(--surf2);color:var(--t2)}
+
+/* ════ MAIN ════ */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:white}
+/* topbar */
+.topbar{
+  height:52px;flex-shrink:0;
+  border-bottom:1px solid var(--b1);padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(180deg,#fff 0%,#fafbfd 100%);
+}
+.tb-l{display:flex;align-items:center;gap:7px}
+.tb-bc{font-size:12px;color:var(--t3)}
+.tb-bc.cur{font-size:13px;font-weight:700;color:var(--t1)}
+.tb-sep{display:flex;align-items:center;color:var(--b1)}
+.tb-r{display:flex;align-items:center;gap:8px}
+.tbtag{
+  font-size:10.5px;font-weight:500;color:var(--t2);
+  padding:5px 10px;border:1px solid var(--b1);
+  border-radius:7px;display:flex;align-items:center;gap:5px;
+  background:var(--surf);
+}
+.td{width:6px;height:6px;border-radius:50%}
+.btn-f{
+  font-size:11.5px;font-weight:600;color:white;border:none;
+  border-radius:8px;padding:7px 15px;cursor:pointer;
+  background:linear-gradient(145deg,#0b1f3a 0%,#1e3d6e 100%);
+  box-shadow:0 1px 3px rgba(7,24,46,.25),0 4px 12px rgba(7,24,46,.1);
+  display:flex;align-items:center;gap:6px;
+  transition:box-shadow 150ms var(--e),transform 120ms var(--e);
+}
+.btn-f:hover{box-shadow:0 2px 6px rgba(7,24,46,.3),0 8px 20px rgba(7,24,46,.14)}
+.btn-f:active{transform:scale(.97)}
+.btn-o{
+  font-size:11.5px;font-weight:500;color:var(--t2);
+  background:white;border:1px solid var(--b1);
+  border-radius:8px;padding:7px 14px;cursor:pointer;
+  display:flex;align-items:center;gap:6px;
+  transition:background 80ms;
+}
+.btn-o:hover{background:var(--surf)}
+/* body */
+.mbody{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.mbody::-webkit-scrollbar{width:4px}
+.mbody::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+/* hero strip */
+.hero{
+  padding:20px 24px 18px;
+  background:linear-gradient(160deg,rgba(230,240,255,.65) 0%,rgba(255,255,255,0) 60%);
+  border-bottom:1px solid var(--b2);flex-shrink:0;
+}
+.ph-t{
+  font-size:22px;font-weight:800;letter-spacing:-.03em;line-height:1.1;
+  background:linear-gradient(130deg,var(--n0) 0%,var(--n3) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.ph-sub{font-size:12px;color:var(--t3);margin-top:4px}
+.ph-tags{display:flex;gap:5px;margin-top:9px}
+.ptag{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:500;padding:3px 9px;border-radius:5px}
+/* content */
+.content{padding:16px 24px;display:flex;flex-direction:column;gap:14px;flex:1;overflow-y:auto}
+.content::-webkit-scrollbar{width:4px}
+.content::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+/* kpi */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.kpi{
+  padding:14px 15px 12px;border:1px solid var(--b1);border-radius:12px;
+  background:linear-gradient(180deg,#fff 0%,#f8fafd 100%);
+  position:relative;overflow:hidden;
+  box-shadow:0 1px 2px rgba(7,24,46,.04);
+}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kc)}
+.kl{font-size:9.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:8px}
+.kn{font-size:26px;font-weight:800;letter-spacing:-.04em;line-height:1;font-family:'JetBrains Mono',monospace;color:var(--t1)}
+.kd{font-size:9.5px;margin-top:5px;color:var(--t3);display:flex;align-items:center;gap:4px}
+.kchip{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;font-family:'JetBrains Mono',monospace}
+/* filter */
+.fbar{display:flex;align-items:center;gap:7px}
+.fs{flex:1;display:flex;align-items:center;gap:7px;background:var(--surf);border:1px solid var(--b1);border-radius:8px;padding:7px 12px;cursor:text}
+.fs:hover{border-color:rgba(11,31,58,.2)}
+.fst{font-size:11.5px;color:var(--t3);flex:1}
+.fb{font-size:11px;font-weight:500;color:var(--t2);background:white;border:1px solid var(--b1);border-radius:8px;padding:7px 12px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:background 80ms}
+.fb:hover{background:var(--surf)}
+/* table */
+.tw{border:1px solid var(--b1);border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(7,24,46,.04)}
+.thr{display:grid;grid-template-columns:2fr 68px 76px 88px 96px;padding:9px 16px;background:linear-gradient(180deg,var(--surf) 0%,var(--surf2) 100%);border-bottom:1px solid var(--b1)}
+.th{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)}
+.tdr{display:grid;grid-template-columns:2fr 68px 76px 88px 96px;padding:9px 16px;border-bottom:1px solid var(--b2);align-items:center;cursor:pointer;transition:background 70ms}
+.tdr:hover{background:rgba(247,249,252,.7)}
+.tdr:last-child{border-bottom:none}
+.tdn{font-size:11.5px;font-weight:600;color:var(--t1)}
+.tds{font-size:10px;color:var(--t3);margin-top:1px}
+.tdv{font-size:11.5px;color:var(--t2);font-family:'JetBrains Mono',monospace}
+.pill{font-size:9.5px;font-weight:600;padding:3px 8px;border-radius:4px;display:inline-flex;align-items:center;gap:3px}
+.pd{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+.mpw{display:flex;align-items:center;gap:6px}
+.mpt{flex:1;height:3px;background:var(--surf2);border-radius:2px;overflow:hidden}
+.mpf{height:100%;border-radius:2px}
+.mpp{font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--t3);flex-shrink:0;width:28px;text-align:right}
+/* bottom grid */
+.bg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.bc{border:1px solid var(--b1);border-radius:12px;padding:13px 15px;background:linear-gradient(180deg,white 0%,var(--surf) 100%)}
+.bcl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-bottom:9px;display:flex;justify-content:space-between}
+.bcp{font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:700}
+.bct{height:5px;background:var(--surf2);border-radius:3px;overflow:hidden;margin-bottom:7px}
+.bcf{height:100%;border-radius:3px}
+.bcm{font-size:10px;color:var(--t3)}
+</style>
+</head>
+<body>
+
+<!-- ── SVG Icon Definitions (reusable) ── -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- search -->
+    <symbol id="ic-search" viewBox="0 0 16 16" fill="none">
+      <circle cx="6.5" cy="6.5" r="4" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </symbol>
+    <!-- chevron down -->
+    <symbol id="ic-chevron-d" viewBox="0 0 16 16" fill="none">
+      <polyline points="3,6 8,11 13,6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <!-- chevron right -->
+    <symbol id="ic-chevron-r" viewBox="0 0 16 16" fill="none">
+      <polyline points="6,3 11,8 6,13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <!-- settings/gear -->
+    <symbol id="ic-settings" viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="8" r="2.2" stroke="currentColor" stroke-width="1.4"/>
+      <path d="M8 1.5v1.2M8 13.3v1.2M1.5 8h1.2M13.3 8h1.2M3.6 3.6l.85.85M11.55 11.55l.85.85M3.6 12.4l.85-.85M11.55 4.45l.85-.85" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+    </symbol>
+    <!-- grid/apps -->
+    <symbol id="ic-grid" viewBox="0 0 16 16" fill="none">
+      <rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+      <rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+      <rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+      <rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+    </symbol>
+    <!-- home/dashboard -->
+    <symbol id="ic-home" viewBox="0 0 16 16" fill="none">
+      <path d="M2 8L8 2.5L14 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M4 7v6h3v-3h2v3h3V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <!-- calendar/gantt -->
+    <symbol id="ic-calendar" viewBox="0 0 16 16" fill="none">
+      <rect x="2" y="3.5" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+      <line x1="2" y1="7" x2="14" y2="7" stroke="currentColor" stroke-width="1.3"/>
+      <line x1="5" y1="2" x2="5" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="11" y1="2" x2="11" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </symbol>
+    <!-- cost/chart -->
+    <symbol id="ic-chart" viewBox="0 0 16 16" fill="none">
+      <polyline points="2,12 5.5,7.5 8.5,9.5 13.5,4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="2" y1="14" x2="14" y2="14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+    </symbol>
+    <!-- wbs/hierarchy -->
+    <symbol id="ic-hierarchy" viewBox="0 0 16 16" fill="none">
+      <rect x="6" y="1.5" width="4" height="3" rx=".8" stroke="currentColor" stroke-width="1.3"/>
+      <rect x="1" y="11" width="4" height="3" rx=".8" stroke="currentColor" stroke-width="1.3"/>
+      <rect x="6" y="11" width="4" height="3" rx=".8" stroke="currentColor" stroke-width="1.3"/>
+      <rect x="11" y="11" width="4" height="3" rx=".8" stroke="currentColor" stroke-width="1.3"/>
+      <line x1="8" y1="4.5" x2="8" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="3" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="3" y1="8" x2="3" y2="11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="8" y1="8" x2="8" y2="11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="13" y1="8" x2="13" y2="11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    </symbol>
+    <!-- document/folder -->
+    <symbol id="ic-folder" viewBox="0 0 16 16" fill="none">
+      <path d="M2 5a1.5 1.5 0 011.5-1.5h2.3l1.4 1.5H12.5A1.5 1.5 0 0114 6.5v6A1.5 1.5 0 0112.5 14h-9A1.5 1.5 0 012 12.5V5z" stroke="currentColor" stroke-width="1.4"/>
+    </symbol>
+    <!-- blueprint/drawing -->
+    <symbol id="ic-blueprint" viewBox="0 0 16 16" fill="none">
+      <rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+      <line x1="2" y1="6" x2="14" y2="6" stroke="currentColor" stroke-width="1.2"/>
+      <line x1="6" y1="6" x2="6" y2="14" stroke="currentColor" stroke-width="1.2"/>
+      <line x1="9.5" y1="8.5" x2="12" y2="8.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+      <line x1="9.5" y1="10.5" x2="12" y2="10.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+      <line x1="9.5" y1="12.5" x2="12" y2="12.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+    </symbol>
+    <!-- commissioning/checklist -->
+    <symbol id="ic-checklist" viewBox="0 0 16 16" fill="none">
+      <rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+      <polyline points="5,8 7,10 11,6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <!-- stage gate/diamond -->
+    <symbol id="ic-gate" viewBox="0 0 16 16" fill="none">
+      <rect x="4" y="4" width="8" height="8" rx=".5" stroke="currentColor" stroke-width="1.4" transform="rotate(45 8 8)"/>
+    </symbol>
+    <!-- ncr/flag -->
+    <symbol id="ic-flag" viewBox="0 0 16 16" fill="none">
+      <line x1="4" y1="2" x2="4" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M4 3h7.5l-2 3 2 3H4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <!-- method/list -->
+    <symbol id="ic-list" viewBox="0 0 16 16" fill="none">
+      <circle cx="3.5" cy="5" r="1" fill="currentColor"/>
+      <circle cx="3.5" cy="8" r="1" fill="currentColor"/>
+      <circle cx="3.5" cy="11" r="1" fill="currentColor"/>
+      <line x1="6.5" y1="5" x2="13.5" y2="5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      <line x1="6.5" y1="8" x2="13.5" y2="8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      <line x1="6.5" y1="11" x2="13.5" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+    </symbol>
+    <!-- environment/leaf -->
+    <symbol id="ic-leaf" viewBox="0 0 16 16" fill="none">
+      <path d="M12 2C12 2 13.5 8.5 8 11C4 13 2 14 2 14C2 14 4.5 8 7 6C9 4.5 12 2 12 2Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="2" y1="14" x2="6" y2="9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    </symbol>
+    <!-- hse/hardhat -->
+    <symbol id="ic-shield" viewBox="0 0 16 16" fill="none">
+      <path d="M8 2L3 4.5v4.2C3 11.5 5 13.5 8 14.5c3-1 5-3 5-5.8V4.5L8 2z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline points="5.5,8.5 7,10 10.5,6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <!-- plus -->
+    <symbol id="ic-plus" viewBox="0 0 16 16" fill="none">
+      <line x1="8" y1="3" x2="8" y2="13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      <line x1="3" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+    </symbol>
+    <!-- export/upload -->
+    <symbol id="ic-export" viewBox="0 0 16 16" fill="none">
+      <path d="M5 6L8 3L11 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="8" y1="3" x2="8" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M3 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- helper shorthand: <use href="#ic-xxx"> wrapped in sized SVG -->
+
+<div class="lede">
+  <div class="eye">Apex — Final</div>
+  <h1>No emoji. Custom icon set. Gradient depth.</h1>
+  <p>Real Open Energy logo. Fully custom 16×16 SVG icons throughout. Navy-ink gradients. DM Sans + JetBrains Mono.</p>
+</div>
+
+<div class="shell">
+
+  <!-- ═══════════ SIDEBAR ═══════════ -->
+  <div class="sb">
+
+    <div class="sb-head">
+      <!-- Real OE three-ring mark -->
+      <div class="sb-mark">
+        <svg width="30" height="30" viewBox="0 0 400 400" style="flex-shrink:0" xmlns="http://www.w3.org/2000/svg">
+          <g fill="none" stroke-linecap="round">
+            <circle cx="142" cy="148" r="92" stroke="#3b82c4" stroke-width="22" stroke-dasharray="430 200" stroke-dashoffset="-50"/>
+            <circle cx="258" cy="148" r="92" stroke="#1f9b95" stroke-width="22" stroke-dasharray="430 200" stroke-dashoffset="80"/>
+            <circle cx="200" cy="252" r="92" stroke="#1a3a5c" stroke-width="22" stroke-dasharray="430 200" stroke-dashoffset="200"/>
+          </g>
+          <circle cx="200" cy="200" r="22" fill="#1a3a5c"/>
+          <circle cx="200" cy="200" r="9" fill="#5fa8e8"/>
+        </svg>
+        <div class="sb-name-block">
+          <div class="sb-name">Open Energy</div>
+          <div class="sb-env">Platform</div>
+        </div>
+      </div>
+      <div class="sb-role">
+        <div class="sb-ri">IPP</div>
+        <div class="sb-rn">IPP Developer</div>
+        <svg width="10" height="10" style="color:var(--t3);flex-shrink:0"><use href="#ic-chevron-d"/></svg>
+      </div>
+    </div>
+
+    <div class="sb-srch">
+      <div class="sb-si">
+        <svg width="13" height="13" style="color:var(--t3);flex-shrink:0"><use href="#ic-search"/></svg>
+        <span class="sb-sh">Jump to feature…</span>
+        <span class="sb-kbd">⌘K</span>
+      </div>
+    </div>
+
+    <div class="sb-body">
+
+      <!-- PROJECT -->
+      <div class="sb-sec">
+        <span class="sb-sl">Project</span>
+        <div class="sb-sc">
+          <div class="sb-ch"><svg width="10" height="10"><use href="#ic-chevron-d"/></svg></div>
+        </div>
+      </div>
+      <div class="sb-sb">
+        <div class="sb-it">
+          <div class="sb-il">
+            <span class="sb-ico"><svg width="14" height="14"><use href="#ic-home"/></svg></span>
+            Dashboard
+          </div>
+        </div>
+        <div class="sb-it on">
+          <div class="sb-il">
+            <span class="sb-ico"><svg width="14" height="14"><use href="#ic-calendar"/></svg></span>
+            Schedule
+          </div>
+          <div class="bps"><span class="bp bp-n">P6</span></div>
+        </div>
+        <div class="sb-it">
+          <div class="sb-il">
+            <span class="sb-ico"><svg width="14" height="14"><use href="#ic-chart"/></svg></span>
+            Cost &amp; EVM
+          </div>
+        </div>
+        <div class="sb-it">
+          <div class="sb-il">
+            <span class="sb-ico"><svg width="14" height="14"><use href="#ic-hierarchy"/></svg></span>
+            WBS
+          </div>
+        </div>
+        <div class="sb-it">
+          <div class="sb-il">
+            <span class="sb-ico"><svg width="14" height="14"><use href="#ic-folder"/></svg></span>
+            Documents
+          </div>
+        </div>
+        <div class="sb-it">
+          <div class="sb-il">
+            <span class="sb-ico"><svg width="14" height="14"><use href="#ic-blueprint"/></svg></span>
+            Drawing Register
+          </div>
+          <div class="bps"><span class="bp bp-b">New</span></div>
+        </div>
+        <div class="sb-it">
+          <div class="sb-il">
+            <span class="sb-ico"><svg width="14" height="14"><use href="#ic-checklist"/></svg></span>
+            Commissioning Log
+          </div>
+        </div>
+      </div>
+
+      <div class="sb-dv"></div>
+
+      <!-- COMPLIANCE -->
+      <div class="sb-sec">
+        <span class="sb-sl">Compliance</span>
+        <div class="sb-sc">
+          <span class="sb-al">3</span>
+          <div class="sb-ch"><svg width="10" height="10"><use href="#ic-chevron-d"/></svg></div>
+        </div>
+      </div>
+      <div class="sb-sb">
+        <div class="sb-it">
+          <div class="sb-il">
+            <span class="sb-ico"><svg width="14" height="14"><use href="#ic-gate"/></svg></span>
+            Stage Gates
+          </div>
+          <div class="bps"><span class="bp bp-am">DG2</span></div>
+        </div>
+        <div class="sb-it">
+          <div class="sb-il">
+            <span class="sb-ico"><svg width="14" height="14"><use href="#ic-flag"/></svg></span>
+            NCR Log
+          </div>
+          <div class="bps"><span class="bp bp-a">3</span></div>
+        </div>
+        <div class="sb-it">
+          <div class="sb-il">
+            <span class="sb-ico"><svg width="14" height="14"><use href="#ic-list"/></svg></span>
+            Method Statements
+          </div>
+        </div>
+        <div class="sb-it">
+          <div class="sb-il">
+            <span class="sb-ico"><svg width="14" height="14"><use href="#ic-leaf"/></svg></span>
+            Env. Monitoring
+          </div>
+        </div>
+        <div class="sb-it">
+          <div class="sb-il">
+            <span class="sb-ico"><svg width="14" height="14"><use href="#ic-shield"/></svg></span>
+            HSE Incidents
+          </div>
+        </div>
+      </div>
+
+      <div class="sb-dv"></div>
+
+      <!-- FINANCE — collapsed -->
+      <div class="sb-sec col">
+        <span class="sb-sl">Finance</span>
+        <div class="sb-sc">
+          <div class="sb-ch"><svg width="10" height="10"><use href="#ic-chevron-d"/></svg></div>
+        </div>
+      </div>
+      <div class="sb-sb col"></div>
+
+      <div class="sb-dv"></div>
+
+      <!-- RISK — collapsed -->
+      <div class="sb-sec col">
+        <span class="sb-sl">Risk &amp; Quality</span>
+        <div class="sb-sc">
+          <span class="sb-al">2</span>
+          <div class="sb-ch"><svg width="10" height="10"><use href="#ic-chevron-d"/></svg></div>
+        </div>
+      </div>
+      <div class="sb-sb col"></div>
+
+      <div class="sb-dv"></div>
+
+      <!-- REGULATORY — collapsed -->
+      <div class="sb-sec col">
+        <span class="sb-sl">Regulatory</span>
+        <div class="sb-sc">
+          <div class="sb-ch"><svg width="10" height="10"><use href="#ic-chevron-d"/></svg></div>
+        </div>
+      </div>
+      <div class="sb-sb col"></div>
+
+    </div>
+
+    <!-- footer -->
+    <div class="sb-ft">
+      <div class="sf-u">
+        <div class="sf-av">RK</div>
+        <div>
+          <div class="sf-un">Reshigan K.</div>
+          <div class="sf-ue">IPP Developer</div>
+        </div>
+      </div>
+      <div class="sf-ac">
+        <div class="sf-btn">
+          <svg width="14" height="14"><use href="#ic-settings"/></svg>
+        </div>
+        <div class="sf-btn">
+          <svg width="14" height="14"><use href="#ic-grid"/></svg>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sb -->
+
+  <!-- ═══════════ MAIN ═══════════ -->
+  <div class="main">
+
+    <div class="topbar">
+      <div class="tb-l">
+        <span class="tb-bc">Project</span>
+        <span class="tb-sep"><svg width="8" height="12" viewBox="0 0 8 12" fill="none"><polyline points="2,2 6,6 2,10" stroke="#e2e8f0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="tb-bc cur">Schedule</span>
+      </div>
+      <div class="tb-r">
+        <div class="tbtag">
+          <div class="td" style="background:var(--grn)"></div>
+          Cosmos Wind Farm
+        </div>
+        <button class="btn-o">
+          <svg width="13" height="13"><use href="#ic-export"/></svg>
+          Export
+        </button>
+        <button class="btn-f">
+          <svg width="13" height="13"><use href="#ic-plus"/></svg>
+          New Task
+        </button>
+      </div>
+    </div>
+
+    <div class="mbody">
+
+      <div class="hero">
+        <div class="ph-t">Schedule</div>
+        <div class="ph-sub">Primavera P6 · Phase 2 Construction · Synced 4 min ago</div>
+        <div class="ph-tags">
+          <span class="ptag" style="background:var(--grn-bg);color:var(--grn);border:1px solid #b5e4cb">
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><polyline points="3,8 7,12 13,5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            On Schedule
+          </span>
+          <span class="ptag" style="background:var(--amb-bg);color:var(--amb);border:1px solid #f3d9a0">
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M8 3v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="8" cy="12" r="1" fill="currentColor"/></svg>
+            Cost Overrun
+          </span>
+          <span class="ptag" style="background:var(--blu-bg);color:var(--blu);border:1px solid #b2cef4">
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.5" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.6"/><line x1="2" y1="7" x2="14" y2="7" stroke="currentColor" stroke-width="1.3"/></svg>
+            DG2 in 14 days
+          </span>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <div class="kpis">
+          <div class="kpi" style="--kc:var(--grn)">
+            <div class="kl">Schedule (SPI)</div>
+            <div class="kn" style="color:var(--grn)">0.97</div>
+            <div class="kd"><span class="kchip" style="background:var(--grn-bg);color:var(--grn)">+0.03</span> vs last period</div>
+          </div>
+          <div class="kpi" style="--kc:var(--amb)">
+            <div class="kl">Cost (CPI)</div>
+            <div class="kn" style="color:var(--amb)">0.89</div>
+            <div class="kd"><span class="kchip" style="background:var(--amb-bg);color:var(--amb)">−0.04</span> vs last period</div>
+          </div>
+          <div class="kpi" style="--kc:var(--n1)">
+            <div class="kl">Est. at Completion</div>
+            <div class="kn">R890M</div>
+            <div class="kd"><span class="kchip" style="background:var(--surf2);color:var(--t2)">+R42M</span> vs budget</div>
+          </div>
+          <div class="kpi" style="--kc:var(--blu)">
+            <div class="kl">DG2 Gate</div>
+            <div class="kn" style="color:var(--blu)">14d</div>
+            <div class="kd" style="color:var(--blu)">On track to submit</div>
+          </div>
+        </div>
+
+        <div class="fbar">
+          <div class="fs">
+            <svg width="13" height="13" style="color:var(--t3);flex-shrink:0"><use href="#ic-search"/></svg>
+            <span class="fst">Filter tasks…</span>
+          </div>
+          <button class="fb">
+            Status
+            <svg width="9" height="9" style="color:var(--t3)"><use href="#ic-chevron-d"/></svg>
+          </button>
+          <button class="fb">
+            Assignee
+            <svg width="9" height="9" style="color:var(--t3)"><use href="#ic-chevron-d"/></svg>
+          </button>
+          <button class="fb">
+            Due date
+            <svg width="9" height="9" style="color:var(--t3)"><use href="#ic-chevron-d"/></svg>
+          </button>
+        </div>
+
+        <div class="tw">
+          <div class="thr">
+            <div class="th">Task Name</div>
+            <div class="th">Due</div>
+            <div class="th">Value</div>
+            <div class="th">Status</div>
+            <div class="th">Progress</div>
+          </div>
+
+          <div class="tdr">
+            <div><div class="tdn">Procurement Package A</div><div class="tds">Civil · Basil Read</div></div>
+            <div class="tdv">Jun 14</div>
+            <div class="tdv">R120M</div>
+            <div><span class="pill" style="background:var(--blu-bg);color:var(--blu)"><span class="pd" style="background:var(--blu)"></span>Active</span></div>
+            <div class="mpw"><div class="mpt"><div class="mpf" style="width:65%;background:linear-gradient(90deg,var(--blu),#3d7fd6)"></div></div><span class="mpp">65%</span></div>
+          </div>
+
+          <div class="tdr">
+            <div><div class="tdn">Foundation Works</div><div class="tds">Civil · Site 2A complete</div></div>
+            <div class="tdv">May 30</div>
+            <div class="tdv">R48M</div>
+            <div><span class="pill" style="background:var(--grn-bg);color:var(--grn)"><span class="pd" style="background:var(--grn)"></span>Done</span></div>
+            <div class="mpw"><div class="mpt"><div class="mpf" style="width:100%;background:linear-gradient(90deg,var(--grn),#1ea060)"></div></div><span class="mpp" style="color:var(--grn)">100%</span></div>
+          </div>
+
+          <div class="tdr">
+            <div><div class="tdn">Turbine Installation — Set 1</div><div class="tds">Mechanical · 12 of 36 turbines</div></div>
+            <div class="tdv">Jul 22</div>
+            <div class="tdv">R310M</div>
+            <div><span class="pill" style="background:var(--ros-bg);color:var(--ros)"><span class="pd" style="background:var(--ros)"></span>Delayed</span></div>
+            <div class="mpw"><div class="mpt"><div class="mpf" style="width:33%;background:linear-gradient(90deg,var(--ros),#d44545)"></div></div><span class="mpp" style="color:var(--ros)">33%</span></div>
+          </div>
+
+          <div class="tdr">
+            <div><div class="tdn">HV Cabling &amp; Substation</div><div class="tds">Electrical · Awaiting delivery</div></div>
+            <div class="tdv">Aug 10</div>
+            <div class="tdv">R87M</div>
+            <div><span class="pill" style="background:var(--amb-bg);color:var(--amb)"><span class="pd" style="background:var(--amb)"></span>On Hold</span></div>
+            <div class="mpw"><div class="mpt"><div class="mpf" style="width:12%;background:linear-gradient(90deg,var(--amb),#c07520)"></div></div><span class="mpp">12%</span></div>
+          </div>
+        </div>
+
+        <div class="bg">
+          <div class="bc">
+            <div class="bcl">Civil Works <span class="bcp" style="color:var(--grn)">82%</span></div>
+            <div class="bct"><div class="bcf" style="width:82%;background:linear-gradient(90deg,#0b7040,#1ea060)"></div></div>
+            <div class="bcm">R352M of R430M · 3 days ahead</div>
+          </div>
+          <div class="bc">
+            <div class="bcl">Mechanical <span class="bcp" style="color:var(--ros)">41%</span></div>
+            <div class="bct"><div class="bcf" style="width:41%;background:linear-gradient(90deg,#b02929,#d44545)"></div></div>
+            <div class="bcm">R165M of R402M · 18 days late</div>
+          </div>
+          <div class="bc">
+            <div class="bcl">Electrical <span class="bcp" style="color:var(--amb)">28%</span></div>
+            <div class="bct"><div class="bcf" style="width:28%;background:linear-gradient(90deg,#8c5a09,#c07520)"></div></div>
+            <div class="bcm">R24M of R87M · on hold</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p style="margin-top:20px;font-size:12px;color:#8698b0">Custom SVG icon set — 17 unique icons. Real OE logo. No emoji. Click sidebar sections to collapse/expand.</p>
+
+<script>
+document.querySelectorAll('.sb-sec').forEach(function(s){
+  s.addEventListener('click',function(){
+    s.classList.toggle('col');
+    var b=s.nextElementSibling;
+    if(b&&b.classList.contains('sb-sb'))b.classList.toggle('col');
+  });
+});
+</script>
+</body>
+</html>

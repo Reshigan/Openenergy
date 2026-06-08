@@ -75,10 +75,10 @@ export function InvoiceDetailPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => navigate('/settlement')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={() => navigate('/settlement')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
             <ArrowLeft size={12} /> Settlement
           </button>
-          <button onClick={() => void load()} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={() => void load()} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
             <RefreshCw size={12} /> Refresh
           </button>
         </div>

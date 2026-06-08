@@ -223,7 +223,7 @@ export function Reports() {
           )}
           <div className="inline-flex items-center gap-1 bg-white border border-[#dde4ec] rounded-lg p-1">
             {(['30d', '90d', '12m', 'ytd'] as Period[]).map((p) => (
-              <button
+              <button type="button"
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={`h-8 px-3 rounded-md text-[12px] font-semibold ${period === p ? 'bg-[#3b82c4] text-white' : 'text-[#6b7685] hover:bg-[#f5f6fa]'}`}
@@ -232,7 +232,7 @@ export function Reports() {
               </button>
             ))}
           </div>
-          <button
+          <button type="button"
             onClick={() => window.print()}
             className="h-9 px-3 rounded-lg border border-[#d0d5dd] text-[13px] text-[#6b7685] hover:bg-white inline-flex items-center gap-2"
           >
@@ -329,7 +329,7 @@ export function Reports() {
             <TableIcon size={14} className="text-[#6b7685]" />
             <h2 className="text-[14px] font-semibold text-[#0f1c2e]">{section.label}</h2>
             <span className="text-[11px] text-[#6b7685] ml-1">({section.rows.length} rows)</span>
-            <button
+            <button type="button"
               onClick={() => downloadCsv(section.key)}
               disabled={csvBusy === section.key || section.rows.length === 0}
               className="ml-auto h-7 px-3 rounded-md border border-[#d0d5dd] text-[12px] text-[#6b7685] hover:bg-[#f5f6fa] inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"

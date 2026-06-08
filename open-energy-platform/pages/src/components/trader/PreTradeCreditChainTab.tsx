@@ -480,7 +480,7 @@ export function PreTradeCreditChainTab() {
 
       <div className="mb-3 flex flex-wrap gap-1.5">
         {FILTERS.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -618,7 +618,7 @@ function Drawer({
                 {TIER_TONE[row.current_tier].label} - {row.counterparty_name ?? row.counterparty_id} - {fmtZar(row.notional_exposure_zar)}
               </div>
             </div>
-            <button
+            <button type="button"
               onClick={onClose}
               className="rounded border border-[#d8dde6] bg-white px-2 py-1 text-[12px] text-[#445] hover:bg-[#f3f5f9]"
             >
@@ -820,7 +820,7 @@ function ActionButton({
     tone === 'bad'     ? 'bg-[#7a0e0e] text-white' :
                          'bg-white text-[#445] border border-[#d8dde6]';
   return (
-    <button
+    <button type="button"
       onClick={onClick}
       className={`rounded px-3 py-1.5 text-[11px] font-medium ${bg}`}
     >

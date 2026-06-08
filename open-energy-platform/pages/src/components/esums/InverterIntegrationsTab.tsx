@@ -168,7 +168,7 @@ function CredCard({
           )}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <button
+          <button type="button"
             onClick={() => onTest(cred.id)}
             disabled={testing || !isLive}
             title={isLive ? 'Test connection' : 'Adapter not yet implemented'}
@@ -176,13 +176,13 @@ function CredCard({
           >
             {testing ? '…' : 'Test'}
           </button>
-          <button
+          <button type="button"
             onClick={() => onEdit(cred)}
             className="px-2.5 py-1 text-xs rounded border border-gray-200 text-gray-600 hover:border-gray-400 transition-colors"
           >
             Edit
           </button>
-          <button
+          <button type="button"
             onClick={() => onDelete(cred.id)}
             className="px-2.5 py-1 text-xs rounded border border-red-100 text-red-500 hover:border-red-300 transition-colors"
           >
@@ -293,7 +293,7 @@ function CredModal({
           <h2 className="text-sm font-semibold text-gray-900">
             {initial ? 'Edit integration' : 'Add integration'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-lg leading-none">&times;</button>
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-700 text-lg leading-none">&times;</button>
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-3 max-h-[70vh] overflow-y-auto">
@@ -455,8 +455,8 @@ function CredModal({
         </form>
 
         <div className="px-6 py-3 border-t border-gray-100 flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-900">Cancel</button>
-          <button
+          <button type="button" onClick={onClose} className="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-900">Cancel</button>
+          <button type="button"
             onClick={handleSubmit as unknown as React.MouseEventHandler}
             disabled={saving}
             className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
@@ -640,7 +640,7 @@ function AccrualsPanel() {
           {/* Period selector */}
           <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
             {(Object.keys(PERIOD_LABELS) as AccrualPeriod[]).map(p => (
-              <button
+              <button type="button"
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={`px-3 py-1.5 transition-colors ${period === p ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
@@ -650,7 +650,7 @@ function AccrualsPanel() {
             ))}
           </div>
           {/* One-time historical backfill */}
-          <button
+          <button type="button"
             onClick={handleBackfill}
             disabled={backfilling}
             title="Pull full historical data from SolaX API for all connected stations"
@@ -845,14 +845,14 @@ export function InverterIntegrationsTab() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <button type="button"
             onClick={handlePollAll}
             disabled={polling}
             className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
             {polling ? 'Polling…' : 'Poll all now'}
           </button>
-          <button
+          <button type="button"
             onClick={() => { setEditCred(null); setPrefillMfr(undefined); setShowModal(true); }}
             className="px-3 py-1.5 text-xs font-medium border border-gray-200 text-gray-700 rounded-lg hover:border-gray-400 transition-colors"
           >
@@ -907,7 +907,7 @@ export function InverterIntegrationsTab() {
                     }
                     // Empty slot
                     return (
-                      <button
+                      <button type="button"
                         key={m}
                         onClick={() => {
                           setEditCred(null);

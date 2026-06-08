@@ -195,7 +195,7 @@ export function ScheduleTab({ projectId }: ScheduleTabProps) {
 
       {/* ── Actions ──────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2">
-        <button
+        <button type="button"
           data-testid="schedule-recompute"
           disabled={loading || busy !== null}
           onClick={recompute}
@@ -203,7 +203,7 @@ export function ScheduleTab({ projectId }: ScheduleTabProps) {
         >
           {busy === 'recompute' ? 'Recomputing…' : 'Recompute CPM'}
         </button>
-        <button
+        <button type="button"
           data-testid="schedule-level"
           disabled={loading || busy !== null}
           onClick={level}
@@ -211,7 +211,7 @@ export function ScheduleTab({ projectId }: ScheduleTabProps) {
         >
           {busy === 'level' ? 'Leveling…' : 'Level resources'}
         </button>
-        <button
+        <button type="button"
           data-testid="schedule-baseline"
           disabled={loading || busy !== null}
           onClick={saveBaseline}

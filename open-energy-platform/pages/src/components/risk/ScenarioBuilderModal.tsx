@@ -72,7 +72,7 @@ export function ScenarioBuilderModal({
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="text-[11px] uppercase tracking-wider text-[#6b7685]">Factor shocks</label>
-              <button onClick={addRow} className="text-[11px] px-2 py-1 bg-[#f4f7fb] rounded border border-[#dbe4ee]" data-testid="scenario-add-row">+ Add</button>
+              <button type="button" onClick={addRow} className="text-[11px] px-2 py-1 bg-[#f4f7fb] rounded border border-[#dbe4ee]" data-testid="scenario-add-row">+ Add</button>
             </div>
             <div className="space-y-2">
               {shocks.map((r, i) => (
@@ -86,7 +86,7 @@ export function ScenarioBuilderModal({
                   <input type="number" step="0.5" value={r.shock_pct} onChange={(e) => setRow(i, { shock_pct: e.target.value })}
                     className="w-28 h-9 px-2 border border-[#dbe4ee] rounded text-right font-mono" placeholder="% shock" />
                   {shocks.length > 1 && (
-                    <button onClick={() => removeRow(i)} className="h-9 px-2 text-[12px] text-red-600 border border-red-200 rounded">✕</button>
+                    <button type="button" onClick={() => removeRow(i)} className="h-9 px-2 text-[12px] text-red-600 border border-red-200 rounded">✕</button>
                   )}
                 </div>
               ))}
@@ -99,8 +99,8 @@ export function ScenarioBuilderModal({
           {err && <div className="text-red-700 text-[12px]">{err}</div>}
         </div>
         <div className="px-5 py-3 border-t border-[#e5ebf2] flex justify-end gap-2">
-          <button onClick={onClose} className="h-9 px-3 rounded border border-[#dbe4ee] text-[12px]">Cancel</button>
-          <button onClick={submit} disabled={saving} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50" data-testid="scenario-save">
+          <button type="button" onClick={onClose} className="h-9 px-3 rounded border border-[#dbe4ee] text-[12px]">Cancel</button>
+          <button type="button" onClick={submit} disabled={saving} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50" data-testid="scenario-save">
             {saving ? 'Saving…' : 'Save scenario'}
           </button>
         </div>

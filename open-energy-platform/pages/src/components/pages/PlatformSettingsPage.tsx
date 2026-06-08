@@ -32,7 +32,7 @@ export function PlatformSettingsPage() {
           { k: 'digests',       label: 'Digests',        icon: <Send     size={13} /> },
           { k: 'saved-filters', label: 'Saved filters',  icon: <ListChecks size={13} /> },
         ] as Array<{ k: Tab; label: string; icon: React.ReactNode }>).map((t) => (
-          <button key={t.k} onClick={() => setTab(t.k)}
+          <button type="button" key={t.k} onClick={() => setTab(t.k)}
             className={`h-10 px-4 text-[12px] font-semibold inline-flex items-center gap-1 border-b-2 transition-colors ${tab === t.k ? 'border-[#3b82c4] text-[#3b82c4]' : 'border-transparent text-[#6b7685] hover:text-[#0f1c2e]'}`}>
             {t.icon} {t.label}
           </button>
@@ -68,7 +68,7 @@ function UsageTab() {
       <div className="flex items-center gap-2 text-[12px]">
         <span className="text-[#6b7685]">Window:</span>
         {[7, 30, 90].map((n) => (
-          <button key={n} onClick={() => setDays(n)}
+          <button type="button" key={n} onClick={() => setDays(n)}
             className={`h-7 px-2.5 rounded-full text-[11px] font-semibold border ${days === n ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>
             {n}d
           </button>
@@ -141,10 +141,10 @@ function ApiKeysTab() {
               <div className="text-[11px] text-[#3d4756] mt-1">This is the only time the raw key will be shown. Store it in your secret manager before closing this banner.</div>
               <code className="block mt-2 font-mono text-[12px] bg-white border border-[#dde4ec] px-3 py-2 rounded">{newKey}</code>
             </div>
-            <button onClick={() => { void navigator.clipboard.writeText(newKey); }} className="h-8 px-2.5 rounded bg-white border border-[#dde4ec] text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+            <button type="button" onClick={() => { void navigator.clipboard.writeText(newKey); }} className="h-8 px-2.5 rounded bg-white border border-[#dde4ec] text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
               <Copy size={13} /> Copy
             </button>
-            <button onClick={() => setNewKey(null)} className="h-8 px-2.5 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Done</button>
+            <button type="button" onClick={() => setNewKey(null)} className="h-8 px-2.5 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Done</button>
           </div>
         </div>
       )}
@@ -160,7 +160,7 @@ function ApiKeysTab() {
                  className="h-9 px-3 rounded border border-[#dde4ec] text-[12px]" />
           <input placeholder="Scopes (comma-sep, optional)" value={scopes} onChange={(e) => setScopes(e.target.value)}
                  className="h-9 px-3 rounded border border-[#dde4ec] text-[12px] font-mono" />
-          <button onClick={create} disabled={!name.trim()}
+          <button type="button" onClick={create} disabled={!name.trim()}
                   className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
             Create key
           </button>
@@ -169,7 +169,7 @@ function ApiKeysTab() {
       <section className="widget-card">
         <header className="widget-card-header">
           <div className="widget-card-title">Active keys ({rows.filter((r) => !r.revoked).length})</div>
-          <button onClick={load} className="text-[11px] inline-flex items-center gap-1 text-[#3b82c4]"><RefreshCw size={11} /> Refresh</button>
+          <button type="button" onClick={load} className="text-[11px] inline-flex items-center gap-1 text-[#3b82c4]"><RefreshCw size={11} /> Refresh</button>
         </header>
         <div className="p-3 overflow-x-auto">
           <table className="w-full text-[12px]">
@@ -188,7 +188,7 @@ function ApiKeysTab() {
                   </td>
                   <td className="text-right">
                     {!r.revoked && (
-                      <button onClick={() => revoke(r.id)} className="text-[11px] text-[#c0392b] hover:underline">Revoke</button>
+                      <button type="button" onClick={() => revoke(r.id)} className="text-[11px] text-[#c0392b] hover:underline">Revoke</button>
                     )}
                   </td>
                 </tr>
@@ -239,7 +239,7 @@ function WebhooksTab() {
           <div className="text-[12px] font-bold widget-tone-good-text">Subscription created — copy the HMAC secret now</div>
           <div className="text-[11px] text-[#3d4756] mt-1">Verify <code>x-oe-signature: sha256=...</code> against this secret in your handler. Shown once.</div>
           <code className="block mt-2 font-mono text-[12px] bg-white border border-[#dde4ec] px-3 py-2 rounded">{secret}</code>
-          <button onClick={() => setSecret(null)} className="mt-2 h-8 px-2.5 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Got it</button>
+          <button type="button" onClick={() => setSecret(null)} className="mt-2 h-8 px-2.5 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Got it</button>
         </div>
       )}
       <section className="widget-card">
@@ -251,14 +251,14 @@ function WebhooksTab() {
                  className="w-full h-9 px-3 rounded border border-[#dde4ec] text-[12px] font-mono" />
           <div className="flex flex-wrap gap-1">
             {WEBHOOK_EVENTS.map((ev) => (
-              <button key={ev}
+              <button type="button" key={ev}
                 onClick={() => setEvents((s) => s.includes(ev) ? s.filter((x) => x !== ev) : [...s, ev])}
                 className={`h-6 px-2 rounded-full text-[10px] font-mono ${events.includes(ev) ? 'bg-[#1a3a5c] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
                 {ev}
               </button>
             ))}
           </div>
-          <button onClick={create} disabled={!url || events.length === 0}
+          <button type="button" onClick={create} disabled={!url || events.length === 0}
                   className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
             Subscribe
           </button>
@@ -279,10 +279,10 @@ function WebhooksTab() {
                   <td className="font-mono text-[11px]">{r.last_status_code ? `HTTP ${r.last_status_code}` : '—'}</td>
                   <td className="text-right font-mono">{r.consecutive_failures || 0}</td>
                   <td className="text-right space-x-2">
-                    <button onClick={async () => { await api.post(`/webhooks/subscriptions/${r.id}/test`, {}); void loadDeliveries(r.id); }} className="text-[11px] text-[#3b82c4]">Test</button>
-                    <button onClick={() => loadDeliveries(r.id)} className="text-[11px] text-[#3d4756]">Deliveries</button>
+                    <button type="button" onClick={async () => { await api.post(`/webhooks/subscriptions/${r.id}/test`, {}); void loadDeliveries(r.id); }} className="text-[11px] text-[#3b82c4]">Test</button>
+                    <button type="button" onClick={() => loadDeliveries(r.id)} className="text-[11px] text-[#3d4756]">Deliveries</button>
                     {r.enabled === 1 && (
-                      <button onClick={async () => { await api.post(`/webhooks/subscriptions/${r.id}/disable`, {}); void load(); }} className="text-[11px] text-[#c0392b]">Disable</button>
+                      <button type="button" onClick={async () => { await api.post(`/webhooks/subscriptions/${r.id}/disable`, {}); void load(); }} className="text-[11px] text-[#c0392b]">Disable</button>
                     )}
                   </td>
                 </tr>
@@ -358,7 +358,7 @@ function DigestsTab() {
           <input type="number" min={0} max={23} value={hour} onChange={(e) => setHour(Number(e.target.value))}
                  placeholder="Hour SAST" className="h-9 px-2 rounded border border-[#dde4ec] text-[12px] font-mono" />
         </div>
-        <div className="px-3 pb-3"><button onClick={create} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Subscribe</button></div>
+        <div className="px-3 pb-3"><button type="button" onClick={create} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Subscribe</button></div>
       </section>
       <section className="widget-card">
         <header className="widget-card-header"><div className="widget-card-title">Subscriptions</div></header>
@@ -377,9 +377,9 @@ function DigestsTab() {
                     ? <span className="px-1.5 py-0.5 rounded text-[10px] widget-tone-good font-semibold">ACTIVE</span>
                     : <span className="px-1.5 py-0.5 rounded text-[10px] widget-tone-bad font-semibold">DISABLED</span>}</td>
                   <td className="text-right space-x-2">
-                    <button onClick={() => sendNow(r.id)} className="text-[11px] text-[#3b82c4]">Send now</button>
+                    <button type="button" onClick={() => sendNow(r.id)} className="text-[11px] text-[#3b82c4]">Send now</button>
                     {r.enabled === 1 && (
-                      <button onClick={() => disable(r.id)} className="text-[11px] text-[#c0392b]">Disable</button>
+                      <button type="button" onClick={() => disable(r.id)} className="text-[11px] text-[#c0392b]">Disable</button>
                     )}
                   </td>
                 </tr>
@@ -430,7 +430,7 @@ function SavedFiltersTab() {
                   {r.is_default === 1 && <span className="px-1.5 py-0.5 rounded text-[10px] widget-tone-info font-semibold">default</span>}
                   {r.shared === 1 && <span className="px-1.5 py-0.5 rounded text-[10px] widget-tone-good font-semibold">shared</span>}
                   <span className="font-mono text-[10px] text-[#6b7685]">used {r.use_count || 0}×</span>
-                  <button onClick={() => del(r.id)} className="text-[11px] text-[#c0392b]">Delete</button>
+                  <button type="button" onClick={() => del(r.id)} className="text-[11px] text-[#c0392b]">Delete</button>
                 </li>
               ))}
             </ul>

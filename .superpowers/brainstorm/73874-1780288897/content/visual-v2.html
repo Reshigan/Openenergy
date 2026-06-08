@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visual Direction v2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+  :root { --ease: cubic-bezier(0.23,1,0.32,1); }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#07080c;font-family:'Inter',system-ui,sans-serif;padding:40px 32px;min-height:100vh;color:#e2e8f0}
+  .page-label{font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#4a5568;margin-bottom:10px}
+  h1{font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#f7fafc;margin-bottom:6px}
+  .sub{font-size:13px;color:#4a5568;margin-bottom:40px;line-height:1.6;max-width:480px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1320px}
+  .option{border-radius:16px;overflow:hidden;cursor:pointer;position:relative;transition:transform 180ms var(--ease),box-shadow 180ms var(--ease)}
+  .option:hover{transform:translateY(-3px)}
+  .option:active{transform:scale(0.985);transition-duration:80ms}
+  .option.selected .checkmark{opacity:1;transform:scale(1)}
+  .option.selected{box-shadow:0 0 0 2px #7e57c2,0 0 0 4px rgba(126,87,194,0.2)}
+  .checkmark{position:absolute;top:14px;right:14px;width:24px;height:24px;background:#7e57c2;border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(0.3);transition:opacity 200ms var(--ease),transform 200ms var(--ease);z-index:20;box-shadow:0 0 0 3px rgba(126,87,194,0.3)}
+  .checkmark svg{width:12px;height:12px}
+  .option-label{padding:18px 20px 20px}
+  .option-label h3{font-size:15px;font-weight:700;letter-spacing:-0.01em;margin-bottom:5px}
+  .option-label p{font-size:12px;line-height:1.6;color:#4a5568}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-bottom:10px}
+
+  /* ─── DIRECTION 1: Midnight ─────────────────────── */
+  .d1{background:#0a0b0f}
+  .d1 .option-label{background:#0f1014;border-top:1px solid rgba(255,255,255,0.05)}
+  .d1 .option-label h3{color:#f7fafc}
+  .preview-1{height:340px;display:flex;font-size:11px;overflow:hidden}
+  /* sidebar */
+  .s1{width:172px;background:#0a0b0f;border-right:1px solid rgba(255,255,255,0.055);display:flex;flex-direction:column;flex-shrink:0}
+  .s1-head{padding:16px 16px 14px;border-bottom:1px solid rgba(255,255,255,0.05);margin-bottom:6px}
+  .s1-logo{font-size:13px;font-weight:800;letter-spacing:-0.03em;color:#f7fafc;line-height:1}
+  .s1-role{margin-top:8px;display:inline-flex;align-items:center;gap:5px;background:rgba(126,87,194,0.12);border:1px solid rgba(126,87,194,0.2);border-radius:5px;padding:3px 8px}
+  .s1-role-dot{width:5px;height:5px;border-radius:50%;background:#7e57c2;flex-shrink:0}
+  .s1-role-text{font-size:9px;font-weight:600;color:#a78bfa;letter-spacing:0.04em}
+  .s1-section{padding:14px 16px 4px;font-size:9px;font-weight:700;letter-spacing:0.12em;color:#272b36;text-transform:uppercase}
+  .s1-item{display:flex;align-items:center;justify-content:space-between;padding:7px 16px;font-size:11px;color:#3d4559;cursor:pointer;position:relative}
+  .s1-item.active{color:#f7fafc;background:rgba(255,255,255,0.04)}
+  .s1-item.active::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:2px;background:#7e57c2;border-radius:0 1px 1px 0}
+  .s1-badge-red{font-size:9px;background:rgba(239,68,68,0.12);color:#f87171;padding:2px 6px;border-radius:4px;font-weight:600;font-family:'JetBrains Mono',monospace}
+  .s1-badge-pur{font-size:9px;background:rgba(126,87,194,0.15);color:#a78bfa;padding:2px 6px;border-radius:4px;font-weight:600}
+  /* main */
+  .m1{flex:1;background:#0d0e13;overflow:hidden;display:flex;flex-direction:column}
+  .m1-bar{background:#0a0b0f;border-bottom:1px solid rgba(255,255,255,0.05);padding:10px 18px;display:flex;align-items:center;justify-content:space-between}
+  .m1-breadcrumb{font-size:10px;color:#3d4559;display:flex;align-items:center;gap:6px}
+  .m1-breadcrumb span{color:#f7fafc;font-weight:500}
+  .m1-actions{display:flex;gap:6px}
+  .btn-ghost{font-size:10px;color:#4a5568;border:1px solid rgba(255,255,255,0.07);border-radius:5px;padding:4px 10px;background:transparent}
+  .btn-primary{font-size:10px;color:white;background:rgba(126,87,194,0.85);border-radius:5px;padding:4px 10px;font-weight:600;border:1px solid rgba(126,87,194,0.5)}
+  .m1-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px;flex:1}
+  .kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .kpi-1{padding:12px 14px;background:rgba(255,255,255,0.024);border:1px solid rgba(255,255,255,0.05);border-radius:10px;position:relative;overflow:hidden}
+  .kpi-1::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--kc)}
+  .kpi-name{font-size:9px;font-weight:600;color:#3d4559;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
+  .kpi-num{font-size:22px;font-weight:800;letter-spacing:-0.03em;line-height:1;font-family:'JetBrains Mono',monospace}
+  .kpi-delta{font-size:9px;margin-top:4px;font-family:'JetBrains Mono',monospace}
+  .table-1{background:rgba(255,255,255,0.018);border:1px solid rgba(255,255,255,0.05);border-radius:10px;overflow:hidden}
+  .thead-1{display:grid;grid-template-columns:1fr 90px 80px 70px;padding:8px 14px;background:rgba(255,255,255,0.02);border-bottom:1px solid rgba(255,255,255,0.04)}
+  .th-1{font-size:9px;font-weight:700;color:#272b36;text-transform:uppercase;letter-spacing:0.09em}
+  .trow-1{display:grid;grid-template-columns:1fr 90px 80px 70px;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,0.025);align-items:center}
+  .trow-1:last-child{border-bottom:none}
+  .td-name-1{font-size:10.5px;color:#c5cedd;font-weight:500}
+  .td-val-1{font-size:10px;color:#5a637a;font-family:'JetBrains Mono',monospace}
+  .pill-1{font-size:9px;font-weight:600;padding:2px 8px;border-radius:4px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.03em;display:inline-block}
+  .p-act{background:rgba(96,165,250,0.08);color:#60a5fa;border:1px solid rgba(96,165,250,0.15)}
+  .p-done{background:rgba(52,211,153,0.08);color:#34d399;border:1px solid rgba(52,211,153,0.15)}
+  .p-late{background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.15)}
+
+  /* ─── DIRECTION 2: Studio ────────────────────────── */
+  .d2{background:#18181b}
+  .d2 .option-label{background:#18181b;border-top:1px solid #27272a}
+  .d2 .option-label h3{color:#fafafa}
+  .d2 .option-label p{color:#71717a}
+  .preview-2{height:340px;display:flex;font-size:11px;overflow:hidden}
+  .s2{width:172px;background:#18181b;border-right:1px solid #27272a;display:flex;flex-direction:column;flex-shrink:0}
+  .s2-head{padding:16px 16px 14px;border-bottom:1px solid #27272a;margin-bottom:6px}
+  .s2-logo{font-size:13px;font-weight:800;letter-spacing:-0.03em;color:#fafafa}
+  .s2-role{margin-top:8px;font-size:9px;font-weight:500;color:#52525b;display:flex;align-items:center;gap:5px}
+  .s2-role-sep{width:1px;height:10px;background:#3f3f46}
+  .s2-section{padding:14px 16px 5px;font-size:9px;font-weight:600;letter-spacing:0.09em;color:#3f3f46;text-transform:uppercase}
+  .s2-item{display:flex;align-items:center;justify-content:space-between;padding:6px 10px 6px 16px;font-size:11px;color:#52525b;margin:1px 6px 1px 0;border-radius:0 6px 6px 0}
+  .s2-item.active{color:#fafafa;background:#27272a}
+  .s2-item.active .s2-icon{color:#a78bfa}
+  .s2-icon{width:14px;text-align:center;margin-right:6px;opacity:0.5;font-size:12px}
+  .s2-badge{font-size:9px;background:#3f3f46;color:#a1a1aa;padding:1px 6px;border-radius:4px;font-weight:600}
+  .s2-badge-red{font-size:9px;background:rgba(239,68,68,0.15);color:#f87171;padding:1px 6px;border-radius:4px;font-weight:600}
+  .m2{flex:1;background:#09090b;overflow:hidden;display:flex;flex-direction:column}
+  .m2-bar{background:#0c0c0e;border-bottom:1px solid #1c1c1f;padding:10px 20px;display:flex;align-items:center;justify-content:space-between}
+  .m2-title{font-size:13px;font-weight:700;color:#fafafa;letter-spacing:-0.02em}
+  .m2-sub{font-size:10px;color:#3f3f46;margin-top:1px}
+  .m2-btn{font-size:10px;color:#fafafa;background:#7e57c2;border-radius:6px;padding:5px 12px;font-weight:600;border:none}
+  .m2-body{padding:16px 20px;display:flex;flex-direction:column;gap:12px;flex:1}
+  .kpi-strip-2{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .kpi-2{padding:12px 14px;background:#0f0f11;border:1px solid #1c1c1f;border-radius:10px}
+  .kpi-name-2{font-size:9px;font-weight:600;color:#3f3f46;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.07em}
+  .kpi-num-2{font-size:22px;font-weight:800;letter-spacing:-0.03em;line-height:1;font-family:'JetBrains Mono',monospace}
+  .kpi-sub-2{font-size:9px;color:#3f3f46;margin-top:4px}
+  .table-2{background:#0f0f11;border:1px solid #1c1c1f;border-radius:10px;overflow:hidden}
+  .thead-2{display:grid;grid-template-columns:1fr 100px 80px 70px;padding:8px 14px;background:#0c0c0e;border-bottom:1px solid #1c1c1f}
+  .th-2{font-size:9px;font-weight:600;color:#3f3f46;text-transform:uppercase;letter-spacing:0.08em}
+  .trow-2{display:grid;grid-template-columns:1fr 100px 80px 70px;padding:8px 14px;border-bottom:1px solid #141416;align-items:center}
+  .trow-2:last-child{border-bottom:none}
+  .td-name-2{font-size:10.5px;color:#e4e4e7;font-weight:500}
+  .td-val-2{font-size:10px;color:#52525b;font-family:'JetBrains Mono',monospace}
+  .pill-2{font-size:9px;font-weight:600;padding:2px 8px;border-radius:20px;display:inline-block;font-family:'JetBrains Mono',monospace}
+  .p2-act{background:#1d4ed820;color:#60a5fa;border:1px solid #1d4ed840}
+  .p2-done{background:#15803d20;color:#4ade80;border:1px solid #15803d40}
+  .p2-late{background:#b91c1c20;color:#f87171;border:1px solid #b91c1c40}
+
+  /* ─── DIRECTION 3: Brand ─────────────────────────── */
+  .d3{background:#0e0b18}
+  .d3 .option-label{background:#0e0b18;border-top:1px solid rgba(126,87,194,0.12)}
+  .d3 .option-label h3{color:#ede9fe}
+  .d3 .option-label p{color:rgba(196,181,253,0.4)}
+  .preview-3{height:340px;display:flex;font-size:11px;overflow:hidden}
+  .s3{width:172px;background:linear-gradient(180deg,#130e24 0%,#0e0b18 100%);border-right:1px solid rgba(126,87,194,0.1);display:flex;flex-direction:column;flex-shrink:0}
+  .s3-head{padding:16px 16px 14px;background:linear-gradient(135deg,rgba(126,87,194,0.18) 0%,transparent 100%);border-bottom:1px solid rgba(126,87,194,0.1);margin-bottom:6px}
+  .s3-logo{font-size:13px;font-weight:800;letter-spacing:-0.03em;background:linear-gradient(135deg,#ede9fe 20%,#a78bfa 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .s3-role{margin-top:9px;background:rgba(126,87,194,0.15);border:1px solid rgba(126,87,194,0.25);border-radius:6px;padding:4px 9px;display:inline-flex;align-items:center;gap:5px}
+  .s3-role-dot{width:6px;height:6px;border-radius:50%;background:#7e57c2;box-shadow:0 0 6px rgba(126,87,194,0.8)}
+  .s3-role-text{font-size:9px;font-weight:600;color:#c4b5fd;letter-spacing:0.04em}
+  .s3-section{padding:14px 16px 4px;font-size:9px;font-weight:700;letter-spacing:0.12em;color:rgba(126,87,194,0.25);text-transform:uppercase}
+  .s3-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px 7px 16px;font-size:11px;color:rgba(196,181,253,0.3);margin:1px 8px 1px 0;border-radius:0 7px 7px 0}
+  .s3-item.active{color:#ede9fe;background:rgba(126,87,194,0.18);border:1px solid rgba(126,87,194,0.22)}
+  .s3-badge-red{font-size:9px;background:rgba(239,68,68,0.12);color:#f87171;padding:2px 6px;border-radius:4px;font-weight:600}
+  .s3-badge-pur{font-size:9px;background:rgba(126,87,194,0.2);color:#c4b5fd;padding:2px 6px;border-radius:4px}
+  .m3{flex:1;background:#0a0815;overflow:hidden;display:flex;flex-direction:column}
+  .m3-bar{background:rgba(126,87,194,0.04);border-bottom:1px solid rgba(126,87,194,0.08);padding:10px 18px;display:flex;align-items:center;justify-content:space-between}
+  .m3-title{font-size:13px;font-weight:700;color:#ede9fe;letter-spacing:-0.02em}
+  .m3-sub{font-size:10px;color:rgba(126,87,194,0.4);margin-top:1px}
+  .m3-btn{font-size:10px;color:white;background:linear-gradient(135deg,#7e57c2,#5c35a8);border-radius:6px;padding:5px 12px;font-weight:600;border:1px solid rgba(126,87,194,0.4);box-shadow:0 2px 8px rgba(126,87,194,0.3)}
+  .m3-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px;flex:1}
+  .kpi-strip-3{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .kpi-3{padding:12px 14px;background:rgba(126,87,194,0.04);border:1px solid rgba(126,87,194,0.1);border-radius:10px;position:relative;overflow:hidden}
+  .kpi-3::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(126,87,194,0.3),transparent)}
+  .kpi-name-3{font-size:9px;font-weight:600;color:rgba(126,87,194,0.4);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px}
+  .kpi-num-3{font-size:22px;font-weight:800;letter-spacing:-0.03em;line-height:1;font-family:'JetBrains Mono',monospace}
+  .table-3{background:rgba(126,87,194,0.03);border:1px solid rgba(126,87,194,0.1);border-radius:10px;overflow:hidden}
+  .thead-3{display:grid;grid-template-columns:1fr 90px 80px 70px;padding:8px 14px;background:rgba(126,87,194,0.05);border-bottom:1px solid rgba(126,87,194,0.08)}
+  .th-3{font-size:9px;font-weight:700;color:rgba(126,87,194,0.35);text-transform:uppercase;letter-spacing:0.1em}
+  .trow-3{display:grid;grid-template-columns:1fr 90px 80px 70px;padding:8px 14px;border-bottom:1px solid rgba(126,87,194,0.06);align-items:center}
+  .trow-3:last-child{border-bottom:none}
+  .td-name-3{font-size:10.5px;color:#c4b5fd;font-weight:500}
+  .td-val-3{font-size:10px;color:rgba(196,181,253,0.3);font-family:'JetBrains Mono',monospace}
+  .pill-3{font-size:9px;font-weight:600;padding:2px 8px;border-radius:5px;display:inline-block;font-family:'JetBrains Mono',monospace}
+  .p3-act{background:rgba(96,165,250,0.1);color:#93c5fd;border:1px solid rgba(96,165,250,0.15)}
+  .p3-done{background:rgba(52,211,153,0.1);color:#6ee7b7;border:1px solid rgba(52,211,153,0.15)}
+  .p3-late{background:rgba(248,113,113,0.1);color:#fca5a5;border:1px solid rgba(248,113,113,0.15)}
+
+  /* progress bar strip */
+  .prog-strip{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .prog-item{display:flex;align-items:center;gap:10px;padding:8px 14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:8px}
+  .prog-label{font-size:10px;color:#3d4559;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .prog-bar-wrap{flex:0 0 60px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
+  .prog-bar-fill{height:100%;border-radius:2px}
+  .prog-num{font-size:10px;font-family:'JetBrains Mono',monospace;flex:0 0 32px;text-align:right}
+</style>
+<script>
+function pick(el) {
+  document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  const choice = el.dataset.choice;
+  if (window.recordChoice) window.recordChoice(choice, el.querySelector('h3')?.textContent || choice);
+}
+</script>
+</head>
+<body>
+
+<div class="page-label">Question 2 of 4</div>
+<h1>Visual Direction</h1>
+<p class="sub">Three distinct design languages — all use the persistent sidebar. Each represents a different character for the platform.</p>
+
+<div class="grid">
+
+  <!-- ──────────── OPTION 1: MIDNIGHT ──────────── -->
+  <div class="option d1" data-choice="midnight" onclick="pick(this)">
+    <div class="checkmark"><svg viewBox="0 0 12 10" fill="none"><polyline points="1,5 4.5,8.5 11,1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="preview-1">
+      <div class="s1">
+        <div class="s1-head">
+          <div class="s1-logo">Open Energy</div>
+          <div class="s1-role"><div class="s1-role-dot"></div><div class="s1-role-text">IPP Developer</div></div>
+        </div>
+        <div class="s1-section">Project</div>
+        <div class="s1-item active">Schedule <span class="s1-badge-pur">P6</span></div>
+        <div class="s1-item">Cost / EVM</div>
+        <div class="s1-item">Documents</div>
+        <div class="s1-item">WBS</div>
+        <div class="s1-section">Compliance</div>
+        <div class="s1-item">Stage Gates</div>
+        <div class="s1-item">NCR <span class="s1-badge-red">3</span></div>
+        <div class="s1-item">Env Monitor</div>
+        <div class="s1-section">Finance</div>
+        <div class="s1-item">Drawdowns</div>
+        <div class="s1-item">Bonds</div>
+      </div>
+      <div class="m1">
+        <div class="m1-bar">
+          <div class="m1-breadcrumb">Project <span style="color:#3d4559">›</span> <span>Schedule</span></div>
+          <div class="m1-actions"><div class="btn-ghost">Export</div><div class="btn-primary">+ Task</div></div>
+        </div>
+        <div class="m1-body">
+          <div class="kpi-strip">
+            <div class="kpi-1" style="--kc:#34d399"><div class="kpi-name">SPI</div><div class="kpi-num" style="color:#34d399">0.97</div><div class="kpi-delta" style="color:#34d399">▲ on track</div></div>
+            <div class="kpi-1" style="--kc:#f59e0b"><div class="kpi-name">CPI</div><div class="kpi-num" style="color:#f59e0b">0.89</div><div class="kpi-delta" style="color:#f59e0b">▼ 11% under</div></div>
+            <div class="kpi-1" style="--kc:#60a5fa"><div class="kpi-name">EAC</div><div class="kpi-num" style="color:#c5cedd">R890M</div><div class="kpi-delta" style="color:#3d4559">+R42M vs BAC</div></div>
+            <div class="kpi-1" style="--kc:#7e57c2"><div class="kpi-name">SLA</div><div class="kpi-num" style="color:#a78bfa">14d</div><div class="kpi-delta" style="color:#3d4559">DG2 gate</div></div>
+          </div>
+          <div class="table-1">
+            <div class="thead-1"><div class="th-1">Task</div><div class="th-1">Due</div><div class="th-1">Value</div><div class="th-1">Status</div></div>
+            <div class="trow-1"><div class="td-name-1">Procurement Package A</div><div class="td-val-1">Jun 14</div><div class="td-val-1">R120M</div><div><span class="pill-1 p-act">Active</span></div></div>
+            <div class="trow-1"><div class="td-name-1">Foundation Works</div><div class="td-val-1">May 30</div><div class="td-val-1">R48M</div><div><span class="pill-1 p-done">Done</span></div></div>
+            <div class="trow-1"><div class="td-name-1">Turbine Installation</div><div class="td-val-1">Jul 22</div><div class="td-val-1">R310M</div><div><span class="pill-1 p-late">Delayed</span></div></div>
+          </div>
+          <div class="prog-strip">
+            <div class="prog-item"><div class="prog-label" style="color:#5a637a">Civil Works</div><div class="prog-bar-wrap"><div class="prog-bar-fill" style="width:82%;background:#34d399"></div></div><div class="prog-num" style="color:#34d399">82%</div></div>
+            <div class="prog-item"><div class="prog-label" style="color:#5a637a">Electrical</div><div class="prog-bar-wrap"><div class="prog-bar-fill" style="width:41%;background:#f59e0b"></div></div><div class="prog-num" style="color:#f59e0b">41%</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="option-label">
+      <div class="badge" style="background:rgba(126,87,194,0.12);color:#a78bfa;border:1px solid rgba(126,87,194,0.2)">★ Recommended</div>
+      <h3>Midnight</h3>
+      <p>Pure dark throughout. Off-black (#0a0b0f) base, 1px rgba borders, zero shadows. Mono numbers. Purple used only for role identity + active states. This is what Bloomberg and Vercel use for exactly this data density.</p>
+    </div>
+  </div>
+
+  <!-- ──────────── OPTION 2: STUDIO ──────────── -->
+  <div class="option d2" data-choice="studio" onclick="pick(this)">
+    <div class="checkmark"><svg viewBox="0 0 12 10" fill="none"><polyline points="1,5 4.5,8.5 11,1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="preview-2">
+      <div class="s2">
+        <div class="s2-head">
+          <div class="s2-logo">Open Energy</div>
+          <div class="s2-role"><div style="width:6px;height:6px;border-radius:50%;background:#7e57c2;flex-shrink:0"></div>IPP Developer</div>
+        </div>
+        <div class="s2-section">Project</div>
+        <div class="s2-item active"><span class="s2-icon">◈</span>Schedule <span class="s2-badge" style="background:rgba(126,87,194,0.15);color:#a78bfa">P6</span></div>
+        <div class="s2-item"><span class="s2-icon">◇</span>Cost / EVM</div>
+        <div class="s2-item"><span class="s2-icon">◇</span>Documents</div>
+        <div class="s2-item"><span class="s2-icon">◇</span>WBS</div>
+        <div class="s2-section">Compliance</div>
+        <div class="s2-item"><span class="s2-icon">◇</span>Stage Gates</div>
+        <div class="s2-item"><span class="s2-icon">◇</span>NCR <span class="s2-badge-red">3</span></div>
+        <div class="s2-item"><span class="s2-icon">◇</span>Env Monitor</div>
+        <div class="s2-section">Finance</div>
+        <div class="s2-item"><span class="s2-icon">◇</span>Drawdowns</div>
+        <div class="s2-item"><span class="s2-icon">◇</span>Bonds</div>
+      </div>
+      <div class="m2">
+        <div class="m2-bar">
+          <div><div class="m2-title">Schedule</div><div class="m2-sub">Cosmos Wind Farm · Phase 2 · P6</div></div>
+          <div class="m2-btn">+ New Task</div>
+        </div>
+        <div class="m2-body">
+          <div class="kpi-strip-2">
+            <div class="kpi-2"><div class="kpi-name-2">SPI</div><div class="kpi-num-2" style="color:#4ade80">0.97</div><div class="kpi-sub-2">schedule performance</div></div>
+            <div class="kpi-2"><div class="kpi-name-2">CPI</div><div class="kpi-num-2" style="color:#fbbf24">0.89</div><div class="kpi-sub-2">cost performance</div></div>
+            <div class="kpi-2"><div class="kpi-name-2">EAC</div><div class="kpi-num-2" style="color:#f4f4f5">R890M</div><div class="kpi-sub-2">est. at completion</div></div>
+            <div class="kpi-2"><div class="kpi-name-2">SLA</div><div class="kpi-num-2" style="color:#c084fc">14d</div><div class="kpi-sub-2">DG2 gate deadline</div></div>
+          </div>
+          <div class="table-2">
+            <div class="thead-2"><div class="th-2">Task</div><div class="th-2">Due</div><div class="th-2">Value</div><div class="th-2">Status</div></div>
+            <div class="trow-2"><div class="td-name-2">Procurement Package A</div><div class="td-val-2">Jun 14</div><div class="td-val-2">R120M</div><div><span class="pill-2 p2-act">Active</span></div></div>
+            <div class="trow-2"><div class="td-name-2">Foundation Works</div><div class="td-val-2">May 30</div><div class="td-val-2">R48M</div><div><span class="pill-2 p2-done">Done</span></div></div>
+            <div class="trow-2"><div class="td-name-2">Turbine Installation</div><div class="td-val-2">Jul 22</div><div class="td-val-2">R310M</div><div><span class="pill-2 p2-late">Delayed</span></div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+            <div style="background:#0f0f11;border:1px solid #1c1c1f;border-radius:8px;padding:10px 14px"><div style="font-size:9px;color:#3f3f46;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px">Civil Works</div><div style="height:3px;background:#27272a;border-radius:2px;overflow:hidden"><div style="width:82%;height:100%;background:#4ade80;border-radius:2px"></div></div><div style="font-size:10px;color:#4ade80;font-family:'JetBrains Mono',monospace;margin-top:5px">82%</div></div>
+            <div style="background:#0f0f11;border:1px solid #1c1c1f;border-radius:8px;padding:10px 14px"><div style="font-size:9px;color:#3f3f46;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px">Electrical</div><div style="height:3px;background:#27272a;border-radius:2px;overflow:hidden"><div style="width:41%;height:100%;background:#fbbf24;border-radius:2px"></div></div><div style="font-size:10px;color:#fbbf24;font-family:'JetBrains Mono',monospace;margin-top:5px">41%</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="option-label">
+      <div class="badge" style="background:#27272a;color:#71717a;border:1px solid #3f3f46">Alternative</div>
+      <h3>Studio</h3>
+      <p>Zinc-900 sidebar, near-black content canvas. Tighter, moodier than Midnight. More like Linear or Raycast. The sidebar uses subtle icon glyphs alongside text. Most familiar to daily-driver tool users.</p>
+    </div>
+  </div>
+
+  <!-- ──────────── OPTION 3: BRAND ──────────── -->
+  <div class="option d3" data-choice="brand" onclick="pick(this)">
+    <div class="checkmark"><svg viewBox="0 0 12 10" fill="none"><polyline points="1,5 4.5,8.5 11,1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="preview-3">
+      <div class="s3">
+        <div class="s3-head">
+          <div class="s3-logo">Open Energy</div>
+          <div class="s3-role"><div class="s3-role-dot"></div><div class="s3-role-text">IPP Developer</div></div>
+        </div>
+        <div class="s3-section">Project</div>
+        <div class="s3-item active">Schedule <span class="s3-badge-pur">P6</span></div>
+        <div class="s3-item">Cost / EVM</div>
+        <div class="s3-item">Documents</div>
+        <div class="s3-item">WBS</div>
+        <div class="s3-section">Compliance</div>
+        <div class="s3-item">Stage Gates</div>
+        <div class="s3-item">NCR <span class="s3-badge-red">3</span></div>
+        <div class="s3-item">Env Monitor</div>
+        <div class="s3-section">Finance</div>
+        <div class="s3-item">Drawdowns</div>
+        <div class="s3-item">Bonds</div>
+      </div>
+      <div class="m3">
+        <div class="m3-bar">
+          <div><div class="m3-title">Schedule</div><div class="m3-sub">Cosmos Wind Farm · Phase 2</div></div>
+          <div class="m3-btn">+ New Task</div>
+        </div>
+        <div class="m3-body">
+          <div class="kpi-strip-3">
+            <div class="kpi-3"><div class="kpi-name-3">SPI</div><div class="kpi-num-3" style="color:#86efac">0.97</div></div>
+            <div class="kpi-3"><div class="kpi-name-3">CPI</div><div class="kpi-num-3" style="color:#fde68a">0.89</div></div>
+            <div class="kpi-3"><div class="kpi-name-3">EAC</div><div class="kpi-num-3" style="color:#ede9fe">R890M</div></div>
+            <div class="kpi-3"><div class="kpi-name-3">SLA</div><div class="kpi-num-3" style="color:#c4b5fd">14d</div></div>
+          </div>
+          <div class="table-3">
+            <div class="thead-3"><div class="th-3">Task</div><div class="th-3">Due</div><div class="th-3">Value</div><div class="th-3">Status</div></div>
+            <div class="trow-3"><div class="td-name-3">Procurement Package A</div><div class="td-val-3">Jun 14</div><div class="td-val-3">R120M</div><div><span class="pill-3 p3-act">Active</span></div></div>
+            <div class="trow-3"><div class="td-name-3">Foundation Works</div><div class="td-val-3">May 30</div><div class="td-val-3">R48M</div><div><span class="pill-3 p3-done">Done</span></div></div>
+            <div class="trow-3"><div class="td-name-3">Turbine Installation</div><div class="td-val-3">Jul 22</div><div class="td-val-3">R310M</div><div><span class="pill-3 p3-late">Delayed</span></div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+            <div style="background:rgba(126,87,194,0.04);border:1px solid rgba(126,87,194,0.1);border-radius:8px;padding:10px 14px"><div style="font-size:9px;color:rgba(126,87,194,0.35);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:5px">Civil Works</div><div style="height:3px;background:rgba(126,87,194,0.08);border-radius:2px;overflow:hidden"><div style="width:82%;height:100%;background:#86efac;border-radius:2px"></div></div><div style="font-size:10px;color:#86efac;font-family:'JetBrains Mono',monospace;margin-top:5px">82%</div></div>
+            <div style="background:rgba(126,87,194,0.04);border:1px solid rgba(126,87,194,0.1);border-radius:8px;padding:10px 14px"><div style="font-size:9px;color:rgba(126,87,194,0.35);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:5px">Electrical</div><div style="height:3px;background:rgba(126,87,194,0.08);border-radius:2px;overflow:hidden"><div style="width:41%;height:100%;background:#fde68a;border-radius:2px"></div></div><div style="font-size:10px;color:#fde68a;font-family:'JetBrains Mono',monospace;margin-top:5px">41%</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="option-label">
+      <div class="badge" style="background:rgba(126,87,194,0.12);color:#c4b5fd;border:1px solid rgba(126,87,194,0.2)">Brand Forward</div>
+      <h3>Brand</h3>
+      <p>Purple (#7e57c2) is the dominant design material, not just an accent. Gradient sidebar header, tinted card borders throughout. Feels like a bespoke product built for this platform specifically.</p>
+    </div>
+  </div>
+
+</div>
+
+<p style="margin-top:28px;font-size:12px;color:#272b36">Click a direction. All three use the same sidebar structure you picked. This is about character, not layout.</p>
+
+</body>
+</html>

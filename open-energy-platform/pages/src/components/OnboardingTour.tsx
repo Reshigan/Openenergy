@@ -61,13 +61,13 @@ export function OnboardingTour({ scope, steps }: Props) {
           <div className="font-semibold text-[14px] text-[#0f1c2e]">{step.title}</div>
           <div className="text-[12px] text-[#3a4658] mt-1 leading-relaxed">{step.body}</div>
         </div>
-        <button onClick={() => setSkip(true)} aria-label="Skip tour" className="text-[#6b7685] hover:text-[#0f1c2e] flex-none">
+        <button type="button" onClick={() => setSkip(true)} aria-label="Skip tour" className="text-[#6b7685] hover:text-[#0f1c2e] flex-none">
           <X size={14}/>
         </button>
       </div>
       <div className="flex justify-end mt-3 gap-2">
-        <button onClick={() => setSkip(true)} className="h-8 px-3 text-[11px] text-[#6b7685] hover:text-[#0f1c2e]">Skip</button>
-        <button onClick={() => void advance()} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[11px] font-semibold inline-flex items-center gap-1">
+        <button type="button" onClick={() => setSkip(true)} className="h-8 px-3 text-[11px] text-[#6b7685] hover:text-[#0f1c2e]">Skip</button>
+        <button type="button" onClick={() => void advance()} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[11px] font-semibold inline-flex items-center gap-1">
           {step.cta || 'Got it'} <ArrowRight size={12}/>
         </button>
       </div>

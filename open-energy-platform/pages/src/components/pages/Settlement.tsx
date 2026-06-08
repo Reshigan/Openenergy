@@ -275,7 +275,7 @@ export function Settlement() {
       title="Settlement"
       subtitle="Invoices, payments, reconciliation and disputes."
       actions={
-        <button onClick={() => void refreshAll()} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
+        <button type="button" onClick={() => void refreshAll()} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
           <RefreshCw className="w-4 h-4" />
         </button>
       }
@@ -304,7 +304,7 @@ export function Settlement() {
           ...(user && ['admin', 'support'].includes(user.role)
             ? [{ k: 'margin-gate' as Tab, label: 'Margin gate' }] : []),
         ]) as Array<{ k: Tab; label: string }>).map(t => (
-          <button
+          <button type="button"
             key={t.k}
             onClick={() => { setTab(t.k); setStatusFilter('all'); }}
             className={`pb-3 border-b-2 transition-colors ${tab === t.k ? 'border-ionex-brand text-ionex-brand font-semibold' : 'border-transparent text-ionex-text-mute hover:text-gray-900'}`}
@@ -318,11 +318,11 @@ export function Settlement() {
         <div className="flex flex-wrap gap-2 items-center">
           <span className="text-sm text-ionex-text-mute">Direction:</span>
           {(['all', 'incoming', 'outgoing'] as const).map(d => (
-            <button key={d} onClick={() => setDirectionFilter(d)} className={`px-3 py-1 rounded-full text-xs capitalize ${directionFilter === d ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{d}</button>
+            <button type="button" key={d} onClick={() => setDirectionFilter(d)} className={`px-3 py-1 rounded-full text-xs capitalize ${directionFilter === d ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{d}</button>
           ))}
           <span className="text-sm text-ionex-text-mute ml-3">Status:</span>
           {(['all', 'issued', 'partial', 'paid', 'overdue', 'disputed'] as const).map(s => (
-            <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${statusFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s}</button>
+            <button type="button" key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${statusFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s}</button>
           ))}
         </div>
       )}
@@ -331,7 +331,7 @@ export function Settlement() {
         <div className="flex flex-wrap gap-2 items-center">
           <span className="text-sm text-ionex-text-mute">Status:</span>
           {(['all', 'open', 'under_review', 'resolved', 'rejected'] as const).map(s => (
-            <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${statusFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s.replace(/_/g, ' ')}</button>
+            <button type="button" key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${statusFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s.replace(/_/g, ' ')}</button>
           ))}
         </div>
       )}
@@ -340,7 +340,7 @@ export function Settlement() {
         <div className="flex flex-wrap gap-2 items-center">
           <span className="text-sm text-ionex-text-mute">Status:</span>
           {(['all', 'open', 'investigating', 'resolved', 'rejected'] as const).map(s => (
-            <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${statusFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s.replace(/_/g, ' ')}</button>
+            <button type="button" key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${statusFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s.replace(/_/g, ' ')}</button>
           ))}
         </div>
       )}
@@ -464,23 +464,23 @@ function InvoiceTable({ rows, userId, onPay, onDispute, onBreak, onAfterConfirm 
                 <Td>
                   <div className="flex gap-1">
                     {canIssuerConfirm && (
-                      <button
+                      <button type="button"
                         onClick={async () => { try { await postConfirm(r.id, 'issuer', 'confirmed'); onAfterConfirm?.(); } catch { /* surface via reload */ } }}
                         className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded"
                         title="Issuer confirms this invoice is correct as issued"
                       >Confirm</button>
                     )}
                     {canPayerAck && (
-                      <button
+                      <button type="button"
                         onClick={async () => { try { await postConfirm(r.id, 'payer', 'confirmed'); onAfterConfirm?.(); } catch { /* surface via reload */ } }}
                         className="px-2 py-1 text-xs bg-green-50 text-green-700 rounded"
                         title="Payer acknowledges this invoice"
                       >Acknowledge</button>
                     )}
-                    {canPay && <button onClick={() => onPay(r)} className="px-2 py-1 text-xs bg-ionex-brand text-white rounded">Pay</button>}
-                    {canDispute && <button onClick={() => onDispute(r)} className="px-2 py-1 text-xs bg-red-50 text-red-700 rounded">Dispute</button>}
+                    {canPay && <button type="button" onClick={() => onPay(r)} className="px-2 py-1 text-xs bg-ionex-brand text-white rounded">Pay</button>}
+                    {canDispute && <button type="button" onClick={() => onDispute(r)} className="px-2 py-1 text-xs bg-red-50 text-red-700 rounded">Dispute</button>}
                     {onBreak && (isPayer || isIssuer) && r.status !== 'cancelled' && (
-                      <button onClick={() => onBreak(r)} className="px-2 py-1 text-xs bg-amber-50 text-amber-800 rounded" title="File a settlement break">Break</button>
+                      <button type="button" onClick={() => onBreak(r)} className="px-2 py-1 text-xs bg-amber-50 text-amber-800 rounded" title="File a settlement break">Break</button>
                     )}
                     {isIssuer && !canPay && !onBreak && !canIssuerConfirm && !canPayerAck && <span className="text-xs text-ionex-text-mute">—</span>}
                   </div>
@@ -515,7 +515,7 @@ function PaymentTable({ rows, userId, onReconcile }: { rows: Payment[]; userId?:
                 <Td>{new Date(p.payment_date).toLocaleDateString()}</Td>
                 <Td className="font-mono text-xs">{p.bank_reference || '—'}</Td>
                 <Td>{p.reconciled ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <Clock className="w-4 h-4 text-amber-500" />}</Td>
-                <Td>{canReconcile && <button onClick={() => onReconcile(p)} className="px-2 py-1 text-xs bg-ionex-brand text-white rounded">Reconcile</button>}</Td>
+                <Td>{canReconcile && <button type="button" onClick={() => onReconcile(p)} className="px-2 py-1 text-xs bg-ionex-brand text-white rounded">Reconcile</button>}</Td>
               </tr>
             );
           })}
@@ -602,8 +602,8 @@ function RecordPaymentModal({ invoice, onClose, onDone }: { invoice: Invoice; on
       <LabelInput label="Bank reference (optional)" value={bankRef} onChange={setBankRef} />
       <LabelInput label="Notes (optional)" value={notes} onChange={setNotes} />
       <div className="flex justify-end gap-2 pt-4">
-        <button onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
-        <button onClick={submit} disabled={saving} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50">
+        <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+        <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50">
           {saving ? 'Recording…' : 'Record payment'}
         </button>
       </div>
@@ -644,8 +644,8 @@ function FileDisputeModal({ invoice, onClose, onDone }: { invoice: Invoice; onCl
         />
       </label>
       <div className="flex justify-end gap-2 pt-4">
-        <button onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
-        <button onClick={submit} disabled={saving} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
+        <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+        <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
           {saving ? 'Filing…' : 'File dispute'}
         </button>
       </div>
@@ -660,7 +660,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5">{children}</div>
       </div>
@@ -717,12 +717,12 @@ function BreaksTable({
               <Td>
                 <div className="flex gap-1">
                   {b.status === 'open' && (
-                    <button onClick={() => onTransition(b.id, 'investigating', '')} className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded">Investigate</button>
+                    <button type="button" onClick={() => onTransition(b.id, 'investigating', '')} className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded">Investigate</button>
                   )}
                   {(b.status === 'open' || b.status === 'investigating') && (
                     <>
-                      <button onClick={() => setTransitioning({ ...b, status: 'resolved' as any })} className="px-2 py-1 text-xs bg-green-50 text-green-700 rounded">Resolve</button>
-                      <button onClick={() => setTransitioning({ ...b, status: 'rejected' as any })} className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">Reject</button>
+                      <button type="button" onClick={() => setTransitioning({ ...b, status: 'resolved' as any })} className="px-2 py-1 text-xs bg-green-50 text-green-700 rounded">Resolve</button>
+                      <button type="button" onClick={() => setTransitioning({ ...b, status: 'rejected' as any })} className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">Reject</button>
                     </>
                   )}
                   {(b.status === 'resolved' || b.status === 'rejected') && (
@@ -795,8 +795,8 @@ function ResolveBreakModal({
         <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4} placeholder="What changed? Required ≥3 chars." className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg resize-none" />
       </label>
       <div className="flex justify-end gap-2 pt-4">
-        <button onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
-        <button onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${isResolved ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}>
+        <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+        <button type="button" onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${isResolved ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}>
           {saving ? 'Saving…' : (isResolved ? 'Resolve' : 'Reject')}
         </button>
       </div>
@@ -862,8 +862,8 @@ function FileBreakModal({ invoice, onClose, onDone }: { invoice: Invoice; onClos
         <textarea value={reason} onChange={e => setReason(e.target.value)} rows={4} placeholder="What disagreement? At least 3 characters." className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg resize-none" />
       </label>
       <div className="flex justify-end gap-2 pt-4">
-        <button onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
-        <button onClick={submit} disabled={saving} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50">
+        <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+        <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50">
           {saving ? 'Filing…' : 'File break'}
         </button>
       </div>
@@ -924,10 +924,10 @@ function ConfirmationsQueue({
                         <Td>
                           <div className="flex gap-1">
                             {canIssuerConfirm && (
-                              <button onClick={async () => { try { await postConfirm(r.id, 'issuer', 'confirmed'); onAfterAction(); } catch { /* */ } }} className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded">Confirm</button>
+                              <button type="button" onClick={async () => { try { await postConfirm(r.id, 'issuer', 'confirmed'); onAfterAction(); } catch { /* */ } }} className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded">Confirm</button>
                             )}
                             {canPayerAck && (
-                              <button onClick={async () => { try { await postConfirm(r.id, 'payer', 'confirmed'); onAfterAction(); } catch { /* */ } }} className="px-2 py-1 text-xs bg-green-50 text-green-700 rounded">Acknowledge</button>
+                              <button type="button" onClick={async () => { try { await postConfirm(r.id, 'payer', 'confirmed'); onAfterAction(); } catch { /* */ } }} className="px-2 py-1 text-xs bg-green-50 text-green-700 rounded">Acknowledge</button>
                             )}
                             {!canIssuerConfirm && !canPayerAck && (
                               <span className="text-xs text-ionex-text-mute">—</span>

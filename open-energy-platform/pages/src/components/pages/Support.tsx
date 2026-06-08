@@ -233,7 +233,7 @@ export function Support() {
             <ul className="divide-y divide-ionex-border-100 max-h-[640px] overflow-auto">
               {results.map(p => (
                 <li key={p.id}>
-                  <button
+                  <button type="button"
                     onClick={() => void loadDetail(p)}
                     className={`w-full text-left px-4 py-3 hover:bg-ionex-bg-50 ${selected?.id === p.id ? 'bg-ionex-primary-50' : ''}`}
                   >
@@ -267,21 +267,21 @@ export function Support() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button
+                    <button type="button"
                       onClick={() => void issueResetLink()}
                       disabled={busy === 'reset'}
                       className="inline-flex items-center gap-1 px-3 py-1.5 text-sm border border-ionex-border-200 rounded-lg hover:bg-ionex-bg-50"
                     >
                       <KeyRound size={14} /> Reset link
                     </button>
-                    <button
+                    <button type="button"
                       onClick={() => void unlock()}
                       disabled={busy === 'unlock'}
                       className="inline-flex items-center gap-1 px-3 py-1.5 text-sm border border-ionex-border-200 rounded-lg hover:bg-ionex-bg-50"
                     >
                       <Unlock size={14} /> Clear lockout
                     </button>
-                    <button
+                    <button type="button"
                       onClick={() => void impersonate()}
                       disabled={busy === 'impersonate' || selected.role === 'admin' || selected.role === 'support'}
                       title={selected.role === 'admin' || selected.role === 'support' ? 'Cannot impersonate admin/support' : 'Start time-boxed impersonation'}
@@ -327,7 +327,7 @@ export function Support() {
                           </td>
                           <td className="px-3 py-2 text-right">
                             {!s.revoked_at && (
-                              <button
+                              <button type="button"
                                 onClick={() => void revokeSession(s.id)}
                                 disabled={busy === `revoke-${s.id}`}
                                 className="text-xs px-2 py-1 text-red-600 hover:bg-red-50 rounded"

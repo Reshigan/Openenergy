@@ -346,11 +346,11 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
         </select>
         <span className="text-xs text-gray-400 ml-auto">{filtered.length} lessons</span>
         {!readOnly && (
-          <button className="text-xs bg-blue-600 text-white rounded px-3 py-1 hover:bg-blue-700" onClick={() => setShowCreate(true)}>
+          <button type="button" className="text-xs bg-blue-600 text-white rounded px-3 py-1 hover:bg-blue-700" onClick={() => setShowCreate(true)}>
             + Add lesson
           </button>
         )}
-        <button className="text-xs border rounded px-2 py-1 hover:bg-gray-50" onClick={load}>Refresh</button>
+        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-gray-50" onClick={load}>Refresh</button>
       </div>
 
       {actionResult && (
@@ -436,7 +436,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
                   </td>
                   {!readOnly && (
                     <td className="px-3 py-2">
-                      <button className="text-xs text-blue-600 hover:underline" onClick={e => { e.stopPropagation(); setSelected(row); }}>Manage</button>
+                      <button type="button" className="text-xs text-blue-600 hover:underline" onClick={e => { e.stopPropagation(); setSelected(row); }}>Manage</button>
                     </td>
                   )}
                 </tr>
@@ -471,7 +471,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
                 <h3 className="font-semibold text-gray-900">{selected.lesson_title}</h3>
                 <p className="text-xs text-gray-400 font-mono mt-0.5">{selected.id} · {selected.project_name ?? selected.project_id}</p>
               </div>
-              <button className="text-gray-400 hover:text-gray-600 text-xl" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
+              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
             </div>
 
             {/* W135 SIGNATURE warning */}
@@ -569,7 +569,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
                 <p className="text-xs font-medium text-gray-500 mb-2">Available actions</p>
                 <div className="flex flex-wrap gap-2">
                   {(ACTIONS[selected.chain_status] ?? []).map(({ action, label, danger }) => (
-                    <button
+                    <button type="button"
                       key={action}
                       disabled={actionLoading}
                       className={`text-xs px-3 py-1.5 rounded font-medium transition
@@ -596,7 +596,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
           <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">Add lesson learned</h3>
-              <button className="text-gray-400 hover:text-gray-600 text-xl" onClick={() => setShowCreate(false)}>×</button>
+              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl" onClick={() => setShowCreate(false)}>×</button>
             </div>
 
             {/* SIGNATURE warning in create form */}
@@ -709,8 +709,8 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
             {error && <div className="text-xs text-red-600 mt-3">{error}</div>}
 
             <div className="flex justify-end gap-2 mt-4">
-              <button className="text-xs border rounded px-3 py-1.5 hover:bg-gray-50" onClick={() => setShowCreate(false)}>Cancel</button>
-              <button
+              <button type="button" className="text-xs border rounded px-3 py-1.5 hover:bg-gray-50" onClick={() => setShowCreate(false)}>Cancel</button>
+              <button type="button"
                 className="text-xs bg-blue-600 text-white rounded px-3 py-1.5 hover:bg-blue-700 disabled:opacity-50"
                 disabled={!newTitle || !newProject || !newDescription || createLoading}
                 onClick={handleCreate}

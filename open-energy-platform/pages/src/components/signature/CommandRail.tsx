@@ -54,7 +54,7 @@ export function CommandRail({ items, ariaLabel = 'Command rail' }: CommandRailPr
       }}
     >
       {items.map((item) => (
-        <button
+        <button type="button"
           key={item.key}
           onClick={item.onTrigger}
           style={{

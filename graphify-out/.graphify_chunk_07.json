@@ -1,0 +1,79 @@
+{
+  "nodes": [
+    {
+      "id": "oe-icon-192",
+      "label": "OE Icon 192x192",
+      "type": "icon",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-192.png",
+      "summary": "192x192 PNG app icon for Open Energy Platform. Shows two interlocking circular arcs forming an abstract logo — one in medium blue and one in dark navy — with a small teal/green eye-like dot accent at their intersection. Light grey background. No visible text."
+    },
+    {
+      "id": "open-energy-platform",
+      "label": "Open Energy Platform",
+      "type": "application",
+      "file": "open-energy-platform/",
+      "summary": "South African energy exchange platform (power trading, carbon, IPP lifecycle, settlement, regulatory compliance)."
+    },
+    {
+      "id": "brand-color-blue",
+      "label": "Brand Color: Medium Blue",
+      "type": "brand_element",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-192.png",
+      "summary": "Medium/steel blue (#3A7BC8 approx) used for the larger outer arc in the OE icon."
+    },
+    {
+      "id": "brand-color-navy",
+      "label": "Brand Color: Dark Navy",
+      "type": "brand_element",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-192.png",
+      "summary": "Dark navy blue (#1B2E4B approx) used for the inner/secondary arc in the OE icon."
+    },
+    {
+      "id": "brand-color-teal",
+      "label": "Brand Color: Teal/Green Accent",
+      "type": "brand_element",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-192.png",
+      "summary": "Small teal/green dot (#2ABFA3 approx) accent visible at the intersection of the two arcs, suggesting an 'eye' or focal point motif."
+    },
+    {
+      "id": "pwa-manifest-icon",
+      "label": "PWA Manifest Icon (192px)",
+      "type": "asset_role",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-192.png",
+      "summary": "192px is a standard PWA manifest icon size used for home-screen and splash-screen display on mobile devices."
+    }
+  ],
+  "edges": [
+    {
+      "source": "oe-icon-192",
+      "target": "open-energy-platform",
+      "label": "is_icon_for",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "oe-icon-192",
+      "target": "brand-color-blue",
+      "label": "uses_color",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-icon-192",
+      "target": "brand-color-navy",
+      "label": "uses_color",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-icon-192",
+      "target": "brand-color-teal",
+      "label": "uses_color",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-icon-192",
+      "target": "pwa-manifest-icon",
+      "label": "serves_role",
+      "confidence": "INFERRED"
+    }
+  ],
+  "hyperedges": []
+}

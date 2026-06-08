@@ -119,7 +119,7 @@ export function EsumsSiteDetailPage() {
         <Link to="/esums" className="text-[11px] text-[#6b7685] hover:text-[#0f1c2e] inline-flex items-center gap-1">
           <ArrowLeft size={12}/> Back to fleet
         </Link>
-        <button onClick={load} className="ml-auto h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1">
+        <button type="button" onClick={load} className="ml-auto h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1">
           <RefreshCw size={11}/> Refresh
         </button>
       </div>
@@ -133,7 +133,7 @@ export function EsumsSiteDetailPage() {
           ['tools', 'Tools', Calculator],
           ['print', 'Print packs', FileText],
         ] as const).map(([k, label, Icon]) => (
-          <button key={k} onClick={() => setTab(k)}
+          <button type="button" key={k} onClick={() => setTab(k)}
             className={`h-9 px-3 text-[12px] font-semibold inline-flex items-center gap-1.5 border-b-2 -mb-px ${
               tab === k ? 'border-[#1a3a5c] text-[#1a3a5c]' : 'border-transparent text-[#6b7685] hover:text-[#0f1c2e]'
             }`}>
@@ -252,7 +252,7 @@ function LiveTab({ siteId }: { siteId: string }) {
         <Radio size={11} className={loading ? 'animate-pulse text-[#1a8a5b]' : 'text-[#1a8a5b]'}/>
         <span>Auto-refresh every 30s</span>
         {lastAt && <span className="font-mono">· last {new Date(lastAt).toLocaleTimeString('en-ZA', { timeZone: 'Africa/Johannesburg' })}</span>}
-        <button onClick={load} className="ml-auto h-7 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1">
+        <button type="button" onClick={load} className="ml-auto h-7 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1">
           <RefreshCw size={11}/> Refresh now
         </button>
       </div>

@@ -47,7 +47,7 @@ export function DepthOpsPage() {
           { k: 'watchlist', label: 'Watchlist',      icon: <AlertTriangle size={13} /> },
           { k: 'pdd',       label: 'Carbon PDDs',    icon: <Leaf         size={13} /> },
         ] as Array<{ k: Tab; label: string; icon: React.ReactNode }>).map((t) => (
-          <button key={t.k} onClick={() => setTab(t.k)}
+          <button type="button" key={t.k} onClick={() => setTab(t.k)}
             className={`h-10 px-3 text-[12px] font-semibold inline-flex items-center gap-1 border-b-2 transition-colors ${tab === t.k ? 'border-[#3b82c4] text-[#3b82c4]' : 'border-transparent text-[#6b7685] hover:text-[#0f1c2e]'}`}>
             {t.icon} {t.label}
           </button>
@@ -105,7 +105,7 @@ function AlgosTab() {
           <input type="datetime-local" value={draft.start_at} onChange={(e) => setDraft({ ...draft, start_at: e.target.value })} className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]" />
           <input type="datetime-local" value={draft.end_at}   onChange={(e) => setDraft({ ...draft, end_at: e.target.value })}   className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]" />
         </div>
-        <div className="px-3 pb-3"><button onClick={submit} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Submit algo</button></div>
+        <div className="px-3 pb-3"><button type="button" onClick={submit} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Submit algo</button></div>
       </Section>
       <Section title={`Active algos (${rows.length})`}>
         <Table headers={['Algo', 'Side', 'Volume', 'Filled', 'Window', 'Status', '']}>
@@ -118,9 +118,9 @@ function AlgosTab() {
               <td className="font-mono text-[10px]">{new Date(r.start_at).toLocaleString()} → {new Date(r.end_at).toLocaleString()}</td>
               <td><Pill status={r.status} /></td>
               <td className="text-right space-x-2">
-                {r.status === 'running' && <button onClick={async () => { await api.post(`/trading-deep/algos/${r.id}/pause`, {}); void load(); }} className="text-[11px]">Pause</button>}
-                {r.status === 'paused'  && <button onClick={async () => { await api.post(`/trading-deep/algos/${r.id}/resume`, {}); void load(); }} className="text-[11px]">Resume</button>}
-                {!['completed','cancelled'].includes(r.status) && <button onClick={async () => { await api.post(`/trading-deep/algos/${r.id}/cancel`, {}); void load(); }} className="text-[11px] text-[#c0392b]">Cancel</button>}
+                {r.status === 'running' && <button type="button" onClick={async () => { await api.post(`/trading-deep/algos/${r.id}/pause`, {}); void load(); }} className="text-[11px]">Pause</button>}
+                {r.status === 'paused'  && <button type="button" onClick={async () => { await api.post(`/trading-deep/algos/${r.id}/resume`, {}); void load(); }} className="text-[11px]">Resume</button>}
+                {!['completed','cancelled'].includes(r.status) && <button type="button" onClick={async () => { await api.post(`/trading-deep/algos/${r.id}/cancel`, {}); void load(); }} className="text-[11px] text-[#c0392b]">Cancel</button>}
               </td>
             </tr>
           ))}
@@ -158,8 +158,8 @@ function LimitsTab() {
               <td className="text-right space-x-2">
                 {b.status === 'open' && (
                   <>
-                    <button onClick={async () => { await api.post(`/trading-deep/breaches/${b.id}/clear`, {}); void load(); }} className="text-[11px] widget-tone-good-text">Clear</button>
-                    <button onClick={() => override(b.id)} className="text-[11px] widget-tone-bad-text">Override</button>
+                    <button type="button" onClick={async () => { await api.post(`/trading-deep/breaches/${b.id}/clear`, {}); void load(); }} className="text-[11px] widget-tone-good-text">Clear</button>
+                    <button type="button" onClick={() => override(b.id)} className="text-[11px] widget-tone-bad-text">Override</button>
                   </>
                 )}
               </td>
@@ -224,9 +224,9 @@ function CyclesTab() {
             <td className="text-right font-mono">{r.netting_efficiency != null ? `${(r.netting_efficiency * 100).toFixed(1)}%` : '—'}</td>
             <td><Pill status={r.status} /></td>
             <td className="text-right space-x-1">
-              {r.status === 'open'           && <button onClick={() => action(r.id, 'net')}     className="text-[11px] text-[#3b82c4]">Net</button>}
-              {r.status === 'net_calculated' && <button onClick={() => action(r.id, 'novate')}  className="text-[11px] text-[#3b82c4]">Novate</button>}
-              {r.status === 'novated'        && <button onClick={() => action(r.id, 'settle')} className="text-[11px] widget-tone-good-text font-semibold">Settle</button>}
+              {r.status === 'open'           && <button type="button" onClick={() => action(r.id, 'net')}     className="text-[11px] text-[#3b82c4]">Net</button>}
+              {r.status === 'net_calculated' && <button type="button" onClick={() => action(r.id, 'novate')}  className="text-[11px] text-[#3b82c4]">Novate</button>}
+              {r.status === 'novated'        && <button type="button" onClick={() => action(r.id, 'settle')} className="text-[11px] widget-tone-good-text font-semibold">Settle</button>}
             </td>
           </tr>
         ))}
@@ -282,7 +282,7 @@ function DrawdownsTab() {
               <td className="font-mono text-[11px]">{r.project_id}</td>
               <td className="text-right font-mono">{formatZAR(r.requested_amount_zar)}</td>
               <td><Pill status={r.status} /></td>
-              <td className="text-right"><button onClick={() => open(r.id)} className="text-[11px] text-[#3b82c4]">{expanded === r.id ? 'Hide CPs' : 'View CPs'}</button></td>
+              <td className="text-right"><button type="button" onClick={() => open(r.id)} className="text-[11px] text-[#3b82c4]">{expanded === r.id ? 'Hide CPs' : 'View CPs'}</button></td>
             </tr>
             {expanded === r.id && (
               <tr><td colSpan={5} className="px-3 py-2 bg-[#f8fafc]">
@@ -325,7 +325,7 @@ function LdsTab() {
               <td className="text-right font-mono">{formatZAR(r.accrued_amount_zar)}</td>
               <td className="text-right font-mono">{formatZAR(cap)}</td>
               <td><Pill status={r.status} /></td>
-              <td className="text-right">{r.status === 'accruing' && <button onClick={() => accrue(r.id)} className="text-[11px] text-[#3b82c4]">Accrue now</button>}</td>
+              <td className="text-right">{r.status === 'accruing' && <button type="button" onClick={() => accrue(r.id)} className="text-[11px] text-[#3b82c4]">Accrue now</button>}</td>
             </tr>
           );
         })}
@@ -379,7 +379,7 @@ function WatchlistTab() {
             <td><span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${r.watchlist_tier === 1 ? 'widget-tone-info' : r.watchlist_tier === 2 ? 'widget-tone-amber' : 'widget-tone-bad'}`}>T{r.watchlist_tier}</span></td>
             <td>{r.trigger_signal.replace(/_/g, ' ')}</td>
             <td className="font-mono text-[10px]">{r.next_review_at ? new Date(r.next_review_at).toLocaleDateString() : '—'}</td>
-            <td className="text-right"><button onClick={async () => { await api.post(`/lender-deep/watchlist/${r.id}/clear`, {}); void load(); }} className="text-[11px] widget-tone-good-text">Clear</button></td>
+            <td className="text-right"><button type="button" onClick={async () => { await api.post(`/lender-deep/watchlist/${r.id}/clear`, {}); void load(); }} className="text-[11px] widget-tone-good-text">Clear</button></td>
           </tr>
         ))}
         {!rows.length && <Empty cols={7} />}

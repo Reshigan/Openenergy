@@ -193,7 +193,7 @@ export function IppChangeOfControlTab() {
         </select>
         <span className="text-gray-300">|</span>
         {TIERS.map(t => (
-          <button
+          <button type="button"
             key={t}
             onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt, filterForeign); }}
             className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white border-indigo-700' : 'bg-white text-gray-600 border-gray-300'}`}
@@ -203,7 +203,7 @@ export function IppChangeOfControlTab() {
         ))}
         <span className="text-gray-300">|</span>
         {(['all', 'domestic', 'foreign'] as const).map(f => (
-          <button
+          <button type="button"
             key={f}
             onClick={() => { setFilterForeign(f); load(filterStatus, filterTier, f); }}
             className={`px-2 py-1 rounded text-xs border ${filterForeign === f ? 'bg-purple-700 text-white border-purple-700' : 'bg-white text-gray-600 border-gray-300'}`}
@@ -211,13 +211,13 @@ export function IppChangeOfControlTab() {
             {f === 'all' ? 'All ownership' : f === 'foreign' ? '🌍 Foreign' : 'Domestic'}
           </button>
         ))}
-        <button
+        <button type="button"
           onClick={() => setShowCreate(true)}
           className="ml-auto px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700"
         >
           + New notification
         </button>
-        <button
+        <button type="button"
           onClick={() => load(filterStatus, filterTier, filterForeign)}
           className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
         >
@@ -311,7 +311,7 @@ export function IppChangeOfControlTab() {
                   {selected.foreign_ownership_flag !== 'domestic' && <span className="ml-1">🌍 {selected.foreign_ownership_flag}</span>}
                 </div>
               </div>
-              <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-700 text-lg leading-none">✕</button>
+              <button type="button" onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-700 text-lg leading-none">✕</button>
             </div>
             {selected.description && (
               <div className="text-sm text-gray-600 bg-gray-50 rounded p-3 mb-4">{selected.description}</div>
@@ -419,14 +419,14 @@ export function IppChangeOfControlTab() {
               />
             </div>
             <div className="flex gap-2 mt-4">
-              <button
+              <button type="button"
                 onClick={createNotification}
                 disabled={createPending || !form.project_id || !form.acquirer_name}
                 className="px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
               >
                 {createPending ? 'Submitting…' : 'Submit notification'}
               </button>
-              <button
+              <button type="button"
                 onClick={() => setShowCreate(false)}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200"
               >

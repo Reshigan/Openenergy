@@ -117,7 +117,7 @@ export function ThreadPanel({
                   <div className="text-[13px] text-[#3d4756] whitespace-pre-wrap mt-0.5">{t.content}</div>
                 </div>
                 {currentParticipantId && t.participant_id === currentParticipantId && (
-                  <button onClick={() => del(t.id)} title="Delete" className="p-1 text-[#6b7685] hover:text-[#c0392b]">
+                  <button type="button" onClick={() => del(t.id)} title="Delete" className="p-1 text-[#6b7685] hover:text-[#c0392b]">
                     <Trash2 size={12} />
                   </button>
                 )}
@@ -136,7 +136,7 @@ export function ThreadPanel({
             className="w-full px-3 py-2 border border-[#dde4ec] rounded-lg text-[12px] resize-none"
           />
           <div className="flex justify-end mt-2">
-            <button
+            <button type="button"
               onClick={post}
               disabled={sending || !draft.trim()}
               className="h-8 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-2 disabled:opacity-50"

@@ -456,7 +456,7 @@ export function AlgoCertChainTab() {
 
       <div className="mb-3 flex flex-wrap gap-1.5">
         {FILTERS.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -579,7 +579,7 @@ function Drawer({
                 {TIER_TONE[row.algo_tier].label} · {row.system_type} · {row.strategy_class ?? '—'} · {fmtZarM(row.authorised_notional_zar_m)}
               </div>
             </div>
-            <button onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
+            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
           </div>
         </header>
 
@@ -685,7 +685,7 @@ function Drawer({
             <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
             <div className="flex flex-wrap gap-2">
               {nextAction && (
-                <button
+                <button type="button"
                   onClick={() => onAct(nextAction, row)}
                   className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a3a5c]"
                 >
@@ -693,7 +693,7 @@ function Drawer({
                 </button>
               )}
               {canKill && (
-                <button
+                <button type="button"
                   onClick={() => onAct('invoke-kill-switch', row)}
                   className="rounded bg-[#7a0e0e] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#9b1f1f]"
                 >
@@ -701,7 +701,7 @@ function Drawer({
                 </button>
               )}
               {canRemediate && (
-                <button
+                <button type="button"
                   onClick={() => onAct('require-remediation', row)}
                   className="rounded border border-[#e0b070] bg-white px-3 py-1.5 text-[12px] font-medium text-[#8a4a00] hover:bg-[#fffaf0]"
                 >
@@ -709,7 +709,7 @@ function Drawer({
                 </button>
               )}
               {canReject && (
-                <button
+                <button type="button"
                   onClick={() => onAct('reject-certification', row)}
                   className="rounded border border-[#e09b9b] bg-white px-3 py-1.5 text-[12px] font-medium text-[#9b1f1f] hover:bg-[#fdf0f0]"
                 >
@@ -717,7 +717,7 @@ function Drawer({
                 </button>
               )}
               {canDecommission && (
-                <button
+                <button type="button"
                   onClick={() => onAct('decommission', row)}
                   className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#4a5568] hover:bg-[#f3f5f9]"
                 >

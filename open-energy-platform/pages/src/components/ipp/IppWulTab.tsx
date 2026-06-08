@@ -221,7 +221,7 @@ export function IppWulTab() {
             <option key={c} value={c}>{TRIGGER_LABELS[c]}</option>
           ))}
         </select>
-        <button
+        <button type="button"
           onClick={() => load()}
           className="ml-auto px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
         >
@@ -322,7 +322,7 @@ export function IppWulTab() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center gap-2 pt-1">
-          <button
+          <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
             className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
@@ -332,7 +332,7 @@ export function IppWulTab() {
           <span className="text-xs text-gray-500">
             Page {page} of {totalPages}
           </span>
-          <button
+          <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
             className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"

@@ -73,14 +73,14 @@ export function VintageDetailPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => navigate('/carbon-registry/workstation')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={() => navigate('/carbon-registry/workstation')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
             <ArrowLeft size={12} /> Workstation
           </button>
-          <button onClick={() => void load()} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={() => void load()} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
             <RefreshCw size={12} /> Refresh
           </button>
           {row.current_stage !== 'retired_full' && row.current_stage !== 'expired' && (
-            <button onClick={() => setAdvancing(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+            <button type="button" onClick={() => setAdvancing(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
               Advance stage
             </button>
           )}

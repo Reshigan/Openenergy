@@ -139,7 +139,7 @@ export function Tile({ config, onClick, className = '' }: TileProps) {
       
       {/* Action button */}
       {action && !isCompact && (
-        <button
+        <button type="button"
           onClick={(e) => {
             e.stopPropagation();
             action.onClick();
@@ -164,7 +164,7 @@ export function ActionTile({ label, description, onClick }: {
   onClick: () => void;
 }) {
   return (
-    <button
+    <button type="button"
       onClick={onClick}
       className="
         w-[176px] h-[160px] rounded-[6px] p-4 flex flex-col justify-center items-center
@@ -211,7 +211,7 @@ export function SectionHeader({ title, action, actionLabel, onAction }: {
     <div className="flex items-center justify-between mb-4">
       <h2 className="text-lg font-semibold text-ionex-brand">{title}</h2>
       {action && onAction && (
-        <button 
+        <button type="button" 
           onClick={onAction}
           className="text-[13px] text-ionex-accent hover:text-ionex-accent-deep font-medium"
         >

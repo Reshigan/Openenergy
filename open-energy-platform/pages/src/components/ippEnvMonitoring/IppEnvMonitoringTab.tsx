@@ -409,25 +409,25 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
-        <select className="text-xs border rounded px-2 py-1" value={filterStatus} onChange={e => setFilterStatus(e.target.value as EnvMonitoringStatus | '')}>
+        <select aria-label="Filter by status" className="text-xs border rounded px-2 py-1" value={filterStatus} onChange={e => setFilterStatus(e.target.value as EnvMonitoringStatus | '')}>
           <option value="">All statuses</option>
           {STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
         </select>
-        <select className="text-xs border rounded px-2 py-1" value={filterTier} onChange={e => setFilterTier(e.target.value as MonitoringTier | '')}>
+        <select aria-label="Filter by tier" className="text-xs border rounded px-2 py-1" value={filterTier} onChange={e => setFilterTier(e.target.value as MonitoringTier | '')}>
           <option value="">All tiers</option>
           {MONITORING_TIERS.map(t => <option key={t} value={t}>{MONITORING_TIER_LABEL[t]}</option>)}
         </select>
-        <select className="text-xs border rounded px-2 py-1" value={filterCategory} onChange={e => setFilterCategory(e.target.value as MonitoringCategory | '')}>
+        <select aria-label="Filter by category" className="text-xs border rounded px-2 py-1" value={filterCategory} onChange={e => setFilterCategory(e.target.value as MonitoringCategory | '')}>
           <option value="">All categories</option>
           {MONITORING_CATEGORIES.map(c => <option key={c} value={c}>{MONITORING_CATEGORY_LABEL[c]}</option>)}
         </select>
         <span className="text-xs text-gray-400 ml-auto">{filtered.length} monitoring records</span>
         {!readOnly && (
-          <button className="text-xs bg-green-600 text-white rounded px-3 py-1 hover:bg-green-700" onClick={() => setShowCreate(true)}>
+          <button type="button" className="text-xs bg-green-600 text-white rounded px-3 py-1 hover:bg-green-700" onClick={() => setShowCreate(true)}>
             + Schedule monitoring
           </button>
         )}
-        <button className="text-xs border rounded px-2 py-1 hover:bg-gray-50" onClick={load}>Refresh</button>
+        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-gray-50" onClick={load}>Refresh</button>
       </div>
 
       {actionResult && (
@@ -528,7 +528,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
                     </td>
                     {!readOnly && (
                       <td className="px-3 py-2">
-                        <button
+                        <button type="button"
                           className="text-xs text-blue-600 hover:underline"
                           onClick={e => { e.stopPropagation(); setSelected(row); }}
                         >
@@ -579,7 +579,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
                   {selected.monitoring_ref ?? selected.id} · {selected.project_name ?? selected.project_id}
                 </p>
               </div>
-              <button className="text-gray-400 hover:text-gray-600 text-xl leading-none" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
+              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl leading-none" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
             </div>
 
             {/* Chain state bar */}
@@ -774,7 +774,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
                 )}
                 <div className="flex flex-wrap gap-2">
                   {(ACTIONS[selected.chain_status] ?? []).map(({ action, label, danger }) => (
-                    <button
+                    <button type="button"
                       key={action}
                       disabled={actionLoading}
                       onClick={() => handleAction(action)}
@@ -809,7 +809,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">Schedule environmental monitoring</h3>
-              <button className="text-gray-400 hover:text-gray-600 text-xl leading-none" onClick={() => setShowCreate(false)}>×</button>
+              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl leading-none" onClick={() => setShowCreate(false)}>×</button>
             </div>
 
             {/* SIGNATURE warning on create */}
@@ -829,59 +829,59 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Monitoring title *</label>
-                  <input className="text-xs border rounded px-2 py-1.5 w-full" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="e.g. PM10 monitoring — Station A" />
+                  <input aria-label="Monitoring title" className="text-xs border rounded px-2 py-1.5 w-full" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="e.g. PM10 monitoring — Station A" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Monitoring ref</label>
-                  <input className="text-xs border rounded px-2 py-1.5 w-full" value={newMonitoringRef} onChange={e => setNewMonitoringRef(e.target.value)} placeholder="e.g. K500-ENV-013" />
+                  <input aria-label="Monitoring ref" className="text-xs border rounded px-2 py-1.5 w-full" value={newMonitoringRef} onChange={e => setNewMonitoringRef(e.target.value)} placeholder="e.g. K500-ENV-013" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Project ID *</label>
-                  <input className="text-xs border rounded px-2 py-1.5 w-full" value={newProject} onChange={e => setNewProject(e.target.value)} placeholder="project-id" />
+                  <input aria-label="Project ID" className="text-xs border rounded px-2 py-1.5 w-full" value={newProject} onChange={e => setNewProject(e.target.value)} placeholder="project-id" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Project name</label>
-                  <input className="text-xs border rounded px-2 py-1.5 w-full" value={newProjectName} onChange={e => setNewProjectName(e.target.value)} placeholder="Project display name" />
+                  <input aria-label="Project name" className="text-xs border rounded px-2 py-1.5 w-full" value={newProjectName} onChange={e => setNewProjectName(e.target.value)} placeholder="Project display name" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Category *</label>
-                  <select className="text-xs border rounded px-2 py-1.5 w-full" value={newCategory} onChange={e => setNewCategory(e.target.value as MonitoringCategory)}>
+                  <select aria-label="Category" className="text-xs border rounded px-2 py-1.5 w-full" value={newCategory} onChange={e => setNewCategory(e.target.value as MonitoringCategory)}>
                     {MONITORING_CATEGORIES.map(c => <option key={c} value={c}>{MONITORING_CATEGORY_LABEL[c]}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Monitoring tier *</label>
-                  <select className="text-xs border rounded px-2 py-1.5 w-full" value={newTier} onChange={e => setNewTier(e.target.value as MonitoringTier)}>
+                  <select aria-label="Monitoring tier" className="text-xs border rounded px-2 py-1.5 w-full" value={newTier} onChange={e => setNewTier(e.target.value as MonitoringTier)}>
                     {MONITORING_TIERS.map(t => <option key={t} value={t}>{MONITORING_TIER_LABEL[t]} ({SLA_HOURS_BY_TIER[t]}h SLA)</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">EIA condition ref</label>
-                  <input className="text-xs border rounded px-2 py-1.5 w-full" value={newEiaCondRef} onChange={e => setNewEiaCondRef(e.target.value)} placeholder="e.g. EIA-2024-CON-014" />
+                  <input aria-label="EIA condition ref" className="text-xs border rounded px-2 py-1.5 w-full" value={newEiaCondRef} onChange={e => setNewEiaCondRef(e.target.value)} placeholder="e.g. EIA-2024-CON-014" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Sampling location</label>
-                  <input className="text-xs border rounded px-2 py-1.5 w-full" value={newSamplingLocation} onChange={e => setNewSamplingLocation(e.target.value)} placeholder="GPS or site description" />
+                  <input aria-label="Sampling location" className="text-xs border rounded px-2 py-1.5 w-full" value={newSamplingLocation} onChange={e => setNewSamplingLocation(e.target.value)} placeholder="GPS or site description" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Monitoring frequency</label>
-                  <input className="text-xs border rounded px-2 py-1.5 w-full" value={newFrequency} onChange={e => setNewFrequency(e.target.value)} placeholder="daily / weekly / monthly / quarterly" />
+                  <input aria-label="Monitoring frequency" className="text-xs border rounded px-2 py-1.5 w-full" value={newFrequency} onChange={e => setNewFrequency(e.target.value)} placeholder="daily / weekly / monthly / quarterly" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Parameter name</label>
-                  <input className="text-xs border rounded px-2 py-1.5 w-full" value={newParameterName} onChange={e => setNewParameterName(e.target.value)} placeholder="e.g. PM10, pH, Laeq(1h)" />
+                  <input aria-label="Parameter name" className="text-xs border rounded px-2 py-1.5 w-full" value={newParameterName} onChange={e => setNewParameterName(e.target.value)} placeholder="e.g. PM10, pH, Laeq(1h)" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Unit</label>
-                  <input className="text-xs border rounded px-2 py-1.5 w-full" value={newUnit} onChange={e => setNewUnit(e.target.value)} placeholder="µg/m³, pH units, dB(A)…" />
+                  <input aria-label="Unit" className="text-xs border rounded px-2 py-1.5 w-full" value={newUnit} onChange={e => setNewUnit(e.target.value)} placeholder="µg/m³, pH units, dB(A)…" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Permit limit (max)</label>
-                  <input type="number" className="text-xs border rounded px-2 py-1.5 w-full" value={newPermitLimitMax} onChange={e => setNewPermitLimitMax(e.target.value)} placeholder="e.g. 75" />
+                  <input aria-label="Permit limit (max)" type="number" className="text-xs border rounded px-2 py-1.5 w-full" value={newPermitLimitMax} onChange={e => setNewPermitLimitMax(e.target.value)} placeholder="e.g. 75" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Lab name</label>
-                  <input className="text-xs border rounded px-2 py-1.5 w-full" value={newLabName} onChange={e => setNewLabName(e.target.value)} placeholder="e.g. Waterlab SA" />
+                  <input aria-label="Lab name" className="text-xs border rounded px-2 py-1.5 w-full" value={newLabName} onChange={e => setNewLabName(e.target.value)} placeholder="e.g. Waterlab SA" />
                 </div>
               </div>
 
@@ -910,32 +910,32 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">NCR ref (W136)</label>
-                  <input className="text-xs border rounded px-2 py-1.5 w-full" value={newNcrRef} onChange={e => setNewNcrRef(e.target.value)} placeholder="ncr-xxx" />
+                  <input aria-label="NCR ref (W136)" className="text-xs border rounded px-2 py-1.5 w-full" value={newNcrRef} onChange={e => setNewNcrRef(e.target.value)} placeholder="ncr-xxx" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">HSE incident ref (W25)</label>
-                  <input className="text-xs border rounded px-2 py-1.5 w-full" value={newHseRef} onChange={e => setNewHseRef(e.target.value)} placeholder="hse-xxx" />
+                  <input aria-label="HSE incident ref (W25)" className="text-xs border rounded px-2 py-1.5 w-full" value={newHseRef} onChange={e => setNewHseRef(e.target.value)} placeholder="hse-xxx" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Method statement ref (W137)</label>
-                  <input className="text-xs border rounded px-2 py-1.5 w-full" value={newMsRef} onChange={e => setNewMsRef(e.target.value)} placeholder="ms-xxx" />
+                  <input aria-label="Method statement ref (W137)" className="text-xs border rounded px-2 py-1.5 w-full" value={newMsRef} onChange={e => setNewMsRef(e.target.value)} placeholder="ms-xxx" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Stage gate ref (W131)</label>
-                  <input className="text-xs border rounded px-2 py-1.5 w-full" value={newStageGateRef} onChange={e => setNewStageGateRef(e.target.value)} placeholder="sg-xxx" />
+                  <input aria-label="Stage gate ref (W131)" className="text-xs border rounded px-2 py-1.5 w-full" value={newStageGateRef} onChange={e => setNewStageGateRef(e.target.value)} placeholder="sg-xxx" />
                 </div>
               </div>
             </div>
 
             <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100">
-              <button
+              <button type="button"
                 onClick={handleCreate}
                 disabled={createLoading || !newTitle || !newProject}
                 className="text-xs bg-green-600 text-white rounded px-4 py-1.5 hover:bg-green-700 disabled:opacity-50"
               >
                 {createLoading ? 'Creating…' : 'Schedule monitoring'}
               </button>
-              <button onClick={() => setShowCreate(false)} className="text-xs border rounded px-3 py-1.5 hover:bg-gray-50">
+              <button type="button" onClick={() => setShowCreate(false)} className="text-xs border rounded px-3 py-1.5 hover:bg-gray-50">
                 Cancel
               </button>
             </div>

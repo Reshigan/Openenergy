@@ -417,11 +417,11 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
         </select>
         <span className="text-xs text-gray-400 ml-auto">{filtered.length} subcontractors</span>
         {!readOnly && (
-          <button className="text-xs bg-green-600 text-white rounded px-3 py-1 hover:bg-green-700" onClick={() => setShowCreate(true)}>
+          <button type="button" className="text-xs bg-green-600 text-white rounded px-3 py-1 hover:bg-green-700" onClick={() => setShowCreate(true)}>
             + Register subcontractor
           </button>
         )}
-        <button className="text-xs border rounded px-2 py-1 hover:bg-gray-50" onClick={load}>Refresh</button>
+        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-gray-50" onClick={load}>Refresh</button>
       </div>
 
       {actionResult && (
@@ -519,7 +519,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
                   </td>
                   {!readOnly && (
                     <td className="px-3 py-2">
-                      <button
+                      <button type="button"
                         className="text-xs text-blue-600 hover:underline"
                         onClick={e => { e.stopPropagation(); setSelected(row); }}
                       >
@@ -569,7 +569,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
                   {selected.id} · {selected.project_name ?? selected.project_id}
                 </p>
               </div>
-              <button className="text-gray-400 hover:text-gray-600 text-xl leading-none" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
+              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl leading-none" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
             </div>
 
             {/* Chain state bar */}
@@ -816,7 +816,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
                 )}
                 <div className="flex flex-wrap gap-2">
                   {(ACTIONS[selected.chain_status] ?? []).map(({ action, label, danger }) => (
-                    <button
+                    <button type="button"
                       key={action}
                       disabled={actionLoading}
                       onClick={() => handleAction(action)}
@@ -851,7 +851,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">Register Subcontractor</h3>
-              <button className="text-gray-400 hover:text-gray-600 text-xl leading-none" onClick={() => setShowCreate(false)}>×</button>
+              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl leading-none" onClick={() => setShowCreate(false)}>×</button>
             </div>
 
             {/* SIGNATURE warning */}
@@ -956,14 +956,14 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
             </div>
 
             <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100">
-              <button
+              <button type="button"
                 onClick={handleCreate}
                 disabled={createLoading || !newCompany || !newProject || !newScope}
                 className="text-xs bg-green-600 text-white rounded px-4 py-1.5 hover:bg-green-700 disabled:opacity-50"
               >
                 {createLoading ? 'Registering…' : 'Register subcontractor'}
               </button>
-              <button onClick={() => setShowCreate(false)} className="text-xs border rounded px-3 py-1.5 hover:bg-gray-50">
+              <button type="button" onClick={() => setShowCreate(false)} className="text-xs border rounded px-3 py-1.5 hover:bg-gray-50">
                 Cancel
               </button>
             </div>

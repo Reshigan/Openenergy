@@ -124,11 +124,11 @@ export function Intelligence() {
       subtitle="Operational, financial, regulatory and market signals."
       actions={
         <>
-          <button onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
+          <button type="button" onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
             <RefreshCw className="w-4 h-4" />
           </button>
           {canScan && (
-            <button
+            <button type="button"
               onClick={runScan}
               disabled={scanning}
               className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50 flex items-center gap-2"
@@ -150,11 +150,11 @@ export function Intelligence() {
       <div className="flex flex-wrap gap-3 items-center">
         <span className="text-sm text-ionex-text-mute">Severity:</span>
         {(['all', 'critical', 'warning', 'info'] as const).map(s => (
-          <button key={s} onClick={() => setSeverityFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${severityFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s}</button>
+          <button type="button" key={s} onClick={() => setSeverityFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${severityFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s}</button>
         ))}
         <span className="text-sm text-ionex-text-mute ml-3">Status:</span>
         {(['unresolved', 'resolved', 'all'] as const).map(s => (
-          <button key={s} onClick={() => setResolvedFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${resolvedFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s}</button>
+          <button type="button" key={s} onClick={() => setResolvedFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${resolvedFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s}</button>
         ))}
         <span className="text-sm text-ionex-text-mute ml-3">Type:</span>
         <select
@@ -181,7 +181,7 @@ export function Intelligence() {
       {!loading && !error && items.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {items.map(it => (
-            <button
+            <button type="button"
               key={it.id}
               onClick={() => setSelected(it)}
               className={`text-left p-4 bg-white border rounded-xl hover:shadow-md transition-shadow ${it.resolved ? 'opacity-70 border-ionex-border-100' : SEVERITY_STYLE[it.severity]}`}
@@ -241,7 +241,7 @@ function DetailModal({ item, canResolve, onClose, onResolve }: {
             </span>
             <span className="text-xs text-ionex-text-mute uppercase">{item.type}</span>
           </div>
-          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
           <h2 className="text-lg font-semibold text-gray-900">{item.title}</h2>
@@ -273,8 +273,8 @@ function DetailModal({ item, canResolve, onClose, onResolve }: {
         </div>
         {canResolve && (
           <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-            <button onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Close</button>
-            <button onClick={onResolve} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light flex items-center gap-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Close</button>
+            <button type="button" onClick={onResolve} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4" /> Mark resolved
             </button>
           </div>

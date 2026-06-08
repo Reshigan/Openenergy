@@ -1,0 +1,123 @@
+{
+  "nodes": [
+    {
+      "id": "oe-icon-maskable-512",
+      "label": "OE Maskable App Icon (512px)",
+      "type": "icon",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-maskable-512.png",
+      "summary": "512x512 maskable PWA icon for the Open Energy Platform. Dark navy/steel-blue square background (#1e3a5f approx). Central graphic composed of three interlocking arcs/rings: a blue arc (top-left), a teal/green arc (top-right), and a white arc (bottom), arranged in a circular triquetra-like motif with a small circular eye-like focal point at the center where arcs intersect. No visible text. Maskable format indicates safe-zone cropping for Android adaptive icons."
+    },
+    {
+      "id": "oe-brand-identity",
+      "label": "Open Energy Platform Brand Identity",
+      "type": "brand",
+      "file": "open-energy-platform/pages/public/logos/",
+      "summary": "Brand system for the Open Energy Platform (oe.vantax.co.za), South African energy exchange. Color palette: dark navy background, steel blue, teal/green, white."
+    },
+    {
+      "id": "pwa-maskable-icon",
+      "label": "PWA Maskable Icon Format",
+      "type": "concept",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-maskable-512.png",
+      "summary": "Progressive Web App maskable icon specification — 512px square with safe zone padding so OS-level adaptive icon shapes (circle, squircle, etc.) can crop without clipping the brand mark."
+    },
+    {
+      "id": "color-navy-background",
+      "label": "Dark Navy Background (#1e3a5f approx)",
+      "type": "design-token",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-maskable-512.png",
+      "summary": "Primary background color used in the icon: deep navy blue, consistent with Open Energy Platform dark theme."
+    },
+    {
+      "id": "color-steel-blue-arc",
+      "label": "Steel Blue Arc",
+      "type": "design-token",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-maskable-512.png",
+      "summary": "The large arc in the upper-left of the icon logo mark, rendered in a medium steel/cornflower blue."
+    },
+    {
+      "id": "color-teal-arc",
+      "label": "Teal/Green Arc",
+      "type": "design-token",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-maskable-512.png",
+      "summary": "The arc in the upper-right of the icon logo mark, rendered in teal/green — connotes renewable energy."
+    },
+    {
+      "id": "color-white-arc",
+      "label": "White Arc",
+      "type": "design-token",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-maskable-512.png",
+      "summary": "The arc at the bottom of the icon logo mark, rendered in white."
+    },
+    {
+      "id": "logo-mark-triquetra",
+      "label": "Three-Arc Interlocking Logo Mark",
+      "type": "graphic-element",
+      "file": "open-energy-platform/pages/public/logos/oe-icon-maskable-512.png",
+      "summary": "Abstract logo mark composed of three curved arcs/rings (blue, teal, white) interlocking around a central focal dot — evokes energy cycles, circular economy, or the 'OE' initials abstracted into arcs."
+    }
+  ],
+  "edges": [
+    {
+      "source": "oe-icon-maskable-512",
+      "target": "oe-brand-identity",
+      "label": "represents",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "oe-icon-maskable-512",
+      "target": "pwa-maskable-icon",
+      "label": "implements",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-icon-maskable-512",
+      "target": "logo-mark-triquetra",
+      "label": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-icon-maskable-512",
+      "target": "color-navy-background",
+      "label": "uses",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "logo-mark-triquetra",
+      "target": "color-steel-blue-arc",
+      "label": "composed-of",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "logo-mark-triquetra",
+      "target": "color-teal-arc",
+      "label": "composed-of",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "logo-mark-triquetra",
+      "target": "color-white-arc",
+      "label": "composed-of",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "color-steel-blue-arc",
+      "target": "oe-brand-identity",
+      "label": "part-of-palette",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "color-teal-arc",
+      "target": "oe-brand-identity",
+      "label": "part-of-palette",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "color-navy-background",
+      "target": "oe-brand-identity",
+      "label": "part-of-palette",
+      "confidence": "INFERRED"
+    }
+  ],
+  "hyperedges": []
+}

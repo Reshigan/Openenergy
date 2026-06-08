@@ -145,7 +145,7 @@ export function ToasterProvider({ children }: { children: ReactNode }) {
                     }}
                   />
                   <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{t.title}</span>
-                  <button
+                  <button type="button"
                     onClick={() => dismiss(t.id)}
                     aria-label="Dismiss notification"
                     style={{
@@ -167,7 +167,7 @@ export function ToasterProvider({ children }: { children: ReactNode }) {
                   </div>
                 ) : null}
                 {t.action ? (
-                  <button
+                  <button type="button"
                     onClick={() => {
                       t.action!.onClick();
                       dismiss(t.id);

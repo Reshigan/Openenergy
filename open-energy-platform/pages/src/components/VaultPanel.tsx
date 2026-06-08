@@ -107,7 +107,7 @@ export function VaultPanel({
           <FileText size={14} /> {title}
           <span className="text-[11px] text-[#6b7685] font-normal">{files.length}</span>
         </div>
-        <button onClick={onPick} disabled={uploading}
+        <button type="button" onClick={onPick} disabled={uploading}
           className="h-8 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-2 disabled:opacity-50">
           {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
           {uploading ? 'Uploading…' : 'Upload'}
@@ -134,8 +134,8 @@ export function VaultPanel({
                     {f.uploaded_by_name ? ` by ${f.uploaded_by_name}` : ''}
                   </div>
                 </div>
-                <button onClick={() => download(f)} title="Download" className="p-1.5 text-[#3b82c4] hover:bg-[#eef2f7] rounded"><Download size={14} /></button>
-                <button onClick={() => del(f)} title="Delete" className="p-1.5 text-[#c0392b] hover:bg-[#fde7e9] rounded"><Trash2 size={14} /></button>
+                <button type="button" onClick={() => download(f)} title="Download" className="p-1.5 text-[#3b82c4] hover:bg-[#eef2f7] rounded"><Download size={14} /></button>
+                <button type="button" onClick={() => del(f)} title="Delete" className="p-1.5 text-[#c0392b] hover:bg-[#fde7e9] rounded"><Trash2 size={14} /></button>
               </li>
             ))}
           </ul>

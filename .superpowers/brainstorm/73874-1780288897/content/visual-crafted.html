@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visual Direction</title>
+<style>
+  :root {
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: -apple-system, system-ui, 'Segoe UI', sans-serif;
+    padding: 32px 24px;
+    min-height: 100vh;
+  }
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #e6edf3;
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: #6e7781;
+    margin-bottom: 32px;
+    max-width: 520px;
+    line-height: 1.6;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    max-width: 1200px;
+  }
+  .card {
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+    position: relative;
+  }
+  .card:hover { transform: translateY(-2px); }
+  .card:active { transform: scale(0.98); transition-duration: 100ms; }
+  .card.selected { outline: 2px solid #7e57c2; outline-offset: 2px; }
+  .card.selected .sel-ring {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .sel-ring {
+    position: absolute;
+    top: 10px; right: 10px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #7e57c2;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transform: scale(0.5);
+    transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+    z-index: 10;
+  }
+  .sel-ring::after {
+    content: '';
+    width: 10px; height: 7px;
+    border-left: 2px solid white;
+    border-bottom: 2px solid white;
+    transform: rotate(-45deg) translateY(-1px);
+    display: block;
+  }
+  .preview { position: relative; }
+  .label {
+    padding: 16px 20px;
+  }
+  .label h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e6edf3;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+  .label p {
+    font-size: 12px;
+    color: #6e7781;
+    line-height: 1.55;
+  }
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  .footer {
+    margin-top: 28px;
+    font-size: 12px;
+    color: #4d5562;
+  }
+  /* ── OPTION A: Vercel Dark meets IBM Carbon ── */
+  .preview-a {
+    background: #0a0d14;
+    height: 280px;
+    display: flex;
+    font-family: 'SF Mono', 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+  .sidebar-a {
+    width: 148px;
+    background: #0d1117;
+    border-right: 1px solid #161b22;
+    padding: 0;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-header-a {
+    padding: 14px 14px 12px;
+    border-bottom: 1px solid #161b22;
+    margin-bottom: 4px;
+  }
+  .brand-a {
+    font-family: -apple-system, system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #e6edf3;
+    margin-bottom: 1px;
+  }
+  .role-a {
+    font-size: 9px;
+    color: #484f58;
+    font-family: -apple-system, system-ui, sans-serif;
+  }
+  .section-label-a {
+    padding: 10px 14px 4px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #30363d;
+    text-transform: uppercase;
+    font-family: -apple-system, system-ui, sans-serif;
+  }
+  .nav-item-a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 14px;
+    font-size: 10.5px;
+    color: #6e7781;
+    font-family: -apple-system, system-ui, sans-serif;
+    border-left: 2px solid transparent;
+  }
+  .nav-item-a.active {
+    color: #e6edf3;
+    background: #161b22;
+    border-left-color: #7e57c2;
+  }
+  .nav-badge {
+    font-size: 9px;
+    background: rgba(220,38,38,0.15);
+    color: #f87171;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  .nav-badge-purple {
+    font-size: 9px;
+    background: rgba(126,87,194,0.2);
+    color: #a78bfa;
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .main-a {
+    flex: 1;
+    background: #0a0d14;
+    padding: 14px;
+    overflow: hidden;
+  }
+  .page-title-a {
+    font-family: -apple-system, system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #e6edf3;
+    letter-spacing: -0.01em;
+    margin-bottom: 2px;
+  }
+  .page-sub-a {
+    font-family: -apple-system, system-ui, sans-serif;
+    font-size: 10px;
+    color: #484f58;
+    margin-bottom: 12px;
+  }
+  .kpi-row-a {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .kpi-a {
+    background: #0d1117;
+    border: 1px solid #161b22;
+    border-radius: 8px;
+    padding: 10px;
+  }
+  .kpi-label-a {
+    font-size: 9px;
+    color: #484f58;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+    font-family: -apple-system, sans-serif;
+  }
+  .kpi-val-a {
+    font-size: 18px;
+    font-weight: 700;
+    font-family: 'SF Mono', monospace;
+    line-height: 1;
+  }
+  .kpi-delta-a {
+    font-size: 9px;
+    margin-top: 3px;
+    font-family: -apple-system, sans-serif;
+  }
+  .table-a {
+    background: #0d1117;
+    border: 1px solid #161b22;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .table-head-a {
+    display: flex;
+    padding: 6px 12px;
+    border-bottom: 1px solid #161b22;
+    gap: 8px;
+  }
+  .th-a {
+    font-family: -apple-system, sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    color: #30363d;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    flex: 1;
+  }
+  .th-a.right { text-align: right; flex: 0 0 60px; }
+  .tr-a {
+    display: flex;
+    align-items: center;
+    padding: 7px 12px;
+    gap: 8px;
+    border-bottom: 1px solid #0d1117;
+  }
+  .td-a { font-family: -apple-system, sans-serif; font-size: 10px; color: #8b949e; flex: 1; }
+  .td-a.name { color: #c9d1d9; }
+  .td-a.right { text-align: right; flex: 0 0 60px; }
+  .status-pill {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-family: -apple-system, sans-serif;
+  }
+  .s-active { background: rgba(56,139,253,0.1); color: #58a6ff; }
+  .s-done { background: rgba(63,185,80,0.1); color: #3fb950; }
+  .s-delayed { background: rgba(220,38,38,0.1); color: #f85149; }
+  /* ── OPTION B: Dark Sidebar + Light Content ── */
+  .preview-b {
+    background: #f6f8fa;
+    height: 280px;
+    display: flex;
+    font-size: 11px;
+  }
+  .sidebar-b {
+    width: 148px;
+    background: #1c2333;
+    border-right: none;
+    padding: 0;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-header-b {
+    padding: 14px 14px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 4px;
+  }
+  .brand-b {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #f0f6fc;
+    margin-bottom: 1px;
+  }
+  .role-b {
+    font-size: 9px;
+    color: rgba(255,255,255,0.3);
+  }
+  .section-label-b {
+    padding: 10px 14px 4px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.2);
+    text-transform: uppercase;
+  }
+  .nav-item-b {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 14px;
+    font-size: 10.5px;
+    color: rgba(255,255,255,0.4);
+  }
+  .nav-item-b.active {
+    color: #f0f6fc;
+    background: rgba(126,87,194,0.2);
+    border-left: 2px solid #7e57c2;
+    padding-left: 12px;
+  }
+  .main-b {
+    flex: 1;
+    background: #f6f8fa;
+    padding: 14px;
+    overflow: hidden;
+  }
+  .page-title-b {
+    font-size: 14px;
+    font-weight: 700;
+    color: #24292f;
+    letter-spacing: -0.01em;
+    margin-bottom: 1px;
+  }
+  .page-sub-b {
+    font-size: 10px;
+    color: #6e7781;
+    margin-bottom: 12px;
+  }
+  .kpi-row-b {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .kpi-b {
+    background: white;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 1px 3px rgba(27,31,35,0.06);
+  }
+  .kpi-label-b {
+    font-size: 9px;
+    color: #6e7781;
+    margin-bottom: 4px;
+  }
+  .kpi-val-b {
+    font-size: 18px;
+    font-weight: 700;
+    font-family: 'SF Mono', 'Geist Mono', monospace;
+    line-height: 1;
+    color: #24292f;
+  }
+  .table-b {
+    background: white;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(27,31,35,0.06);
+  }
+  .th-b {
+    font-size: 9px;
+    font-weight: 600;
+    color: #6e7781;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    padding: 7px 12px;
+    background: #f6f8fa;
+    border-bottom: 1px solid #d0d7de;
+    flex: 1;
+  }
+  .tr-b { display: flex; align-items: center; padding: 7px 12px; border-bottom: 1px solid #f6f8fa; }
+  .td-b { font-size: 10px; color: #57606a; flex: 1; }
+  .td-b.name { color: #24292f; font-weight: 500; }
+  .sb-active { background: #ddf4ff; color: #0969da; border: 1px solid #b6e3ff; font-size: 9px; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+  .sb-done { background: #dafbe1; color: #1a7f37; border: 1px solid #aceebb; font-size: 9px; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+  .sb-delayed { background: #ffebe9; color: #d1242f; border: 1px solid #ff8182; font-size: 9px; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+  /* ── OPTION C: Elevated Glass Dark ── */
+  .preview-c {
+    background: #070c15;
+    height: 280px;
+    display: flex;
+    font-size: 11px;
+  }
+  .sidebar-c {
+    width: 148px;
+    background: linear-gradient(180deg, #0e1628 0%, #080d18 100%);
+    border-right: 1px solid rgba(126,87,194,0.12);
+    padding: 0;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-header-c {
+    padding: 14px 14px 12px;
+    border-bottom: 1px solid rgba(126,87,194,0.08);
+    margin-bottom: 4px;
+  }
+  .brand-c {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #c4b5fd 0%, #7e57c2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1px;
+  }
+  .role-c {
+    font-size: 9px;
+    color: rgba(126,87,194,0.4);
+  }
+  .section-label-c {
+    padding: 10px 14px 4px;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: rgba(126,87,194,0.25);
+    text-transform: uppercase;
+  }
+  .nav-item-c {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    margin: 1px 6px;
+    font-size: 10.5px;
+    color: rgba(196,181,253,0.35);
+    border-radius: 6px;
+  }
+  .nav-item-c.active {
+    color: #e2d9f3;
+    background: rgba(126,87,194,0.16);
+    border: 1px solid rgba(126,87,194,0.2);
+  }
+  .dot-c {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #7e57c2;
+  }
+  .main-c {
+    flex: 1;
+    background: #070c15;
+    padding: 14px;
+    overflow: hidden;
+  }
+  .page-title-c {
+    font-size: 13px;
+    font-weight: 600;
+    color: #c9d1d9;
+    letter-spacing: -0.01em;
+    margin-bottom: 1px;
+  }
+  .page-sub-c {
+    font-size: 9px;
+    color: rgba(126,87,194,0.4);
+    margin-bottom: 12px;
+  }
+  .kpi-row-c {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .kpi-c {
+    background: rgba(255,255,255,0.024);
+    border: 1px solid rgba(255,255,255,0.055);
+    border-radius: 10px;
+    padding: 10px;
+    backdrop-filter: blur(8px);
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-c::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  }
+  .kpi-label-c {
+    font-size: 9px;
+    color: rgba(126,87,194,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+  .kpi-val-c {
+    font-size: 18px;
+    font-weight: 700;
+    font-family: 'SF Mono', 'Geist Mono', monospace;
+    line-height: 1;
+  }
+  .table-c {
+    background: rgba(255,255,255,0.024);
+    border: 1px solid rgba(255,255,255,0.055);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .th-c {
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(126,87,194,0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 7px 12px;
+    background: rgba(126,87,194,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    flex: 1;
+  }
+  .tr-c { display: flex; align-items: center; padding: 7px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .td-c { font-size: 10px; color: rgba(196,181,253,0.45); flex: 1; }
+  .td-c.name { color: #a5b4d4; }
+  .sc-active { background: rgba(96,165,250,0.08); color: #60a5fa; border: 1px solid rgba(96,165,250,0.15); font-size: 9px; padding: 1px 6px; border-radius: 4px; }
+  .sc-done { background: rgba(74,222,128,0.08); color: #4ade80; border: 1px solid rgba(74,222,128,0.15); font-size: 9px; padding: 1px 6px; border-radius: 4px; }
+  .sc-delayed { background: rgba(248,113,113,0.08); color: #f87171; border: 1px solid rgba(248,113,113,0.15); font-size: 9px; padding: 1px 6px; border-radius: 4px; }
+</style>
+<script>
+function toggleSelect(el) {
+  const choice = el.dataset.choice;
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  if (window.recordChoice) window.recordChoice(choice, el.querySelector('.label h3')?.textContent || choice);
+}
+</script>
+</head>
+<body>
+
+<h1>Visual Direction</h1>
+<p class="subtitle">All three use the persistent sidebar you selected. Each has a different visual character. They differ in how light, dark, and data-dense the content area feels.</p>
+
+<div class="grid">
+
+  <!-- ── OPTION A: Vercel Dark / Carbon-density ── -->
+  <div class="card" data-choice="carbon-dark" onclick="toggleSelect(this)">
+    <div class="sel-ring"></div>
+    <div class="preview preview-a">
+      <div class="sidebar-a">
+        <div class="sidebar-header-a">
+          <div class="brand-a">Open Energy</div>
+          <div class="role-a">IPP Developer</div>
+        </div>
+        <div class="section-label-a">Project</div>
+        <div class="nav-item-a active">Schedule <span class="nav-badge-purple">P6</span></div>
+        <div class="nav-item-a">Cost / EVM</div>
+        <div class="nav-item-a">Documents</div>
+        <div class="nav-item-a">WBS</div>
+        <div class="section-label-a">Compliance</div>
+        <div class="nav-item-a">Stage Gates</div>
+        <div class="nav-item-a">NCR <span class="nav-badge">3</span></div>
+        <div class="section-label-a">Finance</div>
+        <div class="nav-item-a">Drawdowns</div>
+        <div class="nav-item-a">Bonds</div>
+      </div>
+      <div class="main-a">
+        <div class="page-title-a">Schedule</div>
+        <div class="page-sub-a">Cosmos Wind Farm · Phase 2 · P6</div>
+        <div class="kpi-row-a">
+          <div class="kpi-a">
+            <div class="kpi-label-a">SPI</div>
+            <div class="kpi-val-a" style="color:#3fb950">0.97</div>
+            <div class="kpi-delta-a" style="color:#3fb950">▲ on track</div>
+          </div>
+          <div class="kpi-a">
+            <div class="kpi-label-a">CPI</div>
+            <div class="kpi-val-a" style="color:#d29922">0.89</div>
+            <div class="kpi-delta-a" style="color:#d29922">▼ under</div>
+          </div>
+          <div class="kpi-a">
+            <div class="kpi-label-a">EAC</div>
+            <div class="kpi-val-a" style="color:#c9d1d9">R890M</div>
+          </div>
+        </div>
+        <div class="table-a">
+          <div class="table-head-a">
+            <div class="th-a">Task</div>
+            <div class="th-a right">Status</div>
+          </div>
+          <div class="tr-a">
+            <div class="td-a name">Procurement Package</div>
+            <div class="td-a right"><span class="status-pill s-active">Active</span></div>
+          </div>
+          <div class="tr-a">
+            <div class="td-a name">Foundation Works</div>
+            <div class="td-a right"><span class="status-pill s-done">Done</span></div>
+          </div>
+          <div class="tr-a">
+            <div class="td-a name">Turbine Installation</div>
+            <div class="td-a right"><span class="status-pill s-delayed">Delayed</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="label" style="background:#0d1117;border-top:1px solid #161b22;">
+      <span class="tag" style="background:rgba(56,139,253,0.1);color:#58a6ff;border:1px solid rgba(56,139,253,0.2)">Recommended</span>
+      <h3>Carbon Dark</h3>
+      <p>Pure dark throughout. Off-black surfaces, 1px #161b22 borders, no shadows. Mono numbers. Active nav: 2px purple left-border. Status: tight uppercase pills. Character: mission control.</p>
+    </div>
+  </div>
+
+  <!-- ── OPTION B: Dark nav + Light content ── -->
+  <div class="card" data-choice="hybrid" onclick="toggleSelect(this)">
+    <div class="sel-ring"></div>
+    <div class="preview preview-b">
+      <div class="sidebar-b">
+        <div class="sidebar-header-b">
+          <div class="brand-b">Open Energy</div>
+          <div class="role-b">IPP Developer</div>
+        </div>
+        <div class="section-label-b">Project</div>
+        <div class="nav-item-b active">Schedule</div>
+        <div class="nav-item-b">Cost / EVM</div>
+        <div class="nav-item-b">Documents</div>
+        <div class="nav-item-b">WBS</div>
+        <div class="section-label-b">Compliance</div>
+        <div class="nav-item-b">Stage Gates</div>
+        <div class="nav-item-b" style="display:flex;align-items:center;justify-content:space-between;">NCR <span style="background:rgba(220,38,38,0.2);color:#f87171;font-size:9px;padding:1px 5px;border-radius:3px;">3</span></div>
+        <div class="section-label-b">Finance</div>
+        <div class="nav-item-b">Drawdowns</div>
+        <div class="nav-item-b">Bonds</div>
+      </div>
+      <div class="main-b">
+        <div class="page-title-b">Schedule</div>
+        <div class="page-sub-b">Cosmos Wind Farm · Phase 2</div>
+        <div class="kpi-row-b">
+          <div class="kpi-b">
+            <div class="kpi-label-b">SPI</div>
+            <div class="kpi-val-b" style="color:#1a7f37">0.97</div>
+          </div>
+          <div class="kpi-b">
+            <div class="kpi-label-b">CPI</div>
+            <div class="kpi-val-b" style="color:#9a6700">0.89</div>
+          </div>
+          <div class="kpi-b">
+            <div class="kpi-label-b">EAC</div>
+            <div class="kpi-val-b">R890M</div>
+          </div>
+        </div>
+        <div class="table-b">
+          <div style="display:flex;background:#f6f8fa;border-bottom:1px solid #d0d7de;">
+            <div class="th-b">Task</div>
+            <div class="th-b" style="text-align:right;flex:0 0 70px;">Status</div>
+          </div>
+          <div class="tr-b">
+            <div class="td-b name">Procurement Package</div>
+            <div style="flex:0 0 70px;text-align:right;"><span class="sb-active">Active</span></div>
+          </div>
+          <div class="tr-b">
+            <div class="td-b name">Foundation Works</div>
+            <div style="flex:0 0 70px;text-align:right;"><span class="sb-done">Done</span></div>
+          </div>
+          <div class="tr-b">
+            <div class="td-b name">Turbine Installation</div>
+            <div style="flex:0 0 70px;text-align:right;"><span class="sb-delayed">Delayed</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="label" style="background:#1c2333;border-top:1px solid rgba(255,255,255,0.06);">
+      <span class="tag" style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);">Hybrid</span>
+      <h3 style="color:#f0f6fc">Dark Rail + Light Content</h3>
+      <p style="color:rgba(255,255,255,0.35)">Dark sidebar, white content area. Best readability for dense data. GitHub-style. Highest WCAG contrast. Familiar to Procore/Aconex users.</p>
+    </div>
+  </div>
+
+  <!-- ── OPTION C: Elevated Glass ── -->
+  <div class="card" data-choice="glass-elevated" onclick="toggleSelect(this)">
+    <div class="sel-ring"></div>
+    <div class="preview preview-c">
+      <div class="sidebar-c">
+        <div class="sidebar-header-c">
+          <div class="brand-c">Open Energy</div>
+          <div class="role-c">IPP Developer</div>
+        </div>
+        <div class="section-label-c">Project</div>
+        <div class="nav-item-c active">Schedule <div class="dot-c"></div></div>
+        <div class="nav-item-c">Cost / EVM</div>
+        <div class="nav-item-c">Documents</div>
+        <div class="nav-item-c">WBS</div>
+        <div class="section-label-c">Compliance</div>
+        <div class="nav-item-c">Stage Gates</div>
+        <div class="nav-item-c">NCR <span style="background:rgba(248,113,113,0.1);color:#f87171;font-size:9px;padding:1px 5px;border-radius:4px;">3</span></div>
+        <div class="section-label-c">Finance</div>
+        <div class="nav-item-c">Drawdowns</div>
+        <div class="nav-item-c">Bonds</div>
+      </div>
+      <div class="main-c">
+        <div class="page-title-c">Schedule</div>
+        <div class="page-sub-c">Cosmos Wind Farm · Phase 2</div>
+        <div class="kpi-row-c">
+          <div class="kpi-c">
+            <div class="kpi-label-c">SPI</div>
+            <div class="kpi-val-c" style="color:#4ade80">0.97</div>
+          </div>
+          <div class="kpi-c">
+            <div class="kpi-label-c">CPI</div>
+            <div class="kpi-val-c" style="color:#fbbf24">0.89</div>
+          </div>
+          <div class="kpi-c">
+            <div class="kpi-label-c">EAC</div>
+            <div class="kpi-val-c" style="color:#a5b4d4">R890M</div>
+          </div>
+        </div>
+        <div class="table-c">
+          <div style="display:flex;background:rgba(126,87,194,0.04);border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div class="th-c">Task</div>
+            <div class="th-c" style="text-align:right;flex:0 0 70px;">Status</div>
+          </div>
+          <div class="tr-c">
+            <div class="td-c name">Procurement Package</div>
+            <div style="flex:0 0 70px;text-align:right;"><span class="sc-active">Active</span></div>
+          </div>
+          <div class="tr-c">
+            <div class="td-c name">Foundation Works</div>
+            <div style="flex:0 0 70px;text-align:right;"><span class="sc-done">Done</span></div>
+          </div>
+          <div class="tr-c">
+            <div class="td-c name">Turbine Installation</div>
+            <div style="flex:0 0 70px;text-align:right;"><span class="sc-delayed">Delayed</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="label" style="background:#0d1220;border-top:1px solid rgba(126,87,194,0.1);">
+      <span class="tag" style="background:rgba(126,87,194,0.12);color:#a78bfa;border:1px solid rgba(126,87,194,0.2)">Premium</span>
+      <h3 style="color:#c4b5fd">Elevated Glass</h3>
+      <p style="color:rgba(196,181,253,0.4)">Ultra-dark base with glass-morphism card elevations. Purple gradient sidebar logo. Frosted borders. Feels like a financial terminal. Most distinctive.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="footer">Three options, one sidebar architecture. Click to select your direction. http://localhost:57782</p>
+
+</body>
+</html>

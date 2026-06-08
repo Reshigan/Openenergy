@@ -23,7 +23,7 @@ export function EmptyState({ icon, title, description, subtitle, action }: Empty
       <h3 className="text-lg font-medium text-gray-900 mb-1">{title}</h3>
       {body && <p className="text-sm text-gray-500 mb-4 max-w-sm">{body}</p>}
       {action && (
-        <button
+        <button type="button"
           onClick={action.onClick}
           className="flex items-center gap-2 px-4 py-2 bg-oe-accent text-white rounded-lg hover:bg-oe-accent/90"
         >

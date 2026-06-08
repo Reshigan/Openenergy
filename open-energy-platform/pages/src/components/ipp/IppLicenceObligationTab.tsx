@@ -427,13 +427,13 @@ export function IppLicenceObligationTab() {
           />
           SLA Breached only
         </label>
-        <button
+        <button type="button"
           onClick={() => load()}
           className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
         >
           Refresh
         </button>
-        <button
+        <button type="button"
           onClick={() => setShowCreate(v => !v)}
           className="ml-auto px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
         >
@@ -626,7 +626,7 @@ export function IppLicenceObligationTab() {
                       onClick={e => e.stopPropagation()}
                     >
                       {actions.length > 0 && (
-                        <button
+                        <button type="button"
                           onClick={() => openActionPicker(item)}
                           className="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
                         >
@@ -652,7 +652,7 @@ export function IppLicenceObligationTab() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center gap-2 pt-1">
-          <button
+          <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
             className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
@@ -660,7 +660,7 @@ export function IppLicenceObligationTab() {
             &larr; Prev
           </button>
           <span className="text-xs text-gray-500">Page {page} of {totalPages}</span>
-          <button
+          <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
             className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
@@ -684,7 +684,7 @@ export function IppLicenceObligationTab() {
                   {detailItem.project_name && <> &nbsp;&middot;&nbsp; {detailItem.project_name}</>}
                 </div>
               </div>
-              <button
+              <button type="button"
                 onClick={() => setDetailItem(null)}
                 className="text-gray-400 hover:text-gray-700 text-lg leading-none"
               >
@@ -777,7 +777,7 @@ export function IppLicenceObligationTab() {
               {!HARD_TERMINALS.has(detailItem.chain_status) && getActions(detailItem).length > 0 && (
                 <div className="border-t pt-4">
                   <div className="text-xs font-semibold text-gray-700 mb-2">Advance State Machine</div>
-                  <button
+                  <button type="button"
                     onClick={() => {
                       setDetailItem(null);
                       openActionPicker(detailItem);
@@ -847,13 +847,13 @@ export function IppLicenceObligationTab() {
             )}
 
             <div className="flex gap-2 justify-end">
-              <button
+              <button type="button"
                 onClick={closeAction}
                 className="px-3 py-1.5 text-xs border rounded bg-white text-gray-600 hover:bg-gray-50"
               >
                 Cancel
               </button>
-              <button
+              <button type="button"
                 onClick={submitAction}
                 disabled={actionLoading || !selectedAction}
                 className={`px-4 py-1.5 text-xs rounded text-white disabled:opacity-50 ${

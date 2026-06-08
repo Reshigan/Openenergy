@@ -324,7 +324,7 @@ export function IppDiaryTab() {
             Signature crossings: miss_diary EVERY tier · dispute_diary on delay+critical_delay · submit_diary on safety_incident.
           </p>
         </div>
-        <button
+        <button type="button"
           onClick={() => setShowCreate(true)}
           className="shrink-0 rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a3a5c]"
         >
@@ -347,7 +347,7 @@ export function IppDiaryTab() {
 
       <div className="mb-3 flex flex-wrap gap-1.5">
         {FILTERS.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -472,7 +472,7 @@ function Drawer({
                 {row.is_reportable === 1 && ' · Reportable'}
               </div>
             </div>
-            <button onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
+            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
           </div>
         </header>
 
@@ -531,7 +531,7 @@ function Drawer({
             <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
             <div className="flex flex-wrap gap-2">
               {primary && (
-                <button
+                <button type="button"
                   onClick={() => onAct(primary, row)}
                   className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a3a5c]"
                 >
@@ -541,7 +541,7 @@ function Drawer({
               {secondary.map((a) => {
                 const danger = DESTRUCTIVE.includes(a);
                 return (
-                  <button
+                  <button type="button"
                     key={a}
                     onClick={() => onAct(a, row)}
                     className={
@@ -625,7 +625,7 @@ function CreateModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
       <div className="w-full max-w-md rounded-lg bg-white shadow-2xl">
         <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3 flex items-center justify-between">
           <span className="font-semibold text-[#0c2a4d]">New diary entry</span>
-          <button onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
+          <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
         </header>
         <div className="px-5 py-4 space-y-3">
           {err && <div className="rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>}
@@ -680,8 +680,8 @@ function CreateModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
           </div>
         </div>
         <footer className="border-t border-[#d8dde6] px-5 py-3 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded border border-[#d8dde6] px-3 py-1.5 text-[12px] text-[#557] hover:bg-[#f3f5f9]">Cancel</button>
-          <button
+          <button type="button" onClick={onClose} className="rounded border border-[#d8dde6] px-3 py-1.5 text-[12px] text-[#557] hover:bg-[#f3f5f9]">Cancel</button>
+          <button type="button"
             onClick={submit} disabled={saving}
             className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a3a5c] disabled:opacity-50"
           >

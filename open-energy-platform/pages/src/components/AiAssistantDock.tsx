@@ -126,7 +126,7 @@ export function AiAssistantDock() {
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)}
+      <button type="button" onClick={() => setOpen(true)}
         aria-label="Open AI assistant"
         className="fixed bottom-4 right-4 z-50 h-12 w-12 rounded-full bg-[#1a3a5c] hover:bg-[#0b1c30] text-white shadow-lg flex items-center justify-center transition-colors"
         style={{ boxShadow: '0 4px 14px rgba(26,58,92,0.4)' }}>
@@ -144,7 +144,7 @@ export function AiAssistantDock() {
           <div className="text-[13px] font-semibold">CEC Assistant</div>
           <div className="text-[10px] opacity-80 capitalize">context: {surfaceFromPath}</div>
         </div>
-        <button onClick={() => setOpen(false)} aria-label="Close" className="p-1 hover:bg-white/10 rounded">
+        <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="p-1 hover:bg-white/10 rounded">
           <X size={16} />
         </button>
       </header>
@@ -171,11 +171,11 @@ export function AiAssistantDock() {
                     <div className="text-[11px] font-mono text-[#3b82c4]">{a.tool}</div>
                     <pre className="text-[10px] mt-1 text-[#3d4756] whitespace-pre-wrap">{JSON.stringify(a.params, null, 2)}</pre>
                     <div className="mt-1 flex gap-1">
-                      <button onClick={() => acceptAction(m.id, a)}
+                      <button type="button" onClick={() => acceptAction(m.id, a)}
                               className="h-7 px-2 rounded bg-[#1a8a5b] text-white text-[11px] font-semibold inline-flex items-center gap-1">
                         <CheckCircle size={12} /> Confirm + execute
                       </button>
-                      <button onClick={() => setProposed((p) => ({ ...p, [m.id]: p[m.id].filter((x) => x.id !== a.id) }))}
+                      <button type="button" onClick={() => setProposed((p) => ({ ...p, [m.id]: p[m.id].filter((x) => x.id !== a.id) }))}
                               className="h-7 px-2 rounded bg-white border border-[#dde4ec] text-[#c0392b] text-[11px] font-semibold">
                         Dismiss
                       </button>

@@ -147,10 +147,10 @@ export function LenderWorkoutPage() {
           <p className="text-[13px] text-[#3d4756]">Cure plans, waivers, amendments and accelerations against every breached covenant. AI advisor inline per row.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => navigate('/lender-suite')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={() => navigate('/lender-suite')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
             <ArrowLeft size={12} /> Lender suite
           </button>
-          <button onClick={() => void load()} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={() => void load()} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
             <RefreshCw size={12} /> Refresh
           </button>
         </div>
@@ -159,7 +159,7 @@ export function LenderWorkoutPage() {
       <div className="flex flex-wrap gap-2 items-center">
         <span className="text-[12px] text-[#6b7685]">Status:</span>
         {(['all', 'open', 'investigating', 'resolved', 'rejected'] as const).map(s => (
-          <button key={s} onClick={() => setStatus(s)} className={`px-3 py-1 rounded-full text-[11px] capitalize ${status === s ? 'bg-[#1a3a5c] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
+          <button type="button" key={s} onClick={() => setStatus(s)} className={`px-3 py-1 rounded-full text-[11px] capitalize ${status === s ? 'bg-[#1a3a5c] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
             {s.replace(/_/g, ' ')}
           </button>
         ))}
@@ -215,19 +215,19 @@ export function LenderWorkoutPage() {
                     <td className="px-4 py-2">
                       <div className="flex flex-wrap gap-1">
                         {a.status === 'open' && (
-                          <button onClick={() => transition(a.id, 'investigating')} className="px-2 py-1 text-[11px] bg-blue-50 text-blue-700 rounded">Investigate</button>
+                          <button type="button" onClick={() => transition(a.id, 'investigating')} className="px-2 py-1 text-[11px] bg-blue-50 text-blue-700 rounded">Investigate</button>
                         )}
                         {(a.status === 'open' || a.status === 'investigating') && (
                           <>
-                            <button onClick={() => setTransitioning({ ...a, status: 'resolved' as any })} className="px-2 py-1 text-[11px] bg-green-50 text-green-700 rounded">Resolve</button>
-                            <button onClick={() => setTransitioning({ ...a, status: 'rejected' as any })} className="px-2 py-1 text-[11px] bg-gray-100 text-gray-700 rounded">Reject</button>
+                            <button type="button" onClick={() => setTransitioning({ ...a, status: 'resolved' as any })} className="px-2 py-1 text-[11px] bg-green-50 text-green-700 rounded">Resolve</button>
+                            <button type="button" onClick={() => setTransitioning({ ...a, status: 'rejected' as any })} className="px-2 py-1 text-[11px] bg-gray-100 text-gray-700 rounded">Reject</button>
                           </>
                         )}
                         {(a.status === 'resolved' || a.status === 'rejected') && (
                           <span className="text-[11px] text-[#6b7685]">{a.resolution_outcome || '—'}</span>
                         )}
                         {!advices[a.id] && a.status !== 'resolved' && a.status !== 'rejected' && (
-                          <button onClick={() => advise(a)} className="px-2 py-1 text-[11px] bg-amber-50 text-amber-800 rounded inline-flex items-center gap-1">
+                          <button type="button" onClick={() => advise(a)} className="px-2 py-1 text-[11px] bg-amber-50 text-amber-800 rounded inline-flex items-center gap-1">
                             <Lightbulb size={12} /> Advise
                           </button>
                         )}
@@ -249,9 +249,9 @@ export function LenderWorkoutPage() {
                             <p className="mt-1 text-[12px] text-[#3d4756]">{advices[a.id].rationale}</p>
                             <div className="mt-2 flex gap-2">
                               {advices[a.id].advice_id && (
-                                <button onClick={() => acceptAdvice(advices[a.id].advice_id)} className="px-2 py-1 text-[11px] bg-[#0f1c2e] text-white rounded">Accept</button>
+                                <button type="button" onClick={() => acceptAdvice(advices[a.id].advice_id)} className="px-2 py-1 text-[11px] bg-[#0f1c2e] text-white rounded">Accept</button>
                               )}
-                              <button onClick={() => dismissAdvice(a.id)} className="px-2 py-1 text-[11px] bg-white border border-[#dde4ec] text-[#3d4756] rounded inline-flex items-center gap-1">
+                              <button type="button" onClick={() => dismissAdvice(a.id)} className="px-2 py-1 text-[11px] bg-white border border-[#dde4ec] text-[#3d4756] rounded inline-flex items-center gap-1">
                                 <X size={10} /> Dismiss
                               </button>
                             </div>
@@ -302,7 +302,7 @@ function ResolveModal({
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
           <h3 className="text-[16px] font-semibold text-[#0f1c2e]">{isResolved ? 'Resolve' : 'Reject'} workout action · {action.covenant_code}</h3>
-          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
           {err && <div className="text-[12px] text-red-700">{err}</div>}
@@ -329,8 +329,8 @@ function ResolveModal({
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} placeholder="What changed? ≥3 chars required." className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none" />
           </label>
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
-            <button onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${isResolved ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}>
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button" onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${isResolved ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}>
               {saving ? 'Saving…' : (isResolved ? 'Resolve' : 'Reject')}
             </button>
           </div>

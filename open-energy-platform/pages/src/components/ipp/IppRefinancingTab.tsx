@@ -193,7 +193,7 @@ export function IppRefinancingTab() {
         </select>
         <span className="text-gray-300">|</span>
         {TIERS.map(t => (
-          <button
+          <button type="button"
             key={t}
             onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }}
             className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white border-indigo-700' : 'bg-white text-gray-600 border-gray-300'}`}
@@ -202,13 +202,13 @@ export function IppRefinancingTab() {
           </button>
         ))}
         <span className="text-gray-300">|</span>
-        <button
+        <button type="button"
           onClick={() => setShowCreate(true)}
           className="ml-auto px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700"
         >
           + New refinancing
         </button>
-        <button
+        <button type="button"
           onClick={() => load(filterStatus, filterTier)}
           className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
         >
@@ -338,14 +338,14 @@ export function IppRefinancingTab() {
               />
             </div>
             <div className="flex gap-2 mt-4">
-              <button
+              <button type="button"
                 onClick={createRefinancing}
                 disabled={createPending || !form.project_id || !form.debt_quantum_zar}
                 className="px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
               >
                 {createPending ? 'Submitting…' : 'Create refinancing'}
               </button>
-              <button
+              <button type="button"
                 onClick={() => setShowCreate(false)}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200"
               >

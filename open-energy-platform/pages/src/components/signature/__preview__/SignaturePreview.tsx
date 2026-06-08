@@ -70,7 +70,7 @@ export default function SignaturePreview() {
           Signature preview
         </strong>
         {ROLE_KEYS.map((r) => (
-          <button
+          <button type="button"
             key={r}
             onClick={() => setRole(r)}
             style={{

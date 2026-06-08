@@ -1,0 +1,129 @@
+<h2>Navigation Architecture — Which direction?</h2>
+<p class="subtitle">The tab overload problem has three fundamentally different solutions. Each implies a different mental model for users.</p>
+
+<div class="cards">
+  <div class="card" data-choice="sidebar" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f1e35;padding:16px;font-family:monospace;font-size:11px;color:#94a3b8;min-height:220px;position:relative;overflow:hidden;">
+      <div style="display:flex;height:100%;gap:0;">
+        <!-- Sidebar -->
+        <div style="width:140px;background:#0a1628;border-right:1px solid #1e3a5c;padding:12px 8px;flex-shrink:0;">
+          <div style="color:#7e57c2;font-size:10px;font-weight:700;letter-spacing:0.08em;margin-bottom:12px;">IPP Developer</div>
+          <div style="margin-bottom:8px;">
+            <div style="color:#64748b;font-size:9px;font-weight:600;letter-spacing:0.06em;margin-bottom:4px;">PROJECT</div>
+            <div style="color:#e2e8f0;font-size:10px;padding:4px 6px;background:#1a3a5c;border-radius:4px;margin-bottom:2px;">Dashboard</div>
+            <div style="color:#94a3b8;font-size:10px;padding:4px 6px;margin-bottom:2px;">Schedule</div>
+            <div style="color:#94a3b8;font-size:10px;padding:4px 6px;margin-bottom:2px;">Cost / EVM</div>
+            <div style="color:#94a3b8;font-size:10px;padding:4px 6px;margin-bottom:2px;">Documents</div>
+          </div>
+          <div style="margin-bottom:8px;">
+            <div style="color:#64748b;font-size:9px;font-weight:600;letter-spacing:0.06em;margin-bottom:4px;">COMPLIANCE</div>
+            <div style="color:#94a3b8;font-size:10px;padding:4px 6px;margin-bottom:2px;">Stage Gates</div>
+            <div style="color:#94a3b8;font-size:10px;padding:4px 6px;margin-bottom:2px;">HSE / NCR</div>
+          </div>
+          <div>
+            <div style="color:#64748b;font-size:9px;font-weight:600;letter-spacing:0.06em;margin-bottom:4px;">FINANCE</div>
+            <div style="color:#94a3b8;font-size:10px;padding:4px 6px;margin-bottom:2px;">Drawdowns</div>
+            <div style="color:#94a3b8;font-size:10px;padding:4px 6px;">Bonds</div>
+          </div>
+        </div>
+        <!-- Main -->
+        <div style="flex:1;padding:12px;">
+          <div style="color:#f1f5f9;font-size:12px;font-weight:600;margin-bottom:8px;">Schedule</div>
+          <div style="height:4px;background:#7e57c2;border-radius:2px;margin-bottom:8px;width:60%;"></div>
+          <div style="display:grid;gap:4px;">
+            <div style="height:24px;background:#1a3a5c;border-radius:4px;"></div>
+            <div style="height:24px;background:#1a3a5c;border-radius:4px;"></div>
+            <div style="height:24px;background:#1a3a5c;border-radius:4px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Persistent Sidebar</h3>
+      <p>Groups functions into labeled sections (Project / Compliance / Finance). Always visible. No tabs at all — clicking a section item replaces the main panel. Standard in Procore, Aconex, Jira.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="hub" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f1e35;padding:16px;font-family:monospace;font-size:11px;color:#94a3b8;min-height:220px;overflow:hidden;">
+      <!-- Top nav -->
+      <div style="display:flex;gap:12px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #1e3a5c;align-items:center;">
+        <div style="color:#7e57c2;font-size:10px;font-weight:700;">Open Energy</div>
+        <div style="color:#e2e8f0;font-size:10px;padding:3px 8px;background:#1a3a5c;border-radius:12px;">IPP</div>
+        <div style="color:#94a3b8;font-size:10px;">Lender</div>
+        <div style="color:#94a3b8;font-size:10px;">Offtaker</div>
+        <div style="margin-left:auto;color:#64748b;font-size:10px;">⌘K Search</div>
+      </div>
+      <!-- Card grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div style="background:#1a3a5c;border-radius:6px;padding:8px;">
+          <div style="color:#7e57c2;font-size:10px;font-weight:700;margin-bottom:4px;">Project</div>
+          <div style="color:#94a3b8;font-size:9px;">3 active</div>
+          <div style="height:3px;background:#7e57c2;border-radius:2px;margin-top:6px;width:40%;"></div>
+        </div>
+        <div style="background:#1a3a5c;border-radius:6px;padding:8px;">
+          <div style="color:#f59e0b;font-size:10px;font-weight:700;margin-bottom:4px;">Stage Gates</div>
+          <div style="color:#94a3b8;font-size:9px;">DG2 pending</div>
+          <div style="height:3px;background:#f59e0b;border-radius:2px;margin-top:6px;width:70%;"></div>
+        </div>
+        <div style="background:#1a3a5c;border-radius:6px;padding:8px;">
+          <div style="color:#22c55e;font-size:10px;font-weight:700;margin-bottom:4px;">Drawdowns</div>
+          <div style="color:#94a3b8;font-size:9px;">R120M drawn</div>
+          <div style="height:3px;background:#22c55e;border-radius:2px;margin-top:6px;width:55%;"></div>
+        </div>
+        <div style="background:#1a3a5c;border-radius:6px;padding:8px;">
+          <div style="color:#dc2626;font-size:10px;font-weight:700;margin-bottom:4px;">Bonds</div>
+          <div style="color:#94a3b8;font-size:9px;">2 expiring</div>
+          <div style="height:3px;background:#dc2626;border-radius:2px;margin-top:6px;width:30%;"></div>
+        </div>
+        <div style="background:#1a3a5c;border-radius:6px;padding:8px;">
+          <div style="color:#94a3b8;font-size:10px;font-weight:700;margin-bottom:4px;">Documents</div>
+          <div style="color:#94a3b8;font-size:9px;">48 files</div>
+          <div style="height:3px;background:#4b5563;border-radius:2px;margin-top:6px;width:80%;"></div>
+        </div>
+        <div style="background:#0a1628;border:1px dashed #1e3a5c;border-radius:6px;padding:8px;display:flex;align-items:center;justify-content:center;">
+          <div style="color:#4b5563;font-size:9px;">+ More</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Hub + Drill-down</h3>
+      <p>Workstation becomes a card grid with status at a glance. Click a card → focused view for that domain. No tabs visible on hub. Breadcrumb to navigate back. Linear / Notion style.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="sections" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f1e35;padding:16px;font-family:monospace;font-size:11px;color:#94a3b8;min-height:220px;overflow:hidden;">
+      <!-- Horizontal group chips -->
+      <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+        <div style="background:#7e57c2;color:white;padding:3px 10px;border-radius:12px;font-size:10px;font-weight:600;">Project</div>
+        <div style="background:#1a3a5c;color:#94a3b8;padding:3px 10px;border-radius:12px;font-size:10px;">Compliance</div>
+        <div style="background:#1a3a5c;color:#94a3b8;padding:3px 10px;border-radius:12px;font-size:10px;">Finance</div>
+        <div style="background:#1a3a5c;color:#94a3b8;padding:3px 10px;border-radius:12px;font-size:10px;">Operations</div>
+        <div style="margin-left:auto;color:#64748b;font-size:10px;padding:3px 0;">⌘K</div>
+      </div>
+      <!-- Sub-tabs (filtered) -->
+      <div style="display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid #1e3a5c;padding-bottom:8px;">
+        <div style="color:#e2e8f0;font-size:10px;padding:3px 8px;background:#1a3a5c;border-radius:4px 4px 0 0;border-bottom:2px solid #7e57c2;">Dashboard</div>
+        <div style="color:#94a3b8;font-size:10px;padding:3px 8px;">Schedule</div>
+        <div style="color:#94a3b8;font-size:10px;padding:3px 8px;">Cost/EVM</div>
+        <div style="color:#94a3b8;font-size:10px;padding:3px 8px;">Docs</div>
+        <div style="color:#94a3b8;font-size:10px;padding:3px 8px;">WBS</div>
+      </div>
+      <!-- Content -->
+      <div style="color:#f1f5f9;font-size:10px;font-weight:600;margin-bottom:8px;">Project Dashboard</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        <div style="height:28px;background:#1a3a5c;border-radius:4px;"></div>
+        <div style="height:28px;background:#1a3a5c;border-radius:4px;"></div>
+        <div style="height:28px;background:#1a3a5c;border-radius:4px;"></div>
+        <div style="height:28px;background:#1a3a5c;border-radius:4px;"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Group Filters + Focused Tabs</h3>
+      <p>Keep the two-level nav but make group chips first-class (larger, more prominent). Clicking a group shows only that group's tabs — 5-7 visible at once instead of 50+. Upgrade of existing pattern.</p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:20px;">Click to select. These can be mixed — e.g. sidebar for role nav + focused tabs within a section.</p>

@@ -114,7 +114,7 @@ export function NoticesTab() {
 
       <div className="flex gap-2 flex-wrap items-center">
         {(['all', 'issued', 'acknowledged', 'overdue', 'satisfied', 'withdrawn'] as const).map((s) => (
-          <button
+          <button type="button"
             key={s}
             data-testid={`regulator-notices-filter-${s}`}
             onClick={() => setFilter(s)}
@@ -123,14 +123,14 @@ export function NoticesTab() {
             {s === 'all' ? 'All' : s.replace(/_/g, ' ')}
           </button>
         ))}
-        <button
+        <button type="button"
           data-testid="regulator-notices-create"
           onClick={() => setCreating(true)}
           className="h-7 px-3 rounded-full text-[11px] font-semibold bg-[#1a3a5c] text-white ml-auto"
         >
           + Issue notice
         </button>
-        <button onClick={load} className="h-7 px-3 rounded-full text-[11px] font-semibold border border-[#d8dee6] bg-white text-[#1a3a5c]">
+        <button type="button" onClick={load} className="h-7 px-3 rounded-full text-[11px] font-semibold border border-[#d8dee6] bg-white text-[#1a3a5c]">
           Refresh
         </button>
       </div>
@@ -155,7 +155,7 @@ export function NoticesTab() {
           const tt = TYPE_TONE[r.notice_type];
           const st = STATUS_TONE[r.status];
           return (
-            <button
+            <button type="button"
               key={r.id}
               data-testid={`regulator-notice-row-${r.id}`}
               onClick={() => setDrillId(r.id)}
@@ -192,7 +192,7 @@ export function NoticesTab() {
               </div>
               <div className="text-[14px] font-bold text-[#1a3a5c]">{drillRow.title}</div>
             </div>
-            <button onClick={() => setDrillId(null)} className="text-[11px] text-[#6b7685] hover:text-[#1a3a5c]">Close ×</button>
+            <button type="button" onClick={() => setDrillId(null)} className="text-[11px] text-[#6b7685] hover:text-[#1a3a5c]">Close ×</button>
           </div>
           <div className="text-[12px] whitespace-pre-wrap text-[#2a3a4a]">{drillRow.body}</div>
           <div className="grid grid-cols-2 gap-3 text-[12px]">
@@ -214,7 +214,7 @@ export function NoticesTab() {
                 className="w-full h-9 px-3 rounded border border-[#d8dee6] text-[12px]"
               />
               <div className="flex gap-2 flex-wrap">
-                <button
+                <button type="button"
                   data-testid="regulator-notice-satisfy"
                   disabled={busy}
                   onClick={satisfy}
@@ -222,7 +222,7 @@ export function NoticesTab() {
                 >
                   Mark satisfied
                 </button>
-                <button
+                <button type="button"
                   data-testid="regulator-notice-withdraw"
                   disabled={busy}
                   onClick={withdraw}
@@ -302,7 +302,7 @@ function CreateNoticeForm({ onClose }: { onClose: () => void }) {
       </div>
       {err && <div className="text-[12px] text-[#9b1f1f]">{err}</div>}
       <div className="flex gap-2">
-        <button
+        <button type="button"
           data-testid="regulator-notice-form-submit"
           disabled={busy}
           onClick={submit}
@@ -310,7 +310,7 @@ function CreateNoticeForm({ onClose }: { onClose: () => void }) {
         >
           Issue notice
         </button>
-        <button
+        <button type="button"
           onClick={onClose}
           className="h-8 px-3 rounded border border-[#d8dee6] bg-white text-[#445566] text-[11px] font-semibold"
         >

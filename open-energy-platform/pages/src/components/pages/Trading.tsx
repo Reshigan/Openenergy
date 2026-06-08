@@ -288,7 +288,7 @@ function TerminalTab({ onSeeRejections }: { onSeeRejections: () => void }) {
         <section className="lg:col-span-2 rounded-xl border border-[#dde4ec] bg-white">
           <header className="px-5 py-3 border-b border-[#eef2f7] flex items-center justify-between">
             <div className="flex items-center gap-2 font-display font-semibold text-[14px] text-[#0f1c2e]"><BookOpen size={14} /> Order Book</div>
-            <button onClick={refresh} className="h-8 px-2 text-[12px] inline-flex items-center gap-1 rounded border border-[#dde4ec] hover:bg-[#eef2f7]"><RefreshCw size={12} /> Refresh</button>
+            <button type="button" onClick={refresh} className="h-8 px-2 text-[12px] inline-flex items-center gap-1 rounded border border-[#dde4ec] hover:bg-[#eef2f7]"><RefreshCw size={12} /> Refresh</button>
           </header>
           <div className="grid grid-cols-2 divide-x divide-[#eef2f7]">
             <BookSide rows={orderBook.bids.slice(0, 10)} side="bid" />
@@ -497,7 +497,7 @@ function AlgoRulesTab() {
       <section className="rounded-xl border border-[#dde4ec] bg-white">
         <header className="px-5 py-3 border-b border-[#eef2f7] flex items-center justify-between">
           <div className="flex items-center gap-2 font-display font-semibold text-[14px] text-[#0f1c2e]"><Cpu size={14} /> Algorithmic strategies</div>
-          <button onClick={() => setEditing({ name: '', side: 'buy', size_mwh: 10, energy_type: 'solar', enabled: true })}
+          <button type="button" onClick={() => setEditing({ name: '', side: 'buy', size_mwh: 10, energy_type: 'solar', enabled: true })}
             className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
             <Plus size={14} /> New rule
           </button>
@@ -535,13 +535,13 @@ function AlgoRulesTab() {
                       <td className="px-4 py-2 text-right font-mono">{num(r.size_mwh)} MWh</td>
                       <td className="px-4 py-2 text-[#6b7685] text-[11px] font-mono">{r.last_fired_at ? new Date(r.last_fired_at).toLocaleString() : '—'}</td>
                       <td className="px-4 py-2">
-                        <button onClick={() => toggle(r)}
+                        <button type="button" onClick={() => toggle(r)}
                           className={`h-6 px-2 rounded text-[10px] font-semibold ${r.enabled ? 'bg-[#cdf0dd] text-[#1a8a5b]' : 'bg-[#eef2f7] text-[#6b7685]'}`}>
                           {r.enabled ? 'ENABLED' : 'PAUSED'}
                         </button>
                       </td>
                       <td className="px-4 py-2 text-right">
-                        <button onClick={() => setEditing(r)} className="text-[12px] text-[#3b82c4] hover:underline">Edit</button>
+                        <button type="button" onClick={() => setEditing(r)} className="text-[12px] text-[#3b82c4] hover:underline">Edit</button>
                       </td>
                     </tr>
                   ))}
@@ -572,8 +572,8 @@ function AlgoRulesTab() {
             <Field label="Size (MWh)"><input type="number" value={editing.size_mwh || 0} onChange={(e) => setEditing({ ...editing, size_mwh: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></Field>
           </div>
           <div className="mt-3 flex gap-2">
-            <button onClick={save} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold">Save</button>
-            <button onClick={() => setEditing(null)} className="h-9 px-4 rounded-md border border-[#dde4ec] text-[#3d4756] text-[13px] font-semibold">Cancel</button>
+            <button type="button" onClick={save} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold">Save</button>
+            <button type="button" onClick={() => setEditing(null)} className="h-9 px-4 rounded-md border border-[#dde4ec] text-[#3d4756] text-[13px] font-semibold">Cancel</button>
           </div>
         </section>
       )}
@@ -622,7 +622,7 @@ function BacktesterTab() {
             </select>
           </Field>
           <Field label="Horizon (days)"><input type="number" min={1} max={365} value={horizon} onChange={(e) => setHorizon(Number(e.target.value))} className="w-28 h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></Field>
-          <button onClick={run} disabled={running} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold inline-flex items-center gap-2 disabled:opacity-50">
+          <button type="button" onClick={run} disabled={running} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold inline-flex items-center gap-2 disabled:opacity-50">
             {running ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />} Run backtest
           </button>
         </div>
@@ -734,7 +734,7 @@ function BlotterTab() {
               <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Filter…" className="h-8 pl-7 pr-3 rounded-md border border-[#dde4ec] text-[12px] w-40" />
             </div>
             <label className="text-[11px] text-[#6b7685] flex items-center gap-1"><input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} /> Auto-refresh (5s)</label>
-            <button onClick={refresh} className="h-8 px-2 text-[12px] inline-flex items-center gap-1 rounded border border-[#dde4ec] hover:bg-[#eef2f7]"><RefreshCw size={12} className={loading ? 'animate-spin' : ''} /> Refresh</button>
+            <button type="button" onClick={refresh} className="h-8 px-2 text-[12px] inline-flex items-center gap-1 rounded border border-[#dde4ec] hover:bg-[#eef2f7]"><RefreshCw size={12} className={loading ? 'animate-spin' : ''} /> Refresh</button>
           </div>
         </header>
         <div className="overflow-auto max-h-[60vh]">
@@ -969,7 +969,7 @@ function RejectionCard({
             <div className="text-[#3d4756] mt-0.5">{rejection.detail}</div>
           </div>
         </div>
-        <button onClick={onDismiss} className="text-[10px] text-[#6b7685] hover:text-[#3d4756]">Dismiss</button>
+        <button type="button" onClick={onDismiss} className="text-[10px] text-[#6b7685] hover:text-[#3d4756]">Dismiss</button>
       </div>
       {(loading || expl?.human_explanation) && (
         <div className="mt-2 flex items-start gap-2 text-[#3d4756]">
@@ -982,14 +982,14 @@ function RejectionCard({
       {expl && expl.suggested_remediations.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-2">
           {expl.suggested_remediations.map((r, i) => (
-            <button
+            <button type="button"
               key={i}
               onClick={() => onApplyRemediation(r.action, r.payload)}
               className="h-7 px-3 rounded text-[11px] font-semibold bg-white border border-[#dde4ec] text-[#1a3a5c] hover:bg-[#eef2f7]">
               {r.label}
             </button>
           ))}
-          <button
+          <button type="button"
             onClick={onSeeAll}
             className="h-7 px-3 rounded text-[11px] font-semibold text-[#3b82c4] hover:underline">
             All my rejections →
@@ -1060,7 +1060,7 @@ function RejectionsTab() {
           <div className="flex items-center gap-2 font-display font-semibold text-[14px] text-[#0f1c2e]">
             <XCircle size={14} /> Rejected order attempts
           </div>
-          <button onClick={refresh} className="h-8 px-2 text-[12px] inline-flex items-center gap-1 rounded border border-[#dde4ec] hover:bg-[#eef2f7]">
+          <button type="button" onClick={refresh} className="h-8 px-2 text-[12px] inline-flex items-center gap-1 rounded border border-[#dde4ec] hover:bg-[#eef2f7]">
             <RefreshCw size={12} className={loading ? 'animate-spin' : ''} /> Refresh
           </button>
         </header>
@@ -1099,7 +1099,7 @@ function RejectionsTab() {
                           </td>
                           <td className="px-4 py-2 text-right font-mono">{formatZAR(r.notional_zar)}</td>
                           <td className="px-4 py-2 text-right">
-                            <button onClick={() => toggle(r.id)} className="text-[11px] text-[#3b82c4] hover:underline inline-flex items-center gap-1">
+                            <button type="button" onClick={() => toggle(r.id)} className="text-[11px] text-[#3b82c4] hover:underline inline-flex items-center gap-1">
                               <Sparkles size={10} /> Why this happened {ex && ex !== 'error' && ex !== 'loading' ? '↑' : '→'}
                             </button>
                           </td>
@@ -1211,10 +1211,10 @@ function MyOrdersPanel({
                   <td className="px-4 py-2 text-right">
                     {isLive && (
                       <div className="inline-flex items-center gap-1">
-                        <button onClick={() => onAmend(o)} className="h-6 px-2 rounded text-[11px] text-[#3b82c4] hover:bg-[#eef2f7] inline-flex items-center gap-1">
+                        <button type="button" onClick={() => onAmend(o)} className="h-6 px-2 rounded text-[11px] text-[#3b82c4] hover:bg-[#eef2f7] inline-flex items-center gap-1">
                           <Edit3 size={10} /> Amend
                         </button>
-                        <button onClick={() => onCancel(o.id)} className="h-6 px-2 rounded text-[11px] text-[#c0392b] hover:bg-[#fdf2f1]">
+                        <button type="button" onClick={() => onCancel(o.id)} className="h-6 px-2 rounded text-[11px] text-[#c0392b] hover:bg-[#fdf2f1]">
                           Cancel
                         </button>
                       </div>
@@ -1298,7 +1298,7 @@ function AmendModal({
               {order.side.toUpperCase()} {num(Number(order.volume_mwh), 1)} MWh {order.energy_type}
             </div>
           </div>
-          <button onClick={onClose} aria-label="Close dialog" className="text-[#6b7685] hover:text-[#3d4756]"><X size={16} /></button>
+          <button type="button" onClick={onClose} aria-label="Close dialog" className="text-[#6b7685] hover:text-[#3d4756]"><X size={16} /></button>
         </div>
         <form onSubmit={submit} className="space-y-3">
           <Field label="New price (R/MWh)">
@@ -1423,13 +1423,13 @@ function ExceptionsTab() {
         <div className="flex flex-wrap gap-2 items-center">
           <span className="text-[12px] text-[#6b7685]">Status:</span>
           {(['all', 'open', 'investigating', 'resolved', 'rejected'] as const).map((s) => (
-            <button key={s} onClick={() => setStatus(s)}
+            <button type="button" key={s} onClick={() => setStatus(s)}
               className={`px-3 py-1 rounded-full text-[11px] capitalize ${status === s ? 'bg-[#1a3a5c] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
               {s.replace(/_/g, ' ')}
             </button>
           ))}
         </div>
-        <button
+        <button type="button"
           onClick={() => setFiling(true)}
           className="h-9 px-3 rounded-md bg-amber-600 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-amber-700"
         >
@@ -1479,12 +1479,12 @@ function ExceptionsTab() {
                   <td className="px-4 py-2">
                     <div className="flex gap-1">
                       {r.status === 'open' && (
-                        <button onClick={() => transition(r.id, 'investigating')} className="px-2 py-1 text-[11px] bg-blue-50 text-blue-700 rounded">Investigate</button>
+                        <button type="button" onClick={() => transition(r.id, 'investigating')} className="px-2 py-1 text-[11px] bg-blue-50 text-blue-700 rounded">Investigate</button>
                       )}
                       {(r.status === 'open' || r.status === 'investigating') && (
                         <>
-                          <button onClick={() => setResolving({ ...r, status: 'resolved' as any })} className="px-2 py-1 text-[11px] bg-green-50 text-green-700 rounded">Resolve</button>
-                          <button onClick={() => setResolving({ ...r, status: 'rejected' as any })} className="px-2 py-1 text-[11px] bg-gray-100 text-gray-700 rounded">Reject</button>
+                          <button type="button" onClick={() => setResolving({ ...r, status: 'resolved' as any })} className="px-2 py-1 text-[11px] bg-green-50 text-green-700 rounded">Resolve</button>
+                          <button type="button" onClick={() => setResolving({ ...r, status: 'rejected' as any })} className="px-2 py-1 text-[11px] bg-gray-100 text-gray-700 rounded">Reject</button>
                         </>
                       )}
                       {(r.status === 'resolved' || r.status === 'rejected') && (
@@ -1542,7 +1542,7 @@ function ResolveExceptionModal({
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
           <h3 className="text-[16px] font-semibold text-[#0f1c2e]">{isResolved ? 'Resolve' : 'Reject'} exception</h3>
-          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
           {err && <div className="text-[12px] text-red-700">{err}</div>}
@@ -1571,8 +1571,8 @@ function ResolveExceptionModal({
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} placeholder="What changed? Required ≥3 chars." className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none" />
           </label>
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
-            <button onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${isResolved ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}>
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button" onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${isResolved ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}>
               {saving ? 'Saving…' : (isResolved ? 'Resolve' : 'Reject')}
             </button>
           </div>
@@ -1616,7 +1616,7 @@ function FileExceptionModal({ onClose, onDone }: { onClose: () => void; onDone: 
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
           <h3 className="text-[16px] font-semibold text-[#0f1c2e]">File a trade exception</h3>
-          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
           {err && <div className="text-[12px] text-red-700">{err}</div>}
@@ -1660,8 +1660,8 @@ function FileExceptionModal({ onClose, onDone }: { onClose: () => void; onDone: 
             <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={4} placeholder="What is wrong with this fill? At least 3 characters." className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none" />
           </label>
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
-            <button onClick={submit} disabled={saving} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50">
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50">
               {saving ? 'Filing…' : 'File exception'}
             </button>
           </div>
@@ -1769,7 +1769,7 @@ function AllocationsTab() {
                     <td className="px-4 py-2">{formatZAR(p.matched_price_zar)}</td>
                     <td className="px-4 py-2 font-medium">{formatZAR(p.matched_volume_mwh * p.matched_price_zar)}</td>
                     <td className="px-4 py-2">
-                      <button onClick={() => setAllocating(p)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">
+                      <button type="button" onClick={() => setAllocating(p)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">
                         Allocate
                       </button>
                     </td>
@@ -1902,7 +1902,7 @@ function AllocateModal({
               {' · '}<span className="font-mono">{fill.match_id.slice(0, 14)}…</span>
             </p>
           </div>
-          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
           {err && <div className="text-[12px] text-red-700">{err}</div>}
@@ -1929,7 +1929,7 @@ function AllocateModal({
                     <td className="px-3 py-2"><input value={sp.reason} onChange={(e) => updateSplit(idx, 'reason', e.target.value)} className="w-full px-2 py-1 border border-[#dde4ec] rounded" placeholder="optional" /></td>
                     <td className="px-3 py-2 text-right">
                       {splits.length > 1 && (
-                        <button onClick={() => removeSplit(idx)} className="text-red-600 text-[11px] hover:underline">remove</button>
+                        <button type="button" onClick={() => removeSplit(idx)} className="text-red-600 text-[11px] hover:underline">remove</button>
                       )}
                     </td>
                   </tr>
@@ -1939,7 +1939,7 @@ function AllocateModal({
           </div>
 
           <div className="flex items-center justify-between text-[12px]">
-            <button onClick={addSplit} className="text-[12px] font-semibold text-[#1a5d97] inline-flex items-center gap-1">
+            <button type="button" onClick={addSplit} className="text-[12px] font-semibold text-[#1a5d97] inline-flex items-center gap-1">
               <Plus size={12} /> Add split
             </button>
             <div className={`font-mono ${balanced ? 'text-green-700' : 'text-red-700'}`}>
@@ -1949,8 +1949,8 @@ function AllocateModal({
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
-            <button onClick={submit} disabled={saving || !balanced} className="px-4 py-2 bg-[#1a3a5c] text-white rounded-lg disabled:opacity-50">
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button" onClick={submit} disabled={saving || !balanced} className="px-4 py-2 bg-[#1a3a5c] text-white rounded-lg disabled:opacity-50">
               {saving ? 'Allocating…' : 'Allocate'}
             </button>
           </div>
@@ -2040,7 +2040,7 @@ function FeesTab() {
       <div className="flex flex-wrap gap-2 items-center">
         <span className="text-[12px] text-[#6b7685]">Type:</span>
         {(['all', 'brokerage', 'exchange', 'clearing', 'regulatory', 'tax', 'adjustment'] as const).map((s) => (
-          <button key={s} onClick={() => setFeeType(s)}
+          <button type="button" key={s} onClick={() => setFeeType(s)}
             className={`px-3 py-1 rounded-full text-[11px] capitalize ${feeType === s ? 'bg-[#1a3a5c] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
             {s.replace(/_/g, ' ')}
           </button>

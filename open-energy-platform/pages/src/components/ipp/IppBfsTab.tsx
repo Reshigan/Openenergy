@@ -141,7 +141,7 @@ export function IppBfsTab() {
           <option value="">All categories</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{TRIGGER_LABELS[c]}</option>)}
         </select>
-        <button onClick={() => load()} className="ml-auto px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200">
+        <button type="button" onClick={() => load()} className="ml-auto px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200">
           Refresh
         </button>
       </div>

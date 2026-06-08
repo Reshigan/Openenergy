@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Apex Refined</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --purple:#6741d9;
+  --purple-bg:#f3f0fb;
+  --purple-border:rgba(103,65,217,0.2);
+  --purple-text:#5b21b6;
+  --slate-50:#f8fafc;
+  --slate-100:#f1f5f9;
+  --slate-200:#e2e8f0;
+  --slate-400:#94a3b8;
+  --slate-500:#64748b;
+  --slate-700:#334155;
+  --slate-900:#0f172a;
+  --green:#15803d;
+  --green-bg:#f0fdf4;
+  --amber:#b45309;
+  --amber-bg:#fffbeb;
+  --red:#dc2626;
+  --red-bg:#fff1f2;
+  --blue:#2563eb;
+  --blue-bg:#eff6ff;
+  --e:cubic-bezier(0.23,1,0.32,1);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+body{
+  background:#e8ecf1;
+  font-family:'Inter',system-ui,sans-serif;
+  padding:40px 32px 60px;
+  min-height:100vh;
+  color:var(--slate-900);
+}
+
+/* ── page header ── */
+.lede{margin-bottom:44px}
+.lede .eyebrow{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--slate-400);margin-bottom:10px}
+.lede h1{font-size:28px;font-weight:800;letter-spacing:-0.03em;color:var(--slate-900);margin-bottom:8px}
+.lede p{font-size:14px;color:var(--slate-500);line-height:1.7;max-width:560px}
+
+/* ── shell ── */
+.shell{
+  width:100%;max-width:1240px;height:540px;
+  background:#fff;border-radius:20px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06),0 20px 60px rgba(0,0,0,0.08);
+  display:flex;overflow:hidden;
+}
+
+/* ══ SIDEBAR ══ */
+.sb{
+  width:232px;flex-shrink:0;
+  background:var(--slate-50);
+  border-right:1px solid var(--slate-200);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+
+/* header */
+.sb-head{padding:16px 14px 12px;border-bottom:1px solid var(--slate-200)}
+.sb-brand{font-size:15px;font-weight:800;letter-spacing:-0.03em;color:var(--slate-900)}
+.sb-role-row{margin-top:10px;display:flex;align-items:center;justify-content:space-between}
+.sb-role{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--purple-bg);border:1px solid var(--purple-border);
+  border-radius:8px;padding:4px 10px;
+}
+.sb-role-dot{
+  width:7px;height:7px;border-radius:50%;background:var(--purple);
+  box-shadow:0 0 0 2px rgba(103,65,217,0.2);flex-shrink:0;
+}
+.sb-role-text{font-size:10px;font-weight:700;color:var(--purple-text);letter-spacing:0.03em}
+.sb-role-arrow{font-size:10px;color:var(--slate-400);cursor:pointer;padding:2px 4px;border-radius:4px}
+.sb-role-arrow:hover{background:var(--slate-200)}
+
+/* search */
+.sb-search{
+  margin:10px 10px 4px;
+  display:flex;align-items:center;gap:7px;
+  background:white;border:1px solid var(--slate-200);
+  border-radius:8px;padding:7px 10px;
+  cursor:text;
+}
+.sb-search-icon{font-size:12px;color:var(--slate-400);flex-shrink:0}
+.sb-search-text{font-size:11px;color:var(--slate-400);flex:1}
+.sb-search-kbd{font-size:9px;color:var(--slate-400);background:var(--slate-100);border:1px solid var(--slate-200);border-radius:4px;padding:1px 5px;font-family:'JetBrains Mono',monospace}
+
+/* scroll area */
+.sb-body{flex:1;overflow-y:auto;padding:4px 0 12px}
+.sb-body::-webkit-scrollbar{width:3px}
+.sb-body::-webkit-scrollbar-thumb{background:var(--slate-200);border-radius:2px}
+
+/* section headers */
+.sb-section{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 14px 5px;
+  cursor:pointer;
+}
+.sb-section-left{display:flex;align-items:center;gap:5px}
+.sb-section-label{font-size:9.5px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--slate-400)}
+.sb-section-count{font-size:9px;font-weight:700;background:var(--red-bg);color:var(--red);padding:1px 5px;border-radius:4px;font-family:'JetBrains Mono',monospace}
+.sb-section-count-pur{font-size:9px;font-weight:700;background:var(--purple-bg);color:var(--purple-text);padding:1px 5px;border-radius:4px;font-family:'JetBrains Mono',monospace}
+.sb-section-chevron{font-size:10px;color:var(--slate-400);transition:transform 150ms var(--e)}
+.sb-section.collapsed .sb-section-chevron{transform:rotate(-90deg)}
+.sb-section:hover .sb-section-label{color:var(--slate-700)}
+
+/* nav items */
+.sb-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 14px 6px 16px;
+  font-size:11.5px;color:var(--slate-500);
+  cursor:pointer;position:relative;border-radius:0;
+  transition:background 80ms,color 80ms;
+}
+.sb-item:hover{background:rgba(0,0,0,0.03);color:var(--slate-700)}
+.sb-item.active{
+  color:var(--purple-text);font-weight:600;
+  background:var(--purple-bg);
+}
+.sb-item.active::before{
+  content:'';position:absolute;left:0;top:4px;bottom:4px;
+  width:3px;background:var(--purple);border-radius:0 2px 2px 0;
+}
+.sb-item-left{display:flex;align-items:center;gap:7px}
+.sb-item-icon{font-size:13px;opacity:0.5;width:16px;text-align:center;flex-shrink:0}
+.sb-item.active .sb-item-icon{opacity:1}
+.sb-item-badges{display:flex;gap:4px;align-items:center}
+
+.badge-red{font-size:9px;font-weight:700;background:var(--red-bg);color:var(--red);padding:1px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;border:1px solid rgba(220,38,38,0.15)}
+.badge-pur{font-size:9px;font-weight:600;background:var(--purple-bg);color:var(--purple-text);padding:1px 6px;border-radius:4px;border:1px solid var(--purple-border)}
+.badge-blue{font-size:9px;font-weight:600;background:var(--blue-bg);color:var(--blue);padding:1px 6px;border-radius:4px}
+.badge-amber{font-size:9px;font-weight:700;background:var(--amber-bg);color:var(--amber);padding:1px 6px;border-radius:4px;border:1px solid rgba(180,83,9,0.15)}
+
+/* collapsed section content - hide via opacity not display so transitions work */
+.sb-section-body.collapsed{display:none}
+
+/* divider */
+.sb-divider{height:1px;background:var(--slate-100);margin:6px 14px}
+
+/* footer */
+.sb-foot{
+  padding:10px 14px;
+  border-top:1px solid var(--slate-200);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.sb-user{display:flex;align-items:center;gap:8px}
+.sb-avatar{
+  width:26px;height:26px;border-radius:8px;
+  background:linear-gradient(135deg,#7c3aed,#4f46e5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:white;flex-shrink:0;
+}
+.sb-username{font-size:11px;font-weight:600;color:var(--slate-700)}
+.sb-useremail{font-size:9px;color:var(--slate-400)}
+.sb-foot-icons{display:flex;gap:2px}
+.sb-foot-icon{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--slate-400);cursor:pointer}
+.sb-foot-icon:hover{background:var(--slate-200)}
+
+/* ══ MAIN ══ */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#fff}
+
+/* top bar */
+.topbar{
+  padding:0 24px;height:52px;
+  border-bottom:1px solid var(--slate-100);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;background:#fff;
+}
+.topbar-left{display:flex;align-items:center;gap:8px}
+.breadcrumb-item{font-size:12px;color:var(--slate-400)}
+.breadcrumb-item.current{font-size:13px;font-weight:600;color:var(--slate-900)}
+.breadcrumb-sep{font-size:11px;color:var(--slate-200)}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.topbar-tag{
+  display:flex;align-items:center;gap:5px;
+  font-size:10px;font-weight:600;color:var(--slate-500);
+  background:var(--slate-50);border:1px solid var(--slate-200);
+  border-radius:6px;padding:4px 9px;
+}
+.topbar-dot-green{width:6px;height:6px;border-radius:50%;background:#16a34a}
+.btn-outline{
+  font-size:11.5px;color:var(--slate-600, #475569);
+  border:1px solid var(--slate-200);border-radius:8px;
+  padding:6px 14px;background:#fff;font-weight:500;cursor:pointer;
+}
+.btn-outline:hover{background:var(--slate-50)}
+.btn-fill{
+  font-size:11.5px;color:#fff;
+  background:var(--purple);border-radius:8px;
+  padding:6px 14px;font-weight:600;cursor:pointer;border:none;
+  box-shadow:0 1px 4px rgba(103,65,217,0.3),0 0 0 0 var(--purple);
+  transition:box-shadow 150ms var(--e),transform 150ms var(--e);
+}
+.btn-fill:active{transform:scale(0.97);transition-duration:80ms}
+
+/* body */
+.body{padding:22px 24px;display:flex;flex-direction:column;gap:16px;flex:1;overflow-y:auto}
+.body::-webkit-scrollbar{width:4px}
+.body::-webkit-scrollbar-thumb{background:var(--slate-200);border-radius:2px}
+
+/* page title area */
+.page-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2px}
+.page-title{font-size:22px;font-weight:800;letter-spacing:-0.03em;color:var(--slate-900);line-height:1.1}
+.page-sub{font-size:12px;color:var(--slate-400);margin-top:4px}
+.page-tags{display:flex;gap:6px;margin-top:8px}
+.ptag{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:10px;font-weight:500;padding:3px 8px;border-radius:6px;
+}
+
+/* kpi strip */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{
+  padding:15px 16px;
+  border:1px solid var(--slate-200);border-radius:14px;
+  background:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,0.04);
+  position:relative;overflow:hidden;
+}
+.kpi::after{
+  content:'';position:absolute;top:0;left:16px;right:16px;height:2px;
+  background:var(--kc);border-radius:0 0 2px 2px;
+}
+.kpi-label{font-size:9.5px;font-weight:600;color:var(--slate-400);text-transform:uppercase;letter-spacing:0.09em;margin-bottom:8px}
+.kpi-num{font-size:28px;font-weight:800;letter-spacing:-0.04em;line-height:1;font-family:'JetBrains Mono',monospace}
+.kpi-delta{font-size:10px;margin-top:5px;display:flex;align-items:center;gap:4px;font-weight:500}
+.kpi-delta-chip{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px}
+
+/* filter row */
+.filter-row{display:flex;align-items:center;gap:8px}
+.filter-search{
+  flex:1;display:flex;align-items:center;gap:7px;
+  border:1px solid var(--slate-200);border-radius:9px;
+  padding:7px 12px;background:var(--slate-50);
+}
+.filter-search-text{font-size:11.5px;color:var(--slate-400);flex:1}
+.filter-btn{
+  font-size:11px;color:var(--slate-500);
+  border:1px solid var(--slate-200);border-radius:9px;
+  padding:7px 13px;background:#fff;display:flex;align-items:center;gap:5px;font-weight:500;
+}
+
+/* table */
+.tbl{border:1px solid var(--slate-100);border-radius:14px;overflow:hidden}
+.thead{
+  display:grid;grid-template-columns:2fr 80px 80px 90px 80px;
+  padding:10px 16px;background:var(--slate-50);
+  border-bottom:1px solid var(--slate-100);
+}
+.th{font-size:10px;font-weight:600;color:var(--slate-400);text-transform:uppercase;letter-spacing:0.07em;display:flex;align-items:center;gap:4px}
+.tr{
+  display:grid;grid-template-columns:2fr 80px 80px 90px 80px;
+  padding:10px 16px;border-bottom:1px solid var(--slate-50);
+  align-items:center;cursor:pointer;
+  transition:background 80ms;
+}
+.tr:hover{background:#fafbfc}
+.tr:last-child{border-bottom:none}
+.tr-name{display:flex;flex-direction:column;gap:2px}
+.td-n{font-size:11.5px;font-weight:500;color:var(--slate-900)}
+.td-sub{font-size:10px;color:var(--slate-400)}
+.td-v{font-size:11px;color:var(--slate-500);font-family:'JetBrains Mono',monospace}
+.pill{font-size:9.5px;font-weight:600;padding:3px 9px;border-radius:20px;display:inline-flex;align-items:center;gap:4px}
+.pill-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.p-act{background:var(--blue-bg);color:var(--blue)}
+.p-done{background:var(--green-bg);color:var(--green)}
+.p-late{background:var(--red-bg);color:var(--red)}
+.p-hold{background:var(--amber-bg);color:var(--amber)}
+
+/* progress section */
+.prog-section{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.prog-card{
+  padding:14px 16px;
+  border:1px solid var(--slate-100);border-radius:14px;
+  background:#fff;
+}
+.prog-card-label{font-size:10px;font-weight:600;color:var(--slate-500);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.prog-card-pct{font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:700}
+.prog-track{height:6px;background:var(--slate-100);border-radius:3px;overflow:hidden;margin-bottom:8px}
+.prog-fill{height:100%;border-radius:3px}
+.prog-meta{font-size:9px;color:var(--slate-400)}
+</style>
+</head>
+<body>
+
+<div class="lede">
+  <div class="eyebrow">Apex — Refined</div>
+  <h1>Sidebar UX in focus</h1>
+  <p>Collapsible sections keep 50+ features organised. Sections bubble up alert counts when collapsed. The active item is always visible. Search handles the rest.</p>
+</div>
+
+<div class="shell">
+
+  <!-- ═══════════ SIDEBAR ═══════════ -->
+  <div class="sb">
+
+    <!-- brand + role -->
+    <div class="sb-head">
+      <div class="sb-brand">Open Energy</div>
+      <div class="sb-role-row">
+        <div class="sb-role">
+          <div class="sb-role-dot"></div>
+          <div class="sb-role-text">IPP Developer</div>
+        </div>
+        <div class="sb-role-arrow">▾</div>
+      </div>
+    </div>
+
+    <!-- search -->
+    <div class="sb-search">
+      <div class="sb-search-icon">⌕</div>
+      <div class="sb-search-text">Search features…</div>
+      <div class="sb-search-kbd">⌘K</div>
+    </div>
+
+    <!-- scrollable nav -->
+    <div class="sb-body">
+
+      <!-- PROJECT MANAGEMENT — expanded -->
+      <div class="sb-section">
+        <div class="sb-section-left">
+          <div class="sb-section-label">Project Management</div>
+        </div>
+        <span class="sb-section-chevron">▾</span>
+      </div>
+      <div class="sb-section-body">
+        <div class="sb-item">
+          <div class="sb-item-left"><span class="sb-item-icon">⬡</span>Dashboard</div>
+        </div>
+        <div class="sb-item active">
+          <div class="sb-item-left"><span class="sb-item-icon">◈</span>Schedule</div>
+          <div class="sb-item-badges"><span class="badge-pur">P6</span></div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-item-left"><span class="sb-item-icon">◇</span>Cost / EVM</div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-item-left"><span class="sb-item-icon">◇</span>WBS</div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-item-left"><span class="sb-item-icon">◇</span>Documents</div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-item-left"><span class="sb-item-icon">◇</span>Drawing Register</div>
+          <div class="sb-item-badges"><span class="badge-blue">New</span></div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-item-left"><span class="sb-item-icon">◇</span>Commissioning Log</div>
+        </div>
+      </div>
+
+      <div class="sb-divider"></div>
+
+      <!-- COMPLIANCE — expanded -->
+      <div class="sb-section">
+        <div class="sb-section-left">
+          <div class="sb-section-label">Compliance & Safety</div>
+          <span class="sb-section-count">3</span>
+        </div>
+        <span class="sb-section-chevron">▾</span>
+      </div>
+      <div class="sb-section-body">
+        <div class="sb-item">
+          <div class="sb-item-left"><span class="sb-item-icon">◇</span>Stage Gates</div>
+          <div class="sb-item-badges"><span class="badge-amber">DG2</span></div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-item-left"><span class="sb-item-icon">◇</span>NCR Log</div>
+          <div class="sb-item-badges"><span class="badge-red">3</span></div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-item-left"><span class="sb-item-icon">◇</span>Method Statements</div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-item-left"><span class="sb-item-icon">◇</span>Env. Monitoring</div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-item-left"><span class="sb-item-icon">◇</span>HSE Incidents</div>
+        </div>
+      </div>
+
+      <div class="sb-divider"></div>
+
+      <!-- FINANCE — collapsed -->
+      <div class="sb-section collapsed">
+        <div class="sb-section-left">
+          <div class="sb-section-label">Contracts & Finance</div>
+        </div>
+        <span class="sb-section-chevron">▾</span>
+      </div>
+      <div class="sb-section-body collapsed">
+        <div class="sb-item"><div class="sb-item-left"><span class="sb-item-icon">◇</span>Progress Claims</div></div>
+        <div class="sb-item"><div class="sb-item-left"><span class="sb-item-icon">◇</span>Drawdowns</div></div>
+        <div class="sb-item"><div class="sb-item-left"><span class="sb-item-icon">◇</span>Bonds &amp; Insurance</div></div>
+        <div class="sb-item"><div class="sb-item-left"><span class="sb-item-icon">◇</span>Subcontractors</div></div>
+        <div class="sb-item"><div class="sb-item-left"><span class="sb-item-icon">◇</span>Procurement / RFP</div></div>
+      </div>
+
+      <div class="sb-divider"></div>
+
+      <!-- RISK — collapsed -->
+      <div class="sb-section collapsed">
+        <div class="sb-section-left">
+          <div class="sb-section-label">Risk &amp; Quality</div>
+          <span class="sb-section-count">2</span>
+        </div>
+        <span class="sb-section-chevron">▾</span>
+      </div>
+      <div class="sb-section-body collapsed"></div>
+
+      <div class="sb-divider"></div>
+
+      <!-- REGULATORY — collapsed -->
+      <div class="sb-section collapsed">
+        <div class="sb-section-left">
+          <div class="sb-section-label">Regulatory</div>
+        </div>
+        <span class="sb-section-chevron">▾</span>
+      </div>
+      <div class="sb-section-body collapsed"></div>
+
+    </div><!-- /sb-body -->
+
+    <!-- user footer -->
+    <div class="sb-foot">
+      <div class="sb-user">
+        <div class="sb-avatar">RK</div>
+        <div>
+          <div class="sb-username">Reshigan K.</div>
+          <div class="sb-useremail">IPP Developer</div>
+        </div>
+      </div>
+      <div class="sb-foot-icons">
+        <div class="sb-foot-icon">⚙</div>
+        <div class="sb-foot-icon">🔔</div>
+      </div>
+    </div>
+
+  </div><!-- /sb -->
+
+  <!-- ═══════════ MAIN CONTENT ═══════════ -->
+  <div class="main">
+
+    <!-- top bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="breadcrumb-item">Project Management</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-item current">Schedule</span>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-tag"><div class="topbar-dot-green"></div>Cosmos Wind Farm</div>
+        <button class="btn-outline">Export</button>
+        <button class="btn-fill">+ New Task</button>
+      </div>
+    </div>
+
+    <!-- scrollable body -->
+    <div class="body">
+
+      <!-- page head -->
+      <div>
+        <div class="page-head">
+          <div>
+            <div class="page-title">Schedule</div>
+            <div class="page-sub">Phase 2 Construction · Primavera P6 · Last synced 4 min ago</div>
+          </div>
+        </div>
+        <div class="page-tags">
+          <span class="ptag" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0">● On Schedule</span>
+          <span class="ptag" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a">⚠ Cost Overrun</span>
+          <span class="ptag" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe">DG2 in 14 days</span>
+        </div>
+      </div>
+
+      <!-- kpi strip -->
+      <div class="kpis">
+        <div class="kpi" style="--kc:#15803d">
+          <div class="kpi-label">Schedule Performance</div>
+          <div class="kpi-num" style="color:#15803d">0.97</div>
+          <div class="kpi-delta" style="color:#15803d">
+            <span class="kpi-delta-chip" style="background:#f0fdf4">▲ +0.03</span> vs last month
+          </div>
+        </div>
+        <div class="kpi" style="--kc:#b45309">
+          <div class="kpi-label">Cost Performance</div>
+          <div class="kpi-num" style="color:#b45309">0.89</div>
+          <div class="kpi-delta" style="color:#b45309">
+            <span class="kpi-delta-chip" style="background:#fffbeb">▼ -0.04</span> vs last month
+          </div>
+        </div>
+        <div class="kpi" style="--kc:#6741d9">
+          <div class="kpi-label">Est. at Completion</div>
+          <div class="kpi-num" style="color:var(--slate-900)">R890M</div>
+          <div class="kpi-delta" style="color:var(--slate-400)">
+            <span class="kpi-delta-chip" style="background:var(--slate-100);color:var(--slate-500)">+R42M</span> vs BAC
+          </div>
+        </div>
+        <div class="kpi" style="--kc:#2563eb">
+          <div class="kpi-label">SLA — DG2 Gate</div>
+          <div class="kpi-num" style="color:#2563eb">14d</div>
+          <div class="kpi-delta" style="color:#2563eb">
+            <span class="kpi-delta-chip" style="background:#eff6ff">On track</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- filter row -->
+      <div class="filter-row">
+        <div class="filter-search">
+          <span style="font-size:12px;color:var(--slate-400)">⌕</span>
+          <div class="filter-search-text">Filter tasks…</div>
+        </div>
+        <button class="filter-btn" style="border:1px solid var(--slate-200);background:#fff;border-radius:9px;padding:7px 13px;font-size:11px;color:var(--slate-500);display:flex;align-items:center;gap:5px">
+          Status ▾
+        </button>
+        <button class="filter-btn" style="border:1px solid var(--slate-200);background:#fff;border-radius:9px;padding:7px 13px;font-size:11px;color:var(--slate-500);display:flex;align-items:center;gap:5px">
+          Assignee ▾
+        </button>
+        <button class="filter-btn" style="border:1px solid var(--slate-200);background:#fff;border-radius:9px;padding:7px 13px;font-size:11px;color:var(--slate-500);display:flex;align-items:center;gap:5px">
+          Due date ▾
+        </button>
+      </div>
+
+      <!-- table -->
+      <div class="tbl">
+        <div class="thead">
+          <div class="th">Task Name</div>
+          <div class="th">Due</div>
+          <div class="th">Value</div>
+          <div class="th">Status</div>
+          <div class="th">Progress</div>
+        </div>
+
+        <div class="tr">
+          <div class="tr-name"><div class="td-n">Procurement Package A</div><div class="td-sub">Civil · Contractor: Basil Read</div></div>
+          <div class="td-v">Jun 14</div>
+          <div class="td-v">R120M</div>
+          <div><span class="pill p-act"><div class="pill-dot" style="background:#2563eb"></div>Active</span></div>
+          <div style="display:flex;align-items:center;gap:7px">
+            <div style="flex:1;height:4px;background:var(--slate-100);border-radius:2px;overflow:hidden"><div style="width:65%;height:100%;background:#2563eb;border-radius:2px"></div></div>
+            <span style="font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--slate-400);flex-shrink:0">65%</span>
+          </div>
+        </div>
+
+        <div class="tr">
+          <div class="tr-name"><div class="td-n">Foundation Works</div><div class="td-sub">Civil · Site 2A complete</div></div>
+          <div class="td-v">May 30</div>
+          <div class="td-v">R48M</div>
+          <div><span class="pill p-done"><div class="pill-dot" style="background:#15803d"></div>Done</span></div>
+          <div style="display:flex;align-items:center;gap:7px">
+            <div style="flex:1;height:4px;background:var(--slate-100);border-radius:2px;overflow:hidden"><div style="width:100%;height:100%;background:#15803d;border-radius:2px"></div></div>
+            <span style="font-size:9.5px;font-family:'JetBrains Mono',monospace;color:#15803d;flex-shrink:0">100%</span>
+          </div>
+        </div>
+
+        <div class="tr">
+          <div class="tr-name"><div class="td-n">Turbine Installation — Set 1</div><div class="td-sub">Mechanical · 12 of 36 turbines</div></div>
+          <div class="td-v">Jul 22</div>
+          <div class="td-v">R310M</div>
+          <div><span class="pill p-late"><div class="pill-dot" style="background:#dc2626"></div>Delayed</span></div>
+          <div style="display:flex;align-items:center;gap:7px">
+            <div style="flex:1;height:4px;background:var(--slate-100);border-radius:2px;overflow:hidden"><div style="width:33%;height:100%;background:#dc2626;border-radius:2px"></div></div>
+            <span style="font-size:9.5px;font-family:'JetBrains Mono',monospace;color:#dc2626;flex-shrink:0">33%</span>
+          </div>
+        </div>
+
+        <div class="tr">
+          <div class="tr-name"><div class="td-n">HV Cabling &amp; Substation</div><div class="td-sub">Electrical · Awaiting delivery</div></div>
+          <div class="td-v">Aug 10</div>
+          <div class="td-v">R87M</div>
+          <div><span class="pill p-hold"><div class="pill-dot" style="background:#b45309"></div>On Hold</span></div>
+          <div style="display:flex;align-items:center;gap:7px">
+            <div style="flex:1;height:4px;background:var(--slate-100);border-radius:2px;overflow:hidden"><div style="width:12%;height:100%;background:#b45309;border-radius:2px"></div></div>
+            <span style="font-size:9.5px;font-family:'JetBrains Mono',monospace;color:#b45309;flex-shrink:0">12%</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- progress section -->
+      <div class="prog-section">
+        <div class="prog-card">
+          <div class="prog-card-label">Civil Works <span class="prog-card-pct" style="color:#15803d">82%</span></div>
+          <div class="prog-track"><div class="prog-fill" style="width:82%;background:#15803d"></div></div>
+          <div class="prog-meta">R352M spent of R430M · ahead by 3 days</div>
+        </div>
+        <div class="prog-card">
+          <div class="prog-card-label">Mechanical <span class="prog-card-pct" style="color:#dc2626">41%</span></div>
+          <div class="prog-track"><div class="prog-fill" style="width:41%;background:#dc2626"></div></div>
+          <div class="prog-meta">R165M spent of R402M · delayed 18 days</div>
+        </div>
+        <div class="prog-card">
+          <div class="prog-card-label">Electrical <span class="prog-card-pct" style="color:#b45309">28%</span></div>
+          <div class="prog-track"><div class="prog-fill" style="width:28%;background:#b45309"></div></div>
+          <div class="prog-meta">R24M spent of R87M · on hold</div>
+        </div>
+      </div>
+
+    </div><!-- /body -->
+  </div><!-- /main -->
+
+</div><!-- /shell -->
+
+<p style="margin-top:24px;font-size:12px;color:#94a3b8">Sidebar: 2 sections expanded · 3 collapsed with alert bubbles · search + role switcher + user footer. Click sections to expand/collapse.</p>
+
+<script>
+// Wire up section collapse
+document.querySelectorAll('.sb-section').forEach(function(sec){
+  sec.addEventListener('click', function(){
+    this.classList.toggle('collapsed');
+    var body = this.nextElementSibling;
+    if(body && body.classList.contains('sb-section-body')){
+      body.classList.toggle('collapsed');
+    }
+  });
+});
+// Record selection (brainstorm companion compat)
+if(window.recordChoice) window.recordChoice('apex-refined','Apex Refined');
+</script>
+
+</body>
+</html>

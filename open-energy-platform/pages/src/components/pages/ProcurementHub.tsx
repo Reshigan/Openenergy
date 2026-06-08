@@ -130,7 +130,7 @@ function BrowseTab() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {filtered.map((r) => (
-            <button key={r.id} onClick={() => setSelected(r)}
+            <button type="button" key={r.id} onClick={() => setSelected(r)}
               className="text-left rounded-xl border border-[#dde4ec] bg-white p-5 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="font-display font-semibold text-[14px] text-[#0f1c2e] line-clamp-2">{r.title}</h3>
@@ -188,7 +188,7 @@ function MyRfpsTab() {
       </div>
       <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
         <div className="text-[13px] text-[#3d4756]">{rfps.length} RFPs you've issued</div>
-        <button onClick={() => setShowCreate(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1"><Plus size={14} /> New RFP</button>
+        <button type="button" onClick={() => setShowCreate(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1"><Plus size={14} /> New RFP</button>
       </div>
       <Card title="Your RFPs">
         {rfps.length === 0 ? <EmptyMsg>You haven't issued any RFPs yet.</EmptyMsg> : (
@@ -344,7 +344,7 @@ function EvaluationTab() {
         {rfps.length === 0 ? <EmptyMsg>No RFPs with submitted bids yet.</EmptyMsg> : (
           <div className="space-y-2">
             {rfps.map((r) => (
-              <button key={r.id} onClick={() => loadBids(r)} className="w-full flex items-center justify-between p-3 rounded-md border border-[#dde4ec] hover:border-[#3b82c4] hover:bg-[#fafbfd] text-left">
+              <button type="button" key={r.id} onClick={() => loadBids(r)} className="w-full flex items-center justify-between p-3 rounded-md border border-[#dde4ec] hover:border-[#3b82c4] hover:bg-[#fafbfd] text-left">
                 <div>
                   <div className="text-[13px] font-semibold text-[#0f1c2e]">{r.title}</div>
                   <div className="text-[11px] text-[#6b7685] mt-0.5">{r.bid_count || 0} bids · deadline {r.deadline ? new Date(r.deadline).toLocaleDateString() : '—'}</div>
@@ -365,7 +365,7 @@ function EvaluationTab() {
           <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Evaluating</div>
           <div className="font-display font-semibold text-[14px] text-[#0f1c2e]">{selectedRfp.title}</div>
         </div>
-        <button onClick={() => { setSelectedRfp(null); setBids([]); }} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[12px] font-semibold">← Back</button>
+        <button type="button" onClick={() => { setSelectedRfp(null); setBids([]); }} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[12px] font-semibold">← Back</button>
       </div>
       <div className="rounded-xl border border-[#dde4ec] bg-white p-3 text-[12px] text-[#3d4756]">
         Weights: <strong>Price 40%</strong> · Technical 25% · Sustainability 20% · Delivery 15%. Adjust 0–100 sliders below; ranking updates live.
@@ -401,7 +401,7 @@ function EvaluationTab() {
                     <td className="px-3 py-2"><Slider value={s.delivery} onChange={(v) => setS('delivery', v)} /></td>
                     <td className="px-3 py-2 text-right font-mono font-semibold text-[#1a3a5c]">{num(overall, 1)}</td>
                     <td className="px-3 py-2 text-right">
-                      <button onClick={() => award(b.id)} className="text-[12px] text-[#1a8a5b] hover:underline font-semibold inline-flex items-center gap-1">
+                      <button type="button" onClick={() => award(b.id)} className="text-[12px] text-[#1a8a5b] hover:underline font-semibold inline-flex items-center gap-1">
                         <BadgeCheck size={12} /> Award
                       </button>
                     </td>
@@ -412,7 +412,7 @@ function EvaluationTab() {
           </table>
         </div>
         <div className="px-5 pb-5 pt-3 flex items-center justify-end gap-2">
-          <button onClick={persistScores} className="h-9 px-4 rounded-md border border-[#dde4ec] text-[#1a3a5c] text-[12px] font-semibold">Save scores</button>
+          <button type="button" onClick={persistScores} className="h-9 px-4 rounded-md border border-[#dde4ec] text-[#1a3a5c] text-[12px] font-semibold">Save scores</button>
         </div>
       </Card>
     </div>
@@ -559,7 +559,7 @@ function Modal({ title, children, onClose, wide }: { title: string; children: Re
       <div className={`bg-white rounded-xl shadow-xl w-full ${wide ? 'max-w-2xl' : 'max-w-md'} mx-4 max-h-[90vh] overflow-auto`}>
         <header className="px-5 py-3 border-b border-[#eef2f7] flex items-center justify-between">
           <div className="font-display font-semibold text-[15px] text-[#0f1c2e]">{title}</div>
-          <button onClick={onClose} aria-label="Close dialog" className="text-[#6b7685] hover:text-[#0f1c2e]"><X size={18} /></button>
+          <button type="button" onClick={onClose} aria-label="Close dialog" className="text-[#6b7685] hover:text-[#0f1c2e]"><X size={18} /></button>
         </header>
         <div className="p-5">{children}</div>
       </div>

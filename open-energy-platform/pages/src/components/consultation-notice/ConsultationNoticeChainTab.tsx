@@ -480,7 +480,7 @@ export function ConsultationNoticeChainTab() {
 
       <div className="mb-3 flex flex-wrap gap-1.5">
         {FILTERS.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -626,7 +626,7 @@ function Drawer({
                 {row.escalation_level > 0 ? ` · escalation lvl ${row.escalation_level}` : ''}
               </div>
             </div>
-            <button onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
+            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
           </div>
         </header>
 
@@ -713,7 +713,7 @@ function Drawer({
             <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
             <div className="flex flex-wrap gap-2">
               {primary && (
-                <button
+                <button type="button"
                   onClick={() => onAct(primary, row)}
                   className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a3a5c]"
                 >
@@ -721,7 +721,7 @@ function Drawer({
                 </button>
               )}
               {canExtend && (
-                <button
+                <button type="button"
                   onClick={() => onAct('extend-comment-period', row)}
                   className="rounded border border-orange-300 bg-white px-3 py-1.5 text-[12px] font-medium text-orange-700 hover:bg-orange-50"
                 >
@@ -729,7 +729,7 @@ function Drawer({
                 </button>
               )}
               {canReopen && (
-                <button
+                <button type="button"
                   onClick={() => onAct('reopen-for-comment', row)}
                   className="rounded border border-orange-300 bg-white px-3 py-1.5 text-[12px] font-medium text-orange-700 hover:bg-orange-50"
                 >
@@ -737,7 +737,7 @@ function Drawer({
                 </button>
               )}
               {canScheduleHearing && (
-                <button
+                <button type="button"
                   onClick={() => onAct('schedule-hearing', row)}
                   className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#1a3a5c] hover:bg-[#f3f5f9]"
                 >
@@ -745,7 +745,7 @@ function Drawer({
                 </button>
               )}
               {canHold && (
-                <button
+                <button type="button"
                   onClick={() => onAct('place-on-hold', row)}
                   className="rounded border border-orange-300 bg-white px-3 py-1.5 text-[12px] font-medium text-orange-700 hover:bg-orange-50"
                 >
@@ -753,7 +753,7 @@ function Drawer({
                 </button>
               )}
               {canWithdraw && (
-                <button
+                <button type="button"
                   onClick={() => onAct('withdraw-notice', row)}
                   className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
                 >
@@ -761,7 +761,7 @@ function Drawer({
                 </button>
               )}
               {canCancel && (
-                <button
+                <button type="button"
                   onClick={() => onAct('cancel', row)}
                   className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6b1f1f] hover:bg-[#f3e0e0]"
                 >

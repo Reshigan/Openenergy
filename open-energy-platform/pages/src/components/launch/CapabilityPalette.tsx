@@ -46,12 +46,12 @@ export function CapabilityPalette({ role, open, onClose }: { role: string; open:
           <Search size={16} />
           <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="What do you want to do?"
             style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14 }} />
-          <button aria-label="Close" onClick={onClose}><X size={16} /></button>
+          <button type="button" aria-label="Close" onClick={onClose}><X size={16} /></button>
         </div>
         <div style={{ maxHeight: 420, overflowY: 'auto', padding: 6 }}>
           {filtered.length === 0 && <div style={{ padding: 20, color: '#7a8a9a', fontSize: 13 }}>No matching actions.</div>}
           {filtered.map((c) => (
-            <button key={c.id} onClick={() => go(c.href)}
+            <button type="button" key={c.id} onClick={() => go(c.href)}
               style={{ display: 'flex', width: '100%', textAlign: 'left', gap: 10, padding: '10px 12px', border: 'none', background: 'none', borderRadius: 8, cursor: 'pointer' }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#0f1c2e' }}>{c.label}

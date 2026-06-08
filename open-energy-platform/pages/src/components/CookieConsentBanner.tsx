@@ -77,15 +77,15 @@ export function CookieConsentBanner() {
               </label>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button onClick={() => record({ analytics, marketing })}
+              <button type="button" onClick={() => record({ analytics, marketing })}
                       className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Save preferences</button>
-              <button onClick={() => record({ analytics: true, marketing: true })}
+              <button type="button" onClick={() => record({ analytics: true, marketing: true })}
                       className="h-8 px-3 rounded bg-white border border-[#dde4ec] text-[#3d4756] text-[12px] font-semibold">Accept all</button>
-              <button onClick={() => record({ analytics: false, marketing: false })}
+              <button type="button" onClick={() => record({ analytics: false, marketing: false })}
                       className="h-8 px-3 rounded bg-white border border-[#dde4ec] text-[#3d4756] text-[12px] font-semibold">Necessary only</button>
             </div>
           </div>
-          <button
+          <button type="button"
             onClick={() => record({ analytics: false, marketing: false })}
             aria-label="Dismiss cookie banner (necessary cookies only)"
             className="p-2 -mt-1 -mr-1 text-[#6b7685] hover:text-[#0f1c2e] inline-flex items-center justify-center min-w-[24px] min-h-[24px]"

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Apex Premium</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
+<style>
+/*
+  Apex Premium
+  ────────────────────────────────────────────────────────────
+  Gradients: intentional depth, not AI-rainbow
+  · Outer body:   rich angled mesh
+  · Sidebar:      top-to-bottom wash from cool-white to slate
+  · Active item:  navy→indigo gradient (inverted, no purple hue)
+  · Logo icon:    midnight→steel gradient
+  · Page title:   navy gradient text
+  · KPI cards:    micro-gradient top-tint per semantic colour
+  · Topbar:       imperceptibly warm-white gradient
+  ────────────────────────────────────────────────────────────
+  No purple. Semantic: emerald · amber · rose · blue.
+*/
+:root{
+  --navy-0:#07182e;
+  --navy-1:#0b1f3a;
+  --navy-2:#162d52;
+  --navy-3:#1e3d6e;
+  --canvas:#ffffff;
+  --surf:#f7f9fc;
+  --surf-2:#f1f4f8;
+  --border:#e2e8f0;
+  --border-2:#edf1f6;
+  --text-1:#0a1628;
+  --text-2:#445570;
+  --text-3:#8698b0;
+  --green:#0b7040;
+  --green-bg:#e6f6ed;
+  --amber:#8c5a09;
+  --amber-bg:#fdf2da;
+  --rose:#b02929;
+  --rose-bg:#fceaea;
+  --blue:#1549a0;
+  --blue-bg:#e9f0fd;
+  --e:cubic-bezier(0.23,1,0.32,1);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+body{
+  font-family:'DM Sans',system-ui,sans-serif;
+  background:
+    radial-gradient(ellipse at 18% 60%,rgba(7,24,46,0.1) 0%,transparent 55%),
+    radial-gradient(ellipse at 82% 15%,rgba(14,54,102,0.07) 0%,transparent 45%),
+    radial-gradient(ellipse at 50% 90%,rgba(10,22,40,0.08) 0%,transparent 50%),
+    linear-gradient(145deg,#d3dae5 0%,#c8d2e0 40%,#d6dde8 100%);
+  padding:44px 32px 72px;
+  min-height:100vh;
+}
+
+/* ── lede ── */
+.lede{margin-bottom:48px}
+.lede .eye{font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8698b0;margin-bottom:10px}
+.lede h1{font-size:26px;font-weight:800;letter-spacing:-0.025em;color:var(--text-1);margin-bottom:6px}
+.lede p{font-size:13.5px;color:var(--text-2);line-height:1.65;max-width:520px}
+
+/* ── shell ── */
+.shell{
+  width:100%;max-width:1260px;height:560px;
+  display:flex;overflow:hidden;
+  border-radius:18px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.7),
+    0 1px 2px rgba(0,0,0,0.06),
+    0 8px 24px rgba(7,24,46,0.08),
+    0 32px 72px rgba(7,24,46,0.12);
+}
+
+/* ══════ SIDEBAR ══════ */
+.sb{
+  width:232px;flex-shrink:0;
+  background:
+    linear-gradient(180deg,
+      rgba(255,255,255,0.96) 0%,
+      rgba(247,249,252,0.97) 50%,
+      rgba(241,244,248,0.98) 100%);
+  border-right:1px solid rgba(226,232,240,0.8);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  backdrop-filter:blur(12px);
+}
+
+/* brand */
+.sb-head{padding:18px 16px 14px;border-bottom:1px solid rgba(226,232,240,0.7)}
+.sb-mark{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.sb-icon{
+  width:28px;height:28px;border-radius:8px;flex-shrink:0;
+  background:linear-gradient(145deg,#07182e 0%,#1a3d6e 100%);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 6px rgba(7,24,46,0.28),inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.sb-icon-sym{font-size:13px;line-height:1}
+.sb-name{font-size:14.5px;font-weight:800;letter-spacing:-0.03em;
+  background:linear-gradient(135deg,var(--navy-0) 20%,var(--navy-3) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.sb-env{font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3)}
+
+/* role */
+.sb-role{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 9px;background:white;
+  border:1px solid var(--border);border-radius:8px;cursor:pointer;
+  box-shadow:0 1px 2px rgba(7,24,46,0.04);
+  transition:border-color 100ms,box-shadow 100ms;
+}
+.sb-role:hover{border-color:rgba(11,31,58,0.25);box-shadow:0 2px 6px rgba(7,24,46,0.06)}
+.sb-ri{width:18px;height:18px;border-radius:5px;
+  background:linear-gradient(145deg,#07182e,#1a3d6e);
+  display:flex;align-items:center;justify-content:center;
+  font-size:8px;font-weight:800;color:white;flex-shrink:0;letter-spacing:0.02em}
+.sb-rn{font-size:10.5px;font-weight:600;color:var(--text-1);flex:1}
+.sb-rc{font-size:9px;color:var(--text-3)}
+
+/* search */
+.sb-search{padding:8px 10px 4px}
+.ssi{display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,0.8);border:1px solid var(--border);
+  border-radius:7px;padding:6px 10px;cursor:text;
+  transition:border-color 100ms,background 100ms;
+}
+.ssi:hover{background:white;border-color:rgba(11,31,58,0.2)}
+.ssic{font-size:11px;color:var(--text-3)}
+.ssih{font-size:11px;color:var(--text-3);flex:1}
+.sskb{font-size:9px;color:var(--text-3);background:var(--surf-2);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:'JetBrains Mono',monospace}
+
+/* nav body */
+.sb-body{flex:1;overflow-y:auto;padding:6px 0 12px}
+.sb-body::-webkit-scrollbar{width:3px}
+.sb-body::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:2px}
+
+/* section */
+.sb-s{padding:12px 14px 4px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.sb-s:hover .sb-sl{color:var(--text-2)}
+.sb-sl{font-size:9.5px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--text-3);transition:color 100ms}
+.sb-sc{display:flex;align-items:center;gap:4px}
+.sb-al{font-size:9px;font-weight:700;background:var(--rose-bg);color:var(--rose);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace}
+.sb-ch{font-size:9px;color:var(--text-3);transition:transform 120ms var(--e)}
+.sb-s.col .sb-ch{transform:rotate(-90deg)}
+.sbb.col{display:none}
+
+/* items */
+.sb-i{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:5.5px 14px 5.5px 18px;cursor:pointer;position:relative;
+  transition:background 70ms;
+}
+.sb-i:hover .sb-il{color:var(--text-1)}
+.sb-i.on{
+  background:linear-gradient(90deg,var(--navy-1) 0%,var(--navy-3) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.sb-i.on .sb-il{color:white;font-weight:600}
+.sb-i.on .bpill{opacity:0.7}
+.sb-il{font-size:11.5px;color:var(--text-2);display:flex;align-items:center;gap:6px;transition:color 80ms}
+.sb-dot{width:3px;height:3px;border-radius:50%;background:var(--border);flex-shrink:0}
+.sb-i.on .sb-dot{background:rgba(255,255,255,0.35)}
+.bpills{display:flex;gap:3px}
+.bpill{font-size:8.5px;font-weight:700;padding:1px 5px;border-radius:3px}
+.bp-n{background:rgba(11,31,58,0.08);color:var(--navy-1)}
+.bp-b{background:var(--blue-bg);color:var(--blue)}
+.bp-a{background:var(--rose-bg);color:var(--rose)}
+.bp-am{background:var(--amber-bg);color:var(--amber)}
+.sb-i.on .bp-n{background:rgba(255,255,255,0.16);color:rgba(255,255,255,0.88)}
+
+.sb-div{height:1px;background:var(--border-2);margin:6px 14px}
+
+/* footer */
+.sb-foot{border-top:1px solid rgba(226,232,240,0.7);padding:11px 15px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:rgba(247,249,252,0.6)}
+.sf-u{display:flex;align-items:center;gap:8px}
+.sf-av{width:28px;height:28px;border-radius:8px;
+  background:linear-gradient(145deg,#07182e,#1a3d6e);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:800;color:white;flex-shrink:0;
+  box-shadow:0 2px 4px rgba(7,24,46,0.25)}
+.sf-un{font-size:11.5px;font-weight:600;color:var(--text-1)}
+.sf-ue{font-size:10px;color:var(--text-3)}
+.sf-acts{display:flex;gap:1px}
+.sf-a{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:12px;cursor:pointer;transition:background 80ms,color 80ms}
+.sf-a:hover{background:var(--surf-2);color:var(--text-2)}
+
+/* ══════ MAIN ══════ */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:white}
+
+/* topbar */
+.topbar{
+  height:52px;flex-shrink:0;
+  border-bottom:1px solid var(--border);
+  padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(180deg,#ffffff 0%,#fafbfd 100%);
+}
+.tbl{display:flex;align-items:center;gap:7px}
+.tbc{font-size:12px;color:var(--text-3)}
+.tbc.cur{font-size:13px;font-weight:700;color:var(--text-1)}
+.tbsep{font-size:10px;color:var(--border)}
+.tbr{display:flex;align-items:center;gap:8px}
+.tbtag{font-size:10.5px;font-weight:500;color:var(--text-2);padding:5px 10px;border:1px solid var(--border);border-radius:7px;display:flex;align-items:center;gap:5px;background:var(--surf)}
+.tdot{width:6px;height:6px;border-radius:50%}
+.btn-f{
+  font-size:11.5px;font-weight:600;color:white;border:none;border-radius:8px;
+  padding:7px 15px;cursor:pointer;
+  background:linear-gradient(145deg,#0b1f3a 0%,#1e3d6e 100%);
+  box-shadow:0 1px 3px rgba(7,24,46,0.25),0 4px 12px rgba(7,24,46,0.1);
+  transition:box-shadow 150ms var(--e),transform 120ms var(--e);
+}
+.btn-f:hover{box-shadow:0 2px 6px rgba(7,24,46,0.3),0 8px 20px rgba(7,24,46,0.14)}
+.btn-f:active{transform:scale(0.97)}
+.btn-o{font-size:11.5px;font-weight:500;color:var(--text-2);background:white;border:1px solid var(--border);border-radius:8px;padding:7px 14px;cursor:pointer;transition:background 80ms}
+.btn-o:hover{background:var(--surf)}
+
+/* body */
+.mbody{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:16px;padding:0}
+.mbody::-webkit-scrollbar{width:4px}
+.mbody::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:2px}
+
+/* page hero strip */
+.hero-strip{
+  padding:20px 24px 18px;
+  background:linear-gradient(160deg,rgba(235,241,252,0.7) 0%,rgba(255,255,255,0) 55%);
+  border-bottom:1px solid var(--border-2);
+  flex-shrink:0;
+}
+.ph-t{
+  font-size:22px;font-weight:800;letter-spacing:-0.03em;line-height:1.1;
+  background:linear-gradient(130deg,var(--navy-0) 0%,var(--navy-3) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.ph-sub{font-size:12px;color:var(--text-3);margin-top:4px}
+.ph-tags{display:flex;gap:5px;margin-top:9px}
+.ptag{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:500;padding:3px 8px;border-radius:5px}
+
+/* rest of content */
+.content{padding:16px 24px;display:flex;flex-direction:column;gap:14px;flex:1;overflow-y:auto}
+.content::-webkit-scrollbar{width:4px}
+.content::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:2px}
+
+/* kpi strip */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.kpi{
+  padding:14px 15px 12px;
+  border:1px solid var(--border);border-radius:12px;
+  background:linear-gradient(180deg,rgba(255,255,255,1) 0%,rgba(248,250,253,1) 100%);
+  position:relative;overflow:hidden;
+  box-shadow:0 1px 2px rgba(7,24,46,0.04);
+}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kc)}
+.kpi::after{content:'';position:absolute;top:2px;left:0;right:0;height:28px;background:linear-gradient(180deg,rgba(var(--kca),0.05) 0%,transparent 100%)}
+.kl{position:relative;font-size:9.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px}
+.kn{position:relative;font-size:26px;font-weight:800;letter-spacing:-0.04em;line-height:1;font-family:'JetBrains Mono',monospace;color:var(--text-1)}
+.kd{position:relative;font-size:9.5px;margin-top:5px;color:var(--text-3);display:flex;align-items:center;gap:4px}
+.kchip{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;font-family:'JetBrains Mono',monospace}
+
+/* filter */
+.fbar{display:flex;align-items:center;gap:7px}
+.fs{flex:1;display:flex;align-items:center;gap:6px;background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:7px 11px}
+.fs:hover{border-color:rgba(11,31,58,0.2)}
+.fsi{font-size:11px;color:var(--text-3)}
+.fst{font-size:11.5px;color:var(--text-3);flex:1}
+.fb{font-size:11px;font-weight:500;color:var(--text-2);background:white;border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer;transition:background 80ms}
+.fb:hover{background:var(--surf)}
+
+/* table */
+.tw{border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(7,24,46,0.04)}
+.thr{display:grid;grid-template-columns:2fr 70px 78px 88px 96px;padding:9px 16px;background:linear-gradient(180deg,var(--surf) 0%,var(--surf-2) 100%);border-bottom:1px solid var(--border)}
+.th{font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-3)}
+.tdr{display:grid;grid-template-columns:2fr 70px 78px 88px 96px;padding:9px 16px;border-bottom:1px solid var(--border-2);align-items:center;cursor:pointer;transition:background 70ms}
+.tdr:hover{background:rgba(247,249,252,0.6)}
+.tdr:last-child{border-bottom:none}
+.tdn{font-size:11.5px;font-weight:600;color:var(--text-1)}
+.tds{font-size:10px;color:var(--text-3);margin-top:1px}
+.tdv{font-size:11.5px;color:var(--text-2);font-family:'JetBrains Mono',monospace}
+.pill{font-size:9.5px;font-weight:600;padding:3px 8px;border-radius:4px;display:inline-flex;align-items:center;gap:3px}
+.pd{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+.mpw{display:flex;align-items:center;gap:6px}
+.mpt{flex:1;height:3px;background:var(--surf-2);border-radius:2px;overflow:hidden}
+.mpf{height:100%;border-radius:2px}
+.mpp{font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--text-3);flex-shrink:0;width:28px;text-align:right}
+
+/* bottom */
+.botg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.bc{
+  border:1px solid var(--border);border-radius:12px;padding:13px 15px;
+  background:linear-gradient(180deg,white 0%,var(--surf) 100%);
+  box-shadow:0 1px 2px rgba(7,24,46,0.04);
+}
+.bcl{font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-3);margin-bottom:9px;display:flex;justify-content:space-between;align-items:center}
+.bcp{font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:700}
+.bct{height:5px;background:var(--surf-2);border-radius:3px;overflow:hidden;margin-bottom:7px}
+.bcf{height:100%;border-radius:3px}
+.bcm{font-size:10px;color:var(--text-3)}
+</style>
+</head>
+<body>
+
+<div class="lede">
+  <div class="eye">Apex Premium</div>
+  <h1>Gradients with purpose. Design with character.</h1>
+  <p>Navy-ink gradients on active states, sidebar wash, page title, and button. No rainbow. No AI. Depth through restraint.</p>
+</div>
+
+<div class="shell">
+
+  <!-- ═══════ SIDEBAR ═══════ -->
+  <div class="sb">
+
+    <div class="sb-head">
+      <div class="sb-mark">
+        <!-- Real OE logo: three interlocking rings -->
+        <svg width="28" height="28" viewBox="0 0 400 400" style="flex-shrink:0" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Open Energy">
+          <g fill="none" stroke-linecap="round">
+            <circle cx="142" cy="148" r="92" stroke="#3b82c4" stroke-width="22" stroke-dasharray="430 200" stroke-dashoffset="-50"/>
+            <circle cx="258" cy="148" r="92" stroke="#1f9b95" stroke-width="22" stroke-dasharray="430 200" stroke-dashoffset="80"/>
+            <circle cx="200" cy="252" r="92" stroke="#1a3a5c" stroke-width="22" stroke-dasharray="430 200" stroke-dashoffset="200"/>
+          </g>
+          <circle cx="200" cy="200" r="22" fill="#1a3a5c"/>
+          <circle cx="200" cy="200" r="9" fill="#5fa8e8"/>
+        </svg>
+        <div>
+          <div class="sb-name">Open Energy</div>
+          <div class="sb-env">Platform</div>
+        </div>
+      </div>
+      <div class="sb-role">
+        <div class="sb-ri">IPP</div>
+        <div class="sb-rn">IPP Developer</div>
+        <div class="sb-rc">⌄</div>
+      </div>
+    </div>
+
+    <div class="sb-search">
+      <div class="ssi">
+        <span class="ssic">⌕</span>
+        <span class="ssih">Jump to feature…</span>
+        <span class="sskb">⌘K</span>
+      </div>
+    </div>
+
+    <div class="sb-body">
+
+      <div class="sb-s"><span class="sb-sl">Project</span><div class="sb-sc"><span class="sb-ch">▾</span></div></div>
+      <div class="sbb">
+        <div class="sb-i"><div class="sb-il"><span class="sb-dot"></span>Dashboard</div></div>
+        <div class="sb-i on"><div class="sb-il"><span class="sb-dot"></span>Schedule</div><div class="bpills"><span class="bpill bp-n">P6</span></div></div>
+        <div class="sb-i"><div class="sb-il"><span class="sb-dot"></span>Cost &amp; EVM</div></div>
+        <div class="sb-i"><div class="sb-il"><span class="sb-dot"></span>WBS</div></div>
+        <div class="sb-i"><div class="sb-il"><span class="sb-dot"></span>Documents</div></div>
+        <div class="sb-i"><div class="sb-il"><span class="sb-dot"></span>Drawing Register</div><div class="bpills"><span class="bpill bp-b">New</span></div></div>
+        <div class="sb-i"><div class="sb-il"><span class="sb-dot"></span>Commissioning Log</div></div>
+      </div>
+
+      <div class="sb-div"></div>
+
+      <div class="sb-s"><span class="sb-sl">Compliance</span><div class="sb-sc"><span class="sb-al">3</span><span class="sb-ch">▾</span></div></div>
+      <div class="sbb">
+        <div class="sb-i"><div class="sb-il"><span class="sb-dot"></span>Stage Gates</div><div class="bpills"><span class="bpill bp-am">DG2</span></div></div>
+        <div class="sb-i"><div class="sb-il"><span class="sb-dot"></span>NCR Log</div><div class="bpills"><span class="bpill bp-a">3</span></div></div>
+        <div class="sb-i"><div class="sb-il"><span class="sb-dot"></span>Method Statements</div></div>
+        <div class="sb-i"><div class="sb-il"><span class="sb-dot"></span>Env. Monitoring</div></div>
+        <div class="sb-i"><div class="sb-il"><span class="sb-dot"></span>HSE Incidents</div></div>
+      </div>
+
+      <div class="sb-div"></div>
+
+      <div class="sb-s col"><span class="sb-sl">Finance</span><div class="sb-sc"><span class="sb-ch">▾</span></div></div>
+      <div class="sbb col"></div>
+
+      <div class="sb-div"></div>
+
+      <div class="sb-s col"><span class="sb-sl">Risk &amp; Quality</span><div class="sb-sc"><span class="sb-al">2</span><span class="sb-ch">▾</span></div></div>
+      <div class="sbb col"></div>
+
+      <div class="sb-div"></div>
+
+      <div class="sb-s col"><span class="sb-sl">Regulatory</span><div class="sb-sc"><span class="sb-ch">▾</span></div></div>
+      <div class="sbb col"></div>
+
+    </div>
+
+    <div class="sb-foot">
+      <div class="sf-u">
+        <div class="sf-av">RK</div>
+        <div>
+          <div class="sf-un">Reshigan K.</div>
+          <div class="sf-ue">IPP Developer</div>
+        </div>
+      </div>
+      <div class="sf-acts">
+        <div class="sf-a">⚙</div>
+        <div class="sf-a">◻</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════ MAIN ═══════ -->
+  <div class="main">
+
+    <div class="topbar">
+      <div class="tbl">
+        <span class="tbc">Project</span>
+        <span class="tbsep">›</span>
+        <span class="tbc cur">Schedule</span>
+      </div>
+      <div class="tbr">
+        <div class="tbtag"><div class="tdot" style="background:var(--green)"></div>Cosmos Wind Farm</div>
+        <button class="btn-o">Export</button>
+        <button class="btn-f">+ New Task</button>
+      </div>
+    </div>
+
+    <div class="mbody">
+
+      <!-- hero strip -->
+      <div class="hero-strip">
+        <div class="ph-t">Schedule</div>
+        <div class="ph-sub">Primavera P6 · Phase 2 Construction · Synced 4 min ago</div>
+        <div class="ph-tags">
+          <span class="ptag" style="background:var(--green-bg);color:var(--green);border:1px solid #b5e4cb">On Schedule</span>
+          <span class="ptag" style="background:var(--amber-bg);color:var(--amber);border:1px solid #f3d9a0">Cost Overrun</span>
+          <span class="ptag" style="background:var(--blue-bg);color:var(--blue);border:1px solid #b2cef4">DG2 in 14 days</span>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <!-- kpis -->
+        <div class="kpis">
+          <div class="kpi" style="--kc:var(--green);--kca:11,112,64">
+            <div class="kl">Schedule (SPI)</div>
+            <div class="kn" style="color:var(--green)">0.97</div>
+            <div class="kd"><span class="kchip" style="background:var(--green-bg);color:var(--green)">+0.03</span> vs last period</div>
+          </div>
+          <div class="kpi" style="--kc:var(--amber);--kca:140,90,9">
+            <div class="kl">Cost (CPI)</div>
+            <div class="kn" style="color:var(--amber)">0.89</div>
+            <div class="kd"><span class="kchip" style="background:var(--amber-bg);color:var(--amber)">−0.04</span> vs last period</div>
+          </div>
+          <div class="kpi" style="--kc:var(--navy-1);--kca:11,31,58">
+            <div class="kl">Est. at Completion</div>
+            <div class="kn">R890M</div>
+            <div class="kd"><span class="kchip" style="background:var(--surf-2);color:var(--text-2)">+R42M</span> vs budget</div>
+          </div>
+          <div class="kpi" style="--kc:var(--blue);--kca:21,73,160">
+            <div class="kl">DG2 Gate</div>
+            <div class="kn" style="color:var(--blue)">14d</div>
+            <div class="kd" style="color:var(--blue)">On track to submit</div>
+          </div>
+        </div>
+
+        <!-- filter -->
+        <div class="fbar">
+          <div class="fs"><span class="fsi">⌕</span><span class="fst">Filter tasks…</span></div>
+          <button class="fb">Status ⌄</button>
+          <button class="fb">Assignee ⌄</button>
+          <button class="fb">Due date ⌄</button>
+        </div>
+
+        <!-- table -->
+        <div class="tw">
+          <div class="thr">
+            <div class="th">Task Name</div>
+            <div class="th">Due</div>
+            <div class="th">Value</div>
+            <div class="th">Status</div>
+            <div class="th">Progress</div>
+          </div>
+
+          <div class="tdr">
+            <div><div class="tdn">Procurement Package A</div><div class="tds">Civil · Basil Read</div></div>
+            <div class="tdv">Jun 14</div><div class="tdv">R120M</div>
+            <div><span class="pill" style="background:var(--blue-bg);color:var(--blue)"><span class="pd" style="background:var(--blue)"></span>Active</span></div>
+            <div class="mpw"><div class="mpt"><div class="mpf" style="width:65%;background:linear-gradient(90deg,var(--blue),#3d7fd6)"></div></div><span class="mpp">65%</span></div>
+          </div>
+
+          <div class="tdr">
+            <div><div class="tdn">Foundation Works</div><div class="tds">Civil · Site 2A complete</div></div>
+            <div class="tdv">May 30</div><div class="tdv">R48M</div>
+            <div><span class="pill" style="background:var(--green-bg);color:var(--green)"><span class="pd" style="background:var(--green)"></span>Done</span></div>
+            <div class="mpw"><div class="mpt"><div class="mpf" style="width:100%;background:linear-gradient(90deg,var(--green),#1ea060)"></div></div><span class="mpp" style="color:var(--green)">100%</span></div>
+          </div>
+
+          <div class="tdr">
+            <div><div class="tdn">Turbine Installation — Set 1</div><div class="tds">Mechanical · 12 of 36 turbines</div></div>
+            <div class="tdv">Jul 22</div><div class="tdv">R310M</div>
+            <div><span class="pill" style="background:var(--rose-bg);color:var(--rose)"><span class="pd" style="background:var(--rose)"></span>Delayed</span></div>
+            <div class="mpw"><div class="mpt"><div class="mpf" style="width:33%;background:linear-gradient(90deg,var(--rose),#d44545)"></div></div><span class="mpp" style="color:var(--rose)">33%</span></div>
+          </div>
+
+          <div class="tdr">
+            <div><div class="tdn">HV Cabling &amp; Substation</div><div class="tds">Electrical · Awaiting delivery</div></div>
+            <div class="tdv">Aug 10</div><div class="tdv">R87M</div>
+            <div><span class="pill" style="background:var(--amber-bg);color:var(--amber)"><span class="pd" style="background:var(--amber)"></span>On Hold</span></div>
+            <div class="mpw"><div class="mpt"><div class="mpf" style="width:12%;background:linear-gradient(90deg,var(--amber),#c07520)"></div></div><span class="mpp">12%</span></div>
+          </div>
+        </div>
+
+        <!-- bottom cards -->
+        <div class="botg">
+          <div class="bc">
+            <div class="bcl">Civil Works <span class="bcp" style="color:var(--green)">82%</span></div>
+            <div class="bct"><div class="bcf" style="width:82%;background:linear-gradient(90deg,#0b7040,#1ea060)"></div></div>
+            <div class="bcm">R352M of R430M · 3 days ahead</div>
+          </div>
+          <div class="bc">
+            <div class="bcl">Mechanical <span class="bcp" style="color:var(--rose)">41%</span></div>
+            <div class="bct"><div class="bcf" style="width:41%;background:linear-gradient(90deg,#b02929,#d44545)"></div></div>
+            <div class="bcm">R165M of R402M · 18 days late</div>
+          </div>
+          <div class="bc">
+            <div class="bcl">Electrical <span class="bcp" style="color:var(--amber)">28%</span></div>
+            <div class="bct"><div class="bcf" style="width:28%;background:linear-gradient(90deg,#8c5a09,#c07520)"></div></div>
+            <div class="bcm">R24M of R87M · on hold</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p style="margin-top:20px;font-size:12px;color:#8698b0">Active item: navy→indigo gradient. Page title: gradient text. Sidebar: gradient wash. Button: gradient fill. Progress bars: gradient fills. KPI top-accent tints. Body: layered mesh gradient.</p>
+
+<script>
+document.querySelectorAll('.sb-s').forEach(function(s){
+  s.addEventListener('click',function(){
+    s.classList.toggle('col');
+    var b=s.nextElementSibling;
+    if(b&&b.classList.contains('sbb'))b.classList.toggle('col');
+  });
+});
+</script>
+</body>
+</html>

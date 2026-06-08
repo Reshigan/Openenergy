@@ -37,7 +37,7 @@ export function OpsL5Page() {
           { k: 'marketplace',      label: 'Marketplace',      icon: <Users size={13} /> },
           { k: 'audit',            label: 'Audit',            icon: <ShieldCheck size={13} /> },
         ] as Array<{ k: Area; label: string; icon: React.ReactNode }>).map((t) => (
-          <button key={t.k} onClick={() => setArea(t.k)}
+          <button type="button" key={t.k} onClick={() => setArea(t.k)}
             className={`h-10 px-3 text-[12px] font-semibold inline-flex items-center gap-1 border-b-2 transition-colors ${area === t.k ? 'border-[#3b82c4] text-[#3b82c4]' : 'border-transparent text-[#6b7685] hover:text-[#0f1c2e]'}`}>
             {t.icon} {t.label}
           </button>
@@ -96,7 +96,7 @@ function GridConstraintsTab() {
             <td className="capitalize">{r.direction}</td>
             <td className="font-mono text-[10px]">{r.source || '—'}</td>
             <td className="text-right">
-              <button onClick={async () => { await api.post(`/grid-l5/constraints/${r.id}/deactivate`, {}).catch(() => null); void load(); }}
+              <button type="button" onClick={async () => { await api.post(`/grid-l5/constraints/${r.id}/deactivate`, {}).catch(() => null); void load(); }}
                       className="text-[11px] text-[#c0392b]">Deactivate</button>
             </td>
           </tr>
@@ -141,7 +141,7 @@ function GridDispatchTab() {
           <input type="number" className="ml-1 h-7 px-2 rounded border border-[#dde4ec] w-24 font-mono"
                  value={newRun.demand_mw} onChange={(e) => setNewRun({ ...newRun, demand_mw: e.target.value })}/>
         </label>
-        <button disabled={creating || !newRun.demand_mw} onClick={createRun}
+        <button type="button" disabled={creating || !newRun.demand_mw} onClick={createRun}
                 className="h-7 px-3 rounded bg-[#1a3a5c] text-white font-semibold disabled:opacity-50">
           {creating ? 'Creating…' : 'New run'}
         </button>
@@ -156,8 +156,8 @@ function GridDispatchTab() {
             <td className="text-right font-mono">{r.marginal_price_zar ? `R${Number(r.marginal_price_zar).toFixed(0)}` : '—'}</td>
             <td><Pill status={r.status} /></td>
             <td className="text-right space-x-2">
-              {r.status === 'queued' && <button onClick={() => optimize(r.id)} className="text-[11px] text-[#3b82c4]">Optimize</button>}
-              {r.status === 'optimized' && <button onClick={async () => { await api.post(`/grid-l5/dispatch/runs/${r.id}/publish`, {}).catch(() => null); void load(); }} className="text-[11px] widget-tone-good-text font-semibold">Publish</button>}
+              {r.status === 'queued' && <button type="button" onClick={() => optimize(r.id)} className="text-[11px] text-[#3b82c4]">Optimize</button>}
+              {r.status === 'optimized' && <button type="button" onClick={async () => { await api.post(`/grid-l5/dispatch/runs/${r.id}/publish`, {}).catch(() => null); void load(); }} className="text-[11px] widget-tone-good-text font-semibold">Publish</button>}
             </td>
           </tr>
         ))}
@@ -410,7 +410,7 @@ function SurveillanceTab() {
   return (
     <>
       <div className="flex justify-end">
-        <button onClick={scan} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[11px] font-semibold">Run scan now</button>
+        <button type="button" onClick={scan} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[11px] font-semibold">Run scan now</button>
       </div>
       <Section title="Open surveillance alerts">
         <Table headers={['Type', 'Participant', 'Severity', 'Score', 'Detected', 'Status', '']}>
@@ -425,9 +425,9 @@ function SurveillanceTab() {
               <td className="text-right space-x-1">
                 {r.status === 'open' && (
                   <>
-                    <button onClick={() => review(r.id, 'under_review')} className="text-[11px]">Review</button>
-                    <button onClick={() => review(r.id, 'false_positive')} className="text-[11px] widget-tone-good-text">FP</button>
-                    <button onClick={() => review(r.id, 'confirmed')} className="text-[11px] widget-tone-bad-text">Confirm</button>
+                    <button type="button" onClick={() => review(r.id, 'under_review')} className="text-[11px]">Review</button>
+                    <button type="button" onClick={() => review(r.id, 'false_positive')} className="text-[11px] widget-tone-good-text">FP</button>
+                    <button type="button" onClick={() => review(r.id, 'confirmed')} className="text-[11px] widget-tone-bad-text">Confirm</button>
                   </>
                 )}
               </td>
@@ -624,7 +624,7 @@ function AuditArea() {
             <input type="date" className="block mt-1 h-7 px-2 rounded border border-[#dde4ec]"
                    value={buildDay} onChange={(e) => setBuildDay(e.target.value)}/>
           </label>
-          <button onClick={build} disabled={busy} className="h-7 px-3 rounded bg-[#1a3a5c] text-white font-semibold disabled:opacity-50">
+          <button type="button" onClick={build} disabled={busy} className="h-7 px-3 rounded bg-[#1a3a5c] text-white font-semibold disabled:opacity-50">
             {busy ? 'Building…' : 'Build root'}
           </button>
           {msg && <span className="text-[#3a4658]">{msg}</span>}
@@ -669,7 +669,7 @@ function SubTabs<T extends string>({ value, onChange, items }: { value: T; onCha
   return (
     <div className="flex flex-wrap gap-1 text-[11px]">
       {items.map((t) => (
-        <button key={t.k} onClick={() => onChange(t.k)}
+        <button type="button" key={t.k} onClick={() => onChange(t.k)}
                 className={`h-7 px-2.5 rounded-full font-semibold border ${value === t.k ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white border-[#dde4ec]'}`}>
           {t.label}
         </button>

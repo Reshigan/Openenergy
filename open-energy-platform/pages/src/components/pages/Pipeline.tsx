@@ -124,10 +124,10 @@ export function Pipeline() {
       subtitle="Originated deals across the funnel."
       actions={
         <>
-          <button onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
+          <button type="button" onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
             <RefreshCw className="w-4 h-4" />
           </button>
-          <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light flex items-center gap-2">
+          <button type="button" onClick={() => setShowCreate(true)} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light flex items-center gap-2">
             <Plus className="w-4 h-4" /> New deal
           </button>
         </>
@@ -142,13 +142,13 @@ export function Pipeline() {
 
       <div className="flex flex-wrap gap-3 items-center">
         <span className="text-sm text-ionex-text-mute">Stage:</span>
-        <button onClick={() => setStageFilter('all')} className={`px-3 py-1 rounded-full text-xs ${stageFilter === 'all' ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>All</button>
+        <button type="button" onClick={() => setStageFilter('all')} className={`px-3 py-1 rounded-full text-xs ${stageFilter === 'all' ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>All</button>
         {STAGES.map(s => (
-          <button key={s.key} onClick={() => setStageFilter(s.key)} className={`px-3 py-1 rounded-full text-xs ${stageFilter === s.key ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s.label}</button>
+          <button type="button" key={s.key} onClick={() => setStageFilter(s.key)} className={`px-3 py-1 rounded-full text-xs ${stageFilter === s.key ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s.label}</button>
         ))}
         <span className="text-sm text-ionex-text-mute ml-4">Status:</span>
         {(['all', 'active', 'won', 'lost', 'cancelled'] as const).map(s => (
-          <button key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${statusFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s}</button>
+          <button type="button" key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${statusFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s}</button>
         ))}
       </div>
 
@@ -171,7 +171,7 @@ export function Pipeline() {
               </div>
               <div className="space-y-2">
                 {(dealsByStage[s.key] || []).map(d => (
-                  <button
+                  <button type="button"
                     key={d.id}
                     onClick={() => setSelected(d)}
                     className="w-full text-left p-3 bg-white border border-ionex-border-100 rounded-lg hover:shadow-md transition-shadow"
@@ -239,7 +239,7 @@ function DealDetailModal({ deal, onClose, onStageChange }: {
             <h3 className="text-lg font-semibold text-gray-900">{deal.deal_name}</h3>
             <p className="text-sm text-ionex-text-mute">{deal.client_name || deal.client_participant_id} · Owner: {deal.owner_name || deal.created_by}</p>
           </div>
-          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-2 gap-3 text-sm">
@@ -276,7 +276,7 @@ function DealDetailModal({ deal, onClose, onStageChange }: {
                 )}
               </div>
             )}
-            <button onClick={submit} className="w-full py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light">
+            <button type="button" onClick={submit} className="w-full py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light">
               Save change
             </button>
           </div>
@@ -347,7 +347,7 @@ function CreateDealModal({ onClose, onCreated }: { onClose: () => void; onCreate
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">New deal</h3>
-          <button onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
           {err && <ErrorBanner message={err} />}
@@ -377,8 +377,8 @@ function CreateDealModal({ onClose, onCreated }: { onClose: () => void; onCreate
           <Input label="Submission deadline (optional)" value={deadline} onChange={setDeadline} type="date" />
         </div>
         <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
-          <button onClick={submit} disabled={saving} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50">
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+          <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50">
             {saving ? 'Saving…' : 'Create'}
           </button>
         </div>

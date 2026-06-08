@@ -173,7 +173,7 @@ export default function Settings() {
               className="w-full max-w-md border border-ionex-border-soft bg-gray-50 rounded-md px-3 py-2 text-sm text-gray-600" />
           </div>
           <div className="flex items-center gap-3 pt-2">
-            <button onClick={saveProfile}
+            <button type="button" onClick={saveProfile}
               className="flex items-center gap-1 px-4 py-2 bg-ionex-brand text-white rounded-lg text-sm hover:bg-ionex-brand-deep">
               <Save className="w-4 h-4" /> Save profile
             </button>
@@ -216,7 +216,7 @@ export default function Settings() {
                 <LabelInput label="Date format" value={prefs.date_format} onChange={(v) => setPrefs({ ...prefs, date_format: v })} />
               </div>
               <div className="flex items-center gap-3 pt-2">
-                <button onClick={savePrefs}
+                <button type="button" onClick={savePrefs}
                   className="flex items-center gap-1 px-4 py-2 bg-ionex-brand text-white rounded-lg text-sm hover:bg-ionex-brand-deep">
                   <Save className="w-4 h-4" /> Save preferences
                 </button>
@@ -252,7 +252,7 @@ export default function Settings() {
             </p>
           </div>
           <div className="flex items-center gap-3 pt-2">
-            <button onClick={changePassword}
+            <button type="button" onClick={changePassword}
               className="flex items-center gap-1 px-4 py-2 bg-ionex-brand text-white rounded-lg text-sm hover:bg-ionex-brand-deep">
               <Save className="w-4 h-4" /> Change password
             </button>
@@ -275,7 +275,7 @@ export default function Settings() {
           <p className="mb-3 text-ionex-text-sub">
             Two-factor authentication (TOTP), active sessions, and backup codes live on the security page.
           </p>
-          <button onClick={() => navigate('/settings/security')}
+          <button type="button" onClick={() => navigate('/settings/security')}
             className="px-4 py-2 border border-ionex-brand text-ionex-brand rounded-lg text-sm hover:bg-ionex-brand hover:text-white">
             Open security settings
           </button>

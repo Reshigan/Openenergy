@@ -200,7 +200,7 @@ export function WarrantyClaimChainTab() {
           <Kpi label="In OEM review" value={kpis.in_review} />
           <Kpi label="Recovery booked" value={fmtZar(kpis.total_recovery_zar)} small />
         </div>
-        <button
+        <button type="button"
           onClick={() => setCreating(true)}
           className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold whitespace-nowrap">
           + New claim
@@ -209,7 +209,7 @@ export function WarrantyClaimChainTab() {
 
       <div className="flex flex-wrap gap-1.5">
         {FILTERS.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
@@ -329,7 +329,7 @@ function ClaimDrawer({
               </span>
             </div>
           </div>
-          <button onClick={onClose} className="text-[#6b7685] hover:text-[#0f1c2e]">✕</button>
+          <button type="button" onClick={onClose} className="text-[#6b7685] hover:text-[#0f1c2e]">✕</button>
         </div>
 
         <div className="p-5 space-y-4 text-[13px]">
@@ -426,7 +426,7 @@ function Pair({ label, value }: { label: string; value: string }) {
 function ActionBtn({ label, onClick, tone = 'neutral' }: { label: string; onClick: () => void; tone?: 'neutral' | 'good' | 'bad' }) {
   const bg = tone === 'good' ? 'bg-emerald-700' : tone === 'bad' ? 'bg-red-700' : 'bg-[#1a3a5c]';
   return (
-    <button onClick={onClick} className={`px-3 py-1.5 ${bg} text-white text-[12px] rounded-md hover:opacity-90`}>
+    <button type="button" onClick={onClick} className={`px-3 py-1.5 ${bg} text-white text-[12px] rounded-md hover:opacity-90`}>
       {label}
     </button>
   );
@@ -469,7 +469,7 @@ function CreateClaimModal({ onClose, onDone }: { onClose: () => void; onDone: ()
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
           <h3 className="text-[16px] font-semibold text-[#0f1c2e]">Open warranty / RMA claim</h3>
-          <button onClick={onClose} className="text-[#6b7685]">✕</button>
+          <button type="button" onClick={onClose} className="text-[#6b7685]">✕</button>
         </div>
         <div className="p-5 space-y-3 text-[13px]">
           {err && <div className="text-[12px] text-red-700">{err}</div>}
@@ -491,8 +491,8 @@ function CreateClaimModal({ onClose, onDone }: { onClose: () => void; onDone: ()
           <Field label="Fault code (optional)"   value={faultCode}   onChange={setFaultCode} />
           <Field label="Warranty reference (optional)" value={warrantyRef} onChange={setWarrantyRef} />
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
-            <button onClick={submit} disabled={saving} className="px-4 py-2 bg-[#1a3a5c] text-white rounded-lg disabled:opacity-50">
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-[#1a3a5c] text-white rounded-lg disabled:opacity-50">
               {saving ? 'Opening…' : 'Open claim'}
             </button>
           </div>

@@ -21,7 +21,7 @@ import { CreditRatingChainTab } from '../carbon/CreditRatingChainTab';
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
     <div className="flex justify-end mb-3">
-      <button onClick={onCreate} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+      <button type="button" onClick={onCreate} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
         + {label}
       </button>
     </div>
@@ -275,7 +275,7 @@ function VintagesTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'outstanding_tco2e', label: 'Outstanding tCO₂e', align: 'right', render: (r) => Number(r.outstanding_tco2e || 0).toFixed(1) },
           { key: 'updated_at', label: 'Updated', render: (r) => new Date(r.updated_at).toLocaleDateString() },
           { key: '_actions', label: '', render: (r) => (
-            <button onClick={() => setAdvancing(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Advance</button>
+            <button type="button" onClick={() => setAdvancing(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Advance</button>
           ) },
         ]}
       />
@@ -315,7 +315,7 @@ function MrvTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'verified_at', label: 'Verified', render: (r) => r.verified_at ? new Date(r.verified_at).toLocaleDateString() : '—' },
           { key: '_actions', label: '', render: (r) => (
             r.status !== 'published' && r.status !== 'rejected' && (
-              <button onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Transition</button>
+              <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Transition</button>
             )
           ) },
         ]}
@@ -494,7 +494,7 @@ function CarbonTaxReturnsTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'sla_deadline', label: 'SLA', render: (r) => r.sla_deadline ? String(r.sla_deadline) : '—' },
           { key: 'sla_breached', label: 'Breach', render: (r) => r.sla_breached ? <Pill tone="bad">BREACH</Pill> : <Pill tone="good">OK</Pill> },
           { key: 'actions', label: '', render: (r) => (
-            <button onClick={() => setActionRow(r)} className="text-[11px] text-[#1a3a5c] underline">Action</button>
+            <button type="button" onClick={() => setActionRow(r)} className="text-[11px] text-[#1a3a5c] underline">Action</button>
           )},
         ]}
       />
@@ -521,7 +521,7 @@ function CarbonRegistryTransferTab({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button
+        <button type="button"
           className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
           onClick={() => setModal('create')}
         >

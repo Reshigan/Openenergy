@@ -145,14 +145,14 @@ export function MarginGateWidget() {
                 <td className="px-4 py-2">
                   {canManage && (
                     <div className="flex gap-1">
-                      <button
+                      <button type="button"
                         onClick={() => void recompute(r.member_id)}
                         disabled={busy === r.member_id}
                         className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50"
                       >
                         Recompute
                       </button>
-                      <button
+                      <button type="button"
                         onClick={() => setOverrideRow(r)}
                         className="px-2 py-1 text-xs bg-purple-50 text-purple-700 rounded hover:bg-purple-100"
                         data-testid="margin-gate-override"
@@ -160,7 +160,7 @@ export function MarginGateWidget() {
                         Override
                       </button>
                       {r.manual_override === 1 && (
-                        <button
+                        <button type="button"
                           onClick={() => void clearOverride(r.member_id)}
                           disabled={busy === r.member_id}
                           className="px-2 py-1 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 disabled:opacity-50"
@@ -242,8 +242,8 @@ function OverrideModal({ row, onClose, onSave }: { row: GateRow; onClose: () => 
           />
         </label>
         <div className="flex justify-end gap-2 mt-4">
-          <button onClick={onClose} className="px-3 py-1.5 border border-ionex-border-200 rounded text-sm">Cancel</button>
-          <button
+          <button type="button" onClick={onClose} className="px-3 py-1.5 border border-ionex-border-200 rounded text-sm">Cancel</button>
+          <button type="button"
             onClick={() => void submit()}
             disabled={saving || reason.trim().length < 3}
             className="px-3 py-1.5 bg-purple-600 text-white rounded text-sm disabled:opacity-50"

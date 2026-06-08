@@ -324,7 +324,7 @@ export function Admin() {
       title="Platform Admin"
       subtitle="KYC queue, users, modules, audit logs, billing."
       actions={
-        <button onClick={fetchAll} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
+        <button type="button" onClick={fetchAll} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
           <RefreshCw className="w-4 h-4" />
         </button>
       }
@@ -340,7 +340,7 @@ export function Admin() {
 
       <div className="border-b border-ionex-border-100 flex gap-6 flex-wrap">
         {TABS.map(t => (
-          <button
+          <button type="button"
             key={t.key}
             onClick={() => setTab(t.key)}
             className={`flex items-center gap-2 pb-3 border-b-2 transition-colors ${tab === t.key ? 'border-ionex-brand text-ionex-brand font-semibold' : 'border-transparent text-ionex-text-mute hover:text-gray-900'}`}
@@ -449,7 +449,7 @@ function KycPanel({ kyc, filter, onFilterChange, onDecide }: {
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
         {(['pending', 'in_review', 'approved', 'rejected'] as KycStatus[]).map(s => (
-          <button
+          <button type="button"
             key={s}
             onClick={() => onFilterChange(s)}
             className={`px-3 py-1.5 rounded-full text-sm border ${filter === s ? 'bg-ionex-brand text-white border-ionex-brand' : 'bg-white border-ionex-border-200 text-gray-700 hover:bg-gray-50'}`}
@@ -471,7 +471,7 @@ function KycPanel({ kyc, filter, onFilterChange, onDecide }: {
               </div>
               <div className="flex flex-wrap gap-2">
                 {filter !== 'approved' && (
-                  <button
+                  <button type="button"
                     onClick={() => onDecide(p.id, 'approved', 'KYC verified.')}
                     className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 flex items-center gap-1"
                   >
@@ -479,7 +479,7 @@ function KycPanel({ kyc, filter, onFilterChange, onDecide }: {
                   </button>
                 )}
                 {filter !== 'in_review' && filter !== 'approved' && (
-                  <button
+                  <button type="button"
                     onClick={() => onDecide(p.id, 'in_review', 'Requires additional review.')}
                     className="px-3 py-1.5 border border-blue-300 text-blue-700 rounded-lg text-sm hover:bg-blue-50 flex items-center gap-1"
                   >
@@ -487,7 +487,7 @@ function KycPanel({ kyc, filter, onFilterChange, onDecide }: {
                   </button>
                 )}
                 {filter !== 'rejected' && (
-                  <button
+                  <button type="button"
                     onClick={() => {
                       const reason = prompt('Reason for rejection?') || 'KYC rejected.';
                       onDecide(p.id, 'rejected', reason);
@@ -528,7 +528,7 @@ function UsersPanel({ users, tenants, search, onSearchChange, onSetStatus, onCre
           placeholder="Search by name, email, or company"
           className="flex-1 min-w-[260px] max-w-md px-3 py-2 border border-ionex-border-200 rounded-lg"
         />
-        <button
+        <button type="button"
           onClick={() => { resetForm(); setShowCreate(true); }}
           className="px-3 py-2 bg-ionex-brand text-white rounded-lg text-sm hover:bg-ionex-brand-700 flex items-center gap-2"
         >
@@ -570,8 +570,8 @@ function UsersPanel({ users, tenants, search, onSearchChange, onSetStatus, onCre
             </label>
           </div>
           <div className="flex justify-end gap-2">
-            <button onClick={() => setShowCreate(false)} className="px-3 py-2 text-sm border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
-            <button
+            <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-2 text-sm border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button"
               disabled={!form.email || !form.name}
               onClick={() => {
                 onCreate({
@@ -619,13 +619,13 @@ function UsersPanel({ users, tenants, search, onSearchChange, onSetStatus, onCre
                   <td className="p-3 capitalize">{u.subscription_tier || '—'}</td>
                   <td className="p-3 text-right whitespace-nowrap">
                     {u.status !== 'active' && (
-                      <button onClick={() => onSetStatus(u.id, 'active')} className="text-xs text-green-700 hover:underline mr-3">Activate</button>
+                      <button type="button" onClick={() => onSetStatus(u.id, 'active')} className="text-xs text-green-700 hover:underline mr-3">Activate</button>
                     )}
                     {u.status !== 'suspended' && (
-                      <button onClick={() => onSetStatus(u.id, 'suspended')} className="text-xs text-red-700 hover:underline mr-3">Suspend</button>
+                      <button type="button" onClick={() => onSetStatus(u.id, 'suspended')} className="text-xs text-red-700 hover:underline mr-3">Suspend</button>
                     )}
-                    <button onClick={() => onIssueReset(u.id, u.email)} className="text-xs text-blue-700 hover:underline mr-3">Reset link</button>
-                    <button onClick={() => onDelete(u.id, u.email)} className="text-xs text-red-700 hover:underline" aria-label={`Suspend ${u.email}`}><Trash2 className="w-3.5 h-3.5 inline" /></button>
+                    <button type="button" onClick={() => onIssueReset(u.id, u.email)} className="text-xs text-blue-700 hover:underline mr-3">Reset link</button>
+                    <button type="button" onClick={() => onDelete(u.id, u.email)} className="text-xs text-red-700 hover:underline" aria-label={`Suspend ${u.email}`}><Trash2 className="w-3.5 h-3.5 inline" /></button>
                   </td>
                 </tr>
               ))}
@@ -661,7 +661,7 @@ function ModulesPanel({ modules, onToggle, onCreate, onUpdate, onDelete }: {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-end">
-        <button
+        <button type="button"
           onClick={() => { resetForm(); setShowCreate(true); }}
           className="px-3 py-2 bg-ionex-brand text-white rounded-lg text-sm hover:bg-ionex-brand-700 flex items-center gap-2"
         >
@@ -694,8 +694,8 @@ function ModulesPanel({ modules, onToggle, onCreate, onUpdate, onDelete }: {
             </label>
           </div>
           <div className="flex justify-end gap-2">
-            <button onClick={() => setShowCreate(false)} className="px-3 py-2 text-sm border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
-            <button
+            <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-2 text-sm border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button"
               disabled={!form.module_key || !form.display_name}
               onClick={() => {
                 onCreate({
@@ -738,8 +738,8 @@ function ModulesPanel({ modules, onToggle, onCreate, onUpdate, onDelete }: {
                     <input value={editForm.required_role} onChange={e => setEditForm({ ...editForm, required_role: e.target.value })} className="w-full px-2 py-1.5 text-sm border border-ionex-border-200 rounded" placeholder="Required role" />
                   </div>
                   <div className="flex justify-end gap-2 pt-1">
-                    <button onClick={() => setEditKey(null)} className="text-xs text-gray-700 hover:underline">Cancel</button>
-                    <button
+                    <button type="button" onClick={() => setEditKey(null)} className="text-xs text-gray-700 hover:underline">Cancel</button>
+                    <button type="button"
                       onClick={() => {
                         onUpdate(m.module_key, {
                           display_name: editForm.display_name.trim(),
@@ -757,8 +757,8 @@ function ModulesPanel({ modules, onToggle, onCreate, onUpdate, onDelete }: {
                 <>
                   {m.description && <p className="text-sm text-gray-600 mt-2">{m.description}</p>}
                   <div className="mt-3 flex gap-3">
-                    <button onClick={() => beginEdit(m)} className="text-xs text-blue-700 hover:underline flex items-center gap-1"><Edit3 className="w-3.5 h-3.5" /> Edit</button>
-                    <button onClick={() => onDelete(m.module_key)} className="text-xs text-red-700 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
+                    <button type="button" onClick={() => beginEdit(m)} className="text-xs text-blue-700 hover:underline flex items-center gap-1"><Edit3 className="w-3.5 h-3.5" /> Edit</button>
+                    <button type="button" onClick={() => onDelete(m.module_key)} className="text-xs text-red-700 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
                   </div>
                 </>
               )}
@@ -789,7 +789,7 @@ function TenantsPanel({ tenants, onCreate, onUpdate, onDelete }: {
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-ionex-text-mute">Tenants isolate participants, contracts, trades, and reports. The <code>default</code> tenant is reserved and cannot be deleted.</p>
-        <button
+        <button type="button"
           onClick={() => { resetForm(); setShowCreate(true); }}
           className="px-3 py-2 bg-ionex-brand text-white rounded-lg text-sm hover:bg-ionex-brand-700 flex items-center gap-2 flex-shrink-0"
         >
@@ -814,8 +814,8 @@ function TenantsPanel({ tenants, onCreate, onUpdate, onDelete }: {
             </label>
           </div>
           <div className="flex justify-end gap-2">
-            <button onClick={() => setShowCreate(false)} className="px-3 py-2 text-sm border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
-            <button
+            <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-2 text-sm border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button"
               disabled={!form.display_name}
               onClick={() => {
                 onCreate({
@@ -867,8 +867,8 @@ function TenantsPanel({ tenants, onCreate, onUpdate, onDelete }: {
                   <td className="p-3 text-right whitespace-nowrap">
                     {editId === t.id ? (
                       <>
-                        <button onClick={() => setEditId(null)} className="text-xs text-gray-700 hover:underline mr-3">Cancel</button>
-                        <button
+                        <button type="button" onClick={() => setEditId(null)} className="text-xs text-gray-700 hover:underline mr-3">Cancel</button>
+                        <button type="button"
                           onClick={() => {
                             onUpdate(t.id, {
                               display_name: editForm.display_name.trim(),
@@ -881,9 +881,9 @@ function TenantsPanel({ tenants, onCreate, onUpdate, onDelete }: {
                       </>
                     ) : (
                       <>
-                        <button onClick={() => beginEdit(t)} className="text-xs text-blue-700 hover:underline mr-3"><Edit3 className="w-3.5 h-3.5 inline mr-1" />Edit</button>
+                        <button type="button" onClick={() => beginEdit(t)} className="text-xs text-blue-700 hover:underline mr-3"><Edit3 className="w-3.5 h-3.5 inline mr-1" />Edit</button>
                         {t.id !== 'default' && (
-                          <button
+                          <button type="button"
                             onClick={() => onDelete(t.id)}
                             disabled={(t.participant_count ?? 0) > 0}
                             title={(t.participant_count ?? 0) > 0 ? 'Move or suspend tenant members before deleting' : 'Delete tenant'}

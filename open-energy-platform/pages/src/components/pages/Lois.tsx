@@ -71,7 +71,7 @@ export function Lois() {
       actions={
         <div className="flex items-center gap-2">
           {(['all', 'received', 'sent'] as const).map((d) => (
-            <button
+            <button type="button"
               key={d}
               onClick={() => setDirection(d)}
               className={`h-8 px-3 rounded-md text-[12px] font-semibold border transition-colors ${

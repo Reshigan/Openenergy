@@ -54,7 +54,7 @@ export function PlatformAdminConsolePage() {
           ['signatures', 'Signatures', FileSignature],
           ['ai', 'AI sessions', Bot],
         ] as const).map(([k, label, Icon]) => (
-          <button
+          <button type="button"
             key={k}
             onClick={() => setTab(k)}
             className={`h-9 px-3 text-[12px] font-semibold inline-flex items-center gap-1.5 border-b-2 -mb-px ${
@@ -125,7 +125,7 @@ function FlagsTab() {
       <div className="flex items-center gap-2">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Feature flags</div>
         <span className="text-[11px] text-[#6b7685]">— {raw.length} configured</span>
-        <button onClick={load} className="ml-auto h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1">
+        <button type="button" onClick={load} className="ml-auto h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1">
           <RefreshCw size={11}/> Refresh
         </button>
       </div>
@@ -171,7 +171,7 @@ function FlagsTab() {
                            onChange={(ev) => setEdit({ ...edit, [f.key]: { ...e, killed: ev.target.checked ? 1 : 0 } })}/>
                   </td>
                   <td className="py-2 text-right">
-                    <button disabled={!dirty || busy} onClick={() => save(f.key)}
+                    <button type="button" disabled={!dirty || busy} onClick={() => save(f.key)}
                             className="h-7 px-2 rounded bg-[#1a3a5c] text-white text-[11px] font-semibold disabled:opacity-40 inline-flex items-center gap-1">
                       <Save size={11}/> Save
                     </button>
@@ -208,7 +208,7 @@ function RumTab() {
         <div className="text-[13px] font-semibold text-[#0f1c2e]">RUM — last 7 days</div>
         <input placeholder="filter by metric or path" className="ml-auto h-8 px-2 rounded border border-[#dde4ec] text-[11px] w-64"
                value={filter} onChange={(e) => setFilter(e.target.value)}/>
-        <button onClick={load} className="h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1">
+        <button type="button" onClick={load} className="h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1">
           <RefreshCw size={11}/> Refresh
         </button>
       </div>
@@ -279,7 +279,7 @@ function SignaturesTab() {
           <input className="block mt-1 h-8 px-2 rounded border border-[#dde4ec] text-[11px] w-64 font-mono"
                  value={docRef} onChange={(e) => setDocRef(e.target.value)}/>
         </label>
-        <button disabled={busy} onClick={load}
+        <button type="button" disabled={busy} onClick={load}
                 className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[11px] font-semibold disabled:opacity-50">
           {busy ? 'Loading…' : 'Look up'}
         </button>
@@ -331,7 +331,7 @@ function AiSessionsTab() {
     <section className="space-y-3">
       <div className="flex items-center gap-2">
         <div className="text-[13px] font-semibold text-[#0f1c2e]">Recent AI sessions</div>
-        <button onClick={load} className="ml-auto h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1">
+        <button type="button" onClick={load} className="ml-auto h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1">
           <RefreshCw size={11}/> Refresh
         </button>
       </div>

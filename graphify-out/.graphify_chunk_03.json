@@ -1,0 +1,129 @@
+{
+  "nodes": [
+    {
+      "id": "oe-banner-svg",
+      "label": "oe-banner.svg",
+      "type": "banner",
+      "file": "/Users/reshigan/Openenergy/open-energy-platform/pages/public/logos/oe-banner.svg",
+      "summary": "SVG banner for the Open Energy platform titled 'Consolidated Energy Cockpit'. Contains a stylised three-interlocking-arcs mark (blue, teal, navy) with a central dot, and a bold geometric wordmark reading 'ENERGY COCKPIT' in two lines."
+    },
+    {
+      "id": "brand-mark",
+      "label": "Three-Arc Brand Mark",
+      "type": "logo-mark",
+      "file": "/Users/reshigan/Openenergy/open-energy-platform/pages/public/logos/oe-banner.svg",
+      "summary": "Geometric mark composed of three overlapping partial circles (arcs) in blue (#3b82c4), teal (#1f9b95), and navy (#1a3a5c), with a two-tone central dot. Positioned at left of banner."
+    },
+    {
+      "id": "wordmark-energy",
+      "label": "ENERGY (wordmark line 1)",
+      "type": "text-element",
+      "file": "/Users/reshigan/Openenergy/open-energy-platform/pages/public/logos/oe-banner.svg",
+      "summary": "Bold geometric sans-serif text 'ENERGY' in navy (#1a3a5c), font-size 72, using Metropolis / IBM Plex Sans / Inter typeface stack."
+    },
+    {
+      "id": "wordmark-cockpit",
+      "label": "COCKPIT (wordmark line 2)",
+      "type": "text-element",
+      "file": "/Users/reshigan/Openenergy/open-energy-platform/pages/public/logos/oe-banner.svg",
+      "summary": "Bold geometric sans-serif text 'COCKPIT' in blue (#3b82c4), font-size 72, using Metropolis / IBM Plex Sans / Inter typeface stack."
+    },
+    {
+      "id": "brand-color-navy",
+      "label": "Navy #1a3a5c",
+      "type": "brand-color",
+      "file": "/Users/reshigan/Openenergy/open-energy-platform/pages/public/logos/oe-banner.svg",
+      "summary": "Primary navy brand colour used for the third arc, the central dot, and the 'ENERGY' wordmark text."
+    },
+    {
+      "id": "brand-color-blue",
+      "label": "Blue #3b82c4",
+      "type": "brand-color",
+      "file": "/Users/reshigan/Openenergy/open-energy-platform/pages/public/logos/oe-banner.svg",
+      "summary": "Brand blue used for the first arc and the 'COCKPIT' wordmark text."
+    },
+    {
+      "id": "brand-color-teal",
+      "label": "Teal #1f9b95",
+      "type": "brand-color",
+      "file": "/Users/reshigan/Openenergy/open-energy-platform/pages/public/logos/oe-banner.svg",
+      "summary": "Brand teal used for the second arc in the mark."
+    },
+    {
+      "id": "product-name",
+      "label": "Consolidated Energy Cockpit",
+      "type": "product-identity",
+      "file": "/Users/reshigan/Openenergy/open-energy-platform/pages/public/logos/oe-banner.svg",
+      "summary": "Full product name declared in the SVG <title> and aria-label: 'Consolidated Energy Cockpit'. This is the accessible label for the banner."
+    }
+  ],
+  "edges": [
+    {
+      "source": "oe-banner-svg",
+      "target": "brand-mark",
+      "label": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-banner-svg",
+      "target": "wordmark-energy",
+      "label": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-banner-svg",
+      "target": "wordmark-cockpit",
+      "label": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-banner-svg",
+      "target": "product-name",
+      "label": "represents",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "wordmark-energy",
+      "target": "brand-color-navy",
+      "label": "uses-color",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "wordmark-cockpit",
+      "target": "brand-color-blue",
+      "label": "uses-color",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "brand-mark",
+      "target": "brand-color-blue",
+      "label": "uses-color",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "brand-mark",
+      "target": "brand-color-teal",
+      "label": "uses-color",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "brand-mark",
+      "target": "brand-color-navy",
+      "label": "uses-color",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "wordmark-energy",
+      "target": "wordmark-cockpit",
+      "label": "paired-with",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-banner-svg",
+      "target": "brand-color-navy",
+      "label": "primary-brand-color",
+      "confidence": "INFERRED"
+    }
+  ],
+  "hyperedges": []
+}

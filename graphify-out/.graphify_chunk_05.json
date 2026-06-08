@@ -1,0 +1,180 @@
+{
+  "nodes": [
+    {
+      "id": "oe-mark-svg",
+      "label": "OE Brand Mark SVG",
+      "type": "logo/mark",
+      "file": "open-energy-platform/pages/public/logos/oe-mark.svg",
+      "summary": "SVG brand mark for Open Energy Platform titled 'Consolidated Energy Cockpit'. Composed of three interlocking arc rings (blue, teal, navy) arranged in a triangular pattern, plus a navy disc and sky-blue centre dot, reproducing the OE brand identity."
+    },
+    {
+      "id": "ring-blue",
+      "label": "Top-Left Blue Ring",
+      "type": "graphic-element",
+      "file": "open-energy-platform/pages/public/logos/oe-mark.svg",
+      "summary": "Partial arc ring at cx=142, cy=148, r=92, stroke #3b82c4 (blue), stroke-width 22. One of three interlocking rings in the OE mark."
+    },
+    {
+      "id": "ring-teal",
+      "label": "Top-Right Teal Ring",
+      "type": "graphic-element",
+      "file": "open-energy-platform/pages/public/logos/oe-mark.svg",
+      "summary": "Partial arc ring at cx=258, cy=148, r=92, stroke #1f9b95 (teal), stroke-width 22. One of three interlocking rings in the OE mark."
+    },
+    {
+      "id": "ring-navy",
+      "label": "Bottom Navy Ring",
+      "type": "graphic-element",
+      "file": "open-energy-platform/pages/public/logos/oe-mark.svg",
+      "summary": "Partial arc ring at cx=200, cy=252, r=92, stroke #1a3a5c (navy), stroke-width 22. One of three interlocking rings in the OE mark."
+    },
+    {
+      "id": "centre-disc-navy",
+      "label": "Centre Navy Disc",
+      "type": "graphic-element",
+      "file": "open-energy-platform/pages/public/logos/oe-mark.svg",
+      "summary": "Filled circle at cx=200, cy=200, r=22, fill #1a3a5c (navy). Forms the centre cluster of the mark."
+    },
+    {
+      "id": "centre-dot-skyblue",
+      "label": "Centre Sky-Blue Dot",
+      "type": "graphic-element",
+      "file": "open-energy-platform/pages/public/logos/oe-mark.svg",
+      "summary": "Small filled circle at cx=200, cy=200, r=9, fill #5fa8e8 (sky-blue). Innermost dot of the centre cluster."
+    },
+    {
+      "id": "color-blue-3b82c4",
+      "label": "Brand Blue #3b82c4",
+      "type": "brand-color",
+      "file": "open-energy-platform/pages/public/logos/oe-mark.svg",
+      "summary": "Mid-tone blue used for the top-left ring. Part of the OE brand palette."
+    },
+    {
+      "id": "color-teal-1f9b95",
+      "label": "Brand Teal #1f9b95",
+      "type": "brand-color",
+      "file": "open-energy-platform/pages/public/logos/oe-mark.svg",
+      "summary": "Teal/green used for the top-right ring. Part of the OE brand palette."
+    },
+    {
+      "id": "color-navy-1a3a5c",
+      "label": "Brand Navy #1a3a5c",
+      "type": "brand-color",
+      "file": "open-energy-platform/pages/public/logos/oe-mark.svg",
+      "summary": "Dark navy used for the bottom ring and centre disc. Primary dark colour in the OE brand palette."
+    },
+    {
+      "id": "color-skyblue-5fa8e8",
+      "label": "Brand Sky-Blue #5fa8e8",
+      "type": "brand-color",
+      "file": "open-energy-platform/pages/public/logos/oe-mark.svg",
+      "summary": "Light sky-blue used for the innermost centre dot. Accent colour in the OE brand palette."
+    },
+    {
+      "id": "text-consolidated-energy-cockpit",
+      "label": "Consolidated Energy Cockpit",
+      "type": "visible-text/aria-label",
+      "file": "open-energy-platform/pages/public/logos/oe-mark.svg",
+      "summary": "Accessible label and SVG <title> text: 'Consolidated Energy Cockpit'. Describes the mark's semantic purpose as representing the unified energy platform cockpit."
+    }
+  ],
+  "edges": [
+    {
+      "source": "oe-mark-svg",
+      "target": "ring-blue",
+      "label": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-mark-svg",
+      "target": "ring-teal",
+      "label": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-mark-svg",
+      "target": "ring-navy",
+      "label": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-mark-svg",
+      "target": "centre-disc-navy",
+      "label": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-mark-svg",
+      "target": "centre-dot-skyblue",
+      "label": "contains",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-mark-svg",
+      "target": "text-consolidated-energy-cockpit",
+      "label": "labelled-by",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "ring-blue",
+      "target": "color-blue-3b82c4",
+      "label": "uses-color",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "ring-teal",
+      "target": "color-teal-1f9b95",
+      "label": "uses-color",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "ring-navy",
+      "target": "color-navy-1a3a5c",
+      "label": "uses-color",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "centre-disc-navy",
+      "target": "color-navy-1a3a5c",
+      "label": "uses-color",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "centre-dot-skyblue",
+      "target": "color-skyblue-5fa8e8",
+      "label": "uses-color",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "ring-blue",
+      "target": "ring-teal",
+      "label": "interlocks-with",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "ring-teal",
+      "target": "ring-navy",
+      "label": "interlocks-with",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "ring-blue",
+      "target": "ring-navy",
+      "label": "interlocks-with",
+      "confidence": "INFERRED"
+    },
+    {
+      "source": "centre-disc-navy",
+      "target": "centre-dot-skyblue",
+      "label": "overlays",
+      "confidence": "EXTRACTED"
+    },
+    {
+      "source": "oe-mark-svg",
+      "target": "text-consolidated-energy-cockpit",
+      "label": "represents",
+      "confidence": "INFERRED"
+    }
+  ],
+  "hyperedges": []
+}

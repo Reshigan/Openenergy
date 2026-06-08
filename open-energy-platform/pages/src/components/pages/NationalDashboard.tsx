@@ -339,7 +339,7 @@ export function NationalDashboard() {
             {lastUpdated && ` Loaded at ${lastUpdated}.`}
           </p>
         </div>
-        <button
+        <button type="button"
           onClick={() => void load()}
           className="h-8 px-3 rounded-md border border-[#dde4ec] bg-white text-[12px] font-medium text-[#1a3a5c] hover:bg-[#f8fafc] transition-colors"
         >

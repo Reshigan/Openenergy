@@ -211,7 +211,7 @@ export function IppSiteInstructionTab() {
       {/* Filter + Create */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
         {FILTER_BUTTONS.map(b => (
-          <button key={b.key} onClick={() => setFilter(b.key)} style={{
+          <button type="button" key={b.key} onClick={() => setFilter(b.key)} style={{
             padding: '5px 12px', borderRadius: 6, fontSize: 12, cursor: 'pointer',
             background: filter === b.key ? '#2563eb' : '#1e293b',
             color: filter === b.key ? '#fff' : '#94a3b8',
@@ -219,11 +219,11 @@ export function IppSiteInstructionTab() {
           }}>{b.label}</button>
         ))}
         <div style={{ flex: 1 }} />
-        <button onClick={() => setShowCreate(true)} style={{
+        <button type="button" onClick={() => setShowCreate(true)} style={{
           padding: '6px 14px', borderRadius: 6, background: '#2563eb',
           color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
         }}>+ New instruction</button>
-        <button onClick={load} style={{
+        <button type="button" onClick={load} style={{
           padding: '6px 12px', borderRadius: 6, background: '#1e293b',
           color: '#94a3b8', border: '1px solid #334155', cursor: 'pointer', fontSize: 12,
         }}>{loading ? '...' : '↻'}</button>
@@ -311,7 +311,7 @@ export function IppSiteInstructionTab() {
               </div>
               <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{selected.project_name}</div>
             </div>
-            <button onClick={() => setSelected(null)} style={{
+            <button type="button" onClick={() => setSelected(null)} style={{
               background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 20,
             }}>×</button>
           </div>
@@ -372,7 +372,7 @@ export function IppSiteInstructionTab() {
           {!TERMINAL.has(selected.status) && (
             <div style={{ marginTop: 20, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {actionButtons(selected).map(btn => (
-                <button key={btn.action}
+                <button type="button" key={btn.action}
                   onClick={async () => {
                     let extra: Record<string, unknown> = {};
                     if (btn.action === 'dispute_instruction') {

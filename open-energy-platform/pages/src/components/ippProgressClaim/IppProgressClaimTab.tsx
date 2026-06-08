@@ -399,11 +399,11 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
         </select>
         <span className="text-xs text-gray-400 ml-auto">{filtered.length} claims</span>
         {!readOnly && (
-          <button className="text-xs bg-green-600 text-white rounded px-3 py-1 hover:bg-green-700" onClick={() => setShowCreate(true)}>
+          <button type="button" className="text-xs bg-green-600 text-white rounded px-3 py-1 hover:bg-green-700" onClick={() => setShowCreate(true)}>
             + New progress claim
           </button>
         )}
-        <button className="text-xs border rounded px-2 py-1 hover:bg-gray-50" onClick={load}>Refresh</button>
+        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-gray-50" onClick={load}>Refresh</button>
       </div>
 
       {actionResult && (
@@ -532,7 +532,7 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
                     </td>
                     {!readOnly && (
                       <td className="px-3 py-2">
-                        <button className="text-[10px] text-blue-600 hover:underline" onClick={e => { e.stopPropagation(); setSelected(row); }}>
+                        <button type="button" className="text-[10px] text-blue-600 hover:underline" onClick={e => { e.stopPropagation(); setSelected(row); }}>
                           Open
                         </button>
                       </td>
@@ -561,7 +561,7 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
                   <p className="text-xs text-gray-400">{selected.project_name}</p>
                 )}
               </div>
-              <button className="text-gray-400 hover:text-gray-600 text-xl" onClick={() => setSelected(null)}>✕</button>
+              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl" onClick={() => setSelected(null)}>✕</button>
             </div>
 
             {/* Chain state bar */}
@@ -692,7 +692,7 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
                 <p className="text-xs font-medium text-gray-600">Actions</p>
                 <div className="flex flex-wrap gap-2">
                   {selectedActions.map(({ action, label, danger }) => (
-                    <button
+                    <button type="button"
                       key={action}
                       disabled={actionLoading}
                       onClick={() => handleAction(action)}
@@ -723,7 +723,7 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold text-gray-900">New progress claim (PCN)</h2>
-              <button className="text-gray-400 hover:text-gray-600 text-xl" onClick={() => setShowCreate(false)}>✕</button>
+              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl" onClick={() => setShowCreate(false)}>✕</button>
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-xs">
@@ -827,8 +827,8 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
             )}
 
             <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
-              <button className="text-xs border rounded px-3 py-1.5" onClick={() => setShowCreate(false)}>Cancel</button>
-              <button
+              <button type="button" className="text-xs border rounded px-3 py-1.5" onClick={() => setShowCreate(false)}>Cancel</button>
+              <button type="button"
                 className="text-xs bg-green-600 text-white rounded px-4 py-1.5 hover:bg-green-700 disabled:opacity-50"
                 disabled={createLoading || !newProjectId || !newClaimAmount || !newClaimType || !newTier}
                 onClick={handleCreate}

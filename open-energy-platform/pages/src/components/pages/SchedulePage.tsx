@@ -100,7 +100,7 @@ export function SchedulePage() {
       actions={
         <div className="inline-flex items-center gap-1 bg-white border border-[#dde4ec] rounded-lg p-1">
           {[30, 60, 90, 180].map((n) => (
-            <button key={n} onClick={() => setDays(n)}
+            <button type="button" key={n} onClick={() => setDays(n)}
               className={`h-8 px-3 rounded-md text-[12px] font-semibold ${days === n ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'}`}>
               {n}d
             </button>
@@ -110,7 +110,7 @@ export function SchedulePage() {
     >
       {/* Source filter chips */}
       <div className="flex flex-wrap gap-2 items-center">
-        <button onClick={() => setFilter('all')}
+        <button type="button" onClick={() => setFilter('all')}
           className={`h-8 px-3 rounded-full text-[11px] font-semibold border ${filter === 'all' ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>
           All <span className="opacity-70 ml-1">{counts.all || 0}</span>
         </button>
@@ -118,7 +118,7 @@ export function SchedulePage() {
           if (!counts[s]) return null;
           const Icon = SOURCE_ICON[s];
           return (
-            <button key={s} onClick={() => setFilter(s)}
+            <button type="button" key={s} onClick={() => setFilter(s)}
               className={`h-8 px-3 rounded-full text-[11px] font-semibold border inline-flex items-center gap-1 ${filter === s ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>
               <Icon size={12} /> {SOURCE_LABEL[s]} <span className="opacity-70">{counts[s]}</span>
             </button>

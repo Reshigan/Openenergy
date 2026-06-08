@@ -189,11 +189,11 @@ export function Grid() {
       actions={
         <>
           {tab === 'constraints' && isOperator && (
-            <button onClick={() => setShowConstraintModal(true)} className="flex items-center gap-2 px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand/90">
+            <button type="button" onClick={() => setShowConstraintModal(true)} className="flex items-center gap-2 px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand/90">
               <Plus size={14} /> Publish constraint
             </button>
           )}
-          <button onClick={refreshAll} className="flex items-center gap-2 px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">
+          <button type="button" onClick={refreshAll} className="flex items-center gap-2 px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">
             <RefreshCw size={14} /> Refresh
           </button>
         </>
@@ -227,7 +227,7 @@ export function Grid() {
                         <Td>{c.export_capacity_mw.toFixed(1)}</Td>
                         <Td>{c.import_capacity_mw.toFixed(1)}</Td>
                         <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[c.status] || 'bg-gray-100'}`}>{c.status}</span></Td>
-                        <Td>{isOperator && c.status !== 'active' ? <button onClick={() => commissionConnection(c.id)} className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"><CheckCircle2 size={12} /> Commission</button> : <span className="text-xs text-ionex-text-mute">—</span>}</Td>
+                        <Td>{isOperator && c.status !== 'active' ? <button type="button" onClick={() => commissionConnection(c.id)} className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"><CheckCircle2 size={12} /> Commission</button> : <span className="text-xs text-ionex-text-mute">—</span>}</Td>
                       </tr>
                     ))}
                   </Table>
@@ -243,7 +243,7 @@ export function Grid() {
                         <Td>R{Number(w.wheeling_rate_per_kwh || 0).toFixed(3)}</Td>
                         <Td className="text-xs">{w.start_date} → {w.end_date}</Td>
                         <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[w.status] || 'bg-gray-100'}`}>{w.status}</span></Td>
-                        <Td>{isOperator && w.status === 'pending' ? <button onClick={() => activateWheeling(w.id)} className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"><CheckCircle2 size={12} /> Activate</button> : <span className="text-xs text-ionex-text-mute">—</span>}</Td>
+                        <Td>{isOperator && w.status === 'pending' ? <button type="button" onClick={() => activateWheeling(w.id)} className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"><CheckCircle2 size={12} /> Activate</button> : <span className="text-xs text-ionex-text-mute">—</span>}</Td>
                       </tr>
                     ))}
                   </Table>
@@ -260,7 +260,7 @@ export function Grid() {
                         <Td>{k.available_capacity_mw != null ? `${k.available_capacity_mw} MW` : '—'}</Td>
                         <Td className="text-xs">{k.start_date || '—'} → {k.end_date || 'ongoing'}</Td>
                         <Td className="max-w-xs"><div className="truncate text-xs" title={k.description || ''}>{k.description || '—'}</div></Td>
-                        <Td>{isOperator && k.status === 'active' ? <button onClick={() => clearConstraint(k.id)} className="text-xs px-2 py-1 bg-gray-700 text-white rounded hover:bg-gray-800">Clear</button> : <span className="text-xs text-ionex-text-mute">—</span>}</Td>
+                        <Td>{isOperator && k.status === 'active' ? <button type="button" onClick={() => clearConstraint(k.id)} className="text-xs px-2 py-1 bg-gray-700 text-white rounded hover:bg-gray-800">Clear</button> : <span className="text-xs text-ionex-text-mute">—</span>}</Td>
                       </tr>
                     ))}
                   </Table>
@@ -332,7 +332,7 @@ function ConstraintModal({ onClose, onCreated }: { onClose: () => void; onCreate
       <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-ionex-border-100">
           <h2 className="text-lg font-semibold">Publish grid constraint</h2>
-          <button onClick={onClose} aria-label="Close dialog"><X size={18} /></button>
+          <button type="button" onClick={onClose} aria-label="Close dialog"><X size={18} /></button>
         </div>
         <div className="p-4 space-y-3">
           <label className="block"><span className="text-sm text-ionex-text-sub">Constraint type</span>
@@ -370,8 +370,8 @@ function ConstraintModal({ onClose, onCreated }: { onClose: () => void; onCreate
           </label>
         </div>
         <div className="flex justify-end gap-2 p-4 border-t border-ionex-border-100">
-          <button onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg">Cancel</button>
-          <button onClick={submit} disabled={submitting} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand/90 disabled:opacity-50">{submitting ? 'Publishing…' : 'Publish'}</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg">Cancel</button>
+          <button type="button" onClick={submit} disabled={submitting} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand/90 disabled:opacity-50">{submitting ? 'Publishing…' : 'Publish'}</button>
         </div>
       </div>
     </div>
@@ -393,7 +393,7 @@ function Tile({ icon, label, value, hint, tone }: { icon: React.ReactNode; label
 
 function TabBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition ${active ? 'border-ionex-brand text-ionex-brand' : 'border-transparent text-ionex-text-sub hover:text-ionex-text'}`}>{label}</button>
+    <button type="button" onClick={onClick} className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition ${active ? 'border-ionex-brand text-ionex-brand' : 'border-transparent text-ionex-text-sub hover:text-ionex-text'}`}>{label}</button>
   );
 }
 

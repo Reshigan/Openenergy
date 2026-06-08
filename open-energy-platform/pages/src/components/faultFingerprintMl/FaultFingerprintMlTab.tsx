@@ -720,7 +720,7 @@ export function FaultFingerprintMlTab({ regulatorView }: Props = {}) {
           </p>
         </div>
         {!regulatorView && (
-          <button
+          <button type="button"
             onClick={() => setShowPropose(true)}
             className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#1a3a5c]"
           >
@@ -772,7 +772,7 @@ export function FaultFingerprintMlTab({ regulatorView }: Props = {}) {
       {/* Row 1: action / priority pills */}
       <div className="mb-2 flex flex-wrap gap-1.5">
         {FILTERS_ACTION.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -789,7 +789,7 @@ export function FaultFingerprintMlTab({ regulatorView }: Props = {}) {
       {/* Row 2: lifecycle */}
       <div className="mb-2 flex flex-wrap gap-1.5">
         {FILTERS_LIFECYCLE.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -806,7 +806,7 @@ export function FaultFingerprintMlTab({ regulatorView }: Props = {}) {
       {/* Row 3: tier */}
       <div className="mb-2 flex flex-wrap gap-1.5">
         {FILTERS_TIER.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -823,7 +823,7 @@ export function FaultFingerprintMlTab({ regulatorView }: Props = {}) {
       {/* Row 4: model family */}
       <div className="mb-2 flex flex-wrap gap-1.5">
         {FILTERS_FAMILY.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -840,7 +840,7 @@ export function FaultFingerprintMlTab({ regulatorView }: Props = {}) {
       {/* Row 5: asset class */}
       <div className="mb-3 flex flex-wrap gap-1.5">
         {FILTERS_ASSET.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -1019,7 +1019,7 @@ function Drawer({
           ? 'bg-[#a06200] text-white hover:bg-[#c97a00]'
           : 'bg-white border border-[#d8dde6] text-[#1a3a5c] hover:bg-[#f3f5f9]';
     return (
-      <button
+      <button type="button"
         key={action}
         onClick={() => onAct(action, row)}
         className={`rounded px-3 py-1.5 text-[11px] font-semibold ${cls}`}
@@ -1048,7 +1048,7 @@ function Drawer({
               {row.feature_count != null ? <> {'•'} {row.feature_count} features</> : null}
             </p>
           </div>
-          <button onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
         </div>
 
         {/* 4 scoring indexes */}
@@ -1393,7 +1393,7 @@ function ProposeModal({
               Replaces W71 12-mode physics rules (XGBoost / RF / GB / 1D-CNN / LightGBM / CatBoost). Stratified split requires {'≥'}30 samples per class (NIST AI RMF).
             </p>
           </div>
-          <button onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -1461,8 +1461,8 @@ function ProposeModal({
         </div>
 
         <div className="mt-3 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1.5 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Cancel</button>
-          <button onClick={submit} className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#1a3a5c]">Propose model</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1.5 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Cancel</button>
+          <button type="button" onClick={submit} className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#1a3a5c]">Propose model</button>
         </div>
       </div>
     </div>

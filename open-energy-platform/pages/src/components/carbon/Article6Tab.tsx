@@ -165,7 +165,7 @@ export function Article6Tab() {
       <div className="flex items-center gap-2 mb-3">
         <span className="text-[11px] text-[#6b7685] uppercase tracking-wide">Filter</span>
         {(['all', 'draft', 'dffe_pending', 'dffe_cleared', 'unfccc_ledger', 'blocked'] as const).map((s) => (
-          <button
+          <button type="button"
             key={s}
             onClick={() => setFilter(s)}
             data-testid={`article6-filter-${s}`}
@@ -176,7 +176,7 @@ export function Article6Tab() {
             {s === 'all' ? 'All' : STATUS_TONE[s].label}
           </button>
         ))}
-        <button
+        <button type="button"
           onClick={load}
           className="ml-auto px-2 py-1 text-[11px] rounded border border-[#dde4ed] text-[#445566]"
           data-testid="article6-refresh"
@@ -239,7 +239,7 @@ export function Article6Tab() {
             <div className="text-[13px] font-semibold">
               {drill.host_country_iso} → {drill.beneficiary_country_iso} · {fmtTco(drill.tco2e)} tCO₂e
             </div>
-            <button onClick={() => setDrillId(null)} className="text-[11px] text-[#6b7685]">close</button>
+            <button type="button" onClick={() => setDrillId(null)} className="text-[11px] text-[#6b7685]">close</button>
           </div>
 
           {drillRisk && (
@@ -263,7 +263,7 @@ export function Article6Tab() {
 
           <div className="flex flex-wrap items-center gap-2 mt-2" data-testid="article6-actions">
             {drill.ca_status === 'draft' && (
-              <button
+              <button type="button"
                 disabled={actionBusy}
                 onClick={() => transition(drill.id, 'submit-dffe')}
                 className="px-2 py-1 text-[11px] rounded bg-[#1a3a5c] text-white"
@@ -271,7 +271,7 @@ export function Article6Tab() {
               >Submit to DFFE</button>
             )}
             {drill.ca_status === 'dffe_pending' && (
-              <button
+              <button type="button"
                 disabled={actionBusy}
                 onClick={() => {
                   const ref = prompt('DFFE clearance reference:');
@@ -282,7 +282,7 @@ export function Article6Tab() {
               >Clear (DFFE only)</button>
             )}
             {drill.ca_status === 'dffe_cleared' && (
-              <button
+              <button type="button"
                 disabled={actionBusy}
                 onClick={() => {
                   const ref = prompt('UNFCCC ledger reference:');
@@ -293,7 +293,7 @@ export function Article6Tab() {
               >Post to UNFCCC ledger</button>
             )}
             {drill.ca_status !== 'blocked' && (
-              <button
+              <button type="button"
                 disabled={actionBusy}
                 onClick={() => {
                   const reason = prompt('Block reason (≥3 chars):');
@@ -304,14 +304,14 @@ export function Article6Tab() {
               >Block</button>
             )}
             {drill.ca_status === 'blocked' && (
-              <button
+              <button type="button"
                 disabled={actionBusy}
                 onClick={() => transition(drill.id, 'unblock')}
                 className="px-2 py-1 text-[11px] rounded bg-white border border-[#1a3a5c] text-[#1a3a5c]"
                 data-testid="article6-unblock"
               >Unblock</button>
             )}
-            <button
+            <button type="button"
               disabled={actionBusy}
               onClick={runAi}
               className="ml-auto px-2 py-1 text-[11px] rounded bg-[#6e3aff] text-white"

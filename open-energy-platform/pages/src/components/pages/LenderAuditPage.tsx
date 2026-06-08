@@ -24,10 +24,10 @@ export function LenderAuditPage() {
           <p className="text-[13px] text-[#3d4756]">Tamper-evident covenant + disbursement chain · IFRS9 ECL register · bank disbursement reconciliation.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => navigate('/lender-suite')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={() => navigate('/lender-suite')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
             <ArrowLeft size={12} /> Lender workbench
           </button>
-          <button onClick={() => setBump((n) => n + 1)} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={() => setBump((n) => n + 1)} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
             <RefreshCw size={12} /> Refresh
           </button>
         </div>

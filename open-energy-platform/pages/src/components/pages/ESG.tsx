@@ -222,7 +222,7 @@ function OverviewTab() {
             {[2026, 2025, 2024, 2023, 2022].map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
         </StitchField>
-        <button onClick={recompute} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
+        <button type="button" onClick={recompute} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
           <OEIcon name="refresh" size={14} /> Recompute rollup
         </button>
         {rollup?.computed_at && (
@@ -328,10 +328,10 @@ function TransactionsTab() {
           </select>
         </StitchField>
         <div className="ml-auto flex gap-2">
-          <button onClick={refresh} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={refresh} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[12px] font-semibold inline-flex items-center gap-1">
             <OEIcon name="refresh" size={14} /> Refresh
           </button>
-          <button onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
             <OEIcon name="plus" size={14} /> Log activity
           </button>
         </div>
@@ -526,7 +526,7 @@ function TargetsTab() {
     <div className="space-y-4">
       <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
         <div className="text-[13px] text-[#3d4756]">SBTi-aligned absolute & intensity targets. Validate with a third-party assurance provider to qualify for SBTi.</div>
-        <button onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
+        <button type="button" onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
           <OEIcon name="plus" size={14} /> New target
         </button>
       </div>
@@ -636,7 +636,7 @@ function InitiativesTab() {
     <div className="space-y-4">
       <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
         <div className="text-[13px] text-[#3d4756]">Reduction initiatives ordered by marginal abatement cost (MACC). Low cost-per-tCO₂e ranks first.</div>
-        <button onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
+        <button type="button" onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
           <OEIcon name="plus" size={14} /> New initiative
         </button>
       </div>
@@ -749,7 +749,7 @@ function SuppliersTab() {
     <div className="space-y-4">
       <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
         <div className="text-[13px] text-[#3d4756]">Send Scope 3 surveys to suppliers (Cat 1, 4, 11) and track responses for value-chain emissions accuracy.</div>
-        <button onClick={() => setShowInv(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
+        <button type="button" onClick={() => setShowInv(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
           <OEIcon name="plus" size={14} /> Invite supplier
         </button>
       </div>
@@ -851,7 +851,7 @@ function RecsTab() {
       </div>
       <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
         <div className="text-[13px] text-[#3d4756]">REC / Guarantee-of-Origin certificates for Scope 2 market-based accounting. Retire against an electricity transaction to zero its market-based emissions.</div>
-        <button onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
+        <button type="button" onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
           <OEIcon name="plus" size={14} /> Register REC
         </button>
       </div>
@@ -961,7 +961,7 @@ function DisclosuresTab() {
     <div className="space-y-4">
       <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
         <div className="text-[13px] text-[#3d4756]">Generate disclosure-ready exports for CDP, TCFD, CSRD, ISSB, JSE-SRL, SEC and the GHG Protocol from your year's emissions rollup.</div>
-        <button onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
+        <button type="button" onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
           <OEIcon name="plus" size={14} /> New disclosure
         </button>
       </div>
@@ -992,7 +992,7 @@ function DisclosuresTab() {
                     <td className="px-4 py-2"><StitchPill label={String(d.assurance_level || 'none')} tone={d.assurance_level === 'reasonable' ? 'good' : d.assurance_level === 'limited' ? 'info' : 'neutral'} /></td>
                     <td className="px-4 py-2"><StitchPill status={String(d.status)} /></td>
                     <td className="px-4 py-2 text-right">
-                      <button onClick={() => preview(String(d.id), String(d.framework))} className="text-[12px] text-[#3b82c4] hover:underline inline-flex items-center gap-1">
+                      <button type="button" onClick={() => preview(String(d.id), String(d.framework))} className="text-[12px] text-[#3b82c4] hover:underline inline-flex items-center gap-1">
                         <OEIcon name="download" size={12} /> Export
                       </button>
                     </td>
@@ -1055,8 +1055,8 @@ function ExportPreviewModal({ framework, data, onClose }: { framework: string; d
       <div className="space-y-3">
         <pre className="bg-[#0f1c2e] text-[#a3eaf0] text-[11px] font-mono p-3 rounded-md max-h-[400px] overflow-auto">{JSON.stringify(data, null, 2)}</pre>
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Close</button>
-          <button onClick={downloadJson} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Close</button>
+          <button type="button" onClick={downloadJson} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold inline-flex items-center gap-1">
             <OEIcon name="download" size={14} /> Download JSON
           </button>
         </div>
@@ -1083,7 +1083,7 @@ function RisksTab() {
     <div className="space-y-4">
       <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
         <div className="text-[13px] text-[#3d4756]">TCFD physical + transition climate risks. Plot against NGFS scenarios for stress testing.</div>
-        <button onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
+        <button type="button" onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
           <OEIcon name="plus" size={14} /> New risk
         </button>
       </div>
@@ -1192,7 +1192,7 @@ function Modal({ title, children, onClose, wide }: { title: string; children: Re
       <div className={`bg-white rounded-xl shadow-xl w-full ${wide ? 'max-w-3xl' : 'max-w-md'} max-h-[90vh] overflow-auto`}>
         <header className="px-5 py-3 border-b border-[#eef2f7] flex items-center justify-between sticky top-0 bg-white">
           <div className="font-display font-semibold text-[15px] text-[#0f1c2e]">{title}</div>
-          <button onClick={onClose} aria-label="Close dialog" className="text-[#6b7685] hover:text-[#0f1c2e]"><OEIcon name="close" size={18} /></button>
+          <button type="button" onClick={onClose} aria-label="Close dialog" className="text-[#6b7685] hover:text-[#0f1c2e]"><OEIcon name="close" size={18} /></button>
         </header>
         <div className="p-5">{children}</div>
       </div>
@@ -1266,11 +1266,11 @@ function FinancedEmissionsTab() {
         <div className="flex items-center gap-2">
           {/* StitchField in this section is used legacy-style with value/onChange — cast to keep tsc green while we plan a proper wrapper. */}
           <StitchField {...({ label: 'Year', value: year, onChange: (e: any) => setYear(Number(e.target.value)), type: 'number', className: 'w-28' } as any)} />
-          <button onClick={() => { coverage.refresh(); rows.refresh(); }} className="text-sm text-blue-600 hover:underline">Refresh</button>
+          <button type="button" onClick={() => { coverage.refresh(); rows.refresh(); }} className="text-sm text-blue-600 hover:underline">Refresh</button>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setTgtOpen(true)} className="px-3 py-1.5 text-sm border rounded-lg">+ NZBA/SBTi-FI target</button>
-          <button onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ Record exposure</button>
+          <button type="button" onClick={() => setTgtOpen(true)} className="px-3 py-1.5 text-sm border rounded-lg">+ NZBA/SBTi-FI target</button>
+          <button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ Record exposure</button>
         </div>
       </div>
 
@@ -1393,8 +1393,8 @@ function ExposureModal({ year, onClose }: { year: number; onClose: () => void })
         <Field label="PCAF data quality (1–5)" type="number" value={f.pcaf_data_quality_score || ''} onChange={e => setF({ ...f, pcaf_data_quality_score: Number(e.target.value) })} />
       </div>
       <div className="mt-4 flex justify-end gap-2">
-        <button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button>
-        <button onClick={save} disabled={busy} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg disabled:opacity-50">{busy ? 'Saving…' : 'Record exposure'}</button>
+        <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button>
+        <button type="button" onClick={save} disabled={busy} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg disabled:opacity-50">{busy ? 'Saving…' : 'Record exposure'}</button>
       </div>
     </Modal>
   );
@@ -1429,8 +1429,8 @@ function PcafTargetModal({ onClose }: { onClose: () => void }) {
         <Field label="Pathway alignment" value={f.pathway_alignment || ''} onChange={e => setF({ ...f, pathway_alignment: e.target.value })} />
       </div>
       <div className="mt-4 flex justify-end gap-2">
-        <button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button>
-        <button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Save target</button>
+        <button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button>
+        <button type="button" onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Save target</button>
       </div>
     </Modal>
   );
@@ -1469,7 +1469,7 @@ function RemovalsTab() {
                   <span>{fmtZ(p.price_zar_per_tco2e || 0)}/tCO₂e</span>
                   <span>{fmtN(p.expected_tco2e_yr || 0)} t/yr</span>
                 </div>
-                <button onClick={() => setOfftakeOpen(p.id)} disabled={p.status !== 'listed'} className="w-full px-2 py-1.5 text-[12px] bg-[#0f1c2e] text-white rounded-lg disabled:opacity-40">{p.status === 'listed' ? 'Sign offtake' : p.status}</button>
+                <button type="button" onClick={() => setOfftakeOpen(p.id)} disabled={p.status !== 'listed'} className="w-full px-2 py-1.5 text-[12px] bg-[#0f1c2e] text-white rounded-lg disabled:opacity-40">{p.status === 'listed' ? 'Sign offtake' : p.status}</button>
               </div>
             ))}
           </div>
@@ -1488,7 +1488,7 @@ function RemovalsTab() {
                   <td>{fmtN(o.total_tco2e, 1)}</td>
                   <td>{fmtN(o.retired_tco2e, 1)}</td>
                   <td><StitchPill status={o.status} /></td>
-                  <td><button onClick={() => setRetireOpen(o.id)} className="text-blue-600 text-[12px] hover:underline">Retire</button></td>
+                  <td><button type="button" onClick={() => setRetireOpen(o.id)} className="text-blue-600 text-[12px] hover:underline">Retire</button></td>
                 </tr>
               ))}
             </tbody>
@@ -1518,7 +1518,7 @@ function OfftakeModal({ projectId, onClose }: { projectId: string; onClose: () =
         <Field label="End vintage" type="number" value={f.end_vintage_year || ''} onChange={e => setF({ ...f, end_vintage_year: Number(e.target.value) })} />
       </div>
       <div className="mt-3 text-sm text-[#0f1c2e]">Total: <strong>{fmtZ(f.total_tco2e * f.price_zar_per_tco2e)}</strong></div>
-      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Sign offtake</button></div>
+      <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button type="button" onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Sign offtake</button></div>
     </Modal>
   );
 }
@@ -1540,7 +1540,7 @@ function RetireModal({ offtakeId, onClose }: { offtakeId: string; onClose: () =>
         <Field label="Beneficiary" value={f.beneficiary} onChange={e => setF({ ...f, beneficiary: e.target.value })} />
         <Field label="Reason" value={f.reason} onChange={e => setF({ ...f, reason: e.target.value })} />
       </div>
-      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Retire</button></div>
+      <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button type="button" onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Retire</button></div>
     </Modal>
   );
 }
@@ -1553,7 +1553,7 @@ function CFETab() {
     <div className="space-y-5">
       <div className="flex justify-between items-center">
         <p className="text-sm text-[#6b7685]">24/7 carbon-free energy hourly matching — load vs. carbon-free generation, hour by hour.</p>
-        <button onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Compute CFE score</button>
+        <button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Compute CFE score</button>
       </div>
       <StitchCard title="Recent CFE periods">
         {summary.loading ? <Skeleton /> : (summary.data || []).length === 0 ? <EmptyState icon="bolt" title="No CFE scores yet" subtitle="Upload hourly load & generation data, then compute a CFE score for the period." /> : (
@@ -1604,7 +1604,7 @@ function CFEScoreModal({ onClose }: { onClose: () => void }) {
           <div>Avoided emissions: <strong>{fmtN(result.emissions_avoided_tco2e, 2)} tCO₂e</strong></div>
         </div>
       )}
-      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Close</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Compute</button></div>
+      <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Close</button><button type="button" onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Compute</button></div>
     </Modal>
   );
 }
@@ -1615,7 +1615,7 @@ function PCFTab() {
   const [open, setOpen] = useState(false);
   return (
     <div className="space-y-5">
-      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">SKU-level lifecycle carbon — cradle-to-gate per ISO 14067.</p><button onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ Add product</button></div>
+      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">SKU-level lifecycle carbon — cradle-to-gate per ISO 14067.</p><button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ Add product</button></div>
       <StitchCard title="Product footprints">
         {rows.loading ? <Skeleton /> : (rows.data || []).length === 0 ? <EmptyState icon="tag" title="No PCFs yet" subtitle="Add a product to compute its lifecycle carbon footprint." /> : (
           <table className="w-full text-sm">
@@ -1661,7 +1661,7 @@ function PCFModal({ onClose }: { onClose: () => void }) {
         <Field label="Units sold" type="number" value={f.units_sold || ''} onChange={e => setF({ ...f, units_sold: Number(e.target.value) })} />
         <Field label="Data quality (0–100)" type="number" value={f.data_quality_score || ''} onChange={e => setF({ ...f, data_quality_score: Number(e.target.value) })} />
       </div>
-      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Save PCF</button></div>
+      <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button type="button" onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Save PCF</button></div>
     </Modal>
   );
 }
@@ -1674,7 +1674,7 @@ function AssuranceTab() {
 
   return (
     <div className="space-y-5">
-      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Auditor engagements with finding tracking and evidence-pack assembly (ISAE 3000/3410, AA1000AS, ISO 14064-3).</p><button onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ Open engagement</button></div>
+      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Auditor engagements with finding tracking and evidence-pack assembly (ISAE 3000/3410, AA1000AS, ISO 14064-3).</p><button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ Open engagement</button></div>
       <StitchCard title="Engagements">
         {eng.loading ? <Skeleton /> : (eng.data || []).length === 0 ? <EmptyState icon="shield" title="No engagements" subtitle="Open your first assurance engagement to start the audit trail." /> : (
           <table className="w-full text-sm">
@@ -1686,7 +1686,7 @@ function AssuranceTab() {
                   <td><StitchPill label={e.assurance_level} tone={e.assurance_level === 'reasonable' ? 'good' : 'info'} /></td>
                   <td>{e.engagement_status}</td>
                   <td>{e.opinion || '—'}</td>
-                  <td><button onClick={() => setFindingsOpen(e.id)} className="text-blue-600 text-[12px] hover:underline">Findings</button></td>
+                  <td><button type="button" onClick={() => setFindingsOpen(e.id)} className="text-blue-600 text-[12px] hover:underline">Findings</button></td>
                 </tr>
               ))}
             </tbody>
@@ -1716,7 +1716,7 @@ function EngagementModal({ onClose }: { onClose: () => void }) {
         <label className="block"><div className="text-[12px] font-medium mb-1">Standard</div><select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.assurance_standard} onChange={e => setF({ ...f, assurance_standard: e.target.value })}><option>ISAE_3000</option><option>ISAE_3410</option><option>AA1000AS</option><option>ISO_14064_3</option><option>custom</option></select></label>
         <label className="block"><div className="text-[12px] font-medium mb-1">Level</div><select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.assurance_level} onChange={e => setF({ ...f, assurance_level: e.target.value })}><option value="limited">Limited</option><option value="reasonable">Reasonable</option></select></label>
       </div>
-      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Open engagement</button></div>
+      <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button type="button" onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Open engagement</button></div>
     </Modal>
   );
 }
@@ -1758,10 +1758,10 @@ function FindingsModal({ engagementId, onClose }: { engagementId: string; onClos
             <label><div className="text-[12px] mb-1">Severity</div><select className="w-full border rounded px-2 py-1 text-sm" value={f.severity} onChange={e => setF({ ...f, severity: e.target.value })}><option>observation</option><option>minor</option><option>significant</option><option>material</option><option>critical</option></select></label>
             <label><div className="text-[12px] mb-1">Category</div><select className="w-full border rounded px-2 py-1 text-sm" value={f.category} onChange={e => setF({ ...f, category: e.target.value })}><option>data_quality</option><option>methodology</option><option>boundary</option><option>factor_age</option><option>restatement</option></select></label>
           </div>
-          <div className="flex justify-end gap-2"><button onClick={() => setAdding(false)} className="px-2 py-1 text-sm border rounded">Cancel</button><button onClick={add} className="px-2 py-1 text-sm bg-[#0f1c2e] text-white rounded">Add</button></div>
+          <div className="flex justify-end gap-2"><button type="button" onClick={() => setAdding(false)} className="px-2 py-1 text-sm border rounded">Cancel</button><button type="button" onClick={add} className="px-2 py-1 text-sm bg-[#0f1c2e] text-white rounded">Add</button></div>
         </div>
       ) : (
-        <div className="flex justify-end"><button onClick={() => setAdding(true)} className="text-sm text-blue-600 hover:underline">+ Add finding</button></div>
+        <div className="flex justify-end"><button type="button" onClick={() => setAdding(true)} className="text-sm text-blue-600 hover:underline">+ Add finding</button></div>
       )}
     </Modal>
   );
@@ -1789,7 +1789,7 @@ function MaturityTab() {
 
   return (
     <div className="space-y-5">
-      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Climate maturity assessment — five pillars graded against your platform activity, not self-reported.</p><button onClick={score} disabled={busy} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg disabled:opacity-50">{busy ? 'Scoring…' : 'Compute current score'}</button></div>
+      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Climate maturity assessment — five pillars graded against your platform activity, not self-reported.</p><button type="button" onClick={score} disabled={busy} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg disabled:opacity-50">{busy ? 'Scoring…' : 'Compute current score'}</button></div>
 
       {latest && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1848,7 +1848,7 @@ function JurisdictionsTab() {
     <div className="space-y-5">
       <div className="flex justify-between">
         <p className="text-sm text-[#6b7685]">File one fiscal-year dataset to many regulators — CSRD, SEC, CA SB-253, UK SECR, SGX, Japan TCFD, JSE-SRL.</p>
-        <button onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ New submission</button>
+        <button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ New submission</button>
       </div>
 
       <StitchCard title="My submissions">
@@ -1904,7 +1904,7 @@ function SubmissionModal({ jurisdictions, onClose }: { jurisdictions: any[]; onC
         <Field label="Reporting year" type="number" value={f.reporting_year} onChange={e => setF({ ...f, reporting_year: Number(e.target.value) })} />
         <Field label="Notes" value={f.notes || ''} onChange={e => setF({ ...f, notes: e.target.value })} />
       </div>
-      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Create</button></div>
+      <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button type="button" onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Create</button></div>
     </Modal>
   );
 }
@@ -1925,7 +1925,7 @@ function AnomaliesTab() {
   };
   return (
     <div className="space-y-5">
-      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Heuristic anomaly detection — spikes, duplicates, impossible values, factor mismatches.</p><button onClick={scan} disabled={busy} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg disabled:opacity-50">{busy ? 'Scanning…' : 'Run scan'}</button></div>
+      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Heuristic anomaly detection — spikes, duplicates, impossible values, factor mismatches.</p><button type="button" onClick={scan} disabled={busy} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg disabled:opacity-50">{busy ? 'Scanning…' : 'Run scan'}</button></div>
       <StitchCard title="Open anomalies">
         {rows.loading ? <Skeleton /> : (rows.data || []).length === 0 ? <EmptyState icon="check-circle" title="No open anomalies" subtitle="All your ESG transactions pass the anomaly heuristics." /> : (
           <table className="w-full text-sm">
@@ -1940,8 +1940,8 @@ function AnomaliesTab() {
                   <td>{r.observed_value ? fmtN(r.observed_value, 2) : '—'}</td>
                   <td className="text-[12px]">{r.detected_at?.slice(0, 16) || '—'}</td>
                   <td className="space-x-2">
-                    <button onClick={() => update(r.id, 'resolved')} className="text-green-700 text-[12px] hover:underline">Resolve</button>
-                    <button onClick={() => update(r.id, 'dismissed')} className="text-[#6b7685] text-[12px] hover:underline">Dismiss</button>
+                    <button type="button" onClick={() => update(r.id, 'resolved')} className="text-green-700 text-[12px] hover:underline">Resolve</button>
+                    <button type="button" onClick={() => update(r.id, 'dismissed')} className="text-[#6b7685] text-[12px] hover:underline">Dismiss</button>
                   </td>
                 </tr>
               ))}
@@ -1965,7 +1965,7 @@ function ScenariosTab() {
   const [detail, setDetail] = useState<any>(null);
   return (
     <div className="space-y-5">
-      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">NGFS / IEA / IPCC scenario analysis. Runs your portfolio through orderly / disorderly / hot-house pathways to compute emissions-at-risk and financial VaR.</p><button onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Run scenario</button></div>
+      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">NGFS / IEA / IPCC scenario analysis. Runs your portfolio through orderly / disorderly / hot-house pathways to compute emissions-at-risk and financial VaR.</p><button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Run scenario</button></div>
 
       <StitchCard title="Reference scenarios">
         {scenarios.loading ? <Skeleton /> : (
@@ -2000,7 +2000,7 @@ function ScenariosTab() {
                   <td className="text-amber-700">{fmtN(r.emissions_at_risk_tco2e, 1)}</td>
                   <td className="text-red-700">{fmtZ(r.financial_value_at_risk_zar, 0)}</td>
                   <td>{r.worst_sector_nace || '—'}</td>
-                  <td><button onClick={() => setDetail(r)} className="text-blue-600 text-[12px] hover:underline">Details</button></td>
+                  <td><button type="button" onClick={() => setDetail(r)} className="text-blue-600 text-[12px] hover:underline">Details</button></td>
                 </tr>
               ))}
             </tbody>
@@ -2034,7 +2034,7 @@ function RunScenarioModal({ scenarios, onClose }: { scenarios: any[]; onClose: (
         </label>
         <Field label="Horizon (years)" type="number" value={f.horizon_years} onChange={e => setF({ ...f, horizon_years: Number(e.target.value) })} />
       </div>
-      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={go} disabled={busy} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg disabled:opacity-50">{busy ? 'Running…' : 'Run'}</button></div>
+      <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button type="button" onClick={go} disabled={busy} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg disabled:opacity-50">{busy ? 'Running…' : 'Run'}</button></div>
     </Modal>
   );
 }
@@ -2076,7 +2076,7 @@ function CounterpartiesTab() {
   const [open, setOpen] = useState(false);
   return (
     <div className="space-y-5">
-      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Send share-links to counterparties so they can submit their emissions (PCAF data-quality 1-2).</p><button onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ Request data</button></div>
+      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Send share-links to counterparties so they can submit their emissions (PCAF data-quality 1-2).</p><button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ Request data</button></div>
       <StitchCard title="Open requests">
         {requests.loading ? <Skeleton /> : (requests.data || []).length === 0 ? <EmptyState icon="people" title="No counterparty requests" subtitle="Send your first data request to a financed counterparty." /> : (
           <table className="w-full text-sm">
@@ -2090,7 +2090,7 @@ function CounterpartiesTab() {
                   <td className="text-[12px]">{r.scope_requested}</td>
                   <td><StitchPill status={r.status} /></td>
                   <td className="text-[12px]">{r.sent_at?.slice(0, 10) || '—'}</td>
-                  <td><button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/api/portal/counterparty/${r.share_token}`); alert('Share link copied'); }} className="text-blue-600 text-[12px] hover:underline">Copy link</button></td>
+                  <td><button type="button" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/api/portal/counterparty/${r.share_token}`); alert('Share link copied'); }} className="text-blue-600 text-[12px] hover:underline">Copy link</button></td>
                 </tr>
               ))}
             </tbody>
@@ -2123,7 +2123,7 @@ function RequestDataModal({ onClose }: { onClose: () => void }) {
         <Field label="Asset class" value={f.asset_class || ''} onChange={e => setF({ ...f, asset_class: e.target.value })} />
         <Field label="Exposure (ZAR)" type="number" value={f.exposure_zar || ''} onChange={e => setF({ ...f, exposure_zar: Number(e.target.value) })} />
       </div>
-      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Generate share link</button></div>
+      <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button type="button" onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Generate share link</button></div>
     </Modal>
   );
 }
@@ -2233,7 +2233,7 @@ function AIClassifierTab() {
           <div className="md:col-span-3"><Field label="Description" value={desc} onChange={e => setDesc(e.target.value)} placeholder="e.g. Sasol natural gas Q1 invoice" /></div>
           <Field label="Amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} />
           <Field label="Unit" value={unit} onChange={e => setUnit(e.target.value)} placeholder="kWh, litre, ZAR" />
-          <div className="flex items-end"><button onClick={classify} disabled={busy || !desc} className="w-full h-9 px-3 bg-[#0f1c2e] text-white rounded-lg text-sm disabled:opacity-50">{busy ? 'Classifying…' : 'Classify'}</button></div>
+          <div className="flex items-end"><button type="button" onClick={classify} disabled={busy || !desc} className="w-full h-9 px-3 bg-[#0f1c2e] text-white rounded-lg text-sm disabled:opacity-50">{busy ? 'Classifying…' : 'Classify'}</button></div>
         </div>
         {result && (
           <div className="mt-4 p-3 bg-[#f6f9fc] rounded-lg">
@@ -2249,7 +2249,7 @@ function AIClassifierTab() {
               </div>
             </div>
             <div className="text-[12px] mb-2">{result.reasoning}</div>
-            <div className="flex gap-2"><button onClick={() => accept(result.id)} className="px-2 py-1 text-[12px] bg-green-700 text-white rounded">Accept</button><button onClick={() => accept(result.id, prompt('Override activity code:') || '')} className="px-2 py-1 text-[12px] border rounded">Override</button></div>
+            <div className="flex gap-2"><button type="button" onClick={() => accept(result.id)} className="px-2 py-1 text-[12px] bg-green-700 text-white rounded">Accept</button><button type="button" onClick={() => accept(result.id, prompt('Override activity code:') || '')} className="px-2 py-1 text-[12px] border rounded">Override</button></div>
           </div>
         )}
       </StitchCard>
@@ -2284,7 +2284,7 @@ function RecMarketTab() {
   const [buyOpen, setBuyOpen] = useState<any>(null);
   return (
     <div className="space-y-5">
-      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Hourly REC marketplace — time-matched energy attribute certificates for 24/7 CFE.</p><button onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ List RECs</button></div>
+      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Hourly REC marketplace — time-matched energy attribute certificates for 24/7 CFE.</p><button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">+ List RECs</button></div>
       <StitchCard title="Active listings">
         {listings.loading ? <Skeleton /> : (listings.data || []).length === 0 ? <EmptyState icon="store" title="No listings" subtitle="Be the first to list hourly RECs." /> : (
           <table className="w-full text-sm">
@@ -2299,7 +2299,7 @@ function RecMarketTab() {
                   <td>{fmtN(l.remaining_kwh)}</td>
                   <td>{l.price_zar_per_kwh?.toFixed(2)}</td>
                   <td><StitchPill status={l.status} /></td>
-                  <td><button onClick={() => setBuyOpen(l)} disabled={l.status === 'sold_out'} className="text-blue-600 text-[12px] hover:underline disabled:opacity-40">Buy</button></td>
+                  <td><button type="button" onClick={() => setBuyOpen(l)} disabled={l.status === 'sold_out'} className="text-blue-600 text-[12px] hover:underline disabled:opacity-40">Buy</button></td>
                 </tr>
               ))}
             </tbody>
@@ -2347,7 +2347,7 @@ function ListRecModal({ onClose }: { onClose: () => void }) {
         <Field label="Price ZAR/kWh" type="number" value={f.price_zar_per_kwh} onChange={e => setF({ ...f, price_zar_per_kwh: Number(e.target.value) })} />
         <Field label="Certificate ref" value={f.certificate_ref || ''} onChange={e => setF({ ...f, certificate_ref: e.target.value })} />
       </div>
-      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">List</button></div>
+      <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button type="button" onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">List</button></div>
     </Modal>
   );
 }
@@ -2368,7 +2368,7 @@ function BuyRecModal({ listing, onClose }: { listing: any; onClose: () => void }
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={retire} onChange={e => setRetire(e.target.checked)} /> Retire immediately for 24/7 CFE matching</label>
         <div className="text-sm text-[#0f1c2e]">Total: <strong>{fmtZ(total, 2)}</strong> ({fmtN(kwh)} kWh @ {listing.price_zar_per_kwh.toFixed(2)}/kWh)</div>
       </div>
-      <div className="mt-4 flex justify-end gap-2"><button onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Buy</button></div>
+      <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button type="button" onClick={save} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg">Buy</button></div>
     </Modal>
   );
 }
@@ -2388,7 +2388,7 @@ function AuditChainTab() {
     <div className="space-y-5">
       <div className="flex justify-between">
         <p className="text-sm text-[#6b7685]">Hash-chained immutable audit log. Each entry stores SHA-256(prev_hash · payload), enabling external auditors to detect tampering.</p>
-        <button onClick={doVerify} disabled={busy} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg disabled:opacity-50">{busy ? 'Verifying…' : 'Verify chain'}</button>
+        <button type="button" onClick={doVerify} disabled={busy} className="px-3 py-1.5 text-sm bg-[#0f1c2e] text-white rounded-lg disabled:opacity-50">{busy ? 'Verifying…' : 'Verify chain'}</button>
       </div>
       {verify && (
         <div className={`p-3 rounded-lg ${verify.valid ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>

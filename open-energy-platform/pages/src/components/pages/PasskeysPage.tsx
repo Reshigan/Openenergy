@@ -123,7 +123,7 @@ export function PasskeysPage() {
           <input placeholder="Device name (optional)"
                  className="h-8 px-2 rounded border border-[#dde4ec] text-[12px] flex-1 max-w-sm"
                  value={deviceName} onChange={(e) => setDeviceName(e.target.value)}/>
-          <button disabled={busy || !supported} onClick={enroll}
+          <button type="button" disabled={busy || !supported} onClick={enroll}
                   className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50 inline-flex items-center gap-1">
             <Fingerprint size={13}/> {busy ? 'Enrolling…' : 'Enrol passkey'}
           </button>
@@ -135,7 +135,7 @@ export function PasskeysPage() {
       <div className="widget-card">
         <header className="widget-card-header flex items-center">
           <div className="widget-card-title">Your passkeys</div>
-          <button onClick={load} className="ml-auto h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1"><RefreshCw size={11}/>Refresh</button>
+          <button type="button" onClick={load} className="ml-auto h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1"><RefreshCw size={11}/>Refresh</button>
         </header>
         <ul className="divide-y divide-[#eef2f7]">
           {creds.map((c) => (
@@ -150,7 +150,7 @@ export function PasskeysPage() {
                 </div>
               </div>
               {!c.revoked_at && (
-                <button onClick={() => revoke(c.id)} className="text-[11px] text-[#c0392b] underline inline-flex items-center gap-1">
+                <button type="button" onClick={() => revoke(c.id)} className="text-[11px] text-[#c0392b] underline inline-flex items-center gap-1">
                   <X size={11}/> Revoke
                 </button>
               )}

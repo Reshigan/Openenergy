@@ -82,7 +82,7 @@ export function StitchPage<TId extends string = string>({
         const TIcon = t.icon;
         const active = t.id === activeTab;
         return (
-          <button
+          <button type="button"
             key={t.id}
             onClick={() => onTabChange?.(t.id)}
             className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-2 ${

@@ -158,7 +158,7 @@ export function DisclosureTab() {
         </div>
         <div className="flex gap-2">
           {canCompute && (
-            <button
+            <button type="button"
               onClick={() => void compute()}
               disabled={busy === 'compute'}
               className="px-3 py-1.5 bg-[#16273e] border border-[#2c4868] rounded text-[13px] hover:bg-[#1f3858] disabled:opacity-50"
@@ -168,7 +168,7 @@ export function DisclosureTab() {
             </button>
           )}
           {canPublish && current && !current.published && (
-            <button
+            <button type="button"
               onClick={() => void publish()}
               disabled={busy === 'publish'}
               className="px-3 py-1.5 bg-blue-600 rounded text-[13px] hover:bg-blue-700 disabled:opacity-50"
@@ -271,7 +271,7 @@ export function DisclosureTab() {
       <div className="rounded-xl border border-ionex-border-100 bg-white p-4" data-testid="disclosure-ai-card">
         <div className="flex items-center justify-between mb-2">
           <div className="text-[11px] uppercase tracking-wide font-semibold text-ionex-text-mute">AI summary</div>
-          <button
+          <button type="button"
             onClick={() => void askAi()}
             disabled={busy === 'ai' || !current}
             className="px-3 py-1 text-[12px] bg-ionex-brand text-white rounded hover:bg-ionex-brand-light disabled:opacity-50"

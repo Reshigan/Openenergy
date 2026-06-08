@@ -295,7 +295,7 @@ export function CyberIncidentChainTab() {
 
       <div className="mb-3 flex flex-wrap gap-1.5">
         {FILTERS.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -420,7 +420,7 @@ function Drawer({
                 {fmtNumber(row.records_affected)} record{row.records_affected === 1 ? '' : 's'} affected
               </div>
             </div>
-            <button onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
+            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
           </div>
         </header>
 
@@ -473,7 +473,7 @@ function Drawer({
             <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
             <div className="flex flex-wrap gap-2">
               {nextAction && (
-                <button
+                <button type="button"
                   onClick={() => onAct(nextAction, row)}
                   className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a3a5c]"
                 >
@@ -481,7 +481,7 @@ function Drawer({
                 </button>
               )}
               {canSkipNotify && (
-                <button
+                <button type="button"
                   onClick={() => onAct('skip-notify', row)}
                   className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#4a5568] hover:bg-[#f3f5f9]"
                 >
@@ -489,7 +489,7 @@ function Drawer({
                 </button>
               )}
               {canEscalate && (
-                <button
+                <button type="button"
                   onClick={() => onAct('escalate', row)}
                   className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
                 >
@@ -497,7 +497,7 @@ function Drawer({
                 </button>
               )}
               {canFalseAlarm && (
-                <button
+                <button type="button"
                   onClick={() => onAct('mark-false-alarm', row)}
                   className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#4a5568] hover:bg-[#f3f5f9]"
                 >

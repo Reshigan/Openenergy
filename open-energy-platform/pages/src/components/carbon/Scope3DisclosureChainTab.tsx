@@ -301,7 +301,7 @@ export function Scope3DisclosureChainTab() {
             (TCFD + ISSB IFRS S2 + GHG Protocol Scope 3 + CDP).
           </p>
         </div>
-        <button
+        <button type="button"
           onClick={create}
           className="shrink-0 rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a3a5c]"
         >
@@ -319,7 +319,7 @@ export function Scope3DisclosureChainTab() {
 
       <div className="mb-3 flex flex-wrap gap-1.5">
         {FILTERS.map((f) => (
-          <button
+          <button type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
@@ -435,7 +435,7 @@ function Drawer({
                 {row.reporting_framework ? ` · ${row.reporting_framework}` : ''}
               </div>
             </div>
-            <button onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
+            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
           </div>
         </header>
 
@@ -490,7 +490,7 @@ function Drawer({
                     ? 'rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50'
                     : 'rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#1a3a5c] hover:bg-[#f3f5f9]';
                 return (
-                  <button key={a} onClick={() => onAct(a, row)} className={cls}>
+                  <button type="button" key={a} onClick={() => onAct(a, row)} className={cls}>
                     {ACTION_LABEL[a]}
                   </button>
                 );

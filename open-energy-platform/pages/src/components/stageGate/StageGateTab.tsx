@@ -272,7 +272,7 @@ export default function StageGateTab({ readOnly = false }: StageGateTabProps) {
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
         {/* Gate filter */}
         {(['all', '0', '1', '2', '3', '4'] as FilterGate[]).map(g => (
-          <button key={g}
+          <button type="button" key={g}
             onClick={() => setFilterGate(g)}
             style={{
               padding: '4px 12px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12,
@@ -284,7 +284,7 @@ export default function StageGateTab({ readOnly = false }: StageGateTabProps) {
         ))}
         <span style={{ color: '#d1d5db', margin: '0 4px' }}>|</span>
         {(['all', 'active', 'terminal', 'breached', 'reportable'] as FilterStatus[]).map(s => (
-          <button key={s}
+          <button type="button" key={s}
             onClick={() => setFilterStatus(s)}
             style={{
               padding: '4px 12px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12,
@@ -296,7 +296,7 @@ export default function StageGateTab({ readOnly = false }: StageGateTabProps) {
         ))}
         <span style={{ color: '#d1d5db', margin: '0 4px' }}>|</span>
         {(['all', 'low_capex', 'medium_capex', 'high_capex', 'mega_capex', 'equator_cat_a'] as FilterTier[]).map(t => (
-          <button key={t}
+          <button type="button" key={t}
             onClick={() => setFilterTier(t)}
             style={{
               padding: '4px 12px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12,
@@ -476,7 +476,7 @@ export default function StageGateTab({ readOnly = false }: StageGateTabProps) {
                           {!readOnly && !terminal && (
                             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                               {fwd && (
-                                <button
+                                <button type="button"
                                   onClick={() => runAction(row.id, fwd.action)}
                                   disabled={!!actionLoading}
                                   style={{
@@ -489,7 +489,7 @@ export default function StageGateTab({ readOnly = false }: StageGateTabProps) {
                               )}
                               {/* Conditional pass (for conditions_satisfied / gate_passed) */}
                               {(row.chain_status === 'conditions_satisfied' || row.chain_status === 'gate_passed') && (
-                                <button
+                                <button type="button"
                                   onClick={() => runAction(row.id, 'conditional_pass')}
                                   disabled={!!actionLoading}
                                   style={{
@@ -502,7 +502,7 @@ export default function StageGateTab({ readOnly = false }: StageGateTabProps) {
                               )}
                               {/* Defer */}
                               {!['gate_deferred','gate_conditional_pass'].includes(row.chain_status) && (
-                                <button
+                                <button type="button"
                                   onClick={() => runAction(row.id, 'defer_gate')}
                                   disabled={!!actionLoading}
                                   style={{
@@ -514,7 +514,7 @@ export default function StageGateTab({ readOnly = false }: StageGateTabProps) {
                                 </button>
                               )}
                               {/* Reject */}
-                              <button
+                              <button type="button"
                                 onClick={() => {
                                   if (confirm(`REJECT gate for ${row.title ?? row.project_id}? This terminates the project at this gate. NERSA/DMRE will be notified (W131 SIGNATURE). Continue?`)) {
                                     runAction(row.id, 'reject_gate');

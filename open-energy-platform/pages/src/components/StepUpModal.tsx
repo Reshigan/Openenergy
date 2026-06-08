@@ -146,7 +146,7 @@ export function StepUpModal() {
               <div className="font-semibold text-[#0f1c2e]">Confirm a fresh second factor</div>
             </div>
           </div>
-          <button onClick={() => close(false)} aria-label="Cancel"><X size={16}/></button>
+          <button type="button" onClick={() => close(false)} aria-label="Cancel"><X size={16}/></button>
         </div>
         <div className="p-4 space-y-3">
           <p className="text-[12px] text-[#3a4658]">
@@ -159,7 +159,7 @@ export function StepUpModal() {
               ['webauthn', 'Passkey', Fingerprint],
               ['recovery', 'Recovery code', Shield],
             ] as const).map(([k, label, Icon]) => (
-              <button key={k} onClick={() => setMethod(k)}
+              <button type="button" key={k} onClick={() => setMethod(k)}
                 className={`flex-1 h-8 px-2 rounded inline-flex items-center justify-center gap-1 ${
                   method === k ? 'bg-[#1a3a5c] text-white' : 'border border-[#dde4ec] text-[#0f1c2e]'
                 }`}>
@@ -175,7 +175,7 @@ export function StepUpModal() {
                        className="mt-1 w-full h-10 px-3 rounded border border-[#dde4ec] text-[18px] font-mono tracking-widest"
                        value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}/>
               </label>
-              <button disabled={busy || code.length !== 6} onClick={verifyTotp}
+              <button type="button" disabled={busy || code.length !== 6} onClick={verifyTotp}
                       className="w-full h-9 rounded bg-[#1a3a5c] text-white text-[13px] font-semibold disabled:opacity-50">
                 {busy ? 'Verifying…' : 'Verify code'}
               </button>
@@ -187,7 +187,7 @@ export function StepUpModal() {
               <p className="text-[12px] text-[#6b7685]">
                 Use your registered passkey (Touch ID, Windows Hello, security key) when prompted.
               </p>
-              <button disabled={busy} onClick={verifyPasskey}
+              <button type="button" disabled={busy} onClick={verifyPasskey}
                       className="w-full h-9 rounded bg-[#1a3a5c] text-white text-[13px] font-semibold inline-flex items-center justify-center gap-1 disabled:opacity-50">
                 <Fingerprint size={14}/> {busy ? 'Waiting for passkey…' : 'Use passkey'}
               </button>
@@ -201,7 +201,7 @@ export function StepUpModal() {
                        className="mt-1 w-full h-10 px-3 rounded border border-[#dde4ec] text-[14px] font-mono"
                        value={code} onChange={(e) => setCode(e.target.value)}/>
               </label>
-              <button disabled={busy || !code} onClick={verifyRecovery}
+              <button type="button" disabled={busy || !code} onClick={verifyRecovery}
                       className="w-full h-9 rounded bg-[#1a3a5c] text-white text-[13px] font-semibold disabled:opacity-50">
                 {busy ? 'Verifying…' : 'Use recovery code'}
               </button>
@@ -212,7 +212,7 @@ export function StepUpModal() {
           {ack && <div className="text-[12px] text-[#1a8a5b] inline-flex items-center gap-1"><CheckCircle2 size={13}/> {ack}</div>}
         </div>
         <div className="p-3 border-t border-[#dde4ec] text-right">
-          <button onClick={() => close(false)} className="h-8 px-3 text-[12px] text-[#6b7685]">Cancel</button>
+          <button type="button" onClick={() => close(false)} className="h-8 px-3 text-[12px] text-[#6b7685]">Cancel</button>
         </div>
       </div>
     </div>

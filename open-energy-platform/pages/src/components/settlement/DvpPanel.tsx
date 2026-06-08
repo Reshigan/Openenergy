@@ -150,7 +150,7 @@ export function DvpPanel() {
           </div>
         </div>
         {canRelease_ && (
-          <button
+          <button type="button"
             onClick={() => void release()}
             disabled={busy === 'release'}
             className="px-3 py-1.5 bg-purple-600 rounded text-[13px] hover:bg-purple-700 disabled:opacity-50"
@@ -186,7 +186,7 @@ export function DvpPanel() {
               <div>
                 <div className="text-[12px] text-ionex-text-mute mb-2">Awaiting bank settlement confirmation.</div>
                 {canConfirmCash && (
-                  <button
+                  <button type="button"
                     onClick={() => setShowConfirm('cash')}
                     className="px-3 py-1 text-[12px] bg-blue-600 text-white rounded hover:bg-blue-700"
                     data-testid="dvp-confirm-cash"
@@ -216,7 +216,7 @@ export function DvpPanel() {
               <div>
                 <div className="text-[12px] text-ionex-text-mute mb-2">Awaiting NER delivery confirmation.</div>
                 {canConfirmEnergy && (
-                  <button
+                  <button type="button"
                     onClick={() => setShowConfirm('energy')}
                     className="px-3 py-1 text-[12px] bg-amber-600 text-white rounded hover:bg-amber-700"
                     data-testid="dvp-confirm-energy"
@@ -297,8 +297,8 @@ function ConfirmLegModal({ leg, onClose, onConfirm, busy }: { leg: 'cash' | 'ene
           autoFocus
         />
         <div className="flex justify-end gap-2 mt-4">
-          <button onClick={onClose} className="px-3 py-1.5 border border-ionex-border-200 rounded text-sm">Cancel</button>
-          <button
+          <button type="button" onClick={onClose} className="px-3 py-1.5 border border-ionex-border-200 rounded text-sm">Cancel</button>
+          <button type="button"
             onClick={() => onConfirm(ref)}
             disabled={busy || !ref.trim()}
             className="px-3 py-1.5 bg-ionex-brand text-white rounded text-sm disabled:opacity-50"

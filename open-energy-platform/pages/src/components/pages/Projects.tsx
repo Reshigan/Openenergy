@@ -179,7 +179,7 @@ export function Projects() {
       subtitle="Track and manage energy projects"
       actions={
         canManage ? (
-          <button onClick={openCreate}
+          <button type="button" onClick={openCreate}
             className="flex items-center gap-2 px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-deep">
             <Plus className="w-4 h-4" /> New Project
           </button>
@@ -229,17 +229,17 @@ export function Projects() {
                       <div className="flex items-center gap-2">
                         {ownProject && canManage && (
                           <>
-                            <button onClick={(e) => { e.stopPropagation(); openEdit(project); }}
+                            <button type="button" onClick={(e) => { e.stopPropagation(); openEdit(project); }}
                               className="p-1.5 rounded hover:bg-gray-100" title="Edit project">
                               <Edit2 className="w-4 h-4 text-ionex-text-sub" />
                             </button>
-                            <button onClick={(e) => { e.stopPropagation(); doDelete(project.id); }}
+                            <button type="button" onClick={(e) => { e.stopPropagation(); doDelete(project.id); }}
                               className="p-1.5 rounded hover:bg-red-50" title="Delete project">
                               <Trash2 className="w-4 h-4 text-red-600" />
                             </button>
                           </>
                         )}
-                        <button onClick={() => navigate(`/projects/${project.id}`)}
+                        <button type="button" onClick={() => navigate(`/projects/${project.id}`)}
                           className="p-1.5 rounded hover:bg-gray-100" title="Open project">
                           <ArrowRight className="w-4 h-4 text-gray-500" />
                         </button>
@@ -354,11 +354,11 @@ function ProjectModal(props: {
         </div>
         {err && <div className="px-5 pb-3 text-sm text-red-700">{err}</div>}
         <div className="px-5 py-4 border-t border-ionex-border-soft flex justify-end gap-2">
-          <button onClick={onClose} disabled={saving}
+          <button type="button" onClick={onClose} disabled={saving}
             className="px-4 py-2 border border-ionex-border rounded-lg text-sm hover:bg-gray-50">
             Cancel
           </button>
-          <button onClick={onSubmit} disabled={saving}
+          <button type="button" onClick={onSubmit} disabled={saving}
             className="px-4 py-2 bg-ionex-brand text-white rounded-lg text-sm hover:bg-ionex-brand-deep disabled:opacity-50">
             {saving ? 'Saving…' : 'Save project'}
           </button>

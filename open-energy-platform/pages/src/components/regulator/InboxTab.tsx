@@ -132,7 +132,7 @@ export function InboxTab() {
       {/* Filter pills */}
       <div className="flex gap-2 flex-wrap">
         {(['all', 'pending', 'acknowledged', 'escalated', 'dismissed'] as const).map((s) => (
-          <button
+          <button type="button"
             key={s}
             data-testid={`regulator-inbox-filter-${s}`}
             onClick={() => setFilter(s)}
@@ -141,7 +141,7 @@ export function InboxTab() {
             {s === 'all' ? 'All' : STATUS_TONE[s].label}
           </button>
         ))}
-        <button onClick={load} className="h-7 px-3 rounded-full text-[11px] font-semibold border border-[#d8dee6] bg-white text-[#1a3a5c] ml-auto">
+        <button type="button" onClick={load} className="h-7 px-3 rounded-full text-[11px] font-semibold border border-[#d8dee6] bg-white text-[#1a3a5c] ml-auto">
           Refresh
         </button>
       </div>
@@ -168,7 +168,7 @@ export function InboxTab() {
           const sv = SEVERITY_TONE[r.severity];
           const sla = slaTone(r.sla_due_at, r.ack_status);
           return (
-            <button
+            <button type="button"
               key={r.id}
               data-testid={`regulator-inbox-row-${r.id}`}
               onClick={() => setDrillId(r.id)}
@@ -208,7 +208,7 @@ export function InboxTab() {
               </div>
               <div className="text-[14px] font-bold text-[#1a3a5c]">{drillRow.title}</div>
             </div>
-            <button onClick={() => setDrillId(null)} className="text-[11px] text-[#6b7685] hover:text-[#1a3a5c]">Close ×</button>
+            <button type="button" onClick={() => setDrillId(null)} className="text-[11px] text-[#6b7685] hover:text-[#1a3a5c]">Close ×</button>
           </div>
           <div className="grid grid-cols-2 gap-3 text-[12px]">
             <Field label="Status" value={STATUS_TONE[drillRow.ack_status].label} />
@@ -243,7 +243,7 @@ export function InboxTab() {
                 className="w-full h-9 px-3 rounded border border-[#d8dee6] text-[12px]"
               />
               <div className="flex gap-2 flex-wrap">
-                <button
+                <button type="button"
                   data-testid="regulator-inbox-ack"
                   disabled={busy}
                   onClick={() => run('ack', { note })}
@@ -251,7 +251,7 @@ export function InboxTab() {
                 >
                   Acknowledge
                 </button>
-                <button
+                <button type="button"
                   data-testid="regulator-inbox-escalate"
                   disabled={busy}
                   onClick={() => run('escalate', { reason: note, open_case: true })}
@@ -259,7 +259,7 @@ export function InboxTab() {
                 >
                   Escalate &amp; open case
                 </button>
-                <button
+                <button type="button"
                   data-testid="regulator-inbox-dismiss"
                   disabled={busy}
                   onClick={() => run('dismiss', { note })}

@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Apex Ink</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
+<style>
+/*
+  Apex Ink
+  ─────────────────────────────────────────────────────────
+  Palette: #fff canvas · #f8f9fb sidebar · 1px #e4e8ee borders
+  Accent:  #0b1f3a (deep navy-ink) — inverted active states
+  Numbers: JetBrains Mono
+  UI text: DM Sans (less Inter-generic)
+  Semantic: emerald green · amber · rose — never purple
+*/
+:root{
+  --ink:#0b1f3a;
+  --ink-light:rgba(11,31,58,0.08);
+  --ink-mid:rgba(11,31,58,0.14);
+  --canvas:#ffffff;
+  --surf:#f8f9fb;
+  --surf-2:#f2f4f7;
+  --border:#e4e8ee;
+  --border-2:#edf0f4;
+  --text-1:#0e1726;
+  --text-2:#4a5568;
+  --text-3:#8896a7;
+  --green:#0e7c47;
+  --green-bg:#e8f7ef;
+  --amber:#92600a;
+  --amber-bg:#fdf3dc;
+  --rose:#bc2c2c;
+  --rose-bg:#fdf0f0;
+  --blue:#1a56a0;
+  --blue-bg:#ebf2fd;
+  --e:cubic-bezier(0.23,1,0.32,1);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+body{
+  font-family:'DM Sans',system-ui,sans-serif;
+  background:#dde2e9;
+  padding:44px 32px 72px;
+  min-height:100vh;
+}
+
+/* ── page header ── */
+.lede{margin-bottom:48px}
+.lede .eyebrow{font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#8896a7;margin-bottom:10px}
+.lede h1{font-size:26px;font-weight:800;letter-spacing:-0.025em;color:var(--text-1);margin-bottom:6px}
+.lede p{font-size:13.5px;color:var(--text-2);line-height:1.65;max-width:520px}
+
+/* ── shell ── */
+.shell{
+  width:100%;max-width:1260px;height:560px;
+  background:var(--canvas);
+  border-radius:16px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.06),0 16px 48px rgba(0,0,0,0.1),0 32px 64px rgba(0,0,0,0.06);
+  display:flex;overflow:hidden;
+  border:1px solid rgba(0,0,0,0.08);
+}
+
+/* ═══ SIDEBAR ═══ */
+.sb{
+  width:228px;flex-shrink:0;
+  background:var(--surf);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+
+/* wordmark area */
+.sb-head{
+  padding:18px 16px 14px;
+  border-bottom:1px solid var(--border);
+}
+.sb-mark{
+  display:flex;align-items:center;gap:8px;margin-bottom:14px;
+}
+.sb-mark-icon{
+  width:26px;height:26px;background:var(--ink);border-radius:7px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.sb-mark-bolt{font-size:12px;color:white;line-height:1}
+.sb-mark-name{font-size:14px;font-weight:800;letter-spacing:-0.03em;color:var(--text-1)}
+.sb-mark-env{font-size:9px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-3);margin-top:1px}
+
+/* role row */
+.sb-role-row{display:flex;align-items:center;gap:6px}
+.sb-role-tag{
+  flex:1;display:flex;align-items:center;gap:6px;
+  padding:6px 8px;background:white;
+  border:1px solid var(--border);border-radius:8px;cursor:pointer;
+}
+.sb-role-tag:hover{border-color:var(--ink-mid)}
+.sb-role-initials{
+  width:18px;height:18px;border-radius:5px;
+  background:var(--ink);
+  font-size:8px;font-weight:800;color:white;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;letter-spacing:0.02em;
+}
+.sb-role-name{font-size:10.5px;font-weight:600;color:var(--text-1);flex:1}
+.sb-role-chevron{font-size:9px;color:var(--text-3)}
+
+/* search */
+.sb-search{
+  padding:8px 10px 4px;
+}
+.sb-search-inner{
+  display:flex;align-items:center;gap:6px;
+  background:white;border:1px solid var(--border);
+  border-radius:7px;padding:6px 10px;cursor:text;
+}
+.sb-search-inner:hover{border-color:var(--ink-mid)}
+.sb-search-icon{font-size:11px;color:var(--text-3);flex-shrink:0}
+.sb-search-hint{font-size:11px;color:var(--text-3);flex:1}
+.sb-kbd{font-size:9px;color:var(--text-3);background:var(--surf-2);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:'JetBrains Mono',monospace;flex-shrink:0}
+
+/* nav body */
+.sb-body{flex:1;overflow-y:auto;padding:6px 0 12px}
+.sb-body::-webkit-scrollbar{width:3px}
+.sb-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* section */
+.sb-section{
+  padding:12px 14px 4px;
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;
+}
+.sb-section:hover .sb-sl{color:var(--text-2)}
+.sb-sl{font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);transition:color 100ms}
+.sb-sc{display:flex;align-items:center;gap:4px}
+.sb-alert{font-size:9px;font-weight:700;background:var(--rose-bg);color:var(--rose);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace}
+.sb-chevron{font-size:9px;color:var(--text-3);transition:transform 120ms var(--e)}
+.sb-section.collapsed .sb-chevron{transform:rotate(-90deg)}
+.sb-section-body.collapsed{display:none}
+
+/* nav items */
+.sb-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:5px 14px 5px 18px;
+  cursor:pointer;
+  position:relative;
+}
+.sb-item:hover .sb-il{color:var(--text-1)}
+.sb-item.active{background:var(--ink)}
+.sb-item.active .sb-il{color:white;font-weight:600}
+.sb-item.active .sb-ibadge{opacity:0.7}
+.sb-il{
+  font-size:11.5px;color:var(--text-2);
+  transition:color 80ms;
+  display:flex;align-items:center;gap:6px;
+}
+.sb-imark{width:3px;height:3px;border-radius:50%;background:var(--border);flex-shrink:0}
+.sb-item.active .sb-imark{background:rgba(255,255,255,0.4)}
+.sb-ibadge-wrap{display:flex;gap:3px}
+.sb-ibadge{font-size:8.5px;font-weight:700;padding:1px 5px;border-radius:3px}
+.badge-a{background:var(--rose-bg);color:var(--rose)}
+.badge-p{background:var(--ink-light);color:var(--ink)}
+.badge-g{background:var(--green-bg);color:var(--green)}
+.badge-b{background:var(--blue-bg);color:var(--blue)}
+.badge-am{background:var(--amber-bg);color:var(--amber)}
+
+.sb-item.active .badge-p{background:rgba(255,255,255,0.18);color:rgba(255,255,255,0.9)}
+
+/* divider */
+.sb-div{height:1px;background:var(--border-2);margin:6px 14px}
+
+/* footer */
+.sb-foot{
+  border-top:1px solid var(--border);
+  padding:10px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.sb-user{display:flex;align-items:center;gap:8px}
+.sb-av{
+  width:28px;height:28px;border-radius:8px;
+  background:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:800;color:white;flex-shrink:0;letter-spacing:0.02em;
+}
+.sb-un{font-size:11.5px;font-weight:600;color:var(--text-1)}
+.sb-ue{font-size:10px;color:var(--text-3)}
+.sb-actions{display:flex;gap:1px}
+.sb-act{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:12px;cursor:pointer;transition:background 80ms}
+.sb-act:hover{background:var(--surf-2);color:var(--text-2)}
+
+/* ═══ MAIN ═══ */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* topbar */
+.topbar{
+  height:50px;flex-shrink:0;
+  border-bottom:1px solid var(--border);
+  padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:white;
+}
+.tbl{display:flex;align-items:center;gap:8px}
+.tb-crumb{font-size:12px;color:var(--text-3)}
+.tb-crumb.cur{font-size:13px;font-weight:700;color:var(--text-1)}
+.tb-sep{font-size:11px;color:var(--border)}
+.tbr{display:flex;align-items:center;gap:8px}
+.tbtag{
+  font-size:10.5px;font-weight:500;color:var(--text-2);
+  padding:4px 10px;border:1px solid var(--border);border-radius:6px;
+  display:flex;align-items:center;gap:5px;
+}
+.tbtag-dot{width:6px;height:6px;border-radius:50%}
+.btn-g{
+  font-size:11.5px;font-weight:600;color:white;
+  background:var(--ink);border:none;border-radius:7px;
+  padding:7px 14px;cursor:pointer;
+  transition:opacity 120ms,transform 120ms var(--e);
+}
+.btn-g:active{transform:scale(0.97);opacity:0.9}
+.btn-o{
+  font-size:11.5px;font-weight:500;color:var(--text-2);
+  background:white;border:1px solid var(--border);border-radius:7px;
+  padding:7px 14px;cursor:pointer;
+}
+.btn-o:hover{background:var(--surf)}
+
+/* body */
+.mbody{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:16px}
+.mbody::-webkit-scrollbar{width:4px}
+.mbody::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* page title */
+.ph{margin-bottom:2px}
+.ph-title{font-size:20px;font-weight:800;letter-spacing:-0.03em;color:var(--text-1)}
+.ph-sub{font-size:12px;color:var(--text-3);margin-top:3px}
+.ph-tags{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.ptag{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:500;padding:3px 8px;border-radius:5px}
+
+/* kpi strip */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.kpi{
+  padding:14px 15px 12px;
+  border:1px solid var(--border);border-radius:11px;
+  background:white;
+  position:relative;overflow:hidden;
+}
+/* thin top-accent rule */
+.kpi::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--kc);
+}
+.kl{font-size:9.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:7px}
+.kn{font-size:26px;font-weight:800;letter-spacing:-0.04em;line-height:1;font-family:'JetBrains Mono',monospace;color:var(--text-1)}
+.kd{font-size:9.5px;margin-top:5px;color:var(--text-3);display:flex;align-items:center;gap:5px}
+.kchip{font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace}
+
+/* filter bar */
+.fbar{display:flex;align-items:center;gap:7px}
+.fsearch{
+  flex:1;display:flex;align-items:center;gap:6px;
+  background:var(--surf);border:1px solid var(--border);
+  border-radius:7px;padding:7px 11px;
+}
+.fsearch:hover{border-color:var(--ink-mid)}
+.ftext{font-size:11.5px;color:var(--text-3);flex:1}
+.ficon{font-size:11px;color:var(--text-3)}
+.fbtn{
+  font-size:11px;font-weight:500;color:var(--text-2);
+  background:white;border:1px solid var(--border);border-radius:7px;
+  padding:7px 12px;cursor:pointer;display:flex;align-items:center;gap:4px;
+}
+.fbtn:hover{background:var(--surf)}
+
+/* table */
+.tbl-wrap{border:1px solid var(--border);border-radius:11px;overflow:hidden}
+.th-row{
+  display:grid;grid-template-columns:2fr 72px 80px 88px 96px;
+  padding:9px 16px;background:var(--surf);
+  border-bottom:1px solid var(--border);
+}
+.th{font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-3)}
+.td-row{
+  display:grid;grid-template-columns:2fr 72px 80px 88px 96px;
+  padding:9px 16px;border-bottom:1px solid var(--border-2);
+  align-items:center;cursor:pointer;
+  transition:background 70ms;
+}
+.td-row:hover{background:var(--surf)}
+.td-row:last-child{border-bottom:none}
+.td-name{font-size:11.5px;font-weight:600;color:var(--text-1)}
+.td-sub{font-size:10px;color:var(--text-3);margin-top:1px}
+.td-v{font-size:11.5px;color:var(--text-2);font-family:'JetBrains Mono',monospace}
+.pill{font-size:9.5px;font-weight:600;padding:3px 8px;border-radius:4px;display:inline-flex;align-items:center;gap:3px}
+.pill-d{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+
+/* mini progress */
+.mp-wrap{display:flex;align-items:center;gap:6px}
+.mp-track{flex:1;height:3px;background:var(--surf-2);border-radius:2px;overflow:hidden}
+.mp-fill{height:100%;border-radius:2px}
+.mp-pct{font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--text-3);flex-shrink:0;width:28px;text-align:right}
+
+/* bottom section */
+.bot-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.bot-card{
+  border:1px solid var(--border);border-radius:11px;
+  padding:13px 15px;background:white;
+}
+.bc-label{font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-3);margin-bottom:9px;display:flex;justify-content:space-between;align-items:center}
+.bc-pct{font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:700}
+.bc-track{height:5px;background:var(--surf-2);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.bc-fill{height:100%;border-radius:3px}
+.bc-meta{font-size:10px;color:var(--text-3)}
+</style>
+</head>
+<body>
+
+<div class="lede">
+  <div class="eyebrow">Apex Ink — Revised</div>
+  <h1>No purple. No AI-template feel.</h1>
+  <p>Deep navy-ink active states. DM Sans typography. Industry-appropriate — reads like a professional energy exchange, not another AI product.</p>
+</div>
+
+<div class="shell">
+
+  <!-- ══════ SIDEBAR ══════ -->
+  <div class="sb">
+
+    <div class="sb-head">
+      <div class="sb-mark">
+        <div class="sb-mark-icon">
+          <div class="sb-mark-bolt">⚡</div>
+        </div>
+        <div>
+          <div class="sb-mark-name">Open Energy</div>
+          <div class="sb-mark-env">Production</div>
+        </div>
+      </div>
+      <div class="sb-role-row">
+        <div class="sb-role-tag">
+          <div class="sb-role-initials">IPP</div>
+          <div class="sb-role-name">IPP Developer</div>
+          <div class="sb-role-chevron">⌄</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sb-search">
+      <div class="sb-search-inner">
+        <span class="sb-search-icon">⌕</span>
+        <span class="sb-search-hint">Jump to feature…</span>
+        <span class="sb-kbd">⌘K</span>
+      </div>
+    </div>
+
+    <div class="sb-body">
+
+      <!-- PROJECT MANAGEMENT -->
+      <div class="sb-section">
+        <span class="sb-sl">Project</span>
+        <div class="sb-sc"><span class="sb-chevron">▾</span></div>
+      </div>
+      <div class="sb-section-body">
+        <div class="sb-item">
+          <div class="sb-il"><span class="sb-imark"></span>Dashboard</div>
+        </div>
+        <div class="sb-item active">
+          <div class="sb-il"><span class="sb-imark"></span>Schedule</div>
+          <div class="sb-ibadge-wrap"><span class="sb-ibadge badge-p">P6</span></div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-il"><span class="sb-imark"></span>Cost &amp; EVM</div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-il"><span class="sb-imark"></span>WBS</div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-il"><span class="sb-imark"></span>Documents</div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-il"><span class="sb-imark"></span>Drawing Register</div>
+          <div class="sb-ibadge-wrap"><span class="sb-ibadge badge-b">New</span></div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-il"><span class="sb-imark"></span>Commissioning Log</div>
+        </div>
+      </div>
+
+      <div class="sb-div"></div>
+
+      <!-- COMPLIANCE -->
+      <div class="sb-section">
+        <span class="sb-sl">Compliance</span>
+        <div class="sb-sc">
+          <span class="sb-alert">3</span>
+          <span class="sb-chevron">▾</span>
+        </div>
+      </div>
+      <div class="sb-section-body">
+        <div class="sb-item">
+          <div class="sb-il"><span class="sb-imark"></span>Stage Gates</div>
+          <div class="sb-ibadge-wrap"><span class="sb-ibadge badge-am">DG2</span></div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-il"><span class="sb-imark"></span>NCR Log</div>
+          <div class="sb-ibadge-wrap"><span class="sb-ibadge badge-a">3</span></div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-il"><span class="sb-imark"></span>Method Statements</div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-il"><span class="sb-imark"></span>Env. Monitoring</div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-il"><span class="sb-imark"></span>HSE Incidents</div>
+        </div>
+      </div>
+
+      <div class="sb-div"></div>
+
+      <!-- FINANCE — collapsed -->
+      <div class="sb-section collapsed">
+        <span class="sb-sl">Finance</span>
+        <div class="sb-sc"><span class="sb-chevron">▾</span></div>
+      </div>
+      <div class="sb-section-body collapsed"></div>
+
+      <div class="sb-div"></div>
+
+      <!-- RISK — collapsed -->
+      <div class="sb-section collapsed">
+        <span class="sb-sl">Risk &amp; Quality</span>
+        <div class="sb-sc">
+          <span class="sb-alert">2</span>
+          <span class="sb-chevron">▾</span>
+        </div>
+      </div>
+      <div class="sb-section-body collapsed"></div>
+
+      <div class="sb-div"></div>
+
+      <!-- REGULATORY — collapsed -->
+      <div class="sb-section collapsed">
+        <span class="sb-sl">Regulatory</span>
+        <div class="sb-sc"><span class="sb-chevron">▾</span></div>
+      </div>
+      <div class="sb-section-body collapsed"></div>
+
+    </div>
+
+    <div class="sb-foot">
+      <div class="sb-user">
+        <div class="sb-av">RK</div>
+        <div>
+          <div class="sb-un">Reshigan K.</div>
+          <div class="sb-ue">IPP Developer</div>
+        </div>
+      </div>
+      <div class="sb-actions">
+        <div class="sb-act">⚙</div>
+        <div class="sb-act">◻</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════ MAIN ══════ -->
+  <div class="main">
+
+    <div class="topbar">
+      <div class="tbl">
+        <span class="tb-crumb">Project</span>
+        <span class="tb-sep">›</span>
+        <span class="tb-crumb cur">Schedule</span>
+      </div>
+      <div class="tbr">
+        <div class="tbtag">
+          <div class="tbtag-dot" style="background:#0e7c47"></div>
+          Cosmos Wind Farm
+        </div>
+        <button class="btn-o">Export</button>
+        <button class="btn-g">+ New Task</button>
+      </div>
+    </div>
+
+    <div class="mbody">
+
+      <div class="ph">
+        <div class="ph-title">Schedule</div>
+        <div class="ph-sub">Primavera P6 · Phase 2 Construction · Synced 4 min ago</div>
+        <div class="ph-tags">
+          <span class="ptag" style="background:var(--green-bg);color:var(--green);border:1px solid #b3e8ce">On Schedule</span>
+          <span class="ptag" style="background:var(--amber-bg);color:var(--amber);border:1px solid #f5dea5">Cost Overrun</span>
+          <span class="ptag" style="background:var(--blue-bg);color:var(--blue);border:1px solid #b3d4f5">DG2 in 14 days</span>
+        </div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi" style="--kc:var(--green)">
+          <div class="kl">Schedule (SPI)</div>
+          <div class="kn" style="color:var(--green)">0.97</div>
+          <div class="kd"><span class="kchip" style="background:var(--green-bg);color:var(--green)">+0.03</span> vs last period</div>
+        </div>
+        <div class="kpi" style="--kc:var(--amber)">
+          <div class="kl">Cost (CPI)</div>
+          <div class="kn" style="color:var(--amber)">0.89</div>
+          <div class="kd"><span class="kchip" style="background:var(--amber-bg);color:var(--amber)">−0.04</span> vs last period</div>
+        </div>
+        <div class="kpi" style="--kc:var(--ink)">
+          <div class="kl">Est. at Completion</div>
+          <div class="kn">R890M</div>
+          <div class="kd"><span class="kchip" style="background:var(--surf-2);color:var(--text-2)">+R42M</span> vs budget</div>
+        </div>
+        <div class="kpi" style="--kc:var(--blue)">
+          <div class="kl">DG2 Gate</div>
+          <div class="kn" style="color:var(--blue)">14d</div>
+          <div class="kd" style="color:var(--blue)">On track to submit</div>
+        </div>
+      </div>
+
+      <div class="fbar">
+        <div class="fsearch">
+          <span class="ficon">⌕</span>
+          <span class="ftext">Filter tasks…</span>
+        </div>
+        <button class="fbtn">Status ⌄</button>
+        <button class="fbtn">Assignee ⌄</button>
+        <button class="fbtn">Due date ⌄</button>
+      </div>
+
+      <div class="tbl-wrap">
+        <div class="th-row">
+          <div class="th">Task Name</div>
+          <div class="th">Due</div>
+          <div class="th">Value</div>
+          <div class="th">Status</div>
+          <div class="th">Progress</div>
+        </div>
+
+        <div class="td-row">
+          <div>
+            <div class="td-name">Procurement Package A</div>
+            <div class="td-sub">Civil · Basil Read</div>
+          </div>
+          <div class="td-v">Jun 14</div>
+          <div class="td-v">R120M</div>
+          <div><span class="pill" style="background:var(--blue-bg);color:var(--blue)"><span class="pill-d" style="background:var(--blue)"></span>Active</span></div>
+          <div class="mp-wrap">
+            <div class="mp-track"><div class="mp-fill" style="width:65%;background:var(--blue)"></div></div>
+            <span class="mp-pct">65%</span>
+          </div>
+        </div>
+
+        <div class="td-row">
+          <div>
+            <div class="td-name">Foundation Works</div>
+            <div class="td-sub">Civil · Site 2A complete</div>
+          </div>
+          <div class="td-v">May 30</div>
+          <div class="td-v">R48M</div>
+          <div><span class="pill" style="background:var(--green-bg);color:var(--green)"><span class="pill-d" style="background:var(--green)"></span>Done</span></div>
+          <div class="mp-wrap">
+            <div class="mp-track"><div class="mp-fill" style="width:100%;background:var(--green)"></div></div>
+            <span class="mp-pct" style="color:var(--green)">100%</span>
+          </div>
+        </div>
+
+        <div class="td-row">
+          <div>
+            <div class="td-name">Turbine Installation — Set 1</div>
+            <div class="td-sub">Mechanical · 12 of 36 turbines</div>
+          </div>
+          <div class="td-v">Jul 22</div>
+          <div class="td-v">R310M</div>
+          <div><span class="pill" style="background:var(--rose-bg);color:var(--rose)"><span class="pill-d" style="background:var(--rose)"></span>Delayed</span></div>
+          <div class="mp-wrap">
+            <div class="mp-track"><div class="mp-fill" style="width:33%;background:var(--rose)"></div></div>
+            <span class="mp-pct" style="color:var(--rose)">33%</span>
+          </div>
+        </div>
+
+        <div class="td-row">
+          <div>
+            <div class="td-name">HV Cabling &amp; Substation</div>
+            <div class="td-sub">Electrical · Awaiting delivery</div>
+          </div>
+          <div class="td-v">Aug 10</div>
+          <div class="td-v">R87M</div>
+          <div><span class="pill" style="background:var(--amber-bg);color:var(--amber)"><span class="pill-d" style="background:var(--amber)"></span>On Hold</span></div>
+          <div class="mp-wrap">
+            <div class="mp-track"><div class="mp-fill" style="width:12%;background:var(--amber)"></div></div>
+            <span class="mp-pct">12%</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="bot-grid">
+        <div class="bot-card">
+          <div class="bc-label">Civil Works <span class="bc-pct" style="color:var(--green)">82%</span></div>
+          <div class="bc-track"><div class="bc-fill" style="width:82%;background:var(--green)"></div></div>
+          <div class="bc-meta">R352M of R430M · 3 days ahead</div>
+        </div>
+        <div class="bot-card">
+          <div class="bc-label">Mechanical <span class="bc-pct" style="color:var(--rose)">41%</span></div>
+          <div class="bc-track"><div class="bc-fill" style="width:41%;background:var(--rose)"></div></div>
+          <div class="bc-meta">R165M of R402M · 18 days late</div>
+        </div>
+        <div class="bot-card">
+          <div class="bc-label">Electrical <span class="bc-pct" style="color:var(--amber)">28%</span></div>
+          <div class="bc-track"><div class="bc-fill" style="width:28%;background:var(--amber)"></div></div>
+          <div class="bc-meta">R24M of R87M · on hold</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<p style="margin-top:20px;font-size:12px;color:#8896a7">Accent: #0b1f3a navy-ink (inverted active). Semantic: emerald · amber · rose. Font: DM Sans + JetBrains Mono. Click sections to collapse.</p>
+
+<script>
+document.querySelectorAll('.sb-section').forEach(function(s){
+  s.addEventListener('click',function(){
+    s.classList.toggle('collapsed');
+    var b=s.nextElementSibling;
+    if(b&&b.classList.contains('sb-section-body'))b.classList.toggle('collapsed');
+  });
+});
+</script>
+</body>
+</html>

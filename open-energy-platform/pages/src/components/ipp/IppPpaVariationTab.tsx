@@ -175,14 +175,14 @@ export function IppPpaVariationTab() {
 
       {/* Filter row */}
       <div className="flex flex-wrap gap-2 items-center">
-        <button
+        <button type="button"
           onClick={() => { setFilterStatus(''); load('', filterTier); }}
           className={`px-3 py-1 rounded text-xs border ${!filterStatus ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-300'}`}
         >
           All
         </button>
         {FILTER_STATUSES.map(s => (
-          <button
+          <button type="button"
             key={s}
             onClick={() => { setFilterStatus(s); load(s, filterTier); }}
             className={`px-3 py-1 rounded text-xs border ${filterStatus === s ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-300'}`}
@@ -192,7 +192,7 @@ export function IppPpaVariationTab() {
         ))}
         <span className="text-gray-300">|</span>
         {(['minor', 'moderate', 'significant', 'major', 'material'] as const).map(t => (
-          <button
+          <button type="button"
             key={t}
             onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }}
             className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white border-indigo-700' : 'bg-white text-gray-600 border-gray-300'}`}
@@ -200,13 +200,13 @@ export function IppPpaVariationTab() {
             {t}
           </button>
         ))}
-        <button
+        <button type="button"
           onClick={() => setShowCreate(true)}
           className="ml-auto px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700"
         >
           + New variation
         </button>
-        <button
+        <button type="button"
           onClick={() => load(filterStatus, filterTier)}
           className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
         >
@@ -302,7 +302,7 @@ export function IppPpaVariationTab() {
                   <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[selected.variation_tier] ?? ''}`}>{selected.variation_tier}</span>
                 </div>
               </div>
-              <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-700 text-lg leading-none">✕</button>
+              <button type="button" onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-700 text-lg leading-none">✕</button>
             </div>
 
             {selected.description && (
@@ -401,14 +401,14 @@ export function IppPpaVariationTab() {
               />
             </div>
             <div className="flex gap-2 mt-4">
-              <button
+              <button type="button"
                 onClick={createVariation}
                 disabled={createPending || !form.project_id || !form.description}
                 className="px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
               >
                 {createPending ? 'Creating…' : 'Create'}
               </button>
-              <button
+              <button type="button"
                 onClick={() => setShowCreate(false)}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200"
               >

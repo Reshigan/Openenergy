@@ -189,14 +189,14 @@ export function ActionQueueCard() {
                 )}
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                <button
+                <button type="button"
                   onClick={() => navigate(href)}
                   className="text-[12px] font-semibold px-2.5 h-8 rounded-md flex items-center gap-1 hover:bg-[#e5ebf2]"
                   style={{ color: '#3b82c4' }}
                 >
                   Open <ArrowRight size={12} />
                 </button>
-                <button
+                <button type="button"
                   onClick={() => complete(it.id)}
                   className="text-[12px] font-semibold px-2.5 h-8 rounded-md hover:bg-[#e5f7ec]"
                   style={{ color: '#1a8a5b' }}

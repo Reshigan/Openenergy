@@ -369,7 +369,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
       >
         {/* Hamburger / nav menu */}
         <div className="relative" ref={menuRef}>
-          <button
+          <button type="button"
             onClick={() => setMenuOpen((v) => !v)}
             className="flex items-center justify-center w-10 h-10 rounded-md text-white/90 hover:bg-white/10 transition-colors"
             aria-label="Open navigation menu"
@@ -560,14 +560,14 @@ export function FioriShell({ children }: { children: ReactNode }) {
                     {user?.role?.replace(/_/g, ' ') ?? '—'}
                   </div>
                 </div>
-                <button
+                <button type="button"
                   className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left transition-colors hover:bg-[var(--oe-surface-container-low)]"
                   style={{ color: 'var(--oe-on-surface)' }}
                   onClick={() => { setUserMenu(false); navigate('/settings'); }}
                 >
                   <MIcon name="person" size={16} /> Profile &amp; preferences
                 </button>
-                <button
+                <button type="button"
                   className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left transition-colors hover:bg-[var(--oe-surface-container-low)]"
                   style={{ color: 'var(--oe-on-surface)' }}
                   onClick={() => { setUserMenu(false); navigate('/settings/security'); }}
@@ -575,7 +575,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
                   <MIcon name="security" size={16} /> Security &amp; MFA
                 </button>
                 {user?.role === 'admin' && (
-                  <button
+                  <button type="button"
                     className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left transition-colors hover:bg-[var(--oe-surface-container-low)]"
                     style={{ color: 'var(--oe-on-surface)' }}
                     onClick={() => { setUserMenu(false); navigate('/admin'); }}
@@ -583,7 +583,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
                     <MIcon name="admin_panel_settings" size={16} /> Admin console
                   </button>
                 )}
-                <button
+                <button type="button"
                   className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left transition-colors border-t"
                   style={{ color: 'var(--oe-error)', borderColor: 'var(--oe-surface-container)' }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--oe-error-container)')}
@@ -645,7 +645,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="p-3 border-t" style={{ borderColor: 'var(--oe-surface-container)' }}>
-          <button
+          <button type="button"
             onClick={() => setCollapsed((v) => !v)}
             className="w-full flex items-center gap-2 h-9 px-2 rounded-md text-[12px] transition-colors hover:bg-[var(--oe-surface-container-low)]"
             style={{ color: 'var(--oe-on-surface-variant)' }}

@@ -17,7 +17,7 @@ import StageGateTab from '../stageGate/StageGateTab';
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
     <div className="flex justify-end mb-3">
-      <button onClick={onCreate} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+      <button type="button" onClick={onCreate} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
         + {label}
       </button>
     </div>
@@ -313,7 +313,7 @@ function LicencesTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'decided_at', label: 'Decided', render: (r) => r.decided_at ? new Date(r.decided_at).toLocaleDateString() : '—' },
           { key: '_actions', label: '', render: (r) => (
             r.status !== 'executed' && r.status !== 'reversed' && (
-              <button onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Transition</button>
+              <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Transition</button>
             )
           ) },
         ]}
@@ -417,7 +417,7 @@ function PublicConsultationTab({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
           + New consultation
         </button>
       </div>
@@ -567,7 +567,7 @@ function MarketConductExamTab({ onRefresh }: { onRefresh?: () => void }) {
 
       <div className="flex justify-between items-center">
         <span className="text-sm text-gray-500">{data.length} conduct examinations</span>
-        <button
+        <button type="button"
           onClick={() => setCreateModal(true)}
           className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700"
         >+ Schedule examination</button>
@@ -600,7 +600,7 @@ function MarketConductExamTab({ onRefresh }: { onRefresh?: () => void }) {
                 </td>
                 <td className="px-3 py-2 text-gray-500 text-xs">{row.sla_deadline ? new Date(row.sla_deadline).toLocaleDateString() : '—'}</td>
                 <td className="px-3 py-2">
-                  <button onClick={() => setModal({ id: row.id, exam_tier: row.exam_tier, examination_ref: row.examination_ref })}
+                  <button type="button" onClick={() => setModal({ id: row.id, exam_tier: row.exam_tier, examination_ref: row.examination_ref })}
                     className="text-xs text-blue-600 hover:underline">Action</button>
                 </td>
               </tr>

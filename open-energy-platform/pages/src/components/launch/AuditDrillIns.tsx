@@ -72,7 +72,7 @@ export function ReconBreaksModal({
             <h3 className="text-[16px] font-semibold text-[#0f1c2e]">Reconciliation breaks</h3>
             <div className="text-[12px] text-[#6b7685] mt-1 font-mono">{runId}</div>
           </div>
-          <button onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e] text-[20px]">×</button>
+          <button type="button" onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e] text-[20px]">×</button>
         </div>
         <div className="p-5 overflow-y-auto flex-1">
           {err && <div className="text-[12px] text-red-700 mb-3">{err}</div>}
@@ -94,7 +94,7 @@ export function ReconBreaksModal({
                   const isOpen = expanded.has(b.id);
                   return (
                     <div key={b.id}>
-                      <button onClick={() => toggle(b.id)} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-[#f8fafc] text-left">
+                      <button type="button" onClick={() => toggle(b.id)} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-[#f8fafc] text-left">
                         {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                         <Pill tone={b.break_type === 'field_mismatch' ? 'bad' : b.break_type === 'missing_in_ours' ? 'bad' : 'warn'}>
                           {b.break_type.replace(/_/g, ' ')}
@@ -123,7 +123,7 @@ export function ReconBreaksModal({
                           </div>
                           {!b.resolution && (
                             <div className="col-span-2 flex justify-end">
-                              <button onClick={() => setResolving(b)} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">
+                              <button type="button" onClick={() => setResolving(b)} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">
                                 Resolve
                               </button>
                             </div>
@@ -188,7 +188,7 @@ function ResolveBreakModal({
       <div className="bg-white rounded-xl shadow-xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
         <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
           <h3 className="text-[15px] font-semibold text-[#0f1c2e]">Resolve break</h3>
-          <button onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e] text-[20px]">×</button>
+          <button type="button" onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e] text-[20px]">×</button>
         </div>
         <div className="p-5 space-y-3 text-[13px]">
           {err && <div className="text-[12px] text-red-700">{err}</div>}
@@ -209,8 +209,8 @@ function ResolveBreakModal({
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none" />
           </label>
           <div className="flex justify-end gap-2 pt-1">
-            <button onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg">Cancel</button>
-            <button onClick={submit} disabled={saving} className="px-4 py-2 bg-[#1a3a5c] text-white rounded-lg disabled:opacity-50">
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg">Cancel</button>
+            <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-[#1a3a5c] text-white rounded-lg disabled:opacity-50">
               {saving ? 'Saving…' : 'Resolve'}
             </button>
           </div>
@@ -259,7 +259,7 @@ export function AuditEventsModal({ prefix, onClose }: BaseProps) {
             <h3 className="text-[16px] font-semibold text-[#0f1c2e]">Audit chain — recent events</h3>
             <div className="text-[12px] text-[#6b7685] mt-1">Append-only · SHA-256 chained · most recent first</div>
           </div>
-          <button onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e] text-[20px]">×</button>
+          <button type="button" onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e] text-[20px]">×</button>
         </div>
         <div className="p-5 overflow-y-auto flex-1">
           {err && <div className="text-[12px] text-red-700 mb-3">{err}</div>}
@@ -282,7 +282,7 @@ export function AuditEventsModal({ prefix, onClose }: BaseProps) {
                 try { prettyPayload = JSON.stringify(JSON.parse(e.payload_json), null, 2); } catch { prettyPayload = e.payload_json; }
                 return (
                   <div key={e.id}>
-                    <button onClick={toggle} className="w-full px-4 py-2 flex items-center gap-3 hover:bg-[#f8fafc] text-left text-[12px]">
+                    <button type="button" onClick={toggle} className="w-full px-4 py-2 flex items-center gap-3 hover:bg-[#f8fafc] text-left text-[12px]">
                       {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                       <span className="font-mono text-[11px] text-[#6b7685] w-12 text-right">#{e.sequence_no}</span>
                       <Pill tone="info">{e.event_type}</Pill>
@@ -365,7 +365,7 @@ export function ExportDetailModal({
             <h3 className="text-[16px] font-semibold text-[#0f1c2e]">Certified export</h3>
             <div className="text-[12px] text-[#6b7685] mt-1 font-mono">{exportId}</div>
           </div>
-          <button onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e] text-[20px]">×</button>
+          <button type="button" onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e] text-[20px]">×</button>
         </div>
         <div className="p-5 overflow-y-auto flex-1 space-y-3">
           {err && <div className="text-[12px] text-red-700">{err}</div>}
@@ -402,7 +402,7 @@ export function ExportDetailModal({
                 <div className="text-[10px] text-[#6b7685] mt-1">{manifest.csv?.bytes?.toLocaleString() || 0} bytes</div>
               </div>
               <div className="flex justify-end pt-2">
-                <button onClick={downloadCsv} className="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+                <button type="button" onClick={downloadCsv} className="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
                   <Download size={14} /> Download CSV
                 </button>
               </div>
