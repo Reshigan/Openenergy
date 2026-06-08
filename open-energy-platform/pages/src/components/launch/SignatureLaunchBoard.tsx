@@ -12,6 +12,7 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { ActionQueueCard } from '../ActionQueueCard';
+import { SetupChecklist } from './SetupChecklist';
 import {
   RoleShell,
   SignatureHero,
@@ -326,6 +327,8 @@ export function SignatureLaunchBoard({ role }: { role: string }) {
       />
 
       <div style={{ display: 'grid', gap: 32, padding: 'clamp(20px, 3vw, 40px)', maxWidth: 1440, margin: '0 auto' }}>
+        <SetupChecklist role={role} />
+
         {featuredKpis.length > 0 && (
           <section>
             <h2

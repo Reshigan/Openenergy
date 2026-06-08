@@ -15,6 +15,7 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { ActionQueueCard } from '../ActionQueueCard';
+import { SetupChecklist } from './SetupChecklist';
 
 export type Tone = 'good' | 'warn' | 'bad' | 'neutral';
 
@@ -366,6 +367,8 @@ export function LaunchBoardShell({
   return (
     <div className="space-y-6">
       <HeroBlock payload={payload} />
+
+      <SetupChecklist role={role} />
 
       {/* KPI grid */}
       {payload.kpis.length > 0 && (
