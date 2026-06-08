@@ -2,7 +2,7 @@
 // Cascade Event System — 35+ Event Types → Notifications + Webhooks + Audit
 // ═══════════════════════════════════════════════════════════════════════════
 
-import type { PlatformEventFields } from './platform-event';
+import type { PlatformEventFields, CommercialContext } from './platform-event';
 import { createNotifications, determineNotificationRecipients, buildNotificationContent, generateId } from './notification-engine';
 import { deliverWebhooks } from './webhook-engine';
 
@@ -2045,6 +2045,22 @@ export interface CascadeContext extends PlatformEventFields {
   skipAudit?: boolean;
 }
 
+// Serialisable subset of CascadeContext sent to the Queue consumer.
+// `env` is omitted — the consumer injects its own env binding at dequeue time.
+export interface CascadeQueuePayload {
+  event: EventType;
+  actor_id?: string;
+  entity_type: string;
+  entity_id: string;
+  data?: Record<string, unknown>;
+  chain_key?: string;
+  source_chain_status?: string;
+  affected_roles?: string[];
+  cross_impact_hint?: string;
+  commercial?: CommercialContext;
+  skipAudit?: boolean;
+}
+
 // Map cascade event prefix → audit-chain entity_type. Anything not in this
 // map gets audited under the catch-all 'platform' chain. The point of the
 // L5 auto-audit hook is that every domain mutation lands somewhere on a
@@ -2429,16 +2445,70 @@ export async function fireCascade(ctx: CascadeContext): Promise<void> {
 
   // ── Ecosystem layers (additive) ─────────────────────────────────────────────
   // Each is error-isolated so a layer failure never breaks the cascade. When
-  // env.QUEUE is provisioned (national scale) these move to a Queue consumer;
-  // until then they run inline and awaited so tests observe their effect.
-  // Auto-progressed reactions inside registry rules use actor 'system:cascade'.
-  // Skip for audit.event_appended (internal meta-event emitted by appendAudit)
-  // to prevent recursive pollution of the analytics sink — mirrors the guard
-  // on the autoAppendAudit block above.
+  // env.QUEUE is provisioned (national scale) these are enqueued so the
+  // request path returns immediately and the consumer processes them async.
+  // Until the Queue binding is live they run inline so tests observe the effect
+  // synchronously. Skip for audit.event_appended to prevent recursive pollution.
   if (ctx.event !== 'audit.event_appended') {
+    if (ctx.env?.QUEUE) {
+      const payload: CascadeQueuePayload = {
+        event: ctx.event,
+        actor_id: ctx.actor_id,
+        entity_type: ctx.entity_type,
+        entity_id: ctx.entity_id,
+        data: ctx.data,
+        chain_key: ctx.chain_key,
+        source_chain_status: ctx.source_chain_status,
+        affected_roles: ctx.affected_roles as string[] | undefined,
+        cross_impact_hint: ctx.cross_impact_hint,
+        commercial: ctx.commercial,
+        skipAudit: ctx.skipAudit,
+      };
+      try {
+        await ctx.env.QUEUE.send(payload);
+        return;
+      } catch {
+        // Queue send failed — fall through to inline execution so no event is lost.
+      }
+    }
     await runStage(ctx, 'registry', () => runCascadeRegistry(ctx)).catch(() => {});
     await runStage(ctx, 'analytics', () => recordPlatformEvent(ctx)).catch(() => {});
     await runStage(ctx, 'commercial', () => computeAndRecordFee(ctx)).catch(() => {});
+  }
+}
+
+// Queue consumer — called by the Worker's `queue` handler in index.ts.
+// Processes each PlatformEvent from the open-energy-cascade Queue, running the
+// registry, analytics, and commercial layers off the HTTP request path.
+export async function processCascadeQueueBatch(
+  batch: { messages: Array<{ body: unknown; ack(): void; retry(): void }> },
+  env: any,
+): Promise<void> {
+  for (const msg of batch.messages) {
+    const p = msg.body as CascadeQueuePayload;
+    const ctx: CascadeContext = {
+      event: p.event,
+      actor_id: p.actor_id,
+      entity_type: p.entity_type,
+      entity_id: p.entity_id,
+      data: p.data,
+      chain_key: p.chain_key,
+      source_chain_status: p.source_chain_status,
+      affected_roles: p.affected_roles as any,
+      cross_impact_hint: p.cross_impact_hint,
+      commercial: p.commercial,
+      skipAudit: p.skipAudit,
+      env,
+    };
+    try {
+      await runCascadeRegistry(ctx);
+      await recordPlatformEvent(ctx);
+      await computeAndRecordFee(ctx);
+      msg.ack();
+    } catch (e) {
+      console.error('cascade_queue_consumer_failed', p.event, e);
+      msg.retry();
+    }
   }
 }
 

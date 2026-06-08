@@ -134,6 +134,19 @@ Two workflows in [.github/workflows/](.github/workflows/):
 
 The full prod smoke takes ~10 minutes because of mandatory 120s pauses between bash scripts to drain the auth rate-limit window.
 
+## graphify-first development (mandatory)
+
+A knowledge graph of the entire codebase lives at `graphify-out/graph.json` (25,279 nodes · 40,179 edges · 855 communities, built 2026-06-06).
+
+**Before building anything new:**
+1. Query the graph: `/graphify query "<what you're about to build>"` — understand what already exists and what connects.
+2. Check god nodes: `index.ts` (656 edges), `fireCascade()` (655), `getCurrentUser()` (446), `HonoEnv` (349), `cascade.ts` (337) — every new module integrates through these.
+3. Check community: new chains belong with their spec+test in the same community cluster. The 855 communities map 1:1 to modules; a new chain creates a new community.
+
+**Do not build without querying first.** The graph catches: duplicate functionality, missing cascade wiring, broken auth integration, skipped SLA sweep hookup.
+
+To rebuild the graph after significant changes: `/graphify open-energy-platform`
+
 ## Documents to read for context
 
 | Doc | When to read |

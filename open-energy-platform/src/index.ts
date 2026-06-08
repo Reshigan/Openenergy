@@ -10,6 +10,7 @@ import './cascade-rules'; // Layer A — registers all cascade rules at boot
 import { logger } from './utils/logger';
 import { mountRoutes } from './routes/mount-routes';
 import { runAllSweeps } from './utils/sweep-runner';
+import { processCascadeQueueBatch } from './utils/cascade';
 
 // Cron-utility functions (not route default exports)
 import { runSurveillanceScan } from './routes/regulator-suite';
@@ -269,5 +270,12 @@ export default {
   fetch: app.fetch,
   async scheduled(event: ScheduledEvent, env: HonoEnv['Bindings'], ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(runCron(env, event.cron));
+  },
+  // Queue consumer — activated when open-energy-cascade Queue is provisioned.
+  // Processes PlatformEvents enqueued by fireCascade off the HTTP request path.
+  // Enable: wrangler queues create open-energy-cascade, then uncomment the
+  // [[queues.producers]] + [[queues.consumers]] blocks in wrangler.toml.
+  async queue(batch: { messages: Array<{ body: unknown; ack(): void; retry(): void }> }, env: HonoEnv['Bindings']): Promise<void> {
+    await processCascadeQueueBatch(batch, env);
   },
 };
