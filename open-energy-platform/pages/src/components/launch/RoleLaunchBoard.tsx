@@ -41,6 +41,7 @@ const KNOWN_ROLES = new Set([
   'carbon_fund',
   'admin',
   'support',
+  'esums_owner',
 ]);
 
 export function RoleLaunchBoard() {
