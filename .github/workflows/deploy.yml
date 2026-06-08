@@ -166,17 +166,27 @@ jobs:
           }')
           for f in $files; do
             echo "::group::Applying $f"
-            out=$(npx wrangler@4 d1 execute open-energy-db --remote --file="$f" -y 2>&1)
-            rc=$?
-            echo "$out"
-            if [ $rc -ne 0 ]; then
-              if echo "$out" | grep -qE "duplicate column name|already exists|SQLITE_CONSTRAINT_UNIQUE|Not currently importing"; then
+            mig_ok=false
+            for try in 1 2 3; do
+              out=$(npx wrangler@4 d1 execute open-energy-db --remote --file="$f" -y 2>&1)
+              rc=$?
+              echo "$out"
+              if [ $rc -eq 0 ]; then
+                mig_ok=true; break
+              elif echo "$out" | grep -qE "duplicate column name|already exists|SQLITE_CONSTRAINT_UNIQUE|Not currently importing"; then
                 echo "::warning::idempotent re-run on $f — already applied, continuing"
+                mig_ok=true; break
+              elif echo "$out" | grep -qE "code: 7500|D1_RESET_DO|internal error"; then
+                echo "::warning::CF infra error on $f (attempt $try/3) — waiting 45s before retry"
+                [ $try -lt 3 ] && sleep 45
               else
-                echo "::error::migration failed: $f"
-                status=1
                 break
               fi
+            done
+            if [ "$mig_ok" = "false" ]; then
+              echo "::error::migration failed: $f"
+              status=1
+              break
             fi
             echo "::endgroup::"
           done
