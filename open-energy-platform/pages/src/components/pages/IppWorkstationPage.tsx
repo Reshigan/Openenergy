@@ -23,6 +23,7 @@ import { IppDocumentControlChainTab } from '../ipp/IppDocumentControlChainTab';
 import { IppSubmittalChainTab } from '../ipp/IppSubmittalChainTab';
 import { IppRfiChainTab } from '../ipp/IppRfiChainTab';
 import { IppChangeOrderChainTab } from '../ipp/IppChangeOrderChainTab';
+import { TakeOrPayChainTab } from '../take-or-pay/TakeOrPayChainTab';
 import { ScadaConnectorTab } from '../scadaConnector/ScadaConnectorTab';
 import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
 import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
@@ -196,6 +197,7 @@ export function IppWorkstationPage() {
         { key: 'green-bond-reports', label: 'Green bond reports (W202)', group: 'Finance', body: ({ onRefresh }) => <GreenBondReportTab onRefresh={onRefresh} /> },
         { key: 'dscr-reports', label: 'DSCR reports (W212)', group: 'Finance', body: ({ onRefresh }) => <DscrReportTab onRefresh={onRefresh} /> },
         { key: 'credit_insurance', label: 'Credit insurance (W218)', group: 'Finance', body: ({ onRefresh }) => <CreditInsuranceTab onRefresh={onRefresh} /> },
+        { key: 'take-or-pay-claims', label: 'Take-or-pay claims', group: 'Finance', body: () => <TakeOrPayChainTab /> },
         { key: 'milestone-variance', label: 'Milestone variance reports (W207)', group: 'Project controls', body: ({ onRefresh }) => <MilestoneVarianceTab onRefresh={onRefresh} /> },
         { key: 'subcontractors', label: 'Subcontractors', group: 'Construction', body: () => <IppSubcontractorTab /> },
         { key: 'procurement', label: 'Procurement / RFPs', group: 'Construction', body: () => <ProcurementChainTab /> },
