@@ -17,6 +17,11 @@ import { registerRegulatorInboxRules } from './regulator-inbox';
 import { registerOfftakerProcurementRules } from './offtaker-procurement';
 import { registerUnderservedInboxRules } from './underserved-inboxes';
 import { registerPpaDeliveryShortfallRules } from './ppa-delivery-shortfall';
+import { registerPtwWoInteractionRules } from './ptw-wo-interactions';
+import { registerTariffRepriceRules } from './tariff-reprice';
+import { registerPredictiveMaintenanceRules } from './predictive-maintenance';
+import { registerWarrantySupplyRules } from './warranty-supply';
+import { registerDefaultFreezeRules } from './default-freeze';
 
 registerTradingSafetyRules();
 registerLifecycleSequencingRules();
@@ -34,5 +39,10 @@ registerRegulatorInboxRules();
 registerOfftakerProcurementRules();
 registerUnderservedInboxRules();
 registerPpaDeliveryShortfallRules();
+registerPtwWoInteractionRules();
+registerTariffRepriceRules();
+registerPredictiveMaintenanceRules();
+registerWarrantySupplyRules();
+registerDefaultFreezeRules();
 
-export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules, registerGridDispatchRules, registerTraderMarginRules, registerLenderCovenantRules, registerCarbonEventRules, registerRegulatorInboxRules, registerOfftakerProcurementRules, registerUnderservedInboxRules, registerPpaDeliveryShortfallRules };
+export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules, registerGridDispatchRules, registerTraderMarginRules, registerLenderCovenantRules, registerCarbonEventRules, registerRegulatorInboxRules, registerOfftakerProcurementRules, registerUnderservedInboxRules, registerPpaDeliveryShortfallRules, registerPtwWoInteractionRules, registerTariffRepriceRules, registerPredictiveMaintenanceRules, registerWarrantySupplyRules, registerDefaultFreezeRules };
