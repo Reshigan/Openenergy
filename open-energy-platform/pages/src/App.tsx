@@ -37,6 +37,7 @@ import { BillingRunDetailPage } from './components/pages/BillingRunDetailPage';
 import SignaturePreview from './components/signature/__preview__/SignaturePreview';
 
 // Import page components
+import { NationalDashboard } from './components/pages/NationalDashboard';
 import { Cockpit } from './components/pages/Cockpit';
 import { Contracts } from './components/pages/Contracts';
 import { ContractDetail } from './components/pages/ContractDetail';
@@ -1476,6 +1477,7 @@ function AppRoutes() {
       <Route path="/marketplace" element={<ProtectedRoute><Layout><Marketplace /></Layout></ProtectedRoute>} />
       <Route path="/modules" element={<ProtectedRoute><Layout><ModulesPage /></Layout></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><Layout><Admin /></Layout></ProtectedRoute>} />
+      <Route path="/dashboard" element={<ProtectedRoute><Layout><NationalDashboard /></Layout></ProtectedRoute>} />
       <Route path="/support" element={<ProtectedRoute><Layout><Support /></Layout></ProtectedRoute>} />
       <Route path="/admin/monitoring" element={<ProtectedRoute><Layout><Monitoring /></Layout></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />

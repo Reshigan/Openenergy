@@ -1,0 +1,494 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// W7 — Sweep-runner: batched SLA sweep dispatcher.
+// Runs all 145+ SLA sweep functions with Promise.allSettled() isolation.
+// One sweep failure never blocks the others.
+// Called from the */15 cron slot in index.ts.
+// ═══════════════════════════════════════════════════════════════════════════
+import type { HonoEnv } from './types';
+import { logger } from './logger';
+
+import { bondExpirySweep } from '../routes/ipp-bonds';
+import { mrvChainSlaSweep } from '../routes/carbon-mrv-chain';
+import { siteCommissioningSlaSweep } from '../routes/esums-commissioning';
+import { dispatchNominationSlaSweep } from '../routes/grid-dispatch-nominations';
+import { supportTicketSlaSweep } from '../routes/support-ticket-chain';
+import { warrantyClaimSlaSweep } from '../routes/warranty-claim-chain';
+import { woChainSlaSweep } from '../routes/wo-chain';
+import { carbonRetirementSlaSweep } from '../routes/carbon-retirement-chain';
+import { plannedOutageSlaSweep } from '../routes/planned-outage-chain';
+import { procurementSlaSweep } from '../routes/procurement-chain';
+import { codSlaSweep } from '../routes/cod-chain';
+import { drawdownSlaSweep } from '../routes/drawdown-chain';
+import { ppaContractSlaSweep } from '../routes/ppa-contract-chain';
+import { insuranceClaimSlaSweep } from '../routes/insurance-claim-chain';
+import { prSlaSweep } from '../routes/pr-chain';
+import { hseIncidentSlaSweep } from '../routes/hse-incident-chain';
+import { cyberIncidentSlaSweep } from '../routes/cyber-incident-chain';
+import { edCommitmentSlaSweep } from '../routes/ed-commitment-chain';
+import { gcaSlaSweep } from '../routes/gca-chain';
+import { poslimitSlaSweep } from '../routes/poslimit-chain';
+import { disbursementSlaSweep } from '../routes/disbursement-chain';
+import { dispositionSlaSweep } from '../routes/disposition-chain';
+import { topSlaSweep } from '../routes/take-or-pay-chain';
+import { licenceRenewalSlaSweep } from '../routes/licence-renewal-chain';
+import { loadCurtailmentSlaSweep } from '../routes/load-curtailment-chain';
+import { vendorEscalationSlaSweep } from '../routes/vendor-escalation-chain';
+import { bestExecutionSlaSweep } from '../routes/best-execution-chain';
+import { carbonRegistrationSlaSweep } from '../routes/carbon-registration-chain';
+import { covenantCertificateSlaSweep } from '../routes/covenant-certificate-chain';
+import { tariffIndexationSlaSweep } from '../routes/tariff-indexation-chain';
+import { complianceInspectionSlaSweep } from '../routes/compliance-inspection-chain';
+import { problemManagementSlaSweep } from '../routes/problem-management-chain';
+import { carbonReversalSlaSweep } from '../routes/carbon-reversal-chain';
+import { tariffDeterminationSlaSweep } from '../routes/tariff-determination-chain';
+import { tradeReportingSlaSweep } from '../routes/trade-reporting-chain';
+import { loanDefaultSlaSweep } from '../routes/loan-default-chain';
+import { curtailmentClaimSlaSweep } from '../routes/curtailment-claim-chain';
+import { changeEnablementSlaSweep } from '../routes/change-enablement-chain';
+import { carbonOffsetClaimSlaSweep } from '../routes/carbon-offset-claim-chain';
+import { licenceApplicationSlaSweep } from '../routes/licence-application-chain';
+import { reserveActivationSlaSweep } from '../routes/reserve-activation-chain';
+import { availabilityGuaranteeSlaSweep } from '../routes/availability-guarantee-chain';
+import { marketAbuseSlaSweep } from '../routes/market-abuse-chain';
+import { creditOriginationSlaSweep } from '../routes/credit-origination-chain';
+import { paymentSecuritySlaSweep } from '../routes/payment-security-chain';
+import { securityRemediationSlaSweep } from '../routes/security-remediation-chain';
+import { creditingRenewalSlaSweep } from '../routes/crediting-renewal-chain';
+import { ssegRegistrationSlaSweep } from '../routes/sseg-registration-chain';
+import { gridCapacitySlaSweep } from '../routes/grid-capacity-allocation-chain';
+import { pmComplianceSlaSweep } from '../routes/pm-compliance-chain';
+import { algoCertSlaSweep } from '../routes/algo-cert-chain';
+import { loanTransferSlaSweep } from '../routes/loan-transfer-chain';
+import { ppaTerminationSlaSweep } from '../routes/ppa-termination-chain';
+import { warrantyRecoverySlaSweep } from '../routes/warranty-recovery-chain';
+import { permitToWorkSlaSweep } from '../routes/permit-to-work-chain';
+import { carbonErpaSlaSweep } from '../routes/carbon-erpa-chain';
+import { complaintResolutionSlaSweep } from '../routes/complaint-resolution-chain';
+import { gridCodeComplianceSlaSweep } from '../routes/grid-code-compliance-chain';
+import { counterpartyMarginSlaSweep } from '../routes/counterparty-margin-chain';
+import { securityPerfectionSlaSweep } from '../routes/security-perfection-chain';
+import { recLifecycleSlaSweep } from '../routes/rec-lifecycle-chain';
+import { assetPrognosticsSlaSweep } from '../routes/asset-prognostics-chain';
+import { sparePartsProvisioningSlaSweep } from '../routes/spare-parts-provisioning-chain';
+import { poaCpaInclusionSlaSweep } from '../routes/poa-cpa-inclusion-chain';
+import { levyAssessmentSlaSweep } from '../routes/levy-assessment-chain';
+import { connectionEnergizationSlaSweep } from '../routes/connection-energization-chain';
+import { tradeAllocationSlaSweep } from '../routes/trade-allocation-chain';
+import { reserveAccountSlaSweep } from '../routes/reserve-account-chain';
+import { ppaChangeInLawSlaSweep } from '../routes/ppa-change-in-law-chain';
+import { generationRevenueAssuranceSlaSweep } from '../routes/generation-revenue-assurance-chain';
+import { serviceContractSlaSweep } from '../routes/service-contract-chain';
+import { projectChangeOrderSlaSweep } from '../routes/project-change-order-chain';
+import { carbonIssuanceSlaSweep } from '../routes/carbon-issuance-chain';
+import { consultationNoticeSlaSweep } from '../routes/consultation-notice-chain';
+import { blackStartSlaSweep } from '../routes/black-start-chain';
+import { settlementFailSlaSweep } from '../routes/settlement-fail-chain';
+import { dscrMonitoringSlaSweep } from '../routes/dscr-monitoring-chain';
+import { ppaNominationSlaSweep } from '../routes/ppa-nomination-chain';
+import { bessSohSlaSweep } from '../routes/bess-soh-chain';
+import { oemFcoSlaSweep } from '../routes/oem-fco-chain';
+import { benchmarkTransitionSlaSweep } from '../routes/benchmark-transition-chain';
+import { ccpAssessmentSlaSweep } from '../routes/ccp-assessment-chain';
+import { projectRiskSlaSweep } from '../routes/project-risk-chain';
+import { enforcementActionSlaSweep } from '../routes/enforcement-action-chain';
+import { rezCapacitySlaSweep } from '../routes/rez-capacity-chain';
+import { sllKpiSlaSweep } from '../routes/sll-kpi-chain';
+import { submittalRfiSlaSweep } from '../routes/submittal-rfi-chain';
+import { dfrSlaSweep } from '../routes/dfr-chain';
+import { punchListSlaSweep } from '../routes/punch-list-chain';
+import { itpSlaSweep } from '../routes/itp-chain';
+import { handoverDossierSlaSweep } from '../routes/handover-dossier-chain';
+import { ppaAnnualReconSlaSweep } from '../routes/ppa-annual-recon-chain';
+import { soilingAuditSlaSweep } from '../routes/soiling-audit-chain';
+import { esgDisclosureSlaSweep } from '../routes/esg-disclosure-chain';
+import { serviceRequestSlaSweep } from '../routes/service-request-chain';
+import { imbalanceSettlementSlaSweep } from '../routes/imbalance-settlement-chain';
+import { enforcementActionS35SlaSweep } from '../routes/enforcement-action-s35-chain';
+import { pretradeCreditSlaSweep } from '../routes/pretrade-credit-chain';
+import { loanRestructureSlaSweep } from '../routes/loan-restructure-chain';
+import { carbonCreditRatingSlaSweep } from '../routes/carbon-credit-rating-chain';
+import { transmissionOutageSlaSweep } from '../routes/transmission-outage-chain';
+import { pnlAttributionSlaSweep } from '../routes/pnl-attribution-chain';
+import { ippScheduleSlaSweep } from '../routes/ipp-schedule-chain';
+import { ippEvmSlaSweep } from '../routes/ipp-evm-chain';
+import { ippDocControlSlaSweep } from '../routes/ipp-document-control-chain';
+import { ippSubmittalSlaSweep } from '../routes/ipp-submittal';
+import { ippRfiSlaSweep } from '../routes/ipp-rfi';
+import { ippChangeOrderSlaSweep } from '../routes/ipp-change-order';
+import { auditChainSlaSweep } from '../routes/audit-chain';
+import { regulatorExportSlaSweep } from '../routes/regulator-export';
+import { reconciliationAttestationSlaSweep } from '../routes/reconciliation-attestation';
+import { controlEnvironmentAuditSlaSweep } from '../routes/control-environment-audit';
+import { scadaConnectorSlaSweep } from '../routes/scada-connector';
+import { mqttOpcuaConnectorSlaSweep } from '../routes/mqtt-opcua-connector';
+import { strateSwiftConnectorSlaSweep } from '../routes/strate-swift-connector';
+import { sapOracleErpConnectorSlaSweep } from '../routes/sap-oracle-erp-connector';
+import { governmentFilingConnectorSlaSweep } from '../routes/government-filing-connector';
+import { anomalyDetectionMlSlaSweep } from '../routes/anomaly-detection-ml';
+import { rulPredictionMlSlaSweep } from '../routes/rul-prediction-ml';
+import { faultFingerprintMlSlaSweep } from '../routes/fault-fingerprint-ml';
+import { nttComparisonBatterySlaSweep } from '../routes/ntt-comparison-battery';
+import { stageGateSlaSweep } from '../routes/stage-gate';
+import { ippIssueSlaSweep } from '../routes/ipp-issues';
+import { ippRiskSlaSweep } from '../routes/ipp-risk';
+import { ippStakeholderSlaSweep } from '../routes/ipp-stakeholder';
+import { ippLessonsLearnedSlaSweep } from '../routes/ipp-lessons-learned';
+import { ippNcrSlaSweep } from '../routes/ipp-ncr';
+import { ippMethodStatementSlaSweep } from '../routes/ipp-method-statement';
+import { ippEnvMonitoringSlaSweep } from '../routes/ipp-env-monitoring';
+import { ippMirSlaSweep } from '../routes/ipp-mir';
+import { ippSubcontractorSlaSweep } from '../routes/ipp-subcontractor';
+import { ippProgressClaimSlaSweep } from '../routes/ipp-progress-claim';
+import { ippTqSlaSweep } from '../routes/ipp-tq';
+import { ippDiarySlaSweep } from '../routes/ipp-diary';
+import { ippSiteInstructionSlaSweep } from '../routes/ipp-site-instruction';
+import { ippDlpDefectSlaSweep } from '../routes/ipp-dlp-defect';
+import { ippVariationOrderSlaSweep } from '../routes/ipp-variation-order';
+import { ippPaymentCertSlaSweep } from '../routes/ipp-payment-cert';
+import { ippFinalCompletionSlaSweep } from '../routes/ipp-final-completion';
+import { ippOmHandoverSlaSweep } from '../routes/ipp-om-handover';
+import { ippLandRegisterSlaSweep } from '../routes/ipp-land-register';
+import { ippEnvClosureSlaSweep } from '../routes/ipp-env-closure';
+import { ippCommissioningTestSlaSweep } from '../routes/ipp-commissioning-test';
+import { ippIeCertSlaSweep } from '../routes/ipp-ie-cert';
+import { ippTpaSlaSweep } from '../routes/ipp-tpa';
+import { ippPpaVariationSlaSweep } from '../routes/ipp-ppa-variation';
+import { ippChangeOfControlSlaSweep } from '../routes/ipp-change-of-control';
+import { ippRefinancingSlaSweep } from '../routes/ipp-refinancing';
+import { ippFmSlaSweep } from '../routes/ipp-fm';
+import { ippAnnualReportSlaSweep } from '../routes/ipp-annual-report';
+import { ippContractorDefaultSlaSweep } from '../routes/ipp-contractor-default';
+import { ippEcoReportSlaSweep } from '../routes/ipp-eco-report';
+import { ippLtaCertificateSlaSweep } from '../routes/ipp-lta-certificate';
+import { ippLandAmendmentSlaSweep } from '../routes/ipp-land-amendment';
+import { ippCommunityTrustSlaSweep } from '../routes/ipp-community-trust';
+import { ippGridComplianceSlaSweep } from '../routes/ipp-grid-compliance';
+import { ippCccSlaSweep } from '../routes/ipp-ccc';
+import { ippOmContractSlaSweep } from '../routes/ipp-om-contract';
+import { ippBfsSlaSweep } from '../routes/ipp-bfs';
+import { ippEaAmendmentSlaSweep } from '../routes/ipp-ea-amendment';
+import { ippWulSlaSweep } from '../routes/ipp-wul';
+import { ippHraSlaSweep } from '../routes/ipp-hra';
+import { ippAelSlaSweep } from '../routes/ipp-ael';
+import { ippForceMajeureSlaSweep } from '../routes/ipp-force-majeure';
+import { ippLcReportSlaSweep } from '../routes/ipp-lc-report';
+import { ippMilestoneCertSlaSweep } from '../routes/ipp-milestone-cert';
+import { ippEsmrSlaSweep } from '../routes/ipp-esmr';
+import { ippIeAnnualReviewSlaSweep } from '../routes/ipp-iear';
+import { ippInsuranceRenewalSlaSweep } from '../routes/ipp-insr';
+import { ippPerfSecuritySlaSweep } from '../routes/ipp-perf-security';
+import { ippCepComplianceSlaSweep } from '../routes/ipp-cep-compliance';
+import { ippSedComplianceSlaSweep } from '../routes/ipp-sed-compliance';
+import { ippBbbeeVerificationSlaSweep } from '../routes/ipp-bbbee-verification';
+import { ippLenderReportingSlaSweep } from '../routes/ipp-lender-reporting';
+import { ippLicenceReturnSlaSweep } from '../routes/ipp-licence-returns';
+import { ippReippppReportSlaSweep } from '../routes/ipp-reipppp-reports';
+import { ippEquityTransferSlaSweep } from '../routes/ipp-equity-transfer';
+import { ippQuarterlyGenReportSlaSweep } from '../routes/ipp-quarterly-gen-reports';
+import { ippAnnualComplianceAssessmentSlaSweep } from '../routes/ipp-annual-compliance-assessments';
+import { ippAnnualAuditSlaSweep } from '../routes/ipp-annual-audits';
+import { ippEmpComplianceReportSlaSweep } from '../routes/ipp-emp-compliance-reports';
+import { ippCpTrackerSlaSweep } from '../routes/ipp-cp-tracker';
+import { ippLicenceObligationSlaSweep } from '../routes/ipp-licence-obligations';
+import { facilityAmendmentSlaSweep } from '../routes/facility-amendment-chain';
+import { esapComplianceSlaSweep } from '../routes/esap-compliance-chain';
+import { protectionRelaySlaSweep } from '../routes/protection-relay-chain';
+import { unservedEnergySlaSweep } from '../routes/unserved-energy-chain';
+import { stationParticipantLinkSlaSweep } from '../routes/station-participant-links';
+import { kycSlaSweep } from '../routes/kyc-chain';
+import { smaSlaSweep } from '../routes/smart-meter-chain';
+import { ctrSlaSweep } from '../routes/carbon-tax-chain';
+import { fsccSlaSweep } from '../routes/fsca-compliance-chain';
+import { gbrSlaSweep } from '../routes/green-bond-chain';
+import { capSlaSweep } from '../routes/capital-adequacy-chain';
+import { slbSlaSweep } from '../routes/slb-kpi-chain';
+import { drSlaSweep } from '../routes/demand-response-chain';
+import { crtSlaSweep } from '../routes/carbon-registry-transfer-chain';
+import { mvsSlaSweep } from '../routes/milestone-variance-chain';
+import { csatSlaSweep } from '../routes/csat-chain';
+import { pcSlaSweep } from '../routes/public-consultation-chain';
+import { gtSlaSweep } from '../routes/green-tariff-chain';
+import { sasSlaSweep } from '../routes/substation-asset-chain';
+import { dscrSlaSweep } from '../routes/dscr-report-chain';
+import { maSlaSweep } from '../routes/methodology-amendment-chain';
+import { esapSlaSweep } from '../routes/esap-monitoring-chain';
+import { eopSlaSweep } from '../routes/eop-activation-chain';
+import { fcrSlaSweep } from '../routes/fsca-conduct-report-chain';
+import { sprSlaSweep } from '../routes/sla-performance-report-chain';
+import { ciSlaSweep } from '../routes/credit-insurance-chain';
+import { wheelSlaSweep } from '../routes/wheeling-access-chain';
+import { mceSlaSweep } from '../routes/market-conduct-exam-chain';
+import { ecSlaSweep } from '../routes/export-curtailment-chain';
+import { cbtSlaSweep } from '../routes/cross-border-trade-chain';
+import { cpSlaSweep } from '../routes/cp-clearance-chain';
+import { gtiaSlaSweep } from '../routes/gtia-chain';
+import { s3SlaSweep } from '../routes/scope3-disclosure-chain';
+import { vcmProjectSlaSweep } from '../routes/vcm-project-development-chain';
+import { carbonBudgetSlaSweep } from '../routes/carbon-budget-chain';
+import { recDeviceSlaSweep } from '../routes/rec-device-registration-chain';
+import { recIssuanceSlaSweep } from '../routes/rec-issuance-chain';
+import { listingSlaSweep } from '../routes/sustainability-marketplace';
+import { transactionSlaSweep } from '../routes/sustainability-transaction-chain';
+import { certBundleSlaSweep } from '../routes/certificate-bundle-chain';
+import { subscriptionBillingSlaSweep } from '../routes/subscription-billing-chain';
+
+type Env = HonoEnv['Bindings'];
+
+type SweepFn = (env: Env) => Promise<unknown>;
+
+// All sweep functions registered in one flat array.
+// Each entry: [label, fn]. Add new sweeps here as new chains ship.
+const SWEEPS: Array<[string, SweepFn]> = [
+  ['bond_expiry', bondExpirySweep as unknown as SweepFn],
+  ['mrv_chain_sla', mrvChainSlaSweep as unknown as SweepFn],
+  ['site_commissioning_sla', siteCommissioningSlaSweep as unknown as SweepFn],
+  ['dispatch_nomination_sla', dispatchNominationSlaSweep as unknown as SweepFn],
+  ['support_ticket_sla', supportTicketSlaSweep as unknown as SweepFn],
+  ['warranty_claim_sla', warrantyClaimSlaSweep as unknown as SweepFn],
+  ['wo_chain_sla', woChainSlaSweep as unknown as SweepFn],
+  ['carbon_retirement_sla', carbonRetirementSlaSweep as unknown as SweepFn],
+  ['planned_outage_sla', plannedOutageSlaSweep as unknown as SweepFn],
+  ['procurement_sla', procurementSlaSweep as unknown as SweepFn],
+  ['cod_sla', codSlaSweep as unknown as SweepFn],
+  ['drawdown_sla', drawdownSlaSweep as unknown as SweepFn],
+  ['ppa_contract_sla', ppaContractSlaSweep as unknown as SweepFn],
+  ['insurance_claim_sla', insuranceClaimSlaSweep as unknown as SweepFn],
+  ['pr_sla', prSlaSweep as unknown as SweepFn],
+  ['hse_incident_sla', hseIncidentSlaSweep as unknown as SweepFn],
+  ['cyber_incident_sla', cyberIncidentSlaSweep as unknown as SweepFn],
+  ['ed_commitment_sla', edCommitmentSlaSweep as unknown as SweepFn],
+  ['gca_sla', gcaSlaSweep as unknown as SweepFn],
+  ['poslimit_sla', poslimitSlaSweep as unknown as SweepFn],
+  ['disbursement_sla', disbursementSlaSweep as unknown as SweepFn],
+  ['disposition_sla', dispositionSlaSweep as unknown as SweepFn],
+  ['top_sla', topSlaSweep as unknown as SweepFn],
+  ['licence_renewal_sla', licenceRenewalSlaSweep as unknown as SweepFn],
+  ['load_curtailment_sla', loadCurtailmentSlaSweep as unknown as SweepFn],
+  ['vendor_escalation_sla', vendorEscalationSlaSweep as unknown as SweepFn],
+  ['best_execution_sla', bestExecutionSlaSweep as unknown as SweepFn],
+  ['carbon_registration_sla', carbonRegistrationSlaSweep as unknown as SweepFn],
+  ['covenant_certificate_sla', covenantCertificateSlaSweep as unknown as SweepFn],
+  ['tariff_indexation_sla', tariffIndexationSlaSweep as unknown as SweepFn],
+  ['compliance_inspection_sla', complianceInspectionSlaSweep as unknown as SweepFn],
+  ['problem_management_sla', problemManagementSlaSweep as unknown as SweepFn],
+  ['carbon_reversal_sla', carbonReversalSlaSweep as unknown as SweepFn],
+  ['tariff_determination_sla', tariffDeterminationSlaSweep as unknown as SweepFn],
+  ['trade_reporting_sla', tradeReportingSlaSweep as unknown as SweepFn],
+  ['loan_default_sla', loanDefaultSlaSweep as unknown as SweepFn],
+  ['curtailment_claim_sla', curtailmentClaimSlaSweep as unknown as SweepFn],
+  ['change_enablement_sla', changeEnablementSlaSweep as unknown as SweepFn],
+  ['carbon_offset_claim_sla', carbonOffsetClaimSlaSweep as unknown as SweepFn],
+  ['licence_application_sla', licenceApplicationSlaSweep as unknown as SweepFn],
+  ['reserve_activation_sla', reserveActivationSlaSweep as unknown as SweepFn],
+  ['availability_guarantee_sla', availabilityGuaranteeSlaSweep as unknown as SweepFn],
+  ['market_abuse_sla', marketAbuseSlaSweep as unknown as SweepFn],
+  ['credit_origination_sla', creditOriginationSlaSweep as unknown as SweepFn],
+  ['payment_security_sla', paymentSecuritySlaSweep as unknown as SweepFn],
+  ['security_remediation_sla', securityRemediationSlaSweep as unknown as SweepFn],
+  ['crediting_renewal_sla', creditingRenewalSlaSweep as unknown as SweepFn],
+  ['sseg_registration_sla', ssegRegistrationSlaSweep as unknown as SweepFn],
+  ['grid_capacity_sla', gridCapacitySlaSweep as unknown as SweepFn],
+  ['pm_compliance_sla', pmComplianceSlaSweep as unknown as SweepFn],
+  ['algo_cert_sla', algoCertSlaSweep as unknown as SweepFn],
+  ['loan_transfer_sla', loanTransferSlaSweep as unknown as SweepFn],
+  ['ppa_termination_sla', ppaTerminationSlaSweep as unknown as SweepFn],
+  ['warranty_recovery_sla', warrantyRecoverySlaSweep as unknown as SweepFn],
+  ['permit_to_work_sla', permitToWorkSlaSweep as unknown as SweepFn],
+  ['carbon_erpa_sla', carbonErpaSlaSweep as unknown as SweepFn],
+  ['complaint_resolution_sla', complaintResolutionSlaSweep as unknown as SweepFn],
+  ['grid_code_compliance_sla', gridCodeComplianceSlaSweep as unknown as SweepFn],
+  ['counterparty_margin_sla', counterpartyMarginSlaSweep as unknown as SweepFn],
+  ['security_perfection_sla', securityPerfectionSlaSweep as unknown as SweepFn],
+  ['rec_lifecycle_sla', recLifecycleSlaSweep as unknown as SweepFn],
+  ['asset_prognostics_sla', assetPrognosticsSlaSweep as unknown as SweepFn],
+  ['spare_parts_provisioning_sla', sparePartsProvisioningSlaSweep as unknown as SweepFn],
+  ['poa_cpa_inclusion_sla', poaCpaInclusionSlaSweep as unknown as SweepFn],
+  ['levy_assessment_sla', levyAssessmentSlaSweep as unknown as SweepFn],
+  ['connection_energization_sla', connectionEnergizationSlaSweep as unknown as SweepFn],
+  ['trade_allocation_sla', tradeAllocationSlaSweep as unknown as SweepFn],
+  ['reserve_account_sla', reserveAccountSlaSweep as unknown as SweepFn],
+  ['ppa_change_in_law_sla', ppaChangeInLawSlaSweep as unknown as SweepFn],
+  ['generation_revenue_assurance_sla', generationRevenueAssuranceSlaSweep as unknown as SweepFn],
+  ['service_contract_sla', serviceContractSlaSweep as unknown as SweepFn],
+  ['project_change_order_sla', projectChangeOrderSlaSweep as unknown as SweepFn],
+  ['carbon_issuance_sla', carbonIssuanceSlaSweep as unknown as SweepFn],
+  ['consultation_notice_sla', consultationNoticeSlaSweep as unknown as SweepFn],
+  ['black_start_sla', blackStartSlaSweep as unknown as SweepFn],
+  ['settlement_fail_sla', settlementFailSlaSweep as unknown as SweepFn],
+  ['dscr_monitoring_sla', dscrMonitoringSlaSweep as unknown as SweepFn],
+  ['ppa_nomination_sla', ppaNominationSlaSweep as unknown as SweepFn],
+  ['bess_soh_sla', bessSohSlaSweep as unknown as SweepFn],
+  ['oem_fco_sla', oemFcoSlaSweep as unknown as SweepFn],
+  ['benchmark_transition_sla', benchmarkTransitionSlaSweep as unknown as SweepFn],
+  ['ccp_assessment_sla', ccpAssessmentSlaSweep as unknown as SweepFn],
+  ['project_risk_sla', projectRiskSlaSweep as unknown as SweepFn],
+  ['enforcement_action_sla', enforcementActionSlaSweep as unknown as SweepFn],
+  ['rez_capacity_sla', rezCapacitySlaSweep as unknown as SweepFn],
+  ['sll_kpi_sla', sllKpiSlaSweep as unknown as SweepFn],
+  ['submittal_rfi_sla', submittalRfiSlaSweep as unknown as SweepFn],
+  ['dfr_sla', dfrSlaSweep as unknown as SweepFn],
+  ['punch_list_sla', punchListSlaSweep as unknown as SweepFn],
+  ['itp_sla', itpSlaSweep as unknown as SweepFn],
+  ['handover_dossier_sla', handoverDossierSlaSweep as unknown as SweepFn],
+  ['ppa_annual_recon_sla', ppaAnnualReconSlaSweep as unknown as SweepFn],
+  ['soiling_audit_sla', soilingAuditSlaSweep as unknown as SweepFn],
+  ['esg_disclosure_sla', esgDisclosureSlaSweep as unknown as SweepFn],
+  ['service_request_sla', serviceRequestSlaSweep as unknown as SweepFn],
+  ['imbalance_settlement_sla', imbalanceSettlementSlaSweep as unknown as SweepFn],
+  ['enforcement_action_s35_sla', enforcementActionS35SlaSweep as unknown as SweepFn],
+  ['pretrade_credit_sla', pretradeCreditSlaSweep as unknown as SweepFn],
+  ['loan_restructure_sla', loanRestructureSlaSweep as unknown as SweepFn],
+  ['carbon_credit_rating_sla', carbonCreditRatingSlaSweep as unknown as SweepFn],
+  ['transmission_outage_sla', transmissionOutageSlaSweep as unknown as SweepFn],
+  ['pnl_attribution_sla', pnlAttributionSlaSweep as unknown as SweepFn],
+  ['ipp_schedule_sla', ippScheduleSlaSweep as unknown as SweepFn],
+  ['ipp_evm_sla', ippEvmSlaSweep as unknown as SweepFn],
+  ['ipp_doc_control_sla', ippDocControlSlaSweep as unknown as SweepFn],
+  ['ipp_submittal_sla', ippSubmittalSlaSweep as unknown as SweepFn],
+  ['ipp_rfi_sla', ippRfiSlaSweep as unknown as SweepFn],
+  ['ipp_change_order_sla', ippChangeOrderSlaSweep as unknown as SweepFn],
+  ['audit_chain_sla', auditChainSlaSweep as unknown as SweepFn],
+  ['regulator_export_sla', regulatorExportSlaSweep as unknown as SweepFn],
+  ['reconciliation_attestation_sla', reconciliationAttestationSlaSweep as unknown as SweepFn],
+  ['control_environment_audit_sla', controlEnvironmentAuditSlaSweep as unknown as SweepFn],
+  ['scada_connector_sla', scadaConnectorSlaSweep as unknown as SweepFn],
+  ['mqtt_opcua_connector_sla', mqttOpcuaConnectorSlaSweep as unknown as SweepFn],
+  ['strate_swift_connector_sla', strateSwiftConnectorSlaSweep as unknown as SweepFn],
+  ['sap_oracle_erp_connector_sla', sapOracleErpConnectorSlaSweep as unknown as SweepFn],
+  ['government_filing_connector_sla', governmentFilingConnectorSlaSweep as unknown as SweepFn],
+  ['anomaly_detection_ml_sla', anomalyDetectionMlSlaSweep as unknown as SweepFn],
+  ['rul_prediction_ml_sla', rulPredictionMlSlaSweep as unknown as SweepFn],
+  ['fault_fingerprint_ml_sla', faultFingerprintMlSlaSweep as unknown as SweepFn],
+  ['ntt_comparison_battery_sla', nttComparisonBatterySlaSweep as unknown as SweepFn],
+  ['stage_gate_sla', stageGateSlaSweep as unknown as SweepFn],
+  ['ipp_issue_sla', ippIssueSlaSweep as unknown as SweepFn],
+  ['ipp_risk_sla', ippRiskSlaSweep as unknown as SweepFn],
+  ['ipp_stakeholder_sla', ippStakeholderSlaSweep as unknown as SweepFn],
+  ['ipp_lessons_learned_sla', ippLessonsLearnedSlaSweep as unknown as SweepFn],
+  ['ipp_ncr_sla', ippNcrSlaSweep as unknown as SweepFn],
+  ['ipp_method_statement_sla', ippMethodStatementSlaSweep as unknown as SweepFn],
+  ['ipp_env_monitoring_sla', ippEnvMonitoringSlaSweep as unknown as SweepFn],
+  ['ipp_mir_sla', ippMirSlaSweep as unknown as SweepFn],
+  ['ipp_subcontractor_sla', ippSubcontractorSlaSweep as unknown as SweepFn],
+  ['ipp_progress_claim_sla', ippProgressClaimSlaSweep as unknown as SweepFn],
+  ['ipp_tq_sla', ippTqSlaSweep as unknown as SweepFn],
+  ['ipp_diary_sla', ippDiarySlaSweep as unknown as SweepFn],
+  ['ipp_site_instruction_sla', ippSiteInstructionSlaSweep as unknown as SweepFn],
+  ['ipp_dlp_defect_sla', ippDlpDefectSlaSweep as unknown as SweepFn],
+  ['ipp_variation_order_sla', ippVariationOrderSlaSweep as unknown as SweepFn],
+  ['ipp_payment_cert_sla', ippPaymentCertSlaSweep as unknown as SweepFn],
+  ['ipp_final_completion_sla', ippFinalCompletionSlaSweep as unknown as SweepFn],
+  ['ipp_om_handover_sla', ippOmHandoverSlaSweep as unknown as SweepFn],
+  ['ipp_land_register_sla', ippLandRegisterSlaSweep as unknown as SweepFn],
+  ['ipp_env_closure_sla', ippEnvClosureSlaSweep as unknown as SweepFn],
+  ['ipp_commissioning_test_sla', ippCommissioningTestSlaSweep as unknown as SweepFn],
+  ['ipp_ie_cert_sla', ippIeCertSlaSweep as unknown as SweepFn],
+  ['ipp_tpa_sla', ippTpaSlaSweep as unknown as SweepFn],
+  ['ipp_ppa_variation_sla', ippPpaVariationSlaSweep as unknown as SweepFn],
+  ['ipp_change_of_control_sla', ippChangeOfControlSlaSweep as unknown as SweepFn],
+  ['ipp_refinancing_sla', ippRefinancingSlaSweep as unknown as SweepFn],
+  ['ipp_fm_sla', ippFmSlaSweep as unknown as SweepFn],
+  ['ipp_annual_report_sla', ippAnnualReportSlaSweep as unknown as SweepFn],
+  ['ipp_contractor_default_sla', ippContractorDefaultSlaSweep as unknown as SweepFn],
+  ['ipp_eco_report_sla', ippEcoReportSlaSweep as unknown as SweepFn],
+  ['ipp_lta_certificate_sla', ippLtaCertificateSlaSweep as unknown as SweepFn],
+  ['ipp_land_amendment_sla', ippLandAmendmentSlaSweep as unknown as SweepFn],
+  ['ipp_community_trust_sla', ippCommunityTrustSlaSweep as unknown as SweepFn],
+  ['ipp_grid_compliance_sla', ippGridComplianceSlaSweep as unknown as SweepFn],
+  ['ipp_ccc_sla', ippCccSlaSweep as unknown as SweepFn],
+  ['ipp_om_contract_sla', ippOmContractSlaSweep as unknown as SweepFn],
+  ['ipp_bfs_sla', ippBfsSlaSweep as unknown as SweepFn],
+  ['ipp_ea_amendment_sla', ippEaAmendmentSlaSweep as unknown as SweepFn],
+  ['ipp_wul_sla', ippWulSlaSweep as unknown as SweepFn],
+  ['ipp_hra_sla', ippHraSlaSweep as unknown as SweepFn],
+  ['ipp_ael_sla', ippAelSlaSweep as unknown as SweepFn],
+  ['ipp_force_majeure_sla', ippForceMajeureSlaSweep as unknown as SweepFn],
+  ['ipp_lc_report_sla', ippLcReportSlaSweep as unknown as SweepFn],
+  ['ipp_milestone_cert_sla', ippMilestoneCertSlaSweep as unknown as SweepFn],
+  ['ipp_esmr_sla', ippEsmrSlaSweep as unknown as SweepFn],
+  ['ipp_ie_annual_review_sla', ippIeAnnualReviewSlaSweep as unknown as SweepFn],
+  ['ipp_insurance_renewal_sla', ippInsuranceRenewalSlaSweep as unknown as SweepFn],
+  ['ipp_perf_security_sla', ippPerfSecuritySlaSweep as unknown as SweepFn],
+  ['ipp_cep_compliance_sla', ippCepComplianceSlaSweep as unknown as SweepFn],
+  ['ipp_sed_compliance_sla', ippSedComplianceSlaSweep as unknown as SweepFn],
+  ['ipp_bbbee_verification_sla', ippBbbeeVerificationSlaSweep as unknown as SweepFn],
+  ['ipp_lender_reporting_sla', ippLenderReportingSlaSweep as unknown as SweepFn],
+  ['ipp_licence_returns_sla', ippLicenceReturnSlaSweep as unknown as SweepFn],
+  ['ipp_reipppp_reports_sla', ippReippppReportSlaSweep as unknown as SweepFn],
+  ['ipp_equity_transfer_sla', ippEquityTransferSlaSweep as unknown as SweepFn],
+  ['ipp_quarterly_gen_report_sla', ippQuarterlyGenReportSlaSweep as unknown as SweepFn],
+  ['ipp_annual_compliance_sla', ippAnnualComplianceAssessmentSlaSweep as unknown as SweepFn],
+  ['ipp_annual_audit_sla', ippAnnualAuditSlaSweep as unknown as SweepFn],
+  ['ipp_emp_compliance_sla', ippEmpComplianceReportSlaSweep as unknown as SweepFn],
+  ['ipp_cp_tracker_sla', ippCpTrackerSlaSweep as unknown as SweepFn],
+  ['ipp_licence_obligation_sla', ippLicenceObligationSlaSweep as unknown as SweepFn],
+  ['facility_amendment_sla', facilityAmendmentSlaSweep as unknown as SweepFn],
+  ['esap_compliance_sla', esapComplianceSlaSweep as unknown as SweepFn],
+  ['protection_relay_sla', protectionRelaySlaSweep as unknown as SweepFn],
+  ['unserved_energy_sla', unservedEnergySlaSweep as unknown as SweepFn],
+  ['station_participant_link_sla', stationParticipantLinkSlaSweep as unknown as SweepFn],
+  ['kyc_sla', kycSlaSweep as unknown as SweepFn],
+  ['sma_sla', smaSlaSweep as unknown as SweepFn],
+  ['ctr_sla', ctrSlaSweep as unknown as SweepFn],
+  ['fscc_sla', fsccSlaSweep as unknown as SweepFn],
+  ['gbr_sla', gbrSlaSweep as unknown as SweepFn],
+  ['cap_adequacy_sla', capSlaSweep as unknown as SweepFn],
+  ['slb_kpi_sla', slbSlaSweep as unknown as SweepFn],
+  ['dr_sla', drSlaSweep as unknown as SweepFn],
+  ['crt_sla', crtSlaSweep as unknown as SweepFn],
+  ['mvs_sla', mvsSlaSweep as unknown as SweepFn],
+  ['csat_sla', csatSlaSweep as unknown as SweepFn],
+  ['pc_sla', pcSlaSweep as unknown as SweepFn],
+  ['gt_sla', gtSlaSweep as unknown as SweepFn],
+  ['sas_sla', sasSlaSweep as unknown as SweepFn],
+  ['dscr_sla', dscrSlaSweep as unknown as SweepFn],
+  ['ma_sla', maSlaSweep as unknown as SweepFn],
+  ['esap_sla', esapSlaSweep as unknown as SweepFn],
+  ['eop_sla', eopSlaSweep as unknown as SweepFn],
+  ['fcr_sla', fcrSlaSweep as unknown as SweepFn],
+  ['spr_sla', sprSlaSweep as unknown as SweepFn],
+  ['ci_sla', ciSlaSweep as unknown as SweepFn],
+  ['wheel_sla', wheelSlaSweep as unknown as SweepFn],
+  ['mce_sla', mceSlaSweep as unknown as SweepFn],
+  ['ec_sla', ecSlaSweep as unknown as SweepFn],
+  ['cbt_sla', cbtSlaSweep as unknown as SweepFn],
+  ['cp_sla', cpSlaSweep as unknown as SweepFn],
+  ['gtia_sla', gtiaSlaSweep as unknown as SweepFn],
+  ['s3_sla', s3SlaSweep as unknown as SweepFn],
+  ['vcm_project_sla', vcmProjectSlaSweep as unknown as SweepFn],
+  ['carbon_budget_sla', carbonBudgetSlaSweep as unknown as SweepFn],
+  ['rec_device_sla', recDeviceSlaSweep as unknown as SweepFn],
+  ['rec_issuance_sla', recIssuanceSlaSweep as unknown as SweepFn],
+  ['listing_sla', listingSlaSweep as unknown as SweepFn],
+  ['transaction_sla', transactionSlaSweep as unknown as SweepFn],
+  ['cert_bundle_sla', certBundleSlaSweep as unknown as SweepFn],
+  ['subscription_billing_sla', subscriptionBillingSlaSweep as unknown as SweepFn],
+];
+
+/**
+ * Run all registered SLA sweep functions in parallel with isolation.
+ * One sweep failure does not block the others.
+ */
+export async function runAllSweeps(env: Env): Promise<void> {
+  const results = await Promise.allSettled(
+    SWEEPS.map(([label, fn]) =>
+      fn(env).catch((err) => {
+        logger.error('sweep_failed', {
+          label,
+          error_name: (err as Error).name,
+          error_message: (err as Error).message,
+        });
+        return null;
+      }),
+    ),
+  );
+
+  const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+  const failed = results.filter((r) => r.status === 'rejected').length;
+
+  logger.info('sweep_runner_complete', {
+    total: SWEEPS.length,
+    succeeded,
+    failed,
+  });
+}
