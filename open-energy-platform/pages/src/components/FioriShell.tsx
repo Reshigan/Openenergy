@@ -60,6 +60,8 @@ const BASE_NAV: NavItem[] = [
   { path: '/settings/passkeys', label: 'Passkeys', icon: 'settings',           section: 'System' },
   { path: '/support',      label: 'Support',       icon: 'support_agent',      section: 'System' },
   { path: '/admin/monitoring', label: 'Monitoring', icon: 'monitor_heart',     section: 'System' },
+  { path: '/dashboard',      label: 'National Dashboard', icon: 'bar_chart',   section: 'System' },
+  { path: '/modules',        label: 'Platform modules', icon: 'grid_view',     section: 'System' },
 ];
 
 function navForRole(role: string | undefined): NavItem[] {
@@ -67,7 +69,7 @@ function navForRole(role: string | undefined): NavItem[] {
   // to every role because every user has personal data rights. Passkeys are
   // available to every signed-in user.
   const adminOnlyPaths = new Set(['/admin', '/support', '/admin/monitoring', '/admin/platform-console',
-    '/admin/bulk-ops', '/settings/compliance-admin']);
+    '/admin/bulk-ops', '/settings/compliance-admin', '/dashboard']);
   const nonSystem = BASE_NAV.filter((n) => !adminOnlyPaths.has(n.path));
   if (!role) return nonSystem;
   switch (role) {
@@ -77,45 +79,45 @@ function navForRole(role: string | undefined): NavItem[] {
       return BASE_NAV.filter((n) =>
         ['/launch', '/support', '/admin/monitoring', '/intelligence', '/briefing', '/popia',
          '/esums', '/admin/paia', '/settlement-ops', '/settings/passkeys', '/documents',
-         '/audit'].includes(n.path),
+         '/audit', '/modules'].includes(n.path),
       );
     case 'trader':
       return BASE_NAV.filter((n) =>
         ['/launch', '/trading', '/settlement', '/contracts', '/marketplace', '/intelligence',
-         '/reports', '/popia', '/briefing', '/documents', '/ops/l5', '/settings/passkeys'].includes(n.path),
+         '/reports', '/popia', '/briefing', '/documents', '/ops/l5', '/settings/passkeys', '/modules'].includes(n.path),
       );
     case 'ipp_developer':
       return BASE_NAV.filter((n) =>
         ['/launch', '/projects', '/contracts', '/settlement', '/grid', '/marketplace',
          '/esg', '/intelligence', '/reports', '/popia', '/briefing',
-         '/esums', '/ipp/variations', '/documents', '/settings/passkeys'].includes(n.path),
+         '/esums', '/ipp/variations', '/documents', '/settings/passkeys', '/modules'].includes(n.path),
       );
     case 'carbon_fund':
       return BASE_NAV.filter((n) =>
         ['/launch', '/carbon', '/marketplace', '/funds', '/pipeline', '/esg', '/intelligence',
-         '/reports', '/popia', '/briefing', '/documents', '/settings/passkeys'].includes(n.path),
+         '/reports', '/popia', '/briefing', '/documents', '/settings/passkeys', '/modules'].includes(n.path),
       );
     case 'offtaker':
       return BASE_NAV.filter((n) =>
         ['/launch', '/contracts', '/lois', '/procurement', '/marketplace', '/settlement', '/esg',
          '/intelligence', '/reports', '/popia', '/briefing',
-         '/ipp/variations', '/documents', '/settings/passkeys'].includes(n.path),
+         '/ipp/variations', '/documents', '/settings/passkeys', '/modules'].includes(n.path),
       );
     case 'lender':
       return BASE_NAV.filter((n) =>
         ['/launch', '/projects', '/pipeline', '/funds', '/settlement', '/esums', '/intelligence',
          '/reports', '/popia', '/briefing',
-         '/ipp/variations', '/documents', '/settings/passkeys'].includes(n.path),
+         '/ipp/variations', '/documents', '/settings/passkeys', '/modules'].includes(n.path),
       );
     case 'grid_operator':
       return BASE_NAV.filter((n) =>
         ['/launch', '/grid', '/settlement', '/intelligence', '/reports', '/popia', '/briefing',
-         '/ops/l5', '/documents', '/settings/passkeys'].includes(n.path),
+         '/ops/l5', '/documents', '/settings/passkeys', '/modules'].includes(n.path),
       );
     case 'regulator':
       return BASE_NAV.filter((n) =>
         ['/launch', '/marketplace', '/esg', '/intelligence', '/reports', '/popia', '/briefing',
-         '/ops/l5', '/audit', '/documents', '/settings/passkeys'].includes(n.path),
+         '/ops/l5', '/audit', '/documents', '/settings/passkeys', '/modules'].includes(n.path),
       );
     default:
       return nonSystem;
