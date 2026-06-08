@@ -294,6 +294,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60" />
             <input
               type="text"
+              aria-label="Search"
               placeholder="Search... ⌘K"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

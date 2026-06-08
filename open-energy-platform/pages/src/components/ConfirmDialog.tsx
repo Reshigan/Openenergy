@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 
 interface ConfirmDialogProps {
@@ -24,6 +24,12 @@ export function ConfirmDialog({
   onCancel,
   loading = false,
 }: ConfirmDialogProps) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (open && e.key === 'Escape' && !loading) onCancel(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [open, loading, onCancel]);
+
   if (!open) return null;
 
   const variantStyles = {
@@ -45,7 +51,7 @@ export function ConfirmDialog({
           <div className="flex items-center gap-3">
             <AlertTriangle className={`w-5 h-5 ${variant === 'danger' ? 'text-red-600' : variant === 'warning' ? 'text-yellow-600' : 'text-blue-600'}`} />
             <h3 className="text-lg font-semibold">{title}</h3>
-            <button onClick={onCancel} className="ml-auto p-1 hover:bg-white/50 rounded">
+            <button type="button" aria-label="Close" onClick={onCancel} className="ml-auto p-1 hover:bg-white/50 rounded">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -55,6 +61,7 @@ export function ConfirmDialog({
         </div>
         <div className="flex justify-end gap-3 p-4 bg-gray-50 rounded-b-xl">
           <button
+            type="button"
             onClick={onCancel}
             disabled={loading}
             className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50"
@@ -62,6 +69,7 @@ export function ConfirmDialog({
             {cancelText}
           </button>
           <button
+            type="button"
             onClick={onConfirm}
             disabled={loading}
             className={`px-4 py-2 text-sm text-white rounded-lg disabled:opacity-50 ${buttonStyles[variant]}`}

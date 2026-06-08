@@ -52,6 +52,12 @@ export function StepUpModal() {
     });
   }, []);
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (opType && e.key === 'Escape' && !busy) close(false); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [opType, busy]);
+
   if (!opType) return null;
 
   const close = (success: boolean) => {

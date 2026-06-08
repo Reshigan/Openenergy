@@ -195,9 +195,10 @@ export function AiAssistantDock() {
       <div className="border-t border-[#eef2f7] p-2 flex gap-1">
         <input value={draft} onChange={(e) => setDraft(e.target.value)} disabled={busy}
                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); } }}
+               aria-label="Ask the AI assistant"
                placeholder="Ask anything…"
                className="flex-1 h-9 px-3 rounded border border-[#dde4ec] text-[13px]" />
-        <button onClick={send} disabled={busy || !draft.trim()}
+        <button type="button" aria-label="Send" onClick={send} disabled={busy || !draft.trim()}
                 className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50 inline-flex items-center gap-1">
           <Send size={14} />
         </button>
