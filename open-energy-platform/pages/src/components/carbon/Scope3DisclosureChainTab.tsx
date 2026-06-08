@@ -168,7 +168,7 @@ function slaLabel(row: S3Row): string {
   const ms = new Date(row.sla_deadline).getTime() - Date.now();
   if (Number.isNaN(ms)) return '—';
   const days = Math.round(ms / 86400000);
-  return days >= 0 ? `${days}d` : `${days}d`;
+  return days >= 0 ? `${days}d` : `${days}d overdue`;
 }
 
 export function Scope3DisclosureChainTab() {
