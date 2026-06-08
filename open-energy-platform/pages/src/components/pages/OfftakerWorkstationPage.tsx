@@ -51,6 +51,7 @@ export function OfftakerWorkstationPage() {
         { key: 'ppa_nomination', label: 'PPA nominations', group: 'Contracts', chainKey: 'ppa_nomination', body: () => <PpaNominationChainTab /> },
         { key: 'ppa_annual_recon', label: 'PPA annual reconciliation', group: 'Contracts', chainKey: 'ppa_annual_recon', body: () => <PpaAnnualReconChainTab /> },
         { key: 'wheeling_access', label: 'Wheeling access (W219)', group: 'Contracts', chainKey: 'wheeling_access', body: ({ onRefresh }) => <WheelingAccessTab onRefresh={onRefresh} /> },
+        { key: 'virtual_ppa_settlement', label: 'Virtual PPA / CfD (W229)', group: 'Contracts', chainKey: 'virtual_ppa_settlement', body: ({ onRefresh }) => <VirtualPpaSettlementTab onRefresh={onRefresh} /> },
         { key: 'wheeling_charges', label: 'Wheeling charges', group: 'Contracts', body: () => <WheelingChargesTab scope="offtaker" /> },
         { key: 'sites', label: 'Sites & groups', group: 'Operations', body: ({ onRefresh }) => <SitesTab onRefresh={onRefresh} /> },
         { key: 'tariffs', label: 'Tariffs', group: 'Operations', body: () => <TariffsTab /> },
@@ -1167,6 +1168,314 @@ function wheelStatusTone(s: string): string {
 }
 
 type WheelModal = { id: string; wheel_tier: string; requested_capacity_mw?: number } | null;
+
+// ─── W229 Virtual/Financial PPA CfD Settlement ──────────────────────────────
+
+type VppaSettlementRow = {
+  id: string;
+  contract_ref: string;
+  generator_id: string;
+  offtaker_id: string;
+  settlement_period: string;
+  reference_index: string;
+  notional_mwh: number;
+  strike_price_zar_per_mwh: number;
+  reference_price_zar_per_mwh: number | null;
+  settlement_amount_zar: number | null;
+  paying_party: 'generator' | 'offtaker' | null;
+  settlement_tier: string | null;
+  chain_status: string;
+  sla_deadline: string | null;
+  sla_breached: boolean | number;
+  hours_until_sla: number | null;
+  is_terminal: boolean;
+  created_at: string;
+};
+type VppaStats = {
+  total: number;
+  settled: number;
+  in_dispute: number;
+  overdue: number;
+  outstanding_zar: number;
+};
+
+// Mirror of SETTLEMENT_VALID_TRANSITIONS — kept inline so SPA doesn't import backend spec.
+const VPPA_TRANSITIONS: Record<string, string[]> = {
+  reference_price_pending: ['publish_reference_price', 'cancel'],
+  calculated:              ['issue_statement', 'cancel'],
+  statement_issued:        ['acknowledge', 'dispute', 'cancel'],
+  payment_pending:         ['record_payment', 'record_partial_payment', 'dispute', 'mark_overdue'],
+  disputed:                ['begin_recalculation', 'escalate_to_isda'],
+  recalculating:           ['confirm_recalculation', 'escalate_to_isda'],
+  isda_determination:      ['confirm_recalculation'],
+  partially_settled:       ['record_payment', 'mark_overdue', 'write_off'],
+  overdue:                 ['record_payment', 'record_partial_payment', 'write_off'],
+  settled:                 [],
+  written_off:             [],
+  cancelled:               [],
+};
+const VPPA_ACTION_LABELS: Record<string, string> = {
+  publish_reference_price: 'Publish ref. price',
+  issue_statement:         'Issue statement',
+  acknowledge:             'Acknowledge',
+  dispute:                 'Dispute',
+  begin_recalculation:     'Begin recalculation',
+  escalate_to_isda:        'Escalate to ISDA',
+  confirm_recalculation:   'Confirm recalculation',
+  record_payment:          'Record payment',
+  record_partial_payment:  'Partial payment',
+  mark_overdue:            'Mark overdue',
+  write_off:               'Write off',
+  cancel:                  'Cancel',
+};
+const VPPA_DESTRUCTIVE = new Set(['write_off', 'cancel', 'escalate_to_isda']);
+
+function vppaStatusTone(status: string): 'good' | 'bad' | 'warn' | 'info' | 'neutral' {
+  if (status === 'settled') return 'good';
+  if (['overdue', 'written_off', 'isda_determination'].includes(status)) return 'bad';
+  if (['disputed', 'recalculating', 'partially_settled'].includes(status)) return 'warn';
+  if (status === 'cancelled') return 'neutral';
+  return 'info';
+}
+function vppaPaying(party: string | null): string {
+  if (party === 'generator') return 'Gen pays';
+  if (party === 'offtaker') return 'You pay';
+  return '—';
+}
+function zarFmt(n: number | null | undefined): string {
+  return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(n || 0);
+}
+
+function VirtualPpaSettlementTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [rows, setRows] = useState<VppaSettlementRow[]>([]);
+  const [stats, setStats] = useState<VppaStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [rowErr, setRowErr] = useState<Record<string, string>>({});
+  const [opening, setOpening] = useState(false);
+  // For publish_reference_price action which needs a numeric input
+  const [pubModal, setPubModal] = useState<{ id: string } | null>(null);
+
+  const load = React.useCallback(async () => {
+    setLoading(true); setErr(null);
+    try {
+      const res = await api.get('/offtaker/virtual-ppa-settlement?per_page=200');
+      setRows((res.data?.data?.settlements as VppaSettlementRow[]) || []);
+      setStats((res.data?.data?.stats as VppaStats) || null);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'load failed');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => { void load(); }, [load]);
+
+  const act = React.useCallback(async (id: string, action: string, extra?: Record<string, unknown>) => {
+    setBusy(id);
+    setRowErr((m) => { const n = { ...m }; delete n[id]; return n; });
+    try {
+      await api.post(`/offtaker/virtual-ppa-settlement/${id}/action`, { action, ...extra });
+      await load();
+      onRefresh?.();
+    } catch (e: unknown) {
+      const msg = (e as any)?.response?.data?.error || (e instanceof Error ? e.message : 'action failed');
+      setRowErr((m) => ({ ...m, [id]: msg }));
+    } finally {
+      setBusy(null);
+    }
+  }, [load, onRefresh]);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-start justify-between gap-4">
+        <p className="text-[12px] leading-relaxed text-[#3d4756] max-w-2xl">
+          Virtual / financial PPA settlement (CfD) — W229 chain. Each period, a reference price
+          is published against a fixed strike; the differential determines who pays whom. Disputes
+          escalate to ISDA Calculation Agent determination. SLA is INVERTED: larger differentials
+          get the longest verification window before payment is due.
+        </p>
+        <div className="flex shrink-0 items-center gap-2">
+          <button type="button"
+            onClick={() => setOpening(true)}
+            className="h-8 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold hover:bg-[#16324f]"
+          >
+            Open settlement period
+          </button>
+          <button type="button"
+            onClick={() => void load()}
+            className="h-8 px-3 rounded-md border border-[#dde4ec] bg-white text-[12px] font-medium text-[#3d4756] hover:bg-[#f8fafc]"
+          >
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      {stats && (
+        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-[12px] text-[#3d4756]">
+          <span><span className="text-[#6b7685]">Total</span> <span className="tabular-nums font-medium text-[#0f1c2e]">{stats.total}</span></span>
+          <span><span className="text-[#6b7685]">Settled</span> <span className="tabular-nums font-medium text-[#2a7a4f]">{stats.settled}</span></span>
+          <span><span className="text-[#6b7685]">In dispute</span> <span className="tabular-nums font-medium text-[#b4453a]">{stats.in_dispute}</span></span>
+          <span><span className="text-[#6b7685]">Overdue</span> <span className="tabular-nums font-medium text-[#b4453a]">{stats.overdue}</span></span>
+          <span><span className="text-[#6b7685]">Outstanding</span> <span className="tabular-nums font-medium text-[#0f1c2e]">{zarFmt(stats.outstanding_zar)}</span></span>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="rounded-xl border border-[#dde4ec] bg-white p-6 text-[12px] text-[#6b7685]">Loading settlements…</div>
+      ) : err ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-[12px] text-red-700">{err}</div>
+      ) : rows.length === 0 ? (
+        <div className="rounded-xl border border-[#dde4ec] bg-[#f8fafc] p-6 text-center">
+          <div className="text-[13px] font-semibold text-[#0f1c2e]">No settlement periods yet</div>
+          <div className="text-[12px] text-[#6b7685] mt-1">Open a CfD settlement period to start the W229 reconciliation chain.</div>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto text-[#0f1c2e]">
+          <table className="w-full text-[13px] min-w-[920px]">
+            <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+              <tr>
+                <th className="px-4 py-2">Contract / Period</th>
+                <th className="px-4 py-2 text-right">Settlement (ZAR)</th>
+                <th className="px-4 py-2">Paying party</th>
+                <th className="px-4 py-2">Tier</th>
+                <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-2">SLA</th>
+                <th className="px-4 py-2">Created</th>
+                <th className="px-4 py-2 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => {
+                const rowBusy = busy === r.id;
+                const breached = r.sla_breached === true || r.sla_breached === 1;
+                const actions = VPPA_TRANSITIONS[r.chain_status] ?? [];
+                return (
+                  <React.Fragment key={r.id}>
+                    <tr className="border-t border-[#e5ebf2] align-top">
+                      <td className="px-4 py-2">
+                        <div className="font-mono text-[11px] text-[#0f1c2e]">{r.contract_ref}</div>
+                        <div className="text-[11px] text-[#6b7685]">{r.settlement_period} · {r.reference_index.replace(/_/g, ' ')}</div>
+                      </td>
+                      <td className="px-4 py-2 text-right tabular-nums text-[12px]">
+                        {r.settlement_amount_zar != null ? zarFmt(r.settlement_amount_zar) : '—'}
+                      </td>
+                      <td className="px-4 py-2 text-[12px]">{vppaPaying(r.paying_party)}</td>
+                      <td className="px-4 py-2">
+                        {r.settlement_tier ? <Pill tone="info">{r.settlement_tier}</Pill> : <span className="text-[#9aa6b4]">—</span>}
+                      </td>
+                      <td className="px-4 py-2">
+                        <Pill tone={vppaStatusTone(r.chain_status)}>{r.chain_status.replace(/_/g, ' ')}</Pill>
+                      </td>
+                      <td className="px-4 py-2 text-[11px] whitespace-nowrap">
+                        {breached ? (
+                          <span className="text-[#b4453a] font-medium">Breached</span>
+                        ) : r.hours_until_sla != null ? (
+                          <span className={r.hours_until_sla < 24 ? 'text-[#b4453a]' : 'text-[#6b7685]'}>{r.hours_until_sla}h left</span>
+                        ) : (
+                          <span className="text-[#9aa6b4]">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 text-[11px] text-[#6b7685] whitespace-nowrap">
+                        {r.created_at ? new Date(r.created_at).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 whitespace-nowrap">
+                          {actions.length === 0 ? (
+                            <span className="text-[11px] text-[#9aa6b4]">Terminal</span>
+                          ) : (
+                            actions.map((a) => (
+                              <button type="button"
+                                key={a}
+                                onClick={() => {
+                                  if (a === 'publish_reference_price') { setPubModal({ id: r.id }); return; }
+                                  void act(r.id, a);
+                                }}
+                                disabled={rowBusy}
+                                className={`text-[11px] font-medium hover:underline disabled:opacity-40 ${VPPA_DESTRUCTIVE.has(a) ? 'text-[#b4453a]' : 'text-[#1a3a5c]'}`}
+                              >
+                                {VPPA_ACTION_LABELS[a] ?? a}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    {rowErr[r.id] && (
+                      <tr className="border-t border-[#e5ebf2] bg-[#fdf6f5]">
+                        <td colSpan={8} className="px-4 py-2 text-[11px] text-[#b4453a]">{rowErr[r.id]}</td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {opening && (
+        <ActionModal
+          title="Open CfD settlement period"
+          submitLabel="Open period"
+          fields={[
+            { key: 'contract_ref', label: 'Contract reference', required: true },
+            { key: 'generator_id', label: 'Generator ID', required: true },
+            { key: 'settlement_period', label: 'Settlement period (YYYY-MM)', required: true },
+            { key: 'reference_index', label: 'Reference index', type: 'select', required: true, options: [
+              { value: 'day_ahead_market', label: 'Day-ahead market' },
+              { value: 'eskom_megaflex', label: 'Eskom Megaflex' },
+              { value: 'ifrt_reference', label: 'IFRT reference' },
+              { value: 'wholesale_pool', label: 'Wholesale pool' },
+            ] },
+            { key: 'notional_mwh', label: 'Notional MWh', type: 'number', required: true },
+            { key: 'strike_price_zar_per_mwh', label: 'Strike price (ZAR/MWh)', type: 'number', required: true },
+            { key: 'reason', label: 'Notes' },
+          ] as FieldSpec[]}
+          onClose={() => setOpening(false)}
+          onSubmit={async (v) => {
+            try {
+              await api.post('/offtaker/virtual-ppa-settlement/open', {
+                ...v,
+                notional_mwh: v.notional_mwh ? Number(v.notional_mwh) : undefined,
+                strike_price_zar_per_mwh: v.strike_price_zar_per_mwh ? Number(v.strike_price_zar_per_mwh) : undefined,
+              });
+            } catch (e: unknown) {
+              throw new Error((e as any)?.response?.data?.error || 'Failed to open settlement period');
+            }
+            setOpening(false);
+            await load();
+            onRefresh?.();
+          }}
+        />
+      )}
+
+      {pubModal && (
+        <ActionModal
+          title="Publish reference price"
+          submitLabel="Publish"
+          fields={[
+            { key: 'reference_price_zar_per_mwh', label: 'Reference price (ZAR/MWh)', type: 'number', required: true },
+            { key: 'reason', label: 'Source / notes' },
+          ] as FieldSpec[]}
+          onClose={() => setPubModal(null)}
+          onSubmit={async (v) => {
+            try {
+              await act(pubModal.id, 'publish_reference_price', {
+                reference_price_zar_per_mwh: Number(v.reference_price_zar_per_mwh),
+                reason: v.reason,
+              });
+            } catch (e: unknown) {
+              throw new Error((e as any)?.response?.data?.error || 'Failed to publish reference price');
+            }
+            setPubModal(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
 
 function WheelingAccessTab({ onRefresh }: { onRefresh?: () => void }) {
   const [data, setData] = React.useState<any[]>([]);

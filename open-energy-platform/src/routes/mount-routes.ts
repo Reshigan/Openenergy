@@ -342,6 +342,7 @@ import sustainabilityMarketplaceRoutes from './sustainability-marketplace';
 import sustainabilityTransactionChainRoutes from './sustainability-transaction-chain';
 import certBundleChainRoutes from './certificate-bundle-chain';
 import subscriptionBillingChainRoutes from './subscription-billing-chain';
+import virtualPpaSettlementChainRoutes from './virtual-ppa-settlement-chain';
 import nationalDashboardRoutes from './national-dashboard';
 
 // Hono's authMiddleware is applied per-module inside each route file using
@@ -701,6 +702,7 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   app.route('/api/sustainability/transactions', sustainabilityTransactionChainRoutes);
   app.route('/api/certificate-track/bundle', certBundleChainRoutes);
   app.route('/api/subscription/billing', subscriptionBillingChainRoutes);
+  app.route('/api/offtaker/virtual-ppa-settlement', virtualPpaSettlementChainRoutes);
   // W7 National Dashboard — operator-only platform-wide aggregate view.
   app.route('/api/national-dashboard', nationalDashboardRoutes);
   // platformFeaturesRoutes is the catch-all for /api — it must remain LAST.
