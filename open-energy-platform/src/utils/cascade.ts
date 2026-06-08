@@ -2056,7 +2056,21 @@ export type EventType =
   | 'cbt_evt_accept_remediation'
   | 'cbt_evt_escalate'
   | 'cbt_evt_cancel'
-  | 'cbt_evt_sla_breach';
+  | 'cbt_evt_sla_breach'
+  // W231 — Lender Construction-Period Monthly IE Cost-to-Complete Report
+  | 'ccr_evt_opened'
+  | 'ccr_evt_request_report'
+  | 'ccr_evt_submit_report'
+  | 'ccr_evt_commence_ie_review'
+  | 'ccr_evt_certify_report'
+  | 'ccr_evt_confirm_budget_compliance'
+  | 'ccr_evt_flag_cost_overrun_risk'
+  | 'ccr_evt_confirm_cost_overrun'
+  | 'ccr_evt_draw_standby_facility'
+  | 'ccr_evt_confirm_cure'
+  | 'ccr_evt_trigger_default'
+  | 'ccr_evt_cancel'
+  | 'ccr_evt_sla_breach';
 
 export interface CascadeContext extends PlatformEventFields {
   event: EventType;

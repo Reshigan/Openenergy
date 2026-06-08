@@ -47,6 +47,7 @@ export function LenderWorkstationPage() {
         { key: 'covenant_cert', label: 'Covenant certificates', group: 'Monitoring', chainKey: 'covenant_certificate', body: () => <CovenantCertificateTab /> },
         { key: 'dscr_monitoring', label: 'DSCR monitoring', group: 'Monitoring', chainKey: 'dscr_monitoring', body: () => <DscrMonitoringChainTab /> },
         { key: 'sll_kpi', label: 'SLL KPI & margin ratchet', group: 'Monitoring', chainKey: 'slb_kpi_ratchet', body: () => <SllKpiChainTab /> },
+        { key: 'construction_cost_report', label: 'IE cost-to-complete (W231)', group: 'Monitoring', chainKey: 'construction_cost_report', body: ({ onRefresh }) => <ConstructionCostReportTab onRefresh={onRefresh} /> },
         { key: 'loan_transfer', label: 'Loan transfer / secondary', group: 'Portfolio', chainKey: 'loan_transfer', body: () => <LoanTransferChainTab /> },
         { key: 'reserve_account', label: 'Reserve accounts (DSRA/MRA)', group: 'Portfolio', chainKey: 'reserve_account', body: () => <ReserveAccountChainTab /> },
         { key: 'security_perfection', label: 'Security perfection', group: 'Portfolio', chainKey: 'security_perfection', body: () => <SecurityPerfectionChainTab /> },
@@ -524,6 +525,267 @@ function CpClearanceTab({ onRefresh }: { onRefresh?: () => void }) {
           ]}
         />
       )}
+    </div>
+  );
+}
+
+// ─── W231: Lender Construction-Period Monthly IE Cost-to-Complete ─────────────
+
+type CcrRow = {
+  id: string;
+  project_id: string;
+  lender_id: string;
+  ipp_id: string;
+  report_month: string;
+  budget_tier: string;
+  total_project_budget_zar: number | null;
+  actual_spend_to_date_zar: number | null;
+  cost_to_complete_estimate_zar: number | null;
+  projected_final_cost_zar: number | null;
+  physical_completion_percentage: number | null;
+  ie_name: string | null;
+  ie_certification_ref: string | null;
+  overrun_zar: number | null;
+  overrun_percentage: number | null;
+  chain_status: string;
+  sla_deadline: string | null;
+  sla_breached: number;
+  overdue?: boolean;
+};
+
+type CcrStats = {
+  total: number;
+  compliant: number;
+  at_risk: number;
+  defaulted: number;
+  sla_breached_count: number;
+};
+
+const CCR_TRANSITIONS: Record<string, string[]> = {
+  monitoring_period_open: ['request_report', 'cancel'],
+  report_requested: ['submit_report', 'cancel'],
+  report_submitted: ['commence_ie_review', 'cancel'],
+  ie_review: ['certify_report'],
+  ie_certified: ['confirm_budget_compliance', 'flag_cost_overrun_risk'],
+  cost_overrun_risk: ['confirm_cost_overrun', 'cancel'],
+  equity_injection_required: ['draw_standby_facility', 'confirm_cure', 'trigger_default'],
+  standby_drawdown: ['confirm_cure', 'trigger_default'],
+};
+
+const CCR_ACTION_LABELS: Record<string, string> = {
+  request_report: 'Request IE report',
+  submit_report: 'Submit cost report',
+  commence_ie_review: 'Commence IE review',
+  certify_report: 'Certify report',
+  confirm_budget_compliance: 'Confirm budget compliance',
+  flag_cost_overrun_risk: 'Flag cost overrun risk',
+  confirm_cost_overrun: 'Confirm overrun — equity injection required',
+  draw_standby_facility: 'Draw standby facility',
+  confirm_cure: 'Confirm cure / resolved',
+  trigger_default: 'Trigger default event',
+  cancel: 'Cancel period',
+};
+
+const CCR_DESTRUCTIVE = new Set(['trigger_default', 'cancel']);
+
+function ccrStatusTone(s: string): 'good' | 'bad' | 'warn' | 'neutral' | 'info' {
+  if (s === 'budget_compliant' || s === 'resolved') return 'good';
+  if (s === 'default_triggered') return 'bad';
+  if (['cost_overrun_risk', 'equity_injection_required', 'standby_drawdown'].includes(s)) return 'warn';
+  if (['ie_review', 'ie_certified', 'report_submitted'].includes(s)) return 'info';
+  return 'neutral';
+}
+
+const zarFmt = (v: number | null) =>
+  v != null ? v.toLocaleString('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }) : '—';
+
+type CcrModal = 'create' | { type: 'action'; id: string; currentStatus: string } | null;
+
+function ConstructionCostReportTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [modal, setModal] = useState<CcrModal>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [data, setData] = useState<{ reports: CcrRow[]; stats: CcrStats } | null>(null);
+
+  const refresh = () => { setRefreshKey(k => k + 1); onRefresh?.(); };
+
+  React.useEffect(() => {
+    fetch('/api/lender/construction-cost-report?per_page=200', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    })
+      .then(r => r.json())
+      .then((res: { data?: { reports: CcrRow[]; stats: CcrStats } }) => {
+        if (res.data) setData(res.data);
+      })
+      .catch(() => null);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional refresh trigger
+  }, [refreshKey]);
+
+  const stats = data?.stats;
+  const reports = data?.reports ?? [];
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex gap-4 text-sm">
+          {stats && (
+            <>
+              <span className="text-[#6b7685]">Total <strong className="text-[#1a3a5c]">{stats.total}</strong></span>
+              <span className="text-[#6b7685]">Compliant <strong className="text-green-700">{stats.compliant}</strong></span>
+              <span className="text-[#6b7685]">At risk <strong className="text-amber-700">{stats.at_risk}</strong></span>
+              <span className="text-[#6b7685]">Defaulted <strong className="text-red-700">{stats.defaulted}</strong></span>
+              <span className="text-[#6b7685]">SLA breached <strong className="text-red-700">{stats.sla_breached_count}</strong></span>
+            </>
+          )}
+        </div>
+        <button type="button"
+          className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
+          onClick={() => setModal('create')}
+        >
+          + New period
+        </button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="border-b border-[#e2e8f0] text-[#6b7685] text-left text-xs uppercase tracking-wide">
+              <th className="py-2 pr-3">Project / Month</th>
+              <th className="py-2 pr-3">Tier</th>
+              <th className="py-2 pr-3 text-right">Budget</th>
+              <th className="py-2 pr-3 text-right">Proj. Final</th>
+              <th className="py-2 pr-3 text-right">Overrun</th>
+              <th className="py-2 pr-3 text-right">Complete %</th>
+              <th className="py-2 pr-3">IE</th>
+              <th className="py-2 pr-3">Status</th>
+              <th className="py-2 pr-3">SLA</th>
+              <th className="py-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {reports.length === 0 && (
+              <tr><td colSpan={10} className="py-8 text-center text-[#6b7685] text-sm">No cost reports. Open a monthly monitoring period to begin.</td></tr>
+            )}
+            {reports.map((r) => {
+              const avail = CCR_TRANSITIONS[r.chain_status] ?? [];
+              return (
+                <tr key={r.id} className="border-b border-[#f0f4f8] hover:bg-[#f8fafc]">
+                  <td className="py-2 pr-3 font-mono text-xs">
+                    <div className="font-medium text-[#1a3a5c]">{r.project_id.slice(0, 16)}</div>
+                    <div className="text-[#6b7685]">{r.report_month}</div>
+                  </td>
+                  <td className="py-2 pr-3">
+                    <Pill tone={r.budget_tier === 'mega' ? 'bad' : r.budget_tier === 'large' ? 'warn' : 'neutral'}>
+                      {r.budget_tier}
+                    </Pill>
+                  </td>
+                  <td className="py-2 pr-3 text-right font-mono text-xs">{zarFmt(r.total_project_budget_zar)}</td>
+                  <td className="py-2 pr-3 text-right font-mono text-xs">{zarFmt(r.projected_final_cost_zar)}</td>
+                  <td className="py-2 pr-3 text-right font-mono text-xs">
+                    {r.overrun_percentage != null
+                      ? <span className={r.overrun_percentage > 5 ? 'text-red-700 font-bold' : 'text-amber-700'}>{r.overrun_percentage.toFixed(1)}%</span>
+                      : '—'}
+                  </td>
+                  <td className="py-2 pr-3 text-right font-mono text-xs">
+                    {r.physical_completion_percentage != null ? `${r.physical_completion_percentage.toFixed(1)}%` : '—'}
+                  </td>
+                  <td className="py-2 pr-3 text-xs text-[#6b7685]">{r.ie_name ?? '—'}</td>
+                  <td className="py-2 pr-3">
+                    <Pill tone={ccrStatusTone(r.chain_status)}>{r.chain_status.replace(/_/g, ' ')}</Pill>
+                  </td>
+                  <td className="py-2 pr-3">
+                    {r.sla_breached ? <Pill tone="bad">Breached</Pill> : r.overdue ? <Pill tone="warn">Overdue</Pill> : <Pill tone="good">On track</Pill>}
+                  </td>
+                  <td className="py-2">
+                    {avail.length > 0 && (
+                      <button type="button"
+                        className="px-2 py-1 rounded bg-[#f0f4f8] text-[#1a3a5c] text-xs font-medium hover:bg-[#e2e8f0]"
+                        onClick={() => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status })}
+                      >
+                        Action
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {modal === 'create' && (
+        <ActionModal
+          title="Open monthly monitoring period"
+          submitLabel="Open"
+          onClose={() => setModal(null)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/lender/construction-cost-report', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({
+                project_id: v.project_id,
+                ipp_id: v.ipp_id,
+                report_month: v.report_month,
+                total_project_budget_zar: v.total_project_budget_zar ? Number(v.total_project_budget_zar) : undefined,
+                reason: v.reason || undefined,
+              }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setModal(null);
+            refresh();
+          }}
+          fields={[
+            { key: 'project_id', label: 'Project ID', required: true },
+            { key: 'ipp_id', label: 'IPP ID', required: true },
+            { key: 'report_month', label: 'Report month (YYYY-MM)', required: true, placeholder: '2026-06' },
+            { key: 'total_project_budget_zar', label: 'Total project budget (ZAR)', type: 'number', required: false },
+            { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+          ]}
+        />
+      )}
+
+      {modal !== null && modal !== 'create' && (() => {
+        const avail = CCR_TRANSITIONS[modal.currentStatus] ?? [];
+        return (
+          <ActionModal
+            title="IE cost report action"
+            submitLabel="Submit"
+            onClose={() => setModal(null)}
+            onSubmit={async (v) => {
+              const res = await fetch(`/api/lender/construction-cost-report/${modal.id}/action`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+                body: JSON.stringify({
+                  action: v.action,
+                  actual_spend_to_date_zar: v.actual_spend_to_date_zar ? Number(v.actual_spend_to_date_zar) : undefined,
+                  cost_to_complete_estimate_zar: v.cost_to_complete_estimate_zar ? Number(v.cost_to_complete_estimate_zar) : undefined,
+                  physical_completion_percentage: v.physical_completion_percentage ? Number(v.physical_completion_percentage) : undefined,
+                  overrun_zar: v.overrun_zar ? Number(v.overrun_zar) : undefined,
+                  overrun_percentage: v.overrun_percentage ? Number(v.overrun_percentage) : undefined,
+                  equity_injection_required_zar: v.equity_injection_required_zar ? Number(v.equity_injection_required_zar) : undefined,
+                  ie_name: v.ie_name || undefined,
+                  ie_certification_ref: v.ie_certification_ref || undefined,
+                  reason: v.reason || undefined,
+                }),
+              });
+              if (!res.ok) throw new Error(await res.text());
+              setModal(null);
+              refresh();
+            }}
+            fields={[
+              { key: 'action', label: 'Action', type: 'select', required: true, options: avail.map(a => ({ value: a, label: CCR_ACTION_LABELS[a] ?? a })) },
+              { key: 'actual_spend_to_date_zar', label: 'Actual spend to date (ZAR)', type: 'number', required: false },
+              { key: 'cost_to_complete_estimate_zar', label: 'IE cost-to-complete estimate (ZAR)', type: 'number', required: false },
+              { key: 'physical_completion_percentage', label: 'Physical completion (%)', type: 'number', required: false },
+              { key: 'overrun_zar', label: 'Overrun amount (ZAR)', type: 'number', required: false },
+              { key: 'overrun_percentage', label: 'Overrun %', type: 'number', required: false },
+              { key: 'equity_injection_required_zar', label: 'Equity injection required (ZAR)', type: 'number', required: false },
+              { key: 'ie_name', label: 'IE firm name', required: false },
+              { key: 'ie_certification_ref', label: 'IE report reference', required: false },
+              { key: 'reason', label: 'Notes', type: 'textarea', required: false },
+            ]}
+          />
+        );
+      })()}
     </div>
   );
 }
