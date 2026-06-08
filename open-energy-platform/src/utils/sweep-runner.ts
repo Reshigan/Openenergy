@@ -232,6 +232,7 @@ import { transactionSlaSweep } from '../routes/sustainability-transaction-chain'
 import { certBundleSlaSweep } from '../routes/certificate-bundle-chain';
 import { subscriptionBillingSlaSweep } from '../routes/subscription-billing-chain';
 import { virtualPpaSettlementSlaSweep } from '../routes/virtual-ppa-settlement-chain';
+import { cbtSedSlaSweep } from '../routes/cbt-sed-chain';
 
 type Env = HonoEnv['Bindings'];
 
@@ -465,6 +466,7 @@ const SWEEPS: Array<[string, SweepFn]> = [
   ['cert_bundle_sla', certBundleSlaSweep as unknown as SweepFn],
   ['subscription_billing_sla', subscriptionBillingSlaSweep as unknown as SweepFn],
   ['vppa_settlement_sla', virtualPpaSettlementSlaSweep as unknown as SweepFn],
+  ['cbt_sed_sla', cbtSedSlaSweep as unknown as SweepFn],
 ];
 
 /**

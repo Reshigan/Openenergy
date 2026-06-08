@@ -2026,7 +2026,37 @@ export type EventType =
   | 'billing_evt_waive'
   | 'billing_evt_write_off'
   | 'billing_evt_cancel'
-  | 'billing_evt_sla_breach';
+  | 'billing_evt_sla_breach'
+  // W229 — Virtual/Financial PPA CfD Settlement
+  | 'vppa_evt_opened'
+  | 'vppa_evt_publish_reference_price'
+  | 'vppa_evt_issue_statement'
+  | 'vppa_evt_acknowledge'
+  | 'vppa_evt_dispute'
+  | 'vppa_evt_begin_recalculation'
+  | 'vppa_evt_escalate_to_isda'
+  | 'vppa_evt_confirm_recalculation'
+  | 'vppa_evt_record_payment'
+  | 'vppa_evt_record_partial_payment'
+  | 'vppa_evt_mark_overdue'
+  | 'vppa_evt_write_off'
+  | 'vppa_evt_cancel'
+  | 'vppa_evt_sla_breach'
+  // W230 — REIPPPP CBT/SED DMRE Annual Report Review
+  | 'cbt_evt_opened'
+  | 'cbt_evt_begin_data_collection'
+  | 'cbt_evt_submit_draft'
+  | 'cbt_evt_submit_report'
+  | 'cbt_evt_commence_review'
+  | 'cbt_evt_issue_queries'
+  | 'cbt_evt_submit_responses'
+  | 'cbt_evt_approve_report'
+  | 'cbt_evt_issue_non_compliance'
+  | 'cbt_evt_submit_remediation'
+  | 'cbt_evt_accept_remediation'
+  | 'cbt_evt_escalate'
+  | 'cbt_evt_cancel'
+  | 'cbt_evt_sla_breach';
 
 export interface CascadeContext extends PlatformEventFields {
   event: EventType;

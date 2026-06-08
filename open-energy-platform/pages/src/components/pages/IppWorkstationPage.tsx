@@ -162,6 +162,7 @@ export function IppWorkstationPage() {
         { key: 'perf-security', label: 'Performance security (W179)', group: 'Risk', chainKey: 'ipp_psec', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppPerfSecurityTab /></React.Suspense> },
         { key: 'cep-compliance', label: 'Community equity participation (W180)', group: 'Risk', chainKey: 'ipp_cep', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppCepComplianceTab /></React.Suspense> },
         { key: 'sed-compliance', label: 'SED annual spend compliance (W181)', group: 'Risk', chainKey: 'ipp_sed', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppSedComplianceTab /></React.Suspense> },
+        { key: 'cbt-sed-report', label: 'CBT/SED DMRE report review (W230)', group: 'Risk', chainKey: 'cbt_sed_report', body: ({ onRefresh }) => <CbtSedReportTab onRefresh={onRefresh} /> },
         { key: 'bbbee-verification', label: 'BBBEE annual verification (W182)', group: 'Risk', chainKey: 'ipp_bbbee', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppBbbeeVerificationTab /></React.Suspense> },
         { key: 'lender-reporting', label: 'Lender reporting covenant (W183)', group: 'Risk', chainKey: 'ipp_lrep', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLenderReportingTab /></React.Suspense> },
         { key: 'licence-returns', label: 'Annual NERSA licence return (W184)', group: 'Risk', chainKey: 'ipp_anr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLicenceReturnsTab /></React.Suspense> },
@@ -1781,6 +1782,265 @@ function GtiaTab({ onRefresh }: { onRefresh?: () => void }) {
             { key: 'rejection_reason', label: 'Rejection reason', type: 'textarea', required: false },
             { key: 'reason', label: 'Notes', type: 'textarea', required: false },
           ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── W230 CBT/SED DMRE Report Review ─────────────────────────────────────────
+
+type CbtSedRow = {
+  id: string;
+  project_name: string;
+  reipppp_bid_window: string;
+  reporting_year: number;
+  cbt_disbursement_tier: string;
+  annual_cbt_disbursement_zar: number | null;
+  report_ref: string | null;
+  chain_status: string;
+  sla_deadline: string | null;
+  sla_breached: boolean | number;
+  hours_until_sla: number | null;
+  is_terminal: boolean;
+  created_at: string;
+};
+type CbtSedStats = {
+  total: number;
+  approved: number;
+  non_compliant: number;
+  escalated: number;
+  sla_breached_count: number;
+};
+
+const CBT_TRANSITIONS: Record<string, string[]> = {
+  reporting_period_open: ['begin_data_collection', 'cancel'],
+  data_collection:       ['submit_draft', 'cancel'],
+  report_drafted:        ['submit_report', 'cancel'],
+  submitted:             ['commence_review'],
+  under_review:          ['approve_report', 'issue_queries', 'issue_non_compliance'],
+  queries_issued:        ['submit_responses'],
+  response_submitted:    ['commence_review'],
+  approved:              [],
+  non_compliant:         ['submit_remediation', 'escalate'],
+  remediation_submitted: ['accept_remediation', 'issue_non_compliance', 'escalate'],
+  cancelled:             [],
+  escalated:             [],
+};
+const CBT_ACTION_LABELS: Record<string, string> = {
+  begin_data_collection: 'Begin data collection',
+  submit_draft:          'Submit draft',
+  submit_report:         'Submit to DMRE',
+  commence_review:       'Commence review',
+  issue_queries:         'Issue queries',
+  submit_responses:      'Submit responses',
+  approve_report:        'Approve',
+  issue_non_compliance:  'Non-compliance',
+  submit_remediation:    'Submit remediation',
+  accept_remediation:    'Accept remediation',
+  escalate:              'Escalate',
+  cancel:                'Cancel',
+};
+const CBT_DESTRUCTIVE = new Set(['escalate', 'issue_non_compliance', 'cancel']);
+
+function cbtStatusTone(status: string): 'good' | 'bad' | 'warn' | 'info' | 'neutral' {
+  if (status === 'approved') return 'good';
+  if (['escalated', 'non_compliant'].includes(status)) return 'bad';
+  if (['remediation_submitted', 'queries_issued'].includes(status)) return 'warn';
+  if (status === 'cancelled') return 'neutral';
+  return 'info';
+}
+
+function CbtSedReportTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [rows, setRows] = useState<CbtSedRow[]>([]);
+  const [stats, setStats] = useState<CbtSedStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [rowErr, setRowErr] = useState<Record<string, string>>({});
+  const [opening, setOpening] = useState(false);
+
+  const load = React.useCallback(async () => {
+    setLoading(true); setErr(null);
+    try {
+      const res = await api.get('/ipp/cbt-sed?per_page=200');
+      setRows((res.data?.data?.reports as CbtSedRow[]) || []);
+      setStats((res.data?.data?.stats as CbtSedStats) || null);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'load failed');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => { void load(); }, [load]);
+
+  const act = React.useCallback(async (id: string, action: string) => {
+    setBusy(id);
+    setRowErr((m) => { const n = { ...m }; delete n[id]; return n; });
+    try {
+      await api.post(`/ipp/cbt-sed/${id}/action`, { action });
+      await load();
+      onRefresh?.();
+    } catch (e: unknown) {
+      const msg = (e as any)?.response?.data?.error || (e instanceof Error ? e.message : 'action failed');
+      setRowErr((m) => ({ ...m, [id]: msg }));
+    } finally {
+      setBusy(null);
+    }
+  }, [load, onRefresh]);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-start justify-between gap-4">
+        <p className="text-[12px] leading-relaxed text-[#3d4756] max-w-2xl">
+          W230 — DMRE formal review of annual CBT/SED reports. Picks up where
+          the W181 SED spend execution chain ends: models the iterative
+          query-response-determination lifecycle on DMRE's side through to
+          approval, non-compliance finding, or enforcement escalation to the
+          BBBEE Commission. INVERTED SLA (larger CBT = more scrutiny = longer window).
+        </p>
+        <div className="flex shrink-0 items-center gap-2">
+          <button type="button"
+            onClick={() => setOpening(true)}
+            className="h-8 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold hover:bg-[#16324f]"
+          >
+            Open reporting period
+          </button>
+          <button type="button"
+            onClick={() => void load()}
+            className="h-8 px-3 rounded-md border border-[#dde4ec] bg-white text-[12px] font-medium text-[#3d4756] hover:bg-[#f8fafc]"
+          >
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      {stats && (
+        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-[12px] text-[#3d4756]">
+          <span><span className="text-[#6b7685]">Total</span> <span className="tabular-nums font-medium text-[#0f1c2e]">{stats.total}</span></span>
+          <span><span className="text-[#6b7685]">Approved</span> <span className="tabular-nums font-medium text-[#2a7a4f]">{stats.approved}</span></span>
+          <span><span className="text-[#6b7685]">Non-compliant</span> <span className="tabular-nums font-medium text-[#b4453a]">{stats.non_compliant}</span></span>
+          <span><span className="text-[#6b7685]">Escalated</span> <span className="tabular-nums font-medium text-[#b4453a]">{stats.escalated}</span></span>
+          <span><span className="text-[#6b7685]">SLA breached</span> <span className="tabular-nums font-medium text-[#b4453a]">{stats.sla_breached_count}</span></span>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="rounded-xl border border-[#dde4ec] bg-white p-6 text-[12px] text-[#6b7685]">Loading CBT/SED reports…</div>
+      ) : err ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-[12px] text-red-700">{err}</div>
+      ) : rows.length === 0 ? (
+        <div className="rounded-xl border border-[#dde4ec] bg-[#f8fafc] p-6 text-center">
+          <div className="text-[13px] font-semibold text-[#0f1c2e]">No CBT/SED reporting periods yet</div>
+          <div className="text-[12px] text-[#6b7685] mt-1">Open an annual reporting period to start the W230 DMRE review chain.</div>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto text-[#0f1c2e]">
+          <table className="w-full text-[13px] min-w-[860px]">
+            <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+              <tr>
+                <th className="px-4 py-2">Project / BW</th>
+                <th className="px-4 py-2">Year</th>
+                <th className="px-4 py-2">Tier</th>
+                <th className="px-4 py-2 text-right">Annual CBT (ZAR)</th>
+                <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-2">SLA</th>
+                <th className="px-4 py-2">Created</th>
+                <th className="px-4 py-2 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => {
+                const rowBusy = busy === r.id;
+                const breached = r.sla_breached === true || r.sla_breached === 1;
+                const actions = CBT_TRANSITIONS[r.chain_status] ?? [];
+                return (
+                  <React.Fragment key={r.id}>
+                    <tr className="border-t border-[#e5ebf2] align-top">
+                      <td className="px-4 py-2">
+                        <div className="font-medium text-[12px]">{r.project_name}</div>
+                        <div className="text-[11px] text-[#6b7685]">{r.reipppp_bid_window}{r.report_ref ? ` · ${r.report_ref}` : ''}</div>
+                      </td>
+                      <td className="px-4 py-2 tabular-nums text-[12px]">{r.reporting_year}</td>
+                      <td className="px-4 py-2"><Pill tone="info">{r.cbt_disbursement_tier}</Pill></td>
+                      <td className="px-4 py-2 text-right tabular-nums text-[12px]">
+                        {r.annual_cbt_disbursement_zar != null
+                          ? new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(r.annual_cbt_disbursement_zar)
+                          : '—'}
+                      </td>
+                      <td className="px-4 py-2"><Pill tone={cbtStatusTone(r.chain_status)}>{r.chain_status.replace(/_/g, ' ')}</Pill></td>
+                      <td className="px-4 py-2 text-[11px] whitespace-nowrap">
+                        {breached ? (
+                          <span className="text-[#b4453a] font-medium">Breached</span>
+                        ) : r.hours_until_sla != null ? (
+                          <span className={r.hours_until_sla < 24 ? 'text-[#b4453a]' : 'text-[#6b7685]'}>{r.hours_until_sla}h left</span>
+                        ) : (
+                          <span className="text-[#9aa6b4]">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 text-[11px] text-[#6b7685] whitespace-nowrap">
+                        {r.created_at ? new Date(r.created_at).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 whitespace-nowrap">
+                          {actions.length === 0 ? (
+                            <span className="text-[11px] text-[#9aa6b4]">Terminal</span>
+                          ) : (
+                            actions.map((a) => (
+                              <button type="button"
+                                key={a}
+                                onClick={() => void act(r.id, a)}
+                                disabled={rowBusy}
+                                className={`text-[11px] font-medium hover:underline disabled:opacity-40 ${CBT_DESTRUCTIVE.has(a) ? 'text-[#b4453a]' : 'text-[#1a3a5c]'}`}
+                              >
+                                {CBT_ACTION_LABELS[a] ?? a}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    {rowErr[r.id] && (
+                      <tr className="border-t border-[#e5ebf2] bg-[#fdf6f5]">
+                        <td colSpan={8} className="px-4 py-2 text-[11px] text-[#b4453a]">{rowErr[r.id]}</td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {opening && (
+        <ActionModal
+          title="Open CBT/SED reporting period"
+          submitLabel="Open period"
+          fields={[
+            { key: 'ipp_id', label: 'IPP ID', required: true },
+            { key: 'project_name', label: 'Project name', required: true },
+            { key: 'reipppp_bid_window', label: 'Bid window (e.g. BW4)', required: true },
+            { key: 'reporting_year', label: 'Reporting year', type: 'number', required: true },
+            { key: 'annual_cbt_disbursement_zar', label: 'Annual CBT disbursement (ZAR)', type: 'number', required: true },
+            { key: 'reason', label: 'Notes' },
+          ] as FieldSpec[]}
+          onClose={() => setOpening(false)}
+          onSubmit={async (v) => {
+            try {
+              await api.post('/ipp/cbt-sed/open', {
+                ...v,
+                reporting_year: v.reporting_year ? Number(v.reporting_year) : undefined,
+                annual_cbt_disbursement_zar: v.annual_cbt_disbursement_zar ? Number(v.annual_cbt_disbursement_zar) : undefined,
+              });
+            } catch (e: unknown) {
+              throw new Error((e as any)?.response?.data?.error || 'Failed to open reporting period');
+            }
+            setOpening(false);
+            await load();
+            onRefresh?.();
+          }}
         />
       )}
     </div>
