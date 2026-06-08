@@ -21,6 +21,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { prompt } from '../PromptDialog';
 
 type ChainStatus =
   | 'default_flagged' | 'under_review' | 'reservation_of_rights' | 'default_notice_issued'
@@ -308,101 +309,101 @@ export function LoanDefaultChainTab() {
     try {
       const body: Record<string, unknown> = {};
       if (action === 'begin-review') {
-        const basis = window.prompt('Review basis (triage narrative):', '');
+        const basis = await prompt('Review basis (triage narrative):', '');
         if (basis) body.review_basis = basis;
       } else if (action === 'reserve-rights') {
-        const ref = window.prompt('Flag / file reference (optional):', row.flag_ref ?? '');
+        const ref = await prompt('Flag / file reference (optional):', row.flag_ref ?? '');
         if (ref) body.flag_ref = ref;
-        const basis = window.prompt('Reservation-of-rights basis (narrative):', '');
+        const basis = await prompt('Reservation-of-rights basis (narrative):', '');
         if (basis) body.review_basis = basis;
       } else if (action === 'issue-default-notice') {
-        const ref = window.prompt('Default notice reference (eg "DEF-NOTICE-2026-0007"):');
+        const ref = await prompt('Default notice reference (eg "DEF-NOTICE-2026-0007"):');
         if (!ref) return;
         body.notice_ref = ref;
-        const basis = window.prompt('Default notice basis (event-of-default rationale — required):');
+        const basis = await prompt('Default notice basis (event-of-default rationale — required):');
         if (!basis) return;
         body.notice_basis = basis;
-        const dtype = window.prompt('Default type (payment / covenant / insolvency / cross_default / moratorium):', row.default_type ?? '');
+        const dtype = await prompt('Default type (payment / covenant / insolvency / cross_default / moratorium):', row.default_type ?? '');
         if (dtype) body.default_type = dtype;
-        const devent = window.prompt('Default event (short label):', row.default_event ?? '');
+        const devent = await prompt('Default event (short label):', row.default_event ?? '');
         if (devent) body.default_event = devent;
       } else if (action === 'open-cure-period') {
-        const ref = window.prompt('Cure reference (eg "CURE-2026-0009"):', '');
+        const ref = await prompt('Cure reference (eg "CURE-2026-0009"):', '');
         if (ref) body.cure_ref = ref;
-        const basis = window.prompt('Cure basis (contractual cure window — required):');
+        const basis = await prompt('Cure basis (contractual cure window — required):');
         if (!basis) return;
         body.cure_basis = basis;
-        const deadline = window.prompt('Cure deadline (ISO date, eg "2026-07-15"):', '');
+        const deadline = await prompt('Cure deadline (ISO date, eg "2026-07-15"):', '');
         if (deadline) body.cure_deadline_at = deadline;
       } else if (action === 'confirm-cure') {
-        const basis = window.prompt('Cure confirmation basis (evidence remedied — required):');
+        const basis = await prompt('Cure confirmation basis (evidence remedied — required):');
         if (!basis) return;
         body.cure_basis = basis;
-        const rod = window.prompt('ROD notes (optional):', '');
+        const rod = await prompt('ROD notes (optional):', '');
         if (rod) body.rod_notes = rod;
       } else if (action === 'dismiss') {
-        const reason = window.prompt('Reason code (eg "FALSE_ALARM", "DATA_ERROR"):', '');
+        const reason = await prompt('Reason code (eg "FALSE_ALARM", "DATA_ERROR"):', '');
         if (reason) body.reason_code = reason;
-        const rod = window.prompt('Dismissal notes (required):');
+        const rod = await prompt('Dismissal notes (required):');
         if (!rod) return;
         body.rod_notes = rod;
       } else if (action === 'accelerate') {
-        const ref = window.prompt('Acceleration reference (eg "ACCEL-EOD-2026-0002"):');
+        const ref = await prompt('Acceleration reference (eg "ACCEL-EOD-2026-0002"):');
         if (!ref) return;
         body.acceleration_ref = ref;
-        const basis = window.prompt('Acceleration basis (event-of-default rationale — required):');
+        const basis = await prompt('Acceleration basis (event-of-default rationale — required):');
         if (!basis) return;
         body.acceleration_basis = basis;
-        const amt = window.prompt('Accelerated amount called (ZAR, eg 450000000):', String(row.outstanding_principal ?? ''));
+        const amt = await prompt('Accelerated amount called (ZAR, eg 450000000):', String(row.outstanding_principal ?? ''));
         if (amt) body.accelerated_amount = Number(amt);
-        const reason = window.prompt('Reason code (eg "EVENT_OF_DEFAULT", "UOP_DIVERSION"):', '');
+        const reason = await prompt('Reason code (eg "EVENT_OF_DEFAULT", "UOP_DIVERSION"):', '');
         if (reason) body.reason_code = reason;
-        const rod = window.prompt('ROD notes (board / majority-lender resolution — required):');
+        const rod = await prompt('ROD notes (board / majority-lender resolution — required):');
         if (!rod) return;
         body.rod_notes = rod;
       } else if (action === 'agree-standstill') {
-        const ref = window.prompt('Standstill / forbearance reference (eg "STANDSTILL-2026-0003"):', '');
+        const ref = await prompt('Standstill / forbearance reference (eg "STANDSTILL-2026-0003"):', '');
         if (ref) body.standstill_ref = ref;
-        const basis = window.prompt('Standstill basis (forbearance terms — required):');
+        const basis = await prompt('Standstill basis (forbearance terms — required):');
         if (!basis) return;
         body.standstill_basis = basis;
       } else if (action === 'commence-enforcement') {
-        const ref = window.prompt('Enforcement / step-in reference (eg "ENFORCE-2026-0001"):');
+        const ref = await prompt('Enforcement / step-in reference (eg "ENFORCE-2026-0001"):');
         if (!ref) return;
         body.enforcement_ref = ref;
-        const basis = window.prompt('Enforcement basis (security realisation / step-in plan — required):');
+        const basis = await prompt('Enforcement basis (security realisation / step-in plan — required):');
         if (!basis) return;
         body.enforcement_basis = basis;
       } else if (action === 'agree-restructure') {
-        const ref = window.prompt('Restructure reference (eg "RESTRUCTURE-2026-0004"):');
+        const ref = await prompt('Restructure reference (eg "RESTRUCTURE-2026-0004"):');
         if (!ref) return;
         body.restructure_ref = ref;
-        const basis = window.prompt('Restructure basis (workout terms — required):');
+        const basis = await prompt('Restructure basis (workout terms — required):');
         if (!basis) return;
         body.restructure_basis = basis;
-        const reason = window.prompt('Reason code (eg "BILATERAL_WORKOUT", "BUSINESS_RESCUE"):', '');
+        const reason = await prompt('Reason code (eg "BILATERAL_WORKOUT", "BUSINESS_RESCUE"):', '');
         if (reason) body.reason_code = reason;
-        const rod = window.prompt('ROD notes (optional):', '');
+        const rod = await prompt('ROD notes (optional):', '');
         if (rod) body.rod_notes = rod;
       } else if (action === 'close-enforcement') {
-        const basis = window.prompt('Enforcement close basis (realisation outcome — required):');
+        const basis = await prompt('Enforcement close basis (realisation outcome — required):');
         if (!basis) return;
         body.enforcement_basis = basis;
-        const rec = window.prompt('Recovery amount realised (ZAR, eg 3960000000):', String(row.recovery_amount ?? ''));
+        const rec = await prompt('Recovery amount realised (ZAR, eg 3960000000):', String(row.recovery_amount ?? ''));
         if (rec) body.recovery_amount = Number(rec);
-        const reason = window.prompt('Reason code (eg "SECURITY_REALISED", "ASSET_SALE"):', '');
+        const reason = await prompt('Reason code (eg "SECURITY_REALISED", "ASSET_SALE"):', '');
         if (reason) body.reason_code = reason;
-        const rod = window.prompt('ROD notes (optional):', '');
+        const rod = await prompt('ROD notes (optional):', '');
         if (rod) body.rod_notes = rod;
       } else if (action === 'write-off') {
-        const amt = window.prompt('Write-off amount — crystallised loss (ZAR, eg 474000000):');
+        const amt = await prompt('Write-off amount — crystallised loss (ZAR, eg 474000000):');
         if (!amt) return;
         body.write_off_amount = Number(amt);
-        const rec = window.prompt('Recovery amount (ZAR, optional):', String(row.recovery_amount ?? ''));
+        const rec = await prompt('Recovery amount (ZAR, optional):', String(row.recovery_amount ?? ''));
         if (rec) body.recovery_amount = Number(rec);
-        const reason = window.prompt('Reason code (eg "UNRECOVERABLE", "INSOLVENCY_SHORTFALL"):', '');
+        const reason = await prompt('Reason code (eg "UNRECOVERABLE", "INSOLVENCY_SHORTFALL"):', '');
         if (reason) body.reason_code = reason;
-        const rod = window.prompt('ROD notes (board impairment resolution — required):');
+        const rod = await prompt('ROD notes (board impairment resolution — required):');
         if (!rod) return;
         body.rod_notes = rod;
       }

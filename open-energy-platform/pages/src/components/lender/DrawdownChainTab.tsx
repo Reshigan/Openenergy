@@ -12,6 +12,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { prompt } from '../PromptDialog';
 
 type ChainStatus =
   | 'requested' | 'documents_submitted' | 'ie_review' | 'cp_checklist'
@@ -237,37 +238,37 @@ export function DrawdownChainTab() {
     try {
       let body: Record<string, string | number> = {};
       if (action === 'begin-ie-review') {
-        const ie = window.prompt('Independent Engineer firm (e.g. Mott MacDonald):');
+        const ie = await prompt('Independent Engineer firm (e.g. Mott MacDonald):');
         if (!ie) return;
         body = { ie_certifier: ie };
       } else if (action === 'pass-to-cp') {
-        const cert = window.prompt('IE certificate document ref (e.g. IE-CERT-2026-NAME-0001):');
+        const cert = await prompt('IE certificate document ref (e.g. IE-CERT-2026-NAME-0001):');
         if (!cert) return;
         body = { ie_cert_doc_ref: cert };
       } else if (action === 'approve') {
-        const cp = window.prompt('CP evidence bundle ref (e.g. CP-PACK-2026-NAME-Q2):');
+        const cp = await prompt('CP evidence bundle ref (e.g. CP-PACK-2026-NAME-Q2):');
         if (!cp) return;
         let sarb = '';
         if (row.tranche_tier === 'senior') {
-          sarb = window.prompt('SARB large-exposure disclosure ref (senior tranche — required for regulator inbox):') || '';
+          sarb = await prompt('SARB large-exposure disclosure ref (senior tranche — required for regulator inbox):') || '';
           if (!sarb) return;
         }
         body = { cp_evidence_ref: cp };
         if (sarb) body.sarb_disclosure_ref = sarb;
       } else if (action === 'fund') {
-        const wire = window.prompt('Treasury wire reference (e.g. WIRE-REF-SBSA-20260601-0500000000):');
+        const wire = await prompt('Treasury wire reference (e.g. WIRE-REF-SBSA-20260601-0500000000):');
         if (!wire) return;
         body = { funding_account_ref: wire };
       } else if (action === 'query') {
-        const notes = window.prompt('Query notes — what is blocked, what evidence is required:');
+        const notes = await prompt('Query notes — what is blocked, what evidence is required:');
         if (!notes) return;
         body = { query_notes: notes };
       } else if (action === 'reject') {
-        const reason = window.prompt('Rejection reason (filed against IPP):');
+        const reason = await prompt('Rejection reason (filed against IPP):');
         if (!reason) return;
         body = { reason };
       } else if (action === 'cancel') {
-        const reason = window.prompt('Cancellation reason (PPA collapse, sponsor walk-away, etc):');
+        const reason = await prompt('Cancellation reason (PPA collapse, sponsor walk-away, etc):');
         if (!reason) return;
         body = { reason };
       }

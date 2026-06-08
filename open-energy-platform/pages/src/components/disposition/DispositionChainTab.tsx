@@ -13,6 +13,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { prompt } from '../PromptDialog';
 
 type ChainStatus =
   | 'received' | 'triaged' | 'assigned' | 'investigating'
@@ -273,65 +274,65 @@ export function DispositionChainTab() {
     try {
       const body: Record<string, unknown> = {};
       if (action === 'triage') {
-        const tier = window.prompt('Severity tier (critical / high / medium / low):', row.severity_tier);
+        const tier = await prompt('Severity tier (critical / high / medium / low):', row.severity_tier);
         if (tier && (tier === 'critical' || tier === 'high' || tier === 'medium' || tier === 'low')) {
           body.severity_tier = tier;
         }
       } else if (action === 'assign') {
-        const officer = window.prompt('Assigned officer (eg "M. Mthembu"):');
+        const officer = await prompt('Assigned officer (eg "M. Mthembu"):');
         if (!officer) return;
         body.assigned_officer = officer;
-        const dir = window.prompt('Directorate (eg "Electricity Subcommittee — Markets"):');
+        const dir = await prompt('Directorate (eg "Electricity Subcommittee — Markets"):');
         if (dir) body.assigned_directorate = dir;
       } else if (action === 'require-action') {
-        const findings = window.prompt('Investigation findings (RCA summary):');
+        const findings = await prompt('Investigation findings (RCA summary):');
         if (!findings) return;
         body.investigation_findings = findings;
-        const req = window.prompt('Required action (directive / order / corrective plan):');
+        const req = await prompt('Required action (directive / order / corrective plan):');
         if (!req) return;
         body.required_action = req;
       } else if (action === 'complete-action') {
-        const ref = window.prompt('Action evidence reference (eg "NERSA-COA-2026-0142"):');
+        const ref = await prompt('Action evidence reference (eg "NERSA-COA-2026-0142"):');
         if (ref) body.action_evidence_ref = ref;
       } else if (action === 'close') {
-        const outcome = window.prompt('Disposition outcome (rationale + Council ratification):');
+        const outcome = await prompt('Disposition outcome (rationale + Council ratification):');
         if (!outcome) return;
         body.disposition_outcome = outcome;
-        const council = window.prompt('Council panel reference (eg "COUNCIL-PANEL-2026-0044"):');
+        const council = await prompt('Council panel reference (eg "COUNCIL-PANEL-2026-0044"):');
         if (council) body.council_panel_ref = council;
-        const minute = window.prompt('Council minute reference:');
+        const minute = await prompt('Council minute reference:');
         if (minute) body.council_minute_ref = minute;
-        const s10 = window.prompt('§10 monthly report reference:');
+        const s10 = await prompt('§10 monthly report reference:');
         if (s10) body.section10_report_ref = s10;
-        const regRef = window.prompt('NERSA disposition reference (eg "NERSA-DISP-2026-0042"):');
+        const regRef = await prompt('NERSA disposition reference (eg "NERSA-DISP-2026-0042"):');
         if (regRef) body.regulator_ref = regRef;
       } else if (action === 'escalate') {
-        const council = window.prompt('Council senior panel reference (mandatory):');
+        const council = await prompt('Council senior panel reference (mandatory):');
         if (!council) return;
         body.council_panel_ref = council;
-        const minute = window.prompt('Council minute reference:');
+        const minute = await prompt('Council minute reference:');
         if (minute) body.council_minute_ref = minute;
-        const reason = window.prompt('Reason code (eg "SYSTEMIC_RISK", "FATAL_SAFETY", "S10_OVERDUE"):');
+        const reason = await prompt('Reason code (eg "SYSTEMIC_RISK", "FATAL_SAFETY", "S10_OVERDUE"):');
         if (reason) body.reason_code = reason;
-        const rod = window.prompt('ROD notes (escalation rationale):');
+        const rod = await prompt('ROD notes (escalation rationale):');
         if (!rod) return;
         body.rod_notes = rod;
       } else if (action === 'dismiss') {
-        const reason = window.prompt('Reason code (eg "NO_JURISDICTION", "FALSE_ALARM", "DUPLICATE"):');
+        const reason = await prompt('Reason code (eg "NO_JURISDICTION", "FALSE_ALARM", "DUPLICATE"):');
         if (!reason) return;
         body.reason_code = reason;
-        const rod = window.prompt('ROD notes (dismissal rationale — audit trail):');
+        const rod = await prompt('ROD notes (dismissal rationale — audit trail):');
         if (!rod) return;
         body.rod_notes = rod;
       } else if (action === 'refer') {
-        const auth = window.prompt('Referred authority (eg "SAPS — Cybercrime Unit", "DMRE — IPPO", "FSCA — Market Conduct"):');
+        const auth = await prompt('Referred authority (eg "SAPS — Cybercrime Unit", "DMRE — IPPO", "FSCA — Market Conduct"):');
         if (!auth) return;
         body.referred_authority = auth;
-        const ref = window.prompt('Referred reference / case number:');
+        const ref = await prompt('Referred reference / case number:');
         if (ref) body.referred_ref = ref;
-        const reason = window.prompt('Reason code (eg "CRIMINAL_NEXUS", "DMRE_JURISDICTION"):');
+        const reason = await prompt('Reason code (eg "CRIMINAL_NEXUS", "DMRE_JURISDICTION"):');
         if (reason) body.reason_code = reason;
-        const rod = window.prompt('ROD notes (referral rationale):');
+        const rod = await prompt('ROD notes (referral rationale):');
         if (!rod) return;
         body.rod_notes = rod;
       }

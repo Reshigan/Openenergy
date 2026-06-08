@@ -120,6 +120,7 @@ import { AiAssistantDock } from './components/AiAssistantDock';
 import { OnboardingTour } from './components/OnboardingTour';
 import { RouteErrorBoundary } from './components/RouteErrorBoundary';
 import { StepUpModal } from './components/StepUpModal';
+import { PromptHost } from './components/PromptDialog';
 import { startAutoFlush, flushQueue } from './lib/offlineQueue';
 import { installRum } from './lib/rum';
 import { Skeleton } from './components/Skeleton';
@@ -1593,6 +1594,7 @@ export default function App() {
         <CookieConsentBanner />
         <AiAssistantDock />
         <StepUpModal />
+        <PromptHost />
         <GlobalOnboardingTourWrapper />
       </AuthProvider>
     </BrowserRouter>

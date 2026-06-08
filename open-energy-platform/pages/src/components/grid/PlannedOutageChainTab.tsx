@@ -14,6 +14,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { prompt } from '../PromptDialog';
 import { useAuth } from '../../lib/useAuth';
 
 type ChainStatus =
@@ -229,11 +230,11 @@ export function PlannedOutageChainTab() {
     try {
       let body: Record<string, string> = {};
       if (action === 'reject') {
-        const reason = window.prompt('Rejection reason:');
+        const reason = await prompt('Rejection reason:');
         if (!reason) return;
         body = { reason };
       } else if (action === 'cancel') {
-        const reason = window.prompt('Reason for cancel:');
+        const reason = await prompt('Reason for cancel:');
         if (!reason) return;
         body = { notes: reason };
       }

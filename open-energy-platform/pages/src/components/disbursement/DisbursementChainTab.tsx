@@ -11,6 +11,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { prompt } from '../PromptDialog';
 
 type ChainStatus =
   | 'tranche_released' | 'invoices_pending' | 'invoices_submitted'
@@ -262,42 +263,42 @@ export function DisbursementChainTab() {
     try {
       const body: Record<string, unknown> = {};
       if (action === 'submit-invoices') {
-        const amt = window.prompt('Total invoices amount (ZAR):');
+        const amt = await prompt('Total invoices amount (ZAR):');
         if (!amt) return;
         body.invoices_amount_zar = Number(amt);
-        const cnt = window.prompt('Invoice count:');
+        const cnt = await prompt('Invoice count:');
         if (cnt) body.invoice_count = Number(cnt);
-        const cat = window.prompt('UoP category (eg "construction", "EPC", "O&M"):');
+        const cat = await prompt('UoP category (eg "construction", "EPC", "O&M"):');
         if (cat) body.uop_category = cat;
       } else if (action === 'request-ie') {
-        const firm = window.prompt('Independent Engineer firm (eg "Mott MacDonald SA"):');
+        const firm = await prompt('Independent Engineer firm (eg "Mott MacDonald SA"):');
         if (!firm) return;
         body.ie_firm = firm;
       } else if (action === 'accept-ie') {
-        const ref = window.prompt('IE certificate reference (eg "IE-CERT-2026-0142"):');
+        const ref = await prompt('IE certificate reference (eg "IE-CERT-2026-0142"):');
         if (!ref) return;
         body.ie_certificate_ref = ref;
       } else if (action === 'close-reconciliation') {
-        const amt = window.prompt('Reconciled amount (ZAR — UoP-verified):');
+        const amt = await prompt('Reconciled amount (ZAR — UoP-verified):');
         if (!amt) return;
         body.reconciled_amount_zar = Number(amt);
-        const sarb = window.prompt('SARB Exchange Control reference (optional for ZAR-only domestic):', row.sarb_exchange_control_ref ?? '');
+        const sarb = await prompt('SARB Exchange Control reference (optional for ZAR-only domestic):', row.sarb_exchange_control_ref ?? '');
         if (sarb) body.sarb_exchange_control_ref = sarb;
       } else if (action === 'demand-clawback') {
-        const amt = window.prompt('Clawback amount (ZAR):');
+        const amt = await prompt('Clawback amount (ZAR):');
         if (!amt) return;
         body.clawback_amount_zar = Number(amt);
-        const reason = window.prompt('Reason code (eg "UOP_DIVERSION", "INV_INVALID", "IE_FAIL"):');
+        const reason = await prompt('Reason code (eg "UOP_DIVERSION", "INV_INVALID", "IE_FAIL"):');
         if (reason) body.reason_code = reason;
-        const rod = window.prompt('ROD notes (rationale + evidence):');
+        const rod = await prompt('ROD notes (rationale + evidence):');
         if (!rod) return;
         body.rod_notes = rod;
-        const sarb = window.prompt('SARB Exchange Control reference (mandatory for clawback):');
+        const sarb = await prompt('SARB Exchange Control reference (mandatory for clawback):');
         if (sarb) body.sarb_exchange_control_ref = sarb;
-        const ep = window.prompt('Equator Principles secretariat reference:');
+        const ep = await prompt('Equator Principles secretariat reference:');
         if (ep) body.equator_principles_ref = ep;
       } else if (action === 'waive') {
-        const rod = window.prompt('Board exception notes (required — facility waiver clause):');
+        const rod = await prompt('Board exception notes (required — facility waiver clause):');
         if (!rod) return;
         body.rod_notes = rod;
       }

@@ -50,6 +50,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { prompt, confirmDialog } from '../PromptDialog';
 
 type RattStatus =
   | 'attestation_proposed' | 'scope_defined' | 'feeds_ingested'
@@ -506,106 +507,106 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
     try {
       const body: Record<string, unknown> = {};
       if (action === 'define-scope') {
-        const sources = window.prompt(
+        const sources = await prompt(
           'Feed sources (CSV - e.g. SAP_S4HANA,ORACLE_FUSION,SAGE_300,STRATE,SWIFT_MT940,W118_PUBLISHED_BLOCKS):',
           row.feed_sources_csv ?? '',
         );
         if (sources === null) return;
         body.feed_sources_csv = sources;
-        const inScope = window.prompt('Feeds in scope (count):', String(row.feeds_in_scope ?? 0));
+        const inScope = await prompt('Feeds in scope (count):', String(row.feeds_in_scope ?? 0));
         if (inScope !== null) body.feeds_in_scope = Number(inScope);
-        const mat = window.prompt('Materiality threshold ZAR:', String(row.materiality_threshold_zar ?? 0));
+        const mat = await prompt('Materiality threshold ZAR:', String(row.materiality_threshold_zar ?? 0));
         if (mat !== null) body.materiality_threshold_zar = Number(mat);
       } else if (action === 'ingest-feeds') {
-        const ingested = window.prompt('Feeds ingested (count):', String(row.feeds_ingested_count ?? 0));
+        const ingested = await prompt('Feeds ingested (count):', String(row.feeds_ingested_count ?? 0));
         if (ingested !== null) body.feeds_ingested_count = Number(ingested);
       } else if (action === 'pair-blocks') {
-        const lo = window.prompt('W118 block height range low (MANDATORY bridge):', String(row.w118_block_height_range_low ?? ''));
+        const lo = await prompt('W118 block height range low (MANDATORY bridge):', String(row.w118_block_height_range_low ?? ''));
         if (lo === null) return;
         body.w118_block_height_range_low = Number(lo);
-        const hi = window.prompt('W118 block height range high:', String(row.w118_block_height_range_high ?? lo));
+        const hi = await prompt('W118 block height range high:', String(row.w118_block_height_range_high ?? lo));
         if (hi === null) return;
         body.w118_block_height_range_high = Number(hi);
-        const w119 = window.prompt('W119 export pack ref (MANDATORY bridge):', row.w119_export_pack_ref ?? '');
+        const w119 = await prompt('W119 export pack ref (MANDATORY bridge):', row.w119_export_pack_ref ?? '');
         if (w119) body.w119_export_pack_ref = w119;
-        const paired = window.prompt('Feeds paired (count):', String(row.feeds_paired_count ?? 0));
+        const paired = await prompt('Feeds paired (count):', String(row.feeds_paired_count ?? 0));
         if (paired !== null) body.feeds_paired_count = Number(paired);
       } else if (action === 'compute-variance') {
-        const total = window.prompt('Total variance ZAR (absolute value):', String(row.total_variance_zar ?? 0));
+        const total = await prompt('Total variance ZAR (absolute value):', String(row.total_variance_zar ?? 0));
         if (total !== null) body.total_variance_zar = Number(total);
-        const explained = window.prompt('Net variance explained ZAR:', String(row.net_variance_explained_zar ?? 0));
+        const explained = await prompt('Net variance explained ZAR:', String(row.net_variance_explained_zar ?? 0));
         if (explained !== null) body.net_variance_explained_zar = Number(explained);
-        const unresolved = window.prompt('Unresolved variance ZAR:', String(row.unresolved_variance_zar ?? 0));
+        const unresolved = await prompt('Unresolved variance ZAR:', String(row.unresolved_variance_zar ?? 0));
         if (unresolved !== null) body.unresolved_variance_zar = Number(unresolved);
       } else if (action === 'classify-break') {
-        const klass = window.prompt(
+        const klass = await prompt(
           'Break classification (timing/cut_off/fx_translation/manual_journal/intercompany/missing_feed/duplicate_feed/data_quality):',
           row.break_classification ?? '',
         );
         if (klass !== null) body.break_classification = klass;
       } else if (action === 'log-root-cause') {
-        const tax = window.prompt(
+        const tax = await prompt(
           'Root cause taxonomy (e.g. system_outage_outbound, manual_journal_error, fx_rate_mismatch, late_posting_after_close...):',
           row.root_cause_taxonomy ?? '',
         );
         if (tax !== null) body.root_cause_taxonomy = tax;
       } else if (action === 'propose-remediation') {
-        const drafted = window.confirm('Action plan drafted?');
+        const drafted = await confirmDialog('Action plan drafted?');
         body.action_plan_drafted = drafted ? 1 : 0;
-        const owner = window.confirm('Owner assigned?');
+        const owner = await confirmDialog('Owner assigned?');
         body.owner_assigned = owner ? 1 : 0;
-        const target = window.confirm('Target date set?');
+        const target = await confirmDialog('Target date set?');
         body.target_date_set = target ? 1 : 0;
-        const evidence = window.confirm('Evidence attached?');
+        const evidence = await confirmDialog('Evidence attached?');
         body.evidence_attached = evidence ? 1 : 0;
       } else if (action === 'get-counter-party-signoff') {
-        const signed = window.confirm('Counter-party signed off?');
+        const signed = await confirmDialog('Counter-party signed off?');
         body.counter_party_signed_off = signed ? 1 : 0;
       } else if (action === 'run-independent-review') {
-        const passed = window.confirm('Independent review PASSED?');
+        const passed = await confirmDialog('Independent review PASSED?');
         body.independent_review_passed = passed ? 1 : 0;
-        const coso = window.prompt('COSO components tested (0-5):', String(row.coso_components_tested ?? 5));
+        const coso = await prompt('COSO components tested (0-5):', String(row.coso_components_tested ?? 5));
         if (coso !== null) body.coso_components_tested = Number(coso);
-        const tsc = window.prompt('TSC categories tested (0-5):', String(row.tsc_categories_tested ?? 5));
+        const tsc = await prompt('TSC categories tested (0-5):', String(row.tsc_categories_tested ?? 5));
         if (tsc !== null) body.tsc_categories_tested = Number(tsc);
       } else if (action === 'sign-attestation') {
-        const cfo = window.confirm('CFO attestation signed?');
+        const cfo = await confirmDialog('CFO attestation signed?');
         body.cfo_attestation_signed = cfo ? 1 : 0;
-        const ac = window.confirm('Audit committee briefed?');
+        const ac = await confirmDialog('Audit committee briefed?');
         body.audit_committee_briefed = ac ? 1 : 0;
       } else if (action === 'archive') {
-        const note = window.prompt('Archive notes (audit_committee_chair - HARD terminal):', '');
+        const note = await prompt('Archive notes (audit_committee_chair - HARD terminal):', '');
         if (note !== null) body.notes = note;
       } else if (action === 'reject') {
-        const reason = window.prompt(
+        const reason = await prompt(
           'Reject reason. NOTE: SIGNATURE crosses regulator EVERY tier when material_variance_unresolved AND icfr_deficiency_suspected.',
           row.reject_reason ?? '',
         );
         if (reason === null) return;
         body.reject_reason = reason;
       } else if (action === 'suspend') {
-        const reason = window.prompt('Suspend reason (regulator-audit-in-progress?):', row.suspend_reason ?? '');
+        const reason = await prompt('Suspend reason (regulator-audit-in-progress?):', row.suspend_reason ?? '');
         if (reason === null) return;
         body.suspend_reason = reason;
       } else if (action === 'resume-from-suspend') {
-        const note = window.prompt('Resume note (back to scope_defined):', '');
+        const note = await prompt('Resume note (back to scope_defined):', '');
         if (note !== null) body.notes = note;
       } else if (action === 'restate') {
-        const reason = window.prompt(
+        const reason = await prompt(
           'Restate reason (CFO - supersede signed pack; crosses regulator quarterly+annual):',
           row.restate_reason ?? '',
         );
         if (reason === null) return;
         body.restate_reason = reason;
       } else if (action === 'escalate-to-audit-committee') {
-        const reason = window.prompt(
+        const reason = await prompt(
           'Escalation reason. W120 SIGNATURE: ICFR-DEFICIENCY-ATTEST crosses regulator EVERY tier (JSE 8.62 + s30).',
           row.escalation_reason ?? '',
         );
         if (reason === null) return;
         body.escalation_reason = reason;
       } else if (action === 'lift-escalation') {
-        const note = window.prompt('Lift escalation note (back to independent_review):', '');
+        const note = await prompt('Lift escalation note (back to independent_review):', '');
         if (note !== null) body.notes = note;
       }
       await api.post(`/reconciliation-attestation/${row.id}/${action}`, body);

@@ -18,6 +18,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { prompt } from '../PromptDialog';
 
 type ChainStatus =
   | 'certificate_due' | 'certificate_submitted' | 'under_review' | 'ratios_verified'
@@ -302,86 +303,86 @@ export function CovenantCertificateTab() {
     try {
       const body: Record<string, unknown> = {};
       if (action === 'submit-certificate') {
-        const ref = window.prompt('Certificate reference (eg "CC-2026-Q1-0042"):');
+        const ref = await prompt('Certificate reference (eg "CC-2026-Q1-0042"):');
         if (ref) body.certificate_ref = ref;
-        const dscr = window.prompt('DSCR actual (eg 1.35):');
+        const dscr = await prompt('DSCR actual (eg 1.35):');
         if (dscr) body.dscr_actual = Number(dscr);
-        const llcr = window.prompt('LLCR actual (eg 1.42):', '');
+        const llcr = await prompt('LLCR actual (eg 1.42):', '');
         if (llcr) body.llcr_actual = Number(llcr);
-        const gearing = window.prompt('Gearing actual ratio (eg 0.72):', '');
+        const gearing = await prompt('Gearing actual ratio (eg 0.72):', '');
         if (gearing) body.gearing_actual = Number(gearing);
-        const basis = window.prompt('Submission basis (narrative):', '');
+        const basis = await prompt('Submission basis (narrative):', '');
         if (basis) body.submission_basis = basis;
       } else if (action === 'begin-review') {
-        const ref = window.prompt('Review reference (optional):', '');
+        const ref = await prompt('Review reference (optional):', '');
         if (ref) body.review_ref = ref;
       } else if (action === 'verify-ratios') {
-        const dscr = window.prompt('DSCR verified (leave blank to keep):', String(row.dscr_actual ?? ''));
+        const dscr = await prompt('DSCR verified (leave blank to keep):', String(row.dscr_actual ?? ''));
         if (dscr) body.dscr_actual = Number(dscr);
-        const llcr = window.prompt('LLCR verified (leave blank to keep):', String(row.llcr_actual ?? ''));
+        const llcr = await prompt('LLCR verified (leave blank to keep):', String(row.llcr_actual ?? ''));
         if (llcr) body.llcr_actual = Number(llcr);
-        const gearing = window.prompt('Gearing verified (leave blank to keep):', String(row.gearing_actual ?? ''));
+        const gearing = await prompt('Gearing verified (leave blank to keep):', String(row.gearing_actual ?? ''));
         if (gearing) body.gearing_actual = Number(gearing);
-        const basis = window.prompt('Review basis (narrative):', '');
+        const basis = await prompt('Review basis (narrative):', '');
         if (basis) body.review_basis = basis;
       } else if (action === 'confirm-compliant') {
-        const rod = window.prompt('Confirmation notes (optional):', '');
+        const rod = await prompt('Confirmation notes (optional):', '');
         if (rod) body.rod_notes = rod;
       } else if (action === 'flag-breach') {
-        const which = window.prompt('Breached covenants (comma list, eg "DSCR,GEARING"):');
+        const which = await prompt('Breached covenants (comma list, eg "DSCR,GEARING"):');
         if (!which) return;
         body.breached_covenants = which;
-        const ref = window.prompt('Breach reference (eg "BREACH-2026-0007"):', '');
+        const ref = await prompt('Breach reference (eg "BREACH-2026-0007"):', '');
         if (ref) body.breach_ref = ref;
-        const basis = window.prompt('Breach basis (narrative — required):');
+        const basis = await prompt('Breach basis (narrative — required):');
         if (!basis) return;
         body.breach_basis = basis;
-        const reason = window.prompt('Reason code (eg "DSCR_SHORTFALL", "GEARING_EXCEEDED"):', '');
+        const reason = await prompt('Reason code (eg "DSCR_SHORTFALL", "GEARING_EXCEEDED"):', '');
         if (reason) body.reason_code = reason;
       } else if (action === 'flag-non-submission') {
-        const ref = window.prompt('Breach reference (eg "INFO-BREACH-2026-0003"):', '');
+        const ref = await prompt('Breach reference (eg "INFO-BREACH-2026-0003"):', '');
         if (ref) body.breach_ref = ref;
-        const basis = window.prompt('Non-submission basis (required — information covenant breach):');
+        const basis = await prompt('Non-submission basis (required — information covenant breach):');
         if (!basis) return;
         body.breach_basis = basis;
-        const reason = window.prompt('Reason code (eg "CERT_NOT_DELIVERED"):', '');
+        const reason = await prompt('Reason code (eg "CERT_NOT_DELIVERED"):', '');
         if (reason) body.reason_code = reason;
       } else if (action === 'request-waiver') {
-        const ref = window.prompt('Waiver reference (eg "WAIVER-REQ-2026-0005"):', '');
+        const ref = await prompt('Waiver reference (eg "WAIVER-REQ-2026-0005"):', '');
         if (ref) body.waiver_ref = ref;
-        const basis = window.prompt('Waiver request basis (narrative — required):');
+        const basis = await prompt('Waiver request basis (narrative — required):');
         if (!basis) return;
         body.waiver_basis = basis;
       } else if (action === 'grant-waiver') {
-        const ref = window.prompt('Waiver reference / majority-lender resolution ref:', row.waiver_ref ?? '');
+        const ref = await prompt('Waiver reference / majority-lender resolution ref:', row.waiver_ref ?? '');
         if (ref) body.waiver_ref = ref;
-        const basis = window.prompt('Waiver grant basis (lender decision rationale — required):');
+        const basis = await prompt('Waiver grant basis (lender decision rationale — required):');
         if (!basis) return;
         body.waiver_basis = basis;
-        const rod = window.prompt('ROD notes (conditions attached, optional):', '');
+        const rod = await prompt('ROD notes (conditions attached, optional):', '');
         if (rod) body.rod_notes = rod;
       } else if (action === 'require-cure') {
-        const ref = window.prompt('Cure reference (eg "CURE-2026-0009"):', '');
+        const ref = await prompt('Cure reference (eg "CURE-2026-0009"):', '');
         if (ref) body.cure_ref = ref;
-        const basis = window.prompt('Cure basis (remediation plan — required):');
+        const basis = await prompt('Cure basis (remediation plan — required):');
         if (!basis) return;
         body.cure_basis = basis;
       } else if (action === 'confirm-cured') {
-        const basis = window.prompt('Cure confirmation basis (evidence remediated — required):');
+        const basis = await prompt('Cure confirmation basis (evidence remediated — required):');
         if (!basis) return;
         body.cure_basis = basis;
-        const rod = window.prompt('ROD notes (optional):', '');
+        const rod = await prompt('ROD notes (optional):', '');
         if (rod) body.rod_notes = rod;
       } else if (action === 'accelerate') {
-        const ref = window.prompt('Acceleration reference (eg "ACCEL-EOD-2026-0002"):');
+        const ref = await prompt('Acceleration reference (eg "ACCEL-EOD-2026-0002"):');
         if (!ref) return;
         body.acceleration_ref = ref;
-        const basis = window.prompt('Acceleration basis (event of default rationale — required):');
+        const basis = await prompt('Acceleration basis (event of default rationale — required):');
         if (!basis) return;
         body.acceleration_basis = basis;
-        const reason = window.prompt('Reason code (eg "EVENT_OF_DEFAULT", "UOP_DIVERSION"):', '');
+        const reason = await prompt('Reason code (eg "EVENT_OF_DEFAULT", "UOP_DIVERSION"):', '');
         if (reason) body.reason_code = reason;
-        const rod = window.prompt('ROD notes (board / majority-lender resolution — required):');
+        const rod = await prompt('ROD notes (board / majority-lender resolution — required):');
         if (!rod) return;
         body.rod_notes = rod;
       }

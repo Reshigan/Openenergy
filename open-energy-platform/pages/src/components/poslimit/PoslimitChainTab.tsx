@@ -17,6 +17,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { prompt } from '../PromptDialog';
 
 type ChainStatus =
   | 'within_limit' | 'warning' | 'soft_breach' | 'hard_breach'
@@ -282,33 +283,33 @@ export function PoslimitChainTab() {
     try {
       const body: Record<string, unknown> = {};
       if (action === 'escalate-overnight') {
-        const ref = window.prompt('FSCA Section 41 reference (e.g. FSCA-S41-2026-0019, prop/market_maker only):', row.fsca_ref ?? '');
+        const ref = await prompt('FSCA Section 41 reference (e.g. FSCA-S41-2026-0019, prop/market_maker only):', row.fsca_ref ?? '');
         if (ref) body.fsca_ref = ref;
       } else if (action === 'issue-margin-call') {
-        const amt = window.prompt('Margin call amount (ZAR):');
+        const amt = await prompt('Margin call amount (ZAR):');
         if (!amt) return;
         body.margin_called_zar = Number(amt);
-        const ref = window.prompt('FSCA reference (optional):', row.fsca_ref ?? '');
+        const ref = await prompt('FSCA reference (optional):', row.fsca_ref ?? '');
         if (ref) body.fsca_ref = ref;
       } else if (action === 'require-reduction') {
-        const tgt = window.prompt('Reduction target (MW — how much to unwind):');
+        const tgt = await prompt('Reduction target (MW — how much to unwind):');
         if (!tgt) return;
         body.reduction_target_mw = Number(tgt);
       } else if (action === 'begin-reduction') {
-        const ach = window.prompt('Reduction achieved so far (MW — leave blank if 0):', String(row.reduction_achieved_mw ?? ''));
+        const ach = await prompt('Reduction achieved so far (MW — leave blank if 0):', String(row.reduction_achieved_mw ?? ''));
         if (ach) body.reduction_achieved_mw = Number(ach);
       } else if (action === 'accept-cure') {
-        const rod = window.prompt('Cure notes (how the breach was resolved — required for audit):');
+        const rod = await prompt('Cure notes (how the breach was resolved — required for audit):');
         if (!rod) return;
         body.rod_notes = rod;
       } else if (action === 'force-liquidate') {
-        const ref = window.prompt('Liquidation order reference (e.g. LIQ-RCS-2026-0011):');
+        const ref = await prompt('Liquidation order reference (e.g. LIQ-RCS-2026-0011):');
         if (!ref) return;
         body.liquidation_order_ref = ref;
-        const rod = window.prompt('ROD notes (rationale + venue + account action):');
+        const rod = await prompt('ROD notes (rationale + venue + account action):');
         if (rod) body.rod_notes = rod;
       } else if (action === 'mark-false-alarm') {
-        const rod = window.prompt('False-alarm notes (telemetry source + recomputed value):');
+        const rod = await prompt('False-alarm notes (telemetry source + recomputed value):');
         if (!rod) return;
         body.rod_notes = rod;
       }

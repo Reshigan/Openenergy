@@ -17,6 +17,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { prompt } from '../PromptDialog';
 
 type ChainStatus =
   | 'indexation_due' | 'index_published' | 'escalation_calculated'
@@ -278,67 +279,67 @@ export function TariffIndexationTab() {
     try {
       let body: Record<string, string | number> = {};
       if (action === 'publish-index') {
-        const ref = window.prompt('Index reference (e.g. STATSSA-CPI-2026-03):');
+        const ref = await prompt('Index reference (e.g. STATSSA-CPI-2026-03):');
         if (!ref) return;
-        const type = window.prompt('Index type (cpi / ppi / cpi_plus_forex):', row.index_type || 'cpi') || 'cpi';
-        const period = window.prompt('Index reference period (e.g. Mar 2026):') || '';
-        const valStr = window.prompt('Published index value (e.g. 6.30 for 6.3% CPI):');
+        const type = await prompt('Index type (cpi / ppi / cpi_plus_forex):', row.index_type || 'cpi') || 'cpi';
+        const period = await prompt('Index reference period (e.g. Mar 2026):') || '';
+        const valStr = await prompt('Published index value (e.g. 6.30 for 6.3% CPI):');
         if (!valStr) return;
         body = { index_ref: ref, index_type: type, index_reference_period: period, index_value: Number(valStr) };
       } else if (action === 'calculate-escalation') {
-        const factor = window.prompt('Escalation factor (e.g. 1.063 for +6.3%):');
+        const factor = await prompt('Escalation factor (e.g. 1.063 for +6.3%):');
         if (!factor) return;
-        const proposed = window.prompt(`Proposed new tariff R/MWh (base was ${fmtTariff(row.base_tariff_zar_mwh)}):`);
+        const proposed = await prompt(`Proposed new tariff R/MWh (base was ${fmtTariff(row.base_tariff_zar_mwh)}):`);
         if (!proposed) return;
-        const basis = window.prompt('Calculation basis (clause + formula):') || '';
+        const basis = await prompt('Calculation basis (clause + formula):') || '';
         body = { escalation_factor: Number(factor), proposed_tariff_zar_mwh: Number(proposed), calculation_basis: basis };
       } else if (action === 'issue-notice') {
-        const ref = window.prompt('Indexation notice reference (e.g. IDX-NOTICE-2026-014):');
+        const ref = await prompt('Indexation notice reference (e.g. IDX-NOTICE-2026-014):');
         if (!ref) return;
-        const acv = window.prompt('Annual contract value at the proposed tariff (ZAR):');
-        const basis = window.prompt('Notice basis / cover note:') || '';
+        const acv = await prompt('Annual contract value at the proposed tariff (ZAR):');
+        const basis = await prompt('Notice basis / cover note:') || '';
         body = { notice_ref: ref, notice_basis: basis };
         if (acv) body.annual_contract_value_zar = Number(acv);
       } else if (action === 'reissue-notice') {
-        const ref = window.prompt('Re-issued notice reference (post-recalculation):', row.notice_ref || '');
+        const ref = await prompt('Re-issued notice reference (post-recalculation):', row.notice_ref || '');
         if (!ref) return;
-        const basis = window.prompt('Re-issue basis (what changed):') || '';
+        const basis = await prompt('Re-issue basis (what changed):') || '';
         body = { notice_ref: ref, notice_basis: basis };
       } else if (action === 'begin-review') {
-        const basis = window.prompt('Review basis — what the offtaker is verifying:') || '';
+        const basis = await prompt('Review basis — what the offtaker is verifying:') || '';
         body = { review_basis: basis };
       } else if (action === 'agree-tariff') {
-        const agreed = window.prompt(`Agreed tariff R/MWh (proposed was ${fmtTariff(row.proposed_tariff_zar_mwh)} — blank accepts proposed):`);
-        const reason = window.prompt('Reason code (e.g. accepted_as_proposed / negotiated):') || '';
+        const agreed = await prompt(`Agreed tariff R/MWh (proposed was ${fmtTariff(row.proposed_tariff_zar_mwh)} — blank accepts proposed):`);
+        const reason = await prompt('Reason code (e.g. accepted_as_proposed / negotiated):') || '';
         body = { reason_code: reason };
         if (agreed) body.agreed_tariff_zar_mwh = Number(agreed);
       } else if (action === 'apply-tariff') {
-        const rod = window.prompt('Record-of-decision notes (effective date, invoicing reference):') || '';
+        const rod = await prompt('Record-of-decision notes (effective date, invoicing reference):') || '';
         body = { rod_notes: rod, reason_code: 'applied_to_invoicing' };
       } else if (action === 'raise-dispute') {
-        const ref = window.prompt('Dispute reference (e.g. IDX-DISPUTE-2026-007):');
+        const ref = await prompt('Dispute reference (e.g. IDX-DISPUTE-2026-007):');
         if (!ref) return;
-        const basis = window.prompt('Dispute basis — clause / index source / formula challenged:');
+        const basis = await prompt('Dispute basis — clause / index source / formula challenged:');
         if (!basis) return;
-        const amount = window.prompt('Disputed amount (ZAR), if quantifiable:');
+        const amount = await prompt('Disputed amount (ZAR), if quantifiable:');
         body = { dispute_ref: ref, dispute_basis: basis, reason_code: 'tariff_disputed' };
         if (amount) body.disputed_amount_zar = Number(amount);
       } else if (action === 'recalculate') {
-        const ref = window.prompt('Recalculation reference:');
+        const ref = await prompt('Recalculation reference:');
         if (!ref) return;
-        const factor = window.prompt('Revised escalation factor:', String(row.escalation_factor ?? ''));
-        const proposed = window.prompt('Revised proposed tariff R/MWh:', String(row.proposed_tariff_zar_mwh ?? ''));
-        const basis = window.prompt('Recalculation basis:') || '';
+        const factor = await prompt('Revised escalation factor:', String(row.escalation_factor ?? ''));
+        const proposed = await prompt('Revised proposed tariff R/MWh:', String(row.proposed_tariff_zar_mwh ?? ''));
+        const basis = await prompt('Recalculation basis:') || '';
         body = { recalc_ref: ref, recalc_basis: basis };
         if (factor) body.escalation_factor = Number(factor);
         if (proposed) body.proposed_tariff_zar_mwh = Number(proposed);
       } else if (action === 'refer-arbitration') {
-        const ref = window.prompt('Arbitration reference (e.g. NERSA-TARIFF-ARB-2026-0003):');
+        const ref = await prompt('Arbitration reference (e.g. NERSA-TARIFF-ARB-2026-0003):');
         if (!ref) return;
-        const basis = window.prompt('Arbitration basis / forum:') || '';
+        const basis = await prompt('Arbitration basis / forum:') || '';
         body = { arbitration_ref: ref, arbitration_basis: basis, reason_code: 'referred_to_arbitration' };
       } else if (action === 'withdraw') {
-        const reason = window.prompt('Withdrawal reason (e.g. superseded, contract terminated):');
+        const reason = await prompt('Withdrawal reason (e.g. superseded, contract terminated):');
         if (!reason) return;
         body = { reason_code: 'withdrawn', rod_notes: reason };
       }

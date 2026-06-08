@@ -19,6 +19,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { prompt } from '../PromptDialog';
 
 type ChainStatus =
   | 'alert_raised' | 'triaged' | 'under_investigation' | 'evidence_review'
@@ -334,73 +335,73 @@ export function MarketAbuseChainTab() {
     try {
       const body: Record<string, unknown> = {};
       if (action === 'triage') {
-        const tier = window.prompt('Abuse tier (info_alert / low_risk / medium_risk / high_risk / critical_abuse) — leave blank to keep:', row.abuse_tier);
+        const tier = await prompt('Abuse tier (info_alert / low_risk / medium_risk / high_risk / critical_abuse) — leave blank to keep:', row.abuse_tier);
         if (tier && tier !== row.abuse_tier) body.abuse_tier = tier;
-        const basis = window.prompt('Triage basis (initial assessment of the alert):', row.triage_basis ?? '');
+        const basis = await prompt('Triage basis (initial assessment of the alert):', row.triage_basis ?? '');
         if (basis) body.triage_basis = basis;
-        const ref = window.prompt('Triage reference (optional):', row.triage_ref ?? '');
+        const ref = await prompt('Triage reference (optional):', row.triage_ref ?? '');
         if (ref) body.triage_ref = ref;
       } else if (action === 'open-investigation') {
-        const basis = window.prompt('Investigation basis (why a full investigation is warranted):', row.investigation_basis ?? '');
+        const basis = await prompt('Investigation basis (why a full investigation is warranted):', row.investigation_basis ?? '');
         if (basis) body.investigation_basis = basis;
-        const ref = window.prompt('Investigation reference (optional):', row.investigation_ref ?? '');
+        const ref = await prompt('Investigation reference (optional):', row.investigation_ref ?? '');
         if (ref) body.investigation_ref = ref;
       } else if (action === 'compile-evidence') {
-        const basis = window.prompt('Evidence basis (order/trade records, comms, patterns compiled):', row.evidence_basis ?? '');
+        const basis = await prompt('Evidence basis (order/trade records, comms, patterns compiled):', row.evidence_basis ?? '');
         if (basis) body.evidence_basis = basis;
-        const ref = window.prompt('Evidence reference (optional):', row.evidence_ref ?? '');
+        const ref = await prompt('Evidence reference (optional):', row.evidence_ref ?? '');
         if (ref) body.evidence_ref = ref;
       } else if (action === 'complete-analysis') {
-        const basis = window.prompt('Analysis basis (conclusion of the surveillance analysis):', row.analysis_basis ?? '');
+        const basis = await prompt('Analysis basis (conclusion of the surveillance analysis):', row.analysis_basis ?? '');
         if (basis) body.analysis_basis = basis;
-        const benefit = window.prompt('Estimated benefit to the subject in ZAR (optional):', row.estimated_benefit_zar != null ? String(row.estimated_benefit_zar) : '');
+        const benefit = await prompt('Estimated benefit to the subject in ZAR (optional):', row.estimated_benefit_zar != null ? String(row.estimated_benefit_zar) : '');
         if (benefit && !Number.isNaN(Number(benefit))) body.estimated_benefit_zar = Number(benefit);
-        const ref = window.prompt('Analysis reference (optional):', row.analysis_ref ?? '');
+        const ref = await prompt('Analysis reference (optional):', row.analysis_ref ?? '');
         if (ref) body.analysis_ref = ref;
       } else if (action === 'clear') {
-        const notes = window.prompt('Clearance notes (why no abuse was found — required for audit):', row.resolution_notes ?? '');
+        const notes = await prompt('Clearance notes (why no abuse was found — required for audit):', row.resolution_notes ?? '');
         if (!notes) return;
         body.resolution_notes = notes;
         body.reason_code = 'no_abuse_found';
       } else if (action === 'dismiss') {
-        const notes = window.prompt('Dismissal notes (why the alert is dismissed at triage — false positive / de-minimis):');
+        const notes = await prompt('Dismissal notes (why the alert is dismissed at triage — false positive / de-minimis):');
         if (!notes) return;
         body.resolution_notes = notes;
         body.reason_code = 'false_positive';
       } else if (action === 'file-stor') {
-        const basis = window.prompt('STOR basis — the suspicious transaction/order grounds. A STOR crosses to the FSCA for EVERY tier:', row.stor_basis ?? '');
+        const basis = await prompt('STOR basis — the suspicious transaction/order grounds. A STOR crosses to the FSCA for EVERY tier:', row.stor_basis ?? '');
         if (!basis) return;
         body.stor_basis = basis;
-        const ref = window.prompt('STOR reference (filing ID):', row.stor_ref ?? '');
+        const ref = await prompt('STOR reference (filing ID):', row.stor_ref ?? '');
         if (ref) body.stor_ref = ref;
-        const reg = window.prompt('Regulator reference (optional):', row.regulator_ref ?? '');
+        const reg = await prompt('Regulator reference (optional):', row.regulator_ref ?? '');
         if (reg) body.regulator_ref = reg;
       } else if (action === 'refer-regulator') {
-        const ref = window.prompt('Referral reference (regulator case ID):', row.referral_ref ?? '');
+        const ref = await prompt('Referral reference (regulator case ID):', row.referral_ref ?? '');
         if (ref) body.referral_ref = ref;
-        const reg = window.prompt('Regulator reference (optional):', row.regulator_ref ?? '');
+        const reg = await prompt('Regulator reference (optional):', row.regulator_ref ?? '');
         if (reg) body.regulator_ref = reg;
       } else if (action === 'commence-enforcement') {
-        const ref = window.prompt('Enforcement reference (enforcement action ID):', row.enforcement_ref ?? '');
+        const ref = await prompt('Enforcement reference (enforcement action ID):', row.enforcement_ref ?? '');
         if (ref) body.enforcement_ref = ref;
       } else if (action === 'sanction') {
-        const basis = window.prompt('Sanction basis — the determination grounds:', row.sanction_basis ?? '');
+        const basis = await prompt('Sanction basis — the determination grounds:', row.sanction_basis ?? '');
         if (!basis) return;
         body.sanction_basis = basis;
-        const penalty = window.prompt('Penalty in ZAR (optional):', row.penalty_zar != null ? String(row.penalty_zar) : '');
+        const penalty = await prompt('Penalty in ZAR (optional):', row.penalty_zar != null ? String(row.penalty_zar) : '');
         if (penalty && !Number.isNaN(Number(penalty))) body.penalty_zar = Number(penalty);
-        const ref = window.prompt('Sanction reference (optional):', row.sanction_ref ?? '');
+        const ref = await prompt('Sanction reference (optional):', row.sanction_ref ?? '');
         if (ref) body.sanction_ref = ref;
         body.reason_code = 'sanction_imposed';
       } else if (action === 'raise-dispute') {
-        const basis = window.prompt('Dispute basis — the subject’s grounds for disputing the finding:', row.dispute_basis ?? '');
+        const basis = await prompt('Dispute basis — the subject’s grounds for disputing the finding:', row.dispute_basis ?? '');
         if (!basis) return;
         body.dispute_basis = basis;
-        const ref = window.prompt('Dispute reference (optional):', row.dispute_ref ?? '');
+        const ref = await prompt('Dispute reference (optional):', row.dispute_ref ?? '');
         if (ref) body.dispute_ref = ref;
         body.reason_code = 'subject_dispute';
       } else if (action === 'resolve-dispute') {
-        const notes = window.prompt('Resolution notes (how the dispute was resolved — required for audit):', row.resolution_notes ?? '');
+        const notes = await prompt('Resolution notes (how the dispute was resolved — required for audit):', row.resolution_notes ?? '');
         if (!notes) return;
         body.resolution_notes = notes;
         body.reason_code = 'dispute_resolved';
