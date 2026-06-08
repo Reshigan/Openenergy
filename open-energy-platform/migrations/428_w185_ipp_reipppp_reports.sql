@@ -36,7 +36,7 @@ CREATE INDEX IF NOT EXISTS idx_ipp_rpr_sla ON oe_ipp_reipppp_reports(sla_due_dat
 -- Seed: 12 rows, one per chain state
 -- SA REIPPPP context: bid windows 4-6, wind/solar/hydro projects across EC/NC/NW/WC/MP provinces
 
-INSERT INTO oe_ipp_reipppp_reports
+INSERT OR IGNORE INTO oe_ipp_reipppp_reports
   (id, project_ref, reipppp_bid_ref, report_period, project_mw, project_tier,
    report_type, local_content_pct, ed_spend_zar, jobs_direct,
    chain_status, sla_due_date, sla_breached, is_reportable,

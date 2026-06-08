@@ -47,7 +47,7 @@ CREATE INDEX IF NOT EXISTS idx_ippvo_tier ON oe_ipp_variation_orders(value_tier)
 CREATE INDEX IF NOT EXISTS idx_ippvo_sla ON oe_ipp_variation_orders(sla_due_at) WHERE sla_breached = 0;
 
 -- Seed: 12 variation orders across value tiers for the NXT participant (IPP demo)
-INSERT INTO oe_ipp_variation_orders VALUES
+INSERT OR IGNORE INTO oe_ipp_variation_orders VALUES
   ('ippvo_001','id_7c352b86da89907a85266a250e15db95','proj_nxt_solar_001',
    'Additional earthworks for transformer bay','Soil conditions required 800m³ extra excavation',
    'scope_change','moderate',385000,NULL,'pa_001','EW-VO-001',NULL,

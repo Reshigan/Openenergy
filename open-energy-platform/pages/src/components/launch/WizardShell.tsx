@@ -28,7 +28,16 @@ export default function WizardShell({
   useEffect(() => { if (open) { setI(0); setCanAdvance(true); setBusy(false); setErr(null); } }, [open]);
   useEffect(() => {
     if (!open) return undefined;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key !== 'Tab') return;
+      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>('button, [href], input, select, textarea');
+      if (!focusable || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
     document.addEventListener('keydown', onKey);
     dialogRef.current?.querySelector<HTMLElement>('button, [href], input, select, textarea')?.focus();
     return () => document.removeEventListener('keydown', onKey);

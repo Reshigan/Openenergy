@@ -43,7 +43,7 @@ CREATE INDEX IF NOT EXISTS idx_ippec_status ON oe_ipp_env_closure(chain_status);
 CREATE INDEX IF NOT EXISTS idx_ippec_sla ON oe_ipp_env_closure(sla_due_at) WHERE sla_breached = 0;
 
 -- Seed: 12 env closure records across tiers and stages
-INSERT INTO oe_ipp_env_closure VALUES
+INSERT OR IGNORE INTO oe_ipp_env_closure VALUES
   ('ippec_001','demo_ipp_001','ip_004',
    620,'major','scoping_eir','EA/NW/2023/001','EMP-NW-75MW-2023',
    'ERM Southern Africa (Pty) Ltd','NEMA-CLO-2024-0341',

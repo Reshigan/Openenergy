@@ -50,7 +50,7 @@ CREATE INDEX IF NOT EXISTS idx_licence_obligations_ipp      ON oe_licence_obliga
 -- 12 rows covering all 12 states, all 5 obligation classes,
 -- mix of sla_breached and regulator_notified values
 
-INSERT INTO oe_licence_obligations
+INSERT OR IGNORE INTO oe_licence_obligations
   (id, ipp_id, licence_number, obligation_ref, obligation_class,
    condition_description, compliance_period, project_name,
    chain_status, sla_deadline, sla_breached, regulator_notified,

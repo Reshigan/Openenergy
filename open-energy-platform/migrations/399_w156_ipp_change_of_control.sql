@@ -36,7 +36,7 @@ CREATE INDEX IF NOT EXISTS idx_ippcoc_status      ON oe_ipp_change_of_control(ch
 CREATE INDEX IF NOT EXISTS idx_ippcoc_sla         ON oe_ipp_change_of_control(sla_due_at) WHERE sla_breached = 0;
 
 -- Seed: 12 change-of-control records across ownership tiers, transaction types, and workflow stages
-INSERT INTO oe_ipp_change_of_control VALUES
+INSERT OR IGNORE INTO oe_ipp_change_of_control VALUES
   -- Row 001: control_transferred — 75MW major share_transfer domestic; fully approved and transferred
   -- Cols: id(1) participant_id(2) project_id(3) capacity_mw(4) ownership_tier(5) transaction_type(6)
   --       transferor_name(7) acquirer_name(8) acquirer_ownership_pct(9) foreign_ownership_flag(10)

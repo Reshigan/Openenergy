@@ -40,7 +40,7 @@ CREATE INDEX IF NOT EXISTS idx_ippct_status ON oe_ipp_commissioning_test(chain_s
 CREATE INDEX IF NOT EXISTS idx_ippct_sla ON oe_ipp_commissioning_test(sla_due_at) WHERE sla_breached = 0;
 
 -- Seed: 12 commissioning test records across tiers and PAC/FAC stages
-INSERT INTO oe_ipp_commissioning_test VALUES
+INSERT OR IGNORE INTO oe_ipp_commissioning_test VALUES
   ('ippct_001','demo_ipp_001','ip_004',
    75,'major','full_commissioning','SORO Construction (Pty) Ltd','WSP Advisory SA',
    'PERF-CERT-2024-0341',

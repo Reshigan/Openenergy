@@ -13,7 +13,7 @@ UPDATE solax_stations
  WHERE participant_id = 'id_7c352b86da89907a85266a250e15db95';
 
 -- ─── 2. Insert om_sites for all 10 Goldrush C&I locations ─────────────────────
-INSERT INTO om_sites
+INSERT OR IGNORE INTO om_sites
   (id, name, participant_id, technology, capacity_mw, capacity_kwp,
    province, latitude, longitude, commissioning_date,
    lender_id, status, commissioning_status,
@@ -163,7 +163,7 @@ UPDATE solax_stations SET site_id = 'om_site_gr_wonderpark',   updated_at = date
 
 -- ─── 4. W191 offtaker links for 9 stations missing them ──────────────────────
 -- slink-007 already covers Malvern; these cover the remaining 9.
-INSERT INTO oe_station_participant_links
+INSERT OR IGNORE INTO oe_station_participant_links
   (id, station_id, initiating_participant_id, accepting_participant_id,
    link_type, reference_id, chain_status, sla_deadline, sla_breached, regulator_notified,
    actor_id, reason, created_at, updated_at)

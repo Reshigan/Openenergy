@@ -44,7 +44,7 @@ CREATE INDEX IF NOT EXISTS idx_ippfcc_status ON oe_ipp_final_completion(chain_st
 CREATE INDEX IF NOT EXISTS idx_ippfcc_sla ON oe_ipp_final_completion(sla_due_at) WHERE sla_breached = 0;
 
 -- Seed: 12 FCC applications across tiers and stages
-INSERT INTO oe_ipp_final_completion VALUES
+INSERT OR IGNORE INTO oe_ipp_final_completion VALUES
   -- Completed FCC + retention released: small rooftop, minor tier
   ('ippfcc_001','id_7c352b86da89907a85266a250e15db95','proj_rooftop_001',
    4200000,210000,'minor',

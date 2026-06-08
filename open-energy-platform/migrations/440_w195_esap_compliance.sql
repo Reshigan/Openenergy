@@ -34,7 +34,7 @@ CREATE INDEX IF NOT EXISTS idx_esap_compliance_created    ON oe_esap_compliance(
 -- ─── Seed data ────────────────────────────────────────────────────────────────
 -- 12 rows covering all 12 states, commitment_tier varied
 
-INSERT INTO oe_esap_compliance
+INSERT OR IGNORE INTO oe_esap_compliance
   (id, chain_status, project_id, reporting_period, commitment_tier,
    es_monitor_id, finding_count_minor, finding_count_major,
    remediation_deadline, breach_basis,

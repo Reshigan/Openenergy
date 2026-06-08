@@ -45,7 +45,7 @@ CREATE INDEX IF NOT EXISTS idx_ipppc_status ON oe_ipp_payment_certs(chain_status
 CREATE INDEX IF NOT EXISTS idx_ipppc_sla ON oe_ipp_payment_certs(sla_due_at) WHERE sla_breached = 0;
 
 -- Seed: 12 payment certificates across claim types and tiers
-INSERT INTO oe_ipp_payment_certs VALUES
+INSERT OR IGNORE INTO oe_ipp_payment_certs VALUES
   ('ipppc_001','id_7c352b86da89907a85266a250e15db95','proj_nxt_solar_001',
    'PC-001','progress','minor',380000,375000,
    '2025-11-01','2025-11-30','November 2025 progress claim',

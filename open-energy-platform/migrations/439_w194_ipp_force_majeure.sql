@@ -43,7 +43,7 @@ CREATE INDEX IF NOT EXISTS idx_fmc_created       ON oe_ipp_force_majeure_chain(c
 -- ─── Seed data ────────────────────────────────────────────────────────────────
 -- 12 rows covering all 12 states, fm_category varied, ppa_id='ppa-001'
 
-INSERT INTO oe_ipp_force_majeure_chain
+INSERT OR IGNORE INTO oe_ipp_force_majeure_chain
   (id, ppa_id, fm_category, affected_capacity_mw, notice_date,
    fm_start_date, fm_end_date, relief_amount_zar, quantum_basis,
    chain_status, sla_deadline, sla_breached, regulator_notified,

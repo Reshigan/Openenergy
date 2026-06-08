@@ -32,7 +32,7 @@ CREATE INDEX IF NOT EXISTS idx_station_links_sla        ON oe_station_participan
 -- 3 offtaker links: link_active, commercial_terms_review, link_suspended
 -- 3 grid_operator links: link_active, technical_validation, approved
 
-INSERT INTO oe_station_participant_links
+INSERT OR IGNORE INTO oe_station_participant_links
   (id, station_id, initiating_participant_id, accepting_participant_id, link_type, reference_id,
    chain_status, sla_deadline, sla_breached, regulator_notified, actor_id, reason, created_at, updated_at)
 VALUES

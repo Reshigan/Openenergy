@@ -51,7 +51,7 @@ CREATE INDEX IF NOT EXISTS idx_fam_actor          ON oe_facility_amendments(acto
 -- ─── Seed data ────────────────────────────────────────────────────────────────
 -- 12 rows covering all 12 states, all 5 amendment_classes, facility_id='FAC-2024-001'
 
-INSERT INTO oe_facility_amendments
+INSERT OR IGNORE INTO oe_facility_amendments
   (id, facility_id, amendment_ref, amendment_class, amendment_type,
    majority_threshold_pct, unanimous_required, consent_deadline, effective_date,
    security_variation, pricing_change_bps, description,

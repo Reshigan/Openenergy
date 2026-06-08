@@ -35,7 +35,7 @@ CREATE INDEX IF NOT EXISTS idx_cp_tracker_project   ON oe_cp_tracker(project_ref
 -- ─── Seed data ────────────────────────────────────────────────────────────────
 -- 12 rows covering all 12 states, all 5 tiers, mix of sla_breached and regulator_notified
 
-INSERT INTO oe_cp_tracker
+INSERT OR IGNORE INTO oe_cp_tracker
   (id, cp_title, cp_tier, project_ref, lender_ref, gate_ref, description,
    chain_status, sla_deadline, sla_breached, regulator_notified, actor_id, reason, created_at, updated_at)
 VALUES

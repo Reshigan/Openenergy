@@ -34,7 +34,7 @@ CREATE INDEX IF NOT EXISTS idx_ipptpa_status ON oe_ipp_tpa(chain_status);
 CREATE INDEX IF NOT EXISTS idx_ipptpa_sla ON oe_ipp_tpa(sla_due_at) WHERE sla_breached = 0;
 
 -- Seed: 12 TPA records across tiers, network owners, and stages
-INSERT INTO oe_ipp_tpa VALUES
+INSERT OR IGNORE INTO oe_ipp_tpa VALUES
   ('ipptpa_001','demo_ipp_001','ip_004',
    75,'major','eskom_transmission','Eskom Transmission — NW Region','PPA-OFFTAKE-2024-001',
    'TPA-NW-2024-0341',

@@ -39,7 +39,7 @@ CREATE INDEX IF NOT EXISTS idx_prt_sla             ON oe_protection_relay_tests(
 -- 12 rows covering all 12 states, protection_class varied,
 -- site_id='om_site_gr_malvern' for most rows
 
-INSERT INTO oe_protection_relay_tests
+INSERT OR IGNORE INTO oe_protection_relay_tests
   (id, chain_status, site_id, device_sn, relay_type, test_standard,
    protection_class, test_engineer_id, grid_witness_id,
    pass_criteria_met, certificate_number, next_test_due,

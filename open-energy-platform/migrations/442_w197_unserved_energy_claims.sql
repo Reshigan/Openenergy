@@ -35,7 +35,7 @@ CREATE INDEX IF NOT EXISTS idx_uec_event_date     ON oe_unserved_energy_claims(e
 -- ─── Seed data ─────────────────────────────────────────────────────────────────
 -- 12 rows covering all 12 states and all 5 customer_category values
 
-INSERT INTO oe_unserved_energy_claims
+INSERT OR IGNORE INTO oe_unserved_energy_claims
   (id, offtaker_id, grid_operator_id, event_date, customer_category,
    unserved_mwh, claimed_amount_zar, settlement_amount_zar,
    nrs048_reference, load_shedding_stage,

@@ -37,7 +37,7 @@ CREATE INDEX IF NOT EXISTS idx_ippie_status ON oe_ipp_ie_cert(chain_status);
 CREATE INDEX IF NOT EXISTS idx_ippie_sla ON oe_ipp_ie_cert(sla_due_at) WHERE sla_breached = 0;
 
 -- Seed: 12 IE certification records across milestone types, tiers, and stages
-INSERT INTO oe_ipp_ie_cert VALUES
+INSERT OR IGNORE INTO oe_ipp_ie_cert VALUES
   ('ippie_001','demo_ipp_001','ip_004',
    850000000,'material','financial_close','WSP Advisory SA','LEC-2022-FC-001',
    'IE-CERT-2022-001',

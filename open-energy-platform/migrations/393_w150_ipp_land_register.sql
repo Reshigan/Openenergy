@@ -39,7 +39,7 @@ CREATE INDEX IF NOT EXISTS idx_ipplr_status ON oe_ipp_land_register(chain_status
 CREATE INDEX IF NOT EXISTS idx_ipplr_sla ON oe_ipp_land_register(sla_due_at) WHERE sla_breached = 0;
 
 -- Seed: 12 land register items across tiers and stages
-INSERT INTO oe_ipp_land_register VALUES
+INSERT OR IGNORE INTO oe_ipp_land_register VALUES
   ('ipplr_001','demo_ipp_001','ip_004',
    620,'major',8,14,'GeoSurvey Associates (Pty) Ltd','T12345/2025',
    'De Aar 75MW — 620ha; 8 erven; 14 servitudes (power line + access road + pipeline)',

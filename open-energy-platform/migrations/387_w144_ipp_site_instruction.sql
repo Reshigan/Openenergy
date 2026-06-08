@@ -60,7 +60,7 @@ CREATE INDEX IF NOT EXISTS idx_ipp_si_type       ON oe_ipp_site_instructions(ins
 CREATE INDEX IF NOT EXISTS idx_ipp_si_sla        ON oe_ipp_site_instructions(sla_deadline, is_sla_breached);
 
 -- Seed: 12 instructions across 3 GoldRush-scale projects covering all statuses
-INSERT INTO oe_ipp_site_instructions VALUES
+INSERT OR IGNORE INTO oe_ipp_site_instructions VALUES
   -- proj-kakamas-500mw (4 rows)
   ('si-001','proj-kakamas-500mw','Kakamas 500MW Solar','id_7c352b86da89907a85266a250e15db95',
    'safety_directive','SI-2026-001','issued','2026-05-01',

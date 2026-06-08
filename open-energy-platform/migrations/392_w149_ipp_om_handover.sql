@@ -45,7 +45,7 @@ CREATE INDEX IF NOT EXISTS idx_ippomh_status ON oe_ipp_om_handover(chain_status)
 CREATE INDEX IF NOT EXISTS idx_ippomh_sla ON oe_ipp_om_handover(sla_due_at) WHERE sla_breached = 0;
 
 -- Seed: 12 handover packs across categories and stages
-INSERT INTO oe_ipp_om_handover VALUES
+INSERT OR IGNORE INTO oe_ipp_om_handover VALUES
   -- Full pack accepted: 75MW De Aar
   ('ippomh_001','demo_ipp_001','ip_004',75,'major','full_pack',
    'De Aar 75MW — Full O&M + H&S Handover Pack',247,NULL,NULL,

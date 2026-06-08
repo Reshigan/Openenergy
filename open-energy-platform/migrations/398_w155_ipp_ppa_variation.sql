@@ -34,7 +34,7 @@ CREATE INDEX IF NOT EXISTS idx_ippppavar_status      ON oe_ipp_ppa_variation(cha
 CREATE INDEX IF NOT EXISTS idx_ippppavar_sla         ON oe_ipp_ppa_variation(sla_due_at) WHERE sla_breached = 0;
 
 -- Seed: 12 PPA variation records across tiers, variation types, and workflow stages
-INSERT INTO oe_ipp_ppa_variation VALUES
+INSERT OR IGNORE INTO oe_ipp_ppa_variation VALUES
   -- Row 001: ppa_amended — 75MW major capacity_adjustment; fully executed amendment
   ('ppavar_001','demo_ipp_001','ip_004',
    75,'major','capacity_adjustment',
