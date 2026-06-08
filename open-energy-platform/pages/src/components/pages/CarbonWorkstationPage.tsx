@@ -15,6 +15,7 @@ import { PoaCpaInclusionChainTab } from '../carbon/PoaCpaInclusionChainTab';
 import { CarbonIssuanceChainTab } from '../carbon/CarbonIssuanceChainTab';
 import { CcpAssessmentChainTab } from '../carbon/CcpAssessmentChainTab';
 import { EsgDisclosureChainTab } from '../carbon/EsgDisclosureChainTab';
+import { Scope3DisclosureChainTab } from '../carbon/Scope3DisclosureChainTab';
 import { CreditRatingChainTab } from '../carbon/CreditRatingChainTab';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
@@ -150,6 +151,11 @@ export function CarbonWorkstationPage() {
           key: 'esg_disclosure_chain',
           label: 'ESG disclosure & assurance',
           body: () => <EsgDisclosureChainTab />,
+        },
+        {
+          key: 'scope3_disclosure_chain',
+          label: 'Scope 3 value-chain disclosure',
+          body: () => <Scope3DisclosureChainTab />,
         },
         {
           key: 'carbon_tax_returns',
