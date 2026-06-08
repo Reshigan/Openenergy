@@ -214,6 +214,43 @@ export function IppWorkstationPage() {
         { key: 'cyber_chain', label: 'Cyber incidents', group: 'Safety & grid', chainKey: 'cyber_incident', body: () => <CyberIncidentChainTab /> },
         { key: 'ed_chain', label: 'ED commitments', group: 'Safety & grid', chainKey: 'ed_commitment', body: () => <EdCommitmentChainTab /> },
         { key: 'gca_chain', label: 'Grid connection', group: 'Safety & grid', chainKey: 'gca_connection', body: () => <GcaChainTab /> },
+        {
+          key: 'warranty_claims',
+          label: 'Warranty / RMA (W15)',
+          group: 'Safety & grid',
+          chainKey: 'warranty_claim',
+          body: () => (
+            <ListingTable
+              endpoint="/esums/warranty-claims"
+              rowKey={(r) => r.id}
+              empty={{ title: 'No warranty claims', description: 'OEM warranty and RMA claims for site equipment will appear here.' }}
+              columns={[
+                { key: 'defect_description', label: 'Defect', render: (r) => <span className="truncate block max-w-xs" title={r.defect_description || ''}>{(r.defect_description || '—').slice(0, 60)}</span> },
+                { key: 'manufacturer', label: 'OEM' },
+                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['remediated','closed'].includes(r.chain_status) ? 'good' : ['rejected','dispute'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
+                { key: 'created_at', label: 'Opened', render: (r) => new Date(r.created_at).toLocaleDateString() },
+              ]}
+            />
+          ),
+        },
+        {
+          key: 'connection_energization_ipp',
+          label: 'Energization (W75)',
+          group: 'Safety & grid',
+          chainKey: 'connection_energization',
+          body: () => (
+            <ListingTable
+              endpoint="/connection-energization/chain"
+              rowKey={(r) => r.id}
+              empty={{ title: 'No energization cases', description: 'SA Grid Code/NTCSA connection energization cases for this facility will appear here.' }}
+              columns={[
+                { key: 'connection_type', label: 'Connection type' },
+                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['commercial_operation'].includes(r.chain_status) ? 'good' : ['withdrawn','suspended'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
+                { key: 'created_at', label: 'Initiated', render: (r) => new Date(r.created_at).toLocaleDateString() },
+              ]}
+            />
+          ),
+        },
         { key: 'gtia', label: 'GTIA (W224)', group: 'Safety & grid', body: ({ onRefresh }) => <GtiaTab onRefresh={onRefresh} /> },
         { key: 'community', label: 'Community', group: 'Safety & grid', body: ({ onRefresh }) => <CommunityTab onRefresh={onRefresh} /> },
         { key: 'scada-connectors', label: 'SCADA connectors', group: 'Predictive ML', body: () => <ScadaConnectorTab /> },

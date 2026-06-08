@@ -63,6 +63,82 @@ export function GridOpsWorkstationPage() {
         { key: 'smart-meter-assets', label: 'Smart meter assets (W199)', group: 'Compliance', chainKey: 'smart_meter_asset', body: ({ onRefresh }) => <SmartMeterAssetsTab onRefresh={onRefresh} /> },
         { key: 'substation-assets', label: 'Substation assets (W211)', group: 'Compliance', chainKey: 'substation_asset', body: ({ onRefresh }) => <SubstationAssetsTab onRefresh={onRefresh} /> },
         { key: 'eop_activations', label: 'EOP activations (W215)', group: 'Operations', chainKey: 'eop_activation', body: ({ onRefresh }) => <EopActivationTab onRefresh={onRefresh} /> },
+        {
+          key: 'load_curtailments',
+          label: 'Load curtailment (W34)',
+          group: 'Operations',
+          chainKey: 'load_curtailment',
+          body: () => (
+            <ListingTable
+              endpoint="/load-curtailment/chain"
+              rowKey={(r) => r.id}
+              empty={{ title: 'No load curtailment cases', description: 'NERSA §CSC-1 load curtailment cases will appear here.' }}
+              columns={[
+                { key: 'load_shedding_stage', label: 'Stage' },
+                { key: 'affected_mw', label: 'Affected MW', render: (r) => r.affected_mw != null ? `${r.affected_mw} MW` : '—' },
+                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['restored','completed'].includes(r.chain_status) ? 'good' : ['escalated','disputed'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
+                { key: 'created_at', label: 'Activated', render: (r) => new Date(r.created_at).toLocaleDateString() },
+              ]}
+            />
+          ),
+        },
+        {
+          key: 'grid_capacity_allocations',
+          label: 'Capacity allocation (W58)',
+          group: 'Connections',
+          chainKey: 'grid_capacity_allocation',
+          body: () => (
+            <ListingTable
+              endpoint="/grid-capacity/chain"
+              rowKey={(r) => r.id}
+              empty={{ title: 'No capacity allocations', description: 'NTCSA 2024 grid capacity allocation queue will appear here.' }}
+              columns={[
+                { key: 'requested_capacity_mw', label: 'Requested MW', render: (r) => r.requested_capacity_mw != null ? `${r.requested_capacity_mw} MW` : '—' },
+                { key: 'connection_type', label: 'Connection type' },
+                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['allocated','confirmed'].includes(r.chain_status) ? 'good' : ['rejected_application','withdrawn'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
+                { key: 'created_at', label: 'Applied', render: (r) => new Date(r.created_at).toLocaleDateString() },
+              ]}
+            />
+          ),
+        },
+        {
+          key: 'grid_code_compliance',
+          label: 'Grid code compliance (W67)',
+          group: 'Compliance',
+          chainKey: 'grid_code_compliance',
+          body: () => (
+            <ListingTable
+              endpoint="/grid-code-compliance/chain"
+              rowKey={(r) => r.id}
+              empty={{ title: 'No compliance cases', description: 'NERSA Grid Code/NRS 097 conformance cases will appear here.' }}
+              columns={[
+                { key: 'voltage_level_kv', label: 'Voltage (kV)', render: (r) => r.voltage_level_kv != null ? `${r.voltage_level_kv} kV` : '—' },
+                { key: 'facility_type', label: 'Facility type' },
+                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['compliant','closed_compliant'].includes(r.chain_status) ? 'good' : ['non_compliant','escalated_disconnection'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
+                { key: 'created_at', label: 'Opened', render: (r) => new Date(r.created_at).toLocaleDateString() },
+              ]}
+            />
+          ),
+        },
+        {
+          key: 'connection_energization',
+          label: 'Connection energization (W75)',
+          group: 'Connections',
+          chainKey: 'connection_energization',
+          body: () => (
+            <ListingTable
+              endpoint="/connection-energization/chain"
+              rowKey={(r) => r.id}
+              empty={{ title: 'No energization cases', description: 'SA Grid Code/NTCSA connection energization and commissioning cases will appear here.' }}
+              columns={[
+                { key: 'connection_voltage_kv', label: 'Voltage (kV)', render: (r) => r.connection_voltage_kv != null ? `${r.connection_voltage_kv} kV` : '—' },
+                { key: 'connection_type', label: 'Type' },
+                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['commercial_operation'].includes(r.chain_status) ? 'good' : ['withdrawn','suspended'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
+                { key: 'created_at', label: 'Initiated', render: (r) => new Date(r.created_at).toLocaleDateString() },
+              ]}
+            />
+          ),
+        },
         { key: 'audit', label: 'Audit & compliance', group: 'Compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

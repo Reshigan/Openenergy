@@ -177,6 +177,59 @@ export function CarbonWorkstationPage() {
           body: ({ onRefresh }) => <CarbonTaxReturnsTab onRefresh={onRefresh} />,
         },
         {
+          key: 'carbon_budget',
+          label: 'Carbon budget',
+          chainKey: 'carbon_budget',
+          body: () => (
+            <ListingTable
+              endpoint="/carbon/budget"
+              rowKey={(r) => r.id}
+              empty={{ title: 'No carbon budgets', description: 'Annual carbon budget allocations will appear here.' }}
+              columns={[
+                { key: 'fiscal_year', label: 'Year' },
+                { key: 'budget_tco2e', label: 'Budget (tCO₂e)', render: (r) => r.budget_tco2e != null ? Number(r.budget_tco2e).toLocaleString() : '—' },
+                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['approved'].includes(r.chain_status) ? 'good' : ['exceeded','breached'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
+                { key: 'created_at', label: 'Filed', render: (r) => new Date(r.created_at).toLocaleDateString() },
+              ]}
+            />
+          ),
+        },
+        {
+          key: 'vcm_project_development',
+          label: 'VCM project development',
+          chainKey: 'vcm_project_development',
+          body: () => (
+            <ListingTable
+              endpoint="/carbon/vcm-projects"
+              rowKey={(r) => r.id}
+              empty={{ title: 'No VCM projects', description: 'Voluntary carbon market project development cases will appear here.' }}
+              columns={[
+                { key: 'project_name', label: 'Project' },
+                { key: 'methodology_id', label: 'Methodology' },
+                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['validated','registered'].includes(r.chain_status) ? 'good' : ['rejected','withdrawn'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
+                { key: 'created_at', label: 'Created', render: (r) => new Date(r.created_at).toLocaleDateString() },
+              ]}
+            />
+          ),
+        },
+        {
+          key: 'certificate_bundle',
+          label: 'Certificate bundles',
+          chainKey: 'certificate_bundle',
+          body: () => (
+            <ListingTable
+              endpoint="/certificate-track/bundle"
+              rowKey={(r) => r.id}
+              empty={{ title: 'No certificate bundles', description: 'I-REC/SAREC certificate bundles will appear here.' }}
+              columns={[
+                { key: 'volume_mwh', label: 'Volume (MWh)', render: (r) => r.volume_mwh != null ? `${Number(r.volume_mwh).toLocaleString()} MWh` : '—' },
+                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['issued'].includes(r.chain_status) ? 'good' : ['cancelled'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
+                { key: 'created_at', label: 'Created', render: (r) => new Date(r.created_at).toLocaleDateString() },
+              ]}
+            />
+          ),
+        },
+        {
           key: 'registry_transfers',
           label: 'Registry transfers (W206)',
           chainKey: 'carbon_registry_transfer',

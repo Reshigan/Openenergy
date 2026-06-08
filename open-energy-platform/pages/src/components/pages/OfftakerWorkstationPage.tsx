@@ -57,6 +57,25 @@ export function OfftakerWorkstationPage() {
         { key: 'budgets', label: 'Budget vs actual', group: 'Operations', body: ({ onRefresh }) => <BudgetsTab onRefresh={onRefresh} /> },
         { key: 'bills', label: 'Bill upload & AI', group: 'Operations', body: ({ onRefresh }) => <BillUploadTab onRefresh={onRefresh} /> },
         { key: 'curtailment_claim', label: 'Curtailment claims', group: 'Operations', chainKey: 'curtailment_claim', body: () => <CurtailmentClaimTab /> },
+        {
+          key: 'take_or_pay',
+          label: 'Take-or-pay obligations (W32)',
+          group: 'Operations',
+          chainKey: 'take_or_pay',
+          body: () => (
+            <ListingTable
+              endpoint="/take-or-pay/chain"
+              rowKey={(r) => r.id}
+              empty={{ title: 'No take-or-pay obligations', description: 'IFRS 16 / NERSA s34 take-or-pay cases will appear here.' }}
+              columns={[
+                { key: 'ppa_ref', label: 'PPA ref' },
+                { key: 'quantum_zar', label: 'Quantum (ZAR)', render: (r) => r.quantum_zar != null ? `R ${Number(r.quantum_zar).toLocaleString()}` : '—' },
+                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['settled','waived'].includes(r.chain_status) ? 'good' : ['defaulted','escalated'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
+                { key: 'created_at', label: 'Raised', render: (r) => new Date(r.created_at).toLocaleDateString() },
+              ]}
+            />
+          ),
+        },
         { key: 'unserved_energy_claims', label: 'USE Claims', group: 'Operations', chainKey: 'unserved_energy_claim', body: () => <OfftakerUseClaimTab /> },
         { key: 'payment_security', label: 'Payment security', group: 'Security', chainKey: 'ppa_payment_security', body: () => <PaymentSecurityChainTab /> },
         { key: 'obligations', label: 'Obligations register', group: 'Security', body: () => <ObligationsTab /> },
