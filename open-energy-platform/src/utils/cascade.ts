@@ -2084,7 +2084,20 @@ export type EventType =
   | 'isda_evt_amendment_approved'
   | 'isda_evt_terminated'
   | 'isda_evt_suspended'
-  | 'isda_evt_sla_breach';
+  | 'isda_evt_sla_breach'
+  | 'dsr_evt_received'
+  | 'dsr_evt_acknowledged'
+  | 'dsr_evt_identity_verified'
+  | 'dsr_evt_data_mapped'
+  | 'dsr_evt_legal_assessment'
+  | 'dsr_evt_response_drafted'
+  | 'dsr_evt_fulfilled'
+  | 'dsr_evt_partial_disclosure'
+  | 'dsr_evt_refused'
+  | 'dsr_evt_erasure_completed'
+  | 'dsr_evt_objection_upheld'
+  | 'dsr_evt_withdrawn'
+  | 'dsr_evt_sla_breach';
 
 export interface CascadeContext extends PlatformEventFields {
   event: EventType;
