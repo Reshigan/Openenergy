@@ -2097,7 +2097,20 @@ export type EventType =
   | 'dsr_evt_erasure_completed'
   | 'dsr_evt_objection_upheld'
   | 'dsr_evt_withdrawn'
-  | 'dsr_evt_sla_breach';
+  | 'dsr_evt_sla_breach'
+  | 'ics_evt_created'
+  | 'ics_evt_submitted'
+  | 'ics_evt_sapp_review'
+  | 'ics_evt_counter_received'
+  | 'ics_evt_negotiation'
+  | 'ics_evt_agreed'
+  | 'ics_evt_operating'
+  | 'ics_evt_deviated'
+  | 'ics_evt_deviation_resolved'
+  | 'ics_evt_completed'
+  | 'ics_evt_dispute'
+  | 'ics_evt_cancelled'
+  | 'ics_evt_sla_breach';
 
 export interface CascadeContext extends PlatformEventFields {
   event: EventType;

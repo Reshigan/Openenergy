@@ -347,6 +347,7 @@ import cbtSedChainRoutes from './cbt-sed-chain';
 import constructionCostReportChainRoutes from './construction-cost-report-chain';
 import isdaAgreementChainRoutes from './isda-agreement-chain';
 import dataSubjectRequestChainRoutes from './data-subject-request-chain';
+import interconnectorScheduleChainRoutes from './interconnector-schedule-chain';
 import nationalDashboardRoutes from './national-dashboard';
 
 // Hono's authMiddleware is applied per-module inside each route file using
@@ -711,6 +712,7 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   app.route('/api/lender/construction-cost-report', constructionCostReportChainRoutes);
   app.route('/api/trader/isda-agreement', isdaAgreementChainRoutes);
   app.route('/api/admin/dsr', dataSubjectRequestChainRoutes);
+  app.route('/api/grid/interconnector-schedule', interconnectorScheduleChainRoutes);
   // W7 National Dashboard — operator-only platform-wide aggregate view.
   app.route('/api/national-dashboard', nationalDashboardRoutes);
   // platformFeaturesRoutes is the catch-all for /api — it must remain LAST.

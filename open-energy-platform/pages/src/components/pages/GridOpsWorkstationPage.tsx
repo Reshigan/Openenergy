@@ -54,6 +54,7 @@ export function GridOpsWorkstationPage() {
         { key: 'ancillary', label: 'Ancillary services', group: 'Operations', chainKey: 'reserve_activation', body: ({ onRefresh }) => <AncillaryTab onRefresh={onRefresh} /> },
         { key: 'imbalance-settlement', label: 'Imbalance settlement', group: 'Operations', chainKey: 'imbalance_settlement', body: () => <ImbalanceSettlementChainTab /> },
         { key: 'wheeling_charges', label: 'Wheeling charges', group: 'Operations', body: () => <WheelingChargesTab /> },
+        { key: 'interconnector_schedules', label: 'SAPP interconnector schedules (W234)', group: 'Operations', chainKey: 'interconnector_schedule', body: ({ onRefresh }) => <InterconnectorScheduleTab onRefresh={onRefresh} /> },
         { key: 'rez_capacity', label: 'REZ capacity allocation', group: 'Connections', chainKey: 'rez_capacity', body: () => <RezCapacityChainTab /> },
         { key: 'transmission-outage', label: 'Transmission outage coordination', group: 'Connections', chainKey: 'transmission_outage', body: () => <TransmissionOutageChainTab /> },
         { key: 'outage', label: 'Outage responses', group: 'Connections', body: ({ onRefresh }) => <OutageTab onRefresh={onRefresh} /> },
@@ -810,6 +811,217 @@ function EopActivationTab({ onRefresh }: { onRefresh: () => void }) {
             { key: 'escalation_reason', label: 'Escalation reason', type: 'textarea', required: false },
             { key: 'reason', label: 'Notes', type: 'textarea', required: false },
           ]}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── W234: SAPP Interconnector Schedule Tab ───────────────────────────────────
+
+type IcsRow = {
+  id: string;
+  interconnector_name: string;
+  neighbour_utility: string;
+  neighbour_country: string;
+  direction: string;
+  capacity_tier: string;
+  scheduled_mw: number;
+  delivery_start: string;
+  delivery_end: string;
+  product_type: string;
+  chain_status: string;
+  sla_deadline: string | null;
+  nersa_notified: number;
+};
+
+type IcsStats = {
+  total: number;
+  active: number;
+  completed: number;
+  in_dispute: number;
+  overdue: number;
+};
+
+const ICS_TRANSITIONS: Record<string, string[]> = {
+  schedule_draft: ['submit_to_sapp', 'cancel'],
+  submitted_to_sapp: ['sapp_acknowledge', 'cancel'],
+  sapp_review: ['receive_counter_schedule', 'agree_schedule', 'cancel'],
+  counter_schedule_received: ['open_negotiation', 'cancel'],
+  negotiation: ['agree_schedule', 'cancel'],
+  agreed: ['commence_delivery', 'cancel'],
+  operating: ['flag_deviation', 'complete_delivery'],
+  deviated: ['resolve_deviation', 'raise_dispute'],
+  deviation_resolved: ['complete_delivery', 'flag_deviation'],
+  completed: [],
+  dispute: ['complete_delivery', 'cancel'],
+  cancelled: [],
+};
+
+const ICS_ACTION_LABELS: Record<string, string> = {
+  submit_to_sapp: 'Submit to SAPP',
+  sapp_acknowledge: 'SAPP acknowledged',
+  receive_counter_schedule: 'Receive counter schedule',
+  open_negotiation: 'Open negotiation',
+  agree_schedule: 'Agree schedule',
+  commence_delivery: 'Commence delivery',
+  flag_deviation: 'Flag deviation',
+  resolve_deviation: 'Resolve deviation',
+  complete_delivery: 'Complete delivery',
+  raise_dispute: 'Raise dispute',
+  cancel: 'Cancel',
+};
+
+const ICS_DESTRUCTIVE = new Set(['cancel', 'raise_dispute']);
+
+function icsStatusTone(s: string): 'good' | 'bad' | 'warn' | 'info' | 'neutral' {
+  if (s === 'completed' || s === 'agreed') return 'good';
+  if (s === 'cancelled' || s === 'dispute') return 'bad';
+  if (s === 'deviated') return 'warn';
+  if (s === 'operating') return 'info';
+  return 'neutral';
+}
+
+function InterconnectorScheduleTab({ onRefresh }: { onRefresh?: () => void }) {
+  const [data, setData] = React.useState<{ schedules: IcsRow[]; stats: IcsStats } | null>(null);
+  const [refreshKey, setRefreshKey] = React.useState(0);
+  const [creating, setCreating] = React.useState(false);
+  const [actionTarget, setActionTarget] = React.useState<IcsRow | null>(null);
+
+  const bump = () => { setRefreshKey(k => k + 1); onRefresh?.(); };
+
+  React.useEffect(() => {
+    fetch('/api/grid/interconnector-schedule', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    })
+      .then(r => r.json())
+      .then((j: { data: { schedules: IcsRow[]; stats: IcsStats } }) => setData(j.data))
+      .catch(() => null);
+  }, [refreshKey]);
+
+  if (!data) return <div className="p-6 text-[13px] text-[var(--oe-outline)]">Loading…</div>;
+
+  const { schedules, stats } = data;
+
+  const statCards = [
+    { label: 'Total', value: stats.total },
+    { label: 'Active', value: stats.active },
+    { label: 'Completed', value: stats.completed },
+    { label: 'In dispute', value: stats.in_dispute },
+    { label: 'Overdue', value: stats.overdue },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-3 flex-wrap">
+        {statCards.map(s => (
+          <div key={s.label} className="flex-1 min-w-[100px] rounded-xl border border-[var(--oe-surface-container)] bg-[var(--oe-surface-container-lowest)] px-4 py-3">
+            <div className="text-[11px] text-[var(--oe-outline)] uppercase tracking-wide">{s.label}</div>
+            <div className={`text-[22px] font-semibold ${(s.label === 'In dispute' || s.label === 'Overdue') && s.value > 0 ? 'text-red-600' : 'text-[var(--oe-on-surface)]'}`}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          onClick={() => setCreating(true)}
+          className="px-3 py-1.5 rounded-lg bg-[var(--oe-primary)] text-white text-[12px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)]"
+        >
+          + New schedule
+        </button>
+      </div>
+
+      <table className="w-full text-[12px]">
+        <thead>
+          <tr className="border-b border-[var(--oe-surface-container)]">
+            {['Interconnector', 'Utility', 'Dir', 'MW', 'Product', 'Delivery start', 'Status', 'NERSA', ''].map(h => (
+              <th key={h} className="text-left py-2 px-2 text-[var(--oe-outline)] font-medium">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {schedules.map(row => (
+            <tr key={row.id} className="border-b border-[var(--oe-surface-container-low)] hover:bg-[var(--oe-surface-container-lowest)]">
+              <td className="py-2 px-2 font-medium text-[var(--oe-on-surface)]">{row.interconnector_name}</td>
+              <td className="py-2 px-2 text-[var(--oe-on-surface-variant)]">{row.neighbour_utility} ({row.neighbour_country})</td>
+              <td className="py-2 px-2"><Pill tone={row.direction === 'export' ? 'info' : 'neutral'}>{row.direction}</Pill></td>
+              <td className="py-2 px-2 text-right text-[var(--oe-on-surface)]">{row.scheduled_mw.toFixed(0)} MW</td>
+              <td className="py-2 px-2 text-[var(--oe-on-surface-variant)]">{row.product_type.replace(/_/g, ' ')}</td>
+              <td className="py-2 px-2 text-[var(--oe-on-surface-variant)]">{new Date(row.delivery_start).toLocaleDateString()}</td>
+              <td className="py-2 px-2"><Pill tone={icsStatusTone(row.chain_status)}>{row.chain_status.replace(/_/g, ' ')}</Pill></td>
+              <td className="py-2 px-2">{row.nersa_notified ? <Pill tone="warn">Yes</Pill> : <span className="text-[var(--oe-outline)]">—</span>}</td>
+              <td className="py-2 px-2">
+                {(ICS_TRANSITIONS[row.chain_status] ?? []).length > 0 && (
+                  <button
+                    onClick={() => setActionTarget(row)}
+                    className="text-[var(--oe-primary)] hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--oe-primary)] rounded"
+                  >
+                    Action
+                  </button>
+                )}
+              </td>
+            </tr>
+          ))}
+          {schedules.length === 0 && (
+            <tr><td colSpan={9} className="py-8 text-center text-[var(--oe-outline)]">No interconnector schedules</td></tr>
+          )}
+        </tbody>
+      </table>
+
+      {creating && (
+        <ActionModal
+          title="New SAPP Interconnector Schedule"
+          fields={[
+            { key: 'interconnector_id', label: 'Interconnector ID (e.g. SA-ZIM-275kV)', required: true },
+            { key: 'interconnector_name', label: 'Interconnector name', required: true },
+            { key: 'neighbour_utility', label: 'Neighbour utility', required: true },
+            { key: 'neighbour_country', label: 'Country', type: 'select', required: true,
+              options: ['ZW','MZ','BW','NA','LS','SZ','ZM'].map(v => ({ value: v, label: v })) },
+            { key: 'direction', label: 'Direction', type: 'select', required: true,
+              options: [{ value: 'export', label: 'Export' }, { value: 'import', label: 'Import' }, { value: 'wheeling', label: 'Wheeling' }] },
+            { key: 'scheduled_mw', label: 'Scheduled MW', type: 'number', required: true },
+            { key: 'delivery_start', label: 'Delivery start (ISO)', required: true },
+            { key: 'delivery_end', label: 'Delivery end (ISO)', required: true },
+            { key: 'product_type', label: 'Product type', type: 'select', required: true,
+              options: ['day_ahead','intraday','week_ahead','bilateral'].map(v => ({ value: v, label: v.replace(/_/g, ' ') })) },
+            { key: 'price_per_mwh', label: 'Price (USD/MWh)', type: 'number' },
+            { key: 'counterparty_ref', label: 'Counterparty reference' },
+          ]}
+          submitLabel="Create schedule"
+          onClose={() => setCreating(false)}
+          onSubmit={async (v) => {
+            const res = await fetch('/api/grid/interconnector-schedule', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({ ...v, scheduled_mw: Number(v.scheduled_mw), price_per_mwh: v.price_per_mwh ? Number(v.price_per_mwh) : undefined }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setCreating(false); bump();
+          }}
+        />
+      )}
+
+      {actionTarget && (
+        <ActionModal
+          title={`Action — ${actionTarget.interconnector_name}`}
+          fields={[
+            { key: 'action', label: 'Action', type: 'select', required: true,
+              options: (ICS_TRANSITIONS[actionTarget.chain_status] ?? []).map(a => ({ value: a, label: ICS_ACTION_LABELS[a] ?? a })) },
+            { key: 'reason_code', label: 'Reason code' },
+            { key: 'reason_detail', label: 'Notes', type: 'textarea' },
+          ]}
+          submitLabel="Submit"
+          cta={ICS_DESTRUCTIVE.has(actionTarget.chain_status) ? 'danger' : 'primary'}
+          onClose={() => setActionTarget(null)}
+          onSubmit={async (v) => {
+            const res = await fetch(`/api/grid/interconnector-schedule/${actionTarget.id}/action`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify(v),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setActionTarget(null); bump();
+          }}
         />
       )}
     </div>

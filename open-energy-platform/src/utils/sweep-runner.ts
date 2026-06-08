@@ -236,6 +236,7 @@ import { cbtSedSlaSweep } from '../routes/cbt-sed-chain';
 import { constructionCostReportSlaSweep } from '../routes/construction-cost-report-chain';
 import { isdaAgreementSlaSweep } from '../routes/isda-agreement-chain';
 import { dataSubjectRequestSlaSweep } from '../routes/data-subject-request-chain';
+import { interconnectorScheduleSlaSweep } from '../routes/interconnector-schedule-chain';
 
 type Env = HonoEnv['Bindings'];
 
@@ -473,6 +474,7 @@ const SWEEPS: Array<[string, SweepFn]> = [
   ['construction_cost_report_sla', constructionCostReportSlaSweep as unknown as SweepFn],
   ['isda_agreement_sla', isdaAgreementSlaSweep as unknown as SweepFn],
   ['data_subject_request_sla', dataSubjectRequestSlaSweep as unknown as SweepFn],
+  ['interconnector_schedule_sla', interconnectorScheduleSlaSweep as unknown as SweepFn],
 ];
 
 /**
