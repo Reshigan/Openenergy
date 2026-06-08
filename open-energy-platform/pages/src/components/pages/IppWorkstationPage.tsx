@@ -3,94 +3,97 @@ import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '..
 import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
-import { BondRegistryTab } from '../ipp/BondRegistryTab';
-import { PlannedOutageChainTab } from '../grid/PlannedOutageChainTab';
-import { ProcurementChainTab } from '../ipp/ProcurementChainTab';
-import { CodChainTab } from '../ipp/CodChainTab';
-import { DfrChainTab } from '../ipp/DfrChainTab';
-import { PunchListChainTab } from '../ipp/PunchListChainTab';
-import { ItpChainTab } from '../ipp/ItpChainTab';
-import { HandoverDossierChainTab } from '../ipp/HandoverDossierChainTab';
-import { ProjectRiskChainTab } from '../ipp/ProjectRiskChainTab';
-import { InsuranceClaimChainTab } from '../ipp/InsuranceClaimChainTab';
-import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
-import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
-import { EdCommitmentChainTab } from '../ed/EdCommitmentChainTab';
-import { GcaChainTab } from '../gca/GcaChainTab';
-import { IppScheduleChainTab } from '../ipp/IppScheduleChainTab';
-import { IppEvmChainTab } from '../ipp/IppEvmChainTab';
-import { IppDocumentControlChainTab } from '../ipp/IppDocumentControlChainTab';
-import { IppSubmittalChainTab } from '../ipp/IppSubmittalChainTab';
-import { IppRfiChainTab } from '../ipp/IppRfiChainTab';
-import { IppChangeOrderChainTab } from '../ipp/IppChangeOrderChainTab';
-import { TakeOrPayChainTab } from '../take-or-pay/TakeOrPayChainTab';
-import { ScadaConnectorTab } from '../scadaConnector/ScadaConnectorTab';
-import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
-import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
-import RulPredictionMlTab from '../rulPredictionMl/RulPredictionMlTab';
-import { FaultFingerprintMlTab } from '../faultFingerprintMl/FaultFingerprintMlTab';
-import StageGateTab from '../stageGate/StageGateTab';
-import IppIssuesTab from '../ippIssues/IppIssuesTab';
-import IppRiskTab from '../ippRisk/IppRiskTab';
-import IppStakeholderTab from '../ippStakeholder/IppStakeholderTab';
-import IppLessonsLearnedTab from '../ippLessonsLearned/IppLessonsLearnedTab';
-import IppNcrTab from '../ippNcr/IppNcrTab';
-import IppMethodStatementTab from '../ippMethodStatement/IppMethodStatementTab';
-import IppEnvMonitoringTab from '../ippEnvMonitoring/IppEnvMonitoringTab';
-import IppMirTab from '../ippMir/IppMirTab';
-import IppSubcontractorTab from '../ippSubcontractor/IppSubcontractorTab';
-import IppProgressClaimTab from '../ippProgressClaim/IppProgressClaimTab';
-import IppTqTab from '../ippTq/IppTqTab';
-import { IppDiaryTab } from '../ipp/IppDiaryTab';
-import { IppSiteInstructionTab } from '../ipp/IppSiteInstructionTab';
-import { IppDlpDefectTab } from '../ipp/IppDlpDefectTab';
-import { IppVariationOrderTab } from '../ipp/IppVariationOrderTab';
-import { IppPaymentCertTab } from '../ipp/IppPaymentCertTab';
-import { IppFinalCompletionTab } from '../ipp/IppFinalCompletionTab';
-import { IppOmHandoverTab } from '../ipp/IppOmHandoverTab';
-import { IppLandRegisterTab } from '../ipp/IppLandRegisterTab';
-import { IppEnvClosureTab } from '../ipp/IppEnvClosureTab';
-import { IppCommissioningTestTab } from '../ipp/IppCommissioningTestTab';
-import { IppIeCertTab } from '../ipp/IppIeCertTab';
-import { IppTpaTab } from '../ipp/IppTpaTab';
-import { IppPpaVariationTab } from '../ipp/IppPpaVariationTab';
-import { IppChangeOfControlTab } from '../ipp/IppChangeOfControlTab';
-import { IppRefinancingTab } from '../ipp/IppRefinancingTab';
-import { IppFmTab } from '../ipp/IppFmTab';
-import { IppAnnualReportTab } from '../ipp/IppAnnualReportTab';
-import { IppContractorDefaultTab } from '../ipp/IppContractorDefaultTab';
-import { IppEcoReportTab } from '../ipp/IppEcoReportTab';
-import { IppLtaCertificateTab } from '../ipp/IppLtaCertificateTab';
-import { IppLandAmendmentTab } from '../ipp/IppLandAmendmentTab';
-import { IppCommunityTrustTab } from '../ipp/IppCommunityTrustTab';
-import { IppGridComplianceTab } from '../ipp/IppGridComplianceTab';
-import { IppCccTab } from '../ipp/IppCccTab';
-import { IppOmContractTab } from '../ipp/IppOmContractTab';
-import { IppBfsTab } from '../ipp/IppBfsTab';
-import { IppEaAmendmentTab } from '../ipp/IppEaAmendmentTab';
-import { IppWulTab } from '../ipp/IppWulTab';
-import { IppHraTab } from '../ipp/IppHraTab';
-import { IppAelTab } from '../ipp/IppAelTab';
-import { IppForceMajeureTab } from '../ipp/IppForceMajeureTab';
-import { IppLcReportTab } from '../ipp/IppLcReportTab';
-import { IppMilestoneCertTab } from '../ipp/IppMilestoneCertTab';
-import { IppEsmrTab } from '../ipp/IppEsmrTab';
-import { IppIearTab } from '../ipp/IppIearTab';
-import { IppInsrTab } from '../ipp/IppInsrTab';
-import { IppPerfSecurityTab } from '../ipp/IppPerfSecurityTab';
-import { IppCepComplianceTab } from '../ipp/IppCepComplianceTab';
-import { IppSedComplianceTab } from '../ipp/IppSedComplianceTab';
-import { IppBbbeeVerificationTab } from '../ipp/IppBbbeeVerificationTab';
-import { IppLenderReportingTab } from '../ipp/IppLenderReportingTab';
-import { IppLicenceReturnsTab } from '../ipp/IppLicenceReturnsTab';
-import { IppReippppReportsTab } from '../ipp/IppReippppReportsTab';
-import { IppEquityTransferTab } from '../ipp/IppEquityTransferTab';
-import { IppQuarterlyGenReportTab } from '../ipp/IppQuarterlyGenReportTab';
-import { IppAnnualComplianceAssessmentTab } from '../ipp/IppAnnualComplianceAssessmentTab';
-import { IppAnnualAuditTab } from '../ipp/IppAnnualAuditTab';
-import { IppEmpComplianceReportTab } from '../ipp/IppEmpComplianceReportTab';
-import { IppCpTrackerTab } from '../ipp/IppCpTrackerTab';
-import { IppLicenceObligationTab } from '../ipp/IppLicenceObligationTab';
+
+
+// Lazy-loaded tab modules — each loads only when the tab is first activated.
+const BondRegistryTab = React.lazy(() => import('../ipp/BondRegistryTab').then(m => ({ default: m.BondRegistryTab })));
+const PlannedOutageChainTab = React.lazy(() => import('../grid/PlannedOutageChainTab').then(m => ({ default: m.PlannedOutageChainTab })));
+const ProcurementChainTab = React.lazy(() => import('../ipp/ProcurementChainTab').then(m => ({ default: m.ProcurementChainTab })));
+const CodChainTab = React.lazy(() => import('../ipp/CodChainTab').then(m => ({ default: m.CodChainTab })));
+const DfrChainTab = React.lazy(() => import('../ipp/DfrChainTab').then(m => ({ default: m.DfrChainTab })));
+const PunchListChainTab = React.lazy(() => import('../ipp/PunchListChainTab').then(m => ({ default: m.PunchListChainTab })));
+const ItpChainTab = React.lazy(() => import('../ipp/ItpChainTab').then(m => ({ default: m.ItpChainTab })));
+const HandoverDossierChainTab = React.lazy(() => import('../ipp/HandoverDossierChainTab').then(m => ({ default: m.HandoverDossierChainTab })));
+const ProjectRiskChainTab = React.lazy(() => import('../ipp/ProjectRiskChainTab').then(m => ({ default: m.ProjectRiskChainTab })));
+const InsuranceClaimChainTab = React.lazy(() => import('../ipp/InsuranceClaimChainTab').then(m => ({ default: m.InsuranceClaimChainTab })));
+const HseIncidentChainTab = React.lazy(() => import('../hse/HseIncidentChainTab').then(m => ({ default: m.HseIncidentChainTab })));
+const CyberIncidentChainTab = React.lazy(() => import('../cyber/CyberIncidentChainTab').then(m => ({ default: m.CyberIncidentChainTab })));
+const EdCommitmentChainTab = React.lazy(() => import('../ed/EdCommitmentChainTab').then(m => ({ default: m.EdCommitmentChainTab })));
+const GcaChainTab = React.lazy(() => import('../gca/GcaChainTab').then(m => ({ default: m.GcaChainTab })));
+const IppScheduleChainTab = React.lazy(() => import('../ipp/IppScheduleChainTab').then(m => ({ default: m.IppScheduleChainTab })));
+const IppEvmChainTab = React.lazy(() => import('../ipp/IppEvmChainTab').then(m => ({ default: m.IppEvmChainTab })));
+const IppDocumentControlChainTab = React.lazy(() => import('../ipp/IppDocumentControlChainTab').then(m => ({ default: m.IppDocumentControlChainTab })));
+const IppSubmittalChainTab = React.lazy(() => import('../ipp/IppSubmittalChainTab').then(m => ({ default: m.IppSubmittalChainTab })));
+const IppRfiChainTab = React.lazy(() => import('../ipp/IppRfiChainTab').then(m => ({ default: m.IppRfiChainTab })));
+const IppChangeOrderChainTab = React.lazy(() => import('../ipp/IppChangeOrderChainTab').then(m => ({ default: m.IppChangeOrderChainTab })));
+const TakeOrPayChainTab = React.lazy(() => import('../take-or-pay/TakeOrPayChainTab').then(m => ({ default: m.TakeOrPayChainTab })));
+const ScadaConnectorTab = React.lazy(() => import('../scadaConnector/ScadaConnectorTab').then(m => ({ default: m.ScadaConnectorTab })));
+const MqttOpcuaConnectorTab = React.lazy(() => import('../mqttOpcuaConnector/MqttOpcuaConnectorTab').then(m => ({ default: m.MqttOpcuaConnectorTab })));
+const AnomalyDetectionMlTab = React.lazy(() => import('../anomalyDetectionMl/AnomalyDetectionMlTab').then(m => ({ default: m.AnomalyDetectionMlTab })));
+const RulPredictionMlTab = React.lazy(() => import('../rulPredictionMl/RulPredictionMlTab'));
+const FaultFingerprintMlTab = React.lazy(() => import('../faultFingerprintMl/FaultFingerprintMlTab').then(m => ({ default: m.FaultFingerprintMlTab })));
+const StageGateTab = React.lazy(() => import('../stageGate/StageGateTab'));
+const IppIssuesTab = React.lazy(() => import('../ippIssues/IppIssuesTab'));
+const IppRiskTab = React.lazy(() => import('../ippRisk/IppRiskTab'));
+const IppStakeholderTab = React.lazy(() => import('../ippStakeholder/IppStakeholderTab'));
+const IppLessonsLearnedTab = React.lazy(() => import('../ippLessonsLearned/IppLessonsLearnedTab'));
+const IppNcrTab = React.lazy(() => import('../ippNcr/IppNcrTab'));
+const IppMethodStatementTab = React.lazy(() => import('../ippMethodStatement/IppMethodStatementTab'));
+const IppEnvMonitoringTab = React.lazy(() => import('../ippEnvMonitoring/IppEnvMonitoringTab'));
+const IppMirTab = React.lazy(() => import('../ippMir/IppMirTab'));
+const IppSubcontractorTab = React.lazy(() => import('../ippSubcontractor/IppSubcontractorTab'));
+const IppProgressClaimTab = React.lazy(() => import('../ippProgressClaim/IppProgressClaimTab'));
+const IppTqTab = React.lazy(() => import('../ippTq/IppTqTab'));
+const IppDiaryTab = React.lazy(() => import('../ipp/IppDiaryTab').then(m => ({ default: m.IppDiaryTab })));
+const IppSiteInstructionTab = React.lazy(() => import('../ipp/IppSiteInstructionTab').then(m => ({ default: m.IppSiteInstructionTab })));
+const IppDlpDefectTab = React.lazy(() => import('../ipp/IppDlpDefectTab').then(m => ({ default: m.IppDlpDefectTab })));
+const IppVariationOrderTab = React.lazy(() => import('../ipp/IppVariationOrderTab').then(m => ({ default: m.IppVariationOrderTab })));
+const IppPaymentCertTab = React.lazy(() => import('../ipp/IppPaymentCertTab').then(m => ({ default: m.IppPaymentCertTab })));
+const IppFinalCompletionTab = React.lazy(() => import('../ipp/IppFinalCompletionTab').then(m => ({ default: m.IppFinalCompletionTab })));
+const IppOmHandoverTab = React.lazy(() => import('../ipp/IppOmHandoverTab').then(m => ({ default: m.IppOmHandoverTab })));
+const IppLandRegisterTab = React.lazy(() => import('../ipp/IppLandRegisterTab').then(m => ({ default: m.IppLandRegisterTab })));
+const IppEnvClosureTab = React.lazy(() => import('../ipp/IppEnvClosureTab').then(m => ({ default: m.IppEnvClosureTab })));
+const IppCommissioningTestTab = React.lazy(() => import('../ipp/IppCommissioningTestTab').then(m => ({ default: m.IppCommissioningTestTab })));
+const IppIeCertTab = React.lazy(() => import('../ipp/IppIeCertTab').then(m => ({ default: m.IppIeCertTab })));
+const IppTpaTab = React.lazy(() => import('../ipp/IppTpaTab').then(m => ({ default: m.IppTpaTab })));
+const IppPpaVariationTab = React.lazy(() => import('../ipp/IppPpaVariationTab').then(m => ({ default: m.IppPpaVariationTab })));
+const IppChangeOfControlTab = React.lazy(() => import('../ipp/IppChangeOfControlTab').then(m => ({ default: m.IppChangeOfControlTab })));
+const IppRefinancingTab = React.lazy(() => import('../ipp/IppRefinancingTab').then(m => ({ default: m.IppRefinancingTab })));
+const IppFmTab = React.lazy(() => import('../ipp/IppFmTab').then(m => ({ default: m.IppFmTab })));
+const IppAnnualReportTab = React.lazy(() => import('../ipp/IppAnnualReportTab').then(m => ({ default: m.IppAnnualReportTab })));
+const IppContractorDefaultTab = React.lazy(() => import('../ipp/IppContractorDefaultTab').then(m => ({ default: m.IppContractorDefaultTab })));
+const IppEcoReportTab = React.lazy(() => import('../ipp/IppEcoReportTab').then(m => ({ default: m.IppEcoReportTab })));
+const IppLtaCertificateTab = React.lazy(() => import('../ipp/IppLtaCertificateTab').then(m => ({ default: m.IppLtaCertificateTab })));
+const IppLandAmendmentTab = React.lazy(() => import('../ipp/IppLandAmendmentTab').then(m => ({ default: m.IppLandAmendmentTab })));
+const IppCommunityTrustTab = React.lazy(() => import('../ipp/IppCommunityTrustTab').then(m => ({ default: m.IppCommunityTrustTab })));
+const IppGridComplianceTab = React.lazy(() => import('../ipp/IppGridComplianceTab').then(m => ({ default: m.IppGridComplianceTab })));
+const IppCccTab = React.lazy(() => import('../ipp/IppCccTab').then(m => ({ default: m.IppCccTab })));
+const IppOmContractTab = React.lazy(() => import('../ipp/IppOmContractTab').then(m => ({ default: m.IppOmContractTab })));
+const IppBfsTab = React.lazy(() => import('../ipp/IppBfsTab').then(m => ({ default: m.IppBfsTab })));
+const IppEaAmendmentTab = React.lazy(() => import('../ipp/IppEaAmendmentTab').then(m => ({ default: m.IppEaAmendmentTab })));
+const IppWulTab = React.lazy(() => import('../ipp/IppWulTab').then(m => ({ default: m.IppWulTab })));
+const IppHraTab = React.lazy(() => import('../ipp/IppHraTab').then(m => ({ default: m.IppHraTab })));
+const IppAelTab = React.lazy(() => import('../ipp/IppAelTab').then(m => ({ default: m.IppAelTab })));
+const IppForceMajeureTab = React.lazy(() => import('../ipp/IppForceMajeureTab').then(m => ({ default: m.IppForceMajeureTab })));
+const IppLcReportTab = React.lazy(() => import('../ipp/IppLcReportTab').then(m => ({ default: m.IppLcReportTab })));
+const IppMilestoneCertTab = React.lazy(() => import('../ipp/IppMilestoneCertTab').then(m => ({ default: m.IppMilestoneCertTab })));
+const IppEsmrTab = React.lazy(() => import('../ipp/IppEsmrTab').then(m => ({ default: m.IppEsmrTab })));
+const IppIearTab = React.lazy(() => import('../ipp/IppIearTab').then(m => ({ default: m.IppIearTab })));
+const IppInsrTab = React.lazy(() => import('../ipp/IppInsrTab').then(m => ({ default: m.IppInsrTab })));
+const IppPerfSecurityTab = React.lazy(() => import('../ipp/IppPerfSecurityTab').then(m => ({ default: m.IppPerfSecurityTab })));
+const IppCepComplianceTab = React.lazy(() => import('../ipp/IppCepComplianceTab').then(m => ({ default: m.IppCepComplianceTab })));
+const IppSedComplianceTab = React.lazy(() => import('../ipp/IppSedComplianceTab').then(m => ({ default: m.IppSedComplianceTab })));
+const IppBbbeeVerificationTab = React.lazy(() => import('../ipp/IppBbbeeVerificationTab').then(m => ({ default: m.IppBbbeeVerificationTab })));
+const IppLenderReportingTab = React.lazy(() => import('../ipp/IppLenderReportingTab').then(m => ({ default: m.IppLenderReportingTab })));
+const IppLicenceReturnsTab = React.lazy(() => import('../ipp/IppLicenceReturnsTab').then(m => ({ default: m.IppLicenceReturnsTab })));
+const IppReippppReportsTab = React.lazy(() => import('../ipp/IppReippppReportsTab').then(m => ({ default: m.IppReippppReportsTab })));
+const IppEquityTransferTab = React.lazy(() => import('../ipp/IppEquityTransferTab').then(m => ({ default: m.IppEquityTransferTab })));
+const IppQuarterlyGenReportTab = React.lazy(() => import('../ipp/IppQuarterlyGenReportTab').then(m => ({ default: m.IppQuarterlyGenReportTab })));
+const IppAnnualComplianceAssessmentTab = React.lazy(() => import('../ipp/IppAnnualComplianceAssessmentTab').then(m => ({ default: m.IppAnnualComplianceAssessmentTab })));
+const IppAnnualAuditTab = React.lazy(() => import('../ipp/IppAnnualAuditTab').then(m => ({ default: m.IppAnnualAuditTab })));
+const IppEmpComplianceReportTab = React.lazy(() => import('../ipp/IppEmpComplianceReportTab').then(m => ({ default: m.IppEmpComplianceReportTab })));
+const IppCpTrackerTab = React.lazy(() => import('../ipp/IppCpTrackerTab').then(m => ({ default: m.IppCpTrackerTab })));
+const IppLicenceObligationTab = React.lazy(() => import('../ipp/IppLicenceObligationTab').then(m => ({ default: m.IppLicenceObligationTab })));
 
 export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
@@ -115,70 +118,70 @@ export function IppWorkstationPage() {
         { key: 'projects', label: 'My projects', group: 'Project controls', body: () => <ProjectsTab /> },
         { key: 'milestones', label: 'Milestones', group: 'Project controls', body: ({ onRefresh }) => <MilestonesTab onRefresh={onRefresh} /> },
         { key: 'schedule', label: 'Schedule pulse', group: 'Project controls', body: () => <SchedulePulseTab /> },
-        { key: 'wbs_schedule', label: 'WBS & Gantt', group: 'Project controls', chainKey: 'ipp_schedule', body: () => <IppScheduleChainTab /> },
-        { key: 'cost-evm', label: 'Cost & EVM', group: 'Project controls', chainKey: 'ipp_evm', body: () => <IppEvmChainTab /> },
-        { key: 'document-control', label: 'Document control', group: 'Documents', chainKey: 'ipp_doc_control', body: () => <IppDocumentControlChainTab /> },
-        { key: 'submittals', label: 'Submittals', group: 'Documents', chainKey: 'ipp_submittal', body: () => <IppSubmittalChainTab /> },
-        { key: 'rfis', label: 'RFIs', group: 'Documents', chainKey: 'ipp_rfi', body: () => <IppRfiChainTab /> },
-        { key: 'change-orders', label: 'Change orders', group: 'Documents', chainKey: 'project_change_order', body: () => <IppChangeOrderChainTab /> },
-        { key: 'technical-queries', label: 'Technical queries', group: 'Documents', chainKey: 'ipp_tq', body: () => <IppTqTab /> },
-        { key: 'site-instructions', label: 'Site instructions (W144)', group: 'Documents', chainKey: 'site_instruction', body: () => <IppSiteInstructionTab /> },
-        { key: 'dlp-defects', label: 'DLP defects (W145)', group: 'Documents', chainKey: 'dlp_defect', body: () => <IppDlpDefectTab /> },
-        { key: 'variation-orders', label: 'Variation orders (W146)', group: 'Documents', chainKey: 'variation_order', body: () => <IppVariationOrderTab /> },
-        { key: 'payment-certs', label: 'Payment certs (W147)', group: 'Documents', chainKey: 'ipp_payment_cert', body: () => <IppPaymentCertTab /> },
-        { key: 'final-completion', label: 'Final completion (W148)', group: 'Documents', chainKey: 'ipp_final_completion', body: () => <IppFinalCompletionTab /> },
-        { key: 'om-handover', label: 'O&M handover (W149)', group: 'Documents', chainKey: 'ipp_om_handover', body: () => <IppOmHandoverTab /> },
-        { key: 'land-register', label: 'Land register (W150)', group: 'Documents', chainKey: 'ipp_land_register', body: () => <IppLandRegisterTab /> },
-        { key: 'env-closure', label: 'Env closure (W151)', group: 'Documents', chainKey: 'ipp_env_closure', body: () => <IppEnvClosureTab /> },
-        { key: 'commissioning-test', label: 'Commissioning test (W152)', group: 'Documents', chainKey: 'ipp_mc', body: () => <IppCommissioningTestTab /> },
-        { key: 'ie-cert', label: 'IE certifications (W153)', group: 'Documents', chainKey: 'ipp_ie_cert', body: () => <IppIeCertTab /> },
-        { key: 'tpa-wheeling', label: 'TPA wheeling (W154)', group: 'Documents', chainKey: 'ipp_tpa', body: () => <IppTpaTab /> },
-        { key: 'ppa-variation', label: 'PPA variations (W155)', group: 'Documents', chainKey: 'ipp_ppavar', body: () => <IppPpaVariationTab /> },
-        { key: 'change-of-control', label: 'Change of control (W156)', group: 'Documents', chainKey: 'ipp_coc', body: () => <IppChangeOfControlTab /> },
-        { key: 'refinancing', label: 'Refinancing (W157)', group: 'Documents', chainKey: 'ipp_refi', body: () => <IppRefinancingTab /> },
-        { key: 'force-majeure', label: 'Force majeure (W158)', group: 'Documents', chainKey: 'ipp_fm', body: () => <IppFmTab /> },
-        { key: 'annual-report', label: 'Annual compliance report (W159)', group: 'Documents', chainKey: 'ipp_acr', body: () => <IppAnnualReportTab /> },
-        { key: 'contractor-default', label: 'Contractor default (W160)', group: 'Documents', chainKey: 'ipp_cd', body: () => <IppContractorDefaultTab /> },
-        { key: 'eco-report', label: 'ECO audit report (W161)', group: 'Documents', chainKey: 'ipp_eco', body: () => <IppEcoReportTab /> },
-        { key: 'lta-certificate', label: 'LTA drawdown cert (W162)', group: 'Documents', chainKey: 'ipp_lta', body: () => <IppLtaCertificateTab /> },
-        { key: 'land-amendment', label: 'Land & servitude amendment (W163)', group: 'Documents', chainKey: 'ipp_lam', body: () => <IppLandAmendmentTab /> },
-        { key: 'community-trust', label: 'Community trust disbursement (W164)', group: 'Documents', chainKey: 'ipp_ctr', body: () => <IppCommunityTrustTab /> },
-        { key: 'grid-compliance', label: 'Grid code compliance (W165)', group: 'Technical', chainKey: 'ipp_gcc', body: () => <IppGridComplianceTab /> },
-        { key: 'ccc', label: 'Connection cost contribution (W166)', group: 'Technical', chainKey: 'ipp_ccc', body: () => <IppCccTab /> },
-        { key: 'om-contract', label: 'O&M contract renewal (W167)', group: 'Technical', chainKey: 'ipp_omc', body: () => <IppOmContractTab /> },
-        { key: 'bfs', label: 'BFS re-certification (W168)', group: 'Technical', chainKey: 'ipp_bfs', body: () => <IppBfsTab /> },
-        { key: 'ea-amendment', label: 'EA amendment & compliance (W169)', group: 'Environmental', chainKey: 'ipp_eam', body: () => <IppEaAmendmentTab /> },
-        { key: 'wul', label: 'Water use licence (W170)', group: 'Environmental', chainKey: 'ipp_wul', body: () => <IppWulTab /> },
-        { key: 'hra', label: 'Heritage resources assessment (W171)', group: 'Environmental', chainKey: 'ipp_hra', body: () => <IppHraTab /> },
-        { key: 'ael', label: 'Atmospheric emission licence (W172)', group: 'Environmental', chainKey: 'ipp_ael', body: () => <IppAelTab /> },
-        { key: 'lc-report', label: 'Local content & SED compliance (W174)', group: 'Risk', chainKey: 'ipp_lcr', body: () => <IppLcReportTab /> },
-        { key: 'milestone-cert', label: 'Milestone certification (W175)', group: 'Risk', chainKey: 'ipp_mc', body: () => <IppMilestoneCertTab /> },
-        { key: 'esmr', label: 'DFI E&S monitoring report (W176)', group: 'Risk', chainKey: 'ipp_esmr', body: () => <IppEsmrTab /> },
-        { key: 'iear', label: 'IE annual performance review (W177)', group: 'Risk', chainKey: 'ipp_iear', body: () => <IppIearTab /> },
-        { key: 'insr', label: 'Insurance renewal (W178)', group: 'Risk', chainKey: 'ipp_insr', body: () => <IppInsrTab /> },
-        { key: 'perf-security', label: 'Performance security (W179)', group: 'Risk', chainKey: 'ipp_psec', body: () => <IppPerfSecurityTab /> },
-        { key: 'cep-compliance', label: 'Community equity participation (W180)', group: 'Risk', chainKey: 'ipp_cep', body: () => <IppCepComplianceTab /> },
-        { key: 'sed-compliance', label: 'SED annual spend compliance (W181)', group: 'Risk', chainKey: 'ipp_sed', body: () => <IppSedComplianceTab /> },
-        { key: 'bbbee-verification', label: 'BBBEE annual verification (W182)', group: 'Risk', chainKey: 'ipp_bbbee', body: () => <IppBbbeeVerificationTab /> },
-        { key: 'lender-reporting', label: 'Lender reporting covenant (W183)', group: 'Risk', chainKey: 'ipp_lrep', body: () => <IppLenderReportingTab /> },
-        { key: 'licence-returns', label: 'Annual NERSA licence return (W184)', group: 'Risk', chainKey: 'ipp_anr', body: () => <IppLicenceReturnsTab /> },
-        { key: 'licence-obligations', label: 'Licence Obligations (W193)', group: 'Regulatory', chainKey: 'licence_obligation', body: () => <IppLicenceObligationTab /> },
-        { key: 'force_majeure', label: 'Force Majeure (W194)', group: 'Operations', chainKey: 'ipp_fm', body: () => <IppForceMajeureTab /> },
+        { key: 'wbs_schedule', label: 'WBS & Gantt', group: 'Project controls', chainKey: 'ipp_schedule', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppScheduleChainTab /></React.Suspense> },
+        { key: 'cost-evm', label: 'Cost & EVM', group: 'Project controls', chainKey: 'ipp_evm', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEvmChainTab /></React.Suspense> },
+        { key: 'document-control', label: 'Document control', group: 'Documents', chainKey: 'ipp_doc_control', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppDocumentControlChainTab /></React.Suspense> },
+        { key: 'submittals', label: 'Submittals', group: 'Documents', chainKey: 'ipp_submittal', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppSubmittalChainTab /></React.Suspense> },
+        { key: 'rfis', label: 'RFIs', group: 'Documents', chainKey: 'ipp_rfi', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppRfiChainTab /></React.Suspense> },
+        { key: 'change-orders', label: 'Change orders', group: 'Documents', chainKey: 'project_change_order', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppChangeOrderChainTab /></React.Suspense> },
+        { key: 'technical-queries', label: 'Technical queries', group: 'Documents', chainKey: 'ipp_tq', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppTqTab /></React.Suspense> },
+        { key: 'site-instructions', label: 'Site instructions (W144)', group: 'Documents', chainKey: 'site_instruction', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppSiteInstructionTab /></React.Suspense> },
+        { key: 'dlp-defects', label: 'DLP defects (W145)', group: 'Documents', chainKey: 'dlp_defect', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppDlpDefectTab /></React.Suspense> },
+        { key: 'variation-orders', label: 'Variation orders (W146)', group: 'Documents', chainKey: 'variation_order', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppVariationOrderTab /></React.Suspense> },
+        { key: 'payment-certs', label: 'Payment certs (W147)', group: 'Documents', chainKey: 'ipp_payment_cert', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppPaymentCertTab /></React.Suspense> },
+        { key: 'final-completion', label: 'Final completion (W148)', group: 'Documents', chainKey: 'ipp_final_completion', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppFinalCompletionTab /></React.Suspense> },
+        { key: 'om-handover', label: 'O&M handover (W149)', group: 'Documents', chainKey: 'ipp_om_handover', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppOmHandoverTab /></React.Suspense> },
+        { key: 'land-register', label: 'Land register (W150)', group: 'Documents', chainKey: 'ipp_land_register', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLandRegisterTab /></React.Suspense> },
+        { key: 'env-closure', label: 'Env closure (W151)', group: 'Documents', chainKey: 'ipp_env_closure', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEnvClosureTab /></React.Suspense> },
+        { key: 'commissioning-test', label: 'Commissioning test (W152)', group: 'Documents', chainKey: 'ipp_mc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppCommissioningTestTab /></React.Suspense> },
+        { key: 'ie-cert', label: 'IE certifications (W153)', group: 'Documents', chainKey: 'ipp_ie_cert', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppIeCertTab /></React.Suspense> },
+        { key: 'tpa-wheeling', label: 'TPA wheeling (W154)', group: 'Documents', chainKey: 'ipp_tpa', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppTpaTab /></React.Suspense> },
+        { key: 'ppa-variation', label: 'PPA variations (W155)', group: 'Documents', chainKey: 'ipp_ppavar', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppPpaVariationTab /></React.Suspense> },
+        { key: 'change-of-control', label: 'Change of control (W156)', group: 'Documents', chainKey: 'ipp_coc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppChangeOfControlTab /></React.Suspense> },
+        { key: 'refinancing', label: 'Refinancing (W157)', group: 'Documents', chainKey: 'ipp_refi', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppRefinancingTab /></React.Suspense> },
+        { key: 'force-majeure', label: 'Force majeure (W158)', group: 'Documents', chainKey: 'ipp_fm', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppFmTab /></React.Suspense> },
+        { key: 'annual-report', label: 'Annual compliance report (W159)', group: 'Documents', chainKey: 'ipp_acr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppAnnualReportTab /></React.Suspense> },
+        { key: 'contractor-default', label: 'Contractor default (W160)', group: 'Documents', chainKey: 'ipp_cd', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppContractorDefaultTab /></React.Suspense> },
+        { key: 'eco-report', label: 'ECO audit report (W161)', group: 'Documents', chainKey: 'ipp_eco', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEcoReportTab /></React.Suspense> },
+        { key: 'lta-certificate', label: 'LTA drawdown cert (W162)', group: 'Documents', chainKey: 'ipp_lta', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLtaCertificateTab /></React.Suspense> },
+        { key: 'land-amendment', label: 'Land & servitude amendment (W163)', group: 'Documents', chainKey: 'ipp_lam', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLandAmendmentTab /></React.Suspense> },
+        { key: 'community-trust', label: 'Community trust disbursement (W164)', group: 'Documents', chainKey: 'ipp_ctr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppCommunityTrustTab /></React.Suspense> },
+        { key: 'grid-compliance', label: 'Grid code compliance (W165)', group: 'Technical', chainKey: 'ipp_gcc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppGridComplianceTab /></React.Suspense> },
+        { key: 'ccc', label: 'Connection cost contribution (W166)', group: 'Technical', chainKey: 'ipp_ccc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppCccTab /></React.Suspense> },
+        { key: 'om-contract', label: 'O&M contract renewal (W167)', group: 'Technical', chainKey: 'ipp_omc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppOmContractTab /></React.Suspense> },
+        { key: 'bfs', label: 'BFS re-certification (W168)', group: 'Technical', chainKey: 'ipp_bfs', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppBfsTab /></React.Suspense> },
+        { key: 'ea-amendment', label: 'EA amendment & compliance (W169)', group: 'Environmental', chainKey: 'ipp_eam', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEaAmendmentTab /></React.Suspense> },
+        { key: 'wul', label: 'Water use licence (W170)', group: 'Environmental', chainKey: 'ipp_wul', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppWulTab /></React.Suspense> },
+        { key: 'hra', label: 'Heritage resources assessment (W171)', group: 'Environmental', chainKey: 'ipp_hra', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppHraTab /></React.Suspense> },
+        { key: 'ael', label: 'Atmospheric emission licence (W172)', group: 'Environmental', chainKey: 'ipp_ael', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppAelTab /></React.Suspense> },
+        { key: 'lc-report', label: 'Local content & SED compliance (W174)', group: 'Risk', chainKey: 'ipp_lcr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLcReportTab /></React.Suspense> },
+        { key: 'milestone-cert', label: 'Milestone certification (W175)', group: 'Risk', chainKey: 'ipp_mc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppMilestoneCertTab /></React.Suspense> },
+        { key: 'esmr', label: 'DFI E&S monitoring report (W176)', group: 'Risk', chainKey: 'ipp_esmr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEsmrTab /></React.Suspense> },
+        { key: 'iear', label: 'IE annual performance review (W177)', group: 'Risk', chainKey: 'ipp_iear', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppIearTab /></React.Suspense> },
+        { key: 'insr', label: 'Insurance renewal (W178)', group: 'Risk', chainKey: 'ipp_insr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppInsrTab /></React.Suspense> },
+        { key: 'perf-security', label: 'Performance security (W179)', group: 'Risk', chainKey: 'ipp_psec', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppPerfSecurityTab /></React.Suspense> },
+        { key: 'cep-compliance', label: 'Community equity participation (W180)', group: 'Risk', chainKey: 'ipp_cep', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppCepComplianceTab /></React.Suspense> },
+        { key: 'sed-compliance', label: 'SED annual spend compliance (W181)', group: 'Risk', chainKey: 'ipp_sed', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppSedComplianceTab /></React.Suspense> },
+        { key: 'bbbee-verification', label: 'BBBEE annual verification (W182)', group: 'Risk', chainKey: 'ipp_bbbee', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppBbbeeVerificationTab /></React.Suspense> },
+        { key: 'lender-reporting', label: 'Lender reporting covenant (W183)', group: 'Risk', chainKey: 'ipp_lrep', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLenderReportingTab /></React.Suspense> },
+        { key: 'licence-returns', label: 'Annual NERSA licence return (W184)', group: 'Risk', chainKey: 'ipp_anr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLicenceReturnsTab /></React.Suspense> },
+        { key: 'licence-obligations', label: 'Licence Obligations (W193)', group: 'Regulatory', chainKey: 'licence_obligation', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLicenceObligationTab /></React.Suspense> },
+        { key: 'force_majeure', label: 'Force Majeure (W194)', group: 'Operations', chainKey: 'ipp_fm', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppForceMajeureTab /></React.Suspense> },
         { key: 'export_curtailments', label: 'Grid export curtailments (W221)', group: 'Operations', chainKey: 'export_curtailment', body: ({ onRefresh }) => <ExportCurtailmentTab onRefresh={onRefresh} /> },
-        { key: 'reipppp-reports', label: 'REIPPPP annual progress report (W185)', group: 'Risk', chainKey: 'ipp_rpr', body: () => <IppReippppReportsTab /> },
-        { key: 'equity-transfer', label: 'SPV equity transfer & consent (W186)', group: 'Risk', chainKey: 'ipp_eqt', body: () => <IppEquityTransferTab /> },
-        { key: 'quarterly-gen-report', label: 'DMRE quarterly generation report (W187)', group: 'Risk', chainKey: 'ipp_qgr', body: () => <IppQuarterlyGenReportTab /> },
-        { key: 'annual-compliance-assessment', label: 'Annual grid code compliance self-assessment (W188)', group: 'Risk', chainKey: 'ipp_acs', body: () => <IppAnnualComplianceAssessmentTab /> },
-        { key: 'annual-audit', label: 'Annual financial statements & audit (W189)', group: 'Risk', chainKey: 'ipp_aud', body: () => <IppAnnualAuditTab /> },
-        { key: 'emp-compliance-report', label: 'EMP annual compliance report (W190)', group: 'Risk', chainKey: 'ipp_empr', body: () => <IppEmpComplianceReportTab /> },
-        { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <StageGateTab /> },
-        { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <IppIssuesTab /> },
-        { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <IppRiskTab /> },
-        { key: 'stakeholder-register', label: 'Stakeholder register', group: 'Risk & quality', body: () => <IppStakeholderTab /> },
-        { key: 'lessons-learned', label: 'Lessons learned', group: 'Risk & quality', body: () => <IppLessonsLearnedTab /> },
-        { key: 'ncr', label: 'Non-conformance (NCR)', group: 'Risk & quality', body: () => <IppNcrTab /> },
-        { key: 'itp', label: 'ITP / Quality plan', group: 'Risk & quality', chainKey: 'itp', body: () => <ItpChainTab /> },
-        { key: 'project_risk', label: 'Risk analysis (EMV/SRA)', group: 'Risk & quality', chainKey: 'project_risk', body: () => <ProjectRiskChainTab /> },
+        { key: 'reipppp-reports', label: 'REIPPPP annual progress report (W185)', group: 'Risk', chainKey: 'ipp_rpr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppReippppReportsTab /></React.Suspense> },
+        { key: 'equity-transfer', label: 'SPV equity transfer & consent (W186)', group: 'Risk', chainKey: 'ipp_eqt', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEquityTransferTab /></React.Suspense> },
+        { key: 'quarterly-gen-report', label: 'DMRE quarterly generation report (W187)', group: 'Risk', chainKey: 'ipp_qgr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppQuarterlyGenReportTab /></React.Suspense> },
+        { key: 'annual-compliance-assessment', label: 'Annual grid code compliance self-assessment (W188)', group: 'Risk', chainKey: 'ipp_acs', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppAnnualComplianceAssessmentTab /></React.Suspense> },
+        { key: 'annual-audit', label: 'Annual financial statements & audit (W189)', group: 'Risk', chainKey: 'ipp_aud', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppAnnualAuditTab /></React.Suspense> },
+        { key: 'emp-compliance-report', label: 'EMP annual compliance report (W190)', group: 'Risk', chainKey: 'ipp_empr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEmpComplianceReportTab /></React.Suspense> },
+        { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><StageGateTab /></React.Suspense> },
+        { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppIssuesTab /></React.Suspense> },
+        { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppRiskTab /></React.Suspense> },
+        { key: 'stakeholder-register', label: 'Stakeholder register', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppStakeholderTab /></React.Suspense> },
+        { key: 'lessons-learned', label: 'Lessons learned', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLessonsLearnedTab /></React.Suspense> },
+        { key: 'ncr', label: 'Non-conformance (NCR)', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppNcrTab /></React.Suspense> },
+        { key: 'itp', label: 'ITP / Quality plan', group: 'Risk & quality', chainKey: 'itp', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><ItpChainTab /></React.Suspense> },
+        { key: 'project_risk', label: 'Risk analysis (EMV/SRA)', group: 'Risk & quality', chainKey: 'project_risk', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><ProjectRiskChainTab /></React.Suspense> },
         { key: 'audit', label: 'Audit & compliance', group: 'Risk & quality',
           body: ({ onRefresh }) => (
             <AuditPanel
@@ -190,30 +193,30 @@ export function IppWorkstationPage() {
           ),
         },
         { key: 'insurance', label: 'Insurance', group: 'Finance', body: ({ onRefresh }) => <InsuranceTab onRefresh={onRefresh} /> },
-        { key: 'insurance_claims', label: 'Insurance claims', group: 'Finance', chainKey: 'insurance_claim', body: () => <InsuranceClaimChainTab /> },
-        { key: 'bonds', label: 'Bonds', group: 'Finance', chainKey: 'ipp_performance_bonds', body: () => <BondRegistryTab /> },
-        { key: 'progress-claims', label: 'Progress claims', group: 'Finance', chainKey: 'ipp_progress_claim', body: () => <IppProgressClaimTab /> },
-        { key: 'cp-tracker', label: 'Conditions Precedent (W192)', group: 'Finance', chainKey: 'cp_tracker', body: () => <IppCpTrackerTab /> },
+        { key: 'insurance_claims', label: 'Insurance claims', group: 'Finance', chainKey: 'insurance_claim', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><InsuranceClaimChainTab /></React.Suspense> },
+        { key: 'bonds', label: 'Bonds', group: 'Finance', chainKey: 'ipp_performance_bonds', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><BondRegistryTab /></React.Suspense> },
+        { key: 'progress-claims', label: 'Progress claims', group: 'Finance', chainKey: 'ipp_progress_claim', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppProgressClaimTab /></React.Suspense> },
+        { key: 'cp-tracker', label: 'Conditions Precedent (W192)', group: 'Finance', chainKey: 'cp_tracker', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppCpTrackerTab /></React.Suspense> },
         { key: 'green-bond-reports', label: 'Green bond reports (W202)', group: 'Finance', chainKey: 'green_bond_report', body: ({ onRefresh }) => <GreenBondReportTab onRefresh={onRefresh} /> },
         { key: 'dscr-reports', label: 'DSCR reports (W212)', group: 'Finance', chainKey: 'dscr_report', body: ({ onRefresh }) => <DscrReportTab onRefresh={onRefresh} /> },
         { key: 'credit_insurance', label: 'Credit insurance (W218)', group: 'Finance', chainKey: 'credit_insurance', body: ({ onRefresh }) => <CreditInsuranceTab onRefresh={onRefresh} /> },
-        { key: 'take-or-pay-claims', label: 'Take-or-pay claims', group: 'Finance', chainKey: 'curtailment_claim', body: () => <TakeOrPayChainTab /> },
+        { key: 'take-or-pay-claims', label: 'Take-or-pay claims', group: 'Finance', chainKey: 'curtailment_claim', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><TakeOrPayChainTab /></React.Suspense> },
         { key: 'milestone-variance', label: 'Milestone variance reports (W207)', group: 'Project controls', chainKey: 'milestone_variance_report', body: ({ onRefresh }) => <MilestoneVarianceTab onRefresh={onRefresh} /> },
-        { key: 'subcontractors', label: 'Subcontractors', group: 'Construction', chainKey: 'ipp_subcontractor', body: () => <IppSubcontractorTab /> },
-        { key: 'procurement', label: 'Procurement / RFPs', group: 'Construction', chainKey: 'procurement_rfp', body: () => <ProcurementChainTab /> },
-        { key: 'cod', label: 'Construction / COD', group: 'Construction', chainKey: 'cod_chain', body: () => <CodChainTab /> },
-        { key: 'dfr', label: 'Daily field report', group: 'Construction', chainKey: 'dfr', body: () => <DfrChainTab /> },
-        { key: 'site_diary', label: 'Site diary (W143)', group: 'Construction', chainKey: 'ipp_construction_diary', body: () => <IppDiaryTab /> },
-        { key: 'punch_list', label: 'Punch list', group: 'Construction', chainKey: 'punch_list', body: () => <PunchListChainTab /> },
-        { key: 'mir', label: 'Material inspections', group: 'Construction', chainKey: 'ipp_mir', body: () => <IppMirTab /> },
-        { key: 'handover_dossier', label: 'Handover dossier', group: 'Construction', chainKey: 'handover_dossier', body: () => <HandoverDossierChainTab /> },
-        { key: 'method-statements', label: 'Method statements', group: 'Safety & grid', chainKey: 'ipp_method_statement', body: () => <IppMethodStatementTab /> },
-        { key: 'env-monitoring', label: 'Environmental monitoring', group: 'Safety & grid', chainKey: 'ipp_env_monitoring', body: () => <IppEnvMonitoringTab /> },
-        { key: 'planned_outages', label: 'Planned outages', group: 'Safety & grid', chainKey: 'planned_outage', body: () => <PlannedOutageChainTab /> },
-        { key: 'hse_chain', label: 'HSE incidents', group: 'Safety & grid', chainKey: 'hse_incident', body: () => <HseIncidentChainTab /> },
-        { key: 'cyber_chain', label: 'Cyber incidents', group: 'Safety & grid', chainKey: 'cyber_incident', body: () => <CyberIncidentChainTab /> },
-        { key: 'ed_chain', label: 'ED commitments', group: 'Safety & grid', chainKey: 'ed_commitment', body: () => <EdCommitmentChainTab /> },
-        { key: 'gca_chain', label: 'Grid connection', group: 'Safety & grid', chainKey: 'gca_connection', body: () => <GcaChainTab /> },
+        { key: 'subcontractors', label: 'Subcontractors', group: 'Construction', chainKey: 'ipp_subcontractor', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppSubcontractorTab /></React.Suspense> },
+        { key: 'procurement', label: 'Procurement / RFPs', group: 'Construction', chainKey: 'procurement_rfp', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><ProcurementChainTab /></React.Suspense> },
+        { key: 'cod', label: 'Construction / COD', group: 'Construction', chainKey: 'cod_chain', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><CodChainTab /></React.Suspense> },
+        { key: 'dfr', label: 'Daily field report', group: 'Construction', chainKey: 'dfr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><DfrChainTab /></React.Suspense> },
+        { key: 'site_diary', label: 'Site diary (W143)', group: 'Construction', chainKey: 'ipp_construction_diary', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppDiaryTab /></React.Suspense> },
+        { key: 'punch_list', label: 'Punch list', group: 'Construction', chainKey: 'punch_list', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><PunchListChainTab /></React.Suspense> },
+        { key: 'mir', label: 'Material inspections', group: 'Construction', chainKey: 'ipp_mir', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppMirTab /></React.Suspense> },
+        { key: 'handover_dossier', label: 'Handover dossier', group: 'Construction', chainKey: 'handover_dossier', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><HandoverDossierChainTab /></React.Suspense> },
+        { key: 'method-statements', label: 'Method statements', group: 'Safety & grid', chainKey: 'ipp_method_statement', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppMethodStatementTab /></React.Suspense> },
+        { key: 'env-monitoring', label: 'Environmental monitoring', group: 'Safety & grid', chainKey: 'ipp_env_monitoring', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEnvMonitoringTab /></React.Suspense> },
+        { key: 'planned_outages', label: 'Planned outages', group: 'Safety & grid', chainKey: 'planned_outage', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><PlannedOutageChainTab /></React.Suspense> },
+        { key: 'hse_chain', label: 'HSE incidents', group: 'Safety & grid', chainKey: 'hse_incident', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><HseIncidentChainTab /></React.Suspense> },
+        { key: 'cyber_chain', label: 'Cyber incidents', group: 'Safety & grid', chainKey: 'cyber_incident', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><CyberIncidentChainTab /></React.Suspense> },
+        { key: 'ed_chain', label: 'ED commitments', group: 'Safety & grid', chainKey: 'ed_commitment', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><EdCommitmentChainTab /></React.Suspense> },
+        { key: 'gca_chain', label: 'Grid connection', group: 'Safety & grid', chainKey: 'gca_connection', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><GcaChainTab /></React.Suspense> },
         {
           key: 'warranty_claims',
           label: 'Warranty / RMA (W15)',
@@ -253,11 +256,11 @@ export function IppWorkstationPage() {
         },
         { key: 'gtia', label: 'GTIA (W224)', group: 'Safety & grid', body: ({ onRefresh }) => <GtiaTab onRefresh={onRefresh} /> },
         { key: 'community', label: 'Community', group: 'Safety & grid', body: ({ onRefresh }) => <CommunityTab onRefresh={onRefresh} /> },
-        { key: 'scada-connectors', label: 'SCADA connectors', group: 'Predictive ML', body: () => <ScadaConnectorTab /> },
-        { key: 'mqtt-opcua-connectors', label: 'MQTT / OPC-UA', group: 'Predictive ML', body: () => <MqttOpcuaConnectorTab /> },
-        { key: 'anomaly-detection-ml', label: 'Anomaly detection', group: 'Predictive ML', body: () => <AnomalyDetectionMlTab /> },
-        { key: 'rul-prediction-ml', label: 'RUL prediction', group: 'Predictive ML', body: () => <RulPredictionMlTab /> },
-        { key: 'fault-fingerprint-ml', label: 'Fault fingerprint', group: 'Predictive ML', body: () => <FaultFingerprintMlTab /> },
+        { key: 'scada-connectors', label: 'SCADA connectors', group: 'Predictive ML', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><ScadaConnectorTab /></React.Suspense> },
+        { key: 'mqtt-opcua-connectors', label: 'MQTT / OPC-UA', group: 'Predictive ML', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><MqttOpcuaConnectorTab /></React.Suspense> },
+        { key: 'anomaly-detection-ml', label: 'Anomaly detection', group: 'Predictive ML', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><AnomalyDetectionMlTab /></React.Suspense> },
+        { key: 'rul-prediction-ml', label: 'RUL prediction', group: 'Predictive ML', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><RulPredictionMlTab /></React.Suspense> },
+        { key: 'fault-fingerprint-ml', label: 'Fault fingerprint', group: 'Predictive ML', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><FaultFingerprintMlTab /></React.Suspense> },
         { key: 'invite-partners', label: 'Invite partners', group: 'Partnerships', body: () => <InvitePartnersTab /> },
       ]}
     />
