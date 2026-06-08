@@ -22,9 +22,10 @@ export default function WizardShell({
   const [i, setI] = useState(0);
   const [canAdvance, setCanAdvance] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { if (open) { setI(0); setCanAdvance(true); setBusy(false); } }, [open]);
+  useEffect(() => { if (open) { setI(0); setCanAdvance(true); setBusy(false); setErr(null); } }, [open]);
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -56,7 +57,11 @@ export default function WizardShell({
 
         <div className="px-5 py-4 text-[13px] text-[#3d4756]">{step.render({ setCanAdvance })}</div>
 
-        <footer className="flex items-center justify-between px-5 py-3 border-t border-[#eef2f7]">
+        <footer className="flex flex-col px-5 py-3 border-t border-[#eef2f7] gap-2">
+          {err && (
+            <p role="alert" className="text-[12px] text-red-700 mt-1">{err}</p>
+          )}
+          <div className="flex items-center justify-between">
           <button type="button" onClick={() => (i === 0 ? onClose() : setI(i - 1))}
             className="text-[12px] text-[#6b7685] hover:text-[#0f1c2e] px-3 py-1.5 rounded-md hover:bg-[#eef2f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c]">
             {i === 0 ? 'Cancel' : 'Back'}
@@ -65,12 +70,21 @@ export default function WizardShell({
             type="button" disabled={!canAdvance || busy}
             onClick={async () => {
               if (!last) { setI(i + 1); return; }
-              setBusy(true); try { await onComplete(); } finally { setBusy(false); }
+              setBusy(true);
+              setErr(null);
+              try {
+                await onComplete();
+              } catch (e) {
+                setErr(e instanceof Error ? e.message : 'Submission failed. Please try again.');
+              } finally {
+                setBusy(false);
+              }
             }}
             className="rounded-md bg-[#1a3a5c] hover:bg-[#16314e] text-white text-[12px] font-semibold px-4 py-1.5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c] focus-visible:ring-offset-1"
           >
             {last ? finalLabel : 'Next'}
           </button>
+          </div>
         </footer>
       </div>
     </div>

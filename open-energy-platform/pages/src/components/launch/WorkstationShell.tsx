@@ -259,7 +259,7 @@ export function WorkstationShell({
     <CrossOptionModal
       action={active}
       onClose={() => setActive(null)}
-      onActioned={() => setActive(null)}
+      onActioned={() => { setActive(null); refresh(); }}
     />
   );
 
@@ -372,7 +372,13 @@ export function WorkstationShell({
                 setActiveGroup={setActiveGroup}
               />
 
-              <div key={`${activeTab}-${bump}`}>{current.body({ onRefresh: refresh })}</div>
+              <div key={`${activeTab}-${bump}`}>
+                {!current ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-[13px] text-[#6b7685]">
+                    <p>Select a tab to get started.</p>
+                  </div>
+                ) : current.body({ onRefresh: refresh })}
+              </div>
             </div>
             <div className="hidden xl:flex xl:flex-col gap-5 shrink-0">
               {incomingRail}
@@ -440,7 +446,13 @@ export function WorkstationShell({
             setActiveGroup={setActiveGroup}
           />
 
-          <div key={`${activeTab}-${bump}`}>{current.body({ onRefresh: refresh })}</div>
+          <div key={`${activeTab}-${bump}`}>
+            {!current ? (
+              <div className="flex flex-col items-center justify-center py-16 text-[13px] text-[#6b7685]">
+                <p>Select a tab to get started.</p>
+              </div>
+            ) : current.body({ onRefresh: refresh })}
+          </div>
         </div>
         <div className="hidden xl:flex xl:flex-col gap-5 shrink-0">
           {incomingRail}
@@ -492,7 +504,7 @@ export function ListingTable({
       if (raw && typeof raw === 'object' && !Array.isArray(raw) && Array.isArray(raw.allocations)) {
         setRows(raw.allocations as any[]);
       } else {
-        setRows((raw as any[]) || []);
+        setRows(Array.isArray(raw) ? raw : []);
       }
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : 'load failed');
