@@ -9,6 +9,7 @@ import { LogoMark, LogoBanner } from './components/Logo';
 import { OEIcon, type IconName } from './components/OEIcon';
 import { LtmLogo } from './components/LtmLogo';
 import { DesignGallery } from './components/pages/DesignGallery';
+import { NotFoundPage } from './components/pages/NotFoundPage';
 import { SearchPage } from './components/pages/SearchPage';
 import { NotificationsPage } from './components/pages/NotificationsPage';
 import { SchedulePage } from './components/pages/SchedulePage';
@@ -50,6 +51,7 @@ import { ProjectLifecycle } from './components/pages/ProjectLifecycle';
 import { Grid } from './components/pages/Grid';
 import { ESG } from './components/pages/ESG';
 import { Funds } from './components/pages/Funds';
+import { FundDetail } from './components/pages/FundDetail';
 import { Marketplace } from './components/pages/Marketplace';
 import { ModulesPage } from './components/pages/ModulesPage';
 import { Admin } from './components/pages/Admin';
@@ -1472,6 +1474,7 @@ function AppRoutes() {
       <Route path="/esg" element={<ProtectedRoute><Layout><ESG /></Layout></ProtectedRoute>} />
       <Route path="/grid" element={<ProtectedRoute><Layout><Grid /></Layout></ProtectedRoute>} />
       <Route path="/funds" element={<ProtectedRoute><Layout><Funds /></Layout></ProtectedRoute>} />
+      <Route path="/funds/:id" element={<ProtectedRoute><Layout><FundDetail /></Layout></ProtectedRoute>} />
       <Route path="/pipeline" element={<ProtectedRoute><Layout><Pipeline /></Layout></ProtectedRoute>} />
       <Route path="/procurement" element={<ProtectedRoute><Layout><ProcurementHub /></Layout></ProtectedRoute>} />
       <Route path="/marketplace" element={<ProtectedRoute><Layout><Marketplace /></Layout></ProtectedRoute>} />
@@ -1556,7 +1559,7 @@ function AppRoutes() {
       <Route path="/ux-prototype/command-lens"  element={<LazyWorkbench><CommandLensPrototype /></LazyWorkbench>} />
       <Route path="/ux-prototype/cockpit-grid"  element={<LazyWorkbench><CockpitGridPrototype /></LazyWorkbench>} />
       <Route path="/" element={<Navigate to="/launch" replace />} />
-      <Route path="*" element={<Navigate to="/launch" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

@@ -1621,7 +1621,7 @@ function GtiaTab({ onRefresh }: { onRefresh?: () => void }) {
 
       <ListingTable
         key={refreshKey}
-        endpoint="/api/gtia"
+        endpoint="/gtia"
         rowKey={(r) => r.id}
         empty={{ title: 'No GTIAs', description: 'Initiate a Grid Technical Interface Agreement to document protection and SCADA settings with the network operator.' }}
         columns={[

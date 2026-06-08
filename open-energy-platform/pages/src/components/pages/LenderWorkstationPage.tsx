@@ -22,7 +22,7 @@ import { LenderFacilityAmendmentTab } from '../lender/LenderFacilityAmendmentTab
 
 export function LenderWorkstationPage() {
   const kpis = useWorkstationKpis('lender');
-  const facilitiesPanel = useWorkstationPanel('Active facilities', '/lender/facilities', (r) => ({
+  const facilitiesPanel = useWorkstationPanel('Active facilities', '/funder/facilities', (r) => ({
     id: r.id,
     lead: <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-[#dbecfb] text-[#1a3a5c]">{r.facility_type || r.product_type || 'facility'}</span>,
     text: <span>{r.facility_name || r.borrower_name || r.project_name || r.id} · {r.facility_amount_zar != null ? Number(r.facility_amount_zar).toLocaleString('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }) : ''}</span>,
@@ -79,7 +79,7 @@ export function LenderWorkstationPage() {
 function FacilitiesTab() {
   return (
     <ListingTable
-      endpoint="/lender/facilities"
+      endpoint="/funder/facilities"
       rowKey={(r) => r.id}
       empty={{ title: 'No facilities', description: 'No active lender facilities yet. Originate one from the credit-origination tab.' }}
       columns={[
@@ -426,7 +426,7 @@ function CpClearanceTab({ onRefresh }: { onRefresh?: () => void }) {
 
       <ListingTable
         key={refreshKey}
-        endpoint="/api/cp-clearances"
+        endpoint="/cp-clearances"
         rowKey={(r) => r.id}
         empty={{ title: 'No CP registers', description: 'Open a conditions precedent register to begin tracking financial close.' }}
         columns={[
