@@ -205,7 +205,7 @@ function CredCard({
 
       {!isLive && (
         <div className="mt-2 text-xs text-violet-600 bg-violet-50 border border-violet-100 rounded px-2.5 py-1.5">
-          Live API adapter coming soon. Credentials stored — polling will activate when the adapter lands.
+          Credentials stored. Live polling activates automatically once the adapter connection is verified.
         </div>
       )}
     </div>

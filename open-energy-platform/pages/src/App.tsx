@@ -506,14 +506,7 @@ function LoginPage() {
         <div className="relative z-10 max-w-xl">
           <h1 className="text-[42px] lg:text-[52px] font-bold leading-[1.05] tracking-tight font-display">
             South Africa's{' '}
-            <span
-              style={{
-                background: 'linear-gradient(90deg,#9bc8ee 0%,#7fd5cf 50%,#5fa8e8 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
+            <span style={{ color: '#7fd5cf' }}>
               unified energy exchange
             </span>
             .

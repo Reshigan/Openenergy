@@ -156,7 +156,7 @@ function TabNav({
                 aria-selected={isActive}
                 aria-controls={`panel-${t.key}`}
                 onClick={() => pick(t.key)}
-                className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-2 ${
+                className={`h-9 px-3 rounded-md text-[13px] font-semibold inline-flex items-center gap-2 ${
                   isActive ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'
                 }`}
               >
@@ -319,7 +319,7 @@ export function WorkstationShell({
             {kpis && kpis.length > 0 && (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4">
                 {kpis.map((k, i) => (
-                  <div key={i} className="rounded-lg bg-white/10 backdrop-blur p-3 border border-white/10">
+                  <div key={i} className="rounded-lg bg-white/15 p-3 border border-white/10">
                     <div className="text-[10px] uppercase tracking-wider text-white/75">{k.label}</div>
                     <div
                       className="mt-1 font-mono text-[20px] font-bold leading-tight"
@@ -426,7 +426,7 @@ export function WorkstationShell({
         {kpis && kpis.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4">
             {kpis.map((k, i) => (
-              <div key={i} className="rounded-lg bg-white/10 backdrop-blur p-3 border border-white/10">
+              <div key={i} className="rounded-lg bg-white/15 p-3 border border-white/10">
                 <div className="text-[10px] uppercase tracking-wider text-white/75">{k.label}</div>
                 <div className="mt-1 font-mono text-[20px] font-bold leading-tight" style={{ fontVariantNumeric: 'tabular-nums', color: '#ffffff' }}>
                   {k.value}
