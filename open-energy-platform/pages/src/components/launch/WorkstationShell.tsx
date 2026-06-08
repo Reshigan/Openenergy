@@ -94,9 +94,9 @@ function TabNav({
   const pick = (key: string) => { onSelect(key); if (query) setQ(''); };
 
   return (
-    <nav className="bg-white border border-[#dde4ec] rounded-lg p-1.5 w-full">
+    <nav className="bg-white border border-[var(--oe-surface-container-high)] rounded-lg p-1.5 w-full">
       {showSearch && (
-        <div className="flex items-center gap-2 px-1.5 pb-2 mb-2 border-b border-[#eef2f7]">
+        <div className="flex items-center gap-2 px-1.5 pb-2 mb-2 border-b border-[var(--oe-surface-container-low)]">
           <Search size={13} className="text-[#9aa6b5] shrink-0" />
           <input
             value={q}
@@ -107,13 +107,13 @@ function TabNav({
             }}
             placeholder={`Jump to any of ${tabs.length} tabs…`}
             aria-label="Filter workstation tabs"
-            className="flex-1 h-7 bg-transparent text-[12px] text-[#0f1c2e] placeholder:text-[#9aa6b5] rounded px-1 outline-none focus-visible:ring-1 focus-visible:ring-[#1a3a5c]"
+            className="flex-1 h-7 bg-transparent text-[12px] text-[var(--oe-on-surface)] placeholder:text-[#9aa6b5] rounded px-1 outline-none focus-visible:ring-1 focus-visible:ring-[var(--oe-primary)]"
           />
           {q && (
             <button type="button"
               onClick={() => setQ('')}
               aria-label="Clear tab filter"
-              className="text-[11px] font-medium text-[#6b7685] hover:text-[#0f1c2e] shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c] focus-visible:rounded"
+              className="text-[11px] font-medium text-[var(--oe-outline)] hover:text-[var(--oe-on-surface)] shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)] focus-visible:rounded"
             >
               clear
             </button>
@@ -121,11 +121,11 @@ function TabNav({
         </div>
       )}
       {hasGroups && !query && (
-        <div className="flex flex-wrap items-center gap-1 pb-2 border-b border-[#eef2f7] mb-2">
+        <div className="flex flex-wrap items-center gap-1 pb-2 border-b border-[var(--oe-surface-container-low)] mb-2">
           <button type="button"
             onClick={() => setActiveGroup(null)}
             className={`h-7 px-2 rounded text-[11px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
-              activeGroup === null ? 'bg-[#1a3a5c] text-white focus-visible:ring-white/80' : 'text-[#6b7685] hover:bg-gray-50 focus-visible:ring-[#1a3a5c]'
+              activeGroup === null ? 'bg-[var(--oe-primary)] text-white focus-visible:ring-white/80' : 'text-[var(--oe-outline)] hover:bg-gray-50 focus-visible:ring-[var(--oe-primary)]'
             }`}
           >
             All
@@ -135,7 +135,7 @@ function TabNav({
               key={g}
               onClick={() => setActiveGroup(g)}
               className={`h-7 px-2 rounded text-[11px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
-                activeGroup === g ? 'bg-[#1a3a5c] text-white focus-visible:ring-white/80' : 'text-[#6b7685] hover:bg-gray-50 focus-visible:ring-[#1a3a5c]'
+                activeGroup === g ? 'bg-[var(--oe-primary)] text-white focus-visible:ring-white/80' : 'text-[var(--oe-outline)] hover:bg-gray-50 focus-visible:ring-[var(--oe-primary)]'
               }`}
             >
               {g}
@@ -145,7 +145,7 @@ function TabNav({
       )}
       <div role="tablist" className="flex flex-wrap items-center gap-1">
         {visible.length === 0 ? (
-          <span className="px-2 py-1.5 text-[12px] text-[#6b7685] italic">No tabs match “{q}”.</span>
+          <span className="px-2 py-1.5 text-[12px] text-[var(--oe-outline)] italic">No tabs match “{q}”.</span>
         ) : (
           visible.map(t => {
             const isActive = activeTab === t.key;
@@ -158,7 +158,7 @@ function TabNav({
                 aria-controls={`panel-${t.key}`}
                 onClick={() => pick(t.key)}
                 className={`h-9 px-3 rounded-md text-[13px] font-semibold inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
-                  isActive ? 'bg-[#1a3a5c] text-white focus-visible:ring-white/80' : 'text-[#3d4756] hover:bg-[#eef2f7] focus-visible:ring-[#1a3a5c]'
+                  isActive ? 'bg-[var(--oe-primary)] text-white focus-visible:ring-white/80' : 'text-[var(--oe-on-surface-variant)] hover:bg-[var(--oe-surface-container-low)] focus-visible:ring-[var(--oe-primary)]'
                 }`}
               >
                 {cleanTabLabel(t.label)}
@@ -353,17 +353,17 @@ export function WorkstationShell({
           {panels && panels.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {panels.map((panel, i) => (
-                <section key={i} className="rounded-xl border border-[#dde4ec] bg-white">
-                  <header className="px-4 py-2.5 border-b border-[#eef2f7]">
-                    <div className="font-display font-semibold text-[14px] text-[#0f1c2e]">
+                <section key={i} className="rounded-xl border border-[var(--oe-surface-container-high)] bg-white">
+                  <header className="px-4 py-2.5 border-b border-[var(--oe-surface-container-low)]">
+                    <div className="font-display font-semibold text-[14px] text-[var(--oe-on-surface)]">
                       {panel.title}{panel.countLabel ? ` (${panel.countLabel})` : ''}
                     </div>
                   </header>
-                  <ul className="divide-y divide-[#eef2f7] text-[12px]">
+                  <ul className="divide-y divide-[var(--oe-surface-container-low)] text-[12px]">
                     {panel.rows.length === 0 ? (
-                      <li className="px-4 py-3 text-[12px] text-[#6b7685] italic">{panel.emptyLabel || 'Nothing open.'}</li>
+                      <li className="px-4 py-3 text-[12px] text-[var(--oe-outline)] italic">{panel.emptyLabel || 'Nothing open.'}</li>
                     ) : panel.rows.slice(0, 6).map((row) => (
-                      <li key={row.id} className="px-4 py-2 flex items-center gap-3 text-[#0f1c2e]">
+                      <li key={row.id} className="px-4 py-2 flex items-center gap-3 text-[var(--oe-on-surface)]">
                         {row.lead}
                         <span className="flex-1 truncate">{row.text}</span>
                         {row.meta}
@@ -394,7 +394,7 @@ export function WorkstationShell({
                 aria-labelledby={current ? `tab-${current.key}` : undefined}
               >
                 {!current ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-[13px] text-[#6b7685]">
+                  <div className="flex flex-col items-center justify-center py-16 text-[13px] text-[var(--oe-outline)]">
                     <p>Select a tab to get started.</p>
                   </div>
                 ) : current.body({ onRefresh: refresh })}
@@ -480,7 +480,7 @@ export function WorkstationShell({
             aria-labelledby={current ? `tab-${current.key}` : undefined}
           >
             {!current ? (
-              <div className="flex flex-col items-center justify-center py-16 text-[13px] text-[#6b7685]">
+              <div className="flex flex-col items-center justify-center py-16 text-[13px] text-[var(--oe-outline)]">
                 <p>Select a tab to get started.</p>
               </div>
             ) : current.body({ onRefresh: refresh })}
@@ -553,9 +553,9 @@ export function ListingTable({
     return <EmptyState title={empty?.title || 'No data'} description={empty?.description || ''} />;
   }
   return (
-    <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto text-[#0f1c2e]">
+    <div className="rounded-xl border border-[var(--oe-surface-container-high)] bg-white overflow-x-auto text-[var(--oe-on-surface)]">
       <table className="w-full text-[13px] min-w-[640px]">
-        <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+        <thead className="bg-[var(--oe-surface-container-lowest)] text-left text-[10px] uppercase tracking-wide text-[var(--oe-outline)]">
           <tr>{columns.map(col => <th key={col.key} scope="col" className="px-4 py-2">{col.label}</th>)}</tr>
         </thead>
         <tbody>
@@ -575,7 +575,7 @@ export function ListingTable({
                 onClick={clickHandler}
                 onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); clickHandler(e as unknown as React.MouseEvent); } } : undefined}
                 tabIndex={clickable ? 0 : undefined}
-                className={`border-t border-[#e5ebf2] hover:bg-[#f8fafc] ${clickable ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#1a3a5c]' : ''}`}
+                className={`border-t border-[var(--oe-surface-container)] hover:bg-[var(--oe-surface-container-lowest)] ${clickable ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--oe-primary)]' : ''}`}
               >
                 {columns.map(col => (
                   <td key={col.key} className={`px-4 py-2 ${col.align === 'right' ? 'text-right' : ''}`}>
@@ -682,7 +682,7 @@ export function ActionModal({
       setTimeout(() => onClose(), 600);
     } catch (e: unknown) { setErr(e instanceof Error ? e.message : 'Failed'); setSaving(false); }
   };
-  const btnCls = cta === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-[#1a3a5c] hover:bg-[#0f1c2e]';
+  const btnCls = cta === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-[var(--oe-primary)] hover:bg-[var(--oe-on-surface)]';
   return (
     <AnimatePresence>
     <motion.div
@@ -691,7 +691,7 @@ export function ActionModal({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={motionTransition('snap')}
-      className="fixed inset-0 z-50 bg-[#0f1c2e]/60 backdrop-blur-[2px] flex items-end sm:items-center justify-center sm:p-4"
+      className="fixed inset-0 z-50 bg-[var(--oe-on-surface)]/60 backdrop-blur-[2px] flex items-end sm:items-center justify-center sm:p-4"
       onClick={onClose}
     >
       <motion.div
@@ -706,9 +706,9 @@ export function ActionModal({
         className="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full sm:max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
-          <h3 id="action-modal-title" className="text-[16px] font-semibold text-[#0f1c2e]">{title}</h3>
-          <button type="button" onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c] focus-visible:rounded">×</button>
+        <div className="p-5 border-b border-[var(--oe-surface-container)] flex items-center justify-between">
+          <h3 id="action-modal-title" className="text-[16px] font-semibold text-[var(--oe-on-surface)]">{title}</h3>
+          <button type="button" onClick={onClose} aria-label="Close" className="text-[var(--oe-outline)] hover:text-[var(--oe-on-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)] focus-visible:rounded">×</button>
         </div>
         <div className="p-5 space-y-3">
           {cta === 'danger' && (
@@ -722,23 +722,23 @@ export function ActionModal({
           </div>
           {fields.map(f => (
             <label key={f.key} className="block text-[13px]">
-              <span className="text-[#6b7685]">{cleanTabLabel(f.label)}{f.required && ' *'}</span>
+              <span className="text-[var(--oe-outline)]">{cleanTabLabel(f.label)}{f.required && ' *'}</span>
               {f.type === 'textarea' ? (
-                <textarea value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} rows={4} placeholder={f.placeholder} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c]" />
+                <textarea value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} rows={4} placeholder={f.placeholder} className="mt-1 w-full px-3 py-2 border border-[var(--oe-surface-container-high)] rounded-lg resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)]" />
               ) : f.type === 'select' ? (
-                <select value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c]">
+                <select value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} className="mt-1 w-full px-3 py-2 border border-[var(--oe-surface-container-high)] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)]">
                   <option value="">— select —</option>
                   {(f.options || []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               ) : (
-                <input type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'} value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} placeholder={f.placeholder} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c]" />
+                <input type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'} value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} placeholder={f.placeholder} className="mt-1 w-full px-3 py-2 border border-[var(--oe-surface-container-high)] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)]" />
               )}
-              {f.helperText && <span className="block mt-1 text-[10px] text-[#6b7685]">{f.helperText}</span>}
+              {f.helperText && <span className="block mt-1 text-[10px] text-[var(--oe-outline)]">{f.helperText}</span>}
             </label>
           ))}
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c]">Cancel</button>
-            <button type="button" onClick={submit} disabled={saving || saved} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#1a3a5c] transition-colors ${saved ? 'bg-green-600' : btnCls}`}>
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[var(--oe-surface-container-high)] rounded-lg hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)]">Cancel</button>
+            <button type="button" onClick={submit} disabled={saving || saved} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--oe-primary)] transition-colors ${saved ? 'bg-green-600' : btnCls}`}>
               {saved ? '✓ Done' : saving ? 'Saving…' : submitLabel}
             </button>
           </div>
