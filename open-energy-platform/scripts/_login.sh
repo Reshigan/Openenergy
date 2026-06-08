@@ -44,6 +44,16 @@ except Exception:
   # head). 429 means rate-limit; 401 means bad password; 5xx means the
   # platform itself is unhealthy.
   echo "[_login] login failed for $email: HTTP ${http_code:-?} body=$(echo "$body" | head -c 160)" >&2
+  # Expose the retryAfter value so callers can wait the exact right amount.
+  local retry_after
+  retry_after=$(echo "$body" | python3 -c "import sys,json
+try:
+  d = json.load(sys.stdin)
+  print(d.get('retryAfter', 0))
+except Exception:
+  print(0)
+" 2>/dev/null)
+  echo "__RETRY_AFTER__:${retry_after:-0}" >&2
   return 1
 }
 
@@ -68,17 +78,21 @@ login_or_cached() {
     echo "[_login] cache file for $email looked corrupt — refreshing" >&2
   fi
 
-  # Cache miss or stale: do a fresh login. Retry once after a 20s pause if
-  # the first attempt hits the rate limiter — that's almost always the
-  # cause of intermittent CI failures.
-  local token
-  if token=$(do_login "$email"); then
+  # Cache miss or stale: do a fresh login. On rate-limit (429) the server
+  # returns a retryAfter field (seconds). Wait exactly that long plus a 5s
+  # buffer before retrying so we don't burn another request while the window
+  # is still full. Fall back to 30s if the field is missing or zero.
+  local token err_out retry_after wait_s
+  if token=$(do_login "$email" 2>/tmp/oe_login_err); then
     echo "$token" > "$cache_file"
     echo "$token"
     return 0
   fi
-  echo "[_login] retrying $email after 20s pause" >&2
-  sleep 20
+  cat /tmp/oe_login_err >&2
+  retry_after=$(grep '__RETRY_AFTER__:' /tmp/oe_login_err | sed 's/.*__RETRY_AFTER__://')
+  wait_s=$(( ${retry_after:-0} > 0 ? retry_after + 5 : 30 ))
+  echo "[_login] retrying $email after ${wait_s}s (retryAfter=${retry_after:-?})" >&2
+  sleep "$wait_s"
   if token=$(do_login "$email"); then
     echo "$token" > "$cache_file"
     echo "$token"
