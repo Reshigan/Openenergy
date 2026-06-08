@@ -142,7 +142,7 @@ function TabNav({
           ))}
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-1">
+      <div role="tablist" className="flex flex-wrap items-center gap-1">
         {visible.length === 0 ? (
           <span className="px-2 py-1.5 text-[12px] text-[#6b7685] italic">No tabs match “{q}”.</span>
         ) : (
@@ -151,6 +151,10 @@ function TabNav({
             return (
               <button
                 key={t.key}
+                id={`tab-${t.key}`}
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`panel-${t.key}`}
                 onClick={() => pick(t.key)}
                 className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-2 ${
                   isActive ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'
@@ -372,7 +376,12 @@ export function WorkstationShell({
                 setActiveGroup={setActiveGroup}
               />
 
-              <div key={`${activeTab}-${bump}`}>
+              <div
+                key={`${activeTab}-${bump}`}
+                id={current ? `panel-${current.key}` : undefined}
+                role="tabpanel"
+                aria-labelledby={current ? `tab-${current.key}` : undefined}
+              >
                 {!current ? (
                   <div className="flex flex-col items-center justify-center py-16 text-[13px] text-[#6b7685]">
                     <p>Select a tab to get started.</p>
@@ -446,7 +455,12 @@ export function WorkstationShell({
             setActiveGroup={setActiveGroup}
           />
 
-          <div key={`${activeTab}-${bump}`}>
+          <div
+            key={`${activeTab}-${bump}`}
+            id={current ? `panel-${current.key}` : undefined}
+            role="tabpanel"
+            aria-labelledby={current ? `tab-${current.key}` : undefined}
+          >
             {!current ? (
               <div className="flex flex-col items-center justify-center py-16 text-[13px] text-[#6b7685]">
                 <p>Select a tab to get started.</p>
@@ -524,7 +538,7 @@ export function ListingTable({
     <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto text-[#0f1c2e]">
       <table className="w-full text-[13px] min-w-[640px]">
         <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
-          <tr>{columns.map(col => <th key={col.key} className="px-4 py-2">{col.label}</th>)}</tr>
+          <tr>{columns.map(col => <th key={col.key} scope="col" className="px-4 py-2">{col.label}</th>)}</tr>
         </thead>
         <tbody>
           {rows.map(r => {
@@ -635,15 +649,20 @@ export function ActionModal({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 8, scale: 0.98 }}
         transition={motionTransition('snap')}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="action-modal-title"
         className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
-          <h3 className="text-[16px] font-semibold text-[#0f1c2e]">{title}</h3>
+          <h3 id="action-modal-title" className="text-[16px] font-semibold text-[#0f1c2e]">{title}</h3>
           <button onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e]">×</button>
         </div>
         <div className="p-5 space-y-3">
-          {err && <div className="text-[12px] text-red-700">{err}</div>}
+          <div role="alert" aria-live="assertive" className="text-[12px] text-red-700 min-h-[1em]">
+            {err ?? ''}
+          </div>
           {fields.map(f => (
             <label key={f.key} className="block text-[13px]">
               <span className="text-[#6b7685]">{cleanTabLabel(f.label)}{f.required && ' *'}</span>
