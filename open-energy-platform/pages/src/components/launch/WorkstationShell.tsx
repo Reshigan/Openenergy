@@ -13,7 +13,7 @@ import IncomingPanel from './IncomingPanel';
 import InsightsPanel from './InsightsPanel';
 import CrossOptionModal from './CrossOptionModal';
 import { type RoleAction } from '../../lib/roleActions';
-import { ArrowLeft, RefreshCw, Search } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Search, HelpCircle } from 'lucide-react';
 import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
@@ -23,6 +23,7 @@ import { themeFor, type RoleKey } from '../../lib/role-themes';
 import { useDensityPreference } from '../../lib/density';
 import { motion, AnimatePresence } from 'framer-motion';
 import { motionTransition } from '../../lib/motion';
+import { CapabilityPalette } from './CapabilityPalette';
 
 export type WorkstationTab = {
   key: string;
@@ -207,6 +208,7 @@ export function WorkstationShell({
 
   // Layer-C cross-role inbox: the action the operator chose to act on (drives CrossOptionModal).
   const [active, setActive] = useState<RoleAction | null>(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   const setTab = (k: string) => {
     setActiveTab(k);
@@ -314,6 +316,15 @@ export function WorkstationShell({
                 >
                   <RefreshCw size={12} /> Refresh
                 </button>
+                {role && (
+                  <button
+                    onClick={() => setPaletteOpen(true)}
+                    className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20"
+                    aria-label="What can I do here"
+                  >
+                    <HelpCircle size={12} /> What can I do?
+                  </button>
+                )}
               </div>
             </div>
             {kpis && kpis.length > 0 && (
@@ -395,6 +406,13 @@ export function WorkstationShell({
             </div>
           </div>
           {crossOption}
+          {role && (
+            <CapabilityPalette
+              role={role}
+              open={paletteOpen}
+              onClose={() => setPaletteOpen(false)}
+            />
+          )}
         </div>
       </RoleShell>
     );
