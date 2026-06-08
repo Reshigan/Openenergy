@@ -19,6 +19,9 @@ export const ROLE_ACTION_PRIORITIES: ReadonlySet<RoleActionPriority> = new Set([
 export interface RoleActionInput {
   target_role: PlatformRole | string;
   target_participant_id?: string;
+  /** Tenant that owns this action row. Defaults to the actor's tenant looked up from participants.
+   *  Pass explicitly when the actor is a system cascade (no HTTP context). */
+  tenant_id?: string;
   source_event: string;
   source_chain_key?: string;
   source_entity_type: string;
@@ -43,18 +46,28 @@ export async function pushRoleAction(env: HonoBindings, input: RoleActionInput):
   }
   const id = `raq_${crypto.randomUUID()}`;
   const now = new Date().toISOString();
+  // Resolve tenant_id: prefer explicit input, else look up actor from participants, else default.
+  let tenantId = input.tenant_id ?? 'default';
+  if (!input.tenant_id) {
+    try {
+      const actor = await env.DB.prepare(
+        `SELECT tenant_id FROM participants WHERE id = ? LIMIT 1`,
+      ).bind(id).first<{ tenant_id: string | null }>();
+      if (actor?.tenant_id) tenantId = actor.tenant_id;
+    } catch { /* best-effort; falls back to default */ }
+  }
   await env.DB.prepare(
     `INSERT INTO oe_role_action_queue
        (id, target_role, target_participant_id, source_event, source_chain_key,
         source_entity_type, source_entity_id, title, body_json, cross_option_json,
-        priority, status, sla_due_at, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
+        priority, status, sla_due_at, tenant_id, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
   ).bind(
     id, input.target_role, input.target_participant_id ?? null, input.source_event,
     input.source_chain_key ?? null, input.source_entity_type, input.source_entity_id,
     input.title, JSON.stringify(input.body ?? {}),
     input.cross_option ? JSON.stringify(input.cross_option) : null,
-    input.priority ?? 'normal', input.sla_due_at ?? null, now, now,
+    input.priority ?? 'normal', input.sla_due_at ?? null, tenantId, now, now,
   ).run();
 
   const role = String(input.target_role);

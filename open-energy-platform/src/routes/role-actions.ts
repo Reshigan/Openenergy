@@ -15,8 +15,9 @@ import { pendingCountForRole, pendingCacheKey } from '../utils/role-actions';
 const roleActions = new Hono<HonoEnv>();
 roleActions.use('*', authMiddleware);
 
-// Visibility predicate. Binds (target_role, participant_id).
-const SCOPE = `target_role = ? AND (target_participant_id IS NULL OR target_participant_id = ?)`;
+// Visibility predicate. Binds (tenant_id, target_role, participant_id).
+// tenant_id fence prevents role-wide rows from leaking across tenants.
+const SCOPE = `COALESCE(tenant_id, 'default') = ? AND target_role = ? AND (target_participant_id IS NULL OR target_participant_id = ?)`;
 
 function safeParse(s: unknown): unknown {
   if (!s || typeof s !== 'string') return null;
@@ -38,7 +39,8 @@ roleActions.get('/', async (c) => {
        FROM oe_role_action_queue
       WHERE ${SCOPE}${status ? ' AND status = ?' : ''}
       ORDER BY created_at DESC LIMIT 200`;
-  const binds = status ? [user.role, user.id, status] : [user.role, user.id];
+  const tenant = user.tenant_id || 'default';
+  const binds = status ? [tenant, user.role, user.id, status] : [tenant, user.role, user.id];
   const rows = await c.env.DB.prepare(sql).bind(...binds).all<Record<string, unknown>>();
   return c.json({ items: (rows.results ?? []).map(decodeRow) });
 });
@@ -58,11 +60,12 @@ async function transitionStatus(c: Context<HonoEnv>, next: 'acknowledged' | 'act
   // false matches on downstream WHERE actioned_by IS NOT NULL queries.
   const actoredBy = next === 'actioned' ? user.id : null;
   const actoredAt = next === 'actioned' ? now : null;
+  const tenant = user.tenant_id || 'default';
   const res = await c.env.DB.prepare(
     `UPDATE oe_role_action_queue
         SET status = ?, actioned_by = ?, actioned_at = ?, updated_at = ?
       WHERE id = ? AND ${SCOPE}`,
-  ).bind(next, actoredBy, actoredAt, now, id, user.role, user.id).run();
+  ).bind(next, actoredBy, actoredAt, now, id, tenant, user.role, user.id).run();
   const changes = (res as { meta?: { changes?: number } })?.meta?.changes ?? 0;
   if (!changes) return c.json({ error: 'not_found' }, 404);
   // Invalidate both the role-only key and the caller's participant-scoped key.
