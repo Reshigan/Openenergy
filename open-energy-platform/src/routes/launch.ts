@@ -26,7 +26,9 @@
 
 import { Hono } from 'hono';
 import { authMiddleware } from '../middleware/auth';
+import { getCurrentUser } from '../middleware/auth';
 import type { HonoEnv } from '../utils/types';
+import { capabilitiesForRole } from '../utils/capability-map';
 
 const launch = new Hono<HonoEnv>();
 
@@ -1867,5 +1869,51 @@ async function buildEsumsOwnerBoard(c: any, user: any): Promise<LaunchPayload> {
     ai_suggestions: [],
   };
 }
+
+launch.get('/:role/capabilities', authMiddleware, async (c) => {
+  const user = getCurrentUser(c);
+  const role = c.req.param('role') || '';
+  if (role !== user.role && user.role !== 'admin' && user.role !== 'support') {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+  return c.json({ success: true, data: { capabilities: capabilitiesForRole(role) } });
+});
+
+launch.get('/:role/checklist', authMiddleware, async (c) => {
+  const user = getCurrentUser(c);
+  const role = c.req.param('role') || '';
+  if (role !== user.role && user.role !== 'admin' && user.role !== 'support') {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+
+  const items: Array<{ id: string; label: string; description: string; href: string; done: boolean }> = [];
+
+  if (role === 'esums_owner') {
+    const sites = await c.env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM om_sites WHERE participant_id = ?`,
+    ).bind(user.id).first<{ n: number }>();
+    const inOm = await c.env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM om_sites WHERE participant_id = ? AND commissioning_status = 'in_om'`,
+    ).bind(user.id).first<{ n: number }>();
+    const meters = await c.env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM oe_smart_meter_assets WHERE owner_id = ?`,
+    ).bind(user.id).first<{ n: number }>();
+    items.push(
+      { id: 'create_site', label: 'Register your first site', description: 'Your site appears in the commissioning chain at "planned".', href: '/esums?tab=commissioning', done: (sites?.n ?? 0) > 0 },
+      { id: 'add_meter', label: 'Add a smart meter', description: 'Register a meter so telemetry can flow.', href: '/esums?tab=smart_meter', done: (meters?.n ?? 0) > 0 },
+      { id: 'site_live', label: 'Bring a site to O&M', description: 'Advance a site through commissioning to in-O&M.', href: '/esums?tab=commissioning', done: (inOm?.n ?? 0) > 0 },
+    );
+  } else if (role === 'ipp_developer') {
+    const projects = await c.env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM ipp_projects WHERE developer_id = ?`,
+    ).bind(user.id).first<{ n: number }>();
+    items.push(
+      { id: 'create_project', label: 'Create your first project', description: 'Start the IPP development lifecycle.', href: '/projects', done: (projects?.n ?? 0) > 0 },
+    );
+  }
+
+  const remaining = items.filter((i) => !i.done).length;
+  return c.json({ success: true, data: { items, remaining, complete: remaining === 0 && items.length > 0 } });
+});
 
 export default launch;
