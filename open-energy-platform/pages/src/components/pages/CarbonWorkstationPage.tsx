@@ -89,16 +89,19 @@ export function CarbonWorkstationPage() {
         {
           key: 'article6',
           label: 'Article 6 ITMO',
+          chainKey: 'article6_adjustment',
           body: () => <Article6Tab />,
         },
         {
           key: 'registration_chain',
           label: 'Project registration',
+          chainKey: 'carbon_registration',
           body: () => <RegistrationChainTab />,
         },
         {
           key: 'mrv_chain',
           label: 'Verification chain',
+          chainKey: 'mrv_submissions',
           body: () => <MrvChainTab />,
         },
         {
@@ -110,67 +113,80 @@ export function CarbonWorkstationPage() {
         {
           key: 'reversal_chain',
           label: 'Reversals',
+          chainKey: 'carbon_reversal',
           body: () => <CarbonReversalChainTab />,
         },
         {
           key: 'offset_claim_chain',
           label: 'Tax offset claims',
+          chainKey: 'carbon_offset_claim',
           body: () => <CarbonOffsetClaimChainTab />,
         },
         {
           key: 'crediting_renewal_chain',
           label: 'Crediting renewal',
+          chainKey: 'crediting_period_renewal',
           body: () => <CreditingRenewalChainTab />,
         },
         {
           key: 'erpa_chain',
           label: 'Forward ERPA delivery',
+          chainKey: 'carbon_erpa',
           body: () => <CarbonErpaChainTab />,
         },
         {
           key: 'poa_cpa_inclusion_chain',
           label: 'PoA / CPA inclusion',
+          chainKey: 'poa_cpa_inclusion',
           body: () => <PoaCpaInclusionChainTab />,
         },
         {
           key: 'carbon_issuance_chain',
           label: 'Credit issuance',
+          chainKey: 'carbon_issuance',
           body: () => <CarbonIssuanceChainTab />,
         },
         {
           key: 'ccp_assessment_chain',
           label: 'CCP-eligibility assessment',
+          chainKey: 'ccp_assessment',
           body: () => <CcpAssessmentChainTab />,
         },
         {
           key: 'credit_rating_chain',
           label: 'Credit quality rating',
+          chainKey: 'carbon_credit_rating',
           body: () => <CreditRatingChainTab />,
         },
         {
           key: 'esg_disclosure_chain',
           label: 'ESG disclosure & assurance',
+          chainKey: 'esg_disclosure',
           body: () => <EsgDisclosureChainTab />,
         },
         {
           key: 'scope3_disclosure_chain',
           label: 'Scope 3 value-chain disclosure',
+          chainKey: 'carbon_scope3_disclosure',
           body: () => <Scope3DisclosureChainTab />,
         },
         {
           key: 'carbon_tax_returns',
           label: 'Carbon tax returns (W200)',
+          chainKey: 'carbon_tax_return',
           body: ({ onRefresh }) => <CarbonTaxReturnsTab onRefresh={onRefresh} />,
         },
         {
           key: 'registry_transfers',
           label: 'Registry transfers (W206)',
+          chainKey: 'carbon_registry_transfer',
           body: ({ onRefresh }) => <CarbonRegistryTransferTab onRefresh={onRefresh} />,
         },
         {
           key: 'methodology_amendments',
           label: 'Methodology amendments (W213)',
           group: 'Compliance',
+          chainKey: 'methodology_amendment',
           body: ({ onRefresh }) => <MethodologyAmendmentTab onRefresh={onRefresh} />,
         },
         {

@@ -48,21 +48,21 @@ export function GridOpsWorkstationPage() {
       kpis={kpis}
       panels={panels}
       tabs={[
-        { key: 'dispatch_nomination', label: 'Dispatch nominations', group: 'Operations', body: () => <DispatchNominationTab /> },
+        { key: 'dispatch_nomination', label: 'Dispatch nominations', group: 'Operations', chainKey: 'oe_dispatch_nominations', body: () => <DispatchNominationTab /> },
         { key: 'curtailment', label: 'Curtailment events', group: 'Operations', body: ({ onRefresh }) => <CurtailmentTab onRefresh={onRefresh} /> },
-        { key: 'demand_response', label: 'Demand response (W205)', group: 'Operations', body: ({ onRefresh }) => <DemandResponseTab onRefresh={onRefresh} /> },
-        { key: 'ancillary', label: 'Ancillary services', group: 'Operations', body: ({ onRefresh }) => <AncillaryTab onRefresh={onRefresh} /> },
-        { key: 'imbalance-settlement', label: 'Imbalance settlement', group: 'Operations', body: () => <ImbalanceSettlementChainTab /> },
+        { key: 'demand_response', label: 'Demand response (W205)', group: 'Operations', chainKey: 'demand_response_event', body: ({ onRefresh }) => <DemandResponseTab onRefresh={onRefresh} /> },
+        { key: 'ancillary', label: 'Ancillary services', group: 'Operations', chainKey: 'reserve_activation', body: ({ onRefresh }) => <AncillaryTab onRefresh={onRefresh} /> },
+        { key: 'imbalance-settlement', label: 'Imbalance settlement', group: 'Operations', chainKey: 'imbalance_settlement', body: () => <ImbalanceSettlementChainTab /> },
         { key: 'wheeling_charges', label: 'Wheeling charges', group: 'Operations', body: () => <WheelingChargesTab /> },
-        { key: 'rez_capacity', label: 'REZ capacity allocation', group: 'Connections', body: () => <RezCapacityChainTab /> },
-        { key: 'transmission-outage', label: 'Transmission outage coordination', group: 'Connections', body: () => <TransmissionOutageChainTab /> },
+        { key: 'rez_capacity', label: 'REZ capacity allocation', group: 'Connections', chainKey: 'rez_capacity', body: () => <RezCapacityChainTab /> },
+        { key: 'transmission-outage', label: 'Transmission outage coordination', group: 'Connections', chainKey: 'transmission_outage', body: () => <TransmissionOutageChainTab /> },
         { key: 'outage', label: 'Outage responses', group: 'Connections', body: ({ onRefresh }) => <OutageTab onRefresh={onRefresh} /> },
-        { key: 'planned_outage', label: 'Planned outages', group: 'Compliance', body: () => <PlannedOutageChainTab /> },
+        { key: 'planned_outage', label: 'Planned outages', group: 'Compliance', chainKey: 'planned_outage', body: () => <PlannedOutageChainTab /> },
         { key: 'scada-connectors', label: 'SCADA data', group: 'Compliance', body: () => <ScadaConnectorTab /> },
         { key: 'mqtt-opcua-connectors', label: 'MQTT/OPC-UA connectors', group: 'Compliance', body: () => <MqttOpcuaConnectorTab /> },
-        { key: 'smart-meter-assets', label: 'Smart meter assets (W199)', group: 'Compliance', body: ({ onRefresh }) => <SmartMeterAssetsTab onRefresh={onRefresh} /> },
-        { key: 'substation-assets', label: 'Substation assets (W211)', group: 'Compliance', body: ({ onRefresh }) => <SubstationAssetsTab onRefresh={onRefresh} /> },
-        { key: 'eop_activations', label: 'EOP activations (W215)', group: 'Operations', body: ({ onRefresh }) => <EopActivationTab onRefresh={onRefresh} /> },
+        { key: 'smart-meter-assets', label: 'Smart meter assets (W199)', group: 'Compliance', chainKey: 'smart_meter_asset', body: ({ onRefresh }) => <SmartMeterAssetsTab onRefresh={onRefresh} /> },
+        { key: 'substation-assets', label: 'Substation assets (W211)', group: 'Compliance', chainKey: 'substation_asset', body: ({ onRefresh }) => <SubstationAssetsTab onRefresh={onRefresh} /> },
+        { key: 'eop_activations', label: 'EOP activations (W215)', group: 'Operations', chainKey: 'eop_activation', body: ({ onRefresh }) => <EopActivationTab onRefresh={onRefresh} /> },
         { key: 'audit', label: 'Audit & compliance', group: 'Compliance',
           body: ({ onRefresh }) => (
             <AuditPanel

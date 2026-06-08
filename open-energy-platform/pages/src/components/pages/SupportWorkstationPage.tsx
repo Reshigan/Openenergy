@@ -107,56 +107,67 @@ export function SupportWorkstationPage() {
           {
             key: 'ticket_chain',
             label: 'Ticket chain',
+            chainKey: 'support_tickets',
             body: () => <SupportTicketChainTab />,
           },
           {
             key: 'problem_chain',
             label: 'Problems',
+            chainKey: 'problem_record',
             body: () => <ProblemManagementChainTab />,
           },
           {
             key: 'change_chain',
             label: 'Changes',
+            chainKey: 'change_request',
             body: () => <ChangeEnablementChainTab />,
           },
           {
             key: 'security_remediation',
             label: 'Vuln remediation',
+            chainKey: 'security_remediation',
             body: () => <SecurityRemediationChainTab />,
           },
           {
             key: 'warranty_recovery',
             label: 'Warranty recovery',
+            chainKey: 'warranty_recovery',
             body: () => <WarrantyRecoveryChainTab />,
           },
           {
             key: 'spare_parts',
             label: 'Spare parts',
+            chainKey: 'spare_parts_provisioning',
             body: () => <SparePartsProvisioningChainTab />,
           },
           {
             key: 'service_contracts',
             label: 'Service contracts',
+            chainKey: 'service_contract',
             body: () => <ServiceContractChainTab />,
           },
           {
             key: 'service-request',
             label: 'Service requests',
+            chainKey: 'service_request',
             body: () => <ServiceRequestChainTab />,
           },
           {
             key: 'oem_fco',
             label: 'OEM FCO/ECN',
+            chainKey: 'oem_fco',
             body: () => <OemFcoChainTab />,
           },
           {
             key: 'csat',
             label: 'CSAT lifecycle (W208)',
+            chainKey: 'csat_record',
             body: ({ onRefresh }) => <CsatLifecycleTab onRefresh={onRefresh} />,
           },
           {
             key: 'sla_performance_reports',
             label: 'SLA performance reports (W217)',
+            chainKey: 'sla_performance_report',
             body: ({ onRefresh }) => <SlaPerformanceReportTab onRefresh={onRefresh} />,
           },
           {
