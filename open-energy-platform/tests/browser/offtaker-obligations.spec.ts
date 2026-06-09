@@ -39,9 +39,20 @@ test.beforeAll(async ({ request, baseURL }) => {
 
 async function seedToken(page: import('@playwright/test').Page) {
   if (!SHARED_ADMIN_TOKEN) throw new Error('shared admin token not initialised');
+  const tokenValue = SHARED_ADMIN_TOKEN;
+  // AuthContext bootstraps via httpOnly cookie refresh — not available in
+  // headless Playwright. Intercept so AuthContext gets a valid response and
+  // calls /auth/me with the Bearer JWT to authenticate normally.
+  await page.route('**/api/auth/refresh', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: { token: tokenValue, expires_in: 3600 } }),
+    });
+  });
   await page.addInitScript((tok) => {
     localStorage.setItem('token', tok as string);
-  }, SHARED_ADMIN_TOKEN);
+  }, tokenValue);
 }
 
 function isBenign(msg: string): boolean {

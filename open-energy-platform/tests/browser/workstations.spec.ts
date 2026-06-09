@@ -49,9 +49,25 @@ test.beforeAll(async ({ request, baseURL }) => {
 
 async function seedToken(page: import('@playwright/test').Page) {
   if (!SHARED_ADMIN_TOKEN) throw new Error('shared admin token not initialised');
+  const tokenValue = SHARED_ADMIN_TOKEN;
+
+  // AuthContext bootstraps via httpOnly cookie refresh which isn't available
+  // in headless Playwright. Intercept /auth/refresh to return a valid access
+  // token; AuthContext then calls /auth/me with the Bearer JWT and succeeds.
+  await page.route('**/api/auth/refresh', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: { token: tokenValue, expires_in: 3600 },
+      }),
+    });
+  });
+
   await page.addInitScript((tok) => {
     localStorage.setItem('token', tok as string);
-  }, SHARED_ADMIN_TOKEN);
+  }, tokenValue);
 }
 
 function isBenign(msg: string): boolean {
@@ -81,19 +97,24 @@ const CASES: WorkstationCase[] = [
     role: 'trader',
     route: '/trader-risk/workstation',
     title: /trader workstation/i,
-    expectedTabs: ['Open orders', 'Rejections', 'Post-trade exceptions', 'Margin calls'],
+    // Trader uses group tabs; default group is 'Trading' — only Trading tabs visible on load.
+    // Post-trade exceptions (Post-trade group) and Margin calls (Risk group) are hidden until
+    // the user switches groups.
+    expectedTabs: ['Open orders', 'Rejections'],
   },
   {
     role: 'ipp_developer',
     route: '/ipp-lifecycle/workstation',
     title: /ipp workstation/i,
-    expectedTabs: ['My projects', 'Milestones', 'Insurance', 'Community'],
+    // Default group is 'Project controls'.
+    expectedTabs: ['My projects', 'Milestones', 'Schedule pulse'],
   },
   {
     role: 'offtaker',
     route: '/offtaker-suite/workstation',
     title: /offtaker workstation/i,
-    expectedTabs: ['Sites & groups', 'Tariffs', 'Budget vs actual', 'RECs portfolio', 'Scope 2'],
+    // Default group is 'Contracts'. Sites & groups / Tariffs / RECs are in 'Operations'/'Compliance'.
+    expectedTabs: ['PPA contracts', 'Tariff indexation'],
   },
   {
     role: 'carbon_fund',
@@ -125,7 +146,8 @@ const CASES: WorkstationCase[] = [
     role: 'grid_operator',
     route: '/grid-operator/workstation',
     title: /grid operations workstation/i,
-    expectedTabs: ['Curtailment events', 'Outage responses', 'Ancillary services', 'Audit & compliance'],
+    // Default group is 'Operations'. Outage responses is in 'Connections' group — not visible on load.
+    expectedTabs: ['Curtailment events', 'Ancillary services'],
   },
   {
     role: 'support',
@@ -150,9 +172,11 @@ for (const c of CASES) {
     });
 
     await seedToken(page);
-    await page.goto(`${baseURL}${c.route}`, { waitUntil: 'networkidle' });
+    await page.goto(`${baseURL}${c.route}`, { waitUntil: 'load' });
 
-    await expect(page.getByRole('heading', { name: c.title })).toBeVisible({ timeout: 10_000 });
+    // Large lazy bundles (offtaker, support) take up to ~15s to render on prod after
+    // load event. Use 25s to give React time to download + render the workstation.
+    await expect(page.getByRole('heading', { name: c.title })).toBeVisible({ timeout: 25_000 });
 
     for (const label of c.expectedTabs) {
       await expect(page.getByRole('tab', { name: label })).toBeVisible();
