@@ -234,7 +234,7 @@ sso.get('/microsoft/callback', async (c) => {
   const accessJti = randomId('jti_');
   const token = await signToken(
     { sub: participant.id, email: participant.email, role: participant.role, name: participant.name, jti: accessJti },
-    c.env.JWT_SECRET,
+    c.env,
     { expiresInSeconds: ACCESS_TOKEN_EXPIRY_SECONDS }
   );
   const session = await createSession({

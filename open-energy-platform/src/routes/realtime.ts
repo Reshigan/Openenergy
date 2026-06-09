@@ -36,8 +36,8 @@ async function resolveSseUser(c: Context<HonoEnv>) {
   const headerToken = c.req.header('Authorization')?.replace(/^Bearer /, '');
   const queryToken = c.req.query('token');
   const token = headerToken || queryToken;
-  if (!token || !c.env.JWT_SECRET) return null;
-  const payload = await verifyToken(token, c.env.JWT_SECRET);
+  if (!token) return null;
+  const payload = await verifyToken(token, c.env);
   if (!payload) return null;
   return {
     id: payload.sub,

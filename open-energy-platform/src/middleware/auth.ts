@@ -1,60 +1,31 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // JWT Authentication Middleware for Open Energy Platform
+// Supports ES256 (asymmetric, preferred) and HS256 (fallback).
+// Set JWT_PRIVATE_KEY_JWK + JWT_PUBLIC_KEY_JWK as Worker secrets to enable ES256.
+// Generate key pair: node scripts/generate-jwt-keys.mjs
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { Context, Next } from 'hono';
-import { HonoEnv } from '../utils/types';
+import { getCookie } from 'hono/cookie';
+import { HonoEnv, HonoBindings } from '../utils/types';
 import { AppError, ErrorCode } from '../utils/types';
 import type { JWTPayload } from '../utils/types';
 
-const JWT_ALGORITHM = 'HS256';
 const DEFAULT_TOKEN_EXPIRY_SECONDS = 24 * 60 * 60;
 
-export async function signToken(
-  payload: Omit<JWTPayload, 'iat' | 'exp'>,
-  secret: string,
-  opts: { expiresInSeconds?: number } = {}
-): Promise<string> {
-  const now = Math.floor(Date.now() / 1000);
-  const expires = now + (opts.expiresInSeconds ?? DEFAULT_TOKEN_EXPIRY_SECONDS);
+// ── ES256 helpers ─────────────────────────────────────────────────────────────
 
-  const header = base64UrlEncodeStr(JSON.stringify({ alg: JWT_ALGORITHM, typ: 'JWT' }));
-  const body = base64UrlEncodeStr(JSON.stringify({ ...payload, iat: now, exp: expires }));
-  const sig = await signWithHMAC(`${header}.${body}`, secret);
-  const signature = base64UrlEncodeBytes(new Uint8Array(sig));
-
-  return `${header}.${body}.${signature}`;
+async function importEcPrivateKey(jwkStr: string): Promise<CryptoKey> {
+  const jwk = JSON.parse(jwkStr);
+  return crypto.subtle.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
 }
 
-export async function verifyToken(token: string, secret: string): Promise<JWTPayload | null> {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-
-    const [header, body, signature] = parts;
-
-    // Verify signature — constant-time comparison to prevent timing oracle
-    const sig = await signWithHMAC(`${header}.${body}`, secret);
-    const expectedSig = base64UrlEncodeBytes(new Uint8Array(sig));
-    const enc = new TextEncoder();
-    const a = enc.encode(signature);
-    const b = enc.encode(expectedSig);
-    if (a.length !== b.length) return null;
-    let diff = 0;
-    for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
-    if (diff !== 0) return null;
-
-    // Parse and check expiry
-    const payload: JWTPayload = JSON.parse(atob(body.replace(/-/g, '+').replace(/_/g, '/')));
-    const now = Math.floor(Date.now() / 1000);
-
-    if (payload.exp < now) return null;
-
-    return payload;
-  } catch {
-    return null;
-  }
+async function importEcPublicKey(jwkStr: string): Promise<CryptoKey> {
+  const jwk = JSON.parse(jwkStr);
+  return crypto.subtle.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
 }
+
+// ── Shared helpers ────────────────────────────────────────────────────────────
 
 function base64UrlEncodeStr(str: string): string {
   return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
@@ -66,15 +37,109 @@ function base64UrlEncodeBytes(bytes: Uint8Array): string {
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
+function base64UrlDecode(s: string): Uint8Array {
+  const padded = s.replace(/-/g, '+').replace(/_/g, '/');
+  const bin = atob(padded);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+// ── HS256 internals ───────────────────────────────────────────────────────────
+
 async function signWithHMAC(data: string, secret: string): Promise<ArrayBuffer> {
   const keyData = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
+    'raw', new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
   );
-  return await crypto.subtle.sign('HMAC', keyData, new TextEncoder().encode(data));
+  return crypto.subtle.sign('HMAC', keyData, new TextEncoder().encode(data));
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
+
+/**
+ * Sign a JWT payload.
+ * - Pass `HonoBindings` (i.e. `c.env`) to auto-select ES256 when
+ *   JWT_PRIVATE_KEY_JWK is set, HS256 otherwise.
+ * - Pass a plain string secret to force HS256 (used in tests).
+ */
+export async function signToken(
+  payload: Omit<JWTPayload, 'iat' | 'exp'>,
+  secretOrEnv: string | HonoBindings,
+  opts: { expiresInSeconds?: number } = {},
+): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const expires = now + (opts.expiresInSeconds ?? DEFAULT_TOKEN_EXPIRY_SECONDS);
+  const claims = { ...payload, iat: now, exp: expires };
+
+  if (typeof secretOrEnv === 'object' && secretOrEnv.JWT_PRIVATE_KEY_JWK) {
+    // ES256 path
+    const header = base64UrlEncodeStr(JSON.stringify({ alg: 'ES256', typ: 'JWT' }));
+    const body   = base64UrlEncodeStr(JSON.stringify(claims));
+    const key    = await importEcPrivateKey(secretOrEnv.JWT_PRIVATE_KEY_JWK);
+    const sigBuf = await crypto.subtle.sign(
+      { name: 'ECDSA', hash: 'SHA-256' },
+      key,
+      new TextEncoder().encode(`${header}.${body}`),
+    );
+    return `${header}.${body}.${base64UrlEncodeBytes(new Uint8Array(sigBuf))}`;
+  }
+
+  // HS256 path (string secret or env without private key)
+  const secret = typeof secretOrEnv === 'string' ? secretOrEnv : secretOrEnv.JWT_SECRET;
+  const header = base64UrlEncodeStr(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const body   = base64UrlEncodeStr(JSON.stringify(claims));
+  const sig    = await signWithHMAC(`${header}.${body}`, secret);
+  return `${header}.${body}.${base64UrlEncodeBytes(new Uint8Array(sig))}`;
+}
+
+/**
+ * Verify a JWT and return the payload, or null if invalid/expired.
+ * Accepts `HonoBindings` (c.env) to support both ES256 and HS256 automatically,
+ * or a plain string secret for HS256 only (test usage).
+ */
+export async function verifyToken(
+  token: string,
+  secretOrEnv: string | HonoBindings,
+): Promise<JWTPayload | null> {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const [headerB64, bodyB64, sigB64] = parts;
+
+    const hdr = JSON.parse(atob(headerB64.replace(/-/g, '+').replace(/_/g, '/')));
+    const alg: string = hdr.alg ?? 'HS256';
+
+    if (alg === 'ES256') {
+      const pubKeyJwk = typeof secretOrEnv === 'object' ? secretOrEnv.JWT_PUBLIC_KEY_JWK : null;
+      if (!pubKeyJwk) return null;
+      const key = await importEcPublicKey(pubKeyJwk);
+      const valid = await crypto.subtle.verify(
+        { name: 'ECDSA', hash: 'SHA-256' },
+        key,
+        base64UrlDecode(sigB64),
+        new TextEncoder().encode(`${headerB64}.${bodyB64}`),
+      );
+      if (!valid) return null;
+    } else {
+      // HS256 — constant-time comparison to prevent timing oracle
+      const secret = typeof secretOrEnv === 'string' ? secretOrEnv : secretOrEnv.JWT_SECRET;
+      const expected = base64UrlEncodeBytes(new Uint8Array(await signWithHMAC(`${headerB64}.${bodyB64}`, secret)));
+      const enc = new TextEncoder();
+      const a = enc.encode(sigB64);
+      const b = enc.encode(expected);
+      if (a.length !== b.length) return null;
+      let diff = 0;
+      for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+      if (diff !== 0) return null;
+    }
+
+    const payload: JWTPayload = JSON.parse(atob(bodyB64.replace(/-/g, '+').replace(/_/g, '/')));
+    if (payload.exp < Math.floor(Date.now() / 1000)) return null;
+    return payload;
+  } catch {
+    return null;
+  }
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -150,19 +215,16 @@ export async function invalidateTenantCache(
 // Auth middleware - must be used after KV binding check
 export async function authMiddleware(c: Context<HonoEnv>, next: Next) {
   const authHeader = c.req.header('Authorization');
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  // Accept Bearer header OR the oe_access httpOnly cookie set on login
+  const token = (authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null)
+    ?? getCookie(c, 'oe_access')
+    ?? null;
+
+  if (!token) {
     throw new AppError(ErrorCode.UNAUTHORIZED, 'Missing or invalid Authorization header', 401);
   }
-  
-  const token = authHeader.substring(7);
-  const secret = c.env.JWT_SECRET;
-  
-  if (!secret) {
-    throw new AppError(ErrorCode.INTERNAL_ERROR, 'JWT secret not configured', 500);
-  }
-  
-  const payload = await verifyToken(token, secret);
+
+  const payload = await verifyToken(token, c.env);
   
   if (!payload) {
     throw new AppError(ErrorCode.UNAUTHORIZED, 'Invalid or expired token', 401);
@@ -203,34 +265,29 @@ export async function authMiddleware(c: Context<HonoEnv>, next: Next) {
 // Optional auth - doesn't fail if no token, just sets context
 export async function optionalAuth(c: Context<HonoEnv>, next: Next) {
   const authHeader = c.req.header('Authorization');
-  
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7);
-    const secret = c.env.JWT_SECRET;
-    
-    if (secret) {
-      const payload = await verifyToken(token, secret);
+  const rawToken = (authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null)
+    ?? getCookie(c, 'oe_access')
+    ?? null;
+
+  if (rawToken) {
+    try {
+      const payload = await verifyToken(rawToken, c.env);
       if (payload) {
-        // Same KV-backed cache as authMiddleware. optionalAuth must never
-        // block an anonymous request, so on cache+DB miss we just leave
-        // the request as anonymous rather than 401.
-        try {
-          const tenantId = await resolveTenantIdCached(c.env, payload.sub);
-          if (tenantId !== null) {
-            c.set('auth', {
-              user: {
-                id: payload.sub,
-                email: payload.email,
-                role: payload.role,
-                name: payload.name,
-                tenant_id: tenantId,
-              },
-            });
-          }
-        } catch {
-          /* soft — leave anonymous */
+        const tenantId = await resolveTenantIdCached(c.env, payload.sub);
+        if (tenantId !== null) {
+          c.set('auth', {
+            user: {
+              id: payload.sub,
+              email: payload.email,
+              role: payload.role,
+              name: payload.name,
+              tenant_id: tenantId,
+            },
+          });
         }
       }
+    } catch {
+      /* soft — leave anonymous */
     }
   }
   
@@ -371,14 +428,10 @@ export async function refreshToken(c: Context<HonoEnv>) {
     throw new AppError(ErrorCode.UNAUTHORIZED, 'Authentication required', 401);
   }
   
-  const secret = c.env.JWT_SECRET;
-  if (!secret) {
-    throw new AppError(ErrorCode.INTERNAL_ERROR, 'JWT secret not configured', 500);
-  }
   return signToken({
     sub: auth.user.id,
     email: auth.user.email,
     role: auth.user.role,
     name: auth.user.name,
-  }, secret);
+  }, c.env);
 }

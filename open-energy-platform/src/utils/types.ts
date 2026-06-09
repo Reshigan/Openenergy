@@ -88,6 +88,11 @@ export interface HonoBindings {
   // then uncomment the [[queues.producers]] + [[queues.consumers]] blocks.
   QUEUE?: Queue;
   JWT_SECRET: string;
+  // ES256 asymmetric signing (preferred over HS256 JWT_SECRET).
+  // Generate with: node scripts/generate-jwt-keys.mjs
+  // Set as Worker secrets: wrangler secret put JWT_PRIVATE_KEY_JWK / JWT_PUBLIC_KEY_JWK
+  JWT_PRIVATE_KEY_JWK?: string;
+  JWT_PUBLIC_KEY_JWK?: string;
   AZURE_AD_CLIENT_ID?: string;
   AZURE_AD_TENANT_ID?: string;
   AZURE_AD_CLIENT_SECRET?: string;

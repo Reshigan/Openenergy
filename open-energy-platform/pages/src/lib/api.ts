@@ -6,13 +6,22 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
+// In-memory access token — never written to localStorage.
+// XSS cannot steal it; session survives page reload via cookie-based refresh.
+let _accessToken: string | null = null;
+export function setAuthToken(t: string | null): void { _accessToken = t; }
+export function getAuthToken(): string | null { return _accessToken; }
+
 export const api = axios.create({
   baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true, // send oe_access / oe_refresh httpOnly cookies
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  // In-memory token takes priority; fall back to localStorage for test helpers
+  // that seed it via page.addInitScript (see CLAUDE.md § browser tests).
+  const token = _accessToken || localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -22,17 +31,14 @@ api.interceptors.request.use((config) => {
 let refreshInFlight: Promise<string | null> | null = null;
 
 async function refreshAccessToken(): Promise<string | null> {
-  const refreshToken = localStorage.getItem('refresh_token');
-  if (!refreshToken) return null;
   if (refreshInFlight) return refreshInFlight;
   refreshInFlight = (async () => {
     try {
-      const res = await axios.post(`${API_BASE}/auth/refresh`, { refresh_token: refreshToken });
+      // No body needed — oe_refresh httpOnly cookie is sent automatically.
+      const res = await axios.post(`${API_BASE}/auth/refresh`, {}, { withCredentials: true });
       if (res.data?.success) {
-        const { token, refresh_token, refresh_expires_at } = res.data.data;
-        localStorage.setItem('token', token);
-        if (refresh_token) localStorage.setItem('refresh_token', refresh_token);
-        if (refresh_expires_at) localStorage.setItem('refresh_expires_at', refresh_expires_at);
+        const { token } = res.data.data;
+        _accessToken = token;
         return token as string;
       }
       return null;
@@ -83,9 +89,7 @@ api.interceptors.response.use(
         (original.headers as Record<string, string>).Authorization = `Bearer ${newToken}`;
         return api.request(original);
       }
-      localStorage.removeItem('token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('refresh_expires_at');
+      _accessToken = null;
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }

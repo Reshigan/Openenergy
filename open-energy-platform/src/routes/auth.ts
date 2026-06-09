@@ -6,6 +6,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { Hono } from 'hono';
+import { setCookie, getCookie, deleteCookie } from 'hono/cookie';
 import { HonoEnv } from '../utils/types';
 import { RegisterSchema, LoginSchema, ForgotPasswordSchema, ResetPasswordSchema } from '../utils/validation';
 import { authMiddleware, getCurrentUser, signToken, hashPassword, verifyPassword } from '../middleware/auth';
@@ -146,7 +147,7 @@ auth.post('/login', async (c) => {
   const accessJti = randomId('jti_');
   const token = await signToken(
     { sub: participant.id, email: participant.email, role: participant.role, name: participant.name, jti: accessJti },
-    c.env.JWT_SECRET,
+    c.env,
     { expiresInSeconds: ACCESS_TOKEN_EXPIRY_SECONDS }
   );
   const session = await createSession({
@@ -168,6 +169,16 @@ auth.post('/login', async (c) => {
     entity_id: participant.id,
     data: { email, role: participant.role },
     env: c.env,
+  });
+
+  // httpOnly cookies — defense-in-depth: XSS cannot read these.
+  // oe_access: scoped to /api so all API routes can use it as fallback.
+  // oe_refresh: scoped to /api/auth/refresh only (rotation endpoint).
+  const cookieOpts = { httpOnly: true, secure: true, sameSite: 'Strict' as const, path: '/api' };
+  setCookie(c, 'oe_access', token, { ...cookieOpts, maxAge: ACCESS_TOKEN_EXPIRY_SECONDS });
+  setCookie(c, 'oe_refresh', session.refreshToken, {
+    ...cookieOpts, path: '/api/auth/refresh',
+    maxAge: 7 * 24 * 60 * 60,
   });
 
   return c.json({
@@ -192,8 +203,10 @@ auth.post('/login', async (c) => {
 });
 
 // POST /auth/refresh — Rotate access + refresh tokens
+// Accepts refresh_token in JSON body OR the oe_refresh httpOnly cookie.
 auth.post('/refresh', async (c) => {
-  const { refresh_token } = await c.req.json().catch(() => ({} as any));
+  const body = await c.req.json().catch(() => ({} as any));
+  const refresh_token = body?.refresh_token ?? getCookie(c, 'oe_refresh');
   if (!refresh_token) return c.json({ success: false, error: 'refresh_token required' }, 400);
 
   const newAccessJti = randomId('jti_');
@@ -207,9 +220,17 @@ auth.post('/refresh', async (c) => {
 
   const token = await signToken(
     { sub: p.id, email: p.email, role: p.role, name: p.name, jti: newAccessJti },
-    c.env.JWT_SECRET,
+    c.env,
     { expiresInSeconds: ACCESS_TOKEN_EXPIRY_SECONDS }
   );
+
+  const cookieOpts = { httpOnly: true, secure: true, sameSite: 'Strict' as const, path: '/api' };
+  setCookie(c, 'oe_access', token, { ...cookieOpts, maxAge: ACCESS_TOKEN_EXPIRY_SECONDS });
+  setCookie(c, 'oe_refresh', rot.newRefreshToken, {
+    ...cookieOpts, path: '/api/auth/refresh',
+    maxAge: 7 * 24 * 60 * 60,
+  });
+
   return c.json({
     success: true,
     data: {
@@ -552,9 +573,13 @@ auth.post('/change-password', authMiddleware, async (c) => {
 auth.post('/logout', authMiddleware, async (c) => {
   const user = getCurrentUser(c);
   const body = await c.req.json().catch(() => ({} as any));
-  if (body?.refresh_token) {
-    await revokeSessionByRefresh(c.env.DB, body.refresh_token, 'user_logout');
+  const rt = body?.refresh_token ?? getCookie(c, 'oe_refresh');
+  if (rt) {
+    await revokeSessionByRefresh(c.env.DB, rt, 'user_logout');
   }
+  // Clear both auth cookies
+  deleteCookie(c, 'oe_access', { path: '/api' });
+  deleteCookie(c, 'oe_refresh', { path: '/api/auth/refresh' });
   await fireCascade({
     event: 'auth.logout',
     actor_id: user.id,

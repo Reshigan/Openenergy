@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { api, User, AuthContextType, RegisterData, MfaRequiredError, LockoutError, SsoTokenBundle } from '../lib/api';
+import { api, setAuthToken, User, AuthContextType, RegisterData, MfaRequiredError, LockoutError, SsoTokenBundle } from '../lib/api';
 
 export { api };
 
@@ -11,7 +11,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refreshUser = async () => {
@@ -26,16 +26,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch {
       setToken(null);
-      localStorage.removeItem('token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('refresh_expires_at');
+      setAuthToken(null);
     } finally {
       setLoading(false);
     }
   };
 
+  // On mount: attempt to restore session from oe_refresh httpOnly cookie.
+  // The server rotates the cookie and returns a fresh access token.
   useEffect(() => {
-    refreshUser();
+    (async () => {
+      try {
+        const res = await api.post('/auth/refresh', {});
+        if (res.data?.success) {
+          const { token: accessToken } = res.data.data;
+          setAuthToken(accessToken);
+          setToken(accessToken);
+          return; // refreshUser() fires via the token useEffect below
+        }
+      } catch {
+        // No valid cookie — start unauthenticated
+      }
+      setLoading(false);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (token) refreshUser();
   }, [token]);
 
   const login = async (email: string, password: string, mfaCode?: string) => {
@@ -44,12 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await api.post('/auth/login', payload);
       if (response.data.success) {
-        const { token: accessToken, refresh_token, refresh_expires_at, participant } = response.data.data;
+        const { token: accessToken, participant } = response.data.data;
+        setAuthToken(accessToken);
         setToken(accessToken);
         setUser(participant);
-        localStorage.setItem('token', accessToken);
-        if (refresh_token) localStorage.setItem('refresh_token', refresh_token);
-        if (refresh_expires_at) localStorage.setItem('refresh_expires_at', refresh_expires_at);
       } else {
         throw new Error(response.data.error || 'Login failed');
       }
@@ -71,35 +86,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Accept a token bundle produced by an SSO callback (see /sso-landing).
-  // Mirrors the tail of `login()` but without a password round-trip.
-  //
-  // We flip `loading` back to true before setting the token so that any
-  // ProtectedRoute that renders between `setToken(...)` and the completion of
-  // `refreshUser()` (triggered by the useEffect on `token`) renders the
-  // loading spinner instead of redirecting to /login. Without this, the
-  // `SsoLanding` → `navigate('/cockpit')` path races with `refreshUser()`
-  // and the user is bounced back to /login on the first render where
-  // `loading === false && user === null` (Devin Review finding).
+  // The oe_refresh cookie is set server-side; we only need the access token here.
   const acceptSsoTokens = (bundle: SsoTokenBundle) => {
-    localStorage.setItem('token', bundle.token);
-    if (bundle.refresh_token) localStorage.setItem('refresh_token', bundle.refresh_token);
-    if (bundle.refresh_expires_at) localStorage.setItem('refresh_expires_at', bundle.refresh_expires_at);
+    setAuthToken(bundle.token);
     setLoading(true);
     setToken(bundle.token);
-    // refreshUser() will run via the useEffect dependency on `token`.
+    // refreshUser() fires via the token useEffect
   };
 
   const logout = () => {
-    const refreshToken = localStorage.getItem('refresh_token');
-    // Best-effort server-side revoke; don't block the UI on it.
-    if (refreshToken) {
-      api.post('/auth/logout', { refresh_token: refreshToken }).catch(() => {});
-    }
+    // Server clears both cookies; withCredentials ensures the cookie is sent.
+    api.post('/auth/logout', {}).catch(() => {});
+    setAuthToken(null);
     setToken(null);
     setUser(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('refresh_expires_at');
   };
 
   return (

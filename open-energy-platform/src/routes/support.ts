@@ -225,7 +225,7 @@ support.post('/participants/:id/impersonate', async (c) => {
       name: target.name,
       jti,
     },
-    c.env.JWT_SECRET,
+    c.env,
     { expiresInSeconds: IMPERSONATION_TTL_SECONDS }
   );
 
