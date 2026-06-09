@@ -71,7 +71,7 @@ test('Carbon Article 6 tab renders KPIs, ledger, and routing', async ({ page, ba
 
   // Tab label is "Article 6 ITMO"; pick the button to avoid colliding with
   // any heading text rendered before tab content swap.
-  await page.getByRole('button', { name: /^Article 6 ITMO$/ }).click();
+  await page.getByRole('tab', { name: /^Article 6 ITMO$/ }).click();
   await expect(page.getByTestId('article6-tab')).toBeVisible({ timeout: 15_000 });
 
   // KPI strip — 5 tiles.
@@ -99,7 +99,7 @@ test('Carbon Article 6 row drill-down shows risk + actions', async ({ page, base
   await seedToken(page);
   await page.goto(`${baseURL}/carbon-registry/workstation`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: /^Article 6 ITMO$/ }).click();
+  await page.getByRole('tab', { name: /^Article 6 ITMO$/ }).click();
   await expect(page.getByTestId('article6-tab')).toBeVisible({ timeout: 15_000 });
 
   // Click first ledger row to open the drill-down.

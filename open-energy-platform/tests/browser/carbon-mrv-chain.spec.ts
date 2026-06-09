@@ -68,7 +68,7 @@ test('Carbon MRV chain tab renders KPIs, filters, and demo rows', async ({ page,
   await seedToken(page);
   await page.goto(`${baseURL}/carbon-registry/workstation`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: /Verification chain/i }).click();
+  await page.getByRole('tab', { name: /Verification chain/i }).click();
   await expect(page.getByTestId('carbon-mrv-chain-tab')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('carbon-mrv-chain-kpis')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('carbon-mrv-chain-table')).toBeVisible({ timeout: 15_000 });
@@ -90,7 +90,7 @@ test('Carbon MRV chain drill-down shows timeline + actions', async ({ page, base
   await seedToken(page);
   await page.goto(`${baseURL}/carbon-registry/workstation`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: /Verification chain/i }).click();
+  await page.getByRole('tab', { name: /Verification chain/i }).click();
   await expect(page.getByTestId('carbon-mrv-chain-tab')).toBeVisible({ timeout: 15_000 });
 
   await page.getByTestId('carbon-mrv-chain-filter-all').click();

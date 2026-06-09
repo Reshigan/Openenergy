@@ -155,12 +155,12 @@ for (const c of CASES) {
     await expect(page.getByRole('heading', { name: c.title })).toBeVisible({ timeout: 10_000 });
 
     for (const label of c.expectedTabs) {
-      await expect(page.getByRole('button', { name: label })).toBeVisible();
+      await expect(page.getByRole('tab', { name: label })).toBeVisible();
     }
 
     // Tab-switch URL contract — only meaningful when there's a second tab.
     if (c.expectedTabs.length >= 2) {
-      await page.getByRole('button', { name: c.expectedTabs[1] }).click();
+      await page.getByRole('tab', { name: c.expectedTabs[1] }).click();
       await expect.poll(() => page.url(), { timeout: 5_000 }).toMatch(/[?&]tab=/);
     }
 

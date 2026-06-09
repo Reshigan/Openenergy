@@ -70,7 +70,7 @@ test('Regulator inbox tab renders KPIs, filters, and demo events', async ({ page
   await seedToken(page);
   await page.goto(`${baseURL}/regulator-suite/workstation`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: /^Inbox$/ }).click();
+  await page.getByRole('tab', { name: /^Inbox$/ }).click();
   await expect(page.getByTestId('regulator-inbox-tab')).toBeVisible({ timeout: 15_000 });
 
   // KPI strip — 5 tiles (total, pending, overdue, escalated, critical open).
@@ -95,7 +95,7 @@ test('Regulator inbox drill-down shows event payload and action buttons', async 
   await seedToken(page);
   await page.goto(`${baseURL}/regulator-suite/workstation`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: /^Inbox$/ }).click();
+  await page.getByRole('tab', { name: /^Inbox$/ }).click();
   await expect(page.getByTestId('regulator-inbox-tab')).toBeVisible({ timeout: 15_000 });
 
   // Filter to pending so we know we'll get a row with action buttons.
@@ -116,7 +116,7 @@ test('Compliance notices tab renders KPIs, filter pills, and demo notices', asyn
   await seedToken(page);
   await page.goto(`${baseURL}/regulator-suite/workstation`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: /^Compliance notices$/ }).click();
+  await page.getByRole('tab', { name: /^Compliance notices$/ }).click();
   await expect(page.getByTestId('regulator-notices-tab')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('regulator-notices-kpis')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('regulator-notices-table')).toBeVisible({ timeout: 15_000 });

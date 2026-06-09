@@ -66,7 +66,7 @@ PROBES=(
   "/api/lender/pipeline::lender"
   "/api/ipp/projects::ipp"
   "/api/offtaker-suite/sites::offtaker-suite"
-  "/api/carbon-registry/projects::carbon-registry"
+  "/api/carbon-registry/registries::carbon-registry"
   "/api/admin-platform/tenants::admin-platform"
   "/api/settlement-auto/runs::settlement-auto"
   "/api/imbalance/runs::imbalance"

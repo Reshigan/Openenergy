@@ -68,7 +68,7 @@ test('Esums commissioning tab renders KPIs, filters, and demo rows', async ({ pa
   await seedToken(page);
   await page.goto(`${baseURL}/esums`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: /Commissioning chain/i }).click();
+  await page.getByRole('tab', { name: /Commissioning chain/i }).click();
   await expect(page.getByTestId('esums-commissioning-tab')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('esums-commissioning-kpis')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('esums-commissioning-table')).toBeVisible({ timeout: 15_000 });
@@ -89,7 +89,7 @@ test('Esums commissioning drill-down shows timeline + actions', async ({ page, b
   await seedToken(page);
   await page.goto(`${baseURL}/esums`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: /Commissioning chain/i }).click();
+  await page.getByRole('tab', { name: /Commissioning chain/i }).click();
   await expect(page.getByTestId('esums-commissioning-tab')).toBeVisible({ timeout: 15_000 });
 
   await page.getByTestId('esums-commissioning-filter-all').click();

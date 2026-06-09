@@ -68,7 +68,7 @@ test('Trader MM compliance tab renders KPIs, filters, and demo rows', async ({ p
   await seedToken(page);
   await page.goto(`${baseURL}/trader-risk/workstation`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: /^MM compliance$/ }).click();
+  await page.getByRole('tab', { name: /^MM compliance$/ }).click();
   await expect(page.getByTestId('trader-mm-compliance-tab')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('trader-mm-compliance-kpis')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('trader-mm-compliance-table')).toBeVisible({ timeout: 15_000 });
@@ -93,7 +93,7 @@ test('Trader MM compliance drill-down shows performance history + actions', asyn
   await seedToken(page);
   await page.goto(`${baseURL}/trader-risk/workstation`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: /^MM compliance$/ }).click();
+  await page.getByRole('tab', { name: /^MM compliance$/ }).click();
   await expect(page.getByTestId('trader-mm-compliance-tab')).toBeVisible({ timeout: 15_000 });
 
   await page.getByTestId('trader-mm-compliance-filter-all').click();

@@ -400,6 +400,12 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   app.route('/api/lois', loiRoutes);
   app.route('/api/offtaker', offtakerRoutes);
   app.route('/api/funder', funderRoutes);
+  // /api/regulator is intentionally mounted three times (lines below + line ~650):
+  //   regulatorRoutes      → /filings, /market-summary
+  //   regulatorSuiteRoutes → /licences, /tariff-submissions
+  //   regulatorReportRoutes (reports.ts) → /catalog, /ledger, /registry, /:role
+  // Hono matches in registration order; the /:role wildcard in reports only fires
+  // for paths not claimed by the first two routers. No conflicts verified.
   app.route('/api/regulator', regulatorRoutes);
   app.route('/api/regulator', regulatorSuiteRoutes);
   app.route('/api/grid-operator', gridOperatorRoutes);

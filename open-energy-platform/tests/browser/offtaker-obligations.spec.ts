@@ -69,7 +69,7 @@ test('Offtaker PPA obligations tab renders KPIs, filters, and demo rows', async 
   await seedToken(page);
   await page.goto(`${baseURL}/offtaker-suite`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: /^PPA obligations$/ }).click();
+  await page.getByRole('tab', { name: /^PPA obligations$/ }).click();
   await expect(page.getByTestId('offtaker-obligations-tab')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('offtaker-obligations-kpis')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('offtaker-obligations-table')).toBeVisible({ timeout: 15_000 });
@@ -91,7 +91,7 @@ test('Offtaker PPA obligations drill-down shows readings + cure action', async (
   await seedToken(page);
   await page.goto(`${baseURL}/offtaker-suite`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: /^PPA obligations$/ }).click();
+  await page.getByRole('tab', { name: /^PPA obligations$/ }).click();
   await expect(page.getByTestId('offtaker-obligations-tab')).toBeVisible({ timeout: 15_000 });
 
   // Switch to All so the delivered/take-or-pay demo rows are reachable.

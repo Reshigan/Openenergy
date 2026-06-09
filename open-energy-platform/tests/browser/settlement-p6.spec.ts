@@ -69,7 +69,7 @@ test('Settlement Disclosure tab renders KPIs + snapshot table', async ({ page, b
   await seedToken(page);
   await page.goto(`${baseURL}/settlement`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: /^Disclosure$/ }).click();
+  await page.getByRole('tab', { name: /^Disclosure$/ }).click();
   await expect(page.getByTestId('disclosure-tab')).toBeVisible({ timeout: 15_000 });
 
   // KPI grid lights up once the current snapshot loads.
@@ -90,7 +90,7 @@ test('Settlement DvP tab renders cycle picker + state pipeline', async ({ page, 
   await seedToken(page);
   await page.goto(`${baseURL}/settlement`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: /^DvP$/ }).click();
+  await page.getByRole('tab', { name: /^DvP$/ }).click();
   await expect(page.getByTestId('dvp-panel')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('dvp-cycle-select')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('dvp-status')).toBeVisible({ timeout: 15_000 });
@@ -104,7 +104,7 @@ test('Settlement Margin gate tab renders member table + KPIs', async ({ page, ba
   await seedToken(page);
   await page.goto(`${baseURL}/settlement`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: /^Margin gate$/ }).click();
+  await page.getByRole('tab', { name: /^Margin gate$/ }).click();
   await expect(page.getByTestId('margin-gate-widget')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('margin-gate-table')).toBeVisible({ timeout: 15_000 });
 

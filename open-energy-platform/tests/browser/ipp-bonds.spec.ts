@@ -68,7 +68,7 @@ test('IPP bond registry renders KPIs, filters, and demo rows', async ({ page, ba
   await seedToken(page);
   await page.goto(`${baseURL}/ipp-lifecycle/workstation`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: /^Bonds$/ }).click();
+  await page.getByRole('tab', { name: /^Bonds$/ }).click();
   await expect(page.getByTestId('ipp-bond-registry-tab')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('ipp-bond-registry-kpis')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('ipp-bond-registry-table')).toBeVisible({ timeout: 15_000 });
@@ -90,7 +90,7 @@ test('IPP bond registry drill-down shows notices + actions', async ({ page, base
   await seedToken(page);
   await page.goto(`${baseURL}/ipp-lifecycle/workstation`, { waitUntil: 'networkidle' });
 
-  await page.getByRole('button', { name: /^Bonds$/ }).click();
+  await page.getByRole('tab', { name: /^Bonds$/ }).click();
   await expect(page.getByTestId('ipp-bond-registry-tab')).toBeVisible({ timeout: 15_000 });
 
   await page.getByTestId('ipp-bond-registry-filter-all').click();

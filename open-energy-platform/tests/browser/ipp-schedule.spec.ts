@@ -105,7 +105,7 @@ test('IPP workstation Schedule pulse tab loads', async ({ page, baseURL }) => {
 
   // The workstation renders all tab buttons up front; switch to Schedule pulse
   // and wait for the pulse-tab mount marker.
-  await page.getByRole('button', { name: /Schedule pulse/i }).click();
+  await page.getByRole('tab', { name: /Schedule pulse/i }).click();
   await expect(page.getByTestId('ipp-schedule-pulse')).toBeVisible({ timeout: 15_000 });
 
   const real = errors.filter((e) => !isBenign(e));
