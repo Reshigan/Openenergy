@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '22'
 
 jobs:
   # ─── Layer 1: Server tsc + Vitest (fast, deterministic, every push) ─────
