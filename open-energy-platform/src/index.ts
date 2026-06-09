@@ -70,13 +70,8 @@ app.use('*', idempotency);
 app.use('/api/*', tenantQuotaMiddleware);
 
 // Basic health check — always responds 200 so uptime monitors see a stable signal.
-app.get('/api/health', (c) => c.json({
-  status: 'healthy',
-  version: '1.0.0',
-  features: {
-    ai_enabled: !((c.env as any).OE_AI_DISABLED === '1' || (c.env as any).OE_AI_DISABLED === 'true'),
-  },
-}));
+// Intentionally minimal: no version, no feature flags (info disclosure).
+app.get('/api/health', (c) => c.json({ status: 'healthy' }));
 
 // Deep health probe — admin-only; leaks binding topology.
 app.get('/api/health/deep', authMiddleware, async (c) => {
