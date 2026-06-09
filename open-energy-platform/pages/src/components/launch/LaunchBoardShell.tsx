@@ -94,7 +94,7 @@ function KpiTile({ kpi }: { kpi: Kpi }) {
     <button
       type="button"
       onClick={clickable ? () => navigate(kpi.href!) : undefined}
-      className="text-left rounded-lg border p-3 transition-all"
+      className="text-left rounded-lg border p-3 transition-all overflow-hidden min-w-0"
       style={{
         background: '#ffffff',
         borderColor: '#dde4ec',
@@ -120,27 +120,27 @@ function KpiTile({ kpi }: { kpi: Kpi }) {
       <div className="text-[10px] font-semibold uppercase tracking-wide truncate" style={{ color: '#6b7685' }}>
         {kpi.label}
       </div>
-      <div className="mt-1 flex items-baseline gap-1.5">
-        <div className="text-[20px] font-bold leading-none" style={{ color: '#0f1c2e' }}>
+      <div className="mt-1 flex items-baseline gap-1.5 min-w-0">
+        <div className="text-[20px] font-bold leading-none truncate min-w-0" style={{ color: '#0f1c2e' }}>
           {formatValue(kpi.value)}
         </div>
         {kpi.unit && (
-          <div className="text-[11px] font-medium" style={{ color: '#6b7685' }}>
+          <div className="text-[11px] font-medium shrink-0" style={{ color: '#6b7685' }}>
             {kpi.unit}
           </div>
         )}
       </div>
       {(kpi.trend_value || kpi.footer) && (
-        <div className="mt-1 flex items-center gap-1.5 text-[10px]">
+        <div className="mt-1 flex items-center gap-1.5 text-[10px] min-w-0 overflow-hidden">
           {kpi.trend_value && (
             <span
-              className="px-1 py-px rounded font-semibold"
+              className="px-1 py-px rounded font-semibold shrink-0"
               style={{ background: toneBg[tone], color: toneText[tone] }}
             >
               {kpi.trend_value}
             </span>
           )}
-          {kpi.footer && <span className="truncate" style={{ color: '#6b7685' }}>{kpi.footer}</span>}
+          {kpi.footer && <span className="truncate min-w-0" style={{ color: '#6b7685' }}>{kpi.footer}</span>}
         </div>
       )}
     </button>
