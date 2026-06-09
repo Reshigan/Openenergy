@@ -40,7 +40,7 @@ export function ContractDetail() {
               onClick={() => navigate('/contracts')}
               className="h-9 px-3 rounded-md bg-white/15 border border-white/20 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/25"
             >
-              <OEIcon name="chevron-left" size={14} /> Contracts
+              <OEIcon name="chevron-left" size={14} /> All contracts
             </button>
             {data.linked.project && (
               <button

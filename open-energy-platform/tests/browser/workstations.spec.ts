@@ -125,7 +125,7 @@ const CASES: WorkstationCase[] = [
     role: 'grid_operator',
     route: '/grid-operator/workstation',
     title: /grid operations workstation/i,
-    expectedTabs: ['Curtailment events', 'Outage responses', 'Ancillary award events', 'Audit & compliance'],
+    expectedTabs: ['Curtailment events', 'Outage responses', 'Ancillary services', 'Audit & compliance'],
   },
   {
     role: 'support',
