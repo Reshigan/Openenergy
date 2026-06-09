@@ -764,10 +764,9 @@ reports.post('/mail', async (c) => {
     }
     const errText = await res.text().catch(() => '');
     return c.json({ success: false, error: `Mail delivery failed: ${res.status} ${errText}` }, 502);
-  } catch (_e) {
-    // In local dev MailChannels is unavailable — log and succeed silently
-    console.log(`[reports/mail] Would send to ${to}: ${subject}`);
-    return c.json({ success: true, message: `Report queued for delivery to ${to}` });
+  } catch (e) {
+    // MailChannels unreachable (local dev or transient network error)
+    return c.json({ success: false, error: 'Mail delivery unavailable. Download the report and send manually.' }, 503);
   }
 });
 

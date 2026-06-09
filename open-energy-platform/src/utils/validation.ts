@@ -7,13 +7,14 @@ import { z } from 'zod';
 // ── AUTH SCHEMAS ──
 export const RegisterSchema = z.object({
   email: z.string().email('Invalid email format'),
-  password: z.string().min(8, 'Password must be at least 8 characters')
+  password: z.string().min(8, 'Password must be at least 8 characters').max(128, 'Password must be at most 128 characters')
     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
     .regex(/[0-9]/, 'Password must contain at least one number'),
   name: z.string().min(2, 'Name must be at least 2 characters'),
   company_name: z.string().optional(),
-  role: z.enum(['admin', 'ipp_developer', 'trader', 'carbon_fund', 'offtaker', 'lender', 'grid_operator', 'regulator', 'esums_owner']),
+  // admin and regulator are provisioned by platform ops, not self-registration
+  role: z.enum(['ipp_developer', 'trader', 'carbon_fund', 'offtaker', 'lender', 'grid_operator', 'esums_owner']),
 });
 
 export const LoginSchema = z.object({
@@ -32,7 +33,7 @@ export const ForgotPasswordSchema = z.object({
 
 export const ResetPasswordSchema = z.object({
   token: z.string(),
-  new_password: z.string().min(8, 'Password must be at least 8 characters'),
+  new_password: z.string().min(8, 'Password must be at least 8 characters').max(128, 'Password must be at most 128 characters'),
 });
 
 // ── CONTRACT SCHEMAS ──

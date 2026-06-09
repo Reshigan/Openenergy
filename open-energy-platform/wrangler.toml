@@ -34,6 +34,14 @@ ENVIRONMENT = "production"
 PLATFORM_NAME = "Open Energy"
 DOMAIN = "oe.vantax.co.za"
 APP_BASE_URL = "https://oe.vantax.co.za"
+# Secrets (never committed — provision via `wrangler secret put <NAME>`):
+#   wrangler secret put JWT_SECRET          # HS256 fallback HMAC key (≥32 random bytes)
+#   wrangler secret put JWT_PRIVATE_KEY_JWK # ES256 P-256 private key JWK (run scripts/generate-jwt-keys.mjs)
+#   wrangler secret put JWT_PUBLIC_KEY_JWK  # ES256 P-256 public key JWK  (same script)
+#   wrangler secret put BACKUP_TOKEN        # Long-lived admin bootstrap token (UUID v4)
+#   wrangler secret put AZURE_AD_CLIENT_SECRET
+#   wrangler secret put SOLAX_CLIENT_SECRET
+#
 # Microsoft Entra ID SSO (client ID + tenant ID are semi-public and safe to
 # commit; AZURE_AD_CLIENT_SECRET must be set via `wrangler secret put` and
 # is never committed).

@@ -1354,15 +1354,17 @@ function AppRoutes() {
       {import.meta.env.DEV ? (
         <Route path="/dev/signature" element={<SignaturePreview />} />
       ) : null}
-      {/* UX exploration prototypes — no auth, no shell. Open in browser to compare. */}
-      <Route path="/apex/register"                element={<LazyWorkbench><ApexRegisterPage /></LazyWorkbench>} />
-      <Route path="/apex"                         element={<LazyWorkbench><ApexApp /></LazyWorkbench>} />
-      <Route path="/apex/*"                       element={<LazyWorkbench><ApexApp /></LazyWorkbench>} />
-      <Route path="/ux-prototype"               element={<LazyWorkbench><UxAlternativesIndex /></LazyWorkbench>} />
-      <Route path="/ux-prototype/pulse-lens"    element={<LazyWorkbench><PulseLensPrototype /></LazyWorkbench>} />
-      <Route path="/ux-prototype/time-axis"     element={<LazyWorkbench><TimeAxisPrototype /></LazyWorkbench>} />
-      <Route path="/ux-prototype/command-lens"  element={<LazyWorkbench><CommandLensPrototype /></LazyWorkbench>} />
-      <Route path="/ux-prototype/cockpit-grid"  element={<LazyWorkbench><CockpitGridPrototype /></LazyWorkbench>} />
+      {/* UX exploration prototypes — auth-gated so API calls carry valid credentials */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/apex/register"                element={<LazyWorkbench><ApexRegisterPage /></LazyWorkbench>} />
+        <Route path="/apex"                         element={<LazyWorkbench><ApexApp /></LazyWorkbench>} />
+        <Route path="/apex/*"                       element={<LazyWorkbench><ApexApp /></LazyWorkbench>} />
+        <Route path="/ux-prototype"               element={<LazyWorkbench><UxAlternativesIndex /></LazyWorkbench>} />
+        <Route path="/ux-prototype/pulse-lens"    element={<LazyWorkbench><PulseLensPrototype /></LazyWorkbench>} />
+        <Route path="/ux-prototype/time-axis"     element={<LazyWorkbench><TimeAxisPrototype /></LazyWorkbench>} />
+        <Route path="/ux-prototype/command-lens"  element={<LazyWorkbench><CommandLensPrototype /></LazyWorkbench>} />
+        <Route path="/ux-prototype/cockpit-grid"  element={<LazyWorkbench><CockpitGridPrototype /></LazyWorkbench>} />
+      </Route>
       <Route path="/" element={<Navigate to="/launch" replace />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

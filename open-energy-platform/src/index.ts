@@ -78,8 +78,10 @@ app.get('/api/health', (c) => c.json({
   },
 }));
 
-// Deep health probe — exercises every Cloudflare binding the platform depends on.
-app.get('/api/health/deep', async (c) => {
+// Deep health probe — admin-only; leaks binding topology.
+app.get('/api/health/deep', authMiddleware, async (c) => {
+  const user = getCurrentUser(c);
+  if (user.role !== 'admin') return c.json({ success: false, error: 'admin only' }, 403);
   const start = Date.now();
   const checks: Record<string, { ok: boolean; latency_ms: number; code?: string }> = {};
 

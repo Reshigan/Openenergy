@@ -111,13 +111,16 @@ auth.post('/login', async (c) => {
     await recordLoginAttempt(c.env.DB, email, ip, false, 'no_user');
     return c.json({ success: false, error: 'Invalid email or password' }, 401);
   }
-  if (participant.status === 'suspended') {
-    await recordLoginAttempt(c.env.DB, email, ip, false, 'suspended');
-    return c.json({ success: false, error: 'Account suspended. Contact support.' }, 403);
-  }
-  if (participant.status === 'rejected') {
-    await recordLoginAttempt(c.env.DB, email, ip, false, 'rejected');
-    return c.json({ success: false, error: 'Account rejected.' }, 403);
+  if (participant.status !== 'active') {
+    const reasons: Record<string, string> = {
+      suspended: 'Account suspended. Contact support.',
+      rejected:  'Account rejected.',
+      locked:    'Account locked. Contact support.',
+      pending:   'Email verification required before login.',
+    };
+    const msg = reasons[participant.status] ?? 'Account inactive. Contact support.';
+    await recordLoginAttempt(c.env.DB, email, ip, false, participant.status);
+    return c.json({ success: false, error: msg }, 403);
   }
 
   const isValid = await verifyPassword(password, participant.password_hash);
@@ -557,6 +560,7 @@ auth.post('/change-password', authMiddleware, async (c) => {
   const { current_password, new_password } = body;
   if (!current_password || !new_password) return c.json({ success: false, error: 'Current and new password required' }, 400);
   if (new_password.length < 8) return c.json({ success: false, error: 'New password must be at least 8 characters' }, 400);
+  if (new_password.length > 128) return c.json({ success: false, error: 'Password must be at most 128 characters' }, 400);
   const p = await c.env.DB.prepare('SELECT password_hash FROM participants WHERE id = ?').bind(user.id).first() as any;
   if (!p) return c.json({ success: false, error: 'Participant not found' }, 404);
   if (!(await verifyPassword(current_password, p.password_hash))) {
