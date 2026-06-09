@@ -1,0 +1,24 @@
+# Local development secrets — copy to .dev.vars and fill in values.
+# .dev.vars is read by `wrangler dev` and is gitignored.
+# For production, set each via: wrangler secret put <NAME>
+
+# ── JWT ──────────────────────────────────────────────────────────────────────
+# Fallback HS256 signing key. Minimum 32 random bytes, base64 or hex string.
+JWT_SECRET=
+
+# ES256 P-256 key pair (preferred over JWT_SECRET when set).
+# Generate with: node scripts/generate-jwt-keys.mjs
+JWT_PRIVATE_KEY_JWK=
+JWT_PUBLIC_KEY_JWK=
+
+# ── PLATFORM ADMIN ───────────────────────────────────────────────────────────
+# Long-lived bootstrap token for the admin account. Use a UUID v4.
+BACKUP_TOKEN=
+
+# ── SSO ──────────────────────────────────────────────────────────────────────
+# Microsoft Entra ID — client ID and tenant ID are in wrangler.toml (public).
+AZURE_AD_CLIENT_SECRET=
+
+# ── SOLAX CLOUD ──────────────────────────────────────────────────────────────
+# NXT Energy Goldrush C&I fleet — OpenAPI EU endpoint.
+SOLAX_CLIENT_SECRET=

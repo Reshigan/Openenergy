@@ -216,7 +216,7 @@ export function Support() {
               className="w-full pl-10 pr-3 py-2 border border-ionex-border-200 rounded-lg"
             />
           </div>
-          <button type="submit" className="px-4 py-2 bg-ionex-primary-600 text-white rounded-lg">Search</button>
+          <button type="submit" disabled={loading} className="px-4 py-2 bg-ionex-primary-600 text-white rounded-lg disabled:opacity-50">{loading ? 'Searching…' : 'Search'}</button>
         </form>
       </div>
 
