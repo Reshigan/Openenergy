@@ -1231,10 +1231,10 @@ INSERT OR IGNORE INTO oe_tariff_determinations (
   application_ref, consultation_ref, determination_ref, gazette_ref,
   application_basis, determination_basis, rod_notes,
   chain_status,
-  application_received_at, completeness_check_at,
-  consultation_opened_at, analysis_started_at, draft_issued_at,
-  determination_issued_at, gazetted_at,
-  determination_round, is_reportable, escalation_level,
+  application_received_at, completeness_review_at,
+  public_consultation_at, revenue_analysis_at, draft_determination_at,
+  determination_issued_at, implemented_at,
+  is_reportable, escalation_level,
   created_by, created_at, updated_at
 ) VALUES (
   'seed_tariff_det_499_001', 'TD-499-2026-0001',
@@ -1248,11 +1248,11 @@ INSERT OR IGNORE INTO oe_tariff_determinations (
   'Annual tariff determination application submitted per ERA Sections 15-16 and MYPD methodology.',
   'Tariff determined at R1.02/kWh; allowed revenue adjusted downward per RCA true-up.',
   'Tariff determination issued and gazetted; effective from 1 July 2026.',
-  'gazetted',
+  'implemented',
   '2025-10-01T08:00:00Z', '2025-10-15T10:00:00Z',
   '2025-11-01T09:00:00Z', '2025-12-01T10:00:00Z', '2026-02-15T14:00:00Z',
   '2026-04-10T10:00:00Z', '2026-05-01T09:00:00Z',
-  1, 0, 0,
+  0, 0,
   'demo_regulator_001', '2025-10-01T08:00:00Z', '2026-05-01T09:00:00Z'
 );
 
@@ -1391,7 +1391,7 @@ INSERT OR IGNORE INTO oe_regulator_complaints (
   complaint_ref, investigation_ref, ruling_ref,
   lodgement_basis, investigation_basis, ruling_basis, remedy_directed,
   chain_status,
-  complaint_lodged_at, admissibility_review_at, referred_to_licensee_at,
+  lodged_at, admissibility_review_at, referred_to_licensee_at,
   under_investigation_at, ruling_issued_at, remedy_monitoring_at, resolved_at,
   is_reportable, escalation_level,
   created_by, created_at, updated_at
@@ -1576,7 +1576,7 @@ INSERT OR IGNORE INTO oe_security_remediations (
   chain_status,
   advisory_received_at, triaged_at, impact_assessment_at,
   mitigation_applied_at, fleet_scoped_at, remediation_approved_at,
-  rollout_in_progress_at, verified_at, resolved_at,
+  rollout_in_progress_at, verification_at, resolved_at,
   is_reportable, escalation_level,
   created_by, created_at, updated_at
 ) VALUES (
