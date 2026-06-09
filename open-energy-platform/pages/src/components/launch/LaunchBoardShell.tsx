@@ -94,7 +94,7 @@ function KpiTile({ kpi }: { kpi: Kpi }) {
     <button
       type="button"
       onClick={clickable ? () => navigate(kpi.href!) : undefined}
-      className="text-left rounded-xl border p-4 transition-all"
+      className="text-left rounded-lg border p-3 transition-all"
       style={{
         background: '#ffffff',
         borderColor: '#dde4ec',
@@ -104,7 +104,7 @@ function KpiTile({ kpi }: { kpi: Kpi }) {
         clickable
           ? (e) => {
               (e.currentTarget as HTMLButtonElement).style.borderColor = '#3b82c4';
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 12px rgba(59,130,196,0.18)';
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 2px 8px rgba(59,130,196,0.15)';
             }
           : undefined
       }
@@ -117,30 +117,30 @@ function KpiTile({ kpi }: { kpi: Kpi }) {
           : undefined
       }
     >
-      <div className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: '#6b7685' }}>
+      <div className="text-[10px] font-semibold uppercase tracking-wide truncate" style={{ color: '#6b7685' }}>
         {kpi.label}
       </div>
-      <div className="mt-2 flex items-baseline gap-2">
-        <div className="text-[26px] font-bold leading-none" style={{ color: '#0f1c2e' }}>
+      <div className="mt-1 flex items-baseline gap-1.5">
+        <div className="text-[20px] font-bold leading-none" style={{ color: '#0f1c2e' }}>
           {formatValue(kpi.value)}
         </div>
         {kpi.unit && (
-          <div className="text-[12px] font-medium" style={{ color: '#6b7685' }}>
+          <div className="text-[11px] font-medium" style={{ color: '#6b7685' }}>
             {kpi.unit}
           </div>
         )}
       </div>
       {(kpi.trend_value || kpi.footer) && (
-        <div className="mt-2 flex items-center gap-2 text-[11px]">
+        <div className="mt-1 flex items-center gap-1.5 text-[10px]">
           {kpi.trend_value && (
             <span
-              className="px-1.5 py-0.5 rounded font-semibold"
+              className="px-1 py-px rounded font-semibold"
               style={{ background: toneBg[tone], color: toneText[tone] }}
             >
               {kpi.trend_value}
             </span>
           )}
-          {kpi.footer && <span style={{ color: '#6b7685' }}>{kpi.footer}</span>}
+          {kpi.footer && <span className="truncate" style={{ color: '#6b7685' }}>{kpi.footer}</span>}
         </div>
       )}
     </button>
@@ -154,7 +154,7 @@ function WorkflowCard({ wf }: { wf: Workflow }) {
     <button
       type="button"
       onClick={() => navigate(wf.href)}
-      className="text-left rounded-xl border p-5 transition-all w-full h-full flex flex-col"
+      className="text-left rounded-lg border p-3 transition-all w-full h-full flex flex-col"
       style={{ background: '#ffffff', borderColor: '#dde4ec' }}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLButtonElement).style.borderColor = '#3b82c4';
@@ -283,26 +283,28 @@ function HeroBlock({ payload }: { payload: LaunchPayload }) {
     <div className="fiori-hero">
       <div className="flex flex-col lg:flex-row lg:items-end gap-6">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 text-[12px] tracking-widest uppercase text-white/70 font-semibold">
-            <Sparkles size={12} />
+          <div className="flex items-center gap-1.5 text-[10px] tracking-widest uppercase text-white/60 font-semibold">
+            <Sparkles size={10} />
             <span>{payload.hero.eyebrow}</span>
           </div>
-          <h1 className="mt-2 text-[28px] sm:text-[32px] font-bold tracking-tight">
-            {payload.hero.title}
-          </h1>
-          <p className="mt-1 text-white/75 text-[14px] max-w-2xl">{payload.hero.subtitle}</p>
+          <div className="mt-1 flex flex-wrap items-baseline gap-3">
+            <h1 className="text-[18px] font-bold tracking-tight leading-tight">
+              {payload.hero.title}
+            </h1>
+            <span className="text-white/65 text-[12px] hidden sm:inline">{payload.hero.subtitle}</span>
+          </div>
           {payload.hero.primary_cta && (
-            <div className="mt-5 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => navigate(payload.hero.primary_cta!.href)}
-                className="h-10 px-5 rounded text-[13px] font-semibold text-white inline-flex items-center gap-2 transition-all hover:brightness-110"
+                className="h-8 px-4 rounded text-[12px] font-semibold text-white inline-flex items-center gap-1.5 transition-all hover:brightness-110"
                 style={{
                   background: 'linear-gradient(135deg,#5fa8e8 0%,#1a5d97 100%)',
-                  boxShadow: '0 8px 20px rgba(95,168,232,0.35)',
+                  boxShadow: '0 4px 12px rgba(95,168,232,0.35)',
                 }}
               >
-                {payload.hero.primary_cta.label} <ArrowRight size={14} />
+                {payload.hero.primary_cta.label} <ArrowRight size={12} />
               </button>
             </div>
           )}
@@ -365,14 +367,14 @@ export function LaunchBoardShell({
   const visibleSuggestions = payload.ai_suggestions.filter((s) => !dismissed.has(s.key));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <HeroBlock payload={payload} />
 
       <SetupChecklist role={role} />
 
       {/* KPI grid */}
       {payload.kpis.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
           {payload.kpis.map((k) => (
             <KpiTile key={k.key} kpi={k} />
           ))}
@@ -385,10 +387,10 @@ export function LaunchBoardShell({
       {/* AI inline assists — only render if we have any */}
       {visibleSuggestions.length > 0 && (
         <div className="space-y-2">
-          <h2 className="text-[13px] font-semibold uppercase tracking-wide" style={{ color: '#6b7685' }}>
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#6b7685' }}>
             Suggested next steps
           </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
             {visibleSuggestions.map((s) => (
               <AiSuggestionCard
                 key={s.key}
@@ -404,10 +406,10 @@ export function LaunchBoardShell({
       {/* Workflow cards */}
       {payload.workflows.length > 0 && (
         <div>
-          <h2 className="text-[13px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#6b7685' }}>
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#6b7685' }}>
             Primary workflows
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
             {payload.workflows.map((w) => (
               <WorkflowCard key={w.key} wf={w} />
             ))}

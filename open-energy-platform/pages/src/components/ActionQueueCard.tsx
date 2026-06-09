@@ -48,7 +48,7 @@ function hrefForAction(entityType: string | null, entityId: string | null): stri
     case 'ona_faults': return entityId ? `/projects?focus=${entityId}` : '/projects';
     case 'disbursement_requests': return entityId ? `/funds?focus=${entityId}` : '/funds';
     case 'loan_covenants': return entityId ? `/funds?focus=${entityId}` : '/funds';
-    default: return '/cockpit';
+    default: return '/';
   }
 }
 
@@ -71,7 +71,11 @@ export function ActionQueueCard() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const interval = setInterval(load, 30_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const complete = async (id: string) => {
     try {

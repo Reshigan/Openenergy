@@ -142,6 +142,12 @@ r.post('/submissions', requireStepUp('regulator.submit'), async (c) => {
   const b = await c.req.json().catch(() => ({} as any));
   if (!b.report_kind || !b.report_id || !b.submitted_to) return c.json({ success: false, error: 'report_kind + report_id + submitted_to required' }, 400);
 
+  const ALLOWED_REPORT_KINDS = ['nersa_quarterly', 'sars_carbon_tax'] as const;
+  type ReportKind = typeof ALLOWED_REPORT_KINDS[number];
+  if (!ALLOWED_REPORT_KINDS.includes(b.report_kind as ReportKind)) {
+    return c.json({ success: false, error: 'invalid report_kind' }, 400);
+  }
+
   const id = genId('rsub');
   // Read the underlying pack and produce + archive the XML envelope
   const reportTable = b.report_kind === 'nersa_quarterly' ? 'oe_nersa_reports' : 'oe_sars_reports';
@@ -152,7 +158,10 @@ r.post('/submissions', requireStepUp('regulator.submit'), async (c) => {
   if (!obj) return c.json({ success: false, error: 'pack missing' }, 404);
   const pack = await obj.json() as any;
   const xml = b.report_kind === 'nersa_quarterly' ? renderNersaXml(pack) : renderSarsXml(pack);
-  const envelopeKey = `${b.report_kind}/${b.report_id}.xml`;
+  // Sanitize both path segments — strip anything that could traverse bucket paths
+  const safeKind = (b.report_kind as string).replace(/[^a-z0-9_]/g, '_');
+  const safeId   = (b.report_id   as string).replace(/[^a-z0-9_-]/g, '_');
+  const envelopeKey = `submissions/${safeKind}/${safeId}.xml`;
   await c.env.R2.put(envelopeKey, xml, { httpMetadata: { contentType: 'application/xml' } });
 
   await c.env.DB.prepare(`

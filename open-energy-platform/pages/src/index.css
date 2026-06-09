@@ -5,9 +5,7 @@
  * 4px baseline grid · 4px standard radius · Tonal layer elevation
  * ═══════════════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 @import './styles/widgets.css';
 /* Material Symbols icon font intentionally removed in favour of the custom
  * OE SVG icon set (src/components/OEIcon.tsx). Every previous Material name
@@ -288,7 +286,7 @@ h1, h2, h3, h4, h5, h6, .font-display, .font-headline {
 /* ═══ Hero strip ═══ */
 .fiori-hero, .oe-hero {
   position: relative; overflow: hidden;
-  border-radius: 12px; padding: 28px 32px;
+  border-radius: 10px; padding: 14px 20px;
   color: #ffffff;
   background:
     radial-gradient(circle at 12% 20%, rgba(95,168,232,0.30) 0%, transparent 45%),

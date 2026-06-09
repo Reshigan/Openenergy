@@ -26,6 +26,8 @@ const TraderWorkstationPage = React.lazy(() => import('./components/pages/Trader
 const IppWorkstationPage    = React.lazy(() => import('./components/pages/IppWorkstationPage').then(m => ({ default: m.IppWorkstationPage })));
 const OfftakerWorkstationPage = React.lazy(() => import('./components/pages/OfftakerWorkstationPage').then(m => ({ default: m.OfftakerWorkstationPage })));
 const LenderWorkstationPage = React.lazy(() => import('./components/pages/LenderWorkstationPage').then(m => ({ default: m.LenderWorkstationPage })));
+const EscoWorkstationPage   = React.lazy(() => import('./components/pages/EscoWorkstationPage').then(m => ({ default: m.EscoWorkstationPage })));
+const EpcWorkstationPage    = React.lazy(() => import('./components/pages/EpcWorkstationPage').then(m => ({ default: m.EpcWorkstationPage })));
 const OrderDetailPage       = React.lazy(() => import('./components/pages/OrderDetailPage').then(m => ({ default: m.OrderDetailPage })));
 const InvoiceDetailPage     = React.lazy(() => import('./components/pages/InvoiceDetailPage').then(m => ({ default: m.InvoiceDetailPage })));
 const ProjectOperationsPage = React.lazy(() => import('./components/pages/ProjectOperationsPage').then(m => ({ default: m.ProjectOperationsPage })));
@@ -40,7 +42,6 @@ const SignaturePreview       = React.lazy(() => import('./components/signature/_
 
 // Core page components
 const NationalDashboard     = React.lazy(() => import('./components/pages/NationalDashboard').then(m => ({ default: m.NationalDashboard })));
-const Cockpit               = React.lazy(() => import('./components/pages/Cockpit').then(m => ({ default: m.Cockpit })));
 const Contracts             = React.lazy(() => import('./components/pages/Contracts').then(m => ({ default: m.Contracts })));
 const ContractDetail        = React.lazy(() => import('./components/pages/ContractDetail').then(m => ({ default: m.ContractDetail })));
 const Trading               = React.lazy(() => import('./components/pages/Trading').then(m => ({ default: m.Trading })));
@@ -188,89 +189,158 @@ function Layout({ children }: { children: ReactNode }) {
   return <FioriShell>{children}</FioriShell>;
 }
 
-// Navigation items by role
+// Navigation items by role — workstation-first; each role's primary nav goes to their L4 workstation
 function getNavigationForRole(role: string) {
-  const baseNav = [
-    { path: '/cockpit', label: 'Cockpit', icon: DashboardIcon },
-    { path: '/contracts', label: 'Contracts', icon: DocumentIcon },
-    { path: '/trading', label: 'Trading', icon: ChartIcon },
-    { path: '/settlement', label: 'Settlement', icon: DollarIcon },
-    { path: '/carbon', label: 'Carbon', icon: LeafIcon },
-    { path: '/projects', label: 'IPP Projects', icon: BuildingIcon },
-    { path: '/esg', label: 'ESG', icon: ChartIcon },
-    { path: '/grid', label: 'Grid', icon: ZapIcon },
-    { path: '/funds', label: 'Funds', icon: DollarIcon },
-    { path: '/pipeline', label: 'Pipeline', icon: FlowIcon },
-    { path: '/procurement', label: 'Procurement', icon: ShoppingIcon },
-    { path: '/marketplace', label: 'Marketplace', icon: ShopIcon },
-    { path: '/lois', label: 'Letters of Intent', icon: DocumentIcon },
-    { path: '/intelligence', label: 'Intelligence', icon: ChartIcon },
-    { path: '/reports', label: 'Reports', icon: ChartIcon },
-  ];
-
-  // Role-specific national-scale workbenches.
-  const regulatorNav    = [{ path: '/regulator-suite',  label: 'Regulator workbench', icon: ShieldIcon }];
-  const gridOperatorNav = [{ path: '/grid-operator',    label: 'System operator',     icon: ZapIcon }];
-  const traderNav       = [{ path: '/trader-risk',      label: 'Trader risk',         icon: ChartIcon }];
-  const lenderNav       = [{ path: '/lender-suite',     label: 'Lender workbench',    icon: DollarIcon }];
-  const ippNav          = [{ path: '/ipp-lifecycle',    label: 'Project file',        icon: BuildingIcon }];
-  const offtakerNav     = [{ path: '/offtaker-suite',   label: 'Offtaker workbench',  icon: LeafIcon }];
-  const carbonNav       = [{ path: '/carbon-registry',  label: 'Carbon registry',     icon: LeafIcon }];
-  const adminPlatformNav= [{ path: '/admin-platform',   label: 'Platform admin',      icon: SettingsIcon }];
-  const esumsOmNav      = [{ path: '/esums',            label: 'Esums',               icon: WrenchIcon }];
-
-  const adminNav = [
-    ...baseNav,
-    ...regulatorNav, ...gridOperatorNav, ...traderNav, ...lenderNav,
-    ...ippNav, ...offtakerNav, ...carbonNav, ...esumsOmNav, ...adminPlatformNav,
-    { path: '/admin', label: 'Admin', icon: SettingsIcon },
-  ];
+  const home = { path: '/', label: 'Home', icon: DashboardIcon };
+  const marketplace = { path: '/marketplace', label: 'Marketplace', icon: ShopIcon };
+  const trading = { path: '/trading', label: 'Order book', icon: ChartIcon };
+  const settlement = { path: '/settlement', label: 'Settlement', icon: DollarIcon };
+  const reports = { path: '/reports', label: 'Reports', icon: ChartIcon };
+  const esums = { path: '/esums', label: 'Asset Ops', icon: WrenchIcon };
+  const settings = { path: '/settings', label: 'Settings', icon: SettingsIcon };
 
   switch (role) {
     case 'admin':
-      return adminNav;
+      return [
+        home,
+        { path: '/admin-platform/workstation', label: 'Platform Admin', icon: SettingsIcon },
+        { path: '/regulator-suite/workstation', label: 'Regulator', icon: ShieldIcon },
+        { path: '/trader-risk/workstation', label: 'Trader Risk', icon: ChartIcon },
+        { path: '/lender-suite/workstation', label: 'Lender', icon: DollarIcon },
+        { path: '/ipp-lifecycle/workstation', label: 'IPP Projects', icon: BuildingIcon },
+        { path: '/offtaker-suite/workstation', label: 'Offtaker', icon: LeafIcon },
+        { path: '/carbon-registry/workstation', label: 'Carbon', icon: LeafIcon },
+        { path: '/grid-operator/workstation', label: 'Grid Ops', icon: ZapIcon },
+        esums,
+        { path: '/admin', label: 'Admin', icon: SettingsIcon },
+        reports,
+      ];
     case 'ipp_developer':
       return [
-        ...baseNav.filter((n) => !['/trading', '/funds', '/marketplace'].includes(n.path)),
-        ...ippNav, ...esumsOmNav,
+        home,
+        { path: '/ipp-lifecycle/workstation', label: 'Project workstation', icon: BuildingIcon },
+        { path: '/ipp-lifecycle/workstation?tab=projects', label: 'Projects', icon: BuildingIcon },
+        { path: '/ipp-lifecycle/workstation?tab=milestones', label: 'Milestones', icon: ChartIcon },
+        { path: '/ipp-lifecycle/workstation?tab=document-control', label: 'Documents', icon: DocumentIcon },
+        { path: '/ipp-lifecycle/workstation?tab=hse_chain', label: 'HSE', icon: ShieldIcon },
+        esums,
+        marketplace,
+        reports,
+        settings,
       ];
     case 'lender':
       return [
-        ...baseNav.filter((n) => ['/cockpit', '/projects', '/funds', '/intelligence', '/reports'].includes(n.path)),
-        ...lenderNav, ...esumsOmNav,
+        home,
+        { path: '/lender-suite/workstation', label: 'Lender workstation', icon: DollarIcon },
+        { path: '/lender-suite/workstation?tab=credit_origination', label: 'Credit', icon: DollarIcon },
+        { path: '/lender-suite/workstation?tab=facilities', label: 'Facilities', icon: DocumentIcon },
+        { path: '/lender-suite/workstation?tab=covenant_cert', label: 'Covenants', icon: ShieldIcon },
+        { path: '/lender-suite/workstation?tab=loan_default', label: 'Default & step-in', icon: ShieldIcon },
+        esums,
+        reports,
+        settings,
       ];
     case 'trader':
       return [
-        ...baseNav.filter((n) => ['/cockpit', '/contracts', '/trading', '/settlement', '/intelligence', '/reports'].includes(n.path)),
-        ...traderNav,
+        home,
+        { path: '/trader-risk/workstation', label: 'Trader workstation', icon: ChartIcon },
+        trading,
+        settlement,
+        { path: '/trader-risk/workstation?tab=risk', label: 'Risk', icon: ChartIcon },
+        { path: '/trader-risk/workstation?tab=market-abuse', label: 'Surveillance', icon: ShieldIcon },
+        { path: '/trader-risk/workstation?tab=algo-cert', label: 'Algo cert', icon: SettingsIcon },
+        reports,
+        settings,
       ];
     case 'carbon_fund':
       return [
-        ...baseNav.filter((n) => ['/cockpit', '/carbon', '/funds', '/intelligence', '/reports'].includes(n.path)),
-        ...carbonNav,
+        home,
+        { path: '/carbon-registry/workstation', label: 'Carbon workstation', icon: LeafIcon },
+        { path: '/carbon-registry/workstation?tab=vintages', label: 'Vintages', icon: LeafIcon },
+        { path: '/carbon-registry/workstation?tab=mrv_chain', label: 'MRV', icon: DocumentIcon },
+        { path: '/carbon-registry/workstation?tab=article6', label: 'Article 6', icon: ShieldIcon },
+        { path: '/carbon-registry/workstation?tab=retirement_chain', label: 'Retirements', icon: ChartIcon },
+        reports,
+        settings,
       ];
     case 'grid_operator':
       return [
-        ...baseNav.filter((n) => ['/cockpit', '/grid', '/intelligence', '/reports'].includes(n.path)),
-        ...gridOperatorNav,
+        home,
+        { path: '/grid-operator/workstation', label: 'Grid workstation', icon: ZapIcon },
+        { path: '/grid-operator/workstation?tab=dispatch_nomination', label: 'Dispatch', icon: ZapIcon },
+        { path: '/grid-operator/workstation?tab=ancillary', label: 'Ancillary', icon: ChartIcon },
+        { path: '/grid-operator/workstation?tab=eop_activations', label: 'EOP', icon: ShieldIcon },
+        { path: '/grid-operator/workstation?tab=grid_code_compliance', label: 'Grid code', icon: ShieldIcon },
+        reports,
+        settings,
       ];
     case 'offtaker':
       return [
-        ...baseNav.filter((n) => ['/cockpit', '/contracts', '/lois', '/procurement', '/marketplace', '/intelligence', '/reports'].includes(n.path)),
-        ...offtakerNav,
+        home,
+        { path: '/offtaker-suite/workstation', label: 'Offtaker workstation', icon: LeafIcon },
+        { path: '/offtaker-suite/workstation?tab=ppa_contract', label: 'PPAs', icon: DocumentIcon },
+        { path: '/offtaker-suite/workstation?tab=bills', label: 'Bills', icon: DollarIcon },
+        { path: '/offtaker-suite/workstation?tab=recs', label: 'RECs', icon: LeafIcon },
+        { path: '/offtaker-suite/workstation?tab=scope2', label: 'Scope 2', icon: ChartIcon },
+        marketplace,
+        reports,
+        settings,
       ];
     case 'regulator':
       return [
-        ...baseNav.filter((n) => ['/cockpit', '/esg', '/intelligence', '/reports'].includes(n.path)),
-        ...regulatorNav,
+        home,
+        { path: '/regulator-suite/workstation', label: 'Regulator workstation', icon: ShieldIcon },
+        { path: '/regulator-suite/workstation?tab=inbox', label: 'Inbox', icon: DocumentIcon },
+        { path: '/regulator-suite/workstation?tab=licence_applications', label: 'Licences', icon: DocumentIcon },
+        { path: '/regulator-suite/workstation?tab=compliance_inspections', label: 'Inspections', icon: ShieldIcon },
+        { path: '/regulator-suite/workstation?tab=levy_assessments', label: 'Levies', icon: DollarIcon },
+        reports,
+        settings,
+      ];
+    case 'support':
+      return [
+        home,
+        { path: '/support/workstation', label: 'Support workstation', icon: WrenchIcon },
+        { path: '/support/workstation?tab=tickets', label: 'Tickets', icon: DocumentIcon },
+        { path: '/support/workstation?tab=problem_chain', label: 'Problems', icon: ShieldIcon },
+        { path: '/support/workstation?tab=change_chain', label: 'Changes', icon: SettingsIcon },
+        reports,
+        settings,
       ];
     case 'esums_owner':
       return [
-        ...esumsOmNav,
-        { path: '/settings', label: 'Settings', icon: SettingsIcon },
+        home,
+        esums,
+        settings,
+      ];
+    case 'esco':
+      return [
+        home,
+        { path: '/esco/workstation', label: 'O&M workstation', icon: WrenchIcon },
+        { path: '/esco/workstation?tab=work-orders', label: 'Work orders', icon: WrenchIcon },
+        { path: '/esco/workstation?tab=pm-compliance', label: 'PM compliance', icon: DocumentIcon },
+        { path: '/esco/workstation?tab=permit-to-work', label: 'Permit-to-work', icon: ShieldIcon },
+        { path: '/esco/workstation?tab=prognostics', label: 'Asset health', icon: ChartIcon },
+        { path: '/esco/workstation?tab=availability', label: 'Availability', icon: ChartIcon },
+        { path: '/esco/workstation?tab=spare-parts', label: 'Spare parts', icon: WrenchIcon },
+        { path: '/esco/workstation?tab=hse', label: 'HSE', icon: ShieldIcon },
+        esums,
+        settings,
+      ];
+    case 'epc_contractor':
+      return [
+        home,
+        { path: '/epc/workstation', label: 'EPC workstation', icon: BuildingIcon },
+        { path: '/epc/workstation?tab=submittals', label: 'Submittals', icon: DocumentIcon },
+        { path: '/epc/workstation?tab=rfis', label: 'RFIs', icon: DocumentIcon },
+        { path: '/epc/workstation?tab=change-orders', label: 'Change orders', icon: DocumentIcon },
+        { path: '/epc/workstation?tab=itps', label: 'ITPs', icon: ShieldIcon },
+        { path: '/epc/workstation?tab=ncrs', label: 'NCRs', icon: ShieldIcon },
+        { path: '/epc/workstation?tab=hse', label: 'HSE', icon: ShieldIcon },
+        settings,
       ];
     default:
-      return [...baseNav.slice(0, 5), { path: '/reports', label: 'Reports', icon: ChartIcon }];
+      return [home, trading, settlement, marketplace, reports, settings];
   }
 }
 
@@ -855,6 +925,8 @@ const ROLE_LABELS: Record<string, string> = {
   offtaker: 'Offtaker / Corporate Buyer',
   lender: 'Lender / Investor',
   esums_owner: 'Asset Owner (Esums O&M)',
+  esco: 'O&M Operator (ESCO)',
+  epc_contractor: 'EPC Contractor',
 };
 
 function RegisterPage() {
@@ -1089,6 +1161,8 @@ function RegisterPage() {
                       <option value="offtaker">Offtaker / Corporate Buyer</option>
                       <option value="lender">Lender / Investor</option>
                       <option value="esums_owner">Asset Owner (Esums O&amp;M)</option>
+                      <option value="esco">O&amp;M Operator (ESCO)</option>
+                      <option value="epc_contractor">EPC Contractor</option>
                     </select>
                   )}
                 </div>
@@ -1248,8 +1322,11 @@ function AppRoutes() {
       <Route path="/status" element={<LazyWorkbench><PublicStatusPage /></LazyWorkbench>} />
       <Route path="/legal" element={<LazyWorkbench><PublicLegalPage /></LazyWorkbench>} />
       <Route path="/audit" element={<LazyWorkbench><PublicAuditPage /></LazyWorkbench>} />
+      <Route path="/esums/faults" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/esums/faults/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/esums/workorders" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/esums/workorders/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/esums/predictions/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/esums/sites/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsSiteDetailPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/regulator-suite/workstation" element={<ProtectedRoute><Layout><RegulatorWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/admin-platform/workstation" element={<ProtectedRoute><Layout><AdminWorkstationPage /></Layout></ProtectedRoute>} />
@@ -1258,6 +1335,8 @@ function AppRoutes() {
       <Route path="/ipp-lifecycle/workstation" element={<ProtectedRoute><Layout><IppWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/offtaker-suite/workstation" element={<ProtectedRoute><Layout><OfftakerWorkstationPage /></Layout></ProtectedRoute>} />
       <Route path="/lender-suite/workstation" element={<ProtectedRoute><Layout><LenderWorkstationPage /></Layout></ProtectedRoute>} />
+      <Route path="/esco/workstation" element={<ProtectedRoute><Layout><LazyWorkbench><EscoWorkstationPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/epc/workstation" element={<ProtectedRoute><Layout><LazyWorkbench><EpcWorkstationPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/trading/orders/:id" element={<ProtectedRoute><Layout><OrderDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/settlement/invoices/:id" element={<ProtectedRoute><Layout><InvoiceDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/projects/:id/operations" element={<ProtectedRoute><Layout><ProjectOperationsPage /></Layout></ProtectedRoute>} />

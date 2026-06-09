@@ -36,7 +36,7 @@
 }
 
 [data-role-shell][data-density='cinematic'] {
-  --oe-pad-card: 24px;
+  --oe-pad-card: 16px;
   --oe-pad-section: 32px;
   --oe-radius-card: 16px;
   --oe-hero-numeral: clamp(72px, 9vw, 128px);

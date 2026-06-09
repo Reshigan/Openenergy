@@ -124,8 +124,10 @@ export async function securityHeaders(c: Context<HonoEnv>, next: Next) {
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      // Vite ships hashed JS/CSS; we also need the Cloudflare Insights beacon.
-      "script-src 'self' https://static.cloudflareinsights.com",
+      // Vite ships hashed JS/CSS; CF Bot Management injects inline scripts at the
+      // edge after this header is set, so 'unsafe-inline' is required. CF challenges
+      // also load from challenges.cloudflare.com.
+      "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://challenges.cloudflare.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.cdnfonts.com",
       "img-src 'self' data: blob: https://lh3.googleusercontent.com",
       "font-src 'self' data: https://fonts.gstatic.com https://fonts.cdnfonts.com",
@@ -148,15 +150,15 @@ export async function securityHeaders(c: Context<HonoEnv>, next: Next) {
 // CORS middleware
 export async function corsMiddleware(c: Context<HonoEnv>, next: Next) {
   const origin = c.req.header('Origin');
-  
-  // Allow specific origins in production
-  const allowedOrigins = [
+  const isProduction = (c.env as unknown as { ENVIRONMENT?: string })?.ENVIRONMENT === 'production';
+
+  const allowedOrigins: string[] = [
     'https://oe.vantax.co.za',
     'https://www.oe.vantax.co.za',
-    'http://localhost:3000',
-    'http://localhost:5173',
+    // Only allow local origins in non-production environments
+    ...(!isProduction ? ['http://localhost:3000', 'http://localhost:5173'] : []),
   ];
-  
+
   if (origin && allowedOrigins.includes(origin)) {
     c.res.headers.set('Access-Control-Allow-Origin', origin);
     c.res.headers.set('Access-Control-Allow-Credentials', 'true');

@@ -2,7 +2,7 @@
   "name": "Consolidated Energy Cockpit — Industrial Energy Exchange",
   "short_name": "CEC",
   "description": "Unified South African energy exchange — power trading, carbon markets, IPP project lifecycle, settlement, regulatory compliance.",
-  "start_url": "/cockpit",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -41,8 +41,8 @@
     {
       "name": "Launchpad",
       "short_name": "Launchpad",
-      "description": "Open the launchpad cockpit",
-      "url": "/cockpit",
+      "description": "Open your role launchpad",
+      "url": "/",
       "icons": [{ "src": "/logos/oe-mark.svg", "sizes": "any", "type": "image/svg+xml" }]
     },
     {
@@ -53,30 +53,23 @@
       "icons": [{ "src": "/logos/oe-mark.svg", "sizes": "any", "type": "image/svg+xml" }]
     },
     {
-      "name": "O&M Cockpit",
-      "short_name": "O&M",
-      "description": "Solar + wind asset operations",
-      "url": "/om",
+      "name": "Asset Operations",
+      "short_name": "Esums",
+      "description": "Asset intelligence and O&M cockpit",
+      "url": "/esums",
       "icons": [{ "src": "/logos/oe-mark.svg", "sizes": "any", "type": "image/svg+xml" }]
     },
     {
-      "name": "Esums O&M Cockpit",
-      "short_name": "Esums O&M",
-      "description": "Asset intelligence cockpit",
-      "url": "/esums-om",
-      "icons": [{ "src": "/logos/oe-mark.svg", "sizes": "any", "type": "image/svg+xml" }]
-    },
-    {
-      "name": "Field tech: my work orders",
+      "name": "Field Work Orders",
       "short_name": "WOs",
       "description": "Assigned work orders for field technicians",
-      "url": "/esums-om/field/wos",
+      "url": "/esums/field/wos",
       "icons": [{ "src": "/logos/oe-mark.svg", "sizes": "any", "type": "image/svg+xml" }]
     },
     {
       "name": "Marketplace",
       "short_name": "Market",
-      "description": "Browse listings",
+      "description": "Browse energy listings",
       "url": "/marketplace",
       "icons": [{ "src": "/logos/oe-mark.svg", "sizes": "any", "type": "image/svg+xml" }]
     }

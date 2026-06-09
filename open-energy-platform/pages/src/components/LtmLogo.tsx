@@ -8,16 +8,16 @@ export function LtmLogo() {
   return (
     <div
       aria-hidden="true"
-      className="fixed bottom-3 right-3 z-40 pointer-events-none select-none"
+      className="fixed top-2 left-2 z-40 pointer-events-none select-none"
       style={{ lineHeight: 0 }}
     >
       <img
         src="/ltm-energy-logo.png"
         alt=""
-        width={140}
-        height={90}
-        className="opacity-80 hover:opacity-100 transition-opacity drop-shadow-md"
-        style={{ width: 140, height: 'auto' }}
+        width={72}
+        height={46}
+        className="opacity-70 hover:opacity-90 transition-opacity drop-shadow-sm"
+        style={{ width: 72, height: 'auto' }}
       />
     </div>
   );

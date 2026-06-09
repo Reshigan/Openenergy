@@ -257,6 +257,7 @@ import siemRoutes from './siem';
 import reportsRoutes from './reports';
 import telemetryRoutes from './telemetry';
 import monitoringRoutes from './monitoring';
+import lookupRoutes from './lookup';
 import adminRevenueRoutes from './admin-revenue';
 import backupRoutes from './backup';
 import searchRoutes from './search';
@@ -610,6 +611,7 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   app.route('/api/siem', siemRoutes);
   app.route('/api/reports', reportsRoutes);
   app.route('/api/telemetry', telemetryRoutes);
+  app.route('/api/lookup', lookupRoutes);
   app.route('/api/admin/monitoring', monitoringRoutes);
   app.route('/api/admin/revenue', adminRevenueRoutes);
   // Backup routes are deliberately mounted outside /api/admin to avoid being

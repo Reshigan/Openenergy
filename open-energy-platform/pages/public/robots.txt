@@ -1,0 +1,28 @@
+User-agent: *
+# Allow public-facing pages
+Allow: /status
+Allow: /legal
+Allow: /audit
+
+# Disallow authenticated app routes and API
+Disallow: /api/
+Disallow: /launch/
+Disallow: /trading/
+Disallow: /ipp/
+Disallow: /offtaker/
+Disallow: /lender-suite/
+Disallow: /carbon-registry/
+Disallow: /regulator-suite/
+Disallow: /grid-operator/
+Disallow: /admin-platform/
+Disallow: /support/
+Disallow: /trader-risk/
+Disallow: /esums/
+Disallow: /esums-om/
+Disallow: /settings/
+Disallow: /ops/
+Disallow: /documents/
+Disallow: /portal/
+Disallow: /auth/
+
+Sitemap: https://oe.vantax.co.za/sitemap.xml

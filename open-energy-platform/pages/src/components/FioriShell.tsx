@@ -25,9 +25,13 @@ type NavItem = {
 /**
  * Master navigation. Sections track the Stitch Launchpad grouping:
  * Home → Commerce → Operations → Sustainability → Finance → Insights → Compliance → System
+ * Workstation deep-links are grouped per-role under their capability section names.
  */
 const BASE_NAV: NavItem[] = [
+  // ── Home ──────────────────────────────────────────────────────────────────
   { path: '/launch',       label: 'Launchpad',     icon: 'dashboard',          section: 'Home' },
+
+  // ── Commerce ──────────────────────────────────────────────────────────────
   { path: '/contracts',    label: 'Contracts',     icon: 'description',        section: 'Commerce' },
   { path: '/lois',         label: 'Letters of Intent', icon: 'assignment',     section: 'Commerce' },
   { path: '/trading',      label: 'Trading',       icon: 'trending_up',        section: 'Commerce' },
@@ -36,11 +40,146 @@ const BASE_NAV: NavItem[] = [
   { path: '/procurement',  label: 'Procurement',   icon: 'shopping_cart',      section: 'Commerce' },
   { path: '/marketplace',  label: 'Marketplace',   icon: 'storefront',         section: 'Commerce' },
   { path: '/documents',    label: 'Documents',     icon: 'description',        section: 'Commerce' },
+
+  // ── Trader workstation deep-links ─────────────────────────────────────────
+  { path: '/trader-risk/workstation',                        label: 'Trader workstation',    icon: 'trending_up',   section: 'Trading' },
+  { path: '/trader-risk/workstation?tab=orders',             label: 'Order book',            icon: 'trending_up',   section: 'Trading' },
+  { path: '/trader-risk/workstation?tab=best-ex',            label: 'Best execution',        icon: 'search',        section: 'Trading' },
+  { path: '/trader-risk/workstation?tab=trade-allocation',   label: 'Trade allocation',      icon: 'swap_horiz',    section: 'Trading' },
+  { path: '/trader-risk/workstation?tab=risk',               label: 'Risk dashboard',        icon: 'insights',      section: 'Risk' },
+  { path: '/trader-risk/workstation?tab=margin',             label: 'Margin',                icon: 'price_check',   section: 'Risk' },
+  { path: '/trader-risk/workstation?tab=poslimit',           label: 'Position limits',       icon: 'warning',       section: 'Risk' },
+  { path: '/trader-risk/workstation?tab=counterparty-margin',label: 'Counterparty margin',   icon: 'account_balance',section: 'Risk' },
+  { path: '/trader-risk/workstation?tab=market-abuse',       label: 'Surveillance / STOR',   icon: 'security',      section: 'Compliance (Trader)' },
+  { path: '/trader-risk/workstation?tab=algo-cert',          label: 'Algo certification',    icon: 'code',          section: 'Compliance (Trader)' },
+  { path: '/trader-risk/workstation?tab=trade-reporting',    label: 'Trade reporting',       icon: 'description',   section: 'Compliance (Trader)' },
+  { path: '/trader-risk/workstation?tab=fsca_conduct_reports',label: 'FSCA conduct reports', icon: 'gavel',         section: 'Compliance (Trader)' },
+  { path: '/trader-risk/workstation?tab=cross_border_trades',label: 'Cross-border trades',   icon: 'public',        section: 'Compliance (Trader)' },
+
+  // ── IPP workstation deep-links ────────────────────────────────────────────
+  { path: '/ipp-lifecycle/workstation',                       label: 'IPP workstation',       icon: 'apartment',     section: 'Project Controls' },
+  { path: '/ipp-lifecycle/workstation?tab=projects',          label: 'Projects',              icon: 'apartment',     section: 'Project Controls' },
+  { path: '/ipp-lifecycle/workstation?tab=milestones',        label: 'Milestones',            icon: 'flag',          section: 'Project Controls' },
+  { path: '/ipp-lifecycle/workstation?tab=stage-gates',       label: 'Stage gates',           icon: 'verified',      section: 'Project Controls' },
+  { path: '/ipp-lifecycle/workstation?tab=risk-register',     label: 'Risk register',         icon: 'warning',       section: 'Project Controls' },
+  { path: '/ipp-lifecycle/workstation?tab=milestone-variance',label: 'Milestone variance',    icon: 'timeline',      section: 'Project Controls' },
+  { path: '/ipp-lifecycle/workstation?tab=document-control',  label: 'Document control',      icon: 'folder',        section: 'Document Control (IPP)' },
+  { path: '/ipp-lifecycle/workstation?tab=submittals',        label: 'Submittals',            icon: 'upload_file',   section: 'Document Control (IPP)' },
+  { path: '/ipp-lifecycle/workstation?tab=rfis',              label: 'RFIs',                  icon: 'help',          section: 'Document Control (IPP)' },
+  { path: '/ipp-lifecycle/workstation?tab=change-orders',     label: 'Change orders',         icon: 'change_circle', section: 'Document Control (IPP)' },
+  { path: '/ipp-lifecycle/workstation?tab=cod',               label: 'COD milestone',         icon: 'bolt',          section: 'Construction (IPP)' },
+  { path: '/ipp-lifecycle/workstation?tab=hse_chain',         label: 'HSE incidents',         icon: 'health_and_safety', section: 'Construction (IPP)' },
+  { path: '/ipp-lifecycle/workstation?tab=dscr-reports',      label: 'DSCR reports',          icon: 'bar_chart',     section: 'Finance (IPP)' },
+  { path: '/ipp-lifecycle/workstation?tab=bonds',             label: 'Bonds & insurance',     icon: 'shield',        section: 'Finance (IPP)' },
+  { path: '/ipp-lifecycle/workstation?tab=procurement',       label: 'REIPPPP procurement',   icon: 'shopping_cart', section: 'Regulatory (IPP)' },
+  { path: '/ipp-lifecycle/workstation?tab=gca_chain',         label: 'Grid connection',       icon: 'electrical_services', section: 'Regulatory (IPP)' },
+
+  // ── Lender workstation deep-links ─────────────────────────────────────────
+  { path: '/lender-suite/workstation',                        label: 'Lender workstation',    icon: 'account_balance',section: 'Credit' },
+  { path: '/lender-suite/workstation?tab=credit_origination', label: 'Credit origination',   icon: 'credit_card',   section: 'Credit' },
+  { path: '/lender-suite/workstation?tab=facilities',         label: 'Facility register',     icon: 'description',   section: 'Credit' },
+  { path: '/lender-suite/workstation?tab=cp_clearances',      label: 'CP clearances',         icon: 'checklist',     section: 'Credit' },
+  { path: '/lender-suite/workstation?tab=drawdown',           label: 'Drawdowns',             icon: 'payments',      section: 'Credit' },
+  { path: '/lender-suite/workstation?tab=covenant_cert',      label: 'Covenant certificates', icon: 'verified',      section: 'Monitoring' },
+  { path: '/lender-suite/workstation?tab=dscr_monitoring',    label: 'DSCR monitoring',       icon: 'bar_chart',     section: 'Monitoring' },
+  { path: '/lender-suite/workstation?tab=esap_monitoring_chain',label: 'ESAP monitoring',     icon: 'eco',           section: 'Monitoring' },
+  { path: '/lender-suite/workstation?tab=loan_default',       label: 'Default & enforcement', icon: 'gavel',         section: 'Default Management' },
+
+  // ── Offtaker workstation deep-links ───────────────────────────────────────
+  { path: '/offtaker-suite/workstation',                      label: 'Offtaker workstation',  icon: 'flash_on',      section: 'Contracts (Offtaker)' },
+  { path: '/offtaker-suite/workstation?tab=ppa_contract',     label: 'PPA contracts',         icon: 'description',   section: 'Contracts (Offtaker)' },
+  { path: '/offtaker-suite/workstation?tab=tariff_indexation',label: 'Tariff indexation',     icon: 'price_change',  section: 'Contracts (Offtaker)' },
+  { path: '/offtaker-suite/workstation?tab=payment_security', label: 'Payment security',      icon: 'shield',        section: 'Contracts (Offtaker)' },
+  { path: '/offtaker-suite/workstation?tab=ppa_annual_recon', label: 'PPA reconciliation',    icon: 'balance',       section: 'Operations (Offtaker)' },
+  { path: '/offtaker-suite/workstation?tab=curtailment_claim',label: 'Curtailment claims',    icon: 'electric_bolt', section: 'Operations (Offtaker)' },
+  { path: '/offtaker-suite/workstation?tab=take_or_pay',      label: 'Take-or-pay',           icon: 'gavel',         section: 'Operations (Offtaker)' },
+  { path: '/offtaker-suite/workstation?tab=recs',             label: 'RECs & sustainability', icon: 'eco',           section: 'Compliance (Offtaker)' },
+  { path: '/offtaker-suite/workstation?tab=scope2',           label: 'Scope 2 reporting',     icon: 'public',        section: 'Compliance (Offtaker)' },
+
+  // ── Grid workstation deep-links ───────────────────────────────────────────
+  { path: '/grid-operator/workstation',                        label: 'Grid workstation',     icon: 'bolt',          section: 'Operations (Grid)' },
+  { path: '/grid-operator/workstation?tab=dispatch_nomination',label: 'Dispatch nominations', icon: 'bolt',          section: 'Operations (Grid)' },
+  { path: '/grid-operator/workstation?tab=demand_response',    label: 'Demand response',      icon: 'electric_bolt', section: 'Operations (Grid)' },
+  { path: '/grid-operator/workstation?tab=ancillary',          label: 'Ancillary services',   icon: 'settings_backup_restore', section: 'Operations (Grid)' },
+  { path: '/grid-operator/workstation?tab=eop_activations',    label: 'EOP activations',      icon: 'emergency',     section: 'Operations (Grid)' },
+  { path: '/grid-operator/workstation?tab=planned_outage',     label: 'Planned outages',      icon: 'event',         section: 'Infrastructure' },
+  { path: '/grid-operator/workstation?tab=substation-assets',  label: 'Substation assets',    icon: 'power',         section: 'Infrastructure' },
+  { path: '/grid-operator/workstation?tab=wheeling_charges',   label: 'Wheeling charges',     icon: 'receipt',       section: 'Commercial (Grid)' },
+  { path: '/grid-operator/workstation?tab=grid_capacity_allocations',label:'Capacity queue',  icon: 'queue',         section: 'Commercial (Grid)' },
+  { path: '/grid-operator/workstation?tab=grid_code_compliance',label: 'Grid code compliance',icon: 'gavel',         section: 'Regulatory (Grid)' },
+
+  // ── Carbon workstation deep-links ─────────────────────────────────────────
+  { path: '/carbon-registry/workstation',                      label: 'Carbon workstation',   icon: 'eco',           section: 'Registry' },
+  { path: '/carbon-registry/workstation?tab=mrv_chain',        label: 'MRV verification',     icon: 'verified',      section: 'Registry' },
+  { path: '/carbon-registry/workstation?tab=registration_chain',label: 'Project registration',icon: 'app_registration', section: 'Registry' },
+  { path: '/carbon-registry/workstation?tab=retirement_chain', label: 'Credit retirements',   icon: 'delete_forever',section: 'Transactions (Carbon)' },
+  { path: '/carbon-registry/workstation?tab=article6',         label: 'Article 6 ITMOs',      icon: 'swap_horiz',    section: 'Transactions (Carbon)' },
+  { path: '/carbon-registry/workstation?tab=erpa_chain',       label: 'ERPA forward delivery',icon: 'schedule',      section: 'Transactions (Carbon)' },
+  { path: '/carbon-registry/workstation?tab=reversal_chain',   label: 'Carbon reversals',     icon: 'restart_alt',   section: 'Integrity (Carbon)' },
+  { path: '/carbon-registry/workstation?tab=carbon_tax_returns',label:'Carbon tax returns',   icon: 'receipt',       section: 'Integrity (Carbon)' },
+
+  // ── Regulator workstation deep-links ──────────────────────────────────────
+  { path: '/regulator-suite/workstation',                      label: 'Regulator workstation',icon: 'gavel',         section: 'Inbox (Regulator)' },
+  { path: '/regulator-suite/workstation?tab=inbox',            label: 'Regulatory inbox',     icon: 'inbox',         section: 'Inbox (Regulator)' },
+  { path: '/regulator-suite/workstation?tab=surveillance',     label: 'Surveillance',         icon: 'monitor_heart', section: 'Inbox (Regulator)' },
+  { path: '/regulator-suite/workstation?tab=licence_applications',label:'Licence applications',icon: 'approval',     section: 'Licensing' },
+  { path: '/regulator-suite/workstation?tab=licence_renewals', label: 'Licence renewals',     icon: 'autorenew',     section: 'Licensing' },
+  { path: '/regulator-suite/workstation?tab=compliance_inspections',label:'Inspections',      icon: 'fact_check',    section: 'Enforcement' },
+  { path: '/regulator-suite/workstation?tab=enforcement',      label: 'Enforcement actions',  icon: 'security',      section: 'Enforcement' },
+  { path: '/regulator-suite/workstation?tab=tariff_determinations',label:'Tariff determinations',icon:'price_change', section: 'Economics' },
+  { path: '/regulator-suite/workstation?tab=levy_assessments', label: 'Levy assessments',     icon: 'receipt',       section: 'Economics' },
+
+  // ── Admin workstation deep-links ──────────────────────────────────────────
+  { path: '/admin-platform/workstation',                       label: 'Platform admin',       icon: 'settings',      section: 'Platform' },
+  { path: '/admin-platform/workstation?tab=kyc-verifications', label: 'KYC verifications',    icon: 'verified_user', section: 'Platform' },
+  { path: '/admin-platform/workstation?tab=flags',             label: 'Feature flags',        icon: 'toggle_on',     section: 'Platform' },
+  { path: '/admin-platform/workstation?tab=cascade-dlq',       label: 'Cascade DLQ',          icon: 'error',         section: 'Audit' },
+  { path: '/admin-platform/workstation?tab=settlement_audit',  label: 'Settlement audit',     icon: 'balance',       section: 'Audit' },
+  { path: '/admin-platform/workstation?tab=anomaly-detection-ml',label:'Anomaly ML',          icon: 'psychology',    section: 'ML & AI' },
+
+  // ── Support workstation deep-links ────────────────────────────────────────
+  { path: '/support/workstation',                              label: 'Support workstation',  icon: 'support_agent', section: 'Tickets' },
+  { path: '/support/workstation?tab=ticket_chain',             label: 'Ticket lifecycle',     icon: 'support_agent', section: 'Tickets' },
+  { path: '/support/workstation?tab=csat',                     label: 'CSAT & SLA',           icon: 'star',          section: 'Tickets' },
+  { path: '/support/workstation?tab=problem_chain',            label: 'Problem management',   icon: 'bug_report',    section: 'ITIL Chains' },
+  { path: '/support/workstation?tab=change_chain',             label: 'Change enablement',    icon: 'change_circle', section: 'ITIL Chains' },
+  { path: '/support/workstation?tab=security_remediation',     label: 'Security remediations',icon: 'security',      section: 'ITIL Chains' },
+  { path: '/support/workstation?tab=warranty_recovery',        label: 'Warranty recovery',    icon: 'build',         section: 'OEM' },
+  { path: '/support/workstation?tab=spare_parts',              label: 'Spare parts',          icon: 'inventory',     section: 'OEM' },
+
+  // ── ESCO workstation deep-links ───────────────────────────────────────────
+  { path: '/esco/workstation',                                 label: 'O&M workstation',      icon: 'build',         section: 'Portfolio' },
+  { path: '/esco/workstation?tab=service-contracts',           label: 'Service contracts',    icon: 'description',   section: 'Portfolio' },
+  { path: '/esco/workstation?tab=work-orders',                 label: 'Work orders',          icon: 'build',         section: 'Operations (O&M)' },
+  { path: '/esco/workstation?tab=pm-compliance',               label: 'PM compliance',        icon: 'event_repeat',  section: 'Operations (O&M)' },
+  { path: '/esco/workstation?tab=permit-to-work',              label: 'Permit-to-work',       icon: 'key',           section: 'Operations (O&M)' },
+  { path: '/esco/workstation?tab=prognostics',                 label: 'Asset prognostics',    icon: 'psychology',    section: 'Asset Health' },
+  { path: '/esco/workstation?tab=availability',                label: 'Availability guarantees',icon:'health_and_safety', section: 'Asset Health' },
+  { path: '/esco/workstation?tab=spare-parts',                 label: 'Spare parts',          icon: 'inventory',     section: 'Supply Chain' },
+  { path: '/esco/workstation?tab=vendor-escalation',           label: 'Vendor escalation',    icon: 'escalator_warning', section: 'Supply Chain' },
+  { path: '/esco/workstation?tab=warranty-claims',             label: 'Warranty claims',      icon: 'shield',        section: 'Supply Chain' },
+  { path: '/esco/workstation?tab=hse',                         label: 'HSE incidents',        icon: 'health_and_safety', section: 'Safety (O&M)' },
+  { path: '/esco/workstation?tab=commissioning',               label: 'Site commissioning',   icon: 'electric_bolt', section: 'Safety (O&M)' },
+
+  // ── EPC workstation deep-links ────────────────────────────────────────────
+  { path: '/epc/workstation',                                  label: 'EPC workstation',      icon: 'construction',  section: 'Document Control (EPC)' },
+  { path: '/epc/workstation?tab=submittals',                   label: 'Submittals',           icon: 'upload_file',   section: 'Document Control (EPC)' },
+  { path: '/epc/workstation?tab=rfis',                         label: 'RFIs',                 icon: 'help',          section: 'Document Control (EPC)' },
+  { path: '/epc/workstation?tab=change-orders',                label: 'Change orders',        icon: 'change_circle', section: 'Document Control (EPC)' },
+  { path: '/epc/workstation?tab=technical-queries',            label: 'Technical queries',    icon: 'quiz',          section: 'Document Control (EPC)' },
+  { path: '/epc/workstation?tab=itps',                         label: 'ITPs',                 icon: 'checklist',     section: 'Quality (EPC)' },
+  { path: '/epc/workstation?tab=ncrs',                         label: 'NCRs',                 icon: 'report',        section: 'Quality (EPC)' },
+  { path: '/epc/workstation?tab=punch-list',                   label: 'Punch list',           icon: 'playlist_add_check', section: 'Quality (EPC)' },
+  { path: '/epc/workstation?tab=method-statements',            label: 'Method statements',    icon: 'article',       section: 'Quality (EPC)' },
+  { path: '/epc/workstation?tab=site-diary',                   label: 'Site diary',           icon: 'book',          section: 'Site (EPC)' },
+  { path: '/epc/workstation?tab=hse',                          label: 'HSE incidents',        icon: 'health_and_safety', section: 'Site (EPC)' },
+
+  // ── Shared Ops / Sustainability / Finance / Insights ─────────────────────
   { path: '/projects',     label: 'IPP Projects',  icon: 'apartment',          section: 'Operations' },
   { path: '/ipp/variations', label: 'Variation Orders', icon: 'assignment',    section: 'Operations' },
   { path: '/pipeline',     label: 'Pipeline',      icon: 'account_tree',       section: 'Operations' },
   { path: '/grid',         label: 'Grid',          icon: 'bolt',               section: 'Operations' },
-  { path: '/esums',        label: 'Esums',         icon: 'build',              section: 'Operations' },
+  { path: '/esums',        label: 'Esums O&M',     icon: 'build',              section: 'Operations' },
   { path: '/ops/l5',       label: 'L5 Ops Console', icon: 'monitor_heart',     section: 'Operations' },
   { path: '/ops/depth',    label: 'Depth Ops',     icon: 'monitor_heart',      section: 'Operations' },
   { path: '/carbon',       label: 'Carbon',        icon: 'eco',                section: 'Sustainability' },
@@ -65,60 +204,98 @@ const BASE_NAV: NavItem[] = [
 ];
 
 function navForRole(role: string | undefined): NavItem[] {
-  // /admin is admin-only; /support is admin + support only. POPIA is visible
-  // to every role because every user has personal data rights. Passkeys are
-  // available to every signed-in user.
   const adminOnlyPaths = new Set(['/admin', '/support', '/admin/monitoring', '/admin/platform-console',
     '/admin/bulk-ops', '/settings/compliance-admin', '/dashboard']);
   const nonSystem = BASE_NAV.filter((n) => !adminOnlyPaths.has(n.path));
   if (!role) return nonSystem;
+
+  // Helper: pick items whose path starts with any of the given prefixes,
+  // plus always include the launchpad and passkeys.
+  const pick = (...prefixes: string[]) => {
+    const set = new Set(['/launch', '/settings/passkeys', ...prefixes]);
+    return BASE_NAV.filter((n) => {
+      if (set.has(n.path)) return true;
+      return prefixes.some((p) => n.path.startsWith(p + '?') || n.path.startsWith(p + '/'));
+    });
+  };
+
   switch (role) {
     case 'admin':
       return BASE_NAV;
+
     case 'support':
-      return BASE_NAV.filter((n) =>
-        ['/launch', '/support', '/admin/monitoring', '/intelligence', '/briefing', '/popia',
-         '/esums', '/admin/paia', '/settlement-ops', '/settings/passkeys', '/documents',
-         '/audit', '/modules'].includes(n.path),
+      return pick(
+        '/support/workstation',
+        '/admin/monitoring',
+        '/intelligence', '/briefing',
+        '/popia', '/admin/paia', '/audit',
+        '/esums', '/settlement-ops', '/documents', '/modules',
       );
+
     case 'trader':
-      return BASE_NAV.filter((n) =>
-        ['/launch', '/trading', '/settlement', '/contracts', '/marketplace', '/intelligence',
-         '/reports', '/popia', '/briefing', '/documents', '/ops/l5', '/settings/passkeys', '/modules'].includes(n.path),
+    case 'trader_risk':
+      return pick(
+        '/trader-risk/workstation',
+        '/settlement', '/contracts', '/marketplace',
+        '/intelligence', '/reports', '/popia', '/briefing', '/documents', '/modules',
       );
+
     case 'ipp_developer':
-      return BASE_NAV.filter((n) =>
-        ['/launch', '/projects', '/contracts', '/settlement', '/grid', '/marketplace',
-         '/esg', '/intelligence', '/reports', '/popia', '/briefing',
-         '/esums', '/ipp/variations', '/documents', '/settings/passkeys', '/modules'].includes(n.path),
+      return pick(
+        '/ipp-lifecycle/workstation',
+        '/contracts', '/settlement', '/marketplace',
+        '/esg', '/intelligence', '/reports', '/popia', '/briefing', '/documents', '/modules',
       );
+
     case 'carbon_fund':
-      return BASE_NAV.filter((n) =>
-        ['/launch', '/carbon', '/marketplace', '/funds', '/pipeline', '/esg', '/intelligence',
-         '/reports', '/popia', '/briefing', '/documents', '/settings/passkeys', '/modules'].includes(n.path),
+      return pick(
+        '/carbon-registry/workstation',
+        '/marketplace', '/funds', '/pipeline',
+        '/esg', '/intelligence', '/reports', '/popia', '/briefing', '/documents', '/modules',
       );
+
     case 'offtaker':
-      return BASE_NAV.filter((n) =>
-        ['/launch', '/contracts', '/lois', '/procurement', '/marketplace', '/settlement', '/esg',
-         '/intelligence', '/reports', '/popia', '/briefing',
-         '/ipp/variations', '/documents', '/settings/passkeys', '/modules'].includes(n.path),
+      return pick(
+        '/offtaker-suite/workstation',
+        '/contracts', '/lois', '/procurement', '/marketplace', '/settlement',
+        '/esg', '/intelligence', '/reports', '/popia', '/briefing', '/documents', '/modules',
       );
+
     case 'lender':
-      return BASE_NAV.filter((n) =>
-        ['/launch', '/projects', '/pipeline', '/funds', '/settlement', '/esums', '/intelligence',
-         '/reports', '/popia', '/briefing',
-         '/ipp/variations', '/documents', '/settings/passkeys', '/modules'].includes(n.path),
+      return pick(
+        '/lender-suite/workstation',
+        '/projects', '/pipeline', '/funds', '/settlement',
+        '/intelligence', '/reports', '/popia', '/briefing', '/documents', '/modules',
       );
+
     case 'grid_operator':
-      return BASE_NAV.filter((n) =>
-        ['/launch', '/grid', '/settlement', '/intelligence', '/reports', '/popia', '/briefing',
-         '/ops/l5', '/documents', '/settings/passkeys', '/modules'].includes(n.path),
+      return pick(
+        '/grid-operator/workstation',
+        '/settlement',
+        '/intelligence', '/reports', '/popia', '/briefing', '/documents', '/modules',
       );
+
     case 'regulator':
-      return BASE_NAV.filter((n) =>
-        ['/launch', '/marketplace', '/esg', '/intelligence', '/reports', '/popia', '/briefing',
-         '/ops/l5', '/audit', '/documents', '/settings/passkeys', '/modules'].includes(n.path),
+      return pick(
+        '/regulator-suite/workstation',
+        '/marketplace', '/esg', '/audit',
+        '/intelligence', '/reports', '/popia', '/briefing', '/documents', '/modules',
       );
+
+    case 'esco':
+      return pick(
+        '/esco/workstation',
+        '/esums',
+        '/intelligence', '/reports', '/popia', '/briefing', '/modules',
+      );
+
+    case 'epc_contractor':
+      return pick(
+        '/epc/workstation',
+        '/projects', '/documents',
+        '/intelligence', '/reports', '/popia', '/briefing', '/modules',
+      );
+
     default:
       return nonSystem;
   }
@@ -250,7 +427,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [query, setQuery] = useState('');
   const [userMenu, setUserMenu] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);

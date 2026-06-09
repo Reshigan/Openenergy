@@ -13,7 +13,7 @@ import IncomingPanel from './IncomingPanel';
 import InsightsPanel from './InsightsPanel';
 import CrossOptionModal from './CrossOptionModal';
 import { type RoleAction } from '../../lib/roleActions';
-import { ArrowLeft, RefreshCw, Search, HelpCircle } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Search, HelpCircle, ChevronLeft, ChevronRight, Wand2, Map } from 'lucide-react';
 import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
@@ -24,6 +24,9 @@ import { useDensityPreference } from '../../lib/density';
 import { motion, AnimatePresence } from 'framer-motion';
 import { motionTransition } from '../../lib/motion';
 import { CapabilityPalette } from './CapabilityPalette';
+import { WizardModal, WizardPicker, type WizardSpec } from './WizardModal';
+import { ProductTour, type TourDef } from './ProductTour';
+import { useTour } from '../../lib/useTour';
 
 export type WorkstationTab = {
   key: string;
@@ -182,6 +185,8 @@ export function WorkstationShell({
   commands,
   kpis,
   panels,
+  wizards,
+  tour,
 }: {
   eyebrow: string;
   title: string;
@@ -199,6 +204,10 @@ export function WorkstationShell({
   kpis?: WorkstationKpi[];
   /** Optional summary panels (open items, exceptions). Render above tabs. */
   panels?: WorkstationPanel[];
+  /** Guided multi-step wizards surfaced via the "Quick start" header button. */
+  wizards?: WizardSpec[];
+  /** Product tour shown on first visit to this workstation. */
+  tour?: TourDef;
 }) {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
@@ -209,6 +218,20 @@ export function WorkstationShell({
   // Layer-C cross-role inbox: the action the operator chose to act on (drives CrossOptionModal).
   const [active, setActive] = useState<RoleAction | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [wizardPickerOpen, setWizardPickerOpen] = useState(false);
+  const [activeWizard, setActiveWizard] = useState<WizardSpec | null>(null);
+
+  // Product tour
+  const { active: tourActive, stepIndex: tourStep, setStepIndex: setTourStep, start: startTour, startForced: startTourForced, finish: finishTour } = useTour(tour?.id ?? '');
+
+  // Auto-trigger tour on first visit
+  useEffect(() => {
+    if (tour) {
+      const forceParam = new URLSearchParams(window.location.search).get('__tour');
+      if (forceParam) { startTourForced(); } else { startTour(); }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tour?.id]);
 
   const setTab = (k: string) => {
     setActiveTab(k);
@@ -276,6 +299,7 @@ export function WorkstationShell({
         {commands && commands.length > 0 ? <CommandRail items={commands} /> : null}
         <div className="p-6 lg:p-10 space-y-5 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
           <section
+            data-tour="ws-header"
             className="rounded-xl text-white p-5 shadow-md"
             style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1a3a5c 60%, #0b1c30 100%)' }}
           >
@@ -316,8 +340,28 @@ export function WorkstationShell({
                 >
                   <RefreshCw size={12} /> Refresh
                 </button>
+                {wizards && wizards.length > 0 && (
+                  <button type="button"
+                    data-tour="quick-start"
+                    onClick={() => setWizardPickerOpen(true)}
+                    className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                    aria-label="Open guided wizards"
+                  >
+                    <Wand2 size={12} /> Quick start
+                  </button>
+                )}
+                {tour && (
+                  <button type="button"
+                    onClick={startTourForced}
+                    className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                    aria-label="Take the workstation tour"
+                  >
+                    <Map size={12} /> Tour
+                  </button>
+                )}
                 {role && (
                   <button type="button"
+                    data-tour="capability-palette"
                     onClick={() => setPaletteOpen(true)}
                     className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
                     aria-label="What can I do here"
@@ -328,7 +372,7 @@ export function WorkstationShell({
               </div>
             </div>
             {kpis && kpis.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4">
+              <div data-tour="kpi-row" className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4">
                 {kpis.map((k, i) => (
                   <div key={i} className="rounded-lg bg-white/15 p-3 border border-white/10">
                     <div className="text-[10px] uppercase tracking-wider text-white/75">{k.label}</div>
@@ -377,15 +421,17 @@ export function WorkstationShell({
 
           <div className="flex gap-5 items-start">
             <div className="min-w-0 flex-1 space-y-5">
-              <TabNav
-                tabs={tabs}
-                activeTab={activeTab}
-                onSelect={setTab}
-                hasGroups={hasGroups}
-                allGroups={allGroups}
-                activeGroup={activeGroup}
-                setActiveGroup={setActiveGroup}
-              />
+              <div data-tour="tab-nav">
+                <TabNav
+                  tabs={tabs}
+                  activeTab={activeTab}
+                  onSelect={setTab}
+                  hasGroups={hasGroups}
+                  allGroups={allGroups}
+                  activeGroup={activeGroup}
+                  setActiveGroup={setActiveGroup}
+                />
+              </div>
 
               <div
                 key={`${activeTab}-${bump}`}
@@ -400,7 +446,7 @@ export function WorkstationShell({
                 ) : current.body({ onRefresh: refresh })}
               </div>
             </div>
-            <div className="hidden xl:flex xl:flex-col gap-5 shrink-0">
+            <div data-tour="incoming-panel" className="hidden xl:flex xl:flex-col gap-5 shrink-0">
               {incomingRail}
               {insightsRail}
             </div>
@@ -411,6 +457,31 @@ export function WorkstationShell({
               role={role}
               open={paletteOpen}
               onClose={() => setPaletteOpen(false)}
+            />
+          )}
+          {wizards && wizards.length > 0 && wizardPickerOpen && (
+            <WizardPicker
+              wizards={wizards}
+              onSelect={w => { setWizardPickerOpen(false); setActiveWizard(w); }}
+              onClose={() => setWizardPickerOpen(false)}
+            />
+          )}
+          {activeWizard && (
+            <WizardModal
+              spec={activeWizard}
+              onClose={() => setActiveWizard(null)}
+            />
+          )}
+          {tour && tourActive && (
+            <ProductTour
+              def={tour}
+              stepIndex={tourStep}
+              onNext={() => {
+                if (tourStep < tour.steps.length - 1) { setTourStep(tourStep + 1); }
+                else { finishTour(); }
+              }}
+              onPrev={() => { if (tourStep > 0) setTourStep(tourStep - 1); }}
+              onClose={finishTour}
             />
           )}
         </div>
@@ -511,6 +582,7 @@ export function ListingTable({
   rowKey,
   rowHref,
   rowOnClick,
+  pageSize = 25,
 }: {
   endpoint: string;
   columns: Column[];
@@ -520,10 +592,12 @@ export function ListingTable({
   /** Alternative to rowHref: fire a callback (e.g. open a modal). The
    *  click handler still ignores clicks on buttons/inputs inside the row. */
   rowOnClick?: (row: any) => void;
+  pageSize?: number;
 }) {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
   const nav = useNavigate();
 
   const load = useCallback(async () => {
@@ -538,6 +612,7 @@ export function ListingTable({
       } else {
         setRows(Array.isArray(raw) ? raw : []);
       }
+      setPage(0);
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : 'load failed');
     } finally {
@@ -552,41 +627,72 @@ export function ListingTable({
   if (rows.length === 0) {
     return <EmptyState title={empty?.title || 'No data'} description={empty?.description || ''} />;
   }
+
+  const totalPages = Math.ceil(rows.length / pageSize);
+  const pageRows = rows.slice(page * pageSize, (page + 1) * pageSize);
+
   return (
-    <div className="rounded-xl border border-[var(--oe-surface-container-high)] bg-white overflow-x-auto text-[var(--oe-on-surface)]">
-      <table className="w-full text-[13px] min-w-[640px]">
-        <thead className="bg-[var(--oe-surface-container-lowest)] text-left text-[10px] uppercase tracking-wide text-[var(--oe-outline)]">
-          <tr>{columns.map(col => <th key={col.key} scope="col" className="px-4 py-2">{col.label}</th>)}</tr>
-        </thead>
-        <tbody>
-          {rows.map(r => {
-            const href = rowHref ? rowHref(r) : null;
-            const clickHandler = (e: React.MouseEvent) => {
-              // Only navigate when the click was on the row chrome — let
-              // buttons / links inside the row keep their own handlers.
-              if ((e.target as HTMLElement).closest('button, a, input, select, textarea')) return;
-              if (href) nav(href);
-              else if (rowOnClick) rowOnClick(r);
-            };
-            const clickable = !!(href || rowOnClick);
-            return (
-              <tr
-                key={rowKey(r)}
-                onClick={clickHandler}
-                onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); clickHandler(e as unknown as React.MouseEvent); } } : undefined}
-                tabIndex={clickable ? 0 : undefined}
-                className={`border-t border-[var(--oe-surface-container)] hover:bg-[var(--oe-surface-container-lowest)] ${clickable ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--oe-primary)]' : ''}`}
-              >
-                {columns.map(col => (
-                  <td key={col.key} className={`px-4 py-2 ${col.align === 'right' ? 'text-right' : ''}`}>
-                    {col.render ? col.render(r) : (r[col.key] ?? '—')}
-                  </td>
-                ))}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <div className="space-y-2">
+      <div className="rounded-xl border border-[var(--oe-surface-container-high)] bg-white overflow-x-auto text-[var(--oe-on-surface)]">
+        <table className="w-full text-[13px] min-w-[640px]">
+          <thead className="bg-[var(--oe-surface-container-lowest)] text-left text-[10px] uppercase tracking-wide text-[var(--oe-outline)]">
+            <tr>{columns.map(col => <th key={col.key} scope="col" className="px-4 py-2">{col.label}</th>)}</tr>
+          </thead>
+          <tbody>
+            {pageRows.map(r => {
+              const href = rowHref ? rowHref(r) : null;
+              const clickHandler = (e: React.MouseEvent) => {
+                // Only navigate when the click was on the row chrome — let
+                // buttons / links inside the row keep their own handlers.
+                if ((e.target as HTMLElement).closest('button, a, input, select, textarea')) return;
+                if (href) nav(href);
+                else if (rowOnClick) rowOnClick(r);
+              };
+              const clickable = !!(href || rowOnClick);
+              return (
+                <tr
+                  key={rowKey(r)}
+                  onClick={clickHandler}
+                  onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); clickHandler(e as unknown as React.MouseEvent); } } : undefined}
+                  tabIndex={clickable ? 0 : undefined}
+                  className={`border-t border-[var(--oe-surface-container)] hover:bg-[var(--oe-surface-container-lowest)] ${clickable ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--oe-primary)]' : ''}`}
+                >
+                  {columns.map(col => (
+                    <td key={col.key} className={`px-4 py-2 ${col.align === 'right' ? 'text-right' : ''}`}>
+                      {col.render ? col.render(r) : (r[col.key] ?? '—')}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-1 text-[12px] text-[var(--oe-outline)]">
+          <span>{rows.length} records · page {page + 1} of {totalPages}</span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setPage(p => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="p-1 rounded hover:bg-[var(--oe-surface-container-lowest)] disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label="Previous page"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+              disabled={page === totalPages - 1}
+              className="p-1 rounded hover:bg-[var(--oe-surface-container-lowest)] disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label="Next page"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -612,12 +718,22 @@ export const Pill = ({ tone, children }: { tone: 'good' | 'warn' | 'bad' | 'neut
 export type FieldSpec = {
   key: string;
   label: string;
-  type?: 'text' | 'textarea' | 'select' | 'number' | 'date';
+  /** 'lookup' fetches options from lookupEndpoint at modal open time. */
+  type?: 'text' | 'textarea' | 'select' | 'number' | 'date' | 'lookup';
   required?: boolean;
+  /** Static options for type: 'select'. */
   options?: { value: string; label: string }[];
   placeholder?: string;
   defaultValue?: string;
   helperText?: string;
+  /** For type: 'lookup' — relative API path, e.g. '/api/lookup/sites' */
+  lookupEndpoint?: string;
+  /**
+   * Auto-fill sibling fields when a lookup value is chosen.
+   * Keys are target field keys; values are property names on the selected
+   * lookup row (beyond value/label). E.g. { technology: 'technology', capacity: 'capacity_kwp' }
+   */
+  lookupAutoFill?: Record<string, string>;
 };
 
 export function ActionModal({
@@ -644,7 +760,49 @@ export function ActionModal({
   const [saved, setSaved] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const dialogRef = React.useRef<HTMLDivElement>(null);
-  const update = (k: string, v: string) => setValues(prev => ({ ...prev, [k]: v }));
+
+  // Lookup options — keyed by field.key → full row objects for auto-fill
+  type LookupOption = { value: string; label: string; [k: string]: unknown };
+  const [lookupOpts, setLookupOpts] = useState<Record<string, LookupOption[]>>({});
+  const [lookupLoading, setLookupLoading] = useState(false);
+
+  useEffect(() => {
+    const lookupFields = fields.filter(f => f.type === 'lookup' && f.lookupEndpoint);
+    if (!lookupFields.length) return;
+    setLookupLoading(true);
+    const token = localStorage.getItem('token') || '';
+    Promise.all(
+      lookupFields.map(f =>
+        fetch(f.lookupEndpoint!, { headers: { Authorization: `Bearer ${token}` } })
+          .then(r => r.json() as Promise<{ data: LookupOption[] }>)
+          .then(d => ({ key: f.key, opts: Array.isArray(d.data) ? d.data : [] }))
+          .catch(() => ({ key: f.key, opts: [] as LookupOption[] }))
+      )
+    ).then(results => {
+      const map: Record<string, LookupOption[]> = {};
+      results.forEach(({ key, opts }) => { map[key] = opts; });
+      setLookupOpts(map);
+      setLookupLoading(false);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const update = (k: string, v: string) => {
+    setValues(prev => {
+      const next = { ...prev, [k]: v };
+      // Auto-fill sibling fields from lookup row metadata
+      const field = fields.find(f => f.key === k);
+      if (field?.type === 'lookup' && field.lookupAutoFill && v) {
+        const selected = (lookupOpts[k] || []).find(o => o.value === v);
+        if (selected) {
+          Object.entries(field.lookupAutoFill).forEach(([targetKey, sourceKey]) => {
+            next[targetKey] = String(selected[sourceKey] ?? '');
+          });
+        }
+      }
+      return next;
+    });
+  };
 
   // Focus management: trap Tab inside the modal; Esc closes
   useEffect(() => {
@@ -729,6 +887,11 @@ export function ActionModal({
                 <select value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} className="mt-1 w-full px-3 py-2 border border-[var(--oe-surface-container-high)] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)]">
                   <option value="">— select —</option>
                   {(f.options || []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              ) : f.type === 'lookup' ? (
+                <select value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} className="mt-1 w-full px-3 py-2 border border-[var(--oe-surface-container-high)] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)]">
+                  <option value="">{lookupLoading ? 'Loading…' : '— select —'}</option>
+                  {(lookupOpts[f.key] || []).map(o => <option key={String(o.value)} value={String(o.value)}>{String(o.label)}</option>)}
                 </select>
               ) : (
                 <input type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'} value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} placeholder={f.placeholder} className="mt-1 w-full px-3 py-2 border border-[var(--oe-surface-container-high)] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)]" />

@@ -168,7 +168,7 @@ function WorkflowTile({ wf }: { wf: Workflow }) {
         <h3
           style={{
             fontFamily: 'var(--oe-display-font)',
-            fontSize: 16,
+            fontSize: 13,
             fontWeight: 600,
             lineHeight: 1.3,
             color: 'var(--role-on-surface)',
@@ -196,14 +196,14 @@ function WorkflowTile({ wf }: { wf: Workflow }) {
       </div>
       <p
         style={{
-          fontSize: 13,
-          lineHeight: 1.5,
+          fontSize: 11,
+          lineHeight: 1.4,
           color: 'var(--role-on-surface-muted)',
           margin: 0,
           flex: 1,
         }}
       >
-        {wf.description.length > 120 ? wf.description.slice(0, 117) + '…' : wf.description}
+        {wf.description.length > 72 ? wf.description.slice(0, 69) + '…' : wf.description}
       </p>
       <span
         style={{
@@ -326,7 +326,7 @@ export function SignatureLaunchBoard({ role }: { role: string }) {
         motif={<HeroMotifFor role={role} kpis={featuredKpis} />}
       />
 
-      <div style={{ display: 'grid', gap: 32, padding: 'clamp(20px, 3vw, 40px)', maxWidth: 1440, margin: '0 auto' }}>
+      <div style={{ display: 'grid', gap: 20, padding: 'clamp(16px, 2vw, 28px)', maxWidth: 1440, margin: '0 auto' }}>
         <SetupChecklist role={role} />
 
         {featuredKpis.length > 0 && (
@@ -338,7 +338,7 @@ export function SignatureLaunchBoard({ role }: { role: string }) {
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
                 color: 'var(--role-on-surface-muted)',
-                marginBottom: 16,
+                marginBottom: 10,
               }}
             >
               Today at a glance
@@ -351,8 +351,8 @@ export function SignatureLaunchBoard({ role }: { role: string }) {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                gap: 16,
+                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                gap: 10,
               }}
             >
               {featuredKpis.map((k) => (
@@ -383,8 +383,8 @@ export function SignatureLaunchBoard({ role }: { role: string }) {
           <section
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-              gap: 12,
+              gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+              gap: 8,
             }}
           >
             {remainingKpis.map((k) => (
@@ -405,7 +405,7 @@ export function SignatureLaunchBoard({ role }: { role: string }) {
                     className="oe-tnum"
                     style={{
                       fontFamily: 'var(--oe-num-font)',
-                      fontSize: 22,
+                      fontSize: 18,
                       fontWeight: 600,
                       color: 'var(--role-on-surface)',
                     }}
@@ -448,7 +448,7 @@ export function SignatureLaunchBoard({ role }: { role: string }) {
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
                 color: 'var(--role-on-surface-muted)',
-                marginBottom: 12,
+                marginBottom: 8,
               }}
             >
               Suggested next steps
@@ -456,8 +456,8 @@ export function SignatureLaunchBoard({ role }: { role: string }) {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                gap: 12,
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: 8,
               }}
             >
               {visibleSuggestions.map((s) => (
@@ -476,7 +476,7 @@ export function SignatureLaunchBoard({ role }: { role: string }) {
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
                 color: 'var(--role-on-surface-muted)',
-                marginBottom: 16,
+                marginBottom: 8,
               }}
             >
               Primary workflows
@@ -484,8 +484,8 @@ export function SignatureLaunchBoard({ role }: { role: string }) {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-                gap: 16,
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: 10,
               }}
             >
               {payload.workflows.map((w) => (

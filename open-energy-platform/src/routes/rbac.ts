@@ -40,23 +40,28 @@ const rbac = new Hono<HonoEnv>();
 const ALL_ROLES = [
   'admin', 'support', 'trader', 'ipp_developer', 'lender',
   'offtaker', 'carbon_fund', 'grid_operator', 'regulator',
+  'esco', 'epc_contractor', 'esums_owner',
 ] as const;
 // Which roles each role is allowed to invite
 const INVITABLE_BY: Record<string, string[]> = {
   admin:        [...ALL_ROLES],
   support:      ['support'],
   trader:       ['trader'],
-  ipp_developer: ['lender', 'offtaker', 'carbon_fund', 'ipp_developer'],
+  ipp_developer: ['lender', 'offtaker', 'carbon_fund', 'ipp_developer', 'epc_contractor', 'esco'],
   lender:       ['lender'],
   offtaker:     ['offtaker'],
   carbon_fund:  ['carbon_fund'],
   grid_operator: ['grid_operator'],
   regulator:    ['regulator'],
+  esco:         ['esco'],
+  epc_contractor: ['epc_contractor'],
+  esums_owner:  ['esums_owner'],
 };
 
 // Self-register: roles that appear on the public sign-up form
 const SELF_REGISTER_ROLES: string[] = [
   'trader', 'ipp_developer', 'lender', 'offtaker', 'carbon_fund',
+  'esco', 'epc_contractor',
 ];
 
 const ADMIN_ROLES = ['admin', 'support'];
@@ -736,6 +741,9 @@ function roleLabel(role: string): string {
     carbon_fund: 'Carbon Fund / Registry',
     grid_operator: 'Grid Operator (SO/DSO)',
     regulator: 'Regulator (NERSA/DMRE)',
+    esco: 'O&M Operator (ESCO)',
+    epc_contractor: 'EPC Contractor',
+    esums_owner: 'Asset Owner (Esums O&M)',
   };
   return labels[role] ?? role;
 }
