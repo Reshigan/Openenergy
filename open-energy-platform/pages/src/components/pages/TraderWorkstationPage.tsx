@@ -19,6 +19,726 @@ import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConn
 import { SapOracleErpConnectorTab } from '../sapOracleErpConnector/SapOracleErpConnectorTab';
 import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/GovernmentFilingConnectorTab';
 import { api } from '../../lib/api';
+import { ReportPanel, type ReportConfig } from '../launch/ReportPanel';
+import type { WizardSpec } from '../launch/WizardModal';
+import type { TourDef } from '../launch/ProductTour';
+
+const TRADER_REPORTS: ReportConfig[] = [
+  {
+    title: 'Trade Settlement',
+    endpoint: '/api/settlement/cycles',
+    columns: [
+      { key: 'trade_date', label: 'Trade Date' },
+      { key: 'total_trades', label: 'Trades', numeric: true },
+      { key: 'total_volume_mwh', label: 'Volume MWh', numeric: true },
+      { key: 'total_value_zar', label: 'Value ZAR', numeric: true },
+      { key: 'status', label: 'Status' },
+    ],
+    dateKey: 'trade_date',
+    pivotGroupBy: 'status',
+    mailSubject: 'Open Energy — Trade Settlement Report',
+  },
+  {
+    title: 'Best Execution Records',
+    endpoint: '/api/trader/best-execution',
+    columns: [
+      { key: 'order_ref', label: 'Order' },
+      { key: 'instrument', label: 'Instrument' },
+      { key: 'executed_volume_mwh', label: 'MWh', numeric: true },
+      { key: 'executed_price_zar', label: 'ZAR/MWh', numeric: true },
+      { key: 'slippage_zar', label: 'Slippage', numeric: true },
+      { key: 'chain_status', label: 'Status' },
+    ],
+    pivotGroupBy: 'instrument',
+    mailSubject: 'Open Energy — Best Execution Report',
+  },
+  {
+    title: 'FSCA Trade Reports',
+    endpoint: '/api/trader/trade-reports',
+    columns: [
+      { key: 'report_ref', label: 'Reference' },
+      { key: 'reporting_period', label: 'Period' },
+      { key: 'total_trades_reported', label: 'Trades', numeric: true },
+      { key: 'chain_status', label: 'Status' },
+      { key: 'submitted_at', label: 'Submitted' },
+    ],
+    dateKey: 'submitted_at',
+    pivotGroupBy: 'chain_status',
+    mailSubject: 'Open Energy — FSCA Trade Reports',
+  },
+];
+
+const TRADER_WIZARDS: WizardSpec[] = [
+  {
+    id: 'trader-complete-setup',
+    title: 'Set up your trader workstation',
+    subtitle: 'Walk through every trading, risk, compliance, and settlement workflow available to you',
+    steps: [
+      {
+        title: 'Trading setup',
+        description: 'Configure your default trading preferences. The Order book, Pre-trade credit, Best-execution RFQ, and Trade allocation tabs are all in this group.',
+        aiHint: 'Pre-trade credit limits are the most common cause of order rejections for new traders. Set them generously at first — you can tighten them once you know your typical order sizes. The pre-trade guard also checks mark age; if VWAP data is stale the guard rejects orders.',
+        fields: [
+          { key: 'default_energy_types', label: 'Energy types you will trade', type: 'select', options: [{ value: 'solar', label: 'Solar' }, { value: 'wind', label: 'Wind' }, { value: 'all', label: 'All markets' }] },
+          { key: 'max_order_size_mwh', label: 'Max single order size (MWh)', type: 'number', placeholder: 'e.g. 500 — sets initial pre-trade guard limit' },
+          { key: 'default_counterparty', label: 'Primary settlement counterparty', type: 'text', placeholder: 'STRATE LEI or counterparty name' },
+        ],
+      },
+      {
+        title: 'Risk management',
+        description: 'Set up your Risk dashboard, Margin management, P&L attribution, Position limits, and Counterparty default workflows.',
+        aiHint: 'Daily VaR is calculated using 10-day 99% confidence — set your soft limit at 80% of your firm\'s regulatory capital buffer. Position limit breach (Wave W29) starts a 10-state FSCA §41 workflow — set limits you can actually operate within.',
+        fields: [
+          { key: 'var_limit_zar', label: 'Daily VaR soft limit (ZAR)', type: 'number', placeholder: 'e.g. 5000000' },
+          { key: 'position_limit_mw', label: 'Max net position (MW)', type: 'number', placeholder: 'e.g. 200' },
+          { key: 'margin_call_contact', label: 'Margin call notification email', type: 'text', placeholder: 'risk@firm.co.za' },
+        ],
+      },
+      {
+        title: 'Post-trade & settlement',
+        description: 'Configure Trade allocation, Settlement fails, Benchmark transition, and Settlement rails (STRATE/SWIFT) workflows.',
+        aiHint: 'STRATE settlement is T+3 for energy derivatives. If your firm has a direct STRATE member connection, link it here. Otherwise Open Energy acts as your settlement agent. CSDR penalties apply for fails beyond T+7.',
+        fields: [
+          { key: 'settlement_agent', label: 'Settlement arrangement', type: 'select', options: [{ value: 'open_energy', label: 'Open Energy as settlement agent' }, { value: 'direct_strate', label: 'Direct STRATE member' }, { value: 'custodian', label: 'Custodian bank' }] },
+          { key: 'strate_lei', label: 'STRATE LEI code', type: 'text', placeholder: 'Leave blank if using Open Energy agent' },
+        ],
+      },
+      {
+        title: 'FSCA compliance',
+        description: 'Set up FSCA conduct reports, STOR filing, Market-maker compliance, Cross-border pre-approvals, and ISDA agreement register.',
+        aiHint: 'FSCA periodic conduct reports are due quarterly for retail-tier traders, monthly for market-makers. The system auto-generates the report draft — you review and submit. STORs must be filed within 24h of identifying suspicious activity.',
+        fields: [
+          { key: 'fsca_reg_number', label: 'FSCA authorisation number', type: 'text', placeholder: 'e.g. FSP 12345' },
+          { key: 'is_market_maker', label: 'Are you a market maker?', type: 'select', required: true, options: [{ value: 'yes', label: 'Yes — monthly FSCA reporting + MM compliance chain' }, { value: 'no', label: 'No — quarterly reporting' }] },
+          { key: 'stor_contact', label: 'STOR reporting officer', type: 'text', placeholder: 'Name and email of compliance officer' },
+        ],
+      },
+      {
+        title: 'Algo trading & trade reporting',
+        description: 'Set up Algo certification (FSCA/MiFID RTS6), Trade repository reporting, and the post-trade recon chain.',
+        aiHint: 'Every algorithm deployed in live trading must have a valid certification record. The kill switch URL is tested monthly by the exchange ops team. Trade repository reporting to the FSCA TR is mandatory within T+1 for all OTC derivatives above the threshold.',
+        fields: [
+          { key: 'algo_systems_count', label: 'Number of algo systems to certify', type: 'number', placeholder: '0 if manual trading only' },
+          { key: 'tr_reporting_flag', label: 'Trade repository reporting required?', type: 'select', options: [{ value: 'yes', label: 'Yes — FMA §2012 applies' }, { value: 'no', label: 'No — below threshold' }] },
+        ],
+      },
+    ],
+    submitLabel: 'Save trading setup',
+    onSubmit: async (values) => {
+      const token = localStorage.getItem('token') || '';
+      await fetch('/api/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ role: 'trader', ...values }) }).catch(() => {});
+    },
+  },
+  {
+    id: 'trader-place-order',
+    title: 'Place your first order',
+    subtitle: 'Submit a bid or offer into the Open Energy exchange',
+    steps: [
+      {
+        title: 'Product',
+        description: 'Choose what you are trading and when.',
+        aiHint: 'Energy type and delivery date determine which order book your order lands in. Mismatched dates are the most common new-trader mistake.',
+        fields: [
+          { key: 'energy_type', label: 'Energy type', type: 'select', required: true, options: [{ value: 'solar', label: 'Solar' }, { value: 'wind', label: 'Wind' }, { value: 'hydro', label: 'Hydro' }, { value: 'gas', label: 'Gas' }, { value: 'coal', label: 'Coal' }, { value: 'nuclear', label: 'Nuclear' }] },
+          { key: 'delivery_date', label: 'Delivery date', type: 'date', required: true },
+          { key: 'side', label: 'Side', type: 'select', required: true, options: [{ value: 'buy', label: 'Buy (bid)' }, { value: 'sell', label: 'Sell (offer)' }] },
+        ],
+      },
+      {
+        title: 'Price & size',
+        description: 'Set the volume and limit price for your order.',
+        aiHint: 'Use the VWAP mark visible in the KPI row as a reference price. Orders more than 15% from the mark will be flagged by the pre-trade guard.',
+        fields: [
+          { key: 'volume_mwh', label: 'Volume (MWh)', type: 'number', required: true, placeholder: 'e.g. 100' },
+          { key: 'price_zar_mwh', label: 'Limit price (R/MWh)', type: 'number', required: true, placeholder: 'e.g. 1450.00' },
+        ],
+      },
+      {
+        title: 'Confirm',
+        description: 'Review your order before it is submitted to the matching engine.',
+        aiHint: 'Once submitted, the order enters the open book immediately. You can cancel or amend from the Open orders tab.',
+        fields: [
+          { key: 'notes', label: 'Trading notes (optional)', type: 'textarea', placeholder: 'Internal reference, strategy notes, etc.' },
+        ],
+      },
+    ],
+    submitLabel: 'Submit order',
+    onSubmit: async (values) => {
+      const token = localStorage.getItem('token') || '';
+      const res = await fetch('/api/trading/orders', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ energy_type: values.energy_type, delivery_date: values.delivery_date, side: values.side, volume_mwh: Number(values.volume_mwh), price_zar_mwh: Number(values.price_zar_mwh), notes: values.notes }) });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error || 'Order submission failed'); }
+    },
+  },
+  {
+    id: 'trader-algo-cert',
+    title: 'Register an algo trading system',
+    subtitle: 'FSCA / FMA RTS-6 certification before live deployment',
+    steps: [
+      {
+        title: 'System identity',
+        description: 'Identify the algorithm and its owner.',
+        aiHint: 'The system_name must be unique per firm. Use a naming convention like FIRM-STRAT-VERSION (e.g. OEC-MKTMK-V2).',
+        fields: [
+          { key: 'system_name', label: 'System name', type: 'text', required: true, placeholder: 'e.g. OEC-MKTMK-V2' },
+          { key: 'vendor', label: 'Vendor / developer', type: 'text', placeholder: 'In-house or third-party' },
+          { key: 'strategy_type', label: 'Strategy type', type: 'select', required: true, options: [{ value: 'market_making', label: 'Market making' }, { value: 'arbitrage', label: 'Arbitrage' }, { value: 'execution', label: 'Execution algorithm' }, { value: 'prop', label: 'Proprietary trading' }] },
+        ],
+      },
+      {
+        title: 'Kill switch',
+        description: 'Provide the technical details needed by the exchange for emergency disconnect.',
+        aiHint: 'FSCA requires a kill switch that can halt all open orders within 500ms. The kill_switch_url is called by exchange operations during a market halt.',
+        fields: [
+          { key: 'kill_switch_url', label: 'Kill switch endpoint URL', type: 'text', required: true, placeholder: 'https://…/kill' },
+          { key: 'max_order_rate', label: 'Max order rate (per second)', type: 'number', placeholder: 'e.g. 10' },
+        ],
+      },
+      {
+        title: 'Certification scope',
+        description: 'Describe the certification testing already completed.',
+        aiHint: 'Certification covers: pre-deployment testing, real-time risk controls, annual review. FSCA typically takes 5–15 business days to review.',
+        fields: [
+          { key: 'testing_environment', label: 'Testing environment used', type: 'select', options: [{ value: 'uat', label: 'UAT / sandbox' }, { value: 'prod_mirror', label: 'Production mirror' }] },
+          { key: 'certification_date', label: 'Testing completed date', type: 'date', required: true },
+          { key: 'operator_attestation', label: 'Operator attestation', type: 'textarea', required: true, placeholder: 'I confirm that the system has been tested against the Open Energy algo-certification checklist and meets all FSCA RTS-6 requirements…' },
+        ],
+      },
+    ],
+    submitLabel: 'Submit for certification',
+    onSubmit: async (values) => {
+      const token = localStorage.getItem('token') || '';
+      const res = await fetch('/api/algo-cert', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error || 'Certification submission failed'); }
+    },
+  },
+  {
+    id: 'trader-stor',
+    title: 'Submit a STOR (Suspicious Transaction Report)',
+    subtitle: 'FSCA FMA Chapter X — report to the regulator',
+    steps: [
+      {
+        title: 'Subject',
+        description: 'Who or what is the subject of this report?',
+        aiHint: 'A STOR must be filed as soon as you have reasonable grounds to suspect market abuse — not after investigation is complete.',
+        fields: [
+          { key: 'subject_name', label: 'Subject name / account', type: 'text', required: true },
+          { key: 'subject_type', label: 'Subject type', type: 'select', options: [{ value: 'participant', label: 'Market participant' }, { value: 'order', label: 'Specific order' }, { value: 'pattern', label: 'Trading pattern' }] },
+          { key: 'energy_type', label: 'Affected market', type: 'select', options: [{ value: 'solar', label: 'Solar' }, { value: 'wind', label: 'Wind' }, { value: 'all', label: 'All markets' }] },
+        ],
+      },
+      {
+        title: 'Incident',
+        description: 'Describe what was observed and when.',
+        aiHint: 'Be factual and specific. Include order IDs, timestamps, and the reason you suspect manipulation or insider trading.',
+        fields: [
+          { key: 'incident_date', label: 'Incident date', type: 'date', required: true },
+          { key: 'description', label: 'Description of suspicious activity', type: 'textarea', required: true, placeholder: 'Describe the order pattern, timing, or information that raised concern…' },
+        ],
+      },
+      {
+        title: 'Classification',
+        description: 'Classify the suspected market abuse type.',
+        fields: [
+          { key: 'abuse_type', label: 'Suspected abuse type', type: 'select', required: true, options: [{ value: 'insider_trading', label: 'Insider trading' }, { value: 'market_manipulation', label: 'Market manipulation' }, { value: 'spoofing', label: 'Spoofing / layering' }, { value: 'wash_trading', label: 'Wash trading' }, { value: 'other', label: 'Other' }] },
+          { key: 'urgency', label: 'Urgency', type: 'select', options: [{ value: 'immediate', label: 'Immediate — active manipulation' }, { value: 'standard', label: 'Standard — historical pattern' }] },
+        ],
+      },
+    ],
+    submitLabel: 'File STOR',
+    cta: 'danger',
+    onSubmit: async (values) => {
+      const token = localStorage.getItem('token') || '';
+      const res = await fetch('/api/market-abuse', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error || 'STOR submission failed'); }
+    },
+  },
+  {
+    id: 'trader-rfq',
+    title: 'Submit an RFQ',
+    subtitle: 'Request for quotation — buy-side price discovery',
+    steps: [
+      {
+        title: 'RFQ details',
+        fields: [
+          { key: 'buyer_id', label: 'Buyer ID', type: 'text', required: true, placeholder: 'Your firm LEI or participant ID' },
+          { key: 'product_type', label: 'Product type', type: 'select', required: true, options: [{ value: 'power_ppa', label: 'Power PPA' }, { value: 'renewable_certificate', label: 'Renewable certificate' }, { value: 'carbon_credit', label: 'Carbon credit' }] },
+          { key: 'description', label: 'Description', type: 'textarea', placeholder: 'Describe your requirements…' },
+          { key: 'volume_mwh', label: 'Volume (MWh)', type: 'number', required: true, placeholder: 'e.g. 10000' },
+        ],
+      },
+      {
+        title: 'Pricing & timeline',
+        fields: [
+          { key: 'target_price_zar', label: 'Target price (ZAR)', type: 'number', placeholder: 'e.g. 750' },
+          { key: 'max_price_zar', label: 'Maximum price (ZAR)', type: 'number', placeholder: 'e.g. 900' },
+          { key: 'quote_deadline', label: 'Quote deadline', type: 'date', required: true },
+          { key: 'award_deadline', label: 'Award deadline', type: 'date', required: true },
+        ],
+      },
+    ],
+    submitLabel: 'Submit RFQ',
+    onSubmit: async (values) => {
+      const token = localStorage.getItem('token') || '';
+      await fetch('/api/trader/rfqs', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) }).catch(() => {});
+    },
+  },
+  {
+    id: 'trader-best-exec',
+    title: 'Record best execution',
+    subtitle: 'FSCA Conduct Standard 1/2020 — post-execution record',
+    steps: [
+      {
+        title: 'Order details',
+        fields: [
+          { key: 'order_ref', label: 'Order reference', type: 'text', required: true, placeholder: 'e.g. ORD-2026-0042' },
+          { key: 'instrument', label: 'Instrument', type: 'select', required: true, options: [{ value: 'solar_pv_day_ahead', label: 'Solar PV day-ahead' }, { value: 'wind_day_ahead', label: 'Wind day-ahead' }, { value: 'baseload_forward', label: 'Baseload forward' }] },
+          { key: 'order_side', label: 'Side', type: 'select', required: true, options: [{ value: 'buy', label: 'Buy' }, { value: 'sell', label: 'Sell' }] },
+          { key: 'ordered_volume_mwh', label: 'Ordered volume (MWh)', type: 'number', required: true },
+          { key: 'ordered_price_zar', label: 'Ordered price (ZAR/MWh)', type: 'number', required: true },
+        ],
+      },
+      {
+        title: 'Execution outcome',
+        fields: [
+          { key: 'executed_volume_mwh', label: 'Executed volume (MWh)', type: 'number', required: true },
+          { key: 'executed_price_zar', label: 'Executed price (ZAR/MWh)', type: 'number', required: true },
+          { key: 'best_venue', label: 'Best execution venue', type: 'text', placeholder: 'e.g. OE Exchange, bilateral OTC' },
+        ],
+      },
+    ],
+    submitLabel: 'Record execution',
+    onSubmit: async (values) => {
+      const token = localStorage.getItem('token') || '';
+      await fetch('/api/trader/best-execution', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) }).catch(() => {});
+    },
+  },
+  {
+    id: 'trader-trade-report',
+    title: 'File FSCA trade report',
+    subtitle: 'FMA 2012 — trade repository reporting',
+    steps: [
+      {
+        title: 'Report period',
+        fields: [
+          { key: 'reporting_period', label: 'Reporting period', type: 'text', required: true, placeholder: 'e.g. 2026-Q2' },
+          { key: 'report_type', label: 'Report type', type: 'select', required: true, options: [{ value: 'otc_derivatives', label: 'OTC derivatives' }, { value: 'exchange_traded', label: 'Exchange traded' }, { value: 'both', label: 'Both' }] },
+        ],
+      },
+      {
+        title: 'Submission details',
+        fields: [
+          { key: 'total_trades_reported', label: 'Total trades reported', type: 'number', required: true },
+          { key: 'total_notional_zar', label: 'Total notional (ZAR)', type: 'number', required: true },
+          { key: 'reporting_obligation', label: 'Reporting obligation', type: 'select', required: true, options: [{ value: 'fma_s17', label: 'FMA §17' }, { value: 'fsca_conduct_standard', label: 'FSCA Conduct Standard' }, { value: 'dodd_frank_comparable', label: 'Dodd-Frank comparable' }] },
+        ],
+      },
+    ],
+    submitLabel: 'File report',
+    onSubmit: async (values) => {
+      const token = localStorage.getItem('token') || '';
+      await fetch('/api/trader/trade-reports', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) }).catch(() => {});
+    },
+  },
+  {
+    id: 'trader-algo-cert-new',
+    title: 'Register algo certification',
+    subtitle: 'FSCA / MiFID RTS-6 — pre-deployment governance gate',
+    steps: [
+      {
+        title: 'System details',
+        fields: [
+          { key: 'system_name', label: 'System name', type: 'text', required: true, placeholder: 'e.g. OEC-MKTMK-V3' },
+          { key: 'system_version', label: 'System version', type: 'text', required: true, placeholder: 'e.g. 3.1.0' },
+          { key: 'kill_switch_mechanism', label: 'Kill switch mechanism', type: 'select', required: true, options: [{ value: 'automated_hard_limit', label: 'Automated hard limit' }, { value: 'manual_override', label: 'Manual override' }, { value: 'dual_key', label: 'Dual-key authorisation' }] },
+        ],
+      },
+      {
+        title: 'Governance',
+        fields: [
+          { key: 'testing_completed_at', label: 'Testing completed date', type: 'date', required: true },
+          { key: 'responsible_officer', label: 'Responsible officer', type: 'text', required: true, placeholder: 'Name and email' },
+          { key: 'certification_tier', label: 'Certification tier', type: 'select', required: true, options: [{ value: 'retail', label: 'Retail' }, { value: 'wholesale', label: 'Wholesale' }, { value: 'market_maker', label: 'Market maker' }, { value: 'systemic', label: 'Systemic' }] },
+        ],
+      },
+    ],
+    submitLabel: 'Register certification',
+    onSubmit: async (values) => {
+      const token = localStorage.getItem('token') || '';
+      await fetch('/api/trader/algo-certifications', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) }).catch(() => {});
+    },
+  },
+  {
+    id: 'trader-position-limit',
+    title: 'Report position limit breach',
+    subtitle: 'FSCA §41 — 10-state position limit breach workflow',
+    steps: [
+      {
+        title: 'Breach details',
+        fields: [
+          { key: 'instrument', label: 'Instrument', type: 'text', required: true, placeholder: 'e.g. solar_pv_day_ahead' },
+          { key: 'breach_type', label: 'Breach type', type: 'select', required: true, options: [{ value: 'gross_limit', label: 'Gross limit' }, { value: 'net_limit', label: 'Net limit' }, { value: 'concentration', label: 'Concentration' }] },
+          { key: 'breach_magnitude_mwh', label: 'Breach magnitude (MWh)', type: 'number', required: true },
+        ],
+      },
+      {
+        title: 'Remediation',
+        fields: [
+          { key: 'reduction_plan', label: 'Reduction plan', type: 'textarea', required: true, placeholder: 'Describe how you will bring the position back within limits…' },
+          { key: 'estimated_compliance_date', label: 'Estimated compliance date', type: 'date', required: true },
+        ],
+      },
+    ],
+    submitLabel: 'Report breach',
+    cta: 'danger',
+    onSubmit: async (values) => {
+      const token = localStorage.getItem('token') || '';
+      await fetch('/api/trader/position-limits', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) }).catch(() => {});
+    },
+  },
+  {
+    id: 'trader-counterparty-margin',
+    title: 'Raise counterparty margin call (W68)',
+    steps: [
+      {
+        title: 'Event details',
+        description: 'Capture the margin shortfall event and due date.',
+        aiHint: 'Margin calls must be delivered by the contractual notice deadline. Missing the due_by timestamp starts the default management clock under CPMI-IOSCO PFMI.',
+        fields: [
+          { key: 'counterparty_id', label: 'Counterparty ID', type: 'text', required: true },
+          { key: 'event_type', label: 'Event type', type: 'select', options: [{ value: 'initial_margin_call', label: 'Initial margin call' }, { value: 'variation_margin_call', label: 'Variation margin call' }, { value: 'default_notice', label: 'Default notice' }] },
+          { key: 'margin_shortfall_zar', label: 'Margin shortfall (ZAR)', type: 'number', required: true },
+          { key: 'due_by', label: 'Due by', type: 'date', required: true },
+        ],
+      },
+      {
+        title: 'Default management',
+        description: 'Set the recovery strategy and escalation contacts.',
+        aiHint: 'If the cure period lapses, the close-out netting provisions under the ISDA agreement activate. Engage enforcement counsel early for large exposures.',
+        fields: [
+          { key: 'recovery_strategy', label: 'Recovery strategy', type: 'select', options: [{ value: 'cure_period', label: 'Cure period' }, { value: 'close_out', label: 'Close-out netting' }, { value: 'default_fund', label: 'Default fund draw' }, { value: 'resolution', label: 'Resolution' }] },
+          { key: 'enforcement_counsel', label: 'Enforcement counsel', type: 'text' },
+          { key: 'notes', label: 'Notes', type: 'textarea' },
+        ],
+      },
+    ],
+    onSubmit: async (values) => {
+      await api.post('/api/counterparty-margin', values);
+    },
+  },
+  {
+    id: 'trader-trade-allocation',
+    title: 'New trade allocation (W76)',
+    steps: [
+      {
+        title: 'Block trade details',
+        description: 'Identify the block trade being allocated.',
+        aiHint: 'Block trades must be allocated to sub-accounts before the CTM affirmation deadline. Late allocations incur CSDR penalties from T+2.',
+        fields: [
+          { key: 'block_trade_ref', label: 'Block trade reference', type: 'text', required: true },
+          { key: 'total_notional_zar', label: 'Total notional (ZAR)', type: 'number', required: true },
+          { key: 'trade_date', label: 'Trade date', type: 'date', required: true },
+          { key: 'product_type', label: 'Product type', type: 'select', options: [{ value: 'energy_derivative', label: 'Energy derivative' }, { value: 'otc_forward', label: 'OTC forward' }, { value: 'auction_contract', label: 'Auction contract' }] },
+        ],
+      },
+      {
+        title: 'Allocation accounts',
+        description: 'Define the per-account split and affirmation deadline.',
+        aiHint: 'Each line must sum to 100%. CTM reference links this allocation to the Omgeo confirmation chain for STP matching.',
+        fields: [
+          { key: 'allocation_accounts', label: 'Allocation accounts', type: 'textarea', required: true, placeholder: 'Account ID, share %; one per line' },
+          { key: 'ctm_reference', label: 'CTM reference', type: 'text', placeholder: 'Omgeo CTM ref if applicable' },
+          { key: 'affirmation_deadline', label: 'Affirmation deadline', type: 'date', required: true },
+        ],
+      },
+    ],
+    onSubmit: async (values) => {
+      await api.post('/api/trade-allocations', values);
+    },
+  },
+  {
+    id: 'trader-settlement-fail',
+    title: 'Log settlement fail',
+    steps: [
+      {
+        title: 'Fail details',
+        description: 'Record the failed settlement instruction.',
+        aiHint: 'Settlement fails must be logged by end of day T+1. CSDR penalties accrue from T+2 for equity-linked instruments and T+4 for bonds.',
+        fields: [
+          { key: 'trade_ref', label: 'Trade reference', type: 'text', required: true },
+          { key: 'fail_date', label: 'Fail date', type: 'date', required: true },
+          { key: 'fail_type', label: 'Fail type', type: 'select', options: [{ value: 'delivery_fail', label: 'Delivery fail' }, { value: 'payment_fail', label: 'Payment fail' }, { value: 'custodian_fail', label: 'Custodian fail' }, { value: 'nostro_fail', label: 'Nostro fail' }] },
+          { key: 'failing_party', label: 'Failing party', type: 'select', options: [{ value: 'us', label: 'Us' }, { value: 'counterparty', label: 'Counterparty' }, { value: 'custodian', label: 'Custodian' }] },
+          { key: 'notional_zar', label: 'Notional (ZAR)', type: 'number', required: true },
+        ],
+      },
+      {
+        title: 'Resolution',
+        description: 'Set the resolution approach and expected settlement date.',
+        aiHint: 'Buy-in procedures under CSDR must be initiated by the CSD no later than 4 business days after the intended settlement date.',
+        fields: [
+          { key: 'resolution_approach', label: 'Resolution approach', type: 'select', options: [{ value: 'buy_in', label: 'Buy-in' }, { value: 'bilateral_cancel', label: 'Bilateral cancellation' }, { value: 'extension', label: 'Extension' }] },
+          { key: 'expected_resolution_date', label: 'Expected resolution date', type: 'date' },
+          { key: 'csdr_penalty_applicable', label: 'CSDR penalty applicable', type: 'select', options: [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }] },
+          { key: 'notes', label: 'Notes', type: 'textarea' },
+        ],
+      },
+    ],
+    onSubmit: async (values) => {
+      await api.post('/api/settlement-fails', values);
+    },
+  },
+  {
+    id: 'trader-benchmark',
+    title: 'Initiate benchmark transition',
+    steps: [
+      {
+        title: 'Transition details',
+        description: 'Identify the legacy and replacement benchmarks.',
+        aiHint: 'ZARONIA replaced JIBAR as the primary overnight reference rate effective 2026. Fallback language must be confirmed before executing any transition.',
+        fields: [
+          { key: 'legacy_benchmark', label: 'Legacy benchmark', type: 'select', options: [{ value: 'JIBAR_3M', label: 'JIBAR 3M' }, { value: 'JIBAR_6M', label: 'JIBAR 6M' }, { value: 'JIBAR_1M', label: 'JIBAR 1M' }, { value: 'LIBOR_USD', label: 'LIBOR USD' }, { value: 'EURIBOR', label: 'EURIBOR' }] },
+          { key: 'new_benchmark', label: 'New benchmark', type: 'select', options: [{ value: 'ZARONIA', label: 'ZARONIA' }, { value: 'SOFR', label: 'SOFR' }, { value: 'ESTR', label: 'ESTR' }, { value: 'SONIA', label: 'SONIA' }] },
+          { key: 'transition_date', label: 'Transition date', type: 'date', required: true },
+          { key: 'notional_zar', label: 'Notional (ZAR)', type: 'number', required: true },
+        ],
+      },
+      {
+        title: 'Documentation',
+        description: 'Confirm all legal and regulatory documentation requirements.',
+        aiHint: 'ISDA protocol adherence is required for multi-lateral transition. Client notification must precede the transition date.',
+        fields: [
+          { key: 'client_notification_sent', label: 'Client notification sent', type: 'select', options: [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }] },
+          { key: 'fallback_language_confirmed', label: 'Fallback language confirmed', type: 'select', options: [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }] },
+          { key: 'isda_protocol_adhered', label: 'ISDA protocol adhered', type: 'select', options: [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }] },
+          { key: 'legal_review_ref', label: 'Legal review reference', type: 'text' },
+        ],
+      },
+    ],
+    onSubmit: async (values) => {
+      await api.post('/api/benchmark-transitions', values);
+    },
+  },
+  {
+    id: 'trader-fsca-compliance',
+    title: 'Submit FSCA compliance report (W201)',
+    steps: [
+      {
+        title: 'Report details',
+        description: 'Provide the reporting period and FSP licence details.',
+        aiHint: 'FSCA annual compliance reports are due within 4 months of financial year-end. Late submissions attract administrative penalties under FAIS.',
+        fields: [
+          { key: 'reporting_period', label: 'Reporting period', type: 'text', required: true, placeholder: 'e.g. Q1 2026' },
+          { key: 'report_type', label: 'Report type', type: 'select', options: [{ value: 'quarterly', label: 'Quarterly' }, { value: 'monthly', label: 'Monthly' }, { value: 'annual', label: 'Annual' }] },
+          { key: 'fsp_licence_number', label: 'FSP licence number', type: 'text', required: true },
+          { key: 'total_trades_count', label: 'Total trades count', type: 'number' },
+          { key: 'total_notional_zar', label: 'Total notional (ZAR)', type: 'number' },
+        ],
+      },
+      {
+        title: 'Attestation',
+        description: 'Compliance officer sign-off and deficiency disclosure.',
+        aiHint: 'Board approval is required for annual reports. Any deficiencies must be disclosed with a remediation plan — omissions constitute a separate FSCA violation.',
+        fields: [
+          { key: 'compliance_officer_name', label: 'Compliance officer name', type: 'text', required: true },
+          { key: 'board_approved', label: 'Board approved', type: 'select', required: true, options: [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }] },
+          { key: 'deficiency_description', label: 'Deficiency description', type: 'textarea', placeholder: 'Any deficiencies to disclose' },
+          { key: 'remediation_plan', label: 'Remediation plan', type: 'textarea' },
+        ],
+      },
+    ],
+    onSubmit: async (values) => {
+      await api.post('/api/fsca-compliance-reports', values);
+    },
+  },
+  {
+    id: 'trader-fsca-conduct',
+    title: 'Submit FSCA conduct report (W216)',
+    steps: [
+      {
+        title: 'Report period',
+        description: 'Identify the FSP class and reporting period.',
+        aiHint: 'Market makers must file monthly; retail-tier traders quarterly. The SLA is calculated from period-end, not submission date.',
+        fields: [
+          { key: 'report_year', label: 'Report year', type: 'number', required: true },
+          { key: 'fsp_class', label: 'FSP class', type: 'select', required: true, options: [{ value: 'category_1', label: 'Category I' }, { value: 'category_2', label: 'Category II' }, { value: 'market_maker', label: 'Market maker' }, { value: 'systemic', label: 'Systemic' }] },
+          { key: 'reporting_period_start', label: 'Reporting period start', type: 'date', required: true },
+          { key: 'reporting_period_end', label: 'Reporting period end', type: 'date', required: true },
+          { key: 'client_count', label: 'Client count', type: 'number' },
+          { key: 'complaint_count', label: 'Complaint count', type: 'number' },
+        ],
+      },
+      {
+        title: 'Compliance attestation',
+        description: 'Record exceptions, breaches, and board sign-off.',
+        aiHint: 'Best-execution exceptions above zero require narrative explanation. Conduct breaches above zero trigger automatic FSCA escalation.',
+        fields: [
+          { key: 'best_ex_exceptions', label: 'Best-ex exceptions', type: 'number', placeholder: '0 if none' },
+          { key: 'conduct_breaches', label: 'Conduct breaches', type: 'number', placeholder: '0 if none' },
+          { key: 'compliance_officer_name', label: 'Compliance officer name', type: 'text', required: true },
+          { key: 'board_sign_off_date', label: 'Board sign-off date', type: 'date', required: true },
+        ],
+      },
+    ],
+    onSubmit: async (values) => {
+      await api.post('/api/fsca-conduct-reports', values);
+    },
+  },
+  {
+    id: 'trader-cross-border',
+    title: 'Apply for cross-border pre-approval (W222)',
+    steps: [
+      {
+        title: 'Transaction details',
+        description: 'Classify the cross-border transaction and counterparty jurisdiction.',
+        aiHint: 'SARB ExCon approval is required for all cross-border capital flows above the single discretionary allowance threshold. FSCA approval is additionally required for OTC derivatives.',
+        fields: [
+          { key: 'cbt_tier', label: 'CBT tier', type: 'select', required: true, options: [{ value: 'small', label: 'Small' }, { value: 'standard', label: 'Standard' }, { value: 'large', label: 'Large' }, { value: 'systemic', label: 'Systemic' }] },
+          { key: 'counterparty_jurisdiction', label: 'Counterparty jurisdiction', type: 'text', required: true, placeholder: 'e.g. Zambia, Zimbabwe, Mozambique' },
+          { key: 'trade_type', label: 'Trade type', type: 'select', required: true, options: [{ value: 'energy_derivative', label: 'Energy derivative' }, { value: 'carbon_credit', label: 'Carbon credit' }, { value: 'ancillary_service', label: 'Ancillary service' }, { value: 'ppa_assignment', label: 'PPA assignment' }] },
+          { key: 'notional_zar', label: 'Notional (ZAR)', type: 'number', required: true },
+          { key: 'underlying_trade_ref', label: 'Underlying trade reference', type: 'text' },
+        ],
+      },
+      {
+        title: 'Regulatory',
+        description: 'Provide application references and confirm currency control status.',
+        aiHint: 'Section 9 exemptions apply to SADC member state energy transactions below R500m. Confirm with SARB legal before claiming the exemption.',
+        fields: [
+          { key: 'sarb_application_ref', label: 'SARB application reference', type: 'text' },
+          { key: 'fsca_application_ref', label: 'FSCA application reference', type: 'text' },
+          { key: 'currency_control_applicable', label: 'Currency control applicable', type: 'select', required: true, options: [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }] },
+          { key: 'section_9_exemption', label: 'Section 9 exemption', type: 'select', options: [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }] },
+          { key: 'notes', label: 'Notes', type: 'textarea' },
+        ],
+      },
+    ],
+    onSubmit: async (values) => {
+      await api.post('/api/cross-border-trades', values);
+    },
+  },
+  {
+    id: 'trader-isda',
+    title: 'Register ISDA agreement (W232)',
+    steps: [
+      {
+        title: 'Agreement details',
+        description: 'Identify the counterparty and agreement type.',
+        aiHint: 'ISDA 2002 is the preferred master agreement for energy OTC trades in South Africa. CSA elections determine margin mechanics under UMR rules.',
+        fields: [
+          { key: 'counterparty_name', label: 'Counterparty name', type: 'text', required: true },
+          { key: 'counterparty_type', label: 'Counterparty type', type: 'select', required: true, options: [{ value: 'bank', label: 'Bank' }, { value: 'broker', label: 'Broker' }, { value: 'energy_company', label: 'Energy company' }, { value: 'ccp', label: 'CCP' }, { value: 'other', label: 'Other' }] },
+          { key: 'agreement_type', label: 'Agreement type', type: 'select', required: true, options: [{ value: 'isda_2002', label: 'ISDA 2002' }, { value: 'isda_2018', label: 'ISDA 2018' }, { value: 'isda_csa', label: 'ISDA CSA' }, { value: 'credit_support_annex', label: 'Credit support annex' }] },
+          { key: 'average_notional_zar', label: 'Average notional (ZAR)', type: 'number' },
+        ],
+      },
+      {
+        title: 'Credit support',
+        description: 'Configure VM CSA, UMR, and netting elections.',
+        aiHint: 'VM CSA is mandatory for all in-scope counterparties under SARB Directive 3/2023. Initial margin thresholds apply to bilateral non-cleared derivatives above the €50m threshold.',
+        fields: [
+          { key: 'vm_csa_included', label: 'VM CSA included', type: 'select', required: true, options: [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }] },
+          { key: 'umr_applicable', label: 'UMR applicable', type: 'select', required: true, options: [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }] },
+          { key: 'initial_margin_threshold_zar', label: 'Initial margin threshold (ZAR)', type: 'number' },
+          { key: 'independent_amount_zar', label: 'Independent amount (ZAR)', type: 'number' },
+          { key: 'netting_election', label: 'Netting election', type: 'select', required: true, options: [{ value: 'single_agreement', label: 'Single agreement' }, { value: 'cross_product', label: 'Cross-product' }] },
+        ],
+      },
+    ],
+    onSubmit: async (values) => {
+      await api.post('/api/isda-agreements', values);
+    },
+  },
+  {
+    id: 'trader-mm-compliance',
+    title: 'Log MM compliance obligation (W9)',
+    steps: [
+      {
+        title: 'Obligation details',
+        description: 'Record the market-making obligation for the trading day.',
+        aiHint: 'MM obligations are assessed per energy type per trading day. Spread obligations tighten during peak trading hours (09:00–16:00 SAST).',
+        fields: [
+          { key: 'energy_type', label: 'Energy type', type: 'select', required: true, options: [{ value: 'solar', label: 'Solar' }, { value: 'wind', label: 'Wind' }, { value: 'gas', label: 'Gas' }, { value: 'all', label: 'All' }] },
+          { key: 'trading_day', label: 'Trading day', type: 'date', required: true },
+          { key: 'obligation_type', label: 'Obligation type', type: 'select', options: [{ value: 'bid_ask_spread', label: 'Bid-ask spread' }, { value: 'minimum_size', label: 'Minimum size' }, { value: 'quote_uptime', label: 'Quote uptime' }, { value: 'price_quality', label: 'Price quality' }] },
+          { key: 'bid_ask_spread_pct', label: 'Bid-ask spread (%)', type: 'number' },
+          { key: 'minimum_quote_mwh', label: 'Minimum quote (MWh)', type: 'number' },
+        ],
+      },
+      {
+        title: 'Performance',
+        description: 'Record actual quotes placed and honoured.',
+        aiHint: '3 consecutive misses trigger the warning state in the W9 chain. The remediation plan is required before the breach escalates to FSCA.',
+        fields: [
+          { key: 'quotes_placed', label: 'Quotes placed', type: 'number', required: true },
+          { key: 'quotes_honoured', label: 'Quotes honoured', type: 'number', required: true },
+          { key: 'consecutive_miss_count', label: 'Consecutive miss count', type: 'number', placeholder: 'Resets to 0 on compliant day' },
+          { key: 'remediation_plan', label: 'Remediation plan', type: 'textarea', placeholder: 'Required if consecutive_miss_count >= 3' },
+        ],
+      },
+    ],
+    onSubmit: async (values) => {
+      await api.post('/api/mm-obligations', values);
+    },
+  },
+  {
+    id: 'trader-pretrade-check',
+    title: 'Run pre-trade credit check',
+    steps: [
+      {
+        title: 'Order parameters',
+        description: 'Provide order details to run the pre-trade guard check.',
+        aiHint: 'The pre-trade guard checks credit exposure, position limits, mark age, and trading halts. A green result means the order will not be rejected by the guard — it is not a guarantee of execution.',
+        fields: [
+          { key: 'energy_type', label: 'Energy type', type: 'select', required: true, options: [{ value: 'solar', label: 'Solar' }, { value: 'wind', label: 'Wind' }, { value: 'gas', label: 'Gas' }] },
+          { key: 'volume_mwh', label: 'Volume (MWh)', type: 'number', required: true },
+          { key: 'price_zar_mwh', label: 'Price (ZAR/MWh)', type: 'number', required: true },
+          { key: 'delivery_date', label: 'Delivery date', type: 'date', required: true },
+          { key: 'counterparty_id', label: 'Counterparty ID', type: 'text', required: true, placeholder: 'Counterparty LEI or ID' },
+        ],
+      },
+    ],
+    onSubmit: async (values) => {
+      await api.post('/api/pretrade-credit-check', values);
+    },
+  },
+  {
+    id: 'trader-pnl-attr',
+    title: 'Record daily P&L attribution',
+    steps: [
+      {
+        title: 'P&L breakdown',
+        description: 'Record the daily P&L attribution by Greek and desk.',
+        aiHint: 'Residual P&L above 5% of total P&L requires a narrative explanation in the notes field for risk officer review.',
+        fields: [
+          { key: 'trade_date', label: 'Trade date', type: 'date', required: true },
+          { key: 'desk_name', label: 'Desk name', type: 'text', required: true },
+          { key: 'realised_pnl_zar', label: 'Realised P&L (ZAR)', type: 'number', required: true },
+          { key: 'unrealised_pnl_zar', label: 'Unrealised P&L (ZAR)', type: 'number', required: true },
+          { key: 'delta_pnl_zar', label: 'Delta P&L (ZAR)', type: 'number' },
+          { key: 'gamma_pnl_zar', label: 'Gamma P&L (ZAR)', type: 'number' },
+          { key: 'vega_pnl_zar', label: 'Vega P&L (ZAR)', type: 'number' },
+          { key: 'residual_pnl_zar', label: 'Residual P&L (ZAR)', type: 'number' },
+          { key: 'notes', label: 'Notes', type: 'textarea' },
+        ],
+      },
+    ],
+    onSubmit: async (values) => {
+      await api.post('/api/pnl-attribution', values);
+    },
+  },
+];
+
+const TRADER_TOUR: TourDef = {
+  id: 'trader-workstation-v1',
+  steps: [
+    { target: 'ws-header', title: 'Your trader workstation', body: 'This is your central command for every workflow from order placement to post-trade compliance. The header shows live KPIs and quick-action buttons.', placement: 'bottom' },
+    { target: 'kpi-row', title: 'Live market KPIs', body: 'Open positions, P&L, margin usage, and breach counts update in near-real time. Red figures need immediate attention.', placement: 'bottom' },
+    { target: 'tab-nav', title: 'Workflow tabs', body: 'Every trading workflow has its own tab — Trading, Risk, Post-trade, Compliance. Use the search box to jump to any tab by name when the workstation has many open workflows.', placement: 'bottom' },
+    { target: 'quick-start', title: 'Quick start wizards', body: 'New here? Click Quick start to launch a step-by-step guided workflow. Wizards walk you through placing your first order, registering an algo system, or filing a STOR.', placement: 'bottom' },
+    { target: 'capability-palette', title: 'What can I do?', body: 'Click this to see every action available to a trader — deep links into each workflow with a one-line description of what each does.', placement: 'bottom' },
+    { target: 'incoming-panel', title: 'Incoming actions', body: 'Counterparty confirmations, margin calls, and regulatory requests land here. Act on them without navigating away from your current tab.', placement: 'left' },
+  ],
+};
 
 export function TraderWorkstationPage() {
   const kpis = useWorkstationKpis('trader');
@@ -45,6 +765,8 @@ export function TraderWorkstationPage() {
       backLabel="Trader risk"
       kpis={kpis}
       panels={panels}
+      wizards={TRADER_WIZARDS}
+      tour={TRADER_TOUR}
       tabs={[
         { key: 'orders', label: 'Open orders', group: 'Trading', body: ({ onRefresh }) => <OrdersTab onRefresh={onRefresh} /> },
         { key: 'rejections', label: 'Rejections', group: 'Trading', body: () => <RejectionsTab /> },
@@ -70,6 +792,72 @@ export function TraderWorkstationPage() {
         { key: 'strate-swift-connectors', label: 'Settlement rails', group: 'Compliance', body: () => <StrateSwiftConnectorTab /> },
         { key: 'sap-oracle-erp-connectors', label: 'ERP connectors', group: 'Compliance', body: () => <SapOracleErpConnectorTab /> },
         { key: 'government-filing-connectors', label: 'Filing connectors', group: 'Compliance', body: () => <GovernmentFilingConnectorTab /> },
+        { key: 'reports', label: 'Reports & Exports', group: 'Compliance',
+          body: () => (
+            <div className="space-y-8">
+              <div className="flex flex-wrap gap-2 items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Export</p>
+                  <p className="text-xs text-slate-500">Download trader data for offline analysis or regulatory submission.</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = '/api/reports/export?role=trader&format=csv';
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'trader-report.csv';
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                    }}
+                    className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Export CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="px-3 py-1.5 text-xs bg-slate-700 text-white rounded hover:bg-slate-800"
+                  >
+                    Print / PDF
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[
+                  { label: 'Trade reporting (FSCA)', description: 'FMA 2012 OTC derivative trade repository reporting. View and file W44 reports.', tabKey: 'trade-reporting' },
+                  { label: 'Position reports', description: 'Open position limits and breach cases. View W29 FSCA §41 position limit workflows.', tabKey: 'poslimit' },
+                  { label: 'P&L attribution', description: 'Daily P&L attribution by book and strategy. View and manage W-pnl attribution chain.', tabKey: 'pnl-attribution' },
+                  { label: 'Market abuse STOR submissions', description: 'FMA Ch.X suspicious transaction reports filed to the FSCA. View surveillance cases.', tabKey: 'market-abuse' },
+                ].map(link => (
+                  <a
+                    key={link.tabKey}
+                    href={`#tab-${link.tabKey}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const btn = document.querySelector<HTMLButtonElement>(`[data-tab-key="${link.tabKey}"]`);
+                      btn?.click();
+                    }}
+                    className="block rounded-lg border border-slate-200 bg-white p-4 hover:border-blue-400 hover:shadow-sm transition-all"
+                  >
+                    <p className="text-sm font-semibold text-slate-800">{link.label}</p>
+                    <p className="mt-1 text-xs text-slate-500">{link.description}</p>
+                  </a>
+                ))}
+              </div>
+
+              {TRADER_REPORTS.map(cfg => (
+                <div key={cfg.endpoint} className="space-y-2">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{cfg.title}</p>
+                  <ReportPanel config={cfg} />
+                </div>
+              ))}
+            </div>
+          ),
+        },
         { key: 'audit', label: 'Audit & compliance', group: 'Compliance',
           body: ({ onRefresh }) => (
             <AuditPanel
@@ -939,7 +1727,7 @@ function IsdaAgreementTab({ onRefresh }: { onRefresh?: () => void }) {
         <ActionModal
           title="New ISDA Agreement"
           fields={[
-            { key: 'counterparty_id', label: 'Counterparty ID', required: true },
+            { key: 'counterparty_id', label: 'Counterparty', type: 'lookup', required: true, lookupEndpoint: '/api/lookup/participants', lookupAutoFill: { counterparty_name: 'name' } },
             { key: 'counterparty_name', label: 'Counterparty name', required: true },
             { key: 'counterparty_type', label: 'Counterparty type', type: 'select', required: true,
               options: ['domestic_bank','foreign_bank','broker_dealer','ccpcentral','corporate','sfp'].map(v => ({ value: v, label: v.replace(/_/g, ' ') })) },

@@ -13,6 +13,51 @@ import { ReconciliationAttestationTab } from '../reconciliation/ReconciliationAt
 import { ControlEnvironmentAuditTab } from '../controlEnvironment/ControlEnvironmentAuditTab';
 import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/GovernmentFilingConnectorTab';
 import StageGateTab from '../stageGate/StageGateTab';
+import { ReportPanel, type ReportConfig } from '../launch/ReportPanel';
+import type { WizardSpec } from '../launch/WizardModal';
+import type { TourDef } from '../launch/ProductTour';
+
+const REGULATOR_REPORTS: ReportConfig[] = [
+  {
+    title: 'Statutory Report Submissions',
+    endpoint: '/api/reports?role=regulator',
+    columns: [
+      { key: 'report_type', label: 'Type' },
+      { key: 'period', label: 'Period' },
+      { key: 'status', label: 'Status' },
+      { key: 'submitted_at', label: 'Submitted' },
+    ],
+    dateKey: 'submitted_at',
+    pivotGroupBy: 'report_type',
+    mailSubject: 'Open Energy — Regulator Statutory Reports',
+  },
+  {
+    title: 'Levy Assessments',
+    endpoint: '/api/regulator/levies',
+    columns: [
+      { key: 'levy_ref', label: 'Reference' },
+      { key: 'licensee_id', label: 'Licensee' },
+      { key: 'levy_amount_zar', label: 'ZAR', numeric: true },
+      { key: 'chain_status', label: 'Status' },
+      { key: 'created_at', label: 'Assessed' },
+    ],
+    filters: [{ key: 'chain_status', label: 'Status', type: 'select', options: [{ value: 'assessed', label: 'Assessed' }, { value: 'final_demand', label: 'Final Demand' }, { value: 'enforcement', label: 'Enforcement' }, { value: 'paid', label: 'Paid' }] }],
+    pivotGroupBy: 'chain_status',
+    mailSubject: 'Open Energy — NERSA Levy Assessments Report',
+  },
+  {
+    title: 'Disposition Cases',
+    endpoint: '/api/regulator/disposition-cases',
+    columns: [
+      { key: 'case_ref', label: 'Reference' },
+      { key: 'subject_id', label: 'Subject' },
+      { key: 'chain_status', label: 'Status' },
+      { key: 'created_at', label: 'Filed' },
+    ],
+    pivotGroupBy: 'chain_status',
+    mailSubject: 'Open Energy — Disposition Cases Report',
+  },
+];
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -31,6 +76,276 @@ const LICENCE_TRANSITIONS = [
   { value: 'appealed', label: 'Appeal' },
   { value: 'reversed', label: 'Reverse' },
 ];
+
+const REGULATOR_WIZARDS: WizardSpec[] = [
+  {
+    id: 'regulator-complete-setup',
+    title: 'Set up your NERSA regulatory workstation',
+    subtitle: 'Configure inbox management, licensing, enforcement, economics, and all regulatory workflows',
+    steps: [
+      {
+        title: 'Inbox & surveillance',
+        description: 'Configure the Regulatory inbox, Notices, and Surveillance scan that receive cross-role escalations from all 9 market participants.',
+        aiHint: 'The regulatory inbox is fed by escalation triggers across all workflow chains. Configure your SLA thresholds here to determine what counts as a "material" escalation. Surveillance scan runs every 15 minutes and uses ML-based anomaly detection — set your alert sensitivity to avoid alert fatigue.',
+        fields: [
+          { key: 'inbox_sla_hours', label: 'Inbox item response SLA (hours)', type: 'number', placeholder: 'e.g. 48 — NERSA internal target' },
+          { key: 'surveillance_sensitivity', label: 'Surveillance alert sensitivity', type: 'select', options: [{ value: 'high', label: 'High — all anomalies flagged' }, { value: 'medium', label: 'Medium — significant anomalies' }, { value: 'low', label: 'Low — critical only' }] },
+          { key: 'duty_officer_email', label: 'Duty officer email', type: 'text', placeholder: 'On-call regulatory officer' },
+        ],
+      },
+      {
+        title: 'Licensing',
+        description: 'Set up Licence register, Licence applications (ERA ss.8-11), Licence renewals (NERSA §14-16), and SSEG registrations (ERA Sch 2).',
+        aiHint: 'Licence application adjudication uses an INVERTED SLA — major projects get more time because the statutory process requires public participation (ERA §10). SSEG registrations (Wave W57) below the Schedule 2 threshold are exempt from public participation and should be fast-tracked. Set your team leads for each licence class now.',
+        fields: [
+          { key: 'licence_classes_handled', label: 'Licence classes your office handles', type: 'select', options: [{ value: 'all', label: 'All classes (generation, transmission, distribution, trading)' }, { value: 'generation_only', label: 'Generation only' }, { value: 'distribution_trading', label: 'Distribution and trading' }] },
+          { key: 'adjudication_team_size', label: 'Adjudication team size', type: 'number', placeholder: 'e.g. 8' },
+          { key: 'application_officer_email', label: 'Applications officer email', type: 'text', placeholder: 'licences@nersa.org.za' },
+        ],
+      },
+      {
+        title: 'Enforcement',
+        description: 'Configure Enforcement actions (ERA §34/§35), Compliance inspections (NERSA §10), Complaint resolution (ERA §30), and Dispositions.',
+        aiHint: 'Compliance notices under ERA §34 must include the specific provision, remediation required, and deadline. Vague notices are challenged and set aside — the platform uses structured templates per provision. Complaint resolution (Wave W66) has an URGENT SLA — external complainants expect resolution within 30 days.',
+        fields: [
+          { key: 'inspection_frequency', label: 'Planned inspection frequency', type: 'select', options: [{ value: 'annual', label: 'Annual per licensee' }, { value: 'biennial', label: 'Every 2 years' }, { value: 'risk_based', label: 'Risk-based (higher risk = more frequent)' }] },
+          { key: 'penalty_schedule_version', label: 'Applicable penalty schedule', type: 'text', placeholder: 'e.g. ERA Amendment Act penalty schedule 2022' },
+          { key: 'enforcement_officer', label: 'Chief enforcement officer', type: 'text', placeholder: 'Name and email' },
+        ],
+      },
+      {
+        title: 'Economics & determinations',
+        description: 'Set up Tariff determinations (NERSA §15-16 + MYPD), Levy assessments (NERA §5B), Public consultations, and Market conduct examinations.',
+        aiHint: 'MYPD tariff determinations run on a 3-5 year cycle — the platform tracks the current determination period and auto-schedules the next review. Levy assessments (Wave W74) are calculated on turnover for traders, volume for generators, and a fixed fee for distributors. Public consultation notice periods are 30–90 days depending on the matter.',
+        fields: [
+          { key: 'mypd_current_period', label: 'Current MYPD determination period end', type: 'date' },
+          { key: 'levy_assessment_frequency', label: 'Levy assessment frequency', type: 'select', options: [{ value: 'annual', label: 'Annual' }, { value: 'semi_annual', label: 'Semi-annual' }, { value: 'quarterly', label: 'Quarterly' }] },
+          { key: 'public_notice_channel', label: 'Public notice publication channel', type: 'text', placeholder: 'e.g. Government Gazette, NERSA website, news media' },
+        ],
+      },
+    ],
+    submitLabel: 'Save NERSA setup',
+    onSubmit: async (values) => {
+      const token = localStorage.getItem('token') || '';
+      await fetch('/api/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ role: 'regulator', ...values }) }).catch(() => {});
+    },
+  },
+  {
+    id: 'regulator-licence-application',
+    title: 'Process a licence application',
+    subtitle: 'ERA § 8–11 — adjudication and Council decision',
+    steps: [
+      {
+        title: 'Application intake',
+        description: 'Record the incoming licence application for NERSA adjudication.',
+        aiHint: 'ERA Section 10 requires public participation for applications above the regulatory threshold. The workflow sets the public notice window automatically based on the licence class.',
+        fields: [
+          { key: 'applicant_name', label: 'Applicant entity', type: 'text', required: true, placeholder: 'e.g. Saldanha Wind Energy (Pty) Ltd' },
+          { key: 'licence_class', label: 'Licence class', type: 'select', required: true, options: [{ value: 'generation_large', label: 'Generation — large (> 1MW)' }, { value: 'generation_small', label: 'Generation — small (1kW–1MW)' }, { value: 'transmission', label: 'Transmission' }, { value: 'distribution', label: 'Distribution' }, { value: 'trading', label: 'Trading licence' }, { value: 'import_export', label: 'Import / export' }] },
+          { key: 'application_ref', label: 'Application reference', type: 'text', required: true, placeholder: 'NERSA application reference number' },
+        ],
+      },
+      {
+        title: 'Application details',
+        description: 'Technical and financial review parameters.',
+        aiHint: 'The technical evaluation covers compliance with Grid Code, environmental impact assessments, and financial capacity. NERSA must decide within the statutory timeframe set by the ERA — INVERTED SLA: major projects get more time for thorough review.',
+        fields: [
+          { key: 'capacity_mw', label: 'Applied capacity (MW)', type: 'number', placeholder: 'e.g. 140' },
+          { key: 'province', label: 'Province', type: 'select', options: [{ value: 'western_cape', label: 'Western Cape' }, { value: 'northern_cape', label: 'Northern Cape' }, { value: 'eastern_cape', label: 'Eastern Cape' }, { value: 'gauteng', label: 'Gauteng' }, { value: 'kwazulu_natal', label: 'KwaZulu-Natal' }, { value: 'limpopo', label: 'Limpopo' }] },
+          { key: 'received_date', label: 'Application received date', type: 'date', required: true },
+        ],
+      },
+      {
+        title: 'Completeness check',
+        description: 'Confirm that the application is complete and the file is opened.',
+        fields: [
+          { key: 'documents_complete', label: 'All required documents received?', type: 'select', required: true, options: [{ value: 'yes', label: 'Yes — complete' }, { value: 'no', label: 'No — deficiency notice required' }] },
+          { key: 'technical_officer', label: 'Assigned technical officer', type: 'text', placeholder: 'NERSA officer name' },
+          { key: 'notes', label: 'Notes', type: 'textarea', placeholder: 'Missing documents, special considerations…' },
+        ],
+      },
+    ],
+    submitLabel: 'Open application file',
+    onSubmit: async (values) => {
+      const token = localStorage.getItem('token') || '';
+      const res = await fetch('/api/licence-applications', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error || 'Application intake failed'); }
+    },
+  },
+  {
+    id: 'regulator-compliance-notice',
+    title: 'Issue a compliance notice',
+    subtitle: 'ERA § 34 — non-compliance enforcement',
+    steps: [
+      {
+        title: 'Non-compliance',
+        description: 'Identify the licensee and the compliance failure.',
+        aiHint: 'Compliance notices under ERA §34 must state the specific provision breached, the remediation required, and the deadline. Vague notices are unenforceable and can be set aside on review.',
+        fields: [
+          { key: 'licensee_name', label: 'Licensee name', type: 'text', required: true, placeholder: 'Registered NERSA licensee' },
+          { key: 'licence_number', label: 'NERSA licence number', type: 'text', required: true, placeholder: 'e.g. NERSA-GEN-2022-0042' },
+          { key: 'provision_breached', label: 'Provision breached', type: 'text', required: true, placeholder: 'e.g. ERA Section 15(2)(b), Grid Code §G.4.3' },
+        ],
+      },
+      {
+        title: 'Non-compliance details',
+        description: 'Describe the breach and the evidence.',
+        fields: [
+          { key: 'breach_description', label: 'Description of breach', type: 'textarea', required: true, placeholder: 'Factual description of the non-compliant conduct and how it was identified…' },
+          { key: 'breach_date', label: 'Breach date (first identified)', type: 'date', required: true },
+          { key: 'evidence_ref', label: 'Evidence reference', type: 'text', placeholder: 'Inspection report, monitoring data reference' },
+        ],
+      },
+      {
+        title: 'Remediation',
+        description: 'Set the remediation required and the compliance deadline.',
+        aiHint: 'The remediation deadline triggers the SLA timer. If the licensee does not comply by this date, the system escalates to enforcement action (ERA §35) automatically.',
+        fields: [
+          { key: 'remediation_required', label: 'Remediation required', type: 'textarea', required: true, placeholder: 'Describe specifically what the licensee must do to return to compliance…' },
+          { key: 'compliance_deadline', label: 'Compliance deadline', type: 'date', required: true },
+          { key: 'penalty_provision', label: 'Penalty provision (if applicable)', type: 'text', placeholder: 'e.g. ERA §34(4) — R5m per day' },
+        ],
+      },
+    ],
+    submitLabel: 'Issue notice',
+    cta: 'danger',
+    onSubmit: async (values) => {
+      const token = localStorage.getItem('token') || '';
+      const res = await fetch('/api/compliance-notices', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error || 'Compliance notice failed'); }
+    },
+  },
+  {
+    id: 'regulator-inspection',
+    title: 'Open a compliance inspection',
+    subtitle: 'ERA § 10 — proactive on-site or document review',
+    steps: [
+      {
+        title: 'Inspection scope',
+        description: 'Define the inspection subject and scope.',
+        aiHint: 'The inspection type determines the required notice period: routine inspections require 14 days\' notice, targeted inspections require 5 days, and urgent safety inspections may be unannounced.',
+        fields: [
+          { key: 'licensee_name', label: 'Licensee / subject', type: 'text', required: true },
+          { key: 'inspection_type', label: 'Inspection type', type: 'select', required: true, options: [{ value: 'routine', label: 'Routine (scheduled, 14d notice)' }, { value: 'targeted', label: 'Targeted (specific concern, 5d notice)' }, { value: 'follow_up', label: 'Follow-up (previous notice compliance)' }, { value: 'urgent', label: 'Urgent (safety, unannounced)' }] },
+          { key: 'inspection_area', label: 'Inspection area', type: 'select', options: [{ value: 'financial', label: 'Financial compliance' }, { value: 'technical', label: 'Technical / grid compliance' }, { value: 'environmental', label: 'Environmental' }, { value: 'safety', label: 'Safety (OHSA)' }, { value: 'all', label: 'Comprehensive' }] },
+        ],
+      },
+      {
+        title: 'Planning',
+        description: 'Schedule the inspection and assign the inspection team.',
+        fields: [
+          { key: 'planned_date', label: 'Planned inspection date', type: 'date', required: true },
+          { key: 'lead_inspector', label: 'Lead inspector', type: 'text', required: true, placeholder: 'NERSA inspector name' },
+          { key: 'scope_description', label: 'Inspection scope description', type: 'textarea', placeholder: 'Describe the specific areas, documents, and systems to be inspected…' },
+        ],
+      },
+    ],
+    submitLabel: 'Open inspection',
+    onSubmit: async (values) => {
+      const token = localStorage.getItem('token') || '';
+      const res = await fetch('/api/compliance-inspection', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error || 'Inspection opening failed'); }
+    },
+  },
+  {
+    id: 'regulator-enforcement',
+    title: 'Open enforcement action (ERA §34)',
+    steps: [
+      {
+        title: 'Subject',
+        description: 'Identify the licensee and the provision breached.',
+        fields: [
+          { key: 'licensee_name', label: 'Licensee name', type: 'text', required: true },
+          { key: 'licence_number', label: 'Licence number', type: 'text', required: true },
+          { key: 'provision_breached', label: 'Provision breached', type: 'text', required: true, placeholder: 'e.g. ERA §34(1)(a)' },
+          { key: 'breach_description', label: 'Breach description', type: 'textarea', required: true },
+          { key: 'breach_date', label: 'Breach date', type: 'date', required: true },
+        ],
+      },
+      {
+        title: 'Action',
+        description: 'Set the enforcement type, deadline, and assigned officer.',
+        fields: [
+          { key: 'enforcement_type', label: 'Enforcement type', type: 'select', required: true, options: [{ value: 'compliance_notice', label: 'Compliance notice' }, { value: 'directive', label: 'Directive' }, { value: 'fine', label: 'Fine' }, { value: 'suspension', label: 'Suspension' }, { value: 'revocation', label: 'Revocation' }] },
+          { key: 'remedy_deadline', label: 'Remedy deadline', type: 'date', required: true },
+          { key: 'penalty_provision', label: 'Penalty provision', type: 'text' },
+          { key: 'legal_officer', label: 'Legal officer', type: 'text', required: true },
+          { key: 'evidence_ref', label: 'Evidence reference', type: 'text' },
+        ],
+      },
+    ],
+    onSubmit: async (values) => { await api.post('/api/enforcement-actions', values); },
+  },
+  {
+    id: 'regulator-enforcement-s35',
+    title: 'Open §35 penalty action',
+    steps: [
+      {
+        title: 'Breach',
+        description: 'Identify the §35 provision and penalty quantum.',
+        fields: [
+          { key: 'licensee_name', label: 'Licensee name', type: 'text', required: true },
+          { key: 's35_provision', label: '§35 provision', type: 'select', required: true, options: [{ value: 's35_1_tariff', label: 'S35(1) — Tariff' }, { value: 's35_2_metering', label: 'S35(2) — Metering' }, { value: 's35_3_service', label: 'S35(3) — Service' }, { value: 's35_4_supply', label: 'S35(4) — Supply' }] },
+          { key: 'breach_date', label: 'Breach date', type: 'date', required: true },
+          { key: 'penalty_amount_zar', label: 'Penalty amount (ZAR)', type: 'number', required: true },
+        ],
+      },
+      {
+        title: 'Process',
+        description: 'Set the show-cause deadline, hearing, and adjudicating officer.',
+        fields: [
+          { key: 'show_cause_deadline', label: 'Show-cause deadline', type: 'date', required: true },
+          { key: 'legal_representation_allowed', label: 'Legal representation allowed', type: 'select', options: [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }] },
+          { key: 'hearing_date', label: 'Hearing date', type: 'date' },
+          { key: 'adjudication_officer', label: 'Adjudication officer', type: 'text', required: true },
+          { key: 'appeal_period_days', label: 'Appeal period (days)', type: 'number', placeholder: '30 per ERA default' },
+        ],
+      },
+    ],
+    onSubmit: async (values) => { await api.post('/api/enforcement-s35', values); },
+  },
+  {
+    id: 'regulator-esg',
+    title: 'Record ESG disclosure review',
+    steps: [
+      {
+        title: 'Disclosure',
+        description: 'Record the licensee ESG disclosure filing details.',
+        fields: [
+          { key: 'licensee_name', label: 'Licensee name', type: 'text', required: true },
+          { key: 'disclosure_year', label: 'Disclosure year', type: 'text', required: true, placeholder: 'e.g. 2026' },
+          { key: 'reporting_standard', label: 'Reporting standard', type: 'select', required: true, options: [{ value: 'gri', label: 'GRI' }, { value: 'tcfd', label: 'TCFD' }, { value: 'cdp', label: 'CDP' }, { value: 'sarb_srr', label: 'SARB SRR' }, { value: 'ifrs_s1_s2', label: 'IFRS S1/S2' }] },
+          { key: 'scope1_tco2e', label: 'Scope 1 (tCO₂e)', type: 'number' },
+          { key: 'scope2_tco2e', label: 'Scope 2 (tCO₂e)', type: 'number' },
+        ],
+      },
+      {
+        title: 'Assessment',
+        description: 'Assess disclosure quality and schedule the next review.',
+        fields: [
+          { key: 'disclosure_quality', label: 'Disclosure quality', type: 'select', required: true, options: [{ value: 'full', label: 'Full' }, { value: 'partial', label: 'Partial' }, { value: 'inadequate', label: 'Inadequate' }] },
+          { key: 'material_omissions', label: 'Material omissions', type: 'textarea' },
+          { key: 'improvement_required', label: 'Improvement required', type: 'select', required: true, options: [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }] },
+          { key: 'next_review_date', label: 'Next review date', type: 'date' },
+          { key: 'regulatory_guidance_issued', label: 'Regulatory guidance issued', type: 'select', options: [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }] },
+        ],
+      },
+    ],
+    onSubmit: async (values) => { await api.post('/api/esg-disclosures', values); },
+  },
+];
+
+const REGULATOR_TOUR: TourDef = {
+  id: 'regulator-workstation-v1',
+  steps: [
+    { target: 'ws-header', title: 'NERSA regulator workstation', body: 'Manage the full regulatory lifecycle — licence applications, compliance notices, inspections, tariff determinations, levy assessments, and disposition of matters.', placement: 'bottom' },
+    { target: 'kpi-row', title: 'Regulatory KPIs', body: 'Open applications, SLA breaches, active enforcement actions, and outstanding levies. Regulatory SLAs are legally binding — red means overdue.', placement: 'bottom' },
+    { target: 'tab-nav', title: 'Regulatory workflow tabs', body: 'Licensing, enforcement, tariff determination, MYPD, public consultation, levy assessment — each is a live state-machine with statutory SLA tracking.', placement: 'bottom' },
+    { target: 'quick-start', title: 'Quick start', body: 'Process a new licence application, issue a compliance notice, or open a compliance inspection — all guided with legal reference at each step.', placement: 'bottom' },
+    { target: 'capability-palette', title: 'What can I do?', body: 'See all regulatory actions: STOR processing, market conduct examinations, disposition workflow, SSEG registration, and more.', placement: 'bottom' },
+    { target: 'incoming-panel', title: 'Incoming actions', body: 'New licence applications, compliance incident escalations, and market surveillance alerts arrive here for adjudication.', placement: 'left' },
+  ],
+};
 
 export function RegulatorWorkstationPage() {
   const kpis = useWorkstationKpis('regulator');
@@ -57,6 +372,8 @@ export function RegulatorWorkstationPage() {
       backLabel="Regulator suite"
       kpis={kpis}
       panels={panels}
+      wizards={REGULATOR_WIZARDS}
+      tour={REGULATOR_TOUR}
       tabs={[
         { key: 'inbox', label: 'Inbox', body: () => <InboxTab /> },
         { key: 'notices', label: 'Compliance notices', body: () => <NoticesTab /> },
@@ -233,6 +550,18 @@ export function RegulatorWorkstationPage() {
             />
           ),
         },
+        { key: 'reports', label: 'Reports & Exports',
+          body: () => (
+            <div className="space-y-8">
+              {REGULATOR_REPORTS.map(cfg => (
+                <div key={cfg.endpoint} className="space-y-2">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{cfg.title}</p>
+                  <ReportPanel config={cfg} />
+                </div>
+              ))}
+            </div>
+          ),
+        },
         { key: 'audit', label: 'Audit & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel
@@ -331,7 +660,7 @@ function LicencesTab({ onRefresh }: { onRefresh: () => void }) {
               { value: 'reinstate', label: 'Reinstate' },
               { value: 'renew', label: 'Renew' },
             ] },
-            { key: 'licence_id', label: 'Licence ID' },
+            { key: 'licence_id', label: 'Licence', type: 'lookup', lookupEndpoint: '/api/lookup/licences' },
             { key: 'application_id', label: 'Application ID' },
             { key: 'notes', label: 'Notes', type: 'textarea' },
           ] as FieldSpec[]}
@@ -632,8 +961,14 @@ function MarketConductExamTab({ onRefresh }: { onRefresh?: () => void }) {
               { value: 'ad_hoc', label: 'Ad hoc' },
             ]} as FieldSpec,
             { key: 'examination_ref', label: 'NERSA/FSCA examination reference' },
-            { key: 'subject_participant_id', label: 'Subject participant ID' },
-            { key: 'subject_licence_class', label: 'Subject licence class' },
+            { key: 'subject_participant_id', label: 'Subject participant', type: 'lookup', lookupEndpoint: '/api/lookup/participants' },
+            { key: 'subject_licence_class', label: 'Subject licence class', type: 'select', options: [
+              { value: 'generation', label: 'Generation' },
+              { value: 'transmission', label: 'Transmission' },
+              { value: 'distribution', label: 'Distribution' },
+              { value: 'trading', label: 'Trading' },
+              { value: 'import_export', label: 'Import/Export' },
+            ] },
             { key: 'reason', label: 'Basis for examination' },
           ] as FieldSpec[]}
           onClose={() => setCreateModal(false)}
