@@ -427,7 +427,9 @@ export function FioriShell({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem('oe_rail_collapsed') === 'true'; } catch { return false; }
+  });
   const [query, setQuery] = useState('');
   const [userMenu, setUserMenu] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -569,7 +571,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
                 </span>
                 <button
                   type="button"
-                  onClick={() => { setCollapsed((v) => !v); setMenuOpen(false); }}
+                  onClick={() => { setCollapsed((v) => { const n = !v; try { localStorage.setItem('oe_rail_collapsed', String(n)); } catch {} return n; }); setMenuOpen(false); }}
                   className="text-[11px] font-semibold hover:underline"
                   style={{ color: 'var(--oe-primary)' }}
                 >
@@ -823,7 +825,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
 
         <div className="p-3 border-t" style={{ borderColor: 'var(--oe-surface-container)' }}>
           <button type="button"
-            onClick={() => setCollapsed((v) => !v)}
+            onClick={() => setCollapsed((v) => { const n = !v; try { localStorage.setItem('oe_rail_collapsed', String(n)); } catch {} return n; })}
             className="w-full flex items-center gap-2 h-9 px-2 rounded-md text-[12px] transition-colors hover:bg-[var(--oe-surface-container-low)]"
             style={{ color: 'var(--oe-on-surface-variant)' }}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}

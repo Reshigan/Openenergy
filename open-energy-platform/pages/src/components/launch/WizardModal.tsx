@@ -210,7 +210,7 @@ export function WizardModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4"
         style={{ background: 'rgba(10,20,34,0.55)', backdropFilter: 'blur(2px)' }}
         onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       >
@@ -382,7 +382,7 @@ export function WizardPicker({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4"
         style={{ background: 'rgba(10,20,34,0.55)', backdropFilter: 'blur(2px)' }}
         onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       >
