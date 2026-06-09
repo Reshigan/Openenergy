@@ -133,6 +133,7 @@ export function IppSiteInstructionTab() {
   const [selected, setSelected] = useState<SI | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -413,24 +414,28 @@ export function IppSiteInstructionTab() {
             </div>
             <form onSubmit={async (e) => {
               e.preventDefault();
-              const fd = new FormData(e.currentTarget);
-              await api.post('/ipp-site-instruction', {
-                project_id: fd.get('project_id'),
-                project_name: fd.get('project_name'),
-                instruction_type: fd.get('instruction_type'),
-                si_ref: fd.get('si_ref'),
-                issued_date: fd.get('issued_date'),
-                description: fd.get('description'),
-                scope_narrative: fd.get('scope_narrative'),
-                work_location: fd.get('work_location'),
-                ie_signatory: fd.get('ie_signatory'),
-                contractor_signatory: fd.get('contractor_signatory'),
-                is_safety_directive: fd.get('is_safety_directive') === 'on',
-                is_contract_variation: fd.get('is_contract_variation') === 'on',
-                value_zar: fd.get('value_zar') ? Number(fd.get('value_zar')) : null,
-              });
-              setShowCreate(false);
-              await load();
+              if (submitting) return;
+              setSubmitting(true);
+              try {
+                const fd = new FormData(e.currentTarget);
+                await api.post('/ipp-site-instruction', {
+                  project_id: fd.get('project_id'),
+                  project_name: fd.get('project_name'),
+                  instruction_type: fd.get('instruction_type'),
+                  si_ref: fd.get('si_ref'),
+                  issued_date: fd.get('issued_date'),
+                  description: fd.get('description'),
+                  scope_narrative: fd.get('scope_narrative'),
+                  work_location: fd.get('work_location'),
+                  ie_signatory: fd.get('ie_signatory'),
+                  contractor_signatory: fd.get('contractor_signatory'),
+                  is_safety_directive: fd.get('is_safety_directive') === 'on',
+                  is_contract_variation: fd.get('is_contract_variation') === 'on',
+                  value_zar: fd.get('value_zar') ? Number(fd.get('value_zar')) : null,
+                });
+                setShowCreate(false);
+                await load();
+              } finally { setSubmitting(false); }
             }}>
               {[
                 ['project_id', 'Project ID', 'text', true],
@@ -510,10 +515,11 @@ export function IppSiteInstructionTab() {
                   padding: '8px 16px', borderRadius: 6, background: '#1e293b',
                   color: '#94a3b8', border: '1px solid #334155', cursor: 'pointer', fontSize: 12,
                 }}>Cancel</button>
-                <button type="submit" style={{
+                <button type="submit" disabled={submitting} style={{
                   padding: '8px 16px', borderRadius: 6, background: '#2563eb',
                   color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-                }}>Create</button>
+                  opacity: submitting ? 0.5 : 1,
+                }}>{submitting ? 'Creating…' : 'Create'}</button>
               </div>
             </form>
           </div>

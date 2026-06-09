@@ -27,6 +27,7 @@ export default function Security() {
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [pwMsg, setPwMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [pwChanging, setPwChanging] = useState(false);
 
   // Sessions state
   const [sessions, setSessions] = useState<SessionRow[]>([]);
@@ -94,8 +95,10 @@ export default function Security() {
 
   async function changePassword(e: React.FormEvent) {
     e.preventDefault();
+    if (pwChanging) return;
     setPwMsg(null);
     if (newPw.length < 8) { setPwMsg({ kind: 'err', text: 'New password must be at least 8 characters.' }); return; }
+    setPwChanging(true);
     try {
       const res = await api.post('/auth/change-password', { current_password: currentPw, new_password: newPw });
       if (res.data?.success) {
@@ -107,6 +110,8 @@ export default function Security() {
       }
     } catch (e: any) {
       setPwMsg({ kind: 'err', text: e?.response?.data?.error || 'Change failed' });
+    } finally {
+      setPwChanging(false);
     }
   }
 
@@ -197,7 +202,9 @@ export default function Security() {
             <input type="password" required value={newPw} onChange={(e) => setNewPw(e.target.value)} className="input" />
           </div>
           <div className="md:col-span-2">
-            <button type="submit" className="btn btn-primary">Change password</button>
+            <button type="submit" disabled={pwChanging} className="btn btn-primary disabled:opacity-50">
+              {pwChanging ? 'Changing…' : 'Change password'}
+            </button>
           </div>
         </form>
       </section>

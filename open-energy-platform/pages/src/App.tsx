@@ -1,5 +1,5 @@
 import React, { useState, useEffect, ReactNode } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Sparkles, ShieldCheck, Zap, Leaf, Activity, ArrowRight } from 'lucide-react';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './lib/useAuth';
@@ -162,7 +162,7 @@ function LazyWorkbench({ children }: { children: ReactNode }) {
 }
 
 // Protected Route Wrapper
-function ProtectedRoute({ children }: { children: ReactNode }) {
+function ProtectedRoute({ children }: { children?: ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
 
@@ -181,7 +181,8 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return <>{children}</>;
+  // Outlet pattern: when used as <Route element={<ProtectedRoute />}>, children come from nested routes
+  return <>{children ?? <Outlet />}</>;
 }
 
 // Layout — Fiori shell wrapper

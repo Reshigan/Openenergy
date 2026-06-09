@@ -51,6 +51,10 @@ async function doRateLimit(
   windowSeconds: number,
   maxRequests: number,
 ): Promise<RateLimitResult> {
+  // NOTE: KV get-then-put is non-atomic. Under burst traffic two requests can
+  // read the same count simultaneously and both pass when only one should.
+  // For the login rate limiter (10/5min) the race window is ~2 ms — acceptable
+  // risk; true atomics would require a Durable Object counter.
   const now = Math.floor(Date.now() / 1000);
   const current = await env.KV.get(key, 'json') as { count: number; windowStart: number } | null;
 

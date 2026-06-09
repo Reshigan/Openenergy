@@ -578,8 +578,11 @@ function NewTargetModal({ onClose, onCreated }: { onClose: () => void; onCreated
     scopes_covered: ['scope_1', 'scope_2'],
     description: '',
   });
+  const [busy, setBusy] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
+    setBusy(true);
     await api.post('/esg/targets', form).catch(() => undefined);
     onCreated(); onClose();
   };
@@ -606,7 +609,7 @@ function NewTargetModal({ onClose, onCreated }: { onClose: () => void; onCreated
         <StitchField label="Description"><textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Cancel</button>
-          <button type="submit" className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold">Save target</button>
+          <button type="submit" disabled={busy} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold disabled:opacity-50">{busy ? 'Saving…' : 'Save target'}</button>
         </div>
       </form>
     </Modal>
@@ -695,8 +698,11 @@ function InitiativesTab() {
 function NewInitiativeModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   useEscapeKey(onClose);
   const [form, setForm] = useState({ name: '', category: 'energy_efficiency', abatement_tco2e_yr: 0, capex_zar: 0, opex_zar_yr: 0, lifetime_years: 10, start_date: '', description: '' });
+  const [busy, setBusy] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
+    setBusy(true);
     await api.post('/esg/initiatives', form).catch(() => undefined);
     onCreated(); onClose();
   };
@@ -724,7 +730,7 @@ function NewInitiativeModal({ onClose, onCreated }: { onClose: () => void; onCre
         <StitchField label="Description"><textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Cancel</button>
-          <button type="submit" className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold">Save initiative</button>
+          <button type="submit" disabled={busy} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold disabled:opacity-50">{busy ? 'Saving…' : 'Save initiative'}</button>
         </div>
       </form>
     </Modal>
@@ -794,8 +800,11 @@ function SuppliersTab() {
 function InviteSupplierModal({ onClose, onSent }: { onClose: () => void; onSent: () => void }) {
   useEscapeKey(onClose);
   const [f, setF] = useState({ supplier_name: '', scope3_category: 1, survey_type: 'custom', notes: '' });
+  const [busy, setBusy] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
+    setBusy(true);
     await api.post('/esg/suppliers/invite', f).catch(() => undefined);
     onSent(); onClose();
   };
@@ -818,7 +827,7 @@ function InviteSupplierModal({ onClose, onSent }: { onClose: () => void; onSent:
         <StitchField label="Notes"><textarea rows={2} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} className="w-full px-3 py-2 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Cancel</button>
-          <button type="submit" className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold">Send invite</button>
+          <button type="submit" disabled={busy} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold disabled:opacity-50">{busy ? 'Sending…' : 'Send invite'}</button>
         </div>
       </form>
     </Modal>
@@ -895,8 +904,11 @@ function RecsTab() {
 function NewRecModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   useEscapeKey(onClose);
   const [f, setF] = useState({ serial_number: '', registry: 'I-REC', technology: 'solar_pv', vintage_year: new Date().getFullYear(), vintage_month: 1, mwh_certified: 0, acquisition_cost_zar: 0 });
+  const [busy, setBusy] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
+    setBusy(true);
     await api.post('/esg/recs', f).catch(() => undefined);
     onCreated(); onClose();
   };
@@ -929,7 +941,7 @@ function NewRecModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Cancel</button>
-          <button type="submit" className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold">Register</button>
+          <button type="submit" disabled={busy} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold disabled:opacity-50">{busy ? 'Registering…' : 'Register'}</button>
         </div>
       </form>
     </Modal>
@@ -1012,8 +1024,11 @@ function DisclosuresTab() {
 function NewDisclosureModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   useEscapeKey(onClose);
   const [f, setF] = useState({ framework: 'CDP', reporting_year: new Date().getFullYear() - 1, assurance_level: 'limited', notes: '' });
+  const [busy, setBusy] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
+    setBusy(true);
     await api.post('/esg/disclosures', f).catch(() => undefined);
     onCreated(); onClose();
   };
@@ -1036,7 +1051,7 @@ function NewDisclosureModal({ onClose, onCreated }: { onClose: () => void; onCre
         <StitchField label="Notes"><textarea rows={2} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} className="w-full px-3 py-2 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Cancel</button>
-          <button type="submit" className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold">Generate</button>
+          <button type="submit" disabled={busy} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold disabled:opacity-50">{busy ? 'Generating…' : 'Generate'}</button>
         </div>
       </form>
     </Modal>
@@ -1125,8 +1140,11 @@ function RisksTab() {
 function NewRiskModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   useEscapeKey(onClose);
   const [f, setF] = useState({ risk_type: 'physical_chronic', title: '', description: '', time_horizon: 'medium', likelihood: 0.3, impact_zar: 0, scenario: 'NGFS Disorderly' });
+  const [busy, setBusy] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
+    setBusy(true);
     await api.post('/esg/risks', f).catch(() => undefined);
     onCreated(); onClose();
   };
@@ -1166,7 +1184,7 @@ function NewRiskModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Cancel</button>
-          <button type="submit" className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold">Save risk</button>
+          <button type="submit" disabled={busy} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold disabled:opacity-50">{busy ? 'Saving…' : 'Save risk'}</button>
         </div>
       </form>
     </Modal>

@@ -75,16 +75,21 @@ function AlgosTab() {
     algo_type: 'twap', energy_type: 'solar', side: 'buy',
     total_volume_mwh: 100, start_at: '', end_at: '',
   });
+  const [submitting, setSubmitting] = useState(false);
   const load = () => api.get('/trading-deep/algos').then((r) => setRows(r.data?.data || []));
   useEffect(() => { void load(); }, []);
   const submit = async () => {
+    if (submitting) return;
     if (!draft.start_at || !draft.end_at) return alert('start_at + end_at required');
-    await api.post('/trading-deep/algos', {
-      ...draft,
-      start_at: new Date(draft.start_at).toISOString(),
-      end_at: new Date(draft.end_at).toISOString(),
-    });
-    void load();
+    setSubmitting(true);
+    try {
+      await api.post('/trading-deep/algos', {
+        ...draft,
+        start_at: new Date(draft.start_at).toISOString(),
+        end_at: new Date(draft.end_at).toISOString(),
+      });
+      void load();
+    } finally { setSubmitting(false); }
   };
   return (
     <div className="mt-3 space-y-3">
@@ -105,7 +110,7 @@ function AlgosTab() {
           <input type="datetime-local" value={draft.start_at} onChange={(e) => setDraft({ ...draft, start_at: e.target.value })} className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]" />
           <input type="datetime-local" value={draft.end_at}   onChange={(e) => setDraft({ ...draft, end_at: e.target.value })}   className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]" />
         </div>
-        <div className="px-3 pb-3"><button type="button" onClick={submit} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Submit algo</button></div>
+        <div className="px-3 pb-3"><button type="button" onClick={submit} disabled={submitting} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">{submitting ? 'Submitting…' : 'Submit algo'}</button></div>
       </Section>
       <Section title={`Active algos (${rows.length})`}>
         <Table headers={['Algo', 'Side', 'Volume', 'Filled', 'Window', 'Status', '']}>

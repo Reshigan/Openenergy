@@ -407,6 +407,105 @@ auth.post('/mfa/verify', authMiddleware, async (c) => {
   return c.json({ success: true, data: { enabled: true, backup_codes: backups } });
 });
 
+// POST /auth/mfa/backup-code — full login using a one-time backup code when TOTP device unavailable.
+// Accepts the same credentials as /login but substitutes the 8-hex backup code for the TOTP code.
+// The used code is burned on success; the remaining codes stay valid.
+auth.post('/mfa/backup-code', async (c) => {
+  const body = await c.req.json().catch(() => ({} as any));
+  const validation = LoginSchema.safeParse(body);
+  if (!validation.success) return c.json({ success: false, error: validation.error.errors[0].message }, 400);
+
+  const { email, password } = validation.data;
+  const rawCode: string | undefined = typeof body?.backup_code === 'string' ? body.backup_code.trim().toLowerCase().replace(/[^0-9a-f-]/g, '') : undefined;
+  if (!rawCode) return c.json({ success: false, error: 'backup_code required' }, 400);
+
+  const ip = clientIp(c);
+  const lockout = await isLockedOut(c.env.DB, email);
+  if (lockout.locked) {
+    return c.json({
+      success: false,
+      error: `Too many failed attempts. Try again in ${Math.ceil(lockout.retryAfterSeconds / 60)} minute(s).`,
+      code: 'LOCKED_OUT',
+      retry_after_seconds: lockout.retryAfterSeconds,
+    }, 429);
+  }
+
+  const participant = await c.env.DB.prepare(
+    `SELECT id, email, password_hash, name, role, status FROM participants WHERE email = ?`
+  ).bind(email).first() as any;
+
+  if (!participant) {
+    await recordLoginAttempt(c.env.DB, email, ip, false, 'no_user');
+    return c.json({ success: false, error: 'Invalid email or password' }, 401);
+  }
+  if (participant.status !== 'active') {
+    await recordLoginAttempt(c.env.DB, email, ip, false, participant.status);
+    return c.json({ success: false, error: 'Account inactive. Contact support.' }, 403);
+  }
+  if (!(await verifyPassword(password, participant.password_hash))) {
+    await recordLoginAttempt(c.env.DB, email, ip, false, 'bad_password');
+    return c.json({ success: false, error: 'Invalid email or password' }, 401);
+  }
+
+  const mfa = await c.env.DB.prepare(
+    `SELECT verified_at, backup_codes_json FROM mfa_totp_secrets WHERE participant_id = ?`
+  ).bind(participant.id).first() as any;
+
+  if (!mfa?.verified_at) {
+    return c.json({ success: false, error: 'MFA not enrolled — use regular login' }, 400);
+  }
+
+  const codes: string[] = JSON.parse(mfa.backup_codes_json || '[]');
+  const idx = codes.findIndex((c) => c.toLowerCase() === rawCode);
+  if (idx === -1) {
+    await recordLoginAttempt(c.env.DB, email, ip, false, 'bad_backup_code');
+    return c.json({ success: false, error: 'Invalid backup code', code: 'BACKUP_INVALID' }, 401);
+  }
+
+  // Burn the used code before issuing tokens — prevents replay if token issuance fails mid-flight.
+  const remaining = [...codes.slice(0, idx), ...codes.slice(idx + 1)];
+  await c.env.DB.prepare(
+    `UPDATE mfa_totp_secrets SET backup_codes_json = ?, updated_at = ? WHERE participant_id = ?`
+  ).bind(JSON.stringify(remaining), new Date().toISOString(), participant.id).run();
+
+  const accessJti = randomId('jti_');
+  const token = await signToken(
+    { sub: participant.id, email: participant.email, role: participant.role, name: participant.name, jti: accessJti },
+    c.env,
+    { expiresInSeconds: ACCESS_TOKEN_EXPIRY_SECONDS }
+  );
+  const session = await createSession({
+    db: c.env.DB,
+    participantId: participant.id,
+    accessJti,
+    userAgent: (c.req.header('user-agent') || null) as string | null,
+    ip,
+  });
+
+  await c.env.DB.prepare('UPDATE participants SET last_login = ? WHERE id = ?')
+    .bind(new Date().toISOString(), participant.id).run();
+  await recordLoginAttempt(c.env.DB, email, ip, true, 'backup_code');
+
+  const cookieOpts = { httpOnly: true, secure: true, sameSite: 'Strict' as const, path: '/api' };
+  setCookie(c, 'oe_access', token, { ...cookieOpts, maxAge: ACCESS_TOKEN_EXPIRY_SECONDS });
+  setCookie(c, 'oe_refresh', session.refreshToken, { ...cookieOpts, path: '/api/auth/refresh', maxAge: 7 * 24 * 60 * 60 });
+
+  return c.json({
+    success: true,
+    data: {
+      token,
+      expires_in: ACCESS_TOKEN_EXPIRY_SECONDS,
+      refresh_token: session.refreshToken,
+      session_id: session.sessionId,
+      backup_codes_remaining: remaining.length,
+      participant: {
+        id: participant.id, email: participant.email, name: participant.name,
+        role: participant.role, mfa_enabled: true,
+      },
+    },
+  });
+});
+
 // POST /auth/mfa/disable — requires current password
 auth.post('/mfa/disable', authMiddleware, async (c) => {
   const user = getCurrentUser(c);
