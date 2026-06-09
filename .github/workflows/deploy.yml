@@ -157,12 +157,15 @@ jobs:
           # next step.
           files=$(ls migrations/*.sql | sort -V | awk -F/ '{
             n = substr($NF, 1, 3) + 0
+            # Skip 012: table-rebuild for support role already in d1_migrations
+            #   ledger. Re-running it wipes participants columns added later
+            #   (epc_contractor/esco roles; phone/job_title/etc from 377/378/472).
             # Skip 019-048 (force-applied out-of-band per GLR §1.1).
             # Skip 050 (per-statement reconcile in next step).
             # Skip 380-381 (esums_projects band — rolled back on first run
             #   due to om_sites FK conflict; handled in ESUMS reconcile step).
             # Skip 383 (manufacturer column ALTER — per-statement reconcile).
-            if (n <= 18 || n == 49 || (n >= 51 && n < 380) || (n == 382) || n >= 384) print
+            if ((n <= 18 && n != 12) || n == 49 || (n >= 51 && n < 380) || (n == 382) || n >= 384) print
           }')
           for f in $files; do
             echo "::group::Applying $f"
