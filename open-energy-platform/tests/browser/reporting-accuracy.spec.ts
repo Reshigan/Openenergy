@@ -20,26 +20,13 @@
 
 import { test, expect } from '@playwright/test';
 
-const PASSWORD = process.env.DEMO_PASSWORD || 'Demo@2024!';
-
 let ADMIN_TOKEN: string | null = null;
 
-test.beforeAll(async ({ request, baseURL }) => {
-  for (const attempt of [0, 1]) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 15_000));
-    const r = await request.post(`${baseURL}/api/auth/login`, {
-      data: { email: 'admin@openenergy.co.za', password: PASSWORD },
-      failOnStatusCode: false,
-    });
-    if (r.ok()) {
-      const tok = (await r.json())?.data?.token;
-      if (tok) { ADMIN_TOKEN = tok; return; }
-    }
-    if (attempt === 1) {
-      throw new Error(`admin login failed: HTTP ${r.status()}`);
-    }
-  }
-}, 90_000);
+test.beforeAll(() => {
+  const tok = process.env.PLAYWRIGHT_ADMIN_TOKEN;
+  if (!tok) throw new Error('PLAYWRIGHT_ADMIN_TOKEN not set — global-setup may have failed');
+  ADMIN_TOKEN = tok;
+});
 
 function auth() {
   return { Authorization: `Bearer ${ADMIN_TOKEN}` };

@@ -425,10 +425,10 @@ settlement.get('/reconciliation', async (c) => {
 
   const aging = (await c.env.DB.prepare(`
     SELECT
-      SUM(CASE WHEN julianday('now') - julianday(i.due_date) <= 0 THEN (i.total_amount - COALESCE(i.paid_amount,0)) ELSE 0 END) AS current_zar,
-      SUM(CASE WHEN julianday('now') - julianday(i.due_date) BETWEEN 1 AND 30 THEN (i.total_amount - COALESCE(i.paid_amount,0)) ELSE 0 END) AS d1_30_zar,
-      SUM(CASE WHEN julianday('now') - julianday(i.due_date) BETWEEN 31 AND 60 THEN (i.total_amount - COALESCE(i.paid_amount,0)) ELSE 0 END) AS d31_60_zar,
-      SUM(CASE WHEN julianday('now') - julianday(i.due_date) > 60 THEN (i.total_amount - COALESCE(i.paid_amount,0)) ELSE 0 END) AS d60p_zar
+      SUM(CASE WHEN i.due_date IS NULL OR julianday(DATE('now')) - julianday(DATE(i.due_date)) <= 0 THEN (i.total_amount - COALESCE(i.paid_amount,0)) ELSE 0 END) AS current_zar,
+      SUM(CASE WHEN i.due_date IS NOT NULL AND julianday(DATE('now')) - julianday(DATE(i.due_date)) BETWEEN 1 AND 30 THEN (i.total_amount - COALESCE(i.paid_amount,0)) ELSE 0 END) AS d1_30_zar,
+      SUM(CASE WHEN i.due_date IS NOT NULL AND julianday(DATE('now')) - julianday(DATE(i.due_date)) BETWEEN 31 AND 60 THEN (i.total_amount - COALESCE(i.paid_amount,0)) ELSE 0 END) AS d31_60_zar,
+      SUM(CASE WHEN i.due_date IS NOT NULL AND julianday(DATE('now')) - julianday(DATE(i.due_date)) > 60 THEN (i.total_amount - COALESCE(i.paid_amount,0)) ELSE 0 END) AS d60p_zar
     FROM invoices i WHERE ${partyFilter} AND i.status IN ('issued','partial','overdue')
   `).bind(user.id).first()) as { current_zar: number | null; d1_30_zar: number | null; d31_60_zar: number | null; d60p_zar: number | null } | null;
 

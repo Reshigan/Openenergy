@@ -16,26 +16,13 @@
 
 import { test, expect } from '@playwright/test';
 
-const PASSWORD = process.env.DEMO_PASSWORD || 'Demo@2024!';
-
 let SHARED_ADMIN_TOKEN: string | null = null;
 
-test.beforeAll(async ({ request, baseURL }) => {
-  for (const attempt of [0, 1]) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 15_000));
-    const r = await request.post(`${baseURL}/api/auth/login`, {
-      data: { email: 'admin@openenergy.co.za', password: PASSWORD },
-      failOnStatusCode: false,
-    });
-    if (r.ok()) {
-      const tok = (await r.json())?.data?.token;
-      if (tok) { SHARED_ADMIN_TOKEN = tok; return; }
-    }
-    if (attempt === 1) {
-      throw new Error(`admin login failed: HTTP ${r.status()} body=${(await r.text()).slice(0, 200)}`);
-    }
-  }
-}, 90_000);
+test.beforeAll(() => {
+  const tok = process.env.PLAYWRIGHT_ADMIN_TOKEN;
+  if (!tok) throw new Error('PLAYWRIGHT_ADMIN_TOKEN not set — global-setup may have failed');
+  SHARED_ADMIN_TOKEN = tok;
+});
 
 async function seedToken(page: import('@playwright/test').Page) {
   if (!SHARED_ADMIN_TOKEN) throw new Error('shared admin token not initialised');
@@ -78,7 +65,7 @@ function attachWatchers(page: import('@playwright/test').Page): string[] {
 test('Carbon Article 6 tab renders KPIs, ledger, and routing', async ({ page, baseURL }) => {
   const errors = attachWatchers(page);
   await seedToken(page);
-  await page.goto(`${baseURL}/carbon-registry/workstation`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseURL}/carbon-registry/workstation`, { waitUntil: 'load' });
 
   // Tab label is "Article 6 ITMO"; pick the button to avoid colliding with
   // any heading text rendered before tab content swap.
@@ -108,12 +95,13 @@ test('Carbon Article 6 tab renders KPIs, ledger, and routing', async ({ page, ba
 test('Carbon Article 6 row drill-down shows risk + actions', async ({ page, baseURL }) => {
   const errors = attachWatchers(page);
   await seedToken(page);
-  await page.goto(`${baseURL}/carbon-registry/workstation`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseURL}/carbon-registry/workstation`, { waitUntil: 'load' });
 
   await page.getByRole('tab', { name: /^Article 6 ITMO$/ }).click();
   await expect(page.getByTestId('article6-tab')).toBeVisible({ timeout: 15_000 });
 
-  // Click first ledger row to open the drill-down.
+  // Wait for rows to appear (the API call can be slow), then click the first one.
+  await expect(page.locator('[data-testid^="article6-row-"]').first()).toBeVisible({ timeout: 25_000 });
   await page.locator('[data-testid^="article6-row-"]').first().click();
   await expect(page.getByTestId('article6-drill')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('article6-risk')).toBeVisible({ timeout: 15_000 });

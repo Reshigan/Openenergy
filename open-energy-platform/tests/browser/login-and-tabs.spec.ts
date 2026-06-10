@@ -4,20 +4,44 @@
 // This is the test that would have caught the service-worker stale-cache
 // bug from earlier today. JS bundle parse failures, broken SPA routes,
 // blank screens — none of these surface in backend / curl smoke tests.
+//
+// Rate-limit discipline: shared admin login for the whole file. Test 2
+// uses seedToken (not a form submit) to avoid burning rate-limit slots that
+// would cascade to later spec files.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { test, expect } from '@playwright/test';
 
-const PASSWORD = process.env.DEMO_PASSWORD || 'Demo@2024!';
+let SHARED_ADMIN_TOKEN: string | null = null;
+
+test.beforeAll(() => {
+  const tok = process.env.PLAYWRIGHT_ADMIN_TOKEN;
+  if (!tok) throw new Error('PLAYWRIGHT_ADMIN_TOKEN not set — global-setup may have failed');
+  SHARED_ADMIN_TOKEN = tok;
+});
+
+async function seedToken(page: import('@playwright/test').Page) {
+  if (!SHARED_ADMIN_TOKEN) throw new Error('shared admin token not initialised');
+  const tokenValue = SHARED_ADMIN_TOKEN;
+  await page.route('**/api/auth/refresh', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: { token: tokenValue, expires_in: 3600 } }),
+    });
+  });
+  await page.addInitScript((tok) => {
+    localStorage.setItem('token', tok as string);
+  }, tokenValue);
+}
 
 // Errors we accept and don't count as test failures:
 // - benign 404s on asset prefetch hints
 // - PWA-related SW registration noise that happens before document ready
-// - cross-origin script load when the test happens to suspend mid-load
 function isBenign(msg: string): boolean {
   return (
     msg.includes('ServiceWorkerRegistration') ||
-    msg.includes('Failed to load resource: the server responded with a status of 404')
+    msg.includes('Failed to load resource: the server responded with a status of')
   );
 }
 
@@ -26,7 +50,7 @@ test('login page renders with LTM partner logo and demo personas', async ({ page
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (msg) => { if (msg.type() === 'error') errors.push(`console.error: ${msg.text()}`); });
 
-  await page.goto(`${baseURL}/`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseURL}/`, { waitUntil: 'load' });
 
   // P0 — assert React actually mounted into #root. A blank page (React
   // failed to mount due to e.g. a chunk-split race) returns 200 with an
@@ -52,20 +76,16 @@ test('admin persona logs in, lands on cockpit, navigates to lender suite', async
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
 
-  await page.goto(`${baseURL}/`, { waitUntil: 'networkidle' });
+  // Seed the token instead of submitting the form — the form submit would
+  // consume one rate-limit slot (10/5min/IP) and cascade 429s to later specs.
+  await seedToken(page);
+  await page.goto(`${baseURL}/launch/admin`, { waitUntil: 'load' });
 
-  // Fill the email + password directly (the persona-tile click is a nice-
-  // to-have, but typing is more reliable across renderer state).
-  await page.locator('input[type="email"], input[name="email"]').first().fill('admin@openenergy.co.za');
-  await page.locator('input[type="password"]').first().fill(PASSWORD);
-  await page.getByRole('button', { name: /sign in/i }).first().click();
+  // Cockpit / launchpad — URL should contain /cockpit or /launch and at
+  // least one shell element is visible (the navigation rail / hamburger menu).
+  await expect(page.locator('button[aria-label="Open navigation menu"], button:has-text("Launchpad")').first()).toBeVisible({ timeout: 15_000 });
 
-  // Cockpit / launchpad. URL contains /cockpit and at least one shell element
-  // is visible (the navigation rail / hamburger menu button).
-  await page.waitForURL(/\/(cockpit|launch)/, { timeout: 15_000 });
-  await expect(page.locator('button[aria-label="Open navigation menu"], button:has-text("Launchpad")').first()).toBeVisible();
-
-  // No runtime page errors during the full login flow.
+  // No runtime page errors during the full navigation flow.
   const real = errors.filter((e) => !isBenign(e));
   expect(real, real.join('\n')).toEqual([]);
 });

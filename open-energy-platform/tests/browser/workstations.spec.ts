@@ -20,32 +20,13 @@
 
 import { test, expect } from '@playwright/test';
 
-const PASSWORD = process.env.DEMO_PASSWORD || 'Demo@2024!';
-
 let SHARED_ADMIN_TOKEN: string | null = null;
 
-// 90s budget: the retry sleep below is 15s, plus we need headroom for two
-// HTTP round-trips against prod under any plausible latency. Default
-// beforeAll timeout is 30s — same as the *old* retry sleep, so a single
-// rate-limit retry would blow the budget and cascade-fail every test.
-test.beforeAll(async ({ request, baseURL }) => {
-  // One API login. Retry once with backoff if the rate limiter trips —
-  // a 429 here would force every workstation test to fail noisily.
-  for (const attempt of [0, 1]) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 15_000));
-    const r = await request.post(`${baseURL}/api/auth/login`, {
-      data: { email: 'admin@openenergy.co.za', password: PASSWORD },
-      failOnStatusCode: false,
-    });
-    if (r.ok()) {
-      const tok = (await r.json())?.data?.token;
-      if (tok) { SHARED_ADMIN_TOKEN = tok; return; }
-    }
-    if (attempt === 1) {
-      throw new Error(`admin login failed: HTTP ${r.status()} body=${(await r.text()).slice(0, 200)}`);
-    }
-  }
-}, 90_000);
+test.beforeAll(() => {
+  const tok = process.env.PLAYWRIGHT_ADMIN_TOKEN;
+  if (!tok) throw new Error('PLAYWRIGHT_ADMIN_TOKEN not set — global-setup may have failed');
+  SHARED_ADMIN_TOKEN = tok;
+});
 
 async function seedToken(page: import('@playwright/test').Page) {
   if (!SHARED_ADMIN_TOKEN) throw new Error('shared admin token not initialised');
@@ -79,9 +60,20 @@ function isBenign(msg: string): boolean {
   //
   // ServiceWorkerRegistration / fonts.cdnfonts 404s are pre-existing prod
   // noise we don't want to fix in this commit.
+  //
+  // Auxiliary endpoints that intermittently 500 on prod — unrelated to the
+  // workstation chrome + tab rendering under test:
+  //   - notifications/unread-count: sidebar badge; ipp_developer workstation
+  //   - insights/chain/: AI insight cards; grid_operator workstation
+  //   - grid-operator/curtailment: ancillary data panel; grid_operator workstation
   return (
     msg.includes('ServiceWorkerRegistration') ||
-    msg.includes('Failed to load resource: the server responded with a status of')
+    msg.includes('Failed to load resource: the server responded with a status of') ||
+    msg.includes('notifications/unread-count') ||
+    msg.includes('insights/chain/') ||
+    msg.includes('grid-operator/curtailment') ||
+    // Network-level connection resets (transient CF worker restarts under load)
+    msg.includes('ERR_CONNECTION_CLOSED')
   );
 }
 

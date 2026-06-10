@@ -16,26 +16,13 @@
 
 import { test, expect } from '@playwright/test';
 
-const PASSWORD = process.env.DEMO_PASSWORD || 'Demo@2024!';
-
 let SHARED_ADMIN_TOKEN: string | null = null;
 
-test.beforeAll(async ({ request, baseURL }) => {
-  for (const attempt of [0, 1]) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 15_000));
-    const r = await request.post(`${baseURL}/api/auth/login`, {
-      data: { email: 'admin@openenergy.co.za', password: PASSWORD },
-      failOnStatusCode: false,
-    });
-    if (r.ok()) {
-      const tok = (await r.json())?.data?.token;
-      if (tok) { SHARED_ADMIN_TOKEN = tok; return; }
-    }
-    if (attempt === 1) {
-      throw new Error(`admin login failed: HTTP ${r.status()} body=${(await r.text()).slice(0, 200)}`);
-    }
-  }
-}, 90_000);
+test.beforeAll(() => {
+  const tok = process.env.PLAYWRIGHT_ADMIN_TOKEN;
+  if (!tok) throw new Error('PLAYWRIGHT_ADMIN_TOKEN not set — global-setup may have failed');
+  SHARED_ADMIN_TOKEN = tok;
+});
 
 async function seedToken(page: import('@playwright/test').Page) {
   if (!SHARED_ADMIN_TOKEN) throw new Error('shared admin token not initialised');
@@ -78,7 +65,7 @@ function attachWatchers(page: import('@playwright/test').Page): string[] {
 test('Offtaker PPA obligations tab renders KPIs, filters, and demo rows', async ({ page, baseURL }) => {
   const errors = attachWatchers(page);
   await seedToken(page);
-  await page.goto(`${baseURL}/offtaker-suite`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseURL}/offtaker-suite`, { waitUntil: 'load' });
 
   await page.getByRole('tab', { name: /^PPA obligations$/ }).click();
   await expect(page.getByTestId('offtaker-obligations-tab')).toBeVisible({ timeout: 15_000 });
@@ -100,7 +87,7 @@ test('Offtaker PPA obligations tab renders KPIs, filters, and demo rows', async 
 test('Offtaker PPA obligations drill-down shows readings + cure action', async ({ page, baseURL }) => {
   const errors = attachWatchers(page);
   await seedToken(page);
-  await page.goto(`${baseURL}/offtaker-suite`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseURL}/offtaker-suite`, { waitUntil: 'load' });
 
   await page.getByRole('tab', { name: /^PPA obligations$/ }).click();
   await expect(page.getByTestId('offtaker-obligations-tab')).toBeVisible({ timeout: 15_000 });
