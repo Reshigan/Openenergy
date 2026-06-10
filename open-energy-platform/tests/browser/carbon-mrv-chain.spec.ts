@@ -77,7 +77,7 @@ function attachWatchers(page: import('@playwright/test').Page): string[] {
 test('Carbon MRV chain tab renders KPIs, filters, and demo rows', async ({ page, baseURL }) => {
   const errors = attachWatchers(page);
   await seedToken(page);
-  await page.goto(`${baseURL}/carbon-registry/workstation`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseURL}/carbon-registry/workstation`, { waitUntil: 'load' });
 
   await page.getByRole('tab', { name: /Verification chain/i }).click();
   await expect(page.getByTestId('carbon-mrv-chain-tab')).toBeVisible({ timeout: 15_000 });
@@ -99,7 +99,7 @@ test('Carbon MRV chain tab renders KPIs, filters, and demo rows', async ({ page,
 test('Carbon MRV chain drill-down shows timeline + actions', async ({ page, baseURL }) => {
   const errors = attachWatchers(page);
   await seedToken(page);
-  await page.goto(`${baseURL}/carbon-registry/workstation`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseURL}/carbon-registry/workstation`, { waitUntil: 'load' });
 
   await page.getByRole('tab', { name: /Verification chain/i }).click();
   await expect(page.getByTestId('carbon-mrv-chain-tab')).toBeVisible({ timeout: 15_000 });

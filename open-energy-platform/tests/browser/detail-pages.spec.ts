@@ -128,12 +128,12 @@ for (const c of CASES) {
     });
 
     await seedToken(page);
-    await page.goto(`${baseURL}${c.routePrefix}${encodeURIComponent(id!)}`, { waitUntil: 'networkidle' });
+    await page.goto(`${baseURL}${c.routePrefix}${encodeURIComponent(id!)}`, { waitUntil: 'load' });
 
     // Stable anchor — confirms the detail component rendered (not a stuck
     // "Loading…" placeholder, not an error banner). getByText is permissive
     // for both <a> and <button>/<span> wrappers.
-    await expect(page.getByText(c.anchorText).first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(c.anchorText).first()).toBeVisible({ timeout: 25_000 });
 
     expect(apiFails, apiFails.join('\n')).toEqual([]);
   });

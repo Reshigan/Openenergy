@@ -78,9 +78,9 @@ function attachWatchers(page: import('@playwright/test').Page): string[] {
 test('Grid wheeling charges tab renders KPIs, filters, and demo rows', async ({ page, baseURL }) => {
   const errors = attachWatchers(page);
   await seedToken(page);
-  await page.goto(`${baseURL}/grid-operator`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseURL}/grid-operator`, { waitUntil: 'load' });
 
-  await page.getByRole('tab', { name: /^Wheeling charges$/ }).click();
+  await page.getByRole('button', { name: /Wheeling charges/ }).click();
   await expect(page.getByTestId('grid-wheeling-charges-tab')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('grid-wheeling-charges-kpis')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('grid-wheeling-charges-table')).toBeVisible({ timeout: 15_000 });
@@ -100,9 +100,9 @@ test('Grid wheeling charges tab renders KPIs, filters, and demo rows', async ({ 
 test('Grid wheeling charges drill-down shows breakdown + dispute pane', async ({ page, baseURL }) => {
   const errors = attachWatchers(page);
   await seedToken(page);
-  await page.goto(`${baseURL}/grid-operator`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseURL}/grid-operator`, { waitUntil: 'load' });
 
-  await page.getByRole('tab', { name: /^Wheeling charges$/ }).click();
+  await page.getByRole('button', { name: /Wheeling charges/ }).click();
   await expect(page.getByTestId('grid-wheeling-charges-tab')).toBeVisible({ timeout: 15_000 });
 
   // Switch to All so paid/escalated demo rows are reachable.

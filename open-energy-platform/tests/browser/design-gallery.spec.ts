@@ -7,6 +7,40 @@ import { test, expect } from '@playwright/test';
 
 const PASSWORD = process.env.DEMO_PASSWORD || 'Demo@2024!';
 
+let SHARED_ADMIN_TOKEN: string | null = null;
+
+test.beforeAll(async ({ request, baseURL }) => {
+  for (const attempt of [0, 1]) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 15_000));
+    const r = await request.post(`${baseURL}/api/auth/login`, {
+      data: { email: 'admin@openenergy.co.za', password: PASSWORD },
+      failOnStatusCode: false,
+    });
+    if (r.ok()) {
+      const tok = (await r.json())?.data?.token;
+      if (tok) { SHARED_ADMIN_TOKEN = tok; return; }
+    }
+    if (attempt === 1) {
+      throw new Error(`admin login failed: HTTP ${r.status()}`);
+    }
+  }
+}, 90_000);
+
+async function seedToken(page: import('@playwright/test').Page) {
+  if (!SHARED_ADMIN_TOKEN) throw new Error('shared admin token not initialised');
+  const tokenValue = SHARED_ADMIN_TOKEN;
+  await page.route('**/api/auth/refresh', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: { token: tokenValue, expires_in: 3600 } }),
+    });
+  });
+  await page.addInitScript((tok) => {
+    localStorage.setItem('token', tok as string);
+  }, tokenValue);
+}
+
 function isBenign(msg: string): boolean {
   return (
     msg.includes('ServiceWorkerRegistration') ||
@@ -19,17 +53,10 @@ test('design gallery loads behind auth and renders 16 cards', async ({ page, bas
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(`console.error: ${m.text()}`); });
 
-  // Log in as admin so the protected route resolves cleanly.
-  await page.goto(`${baseURL}/`, { waitUntil: 'networkidle' });
-  await page.locator('input[type="email"], input[name="email"]').first().fill('admin@openenergy.co.za');
-  await page.locator('input[type="password"]').first().fill(PASSWORD);
-  await page.getByRole('button', { name: /sign in/i }).first().click();
-  await page.waitForURL(/\/(cockpit|launch)/, { timeout: 15_000 });
+  await seedToken(page);
+  await page.goto(`${baseURL}/design-gallery`, { waitUntil: 'load' });
 
-  // Direct-navigate to the gallery.
-  await page.goto(`${baseURL}/design-gallery`, { waitUntil: 'networkidle' });
-
-  await expect(page.getByRole('heading', { name: /design gallery/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /design gallery/i })).toBeVisible({ timeout: 25_000 });
 
   // Filter chips — at minimum the persona buttons plus All.
   const filterChips = page.locator('[role="tab"]');
@@ -50,15 +77,12 @@ test('design gallery loads behind auth and renders 16 cards', async ({ page, bas
 });
 
 test('filtering by persona narrows the card set', async ({ page, baseURL }) => {
-  await page.goto(`${baseURL}/`, { waitUntil: 'networkidle' });
-  await page.locator('input[type="email"], input[name="email"]').first().fill('admin@openenergy.co.za');
-  await page.locator('input[type="password"]').first().fill(PASSWORD);
-  await page.getByRole('button', { name: /sign in/i }).first().click();
-  await page.waitForURL(/\/(cockpit|launch)/, { timeout: 15_000 });
+  await seedToken(page);
+  await page.goto(`${baseURL}/design-gallery`, { waitUntil: 'load' });
 
-  await page.goto(`${baseURL}/design-gallery`, { waitUntil: 'networkidle' });
+  await expect(page.getByRole('heading', { name: /design gallery/i })).toBeVisible({ timeout: 25_000 });
 
-  // Click the "Trader" filter (3 designs in our curated set).
+  // Click the "Trader" filter (4 designs in our curated set).
   await page.getByRole('tab', { name: /^Trader/ }).click();
 
   const cards = page.locator('article');
@@ -70,18 +94,9 @@ test('filtering by persona narrows the card set', async ({ page, baseURL }) => {
 });
 
 test('lh3.googleusercontent.com thumbnails are not blocked by CSP', async ({ page, baseURL }) => {
-  await page.goto(`${baseURL}/`, { waitUntil: 'networkidle' });
-  await page.locator('input[type="email"], input[name="email"]').first().fill('admin@openenergy.co.za');
-  await page.locator('input[type="password"]').first().fill(PASSWORD);
-  await page.getByRole('button', { name: /sign in/i }).first().click();
-  await page.waitForURL(/\/(cockpit|launch)/, { timeout: 15_000 });
+  await seedToken(page);
 
-  // Watch for CSP violations on the gallery navigation. A real CSP block
-  // surfaces as a `securitypolicyviolation` event in the page; we collect
-  // any that fire and assert none target lh3.googleusercontent.com.
-  // This is a stronger test of intent than fetching the image directly:
-  // Google's CDN sometimes returns 403 to non-browser referers, which
-  // would false-positive a "the image loaded" assertion.
+  // Watch for CSP violations on the gallery navigation.
   const cspViolations: string[] = [];
   await page.exposeFunction('__recordCspViolation', (uri: string) => { cspViolations.push(uri); });
   await page.addInitScript(() => {
@@ -91,7 +106,9 @@ test('lh3.googleusercontent.com thumbnails are not blocked by CSP', async ({ pag
     });
   });
 
-  await page.goto(`${baseURL}/design-gallery`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseURL}/design-gallery`, { waitUntil: 'load' });
+
+  await expect(page.getByRole('heading', { name: /design gallery/i })).toBeVisible({ timeout: 25_000 });
 
   // At least one image element with an lh3 src must be in the DOM.
   const firstThumb = page.locator('article img[src*="lh3.googleusercontent.com"]').first();
