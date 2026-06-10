@@ -37,14 +37,14 @@ import {
 const READ_ROLES = new Set([
   'admin', 'support',
   'ipp', 'ipp_developer', 'wind',
-  'esums', 'esums_om',
+  'esums', 'esums_om', 'esco',
   'oem',
   'regulator',
 ]);
 const WRITE_ROLES = new Set([
   'admin', 'support',
   'ipp', 'ipp_developer', 'wind',
-  'esums', 'esums_om',
+  'esums', 'esums_om', 'esco',
 ]);
 
 const app = new Hono<HonoEnv>();

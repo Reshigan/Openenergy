@@ -263,7 +263,7 @@ function AiSuggestionCard({
             onClick={handleAccept}
             className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded"
             style={{
-              background: '#0f1c2e',
+              background: 'oklch(0.46 0.16 55)',
               color: '#fff',
               opacity: accepting ? 0.6 : 1,
             }}
@@ -283,15 +283,15 @@ function HeroBlock({ payload }: { payload: LaunchPayload }) {
     <div className="fiori-hero">
       <div className="flex flex-col lg:flex-row lg:items-end gap-6">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 text-[10px] tracking-widest uppercase text-white/60 font-semibold">
+          <div className="flex items-center gap-1.5 text-[10px] tracking-[0.12em] uppercase font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>
             <Sparkles size={10} />
             <span>{payload.hero.eyebrow}</span>
           </div>
           <div className="mt-1 flex flex-wrap items-baseline gap-3">
-            <h1 className="text-[18px] font-bold tracking-tight leading-tight">
+            <h1 className="font-bold tracking-tight leading-tight" style={{ fontSize: 20, color: 'oklch(0.15 0.025 250)' }}>
               {payload.hero.title}
             </h1>
-            <span className="text-white/65 text-[12px] hidden sm:inline">{payload.hero.subtitle}</span>
+            <span className="text-[12px] hidden sm:inline" style={{ color: 'oklch(0.45 0.015 250)' }}>{payload.hero.subtitle}</span>
           </div>
           {payload.hero.primary_cta && (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -300,8 +300,8 @@ function HeroBlock({ payload }: { payload: LaunchPayload }) {
                 onClick={() => navigate(payload.hero.primary_cta!.href)}
                 className="h-8 px-4 rounded text-[12px] font-semibold text-white inline-flex items-center gap-1.5 transition-all hover:brightness-110"
                 style={{
-                  background: 'linear-gradient(135deg,#5fa8e8 0%,#1a5d97 100%)',
-                  boxShadow: '0 4px 12px rgba(95,168,232,0.35)',
+                  background: 'oklch(0.46 0.16 55)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
                 }}
               >
                 {payload.hero.primary_cta.label} <ArrowRight size={12} />

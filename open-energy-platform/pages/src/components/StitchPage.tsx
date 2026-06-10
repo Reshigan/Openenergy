@@ -100,32 +100,24 @@ export function StitchPage<TId extends string = string>({
   ) : null;
 
   return (
-    <div className="p-6 lg:p-10 space-y-6 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
+    <div className="space-y-0 min-h-screen" style={{ background: 'oklch(0.96 0.003 250)' }}>
       {noHero ? (
-        <header className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
+        <header className="border-b px-6 lg:px-10 py-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3"
+          style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}>
           <div>
             {eyebrowLabel && (
-              <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6b7685] bg-white border border-[#dde4ec] rounded-full px-3 py-1">
-                {Icon ? <Icon size={12} /> : null} {eyebrowLabel}
+              <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>
+                {Icon ? <span className="inline mr-1"><Icon size={10} /></span> : null}{eyebrowLabel}
               </div>
             )}
             <h1
-              className="mt-2 font-display text-[28px] font-bold tracking-tight"
-              style={
-                gradientHeading
-                  ? {
-                      background: 'linear-gradient(90deg,#1a3a5c 0%,#3b82c4 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                    }
-                  : { color: 'var(--oe-on-surface)' }
-              }
+              className="mt-0.5 font-display font-bold tracking-tight"
+              style={{ fontSize: 20, color: 'oklch(0.15 0.025 250)' }}
             >
               {title}
             </h1>
             {subtitle && (
-              <p className="text-[13px] text-[#3d4756] mt-1 max-w-3xl">{subtitle}</p>
+              <p className="text-[12px] mt-0.5 max-w-3xl" style={{ color: 'oklch(0.45 0.015 250)' }}>{subtitle}</p>
             )}
           </div>
           <div className="flex flex-col lg:flex-row lg:items-end gap-2">
@@ -134,7 +126,7 @@ export function StitchPage<TId extends string = string>({
           </div>
         </header>
       ) : (
-        <>
+        <div className="px-6 lg:px-10">
           <SuiteHero
             role={heroRole}
             eyebrow={eyebrowLabel || ''}
@@ -144,11 +136,13 @@ export function StitchPage<TId extends string = string>({
             accentTo={heroAccentTo}
             actions={actions}
           />
-          {tabStrip && <div className="flex justify-end">{tabStrip}</div>}
-        </>
+          {tabStrip && <div className="flex justify-end pt-2">{tabStrip}</div>}
+        </div>
       )}
 
-      {children}
+      <div className="px-6 lg:px-10 py-5 space-y-5">
+        {children}
+      </div>
     </div>
   );
 }

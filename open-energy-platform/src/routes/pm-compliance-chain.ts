@@ -54,13 +54,13 @@ import {
 const READ_ROLES = new Set([
   'admin', 'support',
   'regulator',
-  'ipp_developer', 'lender', 'offtaker',
+  'ipp_developer', 'lender', 'offtaker', 'esco',
 ]);
 
 // Single-party write: no dedicated O&M-contractor login — the Esums O&M
 // operators record every party's action; the contractual party is captured
 // separately via actor_party.
-const WRITE_ROLES = new Set(['admin', 'support', 'ipp_developer']);
+const WRITE_ROLES = new Set(['admin', 'support', 'ipp_developer', 'esco']);
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);

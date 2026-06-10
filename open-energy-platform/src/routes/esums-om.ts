@@ -62,7 +62,7 @@ function canMutate(role: string) {
   // asset-owning IPP personas (ipp → ipp_developer). 'ipp' is kept for any
   // legacy/unsuffixed tokens. Both must be allowed or the wind asset-owner
   // 403s on every fault / WO / telemetry write while its sites list fine.
-  return ['admin', 'support', 'asset_owner', 'ipp', 'ipp_developer', 'om_contractor', 'trader'].includes(role);
+  return ['admin', 'support', 'asset_owner', 'ipp', 'ipp_developer', 'om_contractor', 'trader', 'esco'].includes(role);
 }
 
 // Platform staff who may mutate any site's O&M data. Mirrors the officer set

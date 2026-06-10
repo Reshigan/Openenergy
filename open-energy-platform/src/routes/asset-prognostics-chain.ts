@@ -68,11 +68,11 @@ import {
 // All nine personas may read the fleet prognostics register.
 const READ_ROLES = new Set([
   'admin', 'support', 'ipp_developer', 'offtaker', 'lender',
-  'carbon_fund', 'regulator', 'grid_operator', 'trader',
+  'carbon_fund', 'regulator', 'grid_operator', 'trader', 'esco',
 ]);
 
 // Single-party write: the O&M / asset-performance desk.
-const WRITE_ROLES = new Set(['admin', 'support']);
+const WRITE_ROLES = new Set(['admin', 'support', 'esco']);
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);

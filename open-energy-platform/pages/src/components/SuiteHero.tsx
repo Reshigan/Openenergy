@@ -81,26 +81,27 @@ export function SuiteHero({ role, eyebrow, title, subtitle, accentFrom, accentTo
     };
   }, [role]);
 
-  const from = accentFrom || '#1e3a5f';
-  const to = accentTo || '#0b1c30';
+  const toneColor: Record<string, string> = {
+    good: 'oklch(0.55 0.18 145)', warn: 'oklch(0.65 0.18 75)', bad: 'oklch(0.55 0.22 25)', neutral: 'oklch(0.50 0.008 250)',
+  };
 
   return (
     <section
-      className="rounded-xl text-white p-5 shadow-md"
-      style={{ background: `linear-gradient(135deg, ${from} 0%, #1a3a5c 60%, ${to} 100%)` }}
+      className="border-b px-0 py-4"
+      style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="text-[11px] uppercase tracking-wider text-white/70">{eyebrow}</div>
-          <h2 className="font-display text-[22px] font-bold tracking-tight mt-1">{title}</h2>
-          {subtitle && <p className="text-[12px] text-white/70 mt-1 max-w-2xl">{subtitle}</p>}
+          {eyebrow && <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>{eyebrow}</div>}
+          <h2 className="font-display font-bold tracking-tight mt-0.5" style={{ fontSize: 20, color: 'oklch(0.15 0.025 250)' }}>{title}</h2>
+          {subtitle && <p className="text-[12px] mt-0.5 max-w-2xl" style={{ color: 'oklch(0.45 0.015 250)' }}>{subtitle}</p>}
         </div>
         {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
       {loaded && kpis.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
           {kpis.map((k) => (
-            <KpiCell key={k.key} kpi={k} />
+            <KpiCell key={k.key} kpi={k} toneColor={toneColor} />
           ))}
         </div>
       )}
@@ -108,16 +109,16 @@ export function SuiteHero({ role, eyebrow, title, subtitle, accentFrom, accentTo
   );
 }
 
-function KpiCell({ kpi }: { kpi: Kpi }) {
+function KpiCell({ kpi, toneColor }: { kpi: Kpi; toneColor: Record<string, string> }) {
   return (
-    <div className="rounded-lg bg-white/10 backdrop-blur p-3 border border-white/10">
-      <div className="text-[10px] uppercase tracking-wider text-white/75">{kpi.label}</div>
-      <div className="mt-1 font-mono text-[20px] font-bold leading-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
+    <div className="rounded-lg p-3" style={{ background: 'oklch(0.96 0.003 250)', border: '1px solid oklch(0.90 0.004 250)' }}>
+      <div className="text-[10px] uppercase tracking-wider" style={{ color: 'oklch(0.55 0.008 250)' }}>{kpi.label}</div>
+      <div className="mt-1 font-mono text-[18px] font-bold leading-tight" style={{ fontVariantNumeric: 'tabular-nums', color: 'oklch(0.15 0.025 250)' }}>
         {formatValue(kpi.value)}
-        {kpi.unit && <span className="ml-1 text-[12px] font-semibold text-white/70">{kpi.unit}</span>}
+        {kpi.unit && <span className="ml-1 text-[12px] font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>{kpi.unit}</span>}
       </div>
       {(kpi.trend_value || kpi.footer) && (
-        <div className="text-[10px] text-white/60 mt-0.5">
+        <div className="text-[10px] mt-0.5" style={{ color: kpi.tone ? toneColor[kpi.tone] : 'oklch(0.55 0.008 250)' }}>
           {kpi.trend_value || kpi.footer}
         </div>
       )}

@@ -115,7 +115,7 @@ const C = {
   primary:     'oklch(0.38 0.08 250)',
   badge:       { urgent: 'oklch(0.55 0.22 25)', caution: 'oklch(0.65 0.16 75)', info: 'oklch(0.55 0.10 250)' },
   pill:        { active: { bg: 'oklch(0.20 0.025 250)', text: '#fff' }, inactive: { bg: 'transparent', text: 'oklch(0.45 0.015 250)' } },
-  nav:         { bg: 'oklch(0.13 0.025 250)', text: '#fff', muted: 'oklch(0.65 0.010 250)', active: 'oklch(0.99 0.002 80)' },
+  nav:         { bg: 'oklch(0.99 0.002 80)', text: 'oklch(0.15 0.025 250)', muted: 'oklch(0.50 0.008 250)', active: 'oklch(0.46 0.16 55)' },
 } as const;
 
 // ── Utility ────────────────────────────────────────────────────────────────
@@ -262,7 +262,7 @@ function FeedCard({
                     display: 'inline-flex', alignItems: 'center', gap: 4,
                     padding: '4px 12px',
                     borderRadius: 5,
-                    background: C.nav.bg,
+                    background: 'oklch(0.46 0.16 55)',
                     color: '#fff',
                     border: 'none', cursor: 'pointer',
                     fontSize: 12, fontWeight: 600,
@@ -616,9 +616,9 @@ export function ActivityFeedShell() {
           paddingRight: 20,
           gap: 0,
           position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          borderBottom: '1px solid rgba(255,255,255,0.07)',
+          top: 56,
+          zIndex: 40,
+          borderBottom: '1px solid oklch(0.88 0.006 250)',
         }}
       >
         {/* Wordmark */}
@@ -665,7 +665,7 @@ export function ActivityFeedShell() {
                   borderRadius: 5,
                   border: 'none',
                   cursor: 'pointer',
-                  background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
+                  background: isActive ? 'oklch(0.93 0.006 250)' : 'transparent',
                   color: isActive ? C.nav.active : C.nav.muted,
                   fontSize: 12,
                   fontWeight: isActive ? 600 : 400,
@@ -703,7 +703,7 @@ export function ActivityFeedShell() {
             style={{
               padding: '4px 12px',
               borderRadius: 5,
-              border: '1px solid rgba(255,255,255,0.18)',
+              border: '1px solid oklch(0.85 0.006 250)',
               background: 'transparent',
               color: C.nav.muted,
               fontSize: 11,

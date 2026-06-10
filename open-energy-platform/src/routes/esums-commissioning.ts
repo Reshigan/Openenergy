@@ -47,7 +47,7 @@ import {
 
 const PARTICIPANT_WRITE = new Set(['admin', 'support', 'ipp', 'ipp_developer']);
 const REGULATOR_WRITE   = new Set(['admin', 'support', 'regulator']);
-const READ_ROLES        = new Set(['admin', 'support', 'ipp', 'ipp_developer', 'regulator', 'grid', 'grid_operator']);
+const READ_ROLES        = new Set(['admin', 'support', 'ipp', 'ipp_developer', 'regulator', 'grid', 'grid_operator', 'esco']);
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);

@@ -28,8 +28,8 @@ import {
   type WoPriority,
 } from '../utils/wo-chain-spec';
 
-const READ_ROLES  = new Set(['admin', 'om', 'esums', 'ipp', 'ipp_developer', 'support', 'regulator']);
-const WRITE_ROLES = new Set(['admin', 'om', 'esums']);
+const READ_ROLES  = new Set(['admin', 'om', 'esums', 'ipp', 'ipp_developer', 'support', 'regulator', 'esco']);
+const WRITE_ROLES = new Set(['admin', 'om', 'esums', 'esco']);
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);

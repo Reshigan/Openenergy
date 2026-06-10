@@ -52,7 +52,7 @@ import {
 const READ_ROLES = new Set([
   'admin', 'support',
   'regulator',
-  'ipp_developer', 'grid_operator', 'offtaker', 'lender', 'trader', 'carbon_fund',
+  'ipp_developer', 'grid_operator', 'offtaker', 'lender', 'trader', 'carbon_fund', 'esco',
 ]);
 
 // SINGLE-PARTY write — the support / O&M desk owns the whole record. There is no

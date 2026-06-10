@@ -360,14 +360,17 @@ function NotificationsBell() {
       type="button"
       aria-label={`Notifications${n > 0 ? ` — ${n} unread` : ''}`}
       onClick={() => navigate('/notifications')}
-      className="relative w-10 h-10 rounded-md text-white/90 hover:bg-white/10 flex items-center justify-center transition-colors"
+      className="relative w-10 h-10 rounded-md flex items-center justify-center transition-colors"
+      style={{ color: 'oklch(0.35 0.025 250)' }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.94 0.004 250)')}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
     >
       <MIcon name="notifications" size={18} />
       {n > 0 && (
         <span
           aria-hidden="true"
           className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-[#f86c52] text-white text-[9px] font-bold flex items-center justify-center"
-          style={{ boxShadow: '0 0 0 2px #0f2540' }}
+          style={{ boxShadow: '0 0 0 2px oklch(0.99 0.002 80)' }}
         >
           {n > 99 ? '99+' : n}
         </span>
@@ -397,10 +400,10 @@ function SastClock() {
       aria-label={`Current time in South African Standard Time: ${t}`}
       title="South African Standard Time (UTC+2)"
       className="hidden md:flex items-center gap-1.5 h-10 px-3 font-mono tabular-nums"
-      style={{ fontSize: 12, color: 'oklch(0.70 0.008 250)' }}
+      style={{ fontSize: 12, color: 'oklch(0.50 0.008 250)' }}
     >
-      <MIcon name="schedule" size={13} className="" />
-      <span style={{ color: 'rgba(255,255,255,0.82)' }}>{t}</span>
+      <MIcon name="schedule" size={13} />
+      <span style={{ color: 'oklch(0.15 0.025 250)', fontVariantNumeric: 'tabular-nums' }}>{t}</span>
       <span style={{ fontSize: 10, color: 'oklch(0.55 0.008 250)' }}>SAST</span>
     </div>
   );
@@ -423,6 +426,26 @@ function useIsMobile(breakpoint = 768) {
   }, [breakpoint]);
   return isMobile;
 }
+
+const ROLE_DISPLAY: Record<string, string> = {
+  ipp_developer: 'IPP', ipp: 'IPP', trader: 'Trader', lender: 'Lender',
+  offtaker: 'Offtaker', grid_operator: 'Grid', grid: 'Grid',
+  carbon_fund: 'Carbon', carbon: 'Carbon', regulator: 'Regulator',
+  esco: 'ESCO', admin: 'Admin', support: 'Support', om: 'O&M',
+};
+
+const ADMIN_ROLE_TABS = [
+  { label: 'IPP',       path: '/ipp/workstation',       prefix: '/ipp' },
+  { label: 'Trader',    path: '/trader/workstation',    prefix: '/trader' },
+  { label: 'Lender',    path: '/lender/workstation',    prefix: '/lender' },
+  { label: 'Offtaker',  path: '/offtaker/workstation',  prefix: '/offtaker' },
+  { label: 'Grid',      path: '/grid/workstation',      prefix: '/grid' },
+  { label: 'Carbon',    path: '/carbon/workstation',    prefix: '/carbon' },
+  { label: 'Regulator', path: '/regulator/workstation', prefix: '/regulator' },
+  { label: 'ESCO',      path: '/esco/workstation',      prefix: '/esco' },
+  { label: 'Admin',     path: '/admin',                 prefix: '/admin' },
+  { label: 'Support',   path: '/support/workstation',   prefix: '/support' },
+];
 
 export function FioriShell({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
@@ -525,17 +548,20 @@ export function FioriShell({ children }: { children: ReactNode }) {
         Skip to main content
       </a>
 
-      {/* ════════════ Shell Bar — mockup-B dark nav ════════════ */}
+      {/* ════════════ Shell Bar — mockup-B light nav ════════════ */}
       <header
         role="banner"
         className="fixed top-0 left-0 right-0 z-50 flex items-center px-2 sm:px-4"
-        style={{ height: 'var(--shell-height)', background: 'oklch(0.13 0.025 250)' }}
+        style={{ height: 'var(--shell-height)', background: 'oklch(0.99 0.002 80)', borderBottom: '1px solid oklch(0.88 0.006 250)' }}
       >
         {/* Hamburger / nav menu */}
         <div className="relative" ref={menuRef}>
           <button type="button"
             onClick={() => setMenuOpen((v) => !v)}
-            className="flex items-center justify-center w-10 h-10 rounded-md text-white/90 hover:bg-white/10 transition-colors"
+            className="flex items-center justify-center w-10 h-10 rounded-md transition-colors"
+            style={{ color: 'oklch(0.30 0.025 250)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.94 0.004 250)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             aria-label="Open navigation menu"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
@@ -554,14 +580,6 @@ export function FioriShell({ children }: { children: ReactNode }) {
                 <span className="text-[11px] uppercase tracking-[0.08em] font-semibold font-mono" style={{ color: 'oklch(0.55 0.008 250)' }}>
                   Navigation
                 </span>
-                <button
-                  type="button"
-                  onClick={() => { setCollapsed((v) => { const n = !v; try { localStorage.setItem('oe_rail_collapsed', String(n)); } catch {} return n; }); setMenuOpen(false); }}
-                  className="text-[11px] font-semibold hover:underline"
-                  style={{ color: 'oklch(0.45 0.10 250)' }}
-                >
-                  {collapsed ? 'Expand rail' : 'Collapse rail'}
-                </button>
               </div>
               {sections.length === 0 && (
                 <div className="px-4 py-4 text-[13px]" style={{ color: 'oklch(0.55 0.008 250)' }}>
@@ -617,28 +635,51 @@ export function FioriShell({ children }: { children: ReactNode }) {
         <Link to="/feed" className="flex items-center gap-2.5 ml-1 mr-4 select-none" aria-label="Open Energy Platform — Activity Feed">
           <div
             className="flex items-center justify-center rounded p-0.5"
-            style={{
-              background: 'rgba(255,255,255,0.96)',
-              boxShadow: '0 0 0 1px rgba(255,255,255,0.20), 0 2px 6px rgba(0,0,0,0.22)',
-            }}
+            style={{ boxShadow: '0 0 0 1px oklch(0.88 0.006 250), 0 1px 4px rgba(15,20,40,0.10)' }}
           >
             <LogoMark size={28} variant="colour" />
           </div>
           <div className="leading-[1.1]">
-            <div className="text-[11px] font-mono tracking-[0.12em] uppercase" style={{ color: 'oklch(0.65 0.010 250)' }}>Open Energy</div>
-            <div className="text-[13px] font-semibold text-white">Platform</div>
+            <div className="text-[11px] font-mono tracking-[0.12em] uppercase" style={{ color: 'oklch(0.55 0.008 250)' }}>Open Energy</div>
+            <div className="text-[13px] font-semibold" style={{ color: 'oklch(0.15 0.025 250)' }}>Platform</div>
           </div>
         </Link>
 
-        <div className="hidden md:flex items-center gap-1.5 ml-2" style={{ color: 'oklch(0.65 0.010 250)', fontSize: 13 }}>
-          <span style={{ opacity: 0.4 }}>/</span>
-          <span style={{ color: 'rgba(255,255,255,0.92)', fontWeight: 500 }}>{currentLabel}</span>
-        </div>
+        {/* Role tabs */}
+        {user && (
+          <div className="hidden md:flex items-center gap-0.5 ml-3 overflow-x-auto" style={{ flexShrink: 0, maxWidth: 520 }}>
+            {user.role === 'admin' ? (
+              ADMIN_ROLE_TABS.map(({ label, path, prefix }) => {
+                const active = location.pathname === path || location.pathname.startsWith(prefix + '/');
+                return (
+                  <Link
+                    key={path}
+                    to={path}
+                    className="flex items-center px-2.5 py-1.5 rounded text-[11px] font-semibold transition-colors whitespace-nowrap"
+                    style={{
+                      background: active ? 'oklch(0.93 0.006 250)' : 'transparent',
+                      color: active ? 'oklch(0.20 0.025 250)' : 'oklch(0.55 0.008 250)',
+                    }}
+                  >
+                    {label}
+                  </Link>
+                );
+              })
+            ) : (
+              <span
+                className="flex items-center px-3 py-1.5 rounded text-[11px] font-semibold"
+                style={{ background: 'oklch(0.93 0.006 250)', color: 'oklch(0.20 0.025 250)' }}
+              >
+                {ROLE_DISPLAY[user.role] ?? user.role}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Search */}
         <form onSubmit={onSearchSubmit} className="flex-1 flex justify-center px-3" role="search">
           <div className="relative w-full max-w-xl">
-            <MIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/65 pointer-events-none" />
+            <MIcon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               ref={searchRef}
               type="search"
@@ -646,9 +687,12 @@ export function FioriShell({ children }: { children: ReactNode }) {
               placeholder="Search projects, contracts, counterparties, settlements…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full h-9 pl-10 pr-12 rounded-md bg-white/12 text-white placeholder-white/55 text-[13px] border border-white/15 focus:outline-none focus:bg-white/18 focus:border-white/35 transition-colors font-body"
+              className="w-full h-9 pl-10 pr-12 rounded-md text-[13px] border transition-colors font-body focus:outline-none"
+              style={{ background: 'oklch(0.95 0.003 250)', color: 'oklch(0.15 0.025 250)', border: '1px solid oklch(0.85 0.006 250)' } as React.CSSProperties}
+              onFocus={(e) => { e.currentTarget.style.background = 'oklch(0.97 0.002 250)'; e.currentTarget.style.borderColor = 'oklch(0.65 0.010 250)'; }}
+              onBlur={(e) => { e.currentTarget.style.background = 'oklch(0.95 0.003 250)'; e.currentTarget.style.borderColor = 'oklch(0.85 0.006 250)'; }}
             />
-            <kbd className="hidden sm:inline absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-white/55 border border-white/20 rounded px-1.5 py-[1px] font-mono">
+            <kbd className="hidden sm:inline absolute right-2 top-1/2 -translate-y-1/2 text-[10px] rounded px-1.5 py-[1px] font-mono" style={{ color: 'oklch(0.50 0.008 250)', border: '1px solid oklch(0.82 0.006 250)' } as React.CSSProperties}>
               ⌘K
             </kbd>
           </div>
@@ -661,7 +705,10 @@ export function FioriShell({ children }: { children: ReactNode }) {
             type="button"
             aria-label="Schedule"
             onClick={() => navigate('/schedule')}
-            className="w-10 h-10 rounded-md text-white/90 hover:bg-white/10 flex items-center justify-center transition-colors"
+            className="w-10 h-10 rounded-md flex items-center justify-center transition-colors"
+            style={{ color: 'oklch(0.35 0.025 250)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.94 0.004 250)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
             <MIcon name="event" size={18} />
           </button>
@@ -670,7 +717,10 @@ export function FioriShell({ children }: { children: ReactNode }) {
             type="button"
             aria-label="Help"
             onClick={() => navigate('/support')}
-            className="w-10 h-10 rounded-md text-white/90 hover:bg-white/10 flex items-center justify-center transition-colors"
+            className="w-10 h-10 rounded-md flex items-center justify-center transition-colors"
+            style={{ color: 'oklch(0.35 0.025 250)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.94 0.004 250)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
             <MIcon name="help_outline" size={18} />
           </button>
@@ -683,22 +733,24 @@ export function FioriShell({ children }: { children: ReactNode }) {
               aria-label="User menu"
               aria-haspopup="menu"
               aria-expanded={userMenu}
-              className="flex items-center gap-2 ml-1 pl-1 pr-2 h-10 rounded-md hover:bg-white/10 transition-colors"
+              className="flex items-center gap-2 ml-1 pl-1 pr-2 h-10 rounded-md transition-colors"
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.94 0.004 250)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white font-headline"
                 style={{
                   background: 'linear-gradient(135deg,#5fa8e8 0%,#1a5d97 100%)',
-                  boxShadow: '0 0 0 2px rgba(255,255,255,0.18)',
+                  boxShadow: '0 0 0 2px oklch(0.88 0.006 250)',
                 }}
               >
                 {initialsOf(user?.name)}
               </div>
               <div className="hidden sm:block text-left leading-tight">
-                <div className="text-[12px] text-white font-semibold">
+                <div className="text-[12px] font-semibold" style={{ color: 'oklch(0.15 0.025 250)' }}>
                   {user?.name?.split(' ')[0] ?? 'Guest'}
                 </div>
-                <div className="text-[10px] text-white/65 capitalize font-mono tracking-wide">
+                <div className="text-[10px] capitalize font-mono tracking-wide" style={{ color: 'oklch(0.50 0.015 250)' }}>
                   {user?.role?.replace(/_/g, ' ') ?? '—'}
                 </div>
               </div>
@@ -768,7 +820,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
 
       {/* ════════════ Sidebar rail (desktop ≥ 768px only) ════════════ */}
       <aside
-        className={`oe-rail fiori-rail hidden md:flex fixed left-0 bottom-0 overflow-y-auto flex-col ${collapsed ? 'collapsed' : ''}`}
+        className="oe-rail fiori-rail hidden"
         data-density={roleTheme.workstationDensity}
         data-chrome={roleTheme.chrome}
         style={{
@@ -844,13 +896,11 @@ export function FioriShell({ children }: { children: ReactNode }) {
         style={{
           background: 'oklch(0.97 0.003 250)',
           paddingTop: 'var(--shell-height)',
-          paddingLeft: isMobile ? 0 : sidebarWidth,
+          paddingLeft: 0,
           paddingBottom: isMobile ? 'calc(64px + env(safe-area-inset-bottom))' : 0,
-          transition: 'padding-left 200ms cubic-bezier(0.23,1,0.32,1)',
-          ['--sidebar-width' as any]: isMobile ? '0px' : `${sidebarWidth}px`,
         }}
       >
-        <div className="mx-auto w-full max-w-[1840px] px-3 sm:px-6 lg:px-8 py-4 sm:py-6 fade-in">
+        <div className="w-full fade-in">
           {children}
         </div>
       </main>

@@ -297,27 +297,28 @@ export function WorkstationShell({
     return (
       <RoleShell role={role} density={effectiveDensity} chrome="light">
         {commands && commands.length > 0 ? <CommandRail items={commands} /> : null}
-        <div className="p-6 lg:p-10 space-y-5 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
+        <div className="space-y-0 min-h-screen" style={{ background: 'oklch(0.96 0.003 250)' }}>
+          {/* ── Workstation header bar (mockup-b light style) ── */}
           <section
             data-tour="ws-header"
-            className="rounded-xl text-white p-5 shadow-md"
-            style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1a3a5c 60%, #0b1c30 100%)' }}
+            className="border-b px-6 lg:px-10 py-4"
+            style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="text-[11px] uppercase tracking-wider text-white/70">{eyebrow}</div>
+                <div className="text-[10px] uppercase tracking-[0.10em] font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>{eyebrow}</div>
                 <h1
-                  className="font-display font-bold tracking-tight mt-1"
+                  className="font-display font-bold tracking-tight mt-0.5"
                   style={{
                     fontFamily: 'var(--oe-display-font)',
-                    fontSize: 24,
+                    fontSize: 20,
                     letterSpacing: '-0.02em',
-                    color: '#ffffff',
+                    color: 'oklch(0.15 0.025 250)',
                   }}
                 >
                   {title}
                 </h1>
-                <p className="text-[12px] text-white/70 mt-1 max-w-2xl">{subtitle}</p>
+                {subtitle && <p className="text-[12px] mt-0.5 max-w-2xl" style={{ color: 'oklch(0.45 0.015 250)' }}>{subtitle}</p>}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 {densityState.canToggle ? (
@@ -329,14 +330,20 @@ export function WorkstationShell({
                 {backHref && (
                   <button type="button"
                     onClick={() => navigate(backHref)}
-                    className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                    className="h-8 px-3 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 transition-colors focus-visible:outline-none"
+                    style={{ border: '1px solid oklch(0.85 0.006 250)', background: 'transparent', color: 'oklch(0.35 0.025 250)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.95 0.003 250)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
                     <ArrowLeft size={12} /> {backLabel || 'Back'}
                   </button>
                 )}
                 <button type="button"
                   onClick={refresh}
-                  className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                  className="h-8 px-3 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 transition-colors focus-visible:outline-none"
+                  style={{ border: '1px solid oklch(0.85 0.006 250)', background: 'transparent', color: 'oklch(0.35 0.025 250)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.95 0.003 250)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
                   <RefreshCw size={12} /> Refresh
                 </button>
@@ -344,7 +351,10 @@ export function WorkstationShell({
                   <button type="button"
                     data-tour="quick-start"
                     onClick={() => setWizardPickerOpen(true)}
-                    className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                    className="h-8 px-3 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 transition-colors focus-visible:outline-none"
+                    style={{ background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.38 0.18 55)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'oklch(0.46 0.16 55)')}
                     aria-label="Open guided wizards"
                   >
                     <Wand2 size={12} /> Quick start
@@ -353,7 +363,10 @@ export function WorkstationShell({
                 {tour && (
                   <button type="button"
                     onClick={startTourForced}
-                    className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                    className="h-8 px-3 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 transition-colors focus-visible:outline-none"
+                    style={{ border: '1px solid oklch(0.85 0.006 250)', background: 'transparent', color: 'oklch(0.35 0.025 250)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.95 0.003 250)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     aria-label="Take the workstation tour"
                   >
                     <Map size={12} /> Tour
@@ -363,7 +376,10 @@ export function WorkstationShell({
                   <button type="button"
                     data-tour="capability-palette"
                     onClick={() => setPaletteOpen(true)}
-                    className="h-8 px-3 rounded border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                    className="h-8 px-3 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 transition-colors focus-visible:outline-none"
+                    style={{ border: '1px solid oklch(0.85 0.006 250)', background: 'transparent', color: 'oklch(0.35 0.025 250)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.95 0.003 250)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     aria-label="What can I do here"
                   >
                     <HelpCircle size={12} /> What can I do?
@@ -374,11 +390,11 @@ export function WorkstationShell({
             {kpis && kpis.length > 0 && (
               <div data-tour="kpi-row" className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4">
                 {kpis.map((k, i) => (
-                  <div key={i} className="rounded-lg bg-white/15 p-3 border border-white/10">
-                    <div className="text-[10px] uppercase tracking-wider text-white/75">{k.label}</div>
+                  <div key={i} className="rounded-lg p-3 border" style={{ background: 'oklch(0.96 0.003 250)', borderColor: 'oklch(0.88 0.006 250)' }}>
+                    <div className="text-[10px] uppercase tracking-wider font-mono" style={{ color: 'oklch(0.55 0.008 250)' }}>{k.label}</div>
                     <div
                       className="mt-1 font-mono text-[20px] font-bold leading-tight"
-                      style={{ fontVariantNumeric: 'tabular-nums', color: '#ffffff' }}
+                      style={{ fontVariantNumeric: 'tabular-nums', color: 'oklch(0.15 0.025 250)' }}
                     >
                       {k.value}
                       {k.tone && (
@@ -387,13 +403,14 @@ export function WorkstationShell({
                         </span>
                       )}
                     </div>
-                    {k.caption && <div className="text-[10px] text-white/60 mt-0.5">{k.caption}</div>}
+                    {k.caption && <div className="text-[10px] mt-0.5" style={{ color: 'oklch(0.50 0.008 250)' }}>{k.caption}</div>}
                   </div>
                 ))}
               </div>
             )}
           </section>
 
+          <div className="px-6 lg:px-10 py-5 space-y-5">
           {panels && panels.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {panels.map((panel, i) => (
@@ -446,10 +463,11 @@ export function WorkstationShell({
                 ) : current.body({ onRefresh: refresh })}
               </div>
             </div>
-            <div data-tour="incoming-panel" className="hidden xl:flex xl:flex-col gap-5 shrink-0">
+            <div data-tour="incoming-panel" className="hidden lg:flex lg:flex-col gap-5 shrink-0" style={{ width: 380, borderLeft: '1px solid oklch(0.88 0.006 250)', paddingLeft: 20 }}>
               {incomingRail}
               {insightsRail}
             </div>
+          </div>
           </div>
           {crossOption}
           {role && (
@@ -490,76 +508,85 @@ export function WorkstationShell({
   }
 
   return (
-    <div className="p-6 lg:p-10 space-y-4 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
+    <div className="space-y-0 min-h-screen" style={{ background: 'oklch(0.96 0.003 250)' }}>
       <section
-        className="rounded-xl text-white p-5 shadow-md"
-        style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1a3a5c 60%, #0b1c30 100%)' }}
+        data-tour="ws-header"
+        className="border-b px-6 lg:px-10 py-4"
+        style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="text-[11px] uppercase tracking-wider text-white/70">{eyebrow}</div>
-            <h1 className="mt-1 font-display text-[24px] font-bold tracking-tight" style={{ color: '#ffffff' }}>{title}</h1>
-            <p className="text-[12px] text-white/70 mt-1 max-w-2xl">{subtitle}</p>
+            {eyebrow && (
+              <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>{eyebrow}</div>
+            )}
+            <h1 className="mt-0.5 font-display font-bold tracking-tight" style={{ fontSize: 20, color: 'oklch(0.15 0.025 250)' }}>{title}</h1>
+            {subtitle && <p className="text-[12px] mt-0.5 max-w-2xl" style={{ color: 'oklch(0.45 0.015 250)' }}>{subtitle}</p>}
           </div>
           <div className="flex flex-wrap gap-2">
             {backHref && (
-              <button type="button" onClick={() => navigate(backHref)} className="h-9 px-3 rounded-md border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80">
+              <button type="button" onClick={() => navigate(backHref)}
+                className="h-8 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-1 transition-colors"
+                style={{ border: '1px solid oklch(0.85 0.006 250)', color: 'oklch(0.35 0.025 250)', background: 'transparent' }}>
                 <ArrowLeft size={12} /> {backLabel || 'Back'}
               </button>
             )}
-            <button type="button" onClick={refresh} className="h-9 px-3 rounded-md border border-white/20 bg-white/10 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80">
+            <button type="button" onClick={refresh}
+              className="h-8 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-1 transition-colors"
+              style={{ border: '1px solid oklch(0.85 0.006 250)', color: 'oklch(0.35 0.025 250)', background: 'transparent' }}>
               <RefreshCw size={12} /> Refresh
             </button>
           </div>
         </div>
         {kpis && kpis.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 mt-3">
             {kpis.map((k, i) => (
-              <div key={i} className="rounded-lg bg-white/15 p-3 border border-white/10">
-                <div className="text-[10px] uppercase tracking-wider text-white/75">{k.label}</div>
-                <div className="mt-1 font-mono text-[20px] font-bold leading-tight" style={{ fontVariantNumeric: 'tabular-nums', color: '#ffffff' }}>
+              <div key={i} className="rounded-lg p-3" style={{ background: 'oklch(0.96 0.003 250)', border: '1px solid oklch(0.90 0.004 250)' }}>
+                <div className="text-[10px] uppercase tracking-wider" style={{ color: 'oklch(0.55 0.008 250)' }}>{k.label}</div>
+                <div className="mt-1 font-mono text-[18px] font-bold leading-tight" style={{ fontVariantNumeric: 'tabular-nums', color: 'oklch(0.15 0.025 250)' }}>
                   {k.value}
                   {k.tone && (
-                    <span style={{ fontSize: 13, marginLeft: 4, color: toneColor[k.tone] }}>
+                    <span style={{ fontSize: 12, marginLeft: 4, color: toneColor[k.tone] }}>
                       {toneArrow[k.tone]}
                     </span>
                   )}
                 </div>
-                {k.caption && <div className="text-[10px] text-white/60 mt-0.5">{k.caption}</div>}
+                {k.caption && <div className="text-[10px] mt-0.5" style={{ color: 'oklch(0.55 0.008 250)' }}>{k.caption}</div>}
               </div>
             ))}
           </div>
         )}
       </section>
 
-      <div className="flex gap-5 items-start">
-        <div className="min-w-0 flex-1 space-y-4">
-          <TabNav
-            tabs={tabs}
-            activeTab={activeTab}
-            onSelect={setTab}
-            hasGroups={hasGroups}
-            allGroups={allGroups}
-            activeGroup={activeGroup}
-            setActiveGroup={setActiveGroup}
-          />
+      <div className="px-6 lg:px-10 py-5 space-y-5">
+        <div className="flex gap-5 items-start">
+          <div className="min-w-0 flex-1 space-y-4">
+            <TabNav
+              tabs={tabs}
+              activeTab={activeTab}
+              onSelect={setTab}
+              hasGroups={hasGroups}
+              allGroups={allGroups}
+              activeGroup={activeGroup}
+              setActiveGroup={setActiveGroup}
+            />
 
-          <div
-            key={`${activeTab}-${bump}`}
-            id={current ? `panel-${current.key}` : undefined}
-            role="tabpanel"
-            aria-labelledby={current ? `tab-${current.key}` : undefined}
-          >
-            {!current ? (
-              <div className="flex flex-col items-center justify-center py-16 text-[13px] text-[var(--oe-outline)]">
-                <p>Select a tab to get started.</p>
-              </div>
-            ) : current.body({ onRefresh: refresh })}
+            <div
+              key={`${activeTab}-${bump}`}
+              id={current ? `panel-${current.key}` : undefined}
+              role="tabpanel"
+              aria-labelledby={current ? `tab-${current.key}` : undefined}
+            >
+              {!current ? (
+                <div className="flex flex-col items-center justify-center py-16 text-[13px] text-[var(--oe-outline)]">
+                  <p>Select a tab to get started.</p>
+                </div>
+              ) : current.body({ onRefresh: refresh })}
+            </div>
           </div>
-        </div>
-        <div className="hidden xl:flex xl:flex-col gap-5 shrink-0">
-          {incomingRail}
-          {insightsRail}
+          <div className="hidden lg:flex lg:flex-col gap-5 shrink-0" style={{ width: 380, borderLeft: '1px solid oklch(0.88 0.006 250)', paddingLeft: 20 }}>
+            {incomingRail}
+            {insightsRail}
+          </div>
         </div>
       </div>
       {crossOption}
