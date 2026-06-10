@@ -134,6 +134,17 @@ cr.post('/vintages', async (c) => {
   return c.json({ success: true, data: { id, quantity } }, 201);
 });
 
+cr.get('/vintages', async (c) => {
+  const rs = await c.env.DB.prepare(
+    `SELECT v.*, r.registry_name, p.project_name
+       FROM credit_vintages v
+       JOIN carbon_registries r ON r.id = v.registry_id
+       JOIN carbon_projects p ON p.id = v.project_id
+       ORDER BY v.vintage_year DESC LIMIT 200`,
+  ).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
 cr.get('/vintages/:project_id', async (c) => {
   const pid = c.req.param('project_id');
   const rs = await c.env.DB.prepare(

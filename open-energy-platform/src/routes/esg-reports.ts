@@ -218,6 +218,7 @@ esgReports.get('/:id/download', async (c) => {
 
   // Return signed R2 URL
   const r2Key = report.r2_key;
+  if (!r2Key) return c.json({ success: false, error: 'Report not yet generated — try again shortly' }, 404);
   return c.json({ success: true, data: { download_url: `/api/vault/${r2Key}` }, _bridge: L4_BRIDGE });
 });
 

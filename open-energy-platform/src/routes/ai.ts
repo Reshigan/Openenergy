@@ -587,6 +587,18 @@ async function collectRoleReport(
       return { ...common, audit: audit.results || [] };
     }
 
+    case 'support': {
+      const tickets = await safe(
+        env.DB.prepare(
+          `SELECT COUNT(*) AS c, SUM(CASE WHEN chain_status = 'closed' THEN 1 ELSE 0 END) AS closed,
+                  SUM(CASE WHEN chain_status NOT IN ('closed','cancelled') THEN 1 ELSE 0 END) AS open
+             FROM oe_support_cases WHERE created_at > ?`,
+        ).bind(since).first<any>(),
+        { c: 0, closed: 0, open: 0 },
+      );
+      return { ...common, tickets };
+    }
+
     default:
       return common;
   }
@@ -790,12 +802,12 @@ ai.post('/risk/explain-var', async (c) => {
     : `${portfolio.name} VaR ${Math.round(conf * 100)}% = ${fmt(varRow.var_amount_zar)} as of ${varRow.as_of_date} but no active positions detected — verify filter.`;
 
   await c.env.DB.prepare(`
-    INSERT INTO ai_decisions (id, user_id, intent, input_json, output_summary, model, created_at)
-    VALUES (?, ?, 'risk.explain_var', ?, ?, 'inline-heuristic', datetime('now'))
+    INSERT INTO ai_decisions (id, participant_id, surface, intent, prompt_summary, response_text, model, created_at)
+    VALUES (?, ?, 'api', 'risk.explain_var', ?, ?, 'inline-heuristic', datetime('now'))
   `).bind(
     `aid_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
     user.id,
-    JSON.stringify({ portfolio_id: body.portfolio_id, confidence: conf }),
+    JSON.stringify({ portfolio_id: body.portfolio_id, confidence: conf }).slice(0, 500),
     summary.slice(0, 500),
   ).run().catch(() => null);
 
@@ -851,11 +863,11 @@ ai.post('/risk/suggest-scenario', async (c) => {
     : 'No system scenarios have run this month — wait for tonight\'s cron or trigger a manual run.';
 
   await c.env.DB.prepare(`
-    INSERT INTO ai_decisions (id, user_id, intent, input_json, output_summary, model, created_at)
-    VALUES (?, ?, 'risk.suggest_scenario', ?, ?, 'inline-heuristic', datetime('now'))
+    INSERT INTO ai_decisions (id, participant_id, surface, intent, prompt_summary, response_text, model, created_at)
+    VALUES (?, ?, 'api', 'risk.suggest_scenario', ?, ?, 'inline-heuristic', datetime('now'))
   `).bind(
     `aid_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-    user.id, JSON.stringify(body), summary.slice(0, 500),
+    user.id, JSON.stringify(body).slice(0, 500), summary.slice(0, 500),
   ).run().catch(() => null);
 
   await fireCascade({
@@ -906,11 +918,11 @@ ai.post('/clearing/disclosure-summary', async (c) => {
     : `Cover-1 BREACH on ${breaches.length} metric(s) — see breakdown.`;
 
   await c.env.DB.prepare(`
-    INSERT INTO ai_decisions (id, user_id, intent, input_json, output_summary, model, created_at)
-    VALUES (?, ?, 'clearing.disclosure_summary', ?, ?, 'inline-heuristic', datetime('now'))
+    INSERT INTO ai_decisions (id, participant_id, surface, intent, prompt_summary, response_text, model, created_at)
+    VALUES (?, ?, 'api', 'clearing.disclosure_summary', ?, ?, 'inline-heuristic', datetime('now'))
   `).bind(
     `aid_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-    user.id, JSON.stringify({ snapshot_id: row.id }), (verdict + ' ' + summary).slice(0, 500),
+    user.id, JSON.stringify({ snapshot_id: row.id }).slice(0, 500), (verdict + ' ' + summary).slice(0, 500),
   ).run().catch(() => null);
 
   return c.json({ success: true, data: { summary, verdict, breaches, snapshot_id: row.id, as_of_date: row.as_of_date } });
@@ -961,11 +973,11 @@ ai.post('/settlement/fail-diagnose', async (c) => {
   }
 
   await c.env.DB.prepare(`
-    INSERT INTO ai_decisions (id, user_id, intent, input_json, output_summary, model, created_at)
-    VALUES (?, ?, 'settlement.fail_diagnose', ?, ?, 'inline-heuristic', datetime('now'))
+    INSERT INTO ai_decisions (id, participant_id, surface, intent, prompt_summary, response_text, model, created_at)
+    VALUES (?, ?, 'api', 'settlement.fail_diagnose', ?, ?, 'inline-heuristic', datetime('now'))
   `).bind(
     `aid_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-    user.id, JSON.stringify(body), `${cause}: ${remediation}`.slice(0, 500),
+    user.id, JSON.stringify(body).slice(0, 500), `${cause}: ${remediation}`.slice(0, 500),
   ).run().catch(() => null);
 
   return c.json({ success: true, data: { instruction_id: body.instruction_id, cause, remediation, dvp_lock: cycle, gate_status: memberGate?.gate_status || 'clear' } });
@@ -1013,11 +1025,11 @@ ai.post('/carbon/article-6-explain', async (c) => {
     `Double-counting risk: ${risk.risk.toUpperCase()}. ${risk.reasons.join(' ')}`;
 
   await c.env.DB.prepare(`
-    INSERT INTO ai_decisions (id, user_id, intent, input_json, output_summary, model, created_at)
-    VALUES (?, ?, 'carbon.article6_explain', ?, ?, 'inline-heuristic', datetime('now'))
+    INSERT INTO ai_decisions (id, participant_id, surface, intent, prompt_summary, response_text, model, created_at)
+    VALUES (?, ?, 'api', 'carbon.article6_explain', ?, ?, 'inline-heuristic', datetime('now'))
   `).bind(
     `aid_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-    user.id, JSON.stringify({ adjustment_id: row.id }), summary.slice(0, 500),
+    user.id, JSON.stringify({ adjustment_id: row.id }).slice(0, 500), summary.slice(0, 500),
   ).run().catch(() => null);
 
   return c.json({

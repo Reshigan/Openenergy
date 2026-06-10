@@ -185,6 +185,15 @@ ipp.post('/epc/:id/lds', async (c) => {
   return c.json({ success: true, data: row }, 201);
 });
 
+ipp.get('/epc/list/:project_id', async (c) => {
+  const projectId = c.req.param('project_id');
+  const rows = await c.env.DB.prepare(
+    `SELECT id, project_id, contractor_name, contract_value_zar, contract_date, commercial_operation_date, status
+       FROM epc_contracts WHERE project_id = ? ORDER BY contract_date DESC`,
+  ).bind(projectId).all();
+  return c.json({ success: true, data: rows.results || [] });
+});
+
 ipp.get('/epc/:id', async (c) => {
   const id = c.req.param('id');
   const epc = await c.env.DB.prepare('SELECT * FROM epc_contracts WHERE id = ?').bind(id).first();

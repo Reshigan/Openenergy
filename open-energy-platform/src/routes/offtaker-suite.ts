@@ -177,6 +177,17 @@ off.post('/profiles', async (c) => {
   return c.json({ success: true, data: row }, 201);
 });
 
+off.get('/consumption', async (c) => {
+  const user = getCurrentUser(c);
+  const rs = await c.env.DB.prepare(
+    `SELECT cp.* FROM consumption_profiles cp
+       JOIN offtaker_delivery_points dp ON dp.id = cp.delivery_point_id
+       WHERE dp.participant_id = ?
+       ORDER BY cp.profile_date DESC LIMIT 365`,
+  ).bind(user.id).all();
+  return c.json({ success: true, data: rs.results || [] });
+});
+
 off.get('/profiles/:delivery_point_id', async (c) => {
   const dpid = c.req.param('delivery_point_id');
   const rs = await c.env.DB.prepare(

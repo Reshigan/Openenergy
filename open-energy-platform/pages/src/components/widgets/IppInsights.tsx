@@ -363,8 +363,8 @@ export function IppInsights() {
     setLoading(true);
     Promise.all([
       api.get(`/projects/${chosen}/milestones`).catch(() => ({ data: { data: [] } })),
-      api.get(`/ipp/environmental/conditions/${chosen}`).catch(() => ({ data: { data: [] } })),
-      api.get(`/ipp/epc?project_id=${chosen}`).catch(() => ({ data: { data: [] } })),
+      api.get(`/ipp/environmental/authorisations/${chosen}`).catch(() => ({ data: { data: [] } })),
+      api.get(`/ipp/epc/list/${chosen}`).catch(() => ({ data: { data: [] } })),
     ]).then(([m, c, e]) => {
       if (cancelled) return;
       setMilestones((m.data?.data as Milestone[]) || []);

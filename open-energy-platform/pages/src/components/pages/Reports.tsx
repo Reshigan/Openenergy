@@ -76,6 +76,11 @@ const ROLE_KPI_LAYOUT: Record<string, Array<{ key: string; label: string; format
   regulator: [
     { key: 'audit.length', label: 'Distinct event types' },
   ],
+  support: [
+    { key: 'tickets.c', label: 'Tickets in period' },
+    { key: 'tickets.open', label: 'Open tickets' },
+    { key: 'tickets.closed', label: 'Closed tickets' },
+  ],
 };
 
 const SELECTABLE_ROLES: Array<{ value: string; label: string }> = [

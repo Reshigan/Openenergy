@@ -87,9 +87,13 @@ export function RiskTab() {
 
   const explain = async () => {
     if (!portfolioId) return;
-    const r = await api.post('/ai/risk/explain-var', { portfolio_id: portfolioId, confidence: 0.95 });
-    setExplainSummary(r.data?.data?.summary || '');
-    setDrivers(r.data?.data?.drivers || []);
+    try {
+      const r = await api.post('/ai/risk/explain-var', { portfolio_id: portfolioId, confidence: 0.95 });
+      setExplainSummary(r.data?.data?.summary || '');
+      setDrivers(r.data?.data?.drivers || []);
+    } catch {
+      setExplainSummary('Unable to load AI explanation — ensure a portfolio with positions exists.');
+    }
   };
 
   const v95 = varLatest['0.95'];

@@ -121,7 +121,7 @@ function MethodologyComparison({ vintages }: { vintages: Vintage[] }) {
 export function CarbonInsights() {
   const [vintages, setVintages] = useState<Vintage[]>([]);
   useEffect(() => {
-    api.get('/carbon-registry/vintages').then((r) => {
+    api.get('/carbon-registry/vintages').then((r: any) => {
       setVintages((r.data?.data as Vintage[]) || []);
     }).catch(() => setVintages([]));
   }, []);

@@ -191,15 +191,14 @@ launch.post('/:role/ai/:key/accept', authMiddleware, async (c) => {
   const body = await c.req.json().catch(() => ({}));
   await c.env.DB.prepare(
     `INSERT OR IGNORE INTO ai_decisions
-      (id, participant_id, surface, decision_key, accepted_at, payload_json, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      (id, participant_id, surface, intent, response_json, accepted, created_at)
+     VALUES (?, ?, ?, ?, ?, 1, ?)`,
   )
     .bind(
       crypto.randomUUID(),
       auth.user.id,
       `launch_${role}`,
       key,
-      new Date().toISOString(),
       JSON.stringify(body || {}),
       new Date().toISOString(),
     )
