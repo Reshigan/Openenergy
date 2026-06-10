@@ -512,7 +512,7 @@ regulator.post('/nersa/quarterly', async (c) => {
     SELECT
       (SELECT COALESCE(SUM(volume_mwh), 0) FROM trade_fills WHERE executed_at >= ? AND executed_at < ?) AS total_volume_mwh,
       (SELECT COALESCE(SUM(price * volume_mwh), 0) FROM trade_fills WHERE executed_at >= ? AND executed_at < ?) AS total_value_zar,
-      (SELECT COUNT(DISTINCT participant_id) FROM participants WHERE role IN ('trader','ipp','offtaker')) AS active_participants,
+      (SELECT COUNT(DISTINCT participant_id) FROM participants WHERE role IN ('trader','ipp','ipp_developer','offtaker')) AS active_participants,
       (SELECT COUNT(*) FROM regulator_licences WHERE status IN ('active','varied')) AS active_licences,
       (SELECT COUNT(*) FROM grid_outages WHERE reported_at >= ? AND reported_at < ?) AS grid_outages
   `).bind(from, to, from, to, from, to).first<any>().catch(() => ({}));

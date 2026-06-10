@@ -47,9 +47,9 @@ import {
   type NominationAction,
 } from '../utils/dispatch-nomination-spec';
 
-const READ_ROLES        = new Set(['admin', 'support', 'ipp', 'grid', 'regulator', 'trader']);
-const PARTICIPANT_WRITE = new Set(['admin', 'support', 'ipp', 'trader']);
-const GRID_WRITE        = new Set(['admin', 'support', 'grid']);
+const READ_ROLES        = new Set(['admin', 'support', 'ipp', 'ipp_developer', 'grid', 'grid_operator', 'regulator', 'trader']);
+const PARTICIPANT_WRITE = new Set(['admin', 'support', 'ipp', 'ipp_developer', 'trader']);
+const GRID_WRITE        = new Set(['admin', 'support', 'grid', 'grid_operator']);
 const REGULATOR_WRITE   = new Set(['admin', 'support', 'regulator']);
 
 const app = new Hono<HonoEnv>();

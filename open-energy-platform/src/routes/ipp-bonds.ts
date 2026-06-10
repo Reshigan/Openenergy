@@ -28,8 +28,8 @@ import {
 } from '../utils/bond-expiry-spec';
 
 const ADMIN_WRITE = new Set(['admin', 'support']);
-const IPP_WRITE   = new Set(['admin', 'support', 'ipp']);
-const READ_ROLES  = new Set(['admin', 'support', 'ipp', 'regulator', 'lender']);
+const IPP_WRITE   = new Set(['admin', 'support', 'ipp', 'ipp_developer']);
+const READ_ROLES  = new Set(['admin', 'support', 'ipp', 'ipp_developer', 'regulator', 'lender']);
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);

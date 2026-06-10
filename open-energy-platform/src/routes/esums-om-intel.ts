@@ -388,7 +388,7 @@ intel.get('/ingestion', async (c) => {
 
 intel.post('/ingestion', async (c) => {
   const user = getCurrentUser(c);
-  if (!['admin', 'support', 'asset_owner', 'ipp'].includes(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
+  if (!['admin', 'support', 'asset_owner', 'ipp', 'ipp_developer'].includes(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const b = await c.req.json().catch(() => ({} as any));
   if (!b.site_id || !b.adapter) return c.json({ success: false, error: 'site_id + adapter required' }, 400);
   if (typeof b.endpoint_url === 'string' && b.endpoint_url.length > 0) {

@@ -43,8 +43,8 @@ import {
   type ClaimSeverity,
 } from '../utils/warranty-claim-spec';
 
-const READ_ROLES  = new Set(['admin', 'support', 'regulator', 'ipp', 'om', 'esums']);
-const WRITE_ROLES = new Set(['admin', 'ipp', 'om', 'esums']);
+const READ_ROLES  = new Set(['admin', 'support', 'regulator', 'ipp', 'ipp_developer', 'om', 'esums']);
+const WRITE_ROLES = new Set(['admin', 'ipp', 'ipp_developer', 'om', 'esums']);
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);

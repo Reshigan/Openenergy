@@ -24,6 +24,36 @@ function period(c: Context<HonoEnv>): string {
   return q && /^\d{4}-\d{2}$/.test(q) ? q : new Date().toISOString().slice(0, 7);
 }
 
+// ─── Root summary ───────────────────────────────────────────────────────────
+r.get('/', async (c) => {
+  const user = getCurrentUser(c);
+  if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
+  const p = period(c);
+  const [summary, schedule, arr] = await Promise.all([
+    c.env.DB.prepare(
+      `SELECT COALESCE(SUM(fee_zar), 0) AS total_fee_zar, COUNT(*) AS event_count
+       FROM oe_platform_revenue WHERE billing_period = ?`,
+    ).bind(p).first<any>(),
+    c.env.DB.prepare(
+      `SELECT COUNT(*) AS total, SUM(CASE WHEN is_enabled = 1 THEN 1 ELSE 0 END) AS enabled
+       FROM oe_fee_schedule`,
+    ).first<any>(),
+    c.env.DB.prepare(
+      `SELECT COALESCE(SUM(fee_zar), 0) AS trailing FROM oe_platform_revenue WHERE billing_period = ?`,
+    ).bind(p).first<any>(),
+  ]);
+  return c.json({
+    success: true,
+    data: {
+      period: p,
+      monthly_fee_zar: Number(summary?.total_fee_zar ?? 0),
+      event_count: Number(summary?.event_count ?? 0),
+      projected_arr_zar: Number(arr?.trailing ?? 0) * 12,
+      schedule: { total: Number(schedule?.total ?? 0), enabled: Number(schedule?.enabled ?? 0) },
+    },
+  });
+});
+
 // ─── Schedule (rate card) ────────────────────────────────────────────────────
 r.get('/schedule', async (c) => {
   const user = getCurrentUser(c);

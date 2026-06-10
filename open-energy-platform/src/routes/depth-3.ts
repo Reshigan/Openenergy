@@ -17,7 +17,7 @@ export const lender = new Hono<HonoEnv>(); lender.use('*', authMiddleware);
 export const carbon = new Hono<HonoEnv>(); carbon.use('*', authMiddleware);
 
 const genId = (p: string) => `${p}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-const adminOnly = (role: string) => ['admin', 'support', 'lender', 'ipp', 'carbon_fund'].includes(role);
+const adminOnly = (role: string) => ['admin', 'support', 'lender', 'ipp', 'ipp_developer', 'carbon_fund'].includes(role);
 
 // ════════════════════════════════════════════════════════════════════════
 // IPP — Drawdowns + LD engine

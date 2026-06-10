@@ -54,7 +54,7 @@ const REGISTRY: Record<string, EntityDef> = {
     importColumns: ['project_id', 'owner_id', 'vintage_year', 'amount_tonnes'],
     importIdMode: 'generated',
     importIdPrefix: 'cc',
-    requiredRoles: ['admin', 'support', 'carbon'],
+    requiredRoles: ['admin', 'support', 'carbon', 'carbon_fund'],
   },
   feature_flags: {
     table: 'oe_feature_flags',
