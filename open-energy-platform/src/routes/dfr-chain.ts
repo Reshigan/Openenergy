@@ -21,7 +21,7 @@
 //                                              OR triggers_change_order
 
 import { Hono, Context } from 'hono';
-import { getCurrentUser } from '../middleware/auth';
+import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
 import {
@@ -271,6 +271,7 @@ function decorate(row: DfrRow, now: Date) {
 }
 
 const app = new Hono<HonoEnv>();
+app.use('*', authMiddleware);
 
 app.get('/', async (c) => {
   const user = getCurrentUser(c);

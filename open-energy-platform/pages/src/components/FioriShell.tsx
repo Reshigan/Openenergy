@@ -396,11 +396,12 @@ function SastClock() {
       role="status"
       aria-label={`Current time in South African Standard Time: ${t}`}
       title="South African Standard Time (UTC+2)"
-      className="hidden md:flex items-center gap-1.5 h-10 px-3 text-white/85 text-[12px] font-mono"
+      className="hidden md:flex items-center gap-1.5 h-10 px-3 font-mono tabular-nums"
+      style={{ fontSize: 12, color: 'oklch(0.70 0.008 250)' }}
     >
-      <span aria-hidden="true">🇿🇦</span>
-      <span>{t}</span>
-      <span className="text-white/45 text-[10px]">SAST</span>
+      <MIcon name="schedule" size={13} className="" />
+      <span style={{ color: 'rgba(255,255,255,0.82)' }}>{t}</span>
+      <span style={{ fontSize: 10, color: 'oklch(0.55 0.008 250)' }}>SAST</span>
     </div>
   );
 }
@@ -497,7 +498,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
   }, [nav, location.pathname]);
   const isActive = (path: string) => path === activePath;
 
-  const currentLabel = nav.find((n) => n.path === activePath)?.label ?? 'Consolidated Energy Cockpit';
+  const currentLabel = nav.find((n) => n.path === activePath)?.label ?? 'Open Energy Platform';
 
   const handleLogout = () => {
     logout();
@@ -515,36 +516,20 @@ export function FioriShell({ children }: { children: ReactNode }) {
 
   const roleTheme = themeFor(user?.role);
   return (
-    <div className="min-h-screen" style={{ background: 'var(--oe-surface)' }} data-role={roleTheme.key}>
-      {/* Per-role accent strip — 2px ribbon at the very top of the chrome.
-       *  Subtle but immediate signal that "this is the trader's app vs the
-       *  regulator's app". See [[project-100m-experience]] Batch 4. */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 2,
-          background: `linear-gradient(90deg, ${roleTheme.accent} 0%, ${roleTheme.accentSecondary ?? roleTheme.accent} 100%)`,
-          zIndex: 100,
-          pointerEvents: 'none',
-        }}
-      />
+    <div className="min-h-screen" style={{ background: 'oklch(0.97 0.003 250)' }} data-role={roleTheme.key}>
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-primary focus:px-3 focus:py-2 focus:rounded-md focus:shadow-lg focus:outline-none"
-        style={{ color: 'var(--oe-primary)' }}
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-3 focus:py-2 focus:rounded-md focus:shadow-lg focus:outline-none"
+        style={{ background: 'oklch(0.99 0.002 80)', color: 'oklch(0.20 0.025 250)' }}
       >
         Skip to main content
       </a>
 
-      {/* ════════════ Shell Bar — Open Energy header ════════════ */}
+      {/* ════════════ Shell Bar — mockup-B dark nav ════════════ */}
       <header
         role="banner"
-        className="oe-shell fixed top-0 left-0 right-0 z-50 flex items-center px-2 sm:px-4"
-        style={{ height: 'var(--shell-height)' }}
+        className="fixed top-0 left-0 right-0 z-50 flex items-center px-2 sm:px-4"
+        style={{ height: 'var(--shell-height)', background: 'oklch(0.13 0.025 250)' }}
       >
         {/* Hamburger / nav menu */}
         <div className="relative" ref={menuRef}>
@@ -562,30 +547,30 @@ export function FioriShell({ children }: { children: ReactNode }) {
             <div
               role="menu"
               aria-label="Primary navigation"
-              className="fixed sm:absolute left-0 top-14 sm:top-12 mt-1 w-[90vw] sm:w-[340px] max-h-[calc(100vh-72px)] overflow-y-auto bg-white rounded-md shadow-xl border z-50"
-              style={{ borderColor: 'var(--oe-outline-variant)', boxShadow: '0 12px 32px rgba(25,28,24,0.18)' }}
+              className="fixed sm:absolute left-0 top-14 sm:top-12 mt-1 w-[90vw] sm:w-[340px] max-h-[calc(100vh-72px)] overflow-y-auto rounded-md z-50"
+              style={{ background: 'oklch(0.99 0.002 80)', border: '1px solid oklch(0.88 0.006 250)', boxShadow: '0 12px 32px rgba(15,20,40,0.18)' }}
             >
-              <div className="px-3 py-2 border-b flex items-center justify-between" style={{ borderColor: 'var(--oe-surface-container)' }}>
-                <span className="font-headline text-[11px] uppercase tracking-[0.08em] font-bold" style={{ color: 'var(--oe-on-surface-variant)' }}>
+              <div className="px-3 py-2 border-b flex items-center justify-between" style={{ borderColor: 'oklch(0.93 0.004 250)' }}>
+                <span className="text-[11px] uppercase tracking-[0.08em] font-semibold font-mono" style={{ color: 'oklch(0.55 0.008 250)' }}>
                   Navigation
                 </span>
                 <button
                   type="button"
                   onClick={() => { setCollapsed((v) => { const n = !v; try { localStorage.setItem('oe_rail_collapsed', String(n)); } catch {} return n; }); setMenuOpen(false); }}
                   className="text-[11px] font-semibold hover:underline"
-                  style={{ color: 'var(--oe-primary)' }}
+                  style={{ color: 'oklch(0.45 0.10 250)' }}
                 >
                   {collapsed ? 'Expand rail' : 'Collapse rail'}
                 </button>
               </div>
               {sections.length === 0 && (
-                <div className="px-4 py-4 text-[13px]" style={{ color: 'var(--oe-on-surface-variant)' }}>
+                <div className="px-4 py-4 text-[13px]" style={{ color: 'oklch(0.55 0.008 250)' }}>
                   Sign in to see navigation.
                 </div>
               )}
               {sections.map(([section, items]) => (
                 <div key={section} className="py-1">
-                  <div className="px-3 py-1.5 font-headline text-[10px] uppercase tracking-[0.08em] font-bold" style={{ color: 'var(--oe-outline)' }}>
+                  <div className="px-3 py-1.5 text-[10px] uppercase tracking-[0.10em] font-semibold font-mono" style={{ color: 'oklch(0.60 0.008 250)' }}>
                     {section}
                   </div>
                   {items.map((item) => {
@@ -598,9 +583,10 @@ export function FioriShell({ children }: { children: ReactNode }) {
                         onClick={() => setMenuOpen(false)}
                         className="flex items-center gap-2 px-3 py-2 text-[13px] transition-colors"
                         style={{
-                          background: active ? 'var(--oe-primary-container)' : 'transparent',
-                          color: active ? 'var(--oe-on-primary-container)' : 'var(--oe-on-surface)',
+                          background: active ? 'oklch(0.93 0.006 250)' : 'transparent',
+                          color: active ? 'oklch(0.20 0.025 250)' : 'oklch(0.30 0.020 250)',
                           fontWeight: active ? 600 : 400,
+                          transition: 'background 150ms cubic-bezier(0.23,1,0.32,1)',
                         }}
                       >
                         <MIcon name={item.icon} size={18} />
@@ -610,13 +596,13 @@ export function FioriShell({ children }: { children: ReactNode }) {
                   })}
                 </div>
               ))}
-              <div className="border-t p-2" style={{ borderColor: 'var(--oe-surface-container)' }}>
+              <div className="border-t p-2" style={{ borderColor: 'oklch(0.93 0.004 250)' }}>
                 <button
                   type="button"
                   onClick={() => { setMenuOpen(false); handleLogout(); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] rounded-sm transition-colors"
-                  style={{ color: 'var(--oe-error)' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--oe-error-container)')}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] rounded transition-colors"
+                  style={{ color: 'oklch(0.45 0.18 25)', transition: 'background 150ms cubic-bezier(0.23,1,0.32,1)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.97 0.015 25)')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
                   <MIcon name="logout" size={16} />
@@ -627,26 +613,26 @@ export function FioriShell({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        {/* Brand mark — actual three-ring OE logomark + wordmark */}
-        <Link to="/launch" className="flex items-center gap-2.5 ml-1 mr-4 select-none group" aria-label="Consolidated Energy Cockpit — Launchpad">
+        {/* Brand mark */}
+        <Link to="/feed" className="flex items-center gap-2.5 ml-1 mr-4 select-none" aria-label="Open Energy Platform — Activity Feed">
           <div
             className="flex items-center justify-center rounded p-0.5"
             style={{
               background: 'rgba(255,255,255,0.96)',
-              boxShadow: '0 0 0 1px rgba(255,255,255,0.30), 0 2px 6px rgba(0,0,0,0.18)',
+              boxShadow: '0 0 0 1px rgba(255,255,255,0.20), 0 2px 6px rgba(0,0,0,0.22)',
             }}
           >
             <LogoMark size={28} variant="colour" />
           </div>
-          <div className="leading-[0.95]">
-            <div className="oe-shell-title text-[13px] text-white">ENERGY</div>
-            <div className="text-[13px] text-white/85 font-display font-extrabold">COCKPIT</div>
+          <div className="leading-[1.1]">
+            <div className="text-[11px] font-mono tracking-[0.12em] uppercase" style={{ color: 'oklch(0.65 0.010 250)' }}>Open Energy</div>
+            <div className="text-[13px] font-semibold text-white">Platform</div>
           </div>
         </Link>
 
-        <div className="hidden md:flex items-center gap-2 text-white/70 text-[13px] ml-2">
-          <span className="opacity-50">/</span>
-          <span className="text-white/95 font-medium">{currentLabel}</span>
+        <div className="hidden md:flex items-center gap-1.5 ml-2" style={{ color: 'oklch(0.65 0.010 250)', fontSize: 13 }}>
+          <span style={{ opacity: 0.4 }}>/</span>
+          <span style={{ color: 'rgba(255,255,255,0.92)', fontWeight: 500 }}>{currentLabel}</span>
         </div>
 
         {/* Search */}
@@ -656,7 +642,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
             <input
               ref={searchRef}
               type="search"
-              aria-label="Search across Consolidated Energy Cockpit"
+              aria-label="Search across Open Energy Platform"
               placeholder="Search projects, contracts, counterparties, settlements…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -721,51 +707,54 @@ export function FioriShell({ children }: { children: ReactNode }) {
               <div
                 role="menu"
                 aria-label="User menu"
-                className="absolute right-0 top-full mt-1 w-64 rounded-md shadow-lg border overflow-hidden bg-white"
-                style={{ borderColor: 'var(--oe-outline-variant)' }}
+                className="absolute right-0 top-full mt-1 w-64 rounded-md overflow-hidden"
+                style={{ background: 'oklch(0.99 0.002 80)', border: '1px solid oklch(0.88 0.006 250)', boxShadow: '0 8px 24px rgba(15,20,40,0.15)' }}
               >
-                <div className="p-3 border-b" style={{ borderColor: 'var(--oe-surface-container)' }}>
-                  <div className="font-headline text-[14px] font-semibold" style={{ color: 'var(--oe-on-surface)' }}>
+                <div className="p-3 border-b" style={{ borderColor: 'oklch(0.93 0.004 250)' }}>
+                  <div className="text-[14px] font-semibold" style={{ color: 'oklch(0.20 0.025 250)' }}>
                     {user?.name ?? 'Guest'}
                   </div>
-                  <div className="text-[12px]" style={{ color: 'var(--oe-on-surface-variant)' }}>
+                  <div className="text-[12px] mt-0.5" style={{ color: 'oklch(0.45 0.015 250)' }}>
                     {user?.email}
                   </div>
                   <div
-                    className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                    style={{ background: 'var(--oe-primary-container)', color: 'var(--oe-on-primary-container)' }}
+                    className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold px-2 py-0.5 rounded"
+                    style={{ background: 'oklch(0.93 0.006 250)', color: 'oklch(0.30 0.020 250)' }}
                   >
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--oe-primary)' }} />
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'oklch(0.55 0.10 250)' }} />
                     {user?.role?.replace(/_/g, ' ') ?? '—'}
                   </div>
                 </div>
-                <button type="button"
-                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left transition-colors hover:bg-[var(--oe-surface-container-low)]"
-                  style={{ color: 'var(--oe-on-surface)' }}
-                  onClick={() => { setUserMenu(false); navigate('/settings'); }}
-                >
-                  <MIcon name="person" size={16} /> Profile &amp; preferences
-                </button>
-                <button type="button"
-                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left transition-colors hover:bg-[var(--oe-surface-container-low)]"
-                  style={{ color: 'var(--oe-on-surface)' }}
-                  onClick={() => { setUserMenu(false); navigate('/settings/security'); }}
-                >
-                  <MIcon name="security" size={16} /> Security &amp; MFA
-                </button>
+                {[
+                  { label: 'Activity feed', icon: 'inbox', path: '/feed' },
+                  { label: 'Profile & preferences', icon: 'person', path: '/settings' },
+                  { label: 'Security & MFA', icon: 'security', path: '/settings/security' },
+                ].map(({ label, icon, path }) => (
+                  <button key={path} type="button"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left"
+                    style={{ color: 'oklch(0.30 0.020 250)', transition: 'background 150ms cubic-bezier(0.23,1,0.32,1)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.95 0.003 250)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    onClick={() => { setUserMenu(false); navigate(path); }}
+                  >
+                    <MIcon name={icon} size={16} /> {label}
+                  </button>
+                ))}
                 {user?.role === 'admin' && (
                   <button type="button"
-                    className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left transition-colors hover:bg-[var(--oe-surface-container-low)]"
-                    style={{ color: 'var(--oe-on-surface)' }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left"
+                    style={{ color: 'oklch(0.30 0.020 250)', transition: 'background 150ms cubic-bezier(0.23,1,0.32,1)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.95 0.003 250)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     onClick={() => { setUserMenu(false); navigate('/admin'); }}
                   >
                     <MIcon name="admin_panel_settings" size={16} /> Admin console
                   </button>
                 )}
                 <button type="button"
-                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left transition-colors border-t"
-                  style={{ color: 'var(--oe-error)', borderColor: 'var(--oe-surface-container)' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--oe-error-container)')}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left border-t"
+                  style={{ color: 'oklch(0.45 0.18 25)', borderColor: 'oklch(0.93 0.004 250)', transition: 'background 150ms cubic-bezier(0.23,1,0.32,1)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.97 0.015 25)')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   onClick={handleLogout}
                 >
@@ -785,8 +774,10 @@ export function FioriShell({ children }: { children: ReactNode }) {
         style={{
           top: 'var(--shell-height)',
           width: sidebarWidth,
-          transition: 'width 200ms cubic-bezier(0.4,0,0.2,1)',
+          transition: 'width 200ms cubic-bezier(0.23,1,0.32,1)',
           zIndex: 40,
+          background: 'oklch(0.99 0.002 80)',
+          borderRight: '1px solid oklch(0.88 0.006 250)',
           ['--rail-accent' as any]: roleTheme.accent,
           ['--rail-accent-secondary' as any]: roleTheme.accentSecondary ?? roleTheme.accent,
           ['--rail-accent-soft' as any]: roleTheme.accentSoft,
@@ -794,25 +785,32 @@ export function FioriShell({ children }: { children: ReactNode }) {
       >
         <nav className="flex-1 py-3" aria-label="Primary">
           {sections.length === 0 && !collapsed && (
-            <div className="px-4 py-3 text-[12px]" style={{ color: 'var(--oe-on-surface-variant)' }}>
+            <div className="px-4 py-3 text-[12px]" style={{ color: 'oklch(0.55 0.008 250)' }}>
               Loading navigation…
             </div>
           )}
           {sections.map(([section, items]) => (
             <div key={section} className="mb-2">
               {!collapsed && (
-                <div className="oe-rail-section">{section}</div>
+                <div className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-[0.10em] font-semibold font-mono" style={{ color: 'oklch(0.60 0.008 250)' }}>{section}</div>
               )}
               {collapsed && (
-                <div className="mx-3 my-1 h-px" style={{ background: 'var(--oe-surface-container)' }} />
+                <div className="mx-3 my-1 h-px" style={{ background: 'oklch(0.93 0.004 250)' }} />
               )}
               {items.map((item) => {
+                const active = isActive(item.path);
                 return (
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`oe-rail-item fiori-rail-item ${isActive(item.path) ? 'active' : ''}`}
+                    className={`oe-rail-item fiori-rail-item ${active ? 'active' : ''}`}
                     title={collapsed ? item.label : undefined}
+                    style={{
+                      background: active ? 'oklch(0.93 0.006 250)' : 'transparent',
+                      color: active ? 'oklch(0.20 0.025 250)' : 'oklch(0.40 0.015 250)',
+                      fontWeight: active ? 600 : 400,
+                      transition: 'background 150ms cubic-bezier(0.23,1,0.32,1)',
+                    }}
                   >
                     <MIcon name={item.icon} size={18} />
                     {!collapsed && <span className="truncate">{item.label}</span>}
@@ -823,11 +821,13 @@ export function FioriShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        <div className="p-3 border-t" style={{ borderColor: 'var(--oe-surface-container)' }}>
+        <div className="p-3 border-t" style={{ borderColor: 'oklch(0.88 0.006 250)' }}>
           <button type="button"
             onClick={() => setCollapsed((v) => { const n = !v; try { localStorage.setItem('oe_rail_collapsed', String(n)); } catch {} return n; })}
-            className="w-full flex items-center gap-2 h-9 px-2 rounded-md text-[12px] transition-colors hover:bg-[var(--oe-surface-container-low)]"
-            style={{ color: 'var(--oe-on-surface-variant)' }}
+            className="w-full flex items-center gap-2 h-9 px-2 rounded text-[12px]"
+            style={{ color: 'oklch(0.55 0.008 250)', transition: 'background 150ms cubic-bezier(0.23,1,0.32,1)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.95 0.003 250)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             <MIcon name={collapsed ? 'chevron_right' : 'chevron_left'} size={16} />
@@ -840,14 +840,13 @@ export function FioriShell({ children }: { children: ReactNode }) {
       <main
         id="main-content"
         tabIndex={-1}
-        className="oe-canvas-ambient fiori-canvas-ambient min-h-screen"
+        className="min-h-screen"
         style={{
+          background: 'oklch(0.97 0.003 250)',
           paddingTop: 'var(--shell-height)',
-          // On mobile the side rail is hidden, so the canvas gets full width.
-          // A bottom nav adds 64px of safe padding for mobile-only.
           paddingLeft: isMobile ? 0 : sidebarWidth,
           paddingBottom: isMobile ? 'calc(64px + env(safe-area-inset-bottom))' : 0,
-          transition: 'padding-left 200ms cubic-bezier(0.4,0,0.2,1)',
+          transition: 'padding-left 200ms cubic-bezier(0.23,1,0.32,1)',
           ['--sidebar-width' as any]: isMobile ? '0px' : `${sidebarWidth}px`,
         }}
       >
@@ -890,12 +889,13 @@ function MobileBottomNav({
 
   return (
     <nav
-      className="md:hidden fixed left-0 right-0 bottom-0 bg-white border-t flex items-stretch justify-around"
+      className="md:hidden fixed left-0 right-0 bottom-0 flex items-stretch justify-around"
       style={{
-        borderColor: 'var(--oe-outline-variant)',
+        background: 'oklch(0.99 0.002 80)',
+        borderTop: '1px solid oklch(0.88 0.006 250)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         zIndex: 45,
-        boxShadow: '0 -2px 8px rgba(15,28,46,0.08)',
+        boxShadow: '0 -2px 8px rgba(15,20,40,0.08)',
       }}
       role="navigation"
       aria-label="Primary mobile navigation"
@@ -906,10 +906,11 @@ function MobileBottomNav({
           <Link
             key={item.path}
             to={item.path}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 transition-colors"
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5"
             style={{
-              color: active ? 'var(--oe-primary)' : 'var(--oe-on-surface-variant)',
-              background: active ? 'var(--oe-primary-container)' : 'transparent',
+              color: active ? 'oklch(0.30 0.020 250)' : 'oklch(0.55 0.008 250)',
+              background: active ? 'oklch(0.93 0.006 250)' : 'transparent',
+              transition: 'background 150ms cubic-bezier(0.23,1,0.32,1)',
             }}
           >
             <MIcon name={item.icon} size={20} filled={active} />
@@ -935,7 +936,7 @@ function MoreButton() {
       onClick={openMenu}
       type="button"
       className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5"
-      style={{ color: 'var(--oe-on-surface-variant)' }}
+      style={{ color: 'oklch(0.55 0.008 250)' }}
       aria-label="More navigation"
     >
       <MIcon name="menu" size={20} />

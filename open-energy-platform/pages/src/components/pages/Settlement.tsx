@@ -176,10 +176,8 @@ export function Settlement() {
         } catch { /* skip */ }
       }
       setAllFees(feesAggregate);
-    } catch (err: any) {
-      // Summary tile failures should not block the tab view; keep them silent.
-      // eslint-disable-next-line no-console
-      console.warn('Settlement summary fetch failed', err?.message || err);
+    } catch {
+      // Summary tile failures are non-blocking; silently skip in production.
     }
   }, []);
 

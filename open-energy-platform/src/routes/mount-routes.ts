@@ -54,6 +54,7 @@ import carbonRegistryRoutes from './carbon-registry';
 import carbonArticle6Routes from './carbon-article-6';
 import regulatorInboxRoutes from './regulator-inbox';
 import roleActionsRoutes from './role-actions';
+import feedRoutes from './feed';
 import insightsRoutes from './insights';
 import lenderDunningRoutes from './lender-dunning';
 import offtakerObligationsRoutes from './offtaker-obligations';
@@ -372,6 +373,7 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   app.route('/api/clearing/margin-gate', marginGateRoutes);
   app.route('/api/trading', tradingRoutes);
   app.route('/api/role-actions', roleActionsRoutes);
+  app.route('/api/feed', feedRoutes);
   app.route('/api/insights', insightsRoutes);
   app.route('/api/settlement', settlementRoutes);
   app.route('/api/carbon', carbonRoutes);

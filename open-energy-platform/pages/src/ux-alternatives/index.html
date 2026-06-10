@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440">
+<title>OE Platform — UI Direction Review</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: oklch(0.09 0.005 250);
+    --ink1: oklch(0.13 0.005 250);
+    --ink2: oklch(0.18 0.004 250);
+    --ink3: oklch(0.26 0.004 250);
+    --ink4: oklch(0.38 0.005 250);
+    --tx1: oklch(0.94 0.004 80);
+    --tx2: oklch(0.68 0.006 250);
+    --tx3: oklch(0.48 0.005 250);
+
+    --a-acc: oklch(0.60 0.18 230);   /* Command Center: blue */
+    --b-acc: oklch(0.78 0.18 65);    /* Activity Feed: amber */
+    --c-acc: oklch(0.76 0.17 62);    /* Mission Canvas: amber-ipp */
+
+    --sans: "IBM Plex Sans", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", monospace;
+  }
+
+  html, body { min-height: 100%; background: var(--ink); color: var(--tx1); font-family: var(--sans); font-size: 13px; }
+
+  header {
+    padding: 40px 60px 0;
+    max-width: 1300px;
+    margin: 0 auto;
+  }
+
+  .brand { font-family: var(--mono); font-size: 12px; font-weight: 800; letter-spacing: 0.1em; color: var(--tx3); text-transform: uppercase; margin-bottom: 24px; }
+  h1 { font-size: 32px; font-weight: 700; color: var(--tx1); line-height: 1.1; margin-bottom: 10px; }
+  .sub { font-size: 16px; color: var(--tx2); max-width: 620px; line-height: 1.6; margin-bottom: 8px; }
+  .meta { font-size: 11px; font-family: var(--mono); color: var(--tx3); margin-bottom: 40px; }
+
+  .divider { border: none; border-top: 1px solid var(--ink3); margin-bottom: 48px; }
+
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 1300px; margin: 0 auto 60px; padding: 0 60px; }
+
+  .card {
+    background: var(--ink1);
+    border: 1px solid var(--ink3);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.15s, transform 0.15s;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+  }
+  .card:hover { border-color: var(--ink4); transform: translateY(-2px); }
+
+  .card-preview {
+    height: 220px;
+    position: relative;
+    overflow: hidden;
+    background: var(--ink2);
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 0;
+  }
+
+  /* Direction A preview - 4-column chrome */
+  .preview-a {
+    display: grid;
+    grid-template-columns: 28px 100px 1fr 90px;
+    height: 100%;
+    width: 100%;
+    gap: 0;
+    font-size: 7px;
+    background: oklch(0.14 0.008 250);
+  }
+  .prev-rail { background: oklch(0.12 0.008 250); display: flex; flex-direction: column; align-items: center; padding-top: 8px; gap: 5px; }
+  .prev-icon { width: 18px; height: 18px; border-radius: 4px; background: oklch(0.22 0.006 250); }
+  .prev-icon.active { background: oklch(0.60 0.18 230 / 0.2); border: 1px solid oklch(0.60 0.18 230 / 0.4); }
+  .prev-nav { background: oklch(0.16 0.007 250); border-right: 1px solid oklch(0.24 0.005 250); padding: 8px 6px; display: flex; flex-direction: column; gap: 4px; }
+  .prev-nav-hdr { height: 3px; width: 40px; background: oklch(0.30 0.005 250); border-radius: 2px; margin-bottom: 4px; }
+  .prev-nav-item { height: 12px; background: oklch(0.22 0.004 250); border-radius: 2px; }
+  .prev-nav-item.active { background: oklch(0.60 0.18 230 / 0.15); border-left: 2px solid oklch(0.60 0.18 230); }
+  .prev-workspace { padding: 8px; }
+  .prev-ws-bar { height: 16px; background: oklch(0.18 0.006 250); border-radius: 3px; margin-bottom: 6px; display: flex; gap: 4px; align-items: center; padding: 0 6px; }
+  .prev-ws-dot { width: 4px; height: 4px; border-radius: 2px; }
+  .prev-kpi-row { display: flex; gap: 3px; margin-bottom: 6px; }
+  .prev-kpi { flex: 1; height: 22px; background: oklch(0.18 0.006 250); border-radius: 2px; border: 1px solid oklch(0.24 0.005 250); }
+  .prev-table-row { height: 9px; border-bottom: 1px solid oklch(0.20 0.005 250); margin-bottom: 1px; display: flex; gap: 3px; align-items: center; padding: 0 2px; }
+  .prev-table-cell { height: 5px; flex: 1; background: oklch(0.22 0.004 250); border-radius: 1px; }
+  .prev-context { background: oklch(0.16 0.007 250); padding: 8px 5px; display: flex; flex-direction: column; gap: 4px; }
+  .prev-ctx-item { padding: 5px 4px; border-radius: 2px; border-left: 2px solid oklch(0.60 0.22 20); background: oklch(0.60 0.22 20 / 0.1); }
+  .prev-ctx-dot { width: 100%; height: 3px; background: oklch(0.28 0.004 250); border-radius: 1px; margin-top: 3px; }
+
+  /* Direction B preview - activity feed */
+  .preview-b {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    font-size: 7px;
+    background: oklch(0.11 0.006 60);
+  }
+  .prev-topnav { height: 22px; background: oklch(0.15 0.005 60); border-bottom: 1px solid oklch(0.22 0.004 60); display: flex; align-items: center; gap: 5px; padding: 0 8px; flex-shrink: 0; }
+  .prev-tn-logo { width: 20px; height: 8px; background: oklch(0.78 0.18 65); border-radius: 2px; }
+  .prev-tn-tab { height: 8px; padding: 0 6px; border-radius: 3px; background: oklch(0.22 0.004 60); display: flex; align-items: center; gap: 2px; }
+  .prev-tn-tab.active { background: oklch(0.78 0.18 65 / 0.15); }
+  .prev-tn-dot { width: 3px; height: 3px; border-radius: 2px; background: oklch(0.60 0.22 20); }
+  .prev-feed-area { display: grid; grid-template-columns: 1fr 80px; flex: 1; overflow: hidden; }
+  .prev-feed { padding: 6px; display: flex; flex-direction: column; gap: 3px; }
+  .prev-feed-card { background: oklch(0.16 0.005 60); border-radius: 3px; padding: 5px; border-left: 2px solid oklch(0.60 0.22 20); }
+  .prev-feed-card.warn { border-left-color: oklch(0.72 0.20 30); }
+  .prev-feed-card.info { border-left-color: oklch(0.78 0.18 65); }
+  .prev-feed-card.ok { border-left-color: oklch(0.70 0.18 155); }
+  .prev-feed-line { height: 3px; border-radius: 1px; background: oklch(0.26 0.004 60); margin-bottom: 2px; }
+  .prev-feed-line:last-child { width: 60%; }
+  .prev-ctx-panel { background: oklch(0.14 0.005 60); padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+  .prev-ctx-kpi { height: 20px; background: oklch(0.19 0.004 60); border-radius: 2px; }
+
+  /* Direction C preview - mission canvas */
+  .preview-c {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    font-size: 7px;
+    background: oklch(0.09 0.005 250);
+  }
+  .prev-c-bar { height: 20px; background: oklch(0.14 0.005 250); border-bottom: 1px solid oklch(0.22 0.004 250); flex-shrink: 0; display: flex; align-items: center; gap: 5px; padding: 0 8px; }
+  .prev-c-kpi-row { height: 28px; background: oklch(0.12 0.005 250); border-bottom: 1px solid oklch(0.20 0.004 250); display: flex; align-items: center; gap: 0; flex-shrink: 0; }
+  .prev-c-kpi { flex: 1; border-right: 1px solid oklch(0.20 0.004 250); height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 0 6px; }
+  .prev-c-kpi .l { height: 2px; width: 20px; background: oklch(0.36 0.005 250); border-radius: 1px; margin-bottom: 3px; }
+  .prev-c-kpi .v { height: 5px; width: 30px; background: oklch(0.76 0.17 62); border-radius: 1px; }
+  .prev-c-kpi .v.warn { background: oklch(0.72 0.20 30); }
+  .prev-c-kpi .v.bad { background: oklch(0.60 0.22 20); }
+  .prev-gantt { flex: 1; padding: 8px; overflow: hidden; }
+  .prev-gantt-row { display: grid; grid-template-columns: 55px 1fr; gap: 6px; margin-bottom: 4px; align-items: center; }
+  .prev-gantt-lbl { height: 6px; background: oklch(0.26 0.004 250); border-radius: 1px; }
+  .prev-gantt-bar-area { position: relative; height: 10px; }
+  .prev-gantt-bar { position: absolute; top: 1px; height: 8px; border-radius: 2px; }
+  .prev-bottom { height: 48px; border-top: 1px solid oklch(0.22 0.004 250); display: grid; grid-template-columns: 1fr 60px 60px; flex-shrink: 0; }
+  .prev-bot-pane { padding: 5px 6px; border-right: 1px solid oklch(0.20 0.004 250); display: flex; flex-direction: column; gap: 3px; }
+  .prev-bot-row { height: 5px; background: oklch(0.22 0.004 250); border-radius: 1px; }
+  .prev-bot-row.bad { background: oklch(0.60 0.22 20 / 0.3); }
+
+  /* card body */
+  .card-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+  .card-tag { display: inline-block; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; padding: 3px 8px; border-radius: 3px; margin-bottom: 10px; }
+  .tag-a { background: oklch(0.60 0.18 230 / 0.15); color: oklch(0.72 0.18 230); }
+  .tag-b { background: oklch(0.78 0.18 65 / 0.15); color: oklch(0.78 0.18 65); }
+  .tag-c { background: oklch(0.76 0.17 62 / 0.15); color: oklch(0.76 0.17 62); }
+  .card-title { font-size: 18px; font-weight: 700; color: var(--tx1); margin-bottom: 6px; }
+  .card-tagline { font-size: 12px; color: var(--tx3); font-style: italic; margin-bottom: 14px; }
+  .card-desc { font-size: 12px; color: var(--tx2); line-height: 1.6; margin-bottom: 14px; flex: 1; }
+  .card-traits { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
+  .trait { display: flex; gap: 8px; font-size: 11px; }
+  .trait-k { color: var(--tx3); min-width: 80px; }
+  .trait-v { color: var(--tx2); }
+  .card-cta {
+    display: block; width: 100%; padding: 9px 0; border-radius: 5px; border: 1px solid var(--ink4);
+    text-align: center; font-size: 12px; font-weight: 600; color: var(--tx2); cursor: pointer;
+    text-decoration: none; transition: all 0.12s;
+  }
+  .card:hover .card-cta-a { background: oklch(0.60 0.18 230 / 0.1); border-color: oklch(0.60 0.18 230 / 0.4); color: oklch(0.72 0.18 230); }
+  .card:hover .card-cta-b { background: oklch(0.78 0.18 65 / 0.1); border-color: oklch(0.78 0.18 65 / 0.4); color: oklch(0.78 0.18 65); }
+  .card:hover .card-cta-c { background: oklch(0.76 0.17 62 / 0.1); border-color: oklch(0.76 0.17 62 / 0.4); color: oklch(0.76 0.17 62); }
+
+  /* comparison table */
+  .compare { max-width: 1300px; margin: 0 auto 60px; padding: 0 60px; }
+  .compare h2 { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tx3); margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--ink3); color: var(--tx3); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+  th.col-a { color: oklch(0.72 0.18 230); }
+  th.col-b { color: oklch(0.78 0.18 65); }
+  th.col-c { color: oklch(0.76 0.17 62); }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--ink3); color: var(--tx2); vertical-align: top; line-height: 1.5; }
+  td:first-child { color: var(--tx3); font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+
+  .note { max-width: 1300px; margin: 0 auto 60px; padding: 20px 60px; background: var(--ink1); border-top: 1px solid var(--ink3); border-bottom: 1px solid var(--ink3); font-size: 12px; color: var(--tx3); line-height: 1.7; }
+  .note strong { color: var(--tx2); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">Open Energy Platform — UI direction review</div>
+  <h1>Three directions. One platform.</h1>
+  <p class="sub">A fresh-eyes layout evaluation. Each direction makes a different bet about what matters most in a multi-role energy exchange platform.</p>
+  <p class="meta">Generated 2026-06-10 · open at 1440px+ for best fidelity</p>
+</header>
+
+<hr class="divider" style="max-width:1300px; margin: 0 auto 40px; padding: 0 60px; border:none; border-top: 1px solid var(--ink3);">
+
+<div class="cards">
+
+  <!-- Direction A -->
+  <a class="card" href="mockup-a-command-center.html" target="_blank">
+    <div class="card-preview">
+      <div class="preview-a">
+        <!-- rail -->
+        <div class="prev-rail">
+          <div class="prev-icon active"></div>
+          <div class="prev-icon"></div>
+          <div class="prev-icon"></div>
+          <div class="prev-icon"></div>
+          <div class="prev-icon"></div>
+        </div>
+        <!-- nav panel -->
+        <div class="prev-nav">
+          <div class="prev-nav-hdr"></div>
+          <div class="prev-nav-item active" style="width:80px;"></div>
+          <div class="prev-nav-item" style="width:65px;"></div>
+          <div class="prev-nav-item" style="width:72px;"></div>
+          <div class="prev-nav-hdr" style="margin-top:6px;"></div>
+          <div class="prev-nav-item" style="width:55px;"></div>
+          <div class="prev-nav-item" style="width:70px;"></div>
+        </div>
+        <!-- workspace -->
+        <div class="prev-workspace">
+          <div class="prev-ws-bar">
+            <div class="prev-ws-dot" style="background:oklch(0.60 0.18 230);"></div>
+            <div class="prev-ws-dot" style="background:oklch(0.28 0.004 250);"></div>
+            <div class="prev-ws-dot" style="background:oklch(0.28 0.004 250);"></div>
+          </div>
+          <div class="prev-kpi-row">
+            <div class="prev-kpi"></div>
+            <div class="prev-kpi"></div>
+            <div class="prev-kpi"></div>
+            <div class="prev-kpi"></div>
+            <div class="prev-kpi"></div>
+            <div class="prev-kpi"></div>
+          </div>
+          <div style="height:45px; background:oklch(0.16 0.006 250); border-radius:2px; margin-bottom:6px;"></div>
+          <div class="prev-table-row"><div class="prev-table-cell"></div><div class="prev-table-cell"></div><div class="prev-table-cell"></div></div>
+          <div class="prev-table-row"><div class="prev-table-cell"></div><div class="prev-table-cell"></div><div class="prev-table-cell"></div></div>
+          <div class="prev-table-row"><div class="prev-table-cell" style="background:oklch(0.60 0.18 230 / 0.15);"></div><div class="prev-table-cell"></div><div class="prev-table-cell"></div></div>
+          <div class="prev-table-row"><div class="prev-table-cell"></div><div class="prev-table-cell"></div><div class="prev-table-cell"></div></div>
+        </div>
+        <!-- context -->
+        <div class="prev-context">
+          <div class="prev-ctx-item"><div class="prev-ctx-dot"></div></div>
+          <div class="prev-ctx-item" style="border-left-color:oklch(0.72 0.20 30);"><div class="prev-ctx-dot"></div></div>
+          <div style="height:35px; background:oklch(0.20 0.004 250); border-radius:2px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <span class="card-tag tag-a">Direction A</span>
+      <div class="card-title">Command Center</div>
+      <div class="card-tagline">"Every tool within reach, nothing in the way"</div>
+      <div class="card-desc">Four-column layout: icon rail + contextual nav panel + main workspace + persistent context rail. A market ticker bar runs across the top. The nav panel collapses when focus is in the workspace.</div>
+      <div class="card-traits">
+        <div class="trait"><span class="trait-k">Structure</span><span class="trait-v">4 columns — rail / nav / content / context</span></div>
+        <div class="trait"><span class="trait-k">Nav</span><span class="trait-v">Sidebar hierarchy compressed to contextual panel</span></div>
+        <div class="trait"><span class="trait-k">Data</span><span class="trait-v">KPI chips inline above every table</span></div>
+        <div class="trait"><span class="trait-k">Palette</span><span class="trait-v">Blue-tinted dark, electric accent</span></div>
+        <div class="trait"><span class="trait-k">Best for</span><span class="trait-v">Trader, Admin — always needs parallel context</span></div>
+      </div>
+      <span class="card-cta card-cta-a">Open Direction A →</span>
+    </div>
+  </a>
+
+  <!-- Direction B -->
+  <a class="card" href="mockup-b-activity-feed.html" target="_blank">
+    <div class="card-preview">
+      <div class="preview-b">
+        <div class="prev-topnav">
+          <div class="prev-tn-logo"></div>
+          <div class="prev-tn-tab active"><div class="prev-tn-dot"></div></div>
+          <div class="prev-tn-tab"></div>
+          <div class="prev-tn-tab"></div>
+          <div class="prev-tn-tab"></div>
+        </div>
+        <div class="prev-feed-area">
+          <div class="prev-feed">
+            <div class="prev-feed-card">
+              <div class="prev-feed-line"></div>
+              <div class="prev-feed-line"></div>
+            </div>
+            <div class="prev-feed-card warn">
+              <div class="prev-feed-line"></div>
+              <div class="prev-feed-line"></div>
+              <div style="height:10px; background:oklch(0.72 0.20 30 / 0.15); border-radius:2px; margin-top:3px;"></div>
+            </div>
+            <div class="prev-feed-card info">
+              <div class="prev-feed-line"></div>
+              <div class="prev-feed-line"></div>
+            </div>
+            <div class="prev-feed-card ok">
+              <div class="prev-feed-line"></div>
+            </div>
+          </div>
+          <div class="prev-ctx-panel">
+            <div class="prev-ctx-kpi"></div>
+            <div class="prev-ctx-kpi"></div>
+            <div style="flex:1; background:oklch(0.19 0.004 60); border-radius:2px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <span class="card-tag tag-b">Direction B</span>
+      <div class="card-title">Activity Feed</div>
+      <div class="card-tagline">"What needs your attention, ranked by urgency"</div>
+      <div class="card-desc">Top nav collapses the role sidebar. The main page is an urgency-ranked feed of cards. Clicking a card expands inline detail and action buttons without navigation. Right panel holds KPIs and chain state.</div>
+      <div class="card-traits">
+        <div class="trait"><span class="trait-k">Structure</span><span class="trait-v">Top nav + 2-column (feed / context panel)</span></div>
+        <div class="trait"><span class="trait-k">Nav</span><span class="trait-v">Horizontal role tabs, no sidebar</span></div>
+        <div class="trait"><span class="trait-k">Data</span><span class="trait-v">Urgency-grouped cards, expand-in-place</span></div>
+        <div class="trait"><span class="trait-k">Palette</span><span class="trait-v">Warm anthracite, amber accent</span></div>
+        <div class="trait"><span class="trait-k">Best for</span><span class="trait-v">Regulator, Lender, Offtaker — inbox-driven</span></div>
+      </div>
+      <span class="card-cta card-cta-b">Open Direction B →</span>
+    </div>
+  </a>
+
+  <!-- Direction C -->
+  <a class="card" href="mockup-c-mission-canvas.html" target="_blank">
+    <div class="card-preview">
+      <div class="preview-c">
+        <div class="prev-c-bar">
+          <div style="width:18px; height:7px; background:oklch(0.76 0.17 62); border-radius:2px;"></div>
+          <div style="width:40px; height:7px; background:oklch(0.26 0.004 250); border-radius:2px; margin-left:4px;"></div>
+        </div>
+        <div class="prev-c-kpi-row">
+          <div class="prev-c-kpi"><div class="l"></div><div class="v"></div></div>
+          <div class="prev-c-kpi"><div class="l"></div><div class="v warn"></div></div>
+          <div class="prev-c-kpi"><div class="l"></div><div class="v"></div></div>
+          <div class="prev-c-kpi"><div class="l"></div><div class="v bad"></div></div>
+          <div class="prev-c-kpi"><div class="l"></div><div class="v"></div></div>
+        </div>
+        <div class="prev-gantt">
+          <div class="prev-gantt-row">
+            <div class="prev-gantt-lbl" style="width:90%;"></div>
+            <div class="prev-gantt-bar-area"><div class="prev-gantt-bar" style="left:0;width:25%;background:oklch(0.70 0.18 155 / 0.5);"></div></div>
+          </div>
+          <div class="prev-gantt-row">
+            <div class="prev-gantt-lbl" style="width:70%;"></div>
+            <div class="prev-gantt-bar-area"><div class="prev-gantt-bar" style="left:8%;width:18%;background:oklch(0.70 0.18 155 / 0.5);"></div></div>
+          </div>
+          <div class="prev-gantt-row">
+            <div class="prev-gantt-lbl" style="width:80%;"></div>
+            <div class="prev-gantt-bar-area"><div class="prev-gantt-bar" style="left:25%;width:20%;background:oklch(0.76 0.17 62 / 0.6); border:1px solid oklch(0.76 0.17 62);"></div></div>
+          </div>
+          <div class="prev-gantt-row">
+            <div class="prev-gantt-lbl" style="width:60%;"></div>
+            <div class="prev-gantt-bar-area"><div class="prev-gantt-bar" style="left:43%;width:8%;background:oklch(0.60 0.22 20 / 0.4); border:1px solid oklch(0.60 0.22 20 / 0.6);"></div></div>
+          </div>
+          <div class="prev-gantt-row">
+            <div class="prev-gantt-lbl" style="width:75%;"></div>
+            <div class="prev-gantt-bar-area"><div class="prev-gantt-bar" style="left:55%;width:12%;background:oklch(0.36 0.005 250 / 0.7); border:1px dashed oklch(0.40 0.005 250);"></div></div>
+          </div>
+        </div>
+        <div class="prev-bottom">
+          <div class="prev-bot-pane">
+            <div class="prev-bot-row bad"></div>
+            <div class="prev-bot-row bad"></div>
+            <div class="prev-bot-row"></div>
+          </div>
+          <div class="prev-bot-pane" style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">
+            <div style="height:14px; background:oklch(0.60 0.22 20 / 0.3); border-radius:2px;"></div>
+            <div style="height:14px; background:oklch(0.72 0.20 30 / 0.25); border-radius:2px;"></div>
+            <div style="height:14px; background:oklch(0.70 0.18 155 / 0.15); border-radius:2px;"></div>
+            <div style="height:14px; background:oklch(0.72 0.20 30 / 0.25); border-radius:2px;"></div>
+          </div>
+          <div class="prev-bot-pane" style="border-right:none;">
+            <div class="prev-bot-row"></div>
+            <div class="prev-bot-row"></div>
+            <div class="prev-bot-row"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <span class="card-tag tag-c">Direction C</span>
+      <div class="card-title">Mission Canvas</div>
+      <div class="card-tagline">"The screen is the work, not a portal to the work"</div>
+      <div class="card-desc">No generic shell. Each role gets a canvas that IS their workflow. IPP = live CPM Gantt with stage gates and risk heat map. Trader = live order book with position table. Toggle roles to see both.</div>
+      <div class="card-traits">
+        <div class="trait"><span class="trait-k">Structure</span><span class="trait-v">Role-specific full-canvas — no shared grid</span></div>
+        <div class="trait"><span class="trait-k">Nav</span><span class="trait-v">Role switcher only — workspace IS the nav</span></div>
+        <div class="trait"><span class="trait-k">Data</span><span class="trait-v">Role-native (Gantt for IPP, order book for Trader)</span></div>
+        <div class="trait"><span class="trait-k">Palette</span><span class="trait-v">Rich black with role accent dominant</span></div>
+        <div class="trait"><span class="trait-k">Best for</span><span class="trait-v">IPP Developer, Trader — single-domain focus</span></div>
+      </div>
+      <span class="card-cta card-cta-c">Open Direction C →</span>
+    </div>
+  </a>
+
+</div>
+
+<!-- Comparison table -->
+<div class="compare">
+  <h2>Side-by-side comparison</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Dimension</th>
+        <th class="col-a">A — Command Center</th>
+        <th class="col-b">B — Activity Feed</th>
+        <th class="col-c">C — Mission Canvas</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Layout bet</td>
+        <td>All tools visible simultaneously via columns</td>
+        <td>Urgency surface replaces hierarchical nav</td>
+        <td>Role-specific canvas replaces generic shell entirely</td>
+      </tr>
+      <tr>
+        <td>Nav model</td>
+        <td>Icon rail + collapsible side panel (still hierarchical)</td>
+        <td>Horizontal tabs, no sidebar at all</td>
+        <td>Role switcher only — no navigation concept</td>
+      </tr>
+      <tr>
+        <td>Closest to current</td>
+        <td>Yes — still a sidebar variant, easier migration</td>
+        <td>Moderate break — same pages, different chrome</td>
+        <td>Complete break — requires per-role canvases</td>
+      </tr>
+      <tr>
+        <td>Data density</td>
+        <td>High — always 4 columns active</td>
+        <td>Medium — feed cards expand vertically</td>
+        <td>Very high for that role's domain data</td>
+      </tr>
+      <tr>
+        <td>AI assists</td>
+        <td>Context rail, section 4</td>
+        <td>Inline feed cards labelled "AI suggests"</td>
+        <td>Inline in action queue below Gantt</td>
+      </tr>
+      <tr>
+        <td>Build effort</td>
+        <td>Low — shell swap, existing pages unchanged</td>
+        <td>Medium — new chrome, reuse existing routes</td>
+        <td>High — per-role canvas components new from scratch</td>
+      </tr>
+      <tr>
+        <td>Risk</td>
+        <td>Low nav problem solved; still a sidebar</td>
+        <td>Feed may fragment cross-role context</td>
+        <td>9 canvases × depth = substantial scope</td>
+      </tr>
+      <tr>
+        <td>Palette</td>
+        <td>Blue-tinted dark, electric blue accent</td>
+        <td>Warm anthracite, amber (avoids domain reflex)</td>
+        <td>Rich ink black, role-specific accent dominant</td>
+      </tr>
+      <tr>
+        <td>Roles it serves best</td>
+        <td>Trader, Admin, Carbon — multi-stream</td>
+        <td>Regulator, Lender, Offtaker — inbox-heavy</td>
+        <td>IPP Developer, Trader — deep single-domain focus</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="note">
+  <strong>What these mockups are:</strong> Static HTML files with no backend. All data is placeholder. Interactive elements (role toggle, tab switching, card expand) are wired in JavaScript. Open each file at 1440px+ for layout fidelity; the Column C Mission Canvas requires at minimum 1440px.
+  <br><br>
+  <strong>What to look for when reviewing:</strong> Does the information hierarchy feel right for your role? Does the layout support the task you do most frequently? Which direction would you trust with R2B project data or live energy trades?
+  <br><br>
+  These directions are not mutually exclusive. A hybrid — e.g., Direction C canvases for IPP and Trader combined with Direction B's activity feed approach for Regulator and Lender — is a viable outcome.
+</div>
+
+</body>
+</html>

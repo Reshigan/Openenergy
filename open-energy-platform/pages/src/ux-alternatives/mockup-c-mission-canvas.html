@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440">
+<title>OE Platform — Direction C: Mission Canvas (Light)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:   oklch(0.96 0.003 250);
+    --bg1:  oklch(0.99 0.002 80);
+    --bg2:  oklch(0.93 0.004 250);
+    --bg3:  oklch(0.89 0.006 250);
+    --border:   oklch(0.87 0.006 250);
+    --border-s: oklch(0.78 0.008 250);
+    --tx1: oklch(0.17 0.010 250);
+    --tx2: oklch(0.40 0.009 250);
+    --tx3: oklch(0.60 0.007 250);
+    --bad:     oklch(0.48 0.20 20);
+    --bad-bg:  oklch(0.97 0.04 20);
+    --warn:    oklch(0.50 0.18 55);
+    --warn-bg: oklch(0.96 0.05 55);
+    --good:    oklch(0.40 0.16 155);
+    --good-bg: oklch(0.95 0.04 155);
+    --mono: "IBM Plex Mono","Fira Code",monospace;
+    --sans: "IBM Plex Sans",system-ui,sans-serif;
+    --ease: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+  }
+  html,body { height:100%; background:var(--bg); color:var(--tx1); font-family:var(--sans); font-size:13px; overflow:hidden; }
+
+  .canvas-frame { height:100vh; display:flex; flex-direction:column; }
+
+  /* top bar */
+  .cbar { height:48px; background:var(--bg1); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 20px; gap:10px; flex-shrink:0; }
+  .cbar-logo { font-family:var(--mono); font-size:13px; font-weight:800; letter-spacing:.05em; margin-right:4px; }
+  .cbar-divider { width:1px; height:18px; background:var(--border); margin:0 2px; }
+  .cbar-role-pill { display:flex; align-items:center; gap:6px; padding:4px 10px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer; }
+  .cbar-tab { padding:6px 14px; font-size:12px; font-weight:600; color:var(--tx3); cursor:pointer; border-radius:4px; white-space:nowrap;
+    transition:background-color 120ms var(--ease), color 120ms var(--ease); }
+  .cbar-tab:hover { color:var(--tx2); background:var(--bg2); }
+  .cbar-tab:active { opacity:0.8; }
+  .cbar-tab:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+  .cbar-tab.active { font-weight:700; }
+  .cbar-tab .badge { margin-left:4px; padding:1px 5px; border-radius:8px; font-size:9px; font-weight:800; background:var(--bad-bg); color:var(--bad); font-family:var(--mono); }
+  .cbar-right { margin-left:auto; display:flex; align-items:center; gap:8px; }
+  .cbar-status { font-size:10px; font-family:var(--mono); font-weight:700; padding:3px 8px; border-radius:3px; }
+  .cbar-status.b { background:var(--bad-bg); color:var(--bad); }
+  .cbar-status.w { background:var(--warn-bg); color:var(--warn); }
+  .cbar-btn { padding:5px 14px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer; border:none; font-family:var(--sans); color:#fff; min-height:30px;
+    transition:filter 120ms var(--ease), transform 100ms var(--ease); }
+  .cbar-btn:hover { filter:brightness(0.9); }
+  .cbar-btn:active { transform:scale(0.97); }
+  .cbar-btn:focus-visible { outline:2px solid currentColor; outline-offset:3px; }
+  .cbar-avatar { width:26px; height:26px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; color:#fff; cursor:pointer; }
+
+  /* KPI ribbon */
+  .kpi-ribbon { background:var(--bg1); border-bottom:1px solid var(--border); display:flex; height:62px; flex-shrink:0; }
+  .kpi-cell { flex:1; display:flex; flex-direction:column; justify-content:center; padding:0 16px; border-right:1px solid var(--border); min-width:0; }
+  .kpi-cell:last-child { border-right:none; }
+  .kpi-l { font-size:9px; text-transform:uppercase; letter-spacing:.09em; color:var(--tx3); font-weight:700; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .kpi-v { font-family:var(--mono); font-size:18px; font-weight:700; color:var(--tx1); line-height:1; font-variant-numeric:tabular-nums; }
+  .kpi-v.ok { color:var(--good); }
+  .kpi-v.w  { color:var(--warn); }
+  .kpi-v.b  { color:var(--bad); }
+  .kpi-s { font-size:9px; font-family:var(--mono); color:var(--tx3); margin-top:2px; }
+
+  /* canvas body */
+  .canvas-body { flex:1; overflow:hidden; display:flex; }
+
+  /* ── IPP layout ── */
+  .ipp-canvas { flex:1; display:grid; grid-template-columns:1fr 280px; grid-template-rows:1fr 220px; overflow:hidden; }
+
+  .gantt-panel { grid-column:1; grid-row:1; display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--border); background:var(--bg); }
+  .panel-hdr { height:36px; border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 16px; gap:8px; background:var(--bg1); flex-shrink:0; }
+  .panel-hdr-title { font-size:11px; font-weight:700; color:var(--tx1); text-transform:uppercase; letter-spacing:.08em; }
+  .panel-hdr-sub { font-size:10px; color:var(--tx3); font-family:var(--mono); }
+  .panel-hdr-right { margin-left:auto; display:flex; gap:6px; align-items:center; }
+  .ph-pill { font-size:10px; padding:2px 8px; border-radius:3px; border:1px solid var(--border); color:var(--tx3); background:transparent; cursor:pointer; }
+  .ph-pill.active { border-color:var(--acc-border); color:var(--acc); background:var(--acc-bg); }
+
+  .gantt-body { flex:1; overflow-y:auto; overflow-x:hidden; }
+  .gantt-body::-webkit-scrollbar { width:4px; }
+  .gantt-body::-webkit-scrollbar-thumb { background:var(--border-s); }
+  .gantt-group { padding:5px 12px; background:var(--bg2); border-bottom:1px solid var(--border); font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--tx3); }
+  .gantt-row { display:flex; align-items:center; border-bottom:1px solid var(--border); height:34px; }
+  .gantt-row:hover { background:var(--acc-bg); }
+  .gantt-label { width:200px; flex-shrink:0; display:flex; align-items:center; gap:8px; padding:0 12px; border-right:1px solid var(--border); height:100%; }
+  .gantt-icon { width:16px; height:16px; border-radius:3px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; flex-shrink:0; }
+  .gi-ok { background:var(--good-bg); color:var(--good); }
+  .gi-act { background:var(--acc-bg); color:var(--acc); }
+  .gi-blk { background:var(--bad-bg); color:var(--bad); }
+  .gi-pen { background:var(--bg3); color:var(--tx3); }
+  .gantt-name { font-size:11px; font-weight:600; color:var(--tx1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; }
+  .gantt-track { flex:1; padding:0 8px; position:relative; height:100%; display:flex; align-items:center; }
+  .gantt-bg-line { position:absolute; left:8px; right:8px; top:50%; transform:translateY(-50%); height:4px; background:var(--bg3); border-radius:2px; }
+  .gantt-bar { position:absolute; height:12px; border-radius:3px; top:50%; transform:translateY(-50%); }
+  .gbar-ok { background:var(--good); }
+  .gbar-act { background:var(--acc); }
+  .gbar-crit { background:var(--bad); }
+  .gbar-pen { background:var(--bg3); border:1px solid var(--border-s); }
+  .gantt-pct { position:absolute; right:10px; font-size:9px; font-family:var(--mono); color:var(--tx3); font-variant-numeric:tabular-nums; }
+
+  /* side panel */
+  .side-panel { grid-column:2; grid-row:1/3; background:var(--bg1); border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+  .sp-tabs { display:flex; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .sp-tab { flex:1; padding:8px 4px; font-size:10px; font-weight:700; text-align:center; cursor:pointer; color:var(--tx3); border-bottom:2px solid transparent;
+    transition:color 120ms var(--ease), border-color 120ms var(--ease); }
+  .sp-tab:hover { color:var(--tx2); }
+  .sp-tab:active { opacity:0.8; }
+  .sp-tab:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+  .sp-tab.active { color:var(--acc); border-bottom-color:var(--acc); }
+  .sp-body { flex:1; overflow-y:auto; padding:12px; }
+  .sp-body::-webkit-scrollbar { width:3px; }
+  .sp-body::-webkit-scrollbar-thumb { background:var(--border-s); }
+
+  .risk-cell { border-radius:3px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; cursor:pointer; height:36px; font-family:var(--mono);
+    transition:filter 120ms var(--ease), transform 100ms var(--ease); }
+  .risk-cell:hover { filter:brightness(.95); }
+  .risk-cell:active { transform:scale(0.97); }
+  .risk-cell:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+  .rc-green { background:var(--good-bg); color:var(--good); border:1px solid oklch(0.75 0.10 155); }
+  .rc-yellow { background:var(--warn-bg); color:var(--warn); border:1px solid oklch(0.75 0.10 55); }
+  .rc-red { background:var(--bad-bg); color:var(--bad); border:1px solid oklch(0.75 0.10 20); }
+
+  /* bottom row */
+  .bottom-row { grid-column:1; grid-row:2; display:grid; grid-template-columns:1fr 1fr; border-top:1px solid var(--border); overflow:hidden; background:var(--bg1); }
+  .bot-panel { display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--border); }
+  .bot-panel:last-child { border-right:none; }
+  .action-list { flex:1; overflow-y:auto; padding:8px; }
+  .action-list::-webkit-scrollbar { width:3px; }
+  .action-list::-webkit-scrollbar-thumb { background:var(--border-s); }
+  .action-item { display:flex; align-items:flex-start; gap:8px; padding:7px 8px; border-radius:4px; cursor:pointer; border:1px solid transparent; margin-bottom:4px; }
+  .action-item:hover { border-color:var(--border); background:var(--bg2); }
+  .action-dot { width:7px; height:7px; border-radius:4px; flex-shrink:0; margin-top:3px; }
+  .action-content { flex:1; }
+  .action-title { font-size:11px; font-weight:600; color:var(--tx1); margin-bottom:1px; }
+  .action-sub { font-size:10px; color:var(--tx3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .action-time { font-size:9px; font-family:var(--mono); color:var(--tx3); flex-shrink:0; font-variant-numeric:tabular-nums; }
+
+  /* ── Trader layout ── */
+  .trader-canvas { flex:1; display:grid; grid-template-columns:300px 1fr 280px; grid-template-rows:1fr 180px; overflow:hidden; }
+  .ob-panel { grid-column:1; grid-row:1/3; border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; background:var(--bg); }
+  .ob-body { flex:1; overflow-y:auto; }
+  .ob-body::-webkit-scrollbar { width:3px; }
+  .ob-body::-webkit-scrollbar-thumb { background:var(--border-s); }
+  .ob-hdr { display:grid; grid-template-columns:80px 80px 80px; height:28px; align-items:center; padding:0 12px; background:var(--bg2); border-bottom:1px solid var(--border); position:sticky; top:0; }
+  .ob-hdr span { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--tx3); font-family:var(--mono); }
+  .ob-row { display:grid; grid-template-columns:80px 80px 80px; height:26px; align-items:center; padding:0 12px; font-size:11px; font-family:var(--mono); border-bottom:1px solid var(--border); cursor:pointer; font-variant-numeric:tabular-nums; }
+  .ob-row:hover { background:var(--bg2); }
+  .ob-row.ask { border-left:2px solid var(--bad); }
+  .ob-row.bid { border-left:2px solid var(--good); }
+  .ob-price-a { color:var(--bad); font-weight:700; }
+  .ob-price-b { color:var(--good); font-weight:700; }
+  .ob-spread-row { display:flex; align-items:center; justify-content:center; height:28px; background:var(--bg2); border-bottom:1px solid var(--border); gap:8px; }
+  .ob-spread-label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--tx3); }
+
+  .pos-panel { grid-column:2; grid-row:1; border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; background:var(--bg); }
+  .tbl-header { display:grid; grid-template-columns:120px repeat(5,1fr) 80px; height:28px; align-items:center; padding:0 12px; background:var(--bg2); border-bottom:1px solid var(--border); position:sticky; top:0; }
+  .tbl-header span { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--tx3); font-family:var(--mono); }
+  .pos-table { flex:1; overflow-y:auto; }
+  .pos-table::-webkit-scrollbar { width:3px; }
+  .pos-table::-webkit-scrollbar-thumb { background:var(--border-s); }
+  .tbl-row { display:grid; grid-template-columns:120px repeat(5,1fr) 80px; height:30px; align-items:center; padding:0 12px; border-bottom:1px solid var(--border); cursor:pointer; }
+  .tbl-row:hover { background:var(--bg2); }
+  .tbl-row span { font-size:11px; font-family:var(--mono); color:var(--tx2); font-variant-numeric:tabular-nums; }
+  .tbl-row .instrument { font-weight:600; color:var(--tx1); }
+  .pnl-pos { color:var(--good) !important; }
+  .pnl-neg { color:var(--bad) !important; }
+  .pos-badge { font-size:9px; font-weight:700; padding:2px 6px; border-radius:3px; }
+  .pb-long { background:var(--good-bg); color:var(--good); }
+  .pb-short { background:var(--bad-bg); color:var(--bad); }
+
+  .trader-side { grid-column:3; grid-row:1/3; border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; background:var(--bg1); }
+  .ticker-row { grid-column:2; grid-row:2; background:var(--bg1); border-top:1px solid var(--border); overflow-y:auto; padding:8px 12px; display:flex; flex-direction:column; gap:5px; }
+  .ticker-row::-webkit-scrollbar { width:3px; }
+  .ticker-row::-webkit-scrollbar-thumb { background:var(--border-s); }
+  .trade-exec { display:flex; align-items:center; gap:10px; padding:5px 8px; border-radius:3px; background:var(--bg2); border:1px solid var(--border); font-family:var(--mono); font-size:10px; font-variant-numeric:tabular-nums; }
+  .te-side { width:28px; text-align:center; font-weight:800; font-size:9px; padding:2px 4px; border-radius:2px; }
+  .te-side.b { background:var(--good-bg); color:var(--good); }
+  .te-side.s { background:var(--bad-bg); color:var(--bad); }
+  .te-time { margin-left:auto; color:var(--tx3); }
+  .te-wave { font-size:9px; color:var(--tx3); }
+
+  /* role switcher */
+  .role-switcher { position:fixed; bottom:24px; right:24px; display:flex; gap:8px; flex-wrap:wrap; max-width:320px; z-index:100; background:var(--bg1); border:1px solid var(--border); border-radius:6px; padding:6px; box-shadow:0 4px 16px oklch(0.40 0.008 250 /.12); }
+  .rs-btn { padding:7px 18px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer; border:none; font-family:var(--sans); background:transparent; color:var(--tx3); min-height:32px;
+    transition:background-color 120ms var(--ease), color 120ms var(--ease), transform 100ms var(--ease); }
+  .rs-btn:hover { background:var(--bg2); color:var(--tx2); }
+  .rs-btn:active { transform:scale(0.97); }
+  .rs-btn:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+  .rs-btn.a-ipp { background:oklch(0.96 0.05 55); color:oklch(0.46 0.16 55); }
+  .rs-btn.a-trader { background:oklch(0.95 0.04 148); color:oklch(0.34 0.18 148); }
+</style>
+</head>
+<body>
+
+<!-- IPP Canvas -->
+<div class="canvas-frame" id="ipp-view" style="--acc:oklch(0.46 0.16 55);--acc-bg:oklch(0.96 0.05 55);--acc-border:oklch(0.80 0.12 55);">
+  <div class="cbar">
+    <span class="cbar-logo" style="color:oklch(0.46 0.16 55)">OE/</span>
+    <div class="cbar-divider"></div>
+    <div class="cbar-role-pill" style="background:oklch(0.96 0.05 55);border:1px solid oklch(0.80 0.12 55);color:oklch(0.46 0.16 55)">IPP Developer</div>
+    <div class="cbar-divider"></div>
+    <div class="cbar-tab active" style="color:oklch(0.46 0.16 55);background:oklch(0.96 0.05 55)">Project canvas</div>
+    <div class="cbar-tab">Risk register</div>
+    <div class="cbar-tab">Finance <span class="badge">1</span></div>
+    <div class="cbar-tab">Compliance <span class="badge">3</span></div>
+    <div class="cbar-tab">Stage gates <span class="badge">2</span></div>
+    <div class="cbar-tab">Procurement</div>
+    <div class="cbar-tab">ED commitments</div>
+    <div class="cbar-tab">Grid / NTCSA</div>
+    <div class="cbar-right">
+      <span class="cbar-status b">SG-4 BLOCKED</span>
+      <span class="cbar-status w">DSCR 1.18x</span>
+      <button class="cbar-btn" style="background:oklch(0.46 0.16 55)">+ Action</button>
+      <div class="cbar-avatar" style="background:oklch(0.46 0.16 55)">KM</div>
+    </div>
+  </div>
+  <div class="kpi-ribbon">
+    <div class="kpi-cell"><div class="kpi-l">Active projects</div><div class="kpi-v">4</div><div class="kpi-s">across portfolio</div></div>
+    <div class="kpi-cell"><div class="kpi-l">Total capacity</div><div class="kpi-v">3.2 GW</div><div class="kpi-s">760 MW under construction</div></div>
+    <div class="kpi-cell"><div class="kpi-l">Avg progress</div><div class="kpi-v w">68%</div><div class="kpi-s">Karoo W1 + Solar 2</div></div>
+    <div class="kpi-cell"><div class="kpi-l">Budget committed</div><div class="kpi-v">R 48.4B</div><div class="kpi-s">across 4 active projects</div></div>
+    <div class="kpi-cell"><div class="kpi-l">COD this year</div><div class="kpi-v ok">2</div><div class="kpi-s">on track</div></div>
+    <div class="kpi-cell"><div class="kpi-l">HSE LTI (30d)</div><div class="kpi-v b">1</div><div class="kpi-s">today · Rietkuil</div></div>
+    <div class="kpi-cell"><div class="kpi-l">DSCRs at risk</div><div class="kpi-v b">2</div><div class="kpi-s">below 1.20x floor</div></div>
+    <div class="kpi-cell"><div class="kpi-l">Stage gates blocked</div><div class="kpi-v b">3</div><div class="kpi-s">W20 SG-4 + W49 licence</div></div>
+  </div>
+  <div class="canvas-body">
+    <div class="ipp-canvas">
+      <!-- Gantt -->
+      <div class="gantt-panel">
+        <div class="panel-hdr">
+          <span class="panel-hdr-title">Construction programme</span>
+          <span class="panel-hdr-sub">W20 · COD chain · NERSA §C-5 · 140 MW</span>
+          <div class="ph-pill active" style="border-color:oklch(0.80 0.12 55);color:oklch(0.46 0.16 55);background:oklch(0.96 0.05 55);margin-left:8px">Karoo Wind 1 ▾</div>
+          <span style="font-size:9px;color:var(--tx3);margin-left:4px">(1 of 4)</span>
+          <div class="panel-hdr-right">
+            <div class="ph-pill active" style="border-color:oklch(0.80 0.12 55);color:oklch(0.46 0.16 55);background:oklch(0.96 0.05 55)">Gantt</div>
+            <div class="ph-pill">Milestones</div>
+            <div class="ph-pill">Resources</div>
+            <div class="ph-pill">CPM</div>
+          </div>
+        </div>
+        <div class="gantt-body">
+          <div class="gantt-group">Site preparation</div>
+          <div class="gantt-row">
+            <div class="gantt-label"><div class="gantt-icon gi-ok">✓</div><span class="gantt-name">Access roads</span></div>
+            <div class="gantt-track"><div class="gantt-bg-line"></div><div class="gantt-bar gbar-ok" style="left:10px;width:18%"></div><span class="gantt-pct" style="color:var(--good)">100%</span></div>
+          </div>
+          <div class="gantt-row">
+            <div class="gantt-label"><div class="gantt-icon gi-ok">✓</div><span class="gantt-name">Civil earthworks</span></div>
+            <div class="gantt-track"><div class="gantt-bg-line"></div><div class="gantt-bar gbar-ok" style="left:10px;width:24%"></div><span class="gantt-pct" style="color:var(--good)">100%</span></div>
+          </div>
+          <div class="gantt-group">Foundations</div>
+          <div class="gantt-row">
+            <div class="gantt-label"><div class="gantt-icon gi-ok">✓</div><span class="gantt-name">Turbine foundations × 28</span></div>
+            <div class="gantt-track"><div class="gantt-bg-line"></div><div class="gantt-bar gbar-ok" style="left:14%;width:28%"></div><span class="gantt-pct" style="color:var(--good)">100%</span></div>
+          </div>
+          <div class="gantt-group">Structural erection</div>
+          <div class="gantt-row">
+            <div class="gantt-label"><div class="gantt-icon gi-ok">✓</div><span class="gantt-name">Tower sections</span></div>
+            <div class="gantt-track"><div class="gantt-bg-line"></div><div class="gantt-bar gbar-ok" style="left:28%;width:30%"></div><span class="gantt-pct" style="color:var(--good)">100%</span></div>
+          </div>
+          <div class="gantt-row">
+            <div class="gantt-label"><div class="gantt-icon gi-act" style="background:oklch(0.96 0.05 55);color:oklch(0.46 0.16 55)">▶</div><span class="gantt-name">Nacelle installation</span></div>
+            <div class="gantt-track"><div class="gantt-bg-line"></div><div class="gantt-bar" style="background:oklch(0.46 0.16 55);left:40%;width:20%"></div><span class="gantt-pct" style="color:var(--warn)">68%</span></div>
+          </div>
+          <div class="gantt-row">
+            <div class="gantt-label"><div class="gantt-icon gi-pen">–</div><span class="gantt-name">Rotor / blade assembly</span></div>
+            <div class="gantt-track"><div class="gantt-bg-line"></div><div class="gantt-bar gbar-pen" style="left:58%;width:14%"></div><span class="gantt-pct">0%</span></div>
+          </div>
+          <div class="gantt-group">Electrical</div>
+          <div class="gantt-row">
+            <div class="gantt-label"><div class="gantt-icon gi-act" style="background:oklch(0.96 0.05 55);color:oklch(0.46 0.16 55)">▶</div><span class="gantt-name">MV cable runs</span></div>
+            <div class="gantt-track"><div class="gantt-bg-line"></div><div class="gantt-bar" style="background:oklch(0.46 0.16 55);left:42%;width:22%"></div><span class="gantt-pct" style="color:var(--warn)">55%</span></div>
+          </div>
+          <div class="gantt-row">
+            <div class="gantt-label"><div class="gantt-icon gi-pen">–</div><span class="gantt-name">33 kV collector ring</span></div>
+            <div class="gantt-track"><div class="gantt-bg-line"></div><div class="gantt-bar gbar-pen" style="left:62%;width:14%"></div><span class="gantt-pct">0%</span></div>
+          </div>
+          <div class="gantt-group">Grid connection — W28 GCA · W75 Energization</div>
+          <div class="gantt-row">
+            <div class="gantt-label"><div class="gantt-icon gi-blk">✗</div><span class="gantt-name" style="color:var(--bad)">132 kV substation</span></div>
+            <div class="gantt-track"><div class="gantt-bg-line"></div><div class="gantt-bar gbar-crit" style="left:64%;width:18%"></div><span class="gantt-pct" style="color:var(--bad)">BLOCKED</span></div>
+          </div>
+          <div class="gantt-row">
+            <div class="gantt-label"><div class="gantt-icon gi-pen">–</div><span class="gantt-name">Energization / COD (W75)</span></div>
+            <div class="gantt-track"><div class="gantt-bg-line"></div><div class="gantt-bar gbar-pen" style="left:82%;width:10%"></div><span class="gantt-pct">Q1 2028</span></div>
+          </div>
+          <div class="gantt-group">Commissioning</div>
+          <div class="gantt-row">
+            <div class="gantt-label"><div class="gantt-icon gi-pen">–</div><span class="gantt-name">SCADA / WFMS setup</span></div>
+            <div class="gantt-track"><div class="gantt-bg-line"></div><div class="gantt-bar gbar-pen" style="left:74%;width:10%"></div><span class="gantt-pct">0%</span></div>
+          </div>
+          <div class="gantt-row">
+            <div class="gantt-label"><div class="gantt-icon gi-pen">–</div><span class="gantt-name">Performance testing (W24)</span></div>
+            <div class="gantt-track"><div class="gantt-bg-line"></div><div class="gantt-bar gbar-pen" style="left:86%;width:8%"></div><span class="gantt-pct">0%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Side panel -->
+      <div class="side-panel">
+        <div class="sp-tabs">
+          <div class="sp-tab active" style="color:oklch(0.46 0.16 55);border-bottom-color:oklch(0.46 0.16 55)">Risk</div>
+          <div class="sp-tab">Docs</div>
+          <div class="sp-tab">Finance</div>
+          <div class="sp-tab">AI</div>
+        </div>
+        <div class="sp-body">
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);margin-bottom:8px;">Risk heat map</div>
+          <div style="display:grid;grid-template-columns:52px 1fr 1fr 1fr;gap:3px;margin-bottom:3px;">
+            <div></div>
+            <div style="font-size:8px;font-weight:700;text-transform:uppercase;color:var(--tx3);text-align:center">Low</div>
+            <div style="font-size:8px;font-weight:700;text-transform:uppercase;color:var(--tx3);text-align:center">Med</div>
+            <div style="font-size:8px;font-weight:700;text-transform:uppercase;color:var(--tx3);text-align:center">High</div>
+          </div>
+          <div style="display:grid;grid-template-columns:52px 1fr;gap:3px;margin-bottom:14px;">
+            <div style="display:flex;flex-direction:column;gap:3px;">
+              <div style="height:36px;display:flex;align-items:center;justify-content:flex-end;padding-right:4px;font-size:8px;font-weight:700;color:var(--tx3)">Critical</div>
+              <div style="height:36px;display:flex;align-items:center;justify-content:flex-end;padding-right:4px;font-size:8px;font-weight:700;color:var(--tx3)">Medium</div>
+              <div style="height:36px;display:flex;align-items:center;justify-content:flex-end;padding-right:4px;font-size:8px;font-weight:700;color:var(--tx3)">Low</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:36px 36px 36px;gap:3px;">
+              <div class="risk-cell rc-yellow">—</div>
+              <div class="risk-cell rc-red">DSCR</div>
+              <div class="risk-cell rc-red">SG-4</div>
+              <div class="risk-cell rc-green">—</div>
+              <div class="risk-cell rc-yellow">Bond</div>
+              <div class="risk-cell rc-red">LTI</div>
+              <div class="risk-cell rc-green">—</div>
+              <div class="risk-cell rc-green">RFI</div>
+              <div class="risk-cell rc-yellow">ED</div>
+            </div>
+          </div>
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);margin-bottom:6px;">Active chains</div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:var(--bad-bg);border-radius:3px;font-size:10px;"><span style="color:var(--bad);font-weight:700;">W20 COD · SG-4</span><span style="color:var(--bad);font-family:var(--mono);font-size:9px;">BLOCKED</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:var(--bad-bg);border-radius:3px;font-size:10px;"><span style="color:var(--bad);font-weight:700;">W6 Lender · Covenant</span><span style="color:var(--bad);font-family:var(--mono);font-size:9px;">CURE 12d</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:var(--warn-bg);border-radius:3px;font-size:10px;"><span style="color:var(--warn);font-weight:700;">W10 Bond · Sere Solar</span><span style="color:var(--warn);font-family:var(--mono);font-size:9px;">21d</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:var(--bad-bg);border-radius:3px;font-size:10px;"><span style="color:var(--bad);font-weight:700;">W25 HSE · Rietkuil LTI</span><span style="color:var(--bad);font-family:var(--mono);font-size:9px;">§24 7d</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:var(--good-bg);border-radius:3px;font-size:10px;"><span style="color:var(--good);font-weight:700;">W75 Energization · Karoo</span><span style="color:var(--good);font-family:var(--mono);font-size:9px;">AUTH ✓</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom row -->
+      <div class="bottom-row">
+        <div class="bot-panel">
+          <div class="panel-hdr"><span class="panel-hdr-title">Action queue</span><span class="panel-hdr-sub">4 urgent today</span></div>
+          <div class="action-list">
+            <div class="action-item"><div class="action-dot" style="background:var(--bad)"></div><div class="action-content"><div class="action-title">Chase IE agency — SG-4 cert</div><div class="action-sub">W20 COD · NERSA §C-5 · Karoo Wind 1</div></div><div class="action-time">NOW</div></div>
+            <div class="action-item"><div class="action-dot" style="background:var(--bad)"></div><div class="action-content"><div class="action-title">File OHSA §24 — Rietkuil LTI</div><div class="action-sub">W25 HSE chain · 7d deadline</div></div><div class="action-time">TODAY</div></div>
+            <div class="action-item"><div class="action-dot" style="background:var(--warn)"></div><div class="action-content"><div class="action-title">Submit DSCR cure — cash flow model</div><div class="action-sub">W6 Lender · DBSA · Jun 23</div></div><div class="action-time">12d</div></div>
+            <div class="action-item"><div class="action-dot" style="background:var(--warn)"></div><div class="action-content"><div class="action-title">Initiate bond renewal — Sere Solar</div><div class="action-sub">W10 Bond chain · Standard Bank</div></div><div class="action-time">21d</div></div>
+          </div>
+        </div>
+        <div class="bot-panel">
+          <div class="panel-hdr"><span class="panel-hdr-title">AI assists</span><span class="panel-hdr-sub">Workers AI · 2 suggestions</span></div>
+          <div class="action-list">
+            <div style="background:oklch(0.98 0.02 60);border:1px solid oklch(0.86 0.06 60);border-radius:4px;padding:9px 10px;margin-bottom:6px;">
+              <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:oklch(0.50 0.12 60);margin-bottom:4px;">Construction optimisation</div>
+              <div style="font-size:11px;color:var(--tx2);line-height:1.5;">Add second crane team to recover 4–5 days on nacelle install. Currently 6d behind.</div>
+              <div style="display:flex;gap:6px;margin-top:7px;">
+                <button style="padding:4px 10px;border-radius:3px;font-size:10px;font-weight:600;cursor:pointer;background:oklch(0.56 0.18 65);border:none;color:#fff;font-family:var(--sans)">Accept</button>
+                <button style="padding:4px 10px;border-radius:3px;font-size:10px;font-weight:600;cursor:pointer;background:transparent;border:1px solid oklch(0.78 0.12 60);color:oklch(0.44 0.14 60);font-family:var(--sans)">Dismiss</button>
+              </div>
+            </div>
+            <div style="background:oklch(0.98 0.02 60);border:1px solid oklch(0.86 0.06 60);border-radius:4px;padding:9px 10px;">
+              <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:oklch(0.50 0.12 60);margin-bottom:4px;">Finance alert</div>
+              <div style="font-size:11px;color:var(--tx2);line-height:1.5;">Bond renewal delay reduces DSCR 0.04x further. Parallel-process recommended.</div>
+              <div style="display:flex;gap:6px;margin-top:7px;">
+                <button style="padding:4px 10px;border-radius:3px;font-size:10px;font-weight:600;cursor:pointer;background:oklch(0.56 0.18 65);border:none;color:#fff;font-family:var(--sans)">Accept</button>
+                <button style="padding:4px 10px;border-radius:3px;font-size:10px;font-weight:600;cursor:pointer;background:transparent;border:1px solid oklch(0.78 0.12 60);color:oklch(0.44 0.14 60);font-family:var(--sans)">Dismiss</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Trader Canvas -->
+<div class="canvas-frame" id="trader-view" style="display:none;">
+  <div class="cbar">
+    <span class="cbar-logo" style="color:oklch(0.34 0.18 148)">OE/</span>
+    <div class="cbar-divider"></div>
+    <div class="cbar-role-pill" style="background:oklch(0.95 0.04 148);border:1px solid oklch(0.80 0.10 148);color:oklch(0.34 0.18 148)">Trader</div>
+    <div class="cbar-divider"></div>
+    <div class="cbar-tab active" style="color:oklch(0.34 0.18 148);background:oklch(0.95 0.04 148)">Trading desk</div>
+    <div class="cbar-tab">Risk (VaR)</div>
+    <div class="cbar-tab">Position limits <span class="badge">1</span></div>
+    <div class="cbar-tab">Compliance <span class="badge">3</span></div>
+    <div class="cbar-tab">Settlement</div>
+    <div class="cbar-tab">Algo certs</div>
+    <div class="cbar-tab">Trade repo</div>
+    <div class="cbar-tab">Margin</div>
+    <div class="cbar-right">
+      <span class="cbar-status w">VaR 94% limit</span>
+      <span class="cbar-status b">FSCA STOR pending</span>
+      <button class="cbar-btn" style="background:oklch(0.34 0.18 148)">New order</button>
+      <div class="cbar-avatar" style="background:oklch(0.34 0.18 148)">TN</div>
+    </div>
+  </div>
+  <div class="kpi-ribbon">
+    <div class="kpi-cell"><div class="kpi-l">Market volume today</div><div class="kpi-v">R 4.8B</div><div class="kpi-s">35 active traders</div></div>
+    <div class="kpi-cell"><div class="kpi-l">Open interest</div><div class="kpi-v">1.24M MWh</div><div class="kpi-s">national market</div></div>
+    <div class="kpi-cell"><div class="kpi-l">SPOT price</div><div class="kpi-v">R 842/MWh</div><div class="kpi-s">▲ 2.4% today</div></div>
+    <div class="kpi-cell"><div class="kpi-l">CARBON price</div><div class="kpi-v">R 248/tCO2</div><div class="kpi-s">Carbon Tax Act §13</div></div>
+    <div class="kpi-cell"><div class="kpi-l">REC rate</div><div class="kpi-v">R 124/MWh</div><div class="kpi-s">I-REC/SAREC</div></div>
+    <div class="kpi-cell"><div class="kpi-l">Active traders</div><div class="kpi-v">35</div><div class="kpi-s">FSCA registered</div></div>
+    <div class="kpi-cell"><div class="kpi-l">Stage 3 load-shed</div><div class="kpi-v b">ACTIVE</div><div class="kpi-s">peak contracts elevated</div></div>
+    <div class="kpi-cell"><div class="kpi-l">Grid freq</div><div class="kpi-v w">49.98 Hz</div><div class="kpi-s">below 50.00 nominal</div></div>
+  </div>
+  <div class="canvas-body">
+    <div class="trader-canvas">
+      <!-- Order book -->
+      <div class="ob-panel">
+        <div class="panel-hdr"><span class="panel-hdr-title">Order book</span><span class="panel-hdr-sub">SPOT-ZAR · 13:42:08</span>
+          <div class="panel-hdr-right"><div class="ph-pill active" style="border-color:oklch(0.80 0.10 148);color:oklch(0.34 0.18 148);background:oklch(0.95 0.04 148)">L2</div><div class="ph-pill">L1</div><div class="ph-pill">Depth</div></div>
+        </div>
+        <div style="display:flex;gap:3px;padding:5px 8px;border-bottom:1px solid var(--border);background:var(--bg2);flex-wrap:wrap;">
+          <div style="font-size:9px;padding:2px 7px;border-radius:3px;background:oklch(0.95 0.04 148);border:1px solid oklch(0.80 0.10 148);color:oklch(0.34 0.18 148);cursor:pointer;font-family:var(--mono);font-weight:700;">SOLAR-SPOT</div>
+          <div style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);color:var(--tx3);cursor:pointer;font-family:var(--mono);">WIND-BASE</div>
+          <div style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);color:var(--tx3);cursor:pointer;font-family:var(--mono);">GAS-PEAK</div>
+          <div style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);color:var(--tx3);cursor:pointer;font-family:var(--mono);">COAL-BASE</div>
+          <div style="font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid var(--border);color:var(--tx3);cursor:pointer;font-family:var(--mono);">STORAGE</div>
+        </div>
+        <div class="ob-body">
+          <div class="ob-hdr"><span>Price</span><span>Vol (MW)</span><span>Cumul</span></div>
+          <div class="ob-row ask"><span class="ob-price-a">1 442.50</span><span>12.0</span><span>48.5</span></div>
+          <div class="ob-row ask"><span class="ob-price-a">1 441.75</span><span>8.5</span><span>36.5</span></div>
+          <div class="ob-row ask"><span class="ob-price-a">1 440.00</span><span>15.0</span><span>28.0</span></div>
+          <div class="ob-row ask"><span class="ob-price-a">1 439.25</span><span>13.0</span><span>13.0</span></div>
+          <div class="ob-spread-row"><span class="ob-spread-label">Spread</span><span style="font-family:var(--mono);font-size:12px;font-weight:800;color:oklch(0.34 0.18 148)">1.50</span></div>
+          <div class="ob-row bid"><span class="ob-price-b">1 437.75</span><span>18.0</span><span>18.0</span></div>
+          <div class="ob-row bid"><span class="ob-price-b">1 437.00</span><span>10.5</span><span>28.5</span></div>
+          <div class="ob-row bid"><span class="ob-price-b">1 436.25</span><span>22.0</span><span>50.5</span></div>
+          <div class="ob-row bid"><span class="ob-price-b">1 435.50</span><span>9.0</span><span>59.5</span></div>
+          <div class="ob-row bid"><span class="ob-price-b">1 434.00</span><span>14.0</span><span>73.5</span></div>
+        </div>
+      </div>
+
+      <!-- Positions -->
+      <div class="pos-panel">
+        <div class="panel-hdr"><span class="panel-hdr-title">Open positions</span><span class="panel-hdr-sub">W3 Settlement · W29 Pos limits</span></div>
+        <div class="pos-table">
+          <div class="tbl-header"><span>Instrument</span><span>Side</span><span>Qty (MW)</span><span>Avg px</span><span>Last</span><span>PnL</span><span>Status</span></div>
+          <div class="tbl-row"><span class="instrument">SPOT-ZAR-H13</span><span><span class="pos-badge pb-long">LONG</span></span><span>80.0</span><span>1 432.00</span><span>1 437.75</span><span class="pnl-pos">+R 230K</span><span style="color:var(--good);font-size:9px;font-weight:700">Active</span></div>
+          <div class="tbl-row"><span class="instrument">PEAK-ZAR-H15</span><span><span class="pos-badge pb-short">SHORT</span></span><span>40.0</span><span>1 448.50</span><span>1 439.25</span><span class="pnl-pos">+R 163K</span><span style="color:var(--good);font-size:9px;font-weight:700">Active</span></div>
+          <div class="tbl-row"><span class="instrument">SOLAR-2027-Q1</span><span><span class="pos-badge pb-long">LONG</span></span><span>120.0</span><span>1 218.00</span><span>1 224.50</span><span class="pnl-pos">+R 78K</span><span style="color:var(--good);font-size:9px;font-weight:700">Active</span></div>
+          <div class="tbl-row"><span class="instrument">WIND-CAPE-H08</span><span><span class="pos-badge pb-short">SHORT</span></span><span>55.0</span><span>1 116.00</span><span>1 129.75</span><span class="pnl-neg">−R 69K</span><span style="color:var(--warn);font-size:9px;font-weight:700">Near limit</span></div>
+          <div class="tbl-row"><span class="instrument">BESS-ARBT-D24</span><span><span class="pos-badge pb-long">LONG</span></span><span>30.0</span><span>980.00</span><span>994.25</span><span class="pnl-pos">+R 43K</span><span style="color:var(--good);font-size:9px;font-weight:700">Active</span></div>
+          <div class="tbl-row" style="background:var(--bad-bg)"><span class="instrument" style="color:var(--bad)">INTRADAY-OTC-22</span><span><span class="pos-badge pb-long">LONG</span></span><span>200.0</span><span>1 388.00</span><span>1 372.50</span><span class="pnl-neg">−R 31K</span><span style="color:var(--bad);font-size:9px;font-weight:700">STOR flagged</span></div>
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div class="trader-side">
+        <div style="padding:10px 12px;border-bottom:1px solid var(--border)"><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3)">Urgent (3)</div></div>
+        <div style="flex:1;overflow-y:auto;padding:8px 10px">
+          <div style="background:var(--bad-bg);border:1px solid var(--bad);border-radius:4px;padding:9px 10px;margin-bottom:6px">
+            <div style="font-size:10px;font-weight:700;color:var(--bad);margin-bottom:2px">W52 Market abuse — STOR</div>
+            <div style="font-size:10px;color:var(--tx2)">INTRADAY-OTC-22 flagged. FSCA STOR filing due within 24h.</div>
+            <button style="margin-top:6px;padding:4px 10px;border-radius:3px;font-size:10px;font-weight:700;cursor:pointer;background:var(--bad);border:none;color:#fff;font-family:var(--sans)">File STOR now</button>
+          </div>
+          <div style="background:var(--warn-bg);border:1px solid var(--warn);border-radius:4px;padding:9px 10px;margin-bottom:6px">
+            <div style="font-size:10px;font-weight:700;color:var(--warn);margin-bottom:2px">W29 Position limit — VaR 94%</div>
+            <div style="font-size:10px;color:var(--tx2)">Daily VaR R 1.82M vs R 1.94M limit. Reduce or escalate.</div>
+            <button style="margin-top:6px;padding:4px 10px;border-radius:3px;font-size:10px;font-weight:700;cursor:pointer;background:var(--warn);border:none;color:#fff;font-family:var(--sans)">View risk</button>
+          </div>
+          <div style="background:var(--warn-bg);border:1px solid var(--warn);border-radius:4px;padding:9px 10px;margin-bottom:12px">
+            <div style="font-size:10px;font-weight:700;color:var(--warn);margin-bottom:2px">W44 Trade repo — 3 late</div>
+            <div style="font-size:10px;color:var(--tx2)">3 OTC trades past T+1 reporting window. File to FSCA.</div>
+            <button style="margin-top:6px;padding:4px 10px;border-radius:3px;font-size:10px;font-weight:700;cursor:pointer;background:var(--warn);border:none;color:#fff;font-family:var(--sans)">Report now</button>
+          </div>
+          <div style="background:oklch(0.97 0.03 148);border:1px solid oklch(0.84 0.08 148);border-radius:4px;padding:9px 10px">
+            <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:oklch(0.40 0.14 148);margin-bottom:4px">AI — spread opportunity</div>
+            <div style="font-size:10px;color:var(--tx2);line-height:1.5">BESS H08-H16 spread 48 R/MWh (avg 31). Consider +20 MW short H16.</div>
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <button style="padding:4px 8px;border-radius:3px;font-size:10px;font-weight:600;cursor:pointer;background:oklch(0.34 0.18 148);border:none;color:#fff;font-family:var(--sans)">Accept</button>
+              <button style="padding:4px 8px;border-radius:3px;font-size:10px;font-weight:600;cursor:pointer;background:transparent;border:1px solid oklch(0.80 0.10 148);color:oklch(0.40 0.14 148);font-family:var(--sans)">Dismiss</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Execution blotter -->
+      <div class="ticker-row">
+        <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);margin-bottom:2px">Recent executions — blotter</div>
+        <div class="trade-exec"><span class="te-side b">BUY</span><span style="font-weight:700;color:var(--tx1)">SPOT-ZAR-H13</span><span>1 437.25</span><span style="color:var(--tx3)">20 MW</span><span class="te-wave">W76 alloc</span><span class="te-time">13:41:52</span></div>
+        <div class="trade-exec"><span class="te-side s">SELL</span><span style="font-weight:700;color:var(--tx1)">PEAK-ZAR-H15</span><span>1 448.75</span><span style="color:var(--tx3)">15 MW</span><span class="te-wave">W44 repo</span><span class="te-time">13:40:18</span></div>
+        <div class="trade-exec"><span class="te-side b">BUY</span><span style="font-weight:700;color:var(--tx1)">SOLAR-2027-Q1</span><span>1 224.00</span><span style="color:var(--tx3)">30 MW</span><span class="te-wave">W36 RFQ</span><span class="te-time">13:38:44</span></div>
+        <div class="trade-exec" style="background:var(--bad-bg);border-color:var(--bad)"><span class="te-side s" style="background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad)">BUY</span><span style="font-weight:700;color:var(--bad)">INTRADAY-OTC-22</span><span style="color:var(--bad)">1 388.00</span><span style="color:var(--bad)">200 MW</span><span style="color:var(--bad);font-size:9px">W52 FLAGGED</span><span class="te-time">12:15:30</span></div>
+        <div class="trade-exec"><span class="te-side s">SELL</span><span style="font-weight:700;color:var(--tx1)">BESS-ARBT-D24</span><span>994.50</span><span style="color:var(--tx3)">10 MW</span><span class="te-wave">W3 settle</span><span class="te-time">11:58:12</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="role-switcher">
+  <button class="rs-btn a-ipp" id="btn-ipp" onclick="switchRole('ipp')">IPP Developer</button>
+  <button class="rs-btn" id="btn-trader" onclick="switchRole('trader')">Trader</button>
+  <button class="rs-btn" style="background:transparent;color:var(--tx3)">Lender</button>
+  <button class="rs-btn" style="background:transparent;color:var(--tx3)">Offtaker</button>
+  <button class="rs-btn" style="background:transparent;color:var(--tx3)">Grid Oper.</button>
+  <button class="rs-btn" style="background:transparent;color:var(--tx3)">Carbon</button>
+  <button class="rs-btn" style="background:transparent;color:var(--tx3)">Regulator</button>
+  <button class="rs-btn" style="background:transparent;color:var(--tx3)">ESCO</button>
+</div>
+
+<script>
+function switchRole(r){
+  document.getElementById('ipp-view').style.display = r==='ipp'?'flex':'none';
+  document.getElementById('trader-view').style.display = r==='trader'?'flex':'none';
+  document.getElementById('btn-ipp').className='rs-btn'+(r==='ipp'?' a-ipp':'');
+  document.getElementById('btn-trader').className='rs-btn'+(r==='trader'?' a-trader':'');
+}
+</script>
+</body>
+</html>

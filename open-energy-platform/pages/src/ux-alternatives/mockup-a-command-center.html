@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440">
+<title>OE Platform — Direction A: Command Center (Light)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:   oklch(0.96 0.003 250);
+    --bg1:  oklch(0.99 0.002 80);
+    --bg2:  oklch(0.93 0.004 250);
+    --bg3:  oklch(0.89 0.006 250);
+    --border:   oklch(0.87 0.006 250);
+    --border-s: oklch(0.78 0.008 250);
+    --tx1: oklch(0.17 0.010 250);
+    --tx2: oklch(0.40 0.009 250);
+    --tx3: oklch(0.60 0.007 250);
+    --acc:        oklch(0.34 0.18 148);
+    --acc-bg:     oklch(0.95 0.04 148);
+    --acc-border: oklch(0.80 0.10 148);
+    --warn:    oklch(0.50 0.18 55);
+    --warn-bg: oklch(0.96 0.05 55);
+    --bad:    oklch(0.48 0.20 20);
+    --bad-bg: oklch(0.97 0.04 20);
+    --good:    oklch(0.40 0.16 155);
+    --good-bg: oklch(0.95 0.04 155);
+    --info: oklch(0.42 0.16 240);
+    --mono: "IBM Plex Mono","Fira Code",monospace;
+    --sans: "IBM Plex Sans",system-ui,sans-serif;
+    --ease: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+  html,body{height:100%;background:var(--bg);color:var(--tx1);font-family:var(--sans);font-size:13px;overflow:hidden;}
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+  }
+
+  /* ── CMD BAR ── */
+  .cmd-bar{position:fixed;top:0;left:0;right:0;height:38px;z-index:200;
+    background:oklch(0.17 0.010 250);color:oklch(0.88 0.004 80);
+    display:flex;align-items:center;padding:0 14px;gap:0;
+    border-bottom:1px solid oklch(0.10 0.008 250);}
+  .cb-logo{font-family:var(--mono);font-size:13px;font-weight:800;color:oklch(0.82 0.14 148);letter-spacing:.06em;margin-right:16px;}
+  .cb-market{display:flex;gap:0;font-family:var(--mono);font-size:11px;}
+  .cb-tick{padding:0 13px;border-right:1px solid oklch(0.28 0.008 250);}
+  .cb-tick .l{color:oklch(0.52 0.006 250);font-size:9px;text-transform:uppercase;letter-spacing:.08em;}
+  .cb-tick .v{color:oklch(0.90 0.004 80);font-size:12px;font-weight:700;}
+  .cb-tick .d{font-size:9px;}
+  .cb-tick .d.up{color:oklch(0.68 0.18 155);}
+  .cb-tick .d.dn{color:oklch(0.68 0.20 20);}
+  .cb-tick .d.warn{color:oklch(0.78 0.20 55);}
+  .cb-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+  .cb-badge{padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;font-family:var(--mono);}
+  .cb-badge.bad{background:oklch(0.48 0.20 20);color:#fff;}
+  .cb-badge.warn{background:oklch(0.60 0.18 55);color:#fff;}
+  .cb-time{font-family:var(--mono);font-size:11px;color:oklch(0.52 0.006 250);}
+  .cb-avatar{width:24px;height:24px;border-radius:12px;background:oklch(0.34 0.18 148);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;}
+
+  /* ── SHELL ── */
+  .shell{margin-top:38px;height:calc(100vh - 38px);display:grid;grid-template-columns:46px 252px 1fr 296px;}
+
+  /* Col 1 — icon rail */
+  .rail{background:oklch(0.20 0.010 250);border-right:1px solid oklch(0.15 0.008 250);
+    display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:2px;overflow:hidden;}
+  .rail-icon{width:34px;height:34px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+    font-size:13px;font-family:var(--mono);font-weight:700;cursor:pointer;position:relative;
+    color:oklch(0.52 0.006 250);
+    transition:background-color 120ms var(--ease), color 120ms var(--ease);}
+  .rail-icon:hover{background:oklch(0.28 0.008 250);color:oklch(0.88 0.004 80);}
+  .rail-icon:active{transform:scale(0.93);}
+  .rail-icon.active{background:oklch(0.34 0.18 148 /.2);color:oklch(0.68 0.18 148);}
+  .rail-icon:focus-visible{outline:2px solid oklch(0.68 0.18 148);outline-offset:2px;}
+  .rail-icon .rb{position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:4px;
+    background:oklch(0.48 0.20 20);border:1.5px solid oklch(0.20 0.010 250);}
+  .rail-sep{width:22px;height:1px;background:oklch(0.28 0.008 250);margin:4px 0;}
+  .rail-label{font-size:8px;color:oklch(0.42 0.006 250);text-align:center;margin-top:1px;font-family:var(--mono);}
+
+  /* Col 2 — nav panel */
+  .nav-panel{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+  .nav-top{padding:10px 10px 8px;border-bottom:1px solid var(--border);flex-shrink:0;}
+  .nav-role-bar{display:flex;gap:4px;margin-bottom:8px;}
+  .nav-role-tag{font-size:9px;font-weight:700;padding:3px 8px;border-radius:3px;
+    background:oklch(0.34 0.18 148);color:#fff;font-family:var(--mono);}
+  .nav-role-dept{font-size:10px;color:var(--tx3);padding:3px 0;}
+  .nav-search{width:100%;padding:6px 10px;border-radius:4px;
+    background:var(--bg1);border:1px solid var(--border);
+    color:var(--tx1);font-size:12px;font-family:var(--sans);outline:none;}
+  .nav-search:focus{border-color:var(--acc-border);}
+  .nav-search::placeholder{color:var(--tx3);}
+  .nav-scroll{flex:1;overflow-y:auto;padding:6px 0;}
+  .nav-scroll::-webkit-scrollbar{width:3px;}
+  .nav-scroll::-webkit-scrollbar-thumb{background:var(--border-s);}
+
+  .nav-sec{margin-bottom:1px;}
+  .nav-sec-hdr{padding:5px 12px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.10em;
+    color:var(--tx3);display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
+  .nav-sec-hdr:hover{color:var(--tx2);}
+  .nav-sec-hdr .ch{font-size:8px;transition:transform 150ms var(--ease);}
+  .nav-sec-hdr.coll .ch{transform:rotate(-90deg);}
+  .nav-items{ padding: 0; }
+  .nav-item{display:flex;align-items:center;gap:7px;padding:5px 12px 5px 16px;font-size:12px;
+    color:var(--tx2);cursor:pointer;
+    transition:background-color 100ms var(--ease), color 100ms var(--ease);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:30px;}
+  .nav-item:hover{background:var(--bg3);color:var(--tx1);}
+  .nav-item.active{background:var(--acc-bg);color:var(--acc);font-weight:600;}
+  .nav-item:focus-visible{outline:2px solid var(--acc);outline-offset:-2px;border-radius:3px;}
+  .nav-item .cnt{margin-left:auto;font-size:9px;font-family:var(--mono);padding:1px 5px;border-radius:8px;flex-shrink:0;}
+  .nav-item .cnt.b{background:var(--bad-bg);color:var(--bad);}
+  .nav-item .cnt.w{background:var(--warn-bg);color:var(--warn);}
+  .nav-more{padding:3px 18px;font-size:10px;color:var(--info);cursor:pointer;font-style:italic;}
+  .nav-more:hover{color:var(--tx2);}
+
+  /* Col 3 — workspace */
+  .workspace{display:flex;flex-direction:column;overflow:hidden;background:var(--bg1);}
+  .ws-notice{background:oklch(0.96 0.05 55);border-bottom:1px solid oklch(0.86 0.10 55);
+    padding:5px 20px;font-size:11px;color:var(--warn);flex-shrink:0;display:flex;align-items:center;gap:6px;}
+  .ws-topbar{height:44px;border-bottom:1px solid var(--border);display:flex;align-items:center;
+    padding:0 20px;gap:12px;background:var(--bg1);flex-shrink:0;}
+  .ws-bc{font-size:12px;color:var(--tx3);display:flex;align-items:center;gap:5px;}
+  .ws-bc .sep{color:var(--border-s);}
+  .ws-bc .cur{color:var(--tx1);font-weight:600;}
+  .ws-acts{margin-left:auto;display:flex;gap:6px;}
+  .btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:4px;min-height:32px;
+    font-size:11px;font-weight:600;cursor:pointer;border:none;font-family:var(--sans);
+    transition:background-color 120ms var(--ease), color 120ms var(--ease), transform 100ms var(--ease);}
+  .btn:active{transform:scale(0.97);}
+  .btn:focus-visible{outline:2px solid var(--acc);outline-offset:2px;}
+  .btn-p{background:var(--acc);color:#fff;}
+  .btn-p:hover{background:oklch(0.28 0.18 148);}
+  .btn-s{background:var(--bg2);color:var(--tx2);border:1px solid var(--border);}
+  .btn-s:hover{background:var(--bg3);color:var(--tx1);}
+
+  .ws-tabs{border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:flex-end;gap:0;flex-shrink:0;background:var(--bg1);}
+  .ws-tab{padding:8px 14px;font-size:12px;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;
+    margin-bottom:-1px;white-space:nowrap;
+    transition:color 120ms var(--ease), border-color 120ms var(--ease);}
+  .ws-tab:hover{color:var(--tx2);}
+  .ws-tab:active{opacity:0.7;}
+  .ws-tab.active{color:var(--acc);border-bottom-color:var(--acc);font-weight:600;}
+  .ws-tab:focus-visible{outline:2px solid var(--acc);outline-offset:-2px;border-radius:3px 3px 0 0;}
+
+  .ws-body{flex:1;overflow-y:auto;padding:20px;}
+  .ws-body::-webkit-scrollbar{width:5px;}
+  .ws-body::-webkit-scrollbar-thumb{background:var(--border);}
+
+  .kpi-row{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:5px;overflow:hidden;background:var(--bg1);}
+  .kpi-chip{padding:10px 16px;border-right:1px solid var(--border);flex:1;}
+  .kpi-chip:last-child{border-right:none;}
+  .kpi-chip .l{font-size:9px;text-transform:uppercase;letter-spacing:.10em;color:var(--tx3);font-weight:700;margin-bottom:4px;}
+  .kpi-chip .v{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--tx1);line-height:1;font-variant-numeric:tabular-nums;}
+  .kpi-chip .v.ok{color:var(--good);}
+  .kpi-chip .v.w{color:var(--warn);}
+  .kpi-chip .v.b{color:var(--bad);}
+  .kpi-chip .s{font-family:var(--mono);font-size:9px;color:var(--tx3);margin-top:3px;}
+
+  .sh3{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .sh3 h3{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);}
+
+  .chart-block{background:var(--bg);border:1px solid var(--border);border-radius:5px;height:130px;margin-bottom:20px;
+    display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+  .chart-svg{width:100%;height:100%;}
+  .chart-lbl{font-size:10px;color:var(--tx3);font-family:var(--mono);}
+
+  .data-table{width:100%;border-collapse:collapse;font-size:12px;}
+  .data-table thead th{text-align:left;padding:6px 10px;font-size:9px;font-weight:800;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--tx3);border-bottom:2px solid var(--border);background:var(--bg2);}
+  .data-table thead th:not(:first-child){text-align:right;}
+  .data-table tbody td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--tx2);}
+  .data-table tbody td:not(:first-child){text-align:right;font-family:var(--mono);font-size:11px;font-variant-numeric:tabular-nums;}
+  .data-table tbody tr:hover td{background:var(--bg2);}
+  .td-m{color:var(--tx1);font-weight:500;}
+  .pill{display:inline-block;padding:1px 7px;border-radius:3px;font-size:9px;font-weight:700;}
+  .pill.ok{background:var(--good-bg);color:var(--good);}
+  .pill.w{background:var(--warn-bg);color:var(--warn);}
+  .pill.b{background:var(--bad-bg);color:var(--bad);}
+  .pnl-ok{color:var(--good);}
+  .pnl-b{color:var(--bad);}
+
+  .ai-card{background:oklch(0.98 0.02 60);border:1px solid oklch(0.88 0.06 60);border-radius:5px;
+    padding:12px 14px;margin-bottom:16px;display:flex;gap:10px;}
+  .ai-icon{width:24px;height:24px;border-radius:12px;background:oklch(0.56 0.18 65);
+    display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;color:#fff;font-weight:800;}
+  .ai-body{flex:1;}
+  .ai-body .lbl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.10em;color:oklch(0.50 0.12 60);margin-bottom:3px;}
+  .ai-body .txt{font-size:12px;color:var(--tx2);line-height:1.5;}
+  .ai-acts{display:flex;gap:6px;margin-top:8px;}
+  .ai-btn{padding:3px 10px;border-radius:3px;font-size:10px;font-weight:600;cursor:pointer;
+    border:1px solid oklch(0.78 0.12 60);background:transparent;color:oklch(0.44 0.14 60);
+    min-height:28px;
+    transition:background-color 120ms var(--ease), border-color 120ms var(--ease), transform 100ms var(--ease);}
+  .ai-btn:hover{background:oklch(0.94 0.04 60);}
+  .ai-btn:active{transform:scale(0.97);}
+  .ai-btn:focus-visible{outline:2px solid var(--acc);outline-offset:2px;}
+  .ai-btn.acc{background:oklch(0.56 0.18 65);border-color:oklch(0.56 0.18 65);color:#fff;}
+  .ai-btn.acc:hover{background:oklch(0.50 0.18 65);border-color:oklch(0.50 0.18 65);}
+
+  /* Col 4 — context rail */
+  .ctx-rail{background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+  .ctx-sec{border-bottom:1px solid var(--border);padding:12px;}
+  .ctx-sec.grow{flex:1;overflow-y:auto;}
+  .ctx-sec.grow::-webkit-scrollbar{width:3px;}
+  .ctx-sec.grow::-webkit-scrollbar-thumb{background:var(--border-s);}
+  .ctx-lbl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.10em;color:var(--tx3);margin-bottom:8px;}
+  .ctx-item{padding:8px 10px;border-radius:4px;background:var(--bg1);border:1px solid var(--border);
+    margin-bottom:6px;cursor:pointer;
+    transition:border-color 120ms var(--ease), background-color 120ms var(--ease), transform 100ms var(--ease);}
+  .ctx-item:hover{border-color:var(--border-s);background:var(--bg);}
+  .ctx-item:active{transform:scale(0.99);}
+  .ctx-item:focus-visible{outline:2px solid var(--acc);outline-offset:2px;}
+  .ctx-item.urg{border-color:var(--bad);background:var(--bad-bg);}
+  .ctx-item.cau{border-color:var(--warn);background:var(--warn-bg);}
+  .ctx-item.inf{border-color:var(--border);background:var(--bg1);}
+  .ctx-item .it{font-size:11px;font-weight:600;color:var(--tx1);margin-bottom:2px;}
+  .ctx-item .is{font-size:10px;color:var(--tx3);}
+  .ctx-item .ia{font-size:10px;color:var(--acc);font-weight:600;cursor:pointer;margin-top:4px;}
+  .ctx-item .im{font-size:9px;color:var(--tx3);font-family:var(--mono);margin-top:3px;}
+
+  ::-webkit-scrollbar{width:4px;height:4px;}
+  ::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div class="cmd-bar">
+  <span class="cb-logo">OE/</span>
+  <div class="cb-market">
+    <div class="cb-tick">
+      <div class="l">SPOT</div><div class="v">R 842<span style="font-size:10px">.40</span></div><div class="d up">▲ 2.4%</div>
+    </div>
+    <div class="cb-tick">
+      <div class="l">PEAK</div><div class="v">R 1 240<span style="font-size:10px">.00</span></div><div class="d up">▲ 0.8%</div>
+    </div>
+    <div class="cb-tick">
+      <div class="l">GRID STAGE</div><div class="v warn" style="font-size:14px">3</div><div class="d warn">LOADSHED</div>
+    </div>
+    <div class="cb-tick">
+      <div class="l">ZAR/USD</div><div class="v">18.62</div><div class="d dn">▼ 0.1%</div>
+    </div>
+    <div class="cb-tick">
+      <div class="l">SOLAR-2027-Q1</div><div class="v">R 785<span style="font-size:10px">.00</span></div><div class="d up">▲ 1.1%</div>
+    </div>
+    <div class="cb-tick">
+      <div class="l">CARBON</div><div class="v">R 248<span style="font-size:10px">.50</span></div><div class="d">/tCO2</div>
+    </div>
+    <div class="cb-tick">
+      <div class="l">GRID FREQ</div><div class="v warn" style="font-size:14px">49.98</div><div class="d warn">Hz ▼</div>
+    </div>
+    <div class="cb-tick" style="border-right:none">
+      <div class="l">OPEN INT.</div><div class="v">1.24M</div><div class="d">MWh</div>
+    </div>
+  </div>
+  <div class="cb-right">
+    <span class="cb-badge bad">3 URGENT</span>
+    <span class="cb-badge warn">7 PENDING</span>
+    <span class="cb-time" id="cb-time">14:32:08 SAST</span>
+    <div class="cb-avatar">TR</div>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- Rail -->
+  <div class="rail">
+    <div class="rail-icon active" title="Trading">TX</div>
+    <div class="rail-icon" title="Risk (W2)">VaR</div>
+    <div class="rail-icon" title="Settlement (W3)"><div class="rb"></div>STL</div>
+    <div class="rail-icon" title="Compliance">CPL</div>
+    <div class="rail-icon" title="Surveillance">SRV</div>
+    <div class="rail-sep"></div>
+    <div class="rail-icon" title="Reporting">RPT</div>
+    <div class="rail-icon" title="Counterparty">CTY</div>
+    <div class="rail-icon" title="Contracts">CTR</div>
+    <div class="rail-sep"></div>
+    <div class="rail-icon" style="margin-top:auto" title="Settings">SET</div>
+    <div class="rail-icon" style="margin-bottom:6px" title="Help">?</div>
+  </div>
+
+  <!-- Nav panel — realistic full nav for Trader role -->
+  <div class="nav-panel">
+    <div class="nav-top">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+        <span class="nav-role-tag">TRADER</span>
+        <span class="nav-role-dept" style="font-size:10px;color:var(--tx3)">J. Khumalo</span>
+      </div>
+      <input class="nav-search" placeholder="Search 76 trading functions… (⌘K)">
+    </div>
+    <div class="nav-scroll">
+
+      <div class="nav-sec">
+        <div class="nav-sec-hdr"><span>Pinned</span><span class="ch">▾</span></div>
+        <div class="nav-items">
+          <div class="nav-item active">Order book <span class="cnt w">24 open</span></div>
+          <div class="nav-item">Open positions <span class="cnt b">3 at risk</span></div>
+          <div class="nav-item">Margin calls <span class="cnt b">1</span></div>
+        </div>
+      </div>
+
+      <div class="nav-sec">
+        <div class="nav-sec-hdr"><span>Trading desk</span><span class="ch">▾</span></div>
+        <div class="nav-items">
+          <div class="nav-item">Order book</div>
+          <div class="nav-item">Trade blotter</div>
+          <div class="nav-item">OTC / bilateral desk</div>
+          <div class="nav-item">RFQ — best execution <span class="cnt w">2</span></div>
+          <div class="nav-item">Allocation &amp; give-up <span class="cnt w">1</span></div>
+          <div class="nav-item">Position limits §41</div>
+          <div class="nav-more" id="more-trading" onclick="toggleMore(this)">+ 4 more</div>
+          <div class="nav-extra" style="display:none">
+            <div class="nav-item">Block trade notification</div>
+            <div class="nav-item">Swap / EFP desk</div>
+            <div class="nav-item">Order amendment log</div>
+            <div class="nav-item">Market depth view</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-sec">
+        <div class="nav-sec-hdr"><span>Risk management</span><span class="ch">▾</span></div>
+        <div class="nav-items">
+          <div class="nav-item">Daily VaR dashboard</div>
+          <div class="nav-item">Stress test scenarios</div>
+          <div class="nav-item">Counterparty margin <span class="cnt b">1</span></div>
+          <div class="nav-item">Algo cert &amp; kill-switch</div>
+          <div class="nav-item">Pre-trade guards</div>
+          <div class="nav-more" id="more-risk" onclick="toggleMore(this)">+ 3 more</div>
+          <div class="nav-extra" style="display:none">
+            <div class="nav-item">Exposure by counterparty</div>
+            <div class="nav-item">Mark price history</div>
+            <div class="nav-item">Credit limit utilisation</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-sec">
+        <div class="nav-sec-hdr"><span>Compliance (FSCA)</span><span class="ch">▾</span></div>
+        <div class="nav-items">
+          <div class="nav-item">Trade repository (FMA) <span class="cnt w">3</span></div>
+          <div class="nav-item">Market abuse STOR <span class="cnt b">1</span></div>
+          <div class="nav-item">MM compliance — spread</div>
+          <div class="nav-item">Surveillance alerts</div>
+          <div class="nav-more" id="more-comp" onclick="toggleMore(this)">+ 2 more</div>
+          <div class="nav-extra" style="display:none">
+            <div class="nav-item">Best-execution record</div>
+            <div class="nav-item">Algo change register</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-sec">
+        <div class="nav-sec-hdr"><span>Settlement</span><span class="ch">▾</span></div>
+        <div class="nav-items">
+          <div class="nav-item">T+1 settlement queue <span class="cnt w">5</span></div>
+          <div class="nav-item">DvP matching</div>
+          <div class="nav-item">Margin &amp; collateral</div>
+          <div class="nav-item">Failed trade repo</div>
+        </div>
+      </div>
+
+      <div class="nav-sec">
+        <div class="nav-sec-hdr"><span>Analytics &amp; reporting</span><span class="ch">▾</span></div>
+        <div class="nav-items">
+          <div class="nav-item">P&amp;L attribution</div>
+          <div class="nav-item">VWAP / mark prices</div>
+          <div class="nav-item">Audit trail</div>
+          <div class="nav-more" id="more-rep" onclick="toggleMore(this)">+ 4 more</div>
+          <div class="nav-extra" style="display:none">
+            <div class="nav-item">Fee &amp; commission ledger</div>
+            <div class="nav-item">MIFID-style transaction report</div>
+            <div class="nav-item">Contract valuations</div>
+            <div class="nav-item">Revenue attribution</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Workspace -->
+  <div class="workspace">
+    <div class="ws-notice">ALERT: Stage 3 loadshed active — national grid frequency 49.98 Hz (below 50.00). Peak contracts elevated. Review open positions against limit now.</div>
+    <div class="ws-topbar">
+      <div class="ws-bc">
+        <span>Trading desk</span><span class="sep">/</span><span class="cur">Order book</span>
+      </div>
+      <div class="ws-acts">
+        <button class="btn btn-s">Export</button>
+        <button class="btn btn-s">Filters ▾</button>
+        <button class="btn btn-p">+ New order</button>
+      </div>
+    </div>
+    <div class="ws-tabs">
+      <div class="ws-tab active">Order book</div>
+      <div class="ws-tab">Blotter</div>
+      <div class="ws-tab">Positions</div>
+      <div class="ws-tab">Risk (W2)</div>
+      <div class="ws-tab">Settlement (W3)</div>
+      <div class="ws-tab">Compliance</div>
+      <div class="ws-tab">Algo cert</div>
+      <div class="ws-tab">MM compliance</div>
+      <div class="ws-tab">Counterparty</div>
+    </div>
+    <div class="ws-body">
+
+      <div class="ai-card">
+        <div class="ai-icon">AI</div>
+        <div class="ai-body">
+          <div class="lbl">Market insight</div>
+          <div class="txt">Stage 3 loadshed has historically pushed SOLAR-PEAK-2027 up 8–12% within 2 hours. Your current long (48,000 MWh) may benefit from holding. Precedent: Apr 14, May 3 events.</div>
+          <div class="ai-acts">
+            <button class="ai-btn acc">Accept insight</button>
+            <button class="ai-btn">Dismiss</button>
+            <button class="ai-btn">View analysis</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi-chip">
+          <div class="l">Desk fills</div><div class="v ok">R 61.8M</div><div class="s">Market total R 4.8B today</div>
+        </div>
+        <div class="kpi-chip">
+          <div class="l">Open orders</div><div class="v">24</div><div class="s">8 at risk</div>
+        </div>
+        <div class="kpi-chip">
+          <div class="l">Daily VaR</div><div class="v w">R 12.4M</div><div class="s">82% of limit</div>
+        </div>
+        <div class="kpi-chip">
+          <div class="l">Net exposure</div><div class="v">R 48.2M</div><div class="s">net long</div>
+        </div>
+        <div class="kpi-chip">
+          <div class="l">Margin util.</div><div class="v ok">68%</div><div class="s">R 34.1M used</div>
+        </div>
+        <div class="kpi-chip">
+          <div class="l">P&amp;L today</div><div class="v ok">+R 610K</div><div class="s">realised</div>
+        </div>
+        <div class="kpi-chip">
+          <div class="l">National VWAP</div><div class="v">R 842/MWh</div><div class="s">5d avg R 821</div>
+        </div>
+        <div class="kpi-chip">
+          <div class="l">Open interest</div><div class="v">1.24M MWh</div><div class="s">national market</div>
+        </div>
+      </div>
+
+      <div class="sh3">
+        <h3>SPOT price — 5 day</h3>
+        <div style="display:flex;gap:8px;font-size:10px;font-family:var(--mono);color:var(--tx3);">
+          <span>1D</span><span style="color:var(--acc);font-weight:700">5D</span><span>1M</span><span>3M</span>
+        </div>
+      </div>
+      <div class="chart-block">
+        <svg class="chart-svg" viewBox="0 0 600 100" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="oklch(0.34 0.18 148)" stop-opacity="0.12"/>
+              <stop offset="100%" stop-color="oklch(0.34 0.18 148)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,75 L50,70 L100,65 L150,72 L200,60 L250,55 L300,58 L350,48 L400,45 L450,50 L500,42 L550,38 L600,35" fill="none" stroke="oklch(0.34 0.18 148)" stroke-width="1.5"/>
+          <path d="M0,75 L50,70 L100,65 L150,72 L200,60 L250,55 L300,58 L350,48 L400,45 L450,50 L500,42 L550,38 L600,35 L600,100 L0,100 Z" fill="url(#g)"/>
+        </svg>
+        <div style="position:absolute;bottom:6px;left:16px;" class="chart-lbl">Jun 5</div>
+        <div style="position:absolute;bottom:6px;right:16px;" class="chart-lbl">Jun 10</div>
+        <div style="position:absolute;top:8px;right:16px;font-family:var(--mono);font-size:12px;font-weight:700;color:var(--good);">R 842.40</div>
+      </div>
+
+      <div class="sh3">
+        <h3>Open orders (24)</h3>
+        <button class="btn btn-s" style="font-size:10px;padding:3px 8px;">Show all</button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Contract</th><th>Side</th><th>Qty MWh</th><th>Price R</th><th>Status</th><th>Filled</th><th>P&amp;L</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="td-m">SOLAR-PEAK-2027-Q1</td><td><span class="pill ok">BUY</span></td><td>48,000</td><td>785.00</td><td><span class="pill ok">Active</span></td><td>100%</td><td class="pnl-ok">+R 1.07M</td></tr>
+          <tr><td class="td-m">WIND-BASE-2026-H2</td><td><span class="pill b">SELL</span></td><td>32,000</td><td>640.00</td><td><span class="pill w">Partial</span></td><td>61%</td><td class="pnl-b">-R 646K</td></tr>
+          <tr><td class="td-m">GAS-PEAK-2026-DEC</td><td><span class="pill ok">BUY</span></td><td>12,500</td><td>1,180.00</td><td><span class="pill ok">Active</span></td><td>100%</td><td class="pnl-ok">+R 300K</td></tr>
+          <tr><td class="td-m">COAL-BASE-2027-Q2</td><td><span class="pill ok">BUY</span></td><td>180,000</td><td>420.00</td><td><span class="pill w">Resting</span></td><td>0%</td><td class="pnl-b">-R 120K</td></tr>
+          <tr><td class="td-m">STORAGE-PEAK-Q4</td><td><span class="pill ok">BUY</span></td><td>6,000</td><td>1,040.00</td><td><span class="pill ok">Active</span></td><td>100%</td><td class="pnl-ok">+R 180K</td></tr>
+          <tr><td class="td-m">HYDRO-BASE-2027</td><td><span class="pill ok">BUY</span></td><td>220,000</td><td>510.00</td><td><span class="pill ok">Active</span></td><td>84%</td><td class="pnl-ok">+R 440K</td></tr>
+          <tr><td class="td-m">WIND-NOM-2026-Q4</td><td><span class="pill b">SELL</span></td><td>95,000</td><td>680.00</td><td><span class="pill w">Partial</span></td><td>42%</td><td class="pnl-b">-R 228K</td></tr>
+          <tr><td class="td-m">CARBON-2027</td><td><span class="pill ok">BUY</span></td><td>40,000</td><td>248.50</td><td><span class="pill ok">Active</span></td><td>100%</td><td class="pnl-ok">+R 96K</td></tr>
+          <tr><td class="td-m">STORAGE-CAPE-Q3</td><td><span class="pill b">SELL</span></td><td>210,000</td><td>1,020.00</td><td><span class="pill w">Resting</span></td><td>0%</td><td class="pnl-b">-R 84K</td></tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+  <!-- Context rail -->
+  <div class="ctx-rail">
+    <div class="ctx-sec">
+      <div class="ctx-lbl">Act now — 3 items</div>
+      <div class="ctx-item urg">
+        <div class="it">Margin call — WIND-BASE</div>
+        <div class="is">R 500K top-up. 4h 12m remaining.</div>
+        <div class="ia">Send top-up →</div>
+      </div>
+      <div class="ctx-item urg">
+        <div class="it">STOR filing due</div>
+        <div class="is">Case #MAB-2026-044. 1h 20m left.</div>
+        <div class="ia">Review &amp; file STOR →</div>
+      </div>
+      <div class="ctx-item urg">
+        <div class="it">Position limit §41 breach</div>
+        <div class="is">OFFT-SOLAR net long 38.4% vs 35% limit.</div>
+        <div class="ia">File §41 report →</div>
+      </div>
+      <div class="ctx-item urg">
+        <div class="it">Algo TR-021 kill-switch</div>
+        <div class="is">Algo execution 18% above slippage threshold. FSCA W60 gate pending review.</div>
+        <div class="ia">Review kill-switch →</div>
+      </div>
+    </div>
+    <div class="ctx-sec grow">
+      <div class="ctx-lbl">Today</div>
+      <div class="ctx-item cau">
+        <div class="it">VaR approaching cap</div>
+        <div class="is">R 12.4M — 82% of daily limit.</div>
+        <div class="im">Updated 2 min ago</div>
+      </div>
+      <div class="ctx-item inf">
+        <div class="it">T+1 settlement — 5 trades</div>
+        <div class="is">R 34.1M queued. DvP match pending.</div>
+        <div class="im">Settles 06:00 Jun 11</div>
+      </div>
+      <div class="ctx-item inf">
+        <div class="it">MM compliance — Q2</div>
+        <div class="is">Spread obligation 94.2% met.</div>
+        <div class="im">Due Jun 30</div>
+      </div>
+      <div class="ctx-item inf">
+        <div class="it">Algo TR-021 — review</div>
+        <div class="is">+14% slippage on SOLAR since May 28.</div>
+        <div class="ia">Review algo →</div>
+      </div>
+      <div class="ctx-item inf">
+        <div class="it">W44 Trade report — OTC</div>
+        <div class="is">3 FMA reports due end of day. Post-trade window closes 17:00.</div>
+        <div class="im">FMA §12 · T+1</div>
+      </div>
+      <div class="ctx-item inf">
+        <div class="it">W76 Allocation queue</div>
+        <div class="is">8 block trades pending affirmation. DTCC-ITP window 4h remaining.</div>
+        <div class="im">Updated 8 min ago</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  setInterval(() => {
+    const t = new Date().toTimeString().slice(0,8);
+    document.getElementById('cb-time').textContent = t + ' SAST';
+  }, 1000);
+
+  function toggleMore(el) {
+    const extra = el.nextElementSibling;
+    if (extra.style.display === 'none') {
+      extra.style.display = '';
+      el.textContent = '▴ show less';
+    } else {
+      extra.style.display = 'none';
+      const id = el.id;
+      const map = {'more-trading':'+ 4 more','more-risk':'+ 3 more','more-comp':'+ 2 more','more-rep':'+ 4 more'};
+      el.textContent = map[id] || '+ more';
+    }
+  }
+
+  document.querySelectorAll('.nav-sec-hdr').forEach(h => {
+    h.addEventListener('click', () => {
+      const items = h.nextElementSibling;
+      if (!items) return;
+      const coll = items.style.display === 'none';
+      items.style.display = coll ? '' : 'none';
+      h.classList.toggle('coll', !coll);
+    });
+  });
+
+  document.querySelectorAll('.ws-tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.ws-tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

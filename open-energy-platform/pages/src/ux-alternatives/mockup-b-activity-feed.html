@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440">
+<title>OE Platform — Direction B: Activity Feed (Light) — IPP Developer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:   oklch(0.96 0.003 250);
+    --bg1:  oklch(0.99 0.002 80);
+    --bg2:  oklch(0.93 0.004 250);
+    --bg3:  oklch(0.90 0.006 250);
+    --border:   oklch(0.87 0.006 250);
+    --border-s: oklch(0.78 0.008 250);
+    --tx1: oklch(0.17 0.010 250);
+    --tx2: oklch(0.40 0.009 250);
+    --tx3: oklch(0.60 0.007 250);
+    /* IPP amber */
+    --acc:        oklch(0.46 0.16 55);
+    --acc-bg:     oklch(0.96 0.05 55);
+    --acc-border: oklch(0.80 0.12 55);
+    --bad:     oklch(0.48 0.20 20);
+    --bad-bg:  oklch(0.97 0.04 20);
+    --warn:    oklch(0.50 0.18 55);
+    --warn-bg: oklch(0.96 0.05 55);
+    --good:    oklch(0.40 0.16 155);
+    --good-bg: oklch(0.95 0.04 155);
+    --info:    oklch(0.42 0.16 240);
+    --info-bg: oklch(0.95 0.04 240);
+    --mono: "IBM Plex Mono","Fira Code",monospace;
+    --sans: "IBM Plex Sans",system-ui,sans-serif;
+    --ease: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+  }
+  html,body { height:100%; background:var(--bg); color:var(--tx1); font-family:var(--sans); font-size:13px; overflow:hidden; }
+
+  /* ── TOP NAV ── */
+  .topnav {
+    position:fixed; top:0; left:0; right:0; height:50px; z-index:200;
+    background:var(--bg1); border-bottom:1px solid var(--border);
+    display:flex; align-items:center; padding:0 20px; gap:0;
+  }
+  .tn-logo { font-family:var(--mono); font-size:14px; font-weight:800; color:var(--acc); letter-spacing:.06em; margin-right:24px; }
+  .tn-roles { display:flex; gap:2px; }
+  .tn-role { display:flex; align-items:center; gap:6px; padding:6px 14px; border-radius:5px; font-size:12px; font-weight:600; cursor:pointer; color:var(--tx3); white-space:nowrap;
+    transition:background-color 120ms var(--ease), color 120ms var(--ease); }
+  .tn-role:hover { background:var(--bg2); color:var(--tx2); }
+  .tn-role:active { opacity:0.8; }
+  .tn-role:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+  .tn-role.active { background:var(--acc-bg); color:var(--acc); }
+  .tn-role .rbadge { font-size:9px; font-weight:800; padding:1px 5px; border-radius:8px; font-family:var(--mono); }
+  .tn-role .rbadge.b { background:var(--bad-bg); color:var(--bad); }
+  .tn-role .rbadge.w { background:var(--warn-bg); color:var(--warn); }
+
+  .tn-search { margin-left:20px; flex:1; max-width:340px; }
+  .tn-search input { width:100%; padding:6px 12px; border-radius:5px; background:var(--bg2); border:1px solid var(--border); color:var(--tx1); font-size:12px; font-family:var(--sans); outline:none; }
+  .tn-search input:focus { border-color:var(--acc-border); background:var(--bg1); }
+  .tn-search input::placeholder { color:var(--tx3); }
+
+  .tn-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
+  .tn-status { display:flex; align-items:center; gap:5px; font-size:11px; font-family:var(--mono); padding:4px 10px; border-radius:4px; background:var(--bad-bg); color:var(--bad); font-weight:700; }
+  .tn-dot { width:6px; height:6px; border-radius:3px; background:currentColor; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .tn-btn { padding:6px 14px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer; font-family:var(--sans); background:var(--acc); color:#fff; border:none; min-height:32px;
+    transition:background-color 120ms var(--ease), transform 100ms var(--ease); }
+  .tn-btn:hover { background:oklch(0.38 0.18 55); }
+  .tn-btn:active { transform:scale(0.97); }
+  .tn-btn:focus-visible { outline:2px solid var(--acc); outline-offset:3px; }
+  .tn-avatar { width:28px; height:28px; border-radius:14px; background:var(--acc); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; color:#fff; cursor:pointer; }
+
+  /* ── PAGE LAYOUT ── */
+  .page { margin-top:50px; height:calc(100vh - 50px); display:grid; grid-template-columns:1fr 380px; }
+
+  /* ── LEFT: feed ── */
+  .feed-col { display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--border); background:var(--bg); }
+
+  .feed-bar { padding:10px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; flex-shrink:0; background:var(--bg1); }
+  .feed-title { font-size:14px; font-weight:700; color:var(--tx1); margin-right:8px; }
+  .feed-pill { padding:4px 12px; border-radius:15px; font-size:11px; font-weight:600; cursor:pointer; border:1px solid var(--border); color:var(--tx2); background:var(--bg1); white-space:nowrap;
+    transition:background-color 120ms var(--ease), border-color 120ms var(--ease), color 120ms var(--ease), transform 100ms var(--ease); }
+  .feed-pill:hover { border-color:var(--border-s); color:var(--tx1); }
+  .feed-pill:active { transform:scale(0.97); }
+  .feed-pill:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+  .feed-pill.active { background:var(--acc-bg); border-color:var(--acc-border); color:var(--acc); }
+  .feed-pill.active.bad { background:var(--bad-bg); border-color:var(--bad); color:var(--bad); }
+  .feed-count { margin-left:auto; font-size:11px; color:var(--tx3); font-family:var(--mono); }
+
+  .feed-scroll { flex:1; overflow-y:auto; padding:16px 20px; }
+  .feed-scroll::-webkit-scrollbar { width:4px; }
+  .feed-scroll::-webkit-scrollbar-thumb { background:var(--border-s); }
+
+  .feed-group-hdr { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.10em; color:var(--tx3); margin-bottom:8px; margin-top:16px; display:flex; align-items:center; gap:8px; }
+  .feed-group-hdr:first-child { margin-top:0; }
+  .feed-group-hdr .gcount { font-family:var(--mono); padding:1px 6px; border-radius:8px; font-weight:700; font-size:9px; }
+  .feed-group-hdr .gcount.b { background:var(--bad-bg); color:var(--bad); }
+  .feed-group-hdr .gcount.w { background:var(--warn-bg); color:var(--warn); }
+
+  .card {
+    background:var(--bg1); border:1px solid var(--border); border-radius:6px;
+    margin-bottom:8px; cursor:pointer; overflow:hidden;
+    transition:border-color 120ms var(--ease), box-shadow 120ms var(--ease), transform 100ms var(--ease);
+  }
+  .card:hover { border-color:var(--border-s); box-shadow:0 1px 6px oklch(0.40 0.008 250 /.08); }
+  .card:active { transform:scale(0.995); }
+  .card:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+  .card.open { border-color:var(--border-s); }
+  .card-top { padding:12px 14px; display:flex; align-items:flex-start; gap:10px; }
+  .card-stripe { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:3px; }
+  .card-stripe.b { background:var(--bad); }
+  .card-stripe.w { background:var(--warn); }
+  .card-stripe.ok { background:var(--good); }
+  .card-stripe.inf { background:var(--info); }
+  .card-stripe.acc { background:var(--acc); }
+  .card-content { flex:1; min-width:0; }
+  .card-meta { display:flex; align-items:center; gap:6px; margin-bottom:4px; flex-wrap:wrap; }
+  .card-tag { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; padding:2px 7px; border-radius:3px; }
+  .card-tag.b { background:var(--bad-bg); color:var(--bad); }
+  .card-tag.w { background:var(--warn-bg); color:var(--warn); }
+  .card-tag.ok { background:var(--good-bg); color:var(--good); }
+  .card-tag.inf { background:var(--info-bg); color:var(--info); }
+  .card-tag.acc { background:var(--acc-bg); color:var(--acc); }
+  .card-chain { font-size:9px; color:var(--tx3); font-family:var(--mono); }
+  .card-title { font-size:13px; font-weight:600; color:var(--tx1); margin-bottom:2px; }
+  .card-sub { font-size:11px; color:var(--tx2); line-height:1.4; }
+  .card-footer { display:flex; align-items:center; gap:12px; margin-top:6px; }
+  .card-ago { font-size:10px; color:var(--tx3); font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .card-sla { font-size:10px; font-family:var(--mono); font-weight:600; font-variant-numeric:tabular-nums; }
+  .card-sla.b { color:var(--bad); }
+  .card-sla.w { color:var(--warn); }
+  .card-chevron { margin-left:auto; font-size:11px; color:var(--tx3); transition:transform 150ms var(--ease); }
+  .card.open .card-chevron { transform:rotate(180deg); }
+  .card-expand { display:none; border-top:1px solid var(--border); padding:14px; background:var(--bg2); }
+  .card.open .card-expand { display:block; }
+
+  .expand-kpi { display:flex; gap:0; border:1px solid var(--border); border-radius:5px; overflow:hidden; margin-bottom:12px; background:var(--bg1); }
+  .ekpi { padding:8px 14px; border-right:1px solid var(--border); }
+  .ekpi:last-child { border-right:none; }
+  .ekpi .l { font-size:9px; text-transform:uppercase; letter-spacing:.08em; color:var(--tx3); font-weight:700; margin-bottom:2px; }
+  .ekpi .v { font-family:var(--mono); font-size:16px; font-weight:700; color:var(--tx1); font-variant-numeric:tabular-nums; }
+  .ekpi .v.ok { color:var(--good); }
+  .ekpi .v.w { color:var(--warn); }
+  .ekpi .v.b { color:var(--bad); }
+  .ekpi .s { font-size:9px; font-family:var(--mono); color:var(--tx3); margin-top:2px; }
+
+  .expand-chain { margin-bottom:12px; }
+  .chain-states { display:flex; align-items:center; gap:0; overflow-x:auto; padding-bottom:2px; }
+  .chain-states::-webkit-scrollbar { height:2px; }
+  .chain-states::-webkit-scrollbar-thumb { background:var(--border-s); }
+  .cstate { padding:5px 12px; font-size:10px; font-weight:600; color:var(--tx3); white-space:nowrap; border-right:1px solid var(--border); background:var(--bg1); }
+  .cstate.done { color:var(--good); background:var(--good-bg); }
+  .cstate.active { color:var(--acc); background:var(--acc-bg); font-weight:700; }
+  .cstate.blocked { color:var(--bad); background:var(--bad-bg); }
+  .cstate.pending { color:var(--tx3); }
+  .cstate:last-child { border-right:none; }
+  .cstate-arrow { color:var(--border-s); font-size:9px; }
+
+  .expand-acts { display:flex; gap:8px; flex-wrap:wrap; }
+  .btn { display:inline-flex; align-items:center; gap:5px; padding:6px 14px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer; border:none; font-family:var(--sans); min-height:32px;
+    transition:background-color 120ms var(--ease), border-color 120ms var(--ease), color 120ms var(--ease), transform 100ms var(--ease); }
+  .btn:active { transform:scale(0.97); }
+  .btn:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+  .btn-p { background:var(--acc); color:#fff; }
+  .btn-p:hover { background:oklch(0.38 0.18 55); }
+  .btn-s { background:var(--bg1); color:var(--tx2); border:1px solid var(--border); }
+  .btn-s:hover { background:var(--bg3); color:var(--tx1); }
+  .btn-b { background:var(--bad-bg); color:var(--bad); border:1px solid var(--bad); }
+
+  /* AI card in feed */
+  .ai-feed-card { background:oklch(0.98 0.02 60); border:1px solid oklch(0.86 0.06 60); border-radius:6px; padding:12px 14px; margin-bottom:8px; display:flex; gap:10px; }
+  .ai-icon { width:22px; height:22px; border-radius:11px; background:oklch(0.56 0.18 65); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; color:#fff; flex-shrink:0; }
+  .ai-body { flex:1; }
+  .ai-lbl { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.10em; color:oklch(0.50 0.12 60); margin-bottom:3px; }
+  .ai-txt { font-size:12px; color:var(--tx2); line-height:1.5; }
+  .ai-acts { display:flex; gap:6px; margin-top:8px; }
+  .ai-btn { padding:4px 10px; border-radius:3px; font-size:10px; font-weight:600; cursor:pointer; border:1px solid oklch(0.78 0.12 60); background:transparent; color:oklch(0.44 0.14 60); min-height:28px;
+    transition:background-color 120ms var(--ease), border-color 120ms var(--ease), transform 100ms var(--ease); }
+  .ai-btn:hover { background:oklch(0.94 0.04 60); }
+  .ai-btn:active { transform:scale(0.97); }
+  .ai-btn:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+  .ai-btn.acc { background:oklch(0.56 0.18 65); border-color:oklch(0.56 0.18 65); color:#fff; }
+  .ai-btn.acc:hover { background:oklch(0.50 0.18 65); }
+
+  /* ── RIGHT: context panel ── */
+  .ctx-col { background:var(--bg1); display:flex; flex-direction:column; overflow:hidden; }
+  .ctx-top { padding:14px 16px; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .ctx-top h2 { font-size:14px; font-weight:700; color:var(--tx1); margin-bottom:2px; }
+  .ctx-top .sub { font-size:11px; color:var(--tx3); }
+  .ctx-scroll { flex:1; overflow-y:auto; padding:12px 16px; }
+  .ctx-scroll::-webkit-scrollbar { width:3px; }
+  .ctx-scroll::-webkit-scrollbar-thumb { background:var(--border-s); }
+
+  .ctx-sec-hdr { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.10em; color:var(--tx3); margin-bottom:8px; margin-top:14px; }
+  .ctx-sec-hdr:first-child { margin-top:0; }
+
+  .ctx-kpi-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:14px; }
+  .ctx-kpi { background:var(--bg2); border:1px solid var(--border); border-radius:4px; padding:8px 10px; }
+  .ctx-kpi .l { font-size:9px; text-transform:uppercase; letter-spacing:.08em; color:var(--tx3); font-weight:700; margin-bottom:3px; }
+  .ctx-kpi .v { font-family:var(--mono); font-size:16px; font-weight:700; color:var(--tx1); line-height:1; font-variant-numeric:tabular-nums; }
+  .ctx-kpi .v.ok { color:var(--good); }
+  .ctx-kpi .v.w { color:var(--warn); }
+  .ctx-kpi .v.b { color:var(--bad); }
+  .ctx-kpi .s { font-size:9px; color:var(--tx3); font-family:var(--mono); margin-top:2px; }
+
+  .ctx-progress { margin-bottom:14px; }
+  .prog-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .prog-label { font-size:11px; color:var(--tx2); min-width:120px; }
+  .prog-bar { flex:1; height:6px; background:var(--bg3); border-radius:3px; overflow:hidden; }
+  .prog-fill { height:100%; border-radius:3px; }
+  .prog-fill.ok { background:var(--good); }
+  .prog-fill.w { background:var(--warn); }
+  .prog-fill.b { background:var(--bad); }
+  .prog-val { font-size:10px; font-family:var(--mono); color:var(--tx3); min-width:36px; text-align:right; font-variant-numeric:tabular-nums; }
+
+  .ctx-project-list { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
+  .ctx-proj { display:flex; align-items:center; gap:8px; padding:7px 10px; background:var(--bg2); border:1px solid var(--border); border-radius:4px; cursor:pointer;
+    transition:border-color 120ms var(--ease), background-color 120ms var(--ease); }
+  .ctx-proj:hover { border-color:var(--border-s); }
+  .ctx-proj:active { background:var(--bg3); }
+  .ctx-proj:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+  .ctx-proj .pn { font-size:11px; font-weight:600; color:var(--tx1); flex:1; }
+  .ctx-proj .pp { font-size:10px; color:var(--tx3); font-family:var(--mono); }
+  .ctx-proj .pd { width:8px; height:8px; border-radius:4px; flex-shrink:0; }
+  .ctx-proj .pd.ok { background:var(--good); }
+  .ctx-proj .pd.w { background:var(--warn); }
+  .ctx-proj .pd.b { background:var(--bad); }
+
+  ::-webkit-scrollbar { width:4px; height:4px; }
+  ::-webkit-scrollbar-thumb { background:var(--border-s); border-radius:2px; }
+</style>
+</head>
+<body>
+
+<!-- Top nav -->
+<nav class="topnav">
+  <span class="tn-logo">OE/</span>
+  <div class="tn-roles">
+    <div class="tn-role active">IPP Developer <span class="rbadge b">4</span></div>
+    <div class="tn-role">Trader <span class="rbadge b">3</span></div>
+    <div class="tn-role">Lender <span class="rbadge w">2</span></div>
+    <div class="tn-role">Offtaker</div>
+    <div class="tn-role">Grid Operator <span class="rbadge w">1</span></div>
+    <div class="tn-role">Carbon Fund</div>
+    <div class="tn-role">Regulator <span class="rbadge b">7</span></div>
+    <div class="tn-role">ESCO/Esums</div>
+    <div class="tn-role">Admin</div>
+    <div class="tn-role">Support <span class="rbadge w">3</span></div>
+  </div>
+  <div class="tn-search"><input placeholder="Search across 76 IPP functions… (⌘K)"></div>
+  <div class="tn-right">
+    <div class="tn-status"><div class="tn-dot"></div>SG-4 BLOCKED</div>
+    <button class="tn-btn">+ New action</button>
+    <div class="tn-avatar">KM</div>
+  </div>
+</nav>
+
+<!-- Page -->
+<div class="page">
+
+  <!-- Feed -->
+  <div class="feed-col">
+    <div class="feed-bar">
+      <span class="feed-title">Activity</span>
+      <div class="feed-pill active bad" onclick="setPill(this)">Urgent <span style="background:var(--bad);color:#fff;padding:0 5px;border-radius:8px;font-size:9px;font-family:var(--mono);font-weight:800;">4</span></div>
+      <div class="feed-pill" onclick="setPill(this)">AI suggests</div>
+      <div class="feed-pill" onclick="setPill(this)">Stage gates</div>
+      <div class="feed-pill" onclick="setPill(this)">Compliance</div>
+      <div class="feed-pill" onclick="setPill(this)">Finance</div>
+      <div class="feed-pill" onclick="setPill(this)">Construction</div>
+      <div class="feed-pill" onclick="setPill(this)">Procurement</div>
+      <div class="feed-pill" onclick="setPill(this)">HSE/SHEQ</div>
+      <div class="feed-pill" onclick="setPill(this)">Carbon/REC</div>
+      <div class="feed-pill" onclick="setPill(this)">All</div>
+      <span class="feed-count">247 items · 4 projects</span>
+    </div>
+    <div class="feed-scroll">
+
+      <div class="feed-group-hdr">Urgent <span class="gcount b">4</span></div>
+
+      <!-- Card 1: Stage gate blocked -->
+      <div class="card open" onclick="toggleCard(this)">
+        <div class="card-top">
+          <div class="card-stripe b"></div>
+          <div class="card-content">
+            <div class="card-meta">
+              <span class="card-tag b">Stage gate</span>
+              <span class="card-chain">W20 · COD chain · SG-4</span>
+            </div>
+            <div class="card-title">SG-4 blocked — IE certificate outstanding</div>
+            <div class="card-sub">Karoo Wind 1. NERSA §C-5 gate. Requested Jun 1 — 9 days outstanding. COD at risk (+2 months slippage).</div>
+            <div class="card-footer">
+              <span class="card-ago">9 days ago</span>
+              <span class="card-sla b">SLA breach — escalated</span>
+              <span class="card-chevron">▾</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-expand">
+          <div class="expand-kpi">
+            <div class="ekpi"><div class="l">Project</div><div class="v" style="font-size:13px">Karoo Wind 1</div></div>
+            <div class="ekpi"><div class="l">COD target</div><div class="v w">Dec 2027</div><div class="s">+2m slip</div></div>
+            <div class="ekpi"><div class="l">Budget impact</div><div class="v w">R 8.4M</div><div class="s">per month delay</div></div>
+            <div class="ekpi"><div class="l">DSCR</div><div class="v b">1.18x</div><div class="s">min 1.20x</div></div>
+          </div>
+          <div class="expand-chain" style="margin-bottom:10px;">
+            <div style="font-size:10px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">W20 Construction chain state</div>
+            <div class="chain-states">
+              <div class="cstate done">Planned</div>
+              <div class="cstate done">Procured</div>
+              <div class="cstate done">Finance closed</div>
+              <div class="cstate done">Construction</div>
+              <div class="cstate blocked">SG-4 ✗ BLOCKED</div>
+              <div class="cstate pending">Energize</div>
+              <div class="cstate pending">COD</div>
+            </div>
+          </div>
+          <div class="expand-acts">
+            <button class="btn btn-p">Chase IE agency</button>
+            <button class="btn btn-s">View COD chain →</button>
+            <button class="btn btn-s">Escalate to NERSA</button>
+            <button class="btn btn-b">Flag lender covenant</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Lender DSCR breach -->
+      <div class="card" onclick="toggleCard(this)">
+        <div class="card-top">
+          <div class="card-stripe b"></div>
+          <div class="card-content">
+            <div class="card-meta">
+              <span class="card-tag b">Finance</span>
+              <span class="card-chain">W6 · Lender portal · Covenant breach</span>
+            </div>
+            <div class="card-title">Lender DSCR below covenant floor — cure window active</div>
+            <div class="card-sub">Karoo Wind 1. DSCR 1.18x vs minimum 1.20x. 14-day cure window. Submit revised cash flow model by Jun 23.</div>
+            <div class="card-footer">
+              <span class="card-ago">2 days ago</span>
+              <span class="card-sla b">14d cure — 12d remaining</span>
+              <span class="card-chevron">▾</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-expand">
+          <div class="expand-kpi">
+            <div class="ekpi"><div class="l">Current DSCR</div><div class="v b">1.18x</div><div class="s">floor 1.20x</div></div>
+            <div class="ekpi"><div class="l">Cure deadline</div><div class="v w">Jun 23</div><div class="s">12 days</div></div>
+            <div class="ekpi"><div class="l">Lender</div><div class="v" style="font-size:12px">DBSA</div></div>
+            <div class="ekpi"><div class="l">Facility</div><div class="v" style="font-size:12px">R 1.4B</div></div>
+          </div>
+          <div class="expand-acts">
+            <button class="btn btn-p">Submit cash flow model</button>
+            <button class="btn btn-s">View lender portal →</button>
+            <button class="btn btn-s">Request extension</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: HSE incident -->
+      <div class="card" onclick="toggleCard(this)">
+        <div class="card-top">
+          <div class="card-stripe b"></div>
+          <div class="card-content">
+            <div class="card-meta">
+              <span class="card-tag b">HSE / SHEQ</span>
+              <span class="card-chain">W25 · HSE chain · OHSA s24</span>
+            </div>
+            <div class="card-title">Lost time injury — crane operator — Rietkuil BESS</div>
+            <div class="card-sub">LTI reported Jun 10 08:42. OHSA §24 notification to DMRE due within 7 days. SHEQ investigation opened.</div>
+            <div class="card-footer">
+              <span class="card-ago">4 hours ago</span>
+              <span class="card-sla b">OHSA §24 — 7d deadline</span>
+              <span class="card-chevron">▾</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-expand">
+          <div class="expand-kpi">
+            <div class="ekpi"><div class="l">Severity</div><div class="v b">LTI</div></div>
+            <div class="ekpi"><div class="l">DMRE §24 deadline</div><div class="v b">Jun 17</div></div>
+            <div class="ekpi"><div class="l">Investigation</div><div class="v w">Open</div></div>
+            <div class="ekpi"><div class="l">Site</div><div class="v" style="font-size:12px">Rietkuil BESS</div></div>
+          </div>
+          <div class="expand-acts">
+            <button class="btn btn-b">File OHSA §24</button>
+            <button class="btn btn-s">View HSE chain →</button>
+            <button class="btn btn-s">Assign investigator</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: W49 Licence application -->
+      <div class="card" onclick="toggleCard(this)">
+        <div class="card-top">
+          <div class="card-stripe b"></div>
+          <div class="card-content">
+            <div class="card-meta">
+              <span class="card-tag b">Licence</span>
+              <span class="card-chain">W49 · NERSA ERA §8</span>
+            </div>
+            <div class="card-title">Generation licence application overdue — final notice</div>
+            <div class="card-sub">Karoo Solar 2 (80 MW). NERSA officer requested supplementary docs May 28. 13 days overdue. W33 renewal also pending.</div>
+            <div class="card-footer">
+              <span class="card-ago">13 days ago</span>
+              <span class="card-sla b">Escalated — W31 regulator inbox</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 5: Bond expiry -->
+      <div class="card" onclick="toggleCard(this)">
+        <div class="card-top">
+          <div class="card-stripe w"></div>
+          <div class="card-content">
+            <div class="card-meta">
+              <span class="card-tag w">Bonds / Insurance</span>
+              <span class="card-chain">W10 · IPP bond chain</span>
+            </div>
+            <div class="card-title">Performance bond expiring — Sere Solar PV</div>
+            <div class="card-sub">Bond #PB-2024-088. Expires Jul 1. 21 days to renew or obtain replacement. NERSA may suspend licence if lapsed.</div>
+            <div class="card-footer">
+              <span class="card-ago">1 day ago</span>
+              <span class="card-sla w">21 days to renewal</span>
+              <span class="card-chevron">▾</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-expand">
+          <div class="expand-kpi">
+            <div class="ekpi"><div class="l">Bond value</div><div class="v">R 42M</div></div>
+            <div class="ekpi"><div class="l">Expires</div><div class="v w">Jul 1</div><div class="s">21 days</div></div>
+            <div class="ekpi"><div class="l">Issuer</div><div class="v" style="font-size:11px">Standard Bank</div></div>
+            <div class="ekpi"><div class="l">Cure tier</div><div class="v w">Warn</div></div>
+          </div>
+          <div class="expand-acts">
+            <button class="btn btn-p">Initiate renewal</button>
+            <button class="btn btn-s">View bond chain →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- W64 PTW Caution card -->
+      <div class="card" onclick="toggleCard(this)">
+        <div class="card-top">
+          <div class="card-stripe w"></div>
+          <div class="card-content">
+            <div class="card-meta">
+              <span class="card-tag w">Permit-to-work</span>
+              <span class="card-chain">W64 · OHSA + SANS 10142</span>
+            </div>
+            <div class="card-title">Live electrical PTW expiring — Karoo Wind 1 nacelle work</div>
+            <div class="card-sub">PTW-2026-441. Nacelle installation crew. Expires 17:00 today. Extend or revoke before crew enters.</div>
+            <div class="card-footer">
+              <span class="card-ago">3 hrs ago</span>
+              <span class="card-sla w">4h 20m remaining</span>
+              <span class="card-chevron">▾</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-expand">
+          <div class="expand-acts">
+            <button class="btn btn-p">Extend PTW</button>
+            <button class="btn btn-b">Revoke PTW</button>
+            <button class="btn btn-s">View W64 chain →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI suggest group -->
+      <div class="feed-group-hdr" style="margin-top:20px;">AI suggests <span class="gcount w">3</span></div>
+
+      <div class="ai-feed-card">
+        <div class="ai-icon">AI</div>
+        <div class="ai-body">
+          <div class="ai-lbl">Construction optimisation</div>
+          <div class="ai-txt">Karoo Wind 1 nacelle installation is 6 days behind schedule. Based on current crew deployment and crane availability, adding a second crane team could recover 4–5 days by end of June.</div>
+          <div class="ai-acts">
+            <button class="ai-btn acc">Accept suggestion</button>
+            <button class="ai-btn">Dismiss</button>
+            <button class="ai-btn">View analysis</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-feed-card">
+        <div class="ai-icon">AI</div>
+        <div class="ai-body">
+          <div class="ai-lbl">Finance alert</div>
+          <div class="ai-txt">DSCR sensitivity model shows bond renewal delay on Sere Solar will reduce DSCR by a further 0.04x. Recommending parallel processing of bond renewal and DSCR cure.</div>
+          <div class="ai-acts">
+            <button class="ai-btn acc">Accept</button>
+            <button class="ai-btn">Dismiss</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Today group -->
+      <div class="feed-group-hdr" style="margin-top:20px;">Today <span class="gcount" style="background:var(--bg3);color:var(--tx3)">12</span></div>
+
+      <div class="card" onclick="toggleCard(this)">
+        <div class="card-top">
+          <div class="card-stripe acc"></div>
+          <div class="card-content">
+            <div class="card-meta"><span class="card-tag acc">Grid / NTCSA</span><span class="card-chain">W75 · Energization chain</span></div>
+            <div class="card-title">GCA countersigned — energization authorisation issued</div>
+            <div class="card-sub">Karoo Wind 1. NTCSA confirmed. W75 physical go-live on track for Q1 2027. Grid connection timeline updated.</div>
+            <div class="card-footer"><span class="card-ago">08:14 today</span><span class="card-sla" style="color:var(--good)">On track</span><span class="card-chevron">▾</span></div>
+          </div>
+        </div>
+        <div class="card-expand">
+          <div class="expand-acts">
+            <button class="btn btn-p">View energization chain →</button>
+            <button class="btn btn-s">Download GCA</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" onclick="toggleCard(this)">
+        <div class="card-top">
+          <div class="card-stripe inf"></div>
+          <div class="card-content">
+            <div class="card-meta"><span class="card-tag inf">Procurement</span><span class="card-chain">W19 · REIPPPP chain · RFI #47</span></div>
+            <div class="card-title">RFI #47 — nacelle torque spec response overdue</div>
+            <div class="card-sub">EPC Sinovel awaiting technical query. 3 days overdue. May impact SCADA commissioning sequence.</div>
+            <div class="card-footer"><span class="card-ago">3 days ago</span><span class="card-sla w">3d overdue</span><span class="card-chevron">▾</span></div>
+          </div>
+        </div>
+        <div class="card-expand">
+          <div class="expand-acts">
+            <button class="btn btn-p">Send escalation to Sinovel</button>
+            <button class="btn btn-s">View RFI register</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" onclick="toggleCard(this)">
+        <div class="card-top">
+          <div class="card-stripe inf"></div>
+          <div class="card-content">
+            <div class="card-meta"><span class="card-tag inf">ED commitment</span><span class="card-chain">W27 · REIPPPP ED chain</span></div>
+            <div class="card-title">Q2 ED expenditure report due — Karoo Wind 1</div>
+            <div class="card-sub">IPPO quarterly ED commitment report. R 4.2M of R 18M target spent YTD. Report due Jun 30.</div>
+            <div class="card-footer"><span class="card-ago">2 days ago</span><span class="card-sla w">20 days</span><span class="card-chevron">▾</span></div>
+          </div>
+        </div>
+        <div class="card-expand">
+          <div class="expand-acts">
+            <button class="btn btn-p">Draft ED report</button>
+            <button class="btn btn-s">View ED chain →</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Context panel -->
+  <div class="ctx-col">
+    <div class="ctx-top">
+      <h2>IPP Portfolio — 4 projects</h2>
+      <div class="sub">3.2 GW · R 48.4B committed · 2 COD due 2027</div>
+    </div>
+    <div class="ctx-scroll">
+
+      <div class="ctx-sec-hdr">Portfolio overview</div>
+      <div class="ctx-kpi-grid">
+        <div class="ctx-kpi"><div class="l">Active projects</div><div class="v">4</div><div class="s">across portfolio</div></div>
+        <div class="ctx-kpi"><div class="l">Total capacity</div><div class="v">3.2 GW</div></div>
+        <div class="ctx-kpi"><div class="l">Avg progress</div><div class="v w">68%</div><div class="s">Karoo W1 + Solar 2</div></div>
+        <div class="ctx-kpi"><div class="l">DSCRs at risk</div><div class="v b">2</div><div class="s">below 1.20x floor</div></div>
+      </div>
+
+      <div class="ctx-sec-hdr">Projects</div>
+      <div class="ctx-project-list">
+        <div class="ctx-proj">
+          <div class="pd w"></div>
+          <div class="pn">Karoo Wind 1 (140 MW)</div>
+          <div class="pp">68% · R 8.2B</div>
+        </div>
+        <div class="ctx-proj">
+          <div class="pd w"></div>
+          <div class="pn">Karoo Solar 2 (80 MW)</div>
+          <div class="pp">45% · R 4.8B</div>
+        </div>
+        <div class="ctx-proj">
+          <div class="pd ok"></div>
+          <div class="pn">Limpopo Wind 3 (220 MW)</div>
+          <div class="pp">12% · R 22.8B</div>
+        </div>
+        <div class="ctx-proj">
+          <div class="pd ok"></div>
+          <div class="pn">Cape Hydro 4 (320 MW)</div>
+          <div class="pp">88% · R 12.4B</div>
+        </div>
+      </div>
+
+      <div class="ctx-sec-hdr">Portfolio progress</div>
+      <div class="ctx-progress">
+        <div class="prog-row">
+          <span class="prog-label">Karoo Wind 1 (140 MW)</span>
+          <div class="prog-bar"><div class="prog-fill w" style="width:68%"></div></div>
+          <span class="prog-val w">68%</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Karoo Solar 2 (80 MW)</span>
+          <div class="prog-bar"><div class="prog-fill w" style="width:45%"></div></div>
+          <span class="prog-val w">45%</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Limpopo Wind 3 (220 MW)</span>
+          <div class="prog-bar"><div class="prog-fill ok" style="width:12%"></div></div>
+          <span class="prog-val ok">12%</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Cape Hydro 4 (320 MW)</span>
+          <div class="prog-bar"><div class="prog-fill ok" style="width:88%"></div></div>
+          <span class="prog-val ok">88%</span>
+        </div>
+      </div>
+
+      <div class="ctx-sec-hdr">Compliance calendar</div>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;padding:5px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--tx2)">OHSA §24 — Rietkuil LTI</span><span style="color:var(--bad);font-family:var(--mono);font-weight:700">Jun 17</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;padding:5px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--tx2)">Lender cure — DSCR</span><span style="color:var(--bad);font-family:var(--mono);font-weight:700">Jun 23</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;padding:5px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--tx2)">ED quarterly report</span><span style="color:var(--warn);font-family:var(--mono);font-weight:700">Jun 30</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;padding:5px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--tx2)">Performance bond renewal</span><span style="color:var(--warn);font-family:var(--mono);font-weight:700">Jul 1</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;padding:5px 0;">
+          <span style="color:var(--tx2)">HSE monthly report — DMRE</span><span style="color:var(--tx3);font-family:var(--mono)">Jun 15</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function toggleCard(card) {
+    card.classList.toggle('open');
+  }
+  function setPill(el) {
+    document.querySelectorAll('.feed-pill').forEach(p => p.classList.remove('active','bad'));
+    el.classList.add('active');
+  }
+</script>
+</body>
+</html>

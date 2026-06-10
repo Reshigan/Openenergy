@@ -39,6 +39,7 @@ const LicenceActionDetailPage = React.lazy(() => import('./components/pages/Lice
 const GridOutageDetailPage  = React.lazy(() => import('./components/pages/GridOutageDetailPage').then(m => ({ default: m.GridOutageDetailPage })));
 const BillingRunDetailPage  = React.lazy(() => import('./components/pages/BillingRunDetailPage').then(m => ({ default: m.BillingRunDetailPage })));
 const SignaturePreview       = React.lazy(() => import('./components/signature/__preview__/SignaturePreview'));
+const ActivityFeedShell     = React.lazy(() => import('./components/ActivityFeedShell').then(m => ({ default: m.ActivityFeedShell })));
 
 // Core page components
 const NationalDashboard     = React.lazy(() => import('./components/pages/NationalDashboard').then(m => ({ default: m.NationalDashboard })));
@@ -498,7 +499,7 @@ function LoginPage() {
     setError('');
     setSsoLoading(true);
     try {
-      const r = await api.post('/auth/sso/microsoft/start', { return_to: '/cockpit' });
+      const r = await api.post('/auth/sso/microsoft/start', { return_to: '/feed' });
       if (r.data?.success && r.data?.data?.redirect_url) {
         window.location.href = r.data.data.redirect_url;
         return;
@@ -518,10 +519,8 @@ function LoginPage() {
     setLoading(true);
     try {
       await login(email, password, mfaRequired ? mfaCode : undefined);
-      // The role-aware /launch redirect resolves to /launch/:role once the
-      // auth context has resolved the user. This is what gives every role a
-      // distinct landing page instead of the shared /cockpit.
-      navigate('/launch');
+      const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/feed';
+      navigate(from, { replace: true });
     } catch (err: any) {
       if (err?.name === 'MfaRequiredError') {
         setMfaRequired(true);
@@ -587,15 +586,40 @@ function LoginPage() {
             and settle with confidence — all on one enterprise-grade platform.
           </p>
           <div className="mt-8 grid grid-cols-2 gap-3 max-w-lg">
-            <FeatureBadge icon={Activity} label="Live trading" tint="#5fa8e8" />
-            <FeatureBadge icon={Leaf} label="Carbon & ESG" tint="#7fd5cf" />
-            <FeatureBadge icon={Zap} label="Grid & settlement" tint="#9bc8ee" />
-            <FeatureBadge icon={ShieldCheck} label="POPIA & NERSA" tint="#b8eae6" />
+            <FeatureBadge icon={Activity} label="76 workflow chains" tint="#5fa8e8" />
+            <FeatureBadge icon={Leaf} label="Carbon Article 6" tint="#7fd5cf" />
+            <FeatureBadge icon={Zap} label="Real-time settlement" tint="#9bc8ee" />
+            <FeatureBadge icon={ShieldCheck} label="ERA · NERSA · POPIA" tint="#b8eae6" />
+          </div>
+
+          {/* Mini feed preview */}
+          <div className="mt-8 max-w-lg space-y-2">
+            {[
+              { label: 'COD gate — Karoo Wind 1', note: '2 sign-offs pending', tint: '#c0392b' },
+              { label: 'DSCR covenant breach', note: 'Lender notification sent', tint: '#c97a14' },
+              { label: 'W64 PTW live-electrical', note: '4h 20m remaining', tint: '#3b82c4' },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
+              >
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ background: item.tint }}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12px] font-semibold text-white/90 truncate">{item.label}</p>
+                  <p className="text-[10px] font-mono text-white/50">{item.note}</p>
+                </div>
+              </div>
+            ))}
+            <p className="text-[10px] text-white/35 font-mono pl-1">Activity feed · 11 roles · national scale</p>
           </div>
         </div>
 
         <div className="relative z-10 text-[12px] text-white/55">
-          © {new Date().getFullYear()} Consolidated Energy Cockpit · Vanta X Holdings
+          © {new Date().getFullYear()} Open Energy Platform · Vanta X Holdings
         </div>
       </div>
 
@@ -611,7 +635,7 @@ function LoginPage() {
             Sign in
           </h2>
           <p className="mt-1 text-[14px]" style={{ color: '#3d4756' }}>
-            Welcome back. Use your Consolidated Energy Cockpit credentials to continue.
+            Welcome back to the Open Energy Platform.
           </p>
 
           {error && (
@@ -824,9 +848,10 @@ const PERSONAS: Persona[] = [
   { email: 'lender@openenergy.co.za',    label: 'Lender',          subtitle: 'Infrastructure Capital Partners',  icon: 'piggy-bank', accent: '#a8385c', group: 'Capital' },
   // Network
   { email: 'grid@openenergy.co.za',      label: 'Grid Operator',   subtitle: 'Eskom Holdings',                   icon: 'gridmap',  accent: '#1a3a5c', group: 'Network' },
+  { email: 'esco@openenergy.co.za',      label: 'O&M Operator',    subtitle: 'SunServ O&M (Pty) Ltd',            icon: 'wrench',   accent: '#b45309', group: 'Network' },
   // Oversight
   { email: 'regulator@openenergy.co.za', label: 'Regulator',       subtitle: 'NERSA / Energy Research Institute', icon: 'shield',  accent: '#0e6d68', group: 'Oversight' },
-  { email: 'admin@openenergy.co.za',     label: 'Platform Admin',  subtitle: 'Consolidated Energy Cockpit',      icon: 'settings', accent: '#0f2540', group: 'Oversight' },
+  { email: 'admin@openenergy.co.za',     label: 'Platform Admin',  subtitle: 'Open Energy Platform',            icon: 'settings', accent: '#0f2540', group: 'Oversight' },
 ];
 
 const GROUP_ORDER: Persona['group'][] = ['Producers', 'Markets', 'Capital', 'Network', 'Oversight'];
@@ -889,7 +914,7 @@ function SsoLanding() {
     const params = new URLSearchParams(frag);
     const token = params.get('token');
     const refresh_token = params.get('refresh_token') || undefined;
-    const returnTo = params.get('return_to') || '/launch';
+    const returnTo = params.get('return_to') || '/feed';
     if (!token) {
       setError('Missing SSO token — please try signing in again.');
       const t = setTimeout(() => navigate('/login?sso_error=missing_token', { replace: true }), 2000);
@@ -1262,6 +1287,7 @@ function AppRoutes() {
           bookmarks keep working — but the Launchpad nav now points to
           /launch. */}
       <Route path="/cockpit" element={<ProtectedRoute><LaunchRedirect /></ProtectedRoute>} />
+      <Route path="/feed" element={<ProtectedRoute><ActivityFeedShell /></ProtectedRoute>} />
       <Route path="/launch" element={<ProtectedRoute><LaunchRedirect /></ProtectedRoute>} />
       <Route path="/launch/:role" element={<ProtectedRoute><Layout><RoleLaunchBoard /></Layout></ProtectedRoute>} />
       <Route path="/contracts" element={<ProtectedRoute><Layout><Contracts /></Layout></ProtectedRoute>} />
@@ -1366,7 +1392,7 @@ function AppRoutes() {
         <Route path="/ux-prototype/command-lens"  element={<LazyWorkbench><CommandLensPrototype /></LazyWorkbench>} />
         <Route path="/ux-prototype/cockpit-grid"  element={<LazyWorkbench><CockpitGridPrototype /></LazyWorkbench>} />
       </Route>
-      <Route path="/" element={<Navigate to="/launch" replace />} />
+      <Route path="/" element={<Navigate to="/feed" replace />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
     </React.Suspense>
