@@ -93,7 +93,7 @@ const badgeVariantClasses: Record<BadgeVariant, string> = {
   warning: 'bg-ionex-warning-bg text-ionex-warning',
   error: 'bg-ionex-error-bg text-ionex-error',
   info: 'bg-ionex-brand/10 text-ionex-brand',
-  neutral: 'bg-gray-100 text-gray-800',
+  neutral: 'bg-[#eef2f7] text-[#3d4756]',
 };
 
 export function Badge({ variant = 'neutral', children, className = '' }: BadgeProps) {

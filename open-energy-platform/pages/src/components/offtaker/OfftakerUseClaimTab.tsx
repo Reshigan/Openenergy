@@ -31,7 +31,7 @@ interface UseClaimKpis {
 // ─── Status meta ──────────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<string, string> = {
-  claim_submitted:       'bg-slate-100 text-slate-600',
+  claim_submitted:       'bg-[#eef2f7] text-[#3d4756]',
   metering_data_verified:'bg-blue-100 text-blue-700',
   liability_assessed:    'bg-indigo-100 text-indigo-700',
   preliminary_quantum:   'bg-cyan-100 text-cyan-700',
@@ -42,7 +42,7 @@ const STATUS_COLORS: Record<string, string> = {
   claim_disputed:        'bg-orange-100 text-orange-700',
   formal_adjudication:   'bg-red-100 text-red-700',
   award_made:            'bg-green-100 text-green-800',
-  claim_withdrawn:       'bg-gray-100 text-gray-400',
+  claim_withdrawn:       'bg-[#eef2f7] text-[#9aa5b4]',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -67,7 +67,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   commercial:  'bg-amber-100 text-amber-700',
   municipal:   'bg-blue-100 text-blue-700',
   residential: 'bg-green-100 text-green-700',
-  scheduled:   'bg-gray-100 text-gray-500',
+  scheduled:   'bg-[#eef2f7] text-[#6b7685]',
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -184,7 +184,7 @@ function truncate(s: string, n = 24): string {
   return s.length > n ? s.slice(0, n) + '…' : s;
 }
 
-const sel = 'border rounded px-2 py-1 text-xs text-gray-700 bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
 
 const PAGE_SIZE = 20;
 
@@ -196,15 +196,15 @@ function KpiChip({ label, value, mode = 'neutral' }: { label: string; value: str
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-gray-200 bg-white';
+    'border-[#dde4ec] bg-white';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-gray-900';
+    'text-[#0f1c2e]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-gray-500">{label}</div>
+      <div className="text-xs text-[#6b7685]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -383,7 +383,7 @@ export function OfftakerUseClaimTab() {
         </select>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
+          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
         >
           Refresh
         </button>
@@ -398,12 +398,12 @@ export function OfftakerUseClaimTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-gray-400 py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-gray-500">
+              <tr className="border-b text-left text-xs text-[#6b7685]">
                 <th className="pb-2 pr-3">Event Date</th>
                 <th className="pb-2 pr-3">Category</th>
                 <th className="pb-2 pr-3">MWh</th>
@@ -423,37 +423,37 @@ export function OfftakerUseClaimTab() {
                 return (
                   <tr
                     key={item.id}
-                    className="border-b hover:bg-gray-50 cursor-pointer"
+                    className="border-b hover:bg-[#eef2f7] cursor-pointer"
                     onClick={() => setDetailItem(item)}
                   >
-                    <td className="py-2 pr-3 text-xs tabular-nums text-gray-700">
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[#2d3748]">
                       {fmtDate(item.event_date).text}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${CATEGORY_COLORS[item.customer_category] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${CATEGORY_COLORS[item.customer_category] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {CATEGORY_LABELS[item.customer_category] ?? item.customer_category}
                       </span>
                     </td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-gray-700">
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[#2d3748]">
                       {fmtMwh(item.unserved_mwh)}
                     </td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-gray-700">
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[#2d3748]">
                       {fmtZar(item.claimed_amount_zar)}
                     </td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-gray-700">
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[#2d3748]">
                       {item.settlement_amount_zar != null
                         ? <span className="text-green-700 font-medium">{fmtZar(item.settlement_amount_zar)}</span>
-                        : <span className="text-gray-300">—</span>
+                        : <span className="text-[#9aa5b4]">—</span>
                       }
                     </td>
-                    <td className="py-2 pr-3 text-xs text-center tabular-nums text-gray-600">
+                    <td className="py-2 pr-3 text-xs text-center tabular-nums text-[#3d4756]">
                       {item.load_shedding_stage != null
                         ? <span className="px-1.5 py-0.5 rounded bg-orange-50 text-orange-700 font-semibold">S{item.load_shedding_stage}</span>
-                        : <span className="text-gray-300">—</span>
+                        : <span className="text-[#9aa5b4]">—</span>
                       }
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
                       </span>
                       {item.sla_breached === 1 && (
@@ -461,7 +461,7 @@ export function OfftakerUseClaimTab() {
                       )}
                     </td>
                     <td className="py-2 pr-3 text-xs tabular-nums">
-                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-gray-600'}>
+                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[#3d4756]'}>
                         {due.text}
                       </span>
                     </td>
@@ -469,7 +469,7 @@ export function OfftakerUseClaimTab() {
                       {item.regulator_notified === 1 ? (
                         <span title="Regulator notified" className="text-orange-500 text-base leading-none">&#9873;</span>
                       ) : (
-                        <span className="text-gray-200 text-base leading-none">&#9873;</span>
+                        <span className="text-[#e8ecf0] text-base leading-none">&#9873;</span>
                       )}
                     </td>
                     <td
@@ -490,7 +490,7 @@ export function OfftakerUseClaimTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={10} className="py-10 text-center text-[#9aa5b4] text-sm">
                     No unserved energy claims found
                   </td>
                 </tr>
@@ -506,15 +506,15 @@ export function OfftakerUseClaimTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-gray-500">Page {page} of {totalPages}</span>
+          <span className="text-xs text-[#6b7685]">Page {page} of {totalPages}</span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             Next &rarr;
           </button>
@@ -527,17 +527,17 @@ export function OfftakerUseClaimTab() {
           <div className="bg-white h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <div>
-                <div className="text-sm font-semibold text-gray-800">
+                <div className="text-sm font-semibold text-[#1e2a38]">
                   Unserved Energy Claim
                 </div>
-                <div className="text-xs text-gray-500 mt-0.5">
+                <div className="text-xs text-[#6b7685] mt-0.5">
                   {CATEGORY_LABELS[detailItem.customer_category] ?? detailItem.customer_category}
                   {detailItem.nrs048_reference && <> &nbsp;&middot;&nbsp; {detailItem.nrs048_reference}</>}
                 </div>
               </div>
               <button type="button"
                 onClick={() => setDetailItem(null)}
-                className="text-gray-400 hover:text-gray-700 text-lg leading-none"
+                className="text-[#9aa5b4] hover:text-[#2d3748] text-lg leading-none"
               >
                 &times;
               </button>
@@ -546,10 +546,10 @@ export function OfftakerUseClaimTab() {
             <div className="flex-1 p-5 space-y-5">
               {/* Status badges */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                   {STATUS_LABELS[detailItem.chain_status] ?? detailItem.chain_status.replace(/_/g, ' ')}
                 </span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${CATEGORY_COLORS[detailItem.customer_category] ?? 'bg-gray-100 text-gray-500'}`}>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${CATEGORY_COLORS[detailItem.customer_category] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                   {CATEGORY_LABELS[detailItem.customer_category] ?? detailItem.customer_category}
                 </span>
                 {detailItem.sla_breached === 1 && (
@@ -567,17 +567,17 @@ export function OfftakerUseClaimTab() {
 
               {/* Financial summary */}
               <div className="grid grid-cols-3 gap-3 text-xs">
-                <div className="rounded-lg border border-gray-200 p-2">
-                  <div className="text-gray-400 mb-0.5">Unserved</div>
-                  <div className="font-semibold text-gray-800">{fmtMwh(detailItem.unserved_mwh)}</div>
+                <div className="rounded-lg border border-[#dde4ec] p-2">
+                  <div className="text-[#9aa5b4] mb-0.5">Unserved</div>
+                  <div className="font-semibold text-[#1e2a38]">{fmtMwh(detailItem.unserved_mwh)}</div>
                 </div>
-                <div className="rounded-lg border border-gray-200 p-2">
-                  <div className="text-gray-400 mb-0.5">Claimed</div>
-                  <div className="font-semibold text-gray-800">{fmtZar(detailItem.claimed_amount_zar)}</div>
+                <div className="rounded-lg border border-[#dde4ec] p-2">
+                  <div className="text-[#9aa5b4] mb-0.5">Claimed</div>
+                  <div className="font-semibold text-[#1e2a38]">{fmtZar(detailItem.claimed_amount_zar)}</div>
                 </div>
-                <div className={`rounded-lg border p-2 ${detailItem.settlement_amount_zar != null ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
-                  <div className="text-gray-400 mb-0.5">Settled</div>
-                  <div className={`font-semibold ${detailItem.settlement_amount_zar != null ? 'text-green-700' : 'text-gray-300'}`}>
+                <div className={`rounded-lg border p-2 ${detailItem.settlement_amount_zar != null ? 'border-green-200 bg-green-50' : 'border-[#dde4ec]'}`}>
+                  <div className="text-[#9aa5b4] mb-0.5">Settled</div>
+                  <div className={`font-semibold ${detailItem.settlement_amount_zar != null ? 'text-green-700' : 'text-[#9aa5b4]'}`}>
                     {fmtZar(detailItem.settlement_amount_zar)}
                   </div>
                 </div>
@@ -586,48 +586,48 @@ export function OfftakerUseClaimTab() {
               {/* Core fields */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
                 <div>
-                  <div className="text-gray-400 mb-0.5">Event Date</div>
-                  <div className="text-gray-800">{fmtDate(detailItem.event_date).text}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Event Date</div>
+                  <div className="text-[#1e2a38]">{fmtDate(detailItem.event_date).text}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">SLA Deadline</div>
-                  <div className={`tabular-nums ${fmtDate(detailItem.sla_deadline).isPast ? 'text-red-600 font-medium' : 'text-gray-800'}`}>
+                  <div className="text-[#9aa5b4] mb-0.5">SLA Deadline</div>
+                  <div className={`tabular-nums ${fmtDate(detailItem.sla_deadline).isPast ? 'text-red-600 font-medium' : 'text-[#1e2a38]'}`}>
                     {fmtDate(detailItem.sla_deadline).text}
                   </div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">NRS 048-2 Ref</div>
-                  <div className="text-gray-700 font-mono text-[11px]">{detailItem.nrs048_reference ?? '—'}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">NRS 048-2 Ref</div>
+                  <div className="text-[#2d3748] font-mono text-[11px]">{detailItem.nrs048_reference ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Regulator Notified</div>
-                  <div className={detailItem.regulator_notified === 1 ? 'text-orange-600 font-medium' : 'text-gray-400'}>
+                  <div className="text-[#9aa5b4] mb-0.5">Regulator Notified</div>
+                  <div className={detailItem.regulator_notified === 1 ? 'text-orange-600 font-medium' : 'text-[#9aa5b4]'}>
                     {detailItem.regulator_notified === 1 ? 'Yes' : 'No'}
                   </div>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-gray-400 mb-0.5">Offtaker ID</div>
-                  <div className="font-mono text-gray-600 break-all">{detailItem.offtaker_id}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Offtaker ID</div>
+                  <div className="font-mono text-[#3d4756] break-all">{detailItem.offtaker_id}</div>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-gray-400 mb-0.5">Grid Operator ID</div>
-                  <div className="font-mono text-gray-600 break-all">{detailItem.grid_operator_id}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Grid Operator ID</div>
+                  <div className="font-mono text-[#3d4756] break-all">{detailItem.grid_operator_id}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Created</div>
-                  <div className="text-gray-600">{fmtDate(detailItem.created_at).text}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Created</div>
+                  <div className="text-[#3d4756]">{fmtDate(detailItem.created_at).text}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Updated</div>
-                  <div className="text-gray-600">{fmtDate(detailItem.updated_at).text}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Updated</div>
+                  <div className="text-[#3d4756]">{fmtDate(detailItem.updated_at).text}</div>
                 </div>
               </div>
 
               {/* Reason */}
               {detailItem.reason && (
                 <div>
-                  <div className="text-xs text-gray-400 mb-1">Reason / Notes</div>
-                  <div className="text-xs text-gray-700 bg-gray-50 rounded p-2 border whitespace-pre-wrap">
+                  <div className="text-xs text-[#9aa5b4] mb-1">Reason / Notes</div>
+                  <div className="text-xs text-[#2d3748] bg-[#f8fafc] rounded p-2 border whitespace-pre-wrap">
                     {detailItem.reason}
                   </div>
                 </div>
@@ -636,13 +636,13 @@ export function OfftakerUseClaimTab() {
               {/* Actions section */}
               {!HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs font-semibold text-gray-700 mb-2">Advance State Machine</div>
+                  <div className="text-xs font-semibold text-[#2d3748] mb-2">Advance State Machine</div>
                   <button type="button"
                     onClick={() => {
                       setDetailItem(null);
                       openActionPicker(detailItem);
                     }}
-                    className="px-4 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"
+                    className="px-4 py-1.5 text-xs rounded bg-[#c2873a] text-white hover:bg-[#a3702f]"
                   >
                     Open Action Picker
                   </button>
@@ -651,7 +651,7 @@ export function OfftakerUseClaimTab() {
 
               {HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs text-gray-400 italic">
+                  <div className="text-xs text-[#9aa5b4] italic">
                     This claim is in a terminal state — no further actions are available.
                   </div>
                 </div>
@@ -665,8 +665,8 @@ export function OfftakerUseClaimTab() {
       {actionItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-gray-800 mb-1">USE Claim Action</div>
-            <div className="text-xs text-gray-500 mb-4">
+            <div className="text-sm font-semibold text-[#1e2a38] mb-1">USE Claim Action</div>
+            <div className="text-xs text-[#6b7685] mb-4">
               {CATEGORY_LABELS[actionItem.customer_category] ?? actionItem.customer_category}
               {' '}—{' '}
               {fmtZar(actionItem.claimed_amount_zar)}
@@ -675,7 +675,7 @@ export function OfftakerUseClaimTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-gray-600 mb-1">Action *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Action *</label>
               <select
                 value={selectedAction}
                 onChange={e => { setSelectedAction(e.target.value); setActionSettlement(''); }}
@@ -689,7 +689,7 @@ export function OfftakerUseClaimTab() {
 
             {needsSettlementAmt && (
               <div className="mb-3">
-                <label className="block text-xs text-gray-600 mb-1">Settlement Amount (ZAR)</label>
+                <label className="block text-xs text-[#3d4756] mb-1">Settlement Amount (ZAR)</label>
                 <input
                   type="number"
                   min="0"
@@ -703,7 +703,7 @@ export function OfftakerUseClaimTab() {
             )}
 
             <div className="mb-3">
-              <label className="block text-xs text-gray-600 mb-1">Reason (optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Reason (optional)</label>
               <textarea
                 value={actionReason}
                 onChange={e => setActionReason(e.target.value)}
@@ -722,7 +722,7 @@ export function OfftakerUseClaimTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-gray-600 hover:bg-gray-50"
+                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
               >
                 Cancel
               </button>
@@ -734,7 +734,7 @@ export function OfftakerUseClaimTab() {
                     ? 'bg-red-600 hover:bg-red-700'
                     : modalActions.find(a => a.name === selectedAction)?.variant === 'warn'
                     ? 'bg-amber-500 hover:bg-amber-600'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-[#c2873a] hover:bg-[#a3702f]'
                 }`}
               >
                 {actionLoading ? 'Submitting…' : actionLabelCurrent}

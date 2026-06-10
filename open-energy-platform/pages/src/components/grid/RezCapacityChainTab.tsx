@@ -510,7 +510,7 @@ export function RezCapacityChainTab() {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#0c2a4d] text-white'
+                ? 'bg-[#c2873a] text-white'
                 : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
             }`}
           >
@@ -733,7 +733,7 @@ function Drawer({
               {primary && (
                 <button type="button"
                   onClick={() => onAct(primary, row)}
-                  className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a3a5c]"
+                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
                 >
                   {ACTION_LABEL[primary]}
                 </button>

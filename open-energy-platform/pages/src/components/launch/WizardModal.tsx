@@ -32,8 +32,8 @@ function StepIndicator({ steps, current }: { steps: WizardStep[]; current: numbe
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold border-2 transition-all"
               style={{
-                background: i < current ? '#1a8a5b' : i === current ? '#0f1c2e' : '#f1f4f8',
-                borderColor: i < current ? '#1a8a5b' : i === current ? '#0f1c2e' : '#dde4ec',
+                background: i < current ? '#1a8a5b' : i === current ? 'oklch(0.46 0.16 55)' : '#f1f4f8',
+                borderColor: i < current ? '#1a8a5b' : i === current ? 'oklch(0.46 0.16 55)' : '#dde4ec',
                 color: i <= current ? '#fff' : '#9aa6b4',
               }}
             >
@@ -229,21 +229,22 @@ export function WizardModal({
           {/* Header */}
           <div
             className="px-6 py-4 border-b flex items-start justify-between gap-3"
-            style={{ borderColor: '#e5ebf2', background: 'linear-gradient(135deg,#0a1c30 0%,#1a3a5c 100%)', color: '#fff' }}
+            style={{ borderColor: 'oklch(0.88 0.006 250)', background: 'oklch(0.99 0.002 80)' }}
           >
             <div className="flex-1 min-w-0">
-              <div className="text-[11px] font-semibold uppercase tracking-widest text-white/60">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] font-mono" style={{ color: 'oklch(0.55 0.008 250)' }}>
                 {spec.steps.length}-step wizard
               </div>
-              <div className="mt-0.5 text-[17px] font-bold leading-tight">{spec.title}</div>
+              <div className="mt-0.5 text-[17px] font-bold leading-tight" style={{ color: 'oklch(0.15 0.025 250)' }}>{spec.title}</div>
               {spec.subtitle && (
-                <div className="mt-0.5 text-[12px] text-white/65">{spec.subtitle}</div>
+                <div className="mt-0.5 text-[12px]" style={{ color: 'oklch(0.45 0.015 250)' }}>{spec.subtitle}</div>
               )}
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="mt-0.5 p-1.5 rounded-md hover:bg-white/10 transition-colors"
+              className="mt-0.5 p-1.5 rounded-md hover:bg-[#eef2f7] transition-colors"
+              style={{ color: 'oklch(0.55 0.008 250)' }}
               aria-label="Close wizard"
             >
               <X size={16} />
@@ -320,7 +321,7 @@ export function WizardModal({
                 <button
                   type="button"
                   onClick={() => { setStepIndex(i => i - 1); setErr(null); }}
-                  className="flex items-center gap-1 text-[12px] font-semibold h-9 px-3 rounded-lg border transition-colors hover:bg-gray-50"
+                  className="flex items-center gap-1 text-[12px] font-semibold h-9 px-3 rounded-lg border transition-colors hover:bg-[#eef2f7]"
                   style={{ borderColor: '#dde4ec', color: '#0f1c2e' }}
                 >
                   <ChevronLeft size={13} /> Back
@@ -329,7 +330,7 @@ export function WizardModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="text-[12px] h-9 px-3 rounded-lg border hover:bg-gray-50 transition-colors"
+                  className="text-[12px] h-9 px-3 rounded-lg border hover:bg-[#eef2f7] transition-colors"
                   style={{ borderColor: '#dde4ec', color: '#6b7685' }}
                 >
                   Cancel
@@ -403,7 +404,7 @@ export function WizardPicker({
               <div className="text-[15px] font-bold" style={{ color: '#0f1c2e' }}>Quick start</div>
               <div className="text-[11px]" style={{ color: '#6b7685' }}>Guided step-by-step workflows</div>
             </div>
-            <button type="button" onClick={onClose} className="p-1.5 rounded-md hover:bg-gray-100" aria-label="Close">
+            <button type="button" onClick={onClose} className="p-1.5 rounded-md hover:bg-[#eef2f7]" aria-label="Close">
               <X size={15} style={{ color: '#6b7685' }} />
             </button>
           </div>

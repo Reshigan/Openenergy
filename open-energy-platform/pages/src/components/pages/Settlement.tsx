@@ -31,7 +31,7 @@ const FEE_TYPE_PILL: Record<string, string> = {
   dunning:         'bg-red-100 text-red-700',
   late_payment:    'bg-amber-100 text-amber-800',
   rebooking:       'bg-blue-100 text-blue-700',
-  admin:           'bg-gray-100 text-gray-700',
+  admin:           'bg-[#eef2f7] text-[#2d3748]',
   wheeling_uplift: 'bg-purple-100 text-purple-700',
   imbalance_uplift:'bg-rose-100 text-rose-700',
 };
@@ -54,7 +54,7 @@ type Break = {
 };
 
 const BREAK_SEVERITY_PILL: Record<string, string> = {
-  low: 'bg-gray-100 text-gray-700',
+  low: 'bg-[#eef2f7] text-[#2d3748]',
   medium: 'bg-blue-100 text-blue-700',
   high: 'bg-amber-100 text-amber-800',
   critical: 'bg-red-100 text-red-700',
@@ -116,17 +116,17 @@ interface Dispute {
 }
 
 const STATUS_PILL: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-700',
+  draft: 'bg-[#eef2f7] text-[#2d3748]',
   issued: 'bg-blue-100 text-blue-700',
   partial: 'bg-amber-100 text-amber-800',
   paid: 'bg-green-100 text-green-700',
   overdue: 'bg-red-100 text-red-700',
   disputed: 'bg-red-200 text-red-800',
-  cancelled: 'bg-gray-200 text-gray-700',
+  cancelled: 'bg-[#e8ecf0] text-[#2d3748]',
   open: 'bg-red-100 text-red-700',
   under_review: 'bg-amber-100 text-amber-800',
   resolved: 'bg-green-100 text-green-700',
-  rejected: 'bg-gray-200 text-gray-700',
+  rejected: 'bg-[#e8ecf0] text-[#2d3748]',
 };
 
 const formatZAR = (v: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(v || 0);
@@ -273,7 +273,7 @@ export function Settlement() {
       title="Settlement"
       subtitle="Invoices, payments, reconciliation and disputes."
       actions={
-        <button type="button" onClick={() => void refreshAll()} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
+        <button type="button" onClick={() => void refreshAll()} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]" aria-label="Refresh">
           <RefreshCw className="w-4 h-4" />
         </button>
       }
@@ -305,7 +305,7 @@ export function Settlement() {
           <button type="button"
             key={t.k}
             onClick={() => { setTab(t.k); setStatusFilter('all'); }}
-            className={`pb-3 border-b-2 transition-colors ${tab === t.k ? 'border-ionex-brand text-ionex-brand font-semibold' : 'border-transparent text-ionex-text-mute hover:text-gray-900'}`}
+            className={`pb-3 border-b-2 transition-colors ${tab === t.k ? 'border-ionex-brand text-ionex-brand font-semibold' : 'border-transparent text-ionex-text-mute hover:text-[#0f1c2e]'}`}
           >
             {t.label}
           </button>
@@ -409,13 +409,13 @@ function Tile({ label, value, accent }: { label: string; value: string; accent?:
   return (
     <div className="p-4 bg-white border border-ionex-border-100 rounded-xl">
       <p className="text-xs uppercase tracking-wide text-ionex-text-mute">{label}</p>
-      <p className={`text-2xl font-semibold mt-1 ${accent || 'text-gray-900'}`}>{value}</p>
+      <p className={`text-2xl font-semibold mt-1 ${accent || 'text-[#0f1c2e]'}`}>{value}</p>
     </div>
   );
 }
 
 const CONFIRMATION_PILL: Record<string, string> = {
-  pending: 'bg-gray-100 text-gray-700',
+  pending: 'bg-[#eef2f7] text-[#2d3748]',
   issuer_confirmed: 'bg-blue-100 text-blue-700',
   payer_acknowledged: 'bg-green-100 text-green-700',
   disputed: 'bg-red-100 text-red-700',
@@ -429,7 +429,7 @@ function InvoiceTable({ rows, userId, onPay, onDispute, onBreak, onAfterConfirm 
   return (
     <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-left text-xs uppercase text-ionex-text-mute">
+        <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
           <tr>
             <Th>Invoice</Th><Th>From</Th><Th>To</Th><Th>Amount</Th><Th>Paid</Th><Th>Due</Th><Th>Status</Th><Th>Confirmation</Th><Th>Actions</Th>
           </tr>
@@ -446,16 +446,16 @@ function InvoiceTable({ rows, userId, onPay, onDispute, onBreak, onAfterConfirm 
             const canIssuerConfirm = isIssuer && conf === 'pending';
             const canPayerAck = isPayer && conf === 'issuer_confirmed';
             return (
-              <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+              <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
                 <Td><span className="font-medium">{r.invoice_number}</span></Td>
                 <Td>{r.from_name}</Td>
                 <Td>{r.to_name}</Td>
                 <Td>{formatZAR(r.total_amount)}</Td>
                 <Td>{formatZAR(Number(r.paid_amount || 0))}</Td>
                 <Td>{r.due_date ? new Date(r.due_date).toLocaleDateString() : '—'}</Td>
-                <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-gray-100'}`}>{r.status}</span></Td>
+                <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-[#eef2f7]'}`}>{r.status}</span></Td>
                 <Td>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${CONFIRMATION_PILL[conf] || 'bg-gray-100'}`}>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${CONFIRMATION_PILL[conf] || 'bg-[#eef2f7]'}`}>
                     {conf.replace(/_/g, ' ')}
                   </span>
                 </Td>
@@ -496,7 +496,7 @@ function PaymentTable({ rows, userId, onReconcile }: { rows: Payment[]; userId?:
   return (
     <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-left text-xs uppercase text-ionex-text-mute">
+        <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
           <tr>
             <Th>Reference</Th><Th>Invoice</Th><Th>Amount</Th><Th>Method</Th><Th>Date</Th><Th>Bank ref</Th><Th>Reconciled</Th><Th>Actions</Th>
           </tr>
@@ -505,7 +505,7 @@ function PaymentTable({ rows, userId, onReconcile }: { rows: Payment[]; userId?:
           {rows.map(p => {
             const canReconcile = p.reconciled === 0 && p.from_participant_id === userId;
             return (
-              <tr key={p.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+              <tr key={p.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
                 <Td><span className="font-medium">{p.payment_reference}</span></Td>
                 <Td>{p.invoice_number}</Td>
                 <Td>{formatZAR(p.amount)}</Td>
@@ -527,18 +527,18 @@ function DisputeTable({ rows }: { rows: Dispute[] }) {
   return (
     <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-left text-xs uppercase text-ionex-text-mute">
+        <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
           <tr>
             <Th>Invoice</Th><Th>Filed by</Th><Th>Reason</Th><Th>Status</Th><Th>Filed</Th><Th>Resolved</Th>
           </tr>
         </thead>
         <tbody>
           {rows.map(d => (
-            <tr key={d.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+            <tr key={d.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
               <Td><span className="font-medium">{d.invoice_number}</span><div className="text-xs text-ionex-text-mute">{formatZAR(d.total_amount)}</div></Td>
               <Td>{d.filed_by_name}</Td>
               <Td className="max-w-md"><div className="truncate" title={d.reason}>{d.reason}</div></Td>
-              <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[d.status] || 'bg-gray-100'}`}>{d.status.replace(/_/g, ' ')}</span></Td>
+              <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[d.status] || 'bg-[#eef2f7]'}`}>{d.status.replace(/_/g, ' ')}</span></Td>
               <Td>{new Date(d.created_at).toLocaleDateString()}</Td>
               <Td>{d.resolved_at ? new Date(d.resolved_at).toLocaleDateString() : '—'}</Td>
             </tr>
@@ -584,7 +584,7 @@ function RecordPaymentModal({ invoice, onClose, onDone }: { invoice: Invoice; on
   return (
     <Modal title={`Record payment · ${invoice.invoice_number}`} onClose={onClose}>
       <p className="text-sm text-ionex-text-mute mb-3">
-        Balance due: <span className="font-semibold text-gray-900">{formatZAR(balance)}</span>
+        Balance due: <span className="font-semibold text-[#0f1c2e]">{formatZAR(balance)}</span>
       </p>
       {err && <ErrorBanner message={err} />}
       <LabelInput label="Amount (ZAR)" type="number" value={amount} onChange={v => setAmount(Number(v) || 0)} />
@@ -600,7 +600,7 @@ function RecordPaymentModal({ invoice, onClose, onDone }: { invoice: Invoice; on
       <LabelInput label="Bank reference (optional)" value={bankRef} onChange={setBankRef} />
       <LabelInput label="Notes (optional)" value={notes} onChange={setNotes} />
       <div className="flex justify-end gap-2 pt-4">
-        <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+        <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
         <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50">
           {saving ? 'Recording…' : 'Record payment'}
         </button>
@@ -642,7 +642,7 @@ function FileDisputeModal({ invoice, onClose, onDone }: { invoice: Invoice; onCl
         />
       </label>
       <div className="flex justify-end gap-2 pt-4">
-        <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+        <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
         <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
           {saving ? 'Filing…' : 'File dispute'}
         </button>
@@ -657,7 +657,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <h3 className="text-lg font-semibold text-[#0f1c2e]">{title}</h3>
           <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5">{children}</div>
@@ -696,20 +696,20 @@ function BreaksTable({
   return (
     <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-left text-xs uppercase text-ionex-text-mute">
+        <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
           <tr>
             <Th>Invoice</Th><Th>Type</Th><Th>Severity</Th><Th>Status</Th><Th>Reported</Th><Th>Reason</Th><Th>Actions</Th>
           </tr>
         </thead>
         <tbody>
           {rows.map(b => (
-            <tr key={b.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+            <tr key={b.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
               <Td><span className="font-medium">{b.invoice_number}</span></Td>
               <Td className="capitalize">{b.break_type.replace(/_/g, ' ')}</Td>
               <Td>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase ${BREAK_SEVERITY_PILL[b.severity] || 'bg-gray-100'}`}>{b.severity}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase ${BREAK_SEVERITY_PILL[b.severity] || 'bg-[#eef2f7]'}`}>{b.severity}</span>
               </Td>
-              <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[b.status] || 'bg-gray-100'}`}>{b.status.replace(/_/g, ' ')}</span></Td>
+              <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[b.status] || 'bg-[#eef2f7]'}`}>{b.status.replace(/_/g, ' ')}</span></Td>
               <Td>{new Date(b.reported_at).toLocaleDateString()}</Td>
               <Td className="max-w-md"><span className="block truncate" title={b.reason}>{b.reason}</span></Td>
               <Td>
@@ -720,7 +720,7 @@ function BreaksTable({
                   {(b.status === 'open' || b.status === 'investigating') && (
                     <>
                       <button type="button" onClick={() => setTransitioning({ ...b, status: 'resolved' as any })} className="px-2 py-1 text-xs bg-green-50 text-green-700 rounded">Resolve</button>
-                      <button type="button" onClick={() => setTransitioning({ ...b, status: 'rejected' as any })} className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">Reject</button>
+                      <button type="button" onClick={() => setTransitioning({ ...b, status: 'rejected' as any })} className="px-2 py-1 text-xs bg-[#eef2f7] text-[#2d3748] rounded">Reject</button>
                     </>
                   )}
                   {(b.status === 'resolved' || b.status === 'rejected') && (
@@ -793,7 +793,7 @@ function ResolveBreakModal({
         <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4} placeholder="What changed? Required ≥3 chars." className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg resize-none" />
       </label>
       <div className="flex justify-end gap-2 pt-4">
-        <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+        <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
         <button type="button" onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${isResolved ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}>
           {saving ? 'Saving…' : (isResolved ? 'Resolve' : 'Reject')}
         </button>
@@ -860,7 +860,7 @@ function FileBreakModal({ invoice, onClose, onDone }: { invoice: Invoice; onClos
         <textarea value={reason} onChange={e => setReason(e.target.value)} rows={4} placeholder="What disagreement? At least 3 characters." className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg resize-none" />
       </label>
       <div className="flex justify-end gap-2 pt-4">
-        <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+        <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
         <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50">
           {saving ? 'Filing…' : 'File break'}
         </button>
@@ -901,7 +901,7 @@ function ConfirmationsQueue({
           ) : (
             <div className="rounded-xl border border-ionex-border-100 bg-white overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-left text-xs uppercase text-ionex-text-mute">
+                <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
                   <tr>
                     <Th>Invoice</Th><Th>From</Th><Th>To</Th><Th>Amount</Th><Th>Due</Th><Th>Actions</Th>
                   </tr>
@@ -913,7 +913,7 @@ function ConfirmationsQueue({
                     const canIssuerConfirm = isIssuer && state === 'pending';
                     const canPayerAck = isPayer && state === 'issuer_confirmed';
                     return (
-                      <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+                      <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
                         <Td><span className="font-medium">{r.invoice_number}</span></Td>
                         <Td>{r.from_name}</Td>
                         <Td>{r.to_name}</Td>
@@ -967,7 +967,7 @@ function SettlementFeesTable({ rows }: { rows: SettlementFeeRow[] }) {
       </div>
       <div className="rounded-xl border border-ionex-border-100 bg-white overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs uppercase text-ionex-text-mute">
+          <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
             <tr>
               <Th>When</Th><Th>Type</Th><Th>Invoice</Th><Th>Basis</Th>
               <Th>Reason</Th><Th>Rule</Th><Th>Amount</Th>
@@ -975,9 +975,9 @@ function SettlementFeesTable({ rows }: { rows: SettlementFeeRow[] }) {
           </thead>
           <tbody>
             {rows.map(r => (
-              <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+              <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
                 <Td>{new Date(r.calculated_at).toLocaleString()}</Td>
-                <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${FEE_TYPE_PILL[r.fee_type] || 'bg-gray-100'}`}>{r.fee_type.replace(/_/g, ' ')}</span></Td>
+                <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${FEE_TYPE_PILL[r.fee_type] || 'bg-[#eef2f7]'}`}>{r.fee_type.replace(/_/g, ' ')}</span></Td>
                 <Td><span className="font-medium">{r.invoice_number || r.invoice_id.slice(0, 10) + '…'}</span></Td>
                 <Td>{r.basis}</Td>
                 <Td className="max-w-md"><span className="block truncate" title={r.reason || ''}>{r.reason || '—'}</span></Td>

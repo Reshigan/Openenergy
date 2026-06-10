@@ -48,7 +48,7 @@ interface TimelineEvent {
 // ─── Status metadata ──────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<string, string> = {
-  monitoring_period_open:  'bg-slate-100 text-slate-600',
+  monitoring_period_open:  'bg-[#eef2f7] text-[#3d4756]',
   data_collection:         'bg-blue-100 text-blue-700',
   site_verification:       'bg-cyan-100 text-cyan-700',
   draft_report:            'bg-indigo-100 text-indigo-700',
@@ -82,7 +82,7 @@ const TIER_COLORS: Record<string, string> = {
   major:       'bg-orange-100 text-orange-700',
   significant: 'bg-amber-100 text-amber-700',
   minor:       'bg-blue-100 text-blue-700',
-  routine:     'bg-gray-100 text-gray-600',
+  routine:     'bg-[#eef2f7] text-[#3d4756]',
 };
 
 const TIER_LABELS: Record<string, string> = {
@@ -187,7 +187,7 @@ function authHeader(): HeadersInit {
 }
 
 const PAGE_SIZE = 20;
-const sel = 'border rounded px-2 py-1 text-xs text-gray-700 bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
 
 // ─── KPI chip ─────────────────────────────────────────────────────────────────
 
@@ -198,15 +198,15 @@ function KpiChip({ label, value, mode = 'neutral' }: { label: string; value: str
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-gray-200 bg-white';
+    'border-[#dde4ec] bg-white';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-gray-900';
+    'text-[#0f1c2e]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-gray-500">{label}</div>
+      <div className="text-xs text-[#6b7685]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -459,13 +459,13 @@ export function LenderEsapTab() {
         </select>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
+          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
         >
           Refresh
         </button>
         <button type="button"
           onClick={() => setShowCreate(v => !v)}
-          className="ml-auto px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+          className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]"
         >
           + New Period
         </button>
@@ -480,7 +480,7 @@ export function LenderEsapTab() {
           <div className="text-sm font-semibold text-blue-800">New ESAP Monitoring Period</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Project ID *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Project ID *</label>
               <input
                 type="text"
                 value={formProjectId}
@@ -491,7 +491,7 @@ export function LenderEsapTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Reporting Period *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Reporting Period *</label>
               <input
                 type="text"
                 value={formPeriod}
@@ -502,7 +502,7 @@ export function LenderEsapTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Commitment Tier *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Commitment Tier *</label>
               <select
                 value={formTier}
                 onChange={e => setFormTier(e.target.value)}
@@ -515,7 +515,7 @@ export function LenderEsapTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">ES Monitor ID</label>
+              <label className="block text-xs text-[#3d4756] mb-1">ES Monitor ID</label>
               <input
                 type="text"
                 value={formMonitorId}
@@ -534,14 +534,14 @@ export function LenderEsapTab() {
             <button
               type="submit"
               disabled={creating}
-              className="px-4 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-1.5 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f] disabled:opacity-50"
             >
               {creating ? 'Creating…' : 'Create Period'}
             </button>
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 bg-white border rounded text-xs text-gray-600 hover:bg-gray-50"
+              className="px-3 py-1.5 bg-white border rounded text-xs text-[#3d4756] hover:bg-[#eef2f7]"
             >
               Cancel
             </button>
@@ -558,12 +558,12 @@ export function LenderEsapTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-gray-400 py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-gray-500">
+              <tr className="border-b text-left text-xs text-[#6b7685]">
                 <th className="pb-2 pr-3">Project</th>
                 <th className="pb-2 pr-3">Period</th>
                 <th className="pb-2 pr-3">Tier</th>
@@ -582,38 +582,38 @@ export function LenderEsapTab() {
                 return (
                   <tr
                     key={item.id}
-                    className="border-b hover:bg-gray-50 cursor-pointer"
+                    className="border-b hover:bg-[#eef2f7] cursor-pointer"
                     onClick={() => openDetail(item)}
                   >
-                    <td className="py-2 pr-3 text-xs font-medium text-gray-800">
+                    <td className="py-2 pr-3 text-xs font-medium text-[#1e2a38]">
                       {item.project_id}
                     </td>
-                    <td className="py-2 pr-3 text-xs text-gray-600">
+                    <td className="py-2 pr-3 text-xs text-[#3d4756]">
                       {item.reporting_period}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.commitment_tier] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.commitment_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {item.commitment_tier}
                       </span>
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
                       </span>
                       {item.sla_breached === 1 && (
                         <span className="ml-1 px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-600 font-semibold">SLA</span>
                       )}
                     </td>
-                    <td className="py-2 pr-3 text-xs text-right tabular-nums text-gray-600">
+                    <td className="py-2 pr-3 text-xs text-right tabular-nums text-[#3d4756]">
                       {item.finding_count_minor}
                     </td>
                     <td className="py-2 pr-3 text-xs text-right tabular-nums">
-                      <span className={item.finding_count_major > 0 ? 'text-orange-700 font-semibold' : 'text-gray-400'}>
+                      <span className={item.finding_count_major > 0 ? 'text-orange-700 font-semibold' : 'text-[#9aa5b4]'}>
                         {item.finding_count_major}
                       </span>
                     </td>
                     <td className="py-2 pr-3 text-xs tabular-nums">
-                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-gray-600'}>
+                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[#3d4756]'}>
                         {due.text}
                       </span>
                     </td>
@@ -621,7 +621,7 @@ export function LenderEsapTab() {
                       {item.regulator_notified === 1 ? (
                         <span title="Regulator notified" className="text-orange-500 text-base leading-none">&#9873;</span>
                       ) : (
-                        <span className="text-gray-200 text-base leading-none">&#9873;</span>
+                        <span className="text-[#e8ecf0] text-base leading-none">&#9873;</span>
                       )}
                     </td>
                     <td
@@ -642,7 +642,7 @@ export function LenderEsapTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={9} className="py-10 text-center text-[#9aa5b4] text-sm">
                     No ESAP compliance periods found
                   </td>
                 </tr>
@@ -658,15 +658,15 @@ export function LenderEsapTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-gray-500">Page {page} of {totalPages}</span>
+          <span className="text-xs text-[#6b7685]">Page {page} of {totalPages}</span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             Next &rarr;
           </button>
@@ -679,16 +679,16 @@ export function LenderEsapTab() {
           <div className="bg-white h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <div>
-                <div className="text-sm font-semibold text-gray-800">
+                <div className="text-sm font-semibold text-[#1e2a38]">
                   ESAP Compliance — {detailItem.project_id}
                 </div>
-                <div className="text-xs text-gray-500 mt-0.5">
+                <div className="text-xs text-[#6b7685] mt-0.5">
                   {detailItem.reporting_period} &nbsp;&middot;&nbsp; {detailItem.commitment_tier}
                 </div>
               </div>
               <button type="button"
                 onClick={() => setDetailItem(null)}
-                className="text-gray-400 hover:text-gray-700 text-lg leading-none"
+                className="text-[#9aa5b4] hover:text-[#2d3748] text-lg leading-none"
               >
                 &times;
               </button>
@@ -697,10 +697,10 @@ export function LenderEsapTab() {
             <div className="flex-1 p-5 space-y-5">
               {/* Status badges */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                   {STATUS_LABELS[detailItem.chain_status] ?? detailItem.chain_status.replace(/_/g, ' ')}
                 </span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.commitment_tier] ?? 'bg-gray-100 text-gray-500'}`}>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.commitment_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                   {TIER_LABELS[detailItem.commitment_tier] ?? detailItem.commitment_tier}
                 </span>
                 {detailItem.sla_breached === 1 && (
@@ -714,59 +714,59 @@ export function LenderEsapTab() {
               {/* Core fields */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
                 <div>
-                  <div className="text-gray-400 mb-0.5">Project ID</div>
-                  <div className="font-medium text-gray-800">{detailItem.project_id}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Project ID</div>
+                  <div className="font-medium text-[#1e2a38]">{detailItem.project_id}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Reporting Period</div>
-                  <div className="text-gray-800">{detailItem.reporting_period}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Reporting Period</div>
+                  <div className="text-[#1e2a38]">{detailItem.reporting_period}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">ES Monitor ID</div>
-                  <div className="text-gray-700">{detailItem.es_monitor_id ?? '—'}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">ES Monitor ID</div>
+                  <div className="text-[#2d3748]">{detailItem.es_monitor_id ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">SLA Deadline</div>
-                  <div className={`tabular-nums ${fmtDate(detailItem.sla_deadline).isPast ? 'text-red-600 font-medium' : 'text-gray-800'}`}>
+                  <div className="text-[#9aa5b4] mb-0.5">SLA Deadline</div>
+                  <div className={`tabular-nums ${fmtDate(detailItem.sla_deadline).isPast ? 'text-red-600 font-medium' : 'text-[#1e2a38]'}`}>
                     {fmtDate(detailItem.sla_deadline).text}
                   </div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Minor Findings</div>
-                  <div className="text-gray-800 tabular-nums">{detailItem.finding_count_minor}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Minor Findings</div>
+                  <div className="text-[#1e2a38] tabular-nums">{detailItem.finding_count_minor}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Major Findings</div>
-                  <div className={`tabular-nums font-semibold ${detailItem.finding_count_major > 0 ? 'text-orange-700' : 'text-gray-400'}`}>
+                  <div className="text-[#9aa5b4] mb-0.5">Major Findings</div>
+                  <div className={`tabular-nums font-semibold ${detailItem.finding_count_major > 0 ? 'text-orange-700' : 'text-[#9aa5b4]'}`}>
                     {detailItem.finding_count_major}
                   </div>
                 </div>
                 {detailItem.remediation_deadline && (
                   <div>
-                    <div className="text-gray-400 mb-0.5">Remediation Deadline</div>
-                    <div className={`tabular-nums ${fmtDate(detailItem.remediation_deadline).isPast ? 'text-red-600 font-medium' : 'text-gray-800'}`}>
+                    <div className="text-[#9aa5b4] mb-0.5">Remediation Deadline</div>
+                    <div className={`tabular-nums ${fmtDate(detailItem.remediation_deadline).isPast ? 'text-red-600 font-medium' : 'text-[#1e2a38]'}`}>
                       {fmtDate(detailItem.remediation_deadline).text}
                     </div>
                   </div>
                 )}
                 <div>
-                  <div className="text-gray-400 mb-0.5">Actor</div>
-                  <div className="text-gray-700 break-all">{detailItem.actor_id ?? '—'}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Actor</div>
+                  <div className="text-[#2d3748] break-all">{detailItem.actor_id ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Created</div>
-                  <div className="text-gray-600">{fmtDate(detailItem.created_at).text}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Created</div>
+                  <div className="text-[#3d4756]">{fmtDate(detailItem.created_at).text}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Updated</div>
-                  <div className="text-gray-600">{fmtDate(detailItem.updated_at).text}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Updated</div>
+                  <div className="text-[#3d4756]">{fmtDate(detailItem.updated_at).text}</div>
                 </div>
               </div>
 
               {/* Breach basis */}
               {detailItem.breach_basis && (
                 <div>
-                  <div className="text-xs text-gray-400 mb-1">Breach Basis</div>
+                  <div className="text-xs text-[#9aa5b4] mb-1">Breach Basis</div>
                   <div className="text-xs text-red-700 bg-red-50 rounded p-2 border border-red-100 whitespace-pre-wrap">
                     {detailItem.breach_basis}
                   </div>
@@ -776,8 +776,8 @@ export function LenderEsapTab() {
               {/* Reason */}
               {detailItem.reason && (
                 <div>
-                  <div className="text-xs text-gray-400 mb-1">Reason / Notes</div>
-                  <div className="text-xs text-gray-700 bg-gray-50 rounded p-2 border whitespace-pre-wrap">
+                  <div className="text-xs text-[#9aa5b4] mb-1">Reason / Notes</div>
+                  <div className="text-xs text-[#2d3748] bg-[#f8fafc] rounded p-2 border whitespace-pre-wrap">
                     {detailItem.reason}
                   </div>
                 </div>
@@ -785,19 +785,19 @@ export function LenderEsapTab() {
 
               {/* Timeline */}
               <div className="border-t pt-4">
-                <div className="text-xs font-semibold text-gray-700 mb-2">Event Timeline</div>
+                <div className="text-xs font-semibold text-[#2d3748] mb-2">Event Timeline</div>
                 {timelineLoading ? (
-                  <div className="text-xs text-gray-400">Loading timeline&hellip;</div>
+                  <div className="text-xs text-[#9aa5b4]">Loading timeline&hellip;</div>
                 ) : timeline.length === 0 ? (
-                  <div className="text-xs text-gray-400 italic">No events recorded yet</div>
+                  <div className="text-xs text-[#9aa5b4] italic">No events recorded yet</div>
                 ) : (
                   <ol className="space-y-2">
                     {timeline.map(evt => (
                       <li key={evt.id} className="flex gap-3 text-xs">
-                        <span className="text-gray-400 tabular-nums shrink-0">
+                        <span className="text-[#9aa5b4] tabular-nums shrink-0">
                           {fmtDate(evt.created_at).text}
                         </span>
-                        <span className="text-gray-700">{evt.action ?? String(evt.id)}</span>
+                        <span className="text-[#2d3748]">{evt.action ?? String(evt.id)}</span>
                       </li>
                     ))}
                   </ol>
@@ -807,13 +807,13 @@ export function LenderEsapTab() {
               {/* Actions */}
               {!HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs font-semibold text-gray-700 mb-2">Advance State Machine</div>
+                  <div className="text-xs font-semibold text-[#2d3748] mb-2">Advance State Machine</div>
                   <button type="button"
                     onClick={() => {
                       setDetailItem(null);
                       openActionPicker(detailItem);
                     }}
-                    className="px-4 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"
+                    className="px-4 py-1.5 text-xs rounded bg-[#c2873a] text-white hover:bg-[#a3702f]"
                   >
                     Open Action Picker
                   </button>
@@ -822,7 +822,7 @@ export function LenderEsapTab() {
 
               {HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs text-gray-400 italic">
+                  <div className="text-xs text-[#9aa5b4] italic">
                     This ESAP record is in a terminal state — no further actions available.
                   </div>
                 </div>
@@ -836,10 +836,10 @@ export function LenderEsapTab() {
       {actionItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-gray-800 mb-1">
+            <div className="text-sm font-semibold text-[#1e2a38] mb-1">
               ESAP Compliance Action
             </div>
-            <div className="text-xs text-gray-500 mb-4">
+            <div className="text-xs text-[#6b7685] mb-4">
               {actionItem.project_id} &mdash; {actionItem.reporting_period}
               {' '}({TIER_LABELS[actionItem.commitment_tier] ?? actionItem.commitment_tier})
               &nbsp;&mdash;&nbsp;
@@ -847,7 +847,7 @@ export function LenderEsapTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-gray-600 mb-1">Action *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Action *</label>
               <select
                 value={selectedAction}
                 onChange={e => setSelectedAction(e.target.value)}
@@ -861,7 +861,7 @@ export function LenderEsapTab() {
 
             {selectedAction === 'flag_major_findings' && (
               <div className="mb-3">
-                <label className="block text-xs text-gray-600 mb-1">Major Finding Count</label>
+                <label className="block text-xs text-[#3d4756] mb-1">Major Finding Count</label>
                 <input
                   type="number"
                   min="1"
@@ -875,7 +875,7 @@ export function LenderEsapTab() {
 
             {selectedAction === 'declare_breach' && (
               <div className="mb-3">
-                <label className="block text-xs text-gray-600 mb-1">Breach Basis *</label>
+                <label className="block text-xs text-[#3d4756] mb-1">Breach Basis *</label>
                 <textarea
                   value={actionBreachBasis}
                   onChange={e => setActionBreachBasis(e.target.value)}
@@ -887,7 +887,7 @@ export function LenderEsapTab() {
             )}
 
             <div className="mb-3">
-              <label className="block text-xs text-gray-600 mb-1">Reason / Notes</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Reason / Notes</label>
               <textarea
                 value={actionReason}
                 onChange={e => setActionReason(e.target.value)}
@@ -906,7 +906,7 @@ export function LenderEsapTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-gray-600 hover:bg-gray-50"
+                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
               >
                 Cancel
               </button>
@@ -918,7 +918,7 @@ export function LenderEsapTab() {
                     ? 'bg-red-600 hover:bg-red-700'
                     : modalActions.find(a => a.name === selectedAction)?.variant === 'warn'
                     ? 'bg-amber-500 hover:bg-amber-600'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-[#c2873a] hover:bg-[#a3702f]'
                 }`}
               >
                 {actionLoading ? 'Submitting…' : actionLabelCurrent}

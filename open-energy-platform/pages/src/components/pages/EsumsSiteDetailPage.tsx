@@ -400,7 +400,7 @@ function ChartsTab({ perf }: { perf: Perf | null }) {
               const h = (s.kwh / maxKwh) * 100;
               return (
                 <div key={s.day} className="flex-1 group relative" title={`${s.day} · ${Math.round(s.kwh).toLocaleString()} kWh · R${Math.round(s.revenue_zar).toLocaleString()}`}>
-                  <div className="bg-[#1a3a5c] rounded-t" style={{ height: `${Math.max(2, h)}%` }}/>
+                  <div className="bg-[#c2873a] rounded-t" style={{ height: `${Math.max(2, h)}%` }}/>
                 </div>
               );
             })}

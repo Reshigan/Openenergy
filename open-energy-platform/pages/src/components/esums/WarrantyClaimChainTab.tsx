@@ -202,7 +202,7 @@ export function WarrantyClaimChainTab() {
         </div>
         <button type="button"
           onClick={() => setCreating(true)}
-          className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold whitespace-nowrap">
+          className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold whitespace-nowrap">
           + New claim
         </button>
       </div>
@@ -214,8 +214,8 @@ export function WarrantyClaimChainTab() {
             onClick={() => setFilter(f.key)}
             className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
               filter === f.key
-                ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]'
-                : 'bg-white text-[#4a5568] border-[#dde4ec] hover:bg-gray-50'
+                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
+                : 'bg-white text-[#4a5568] border-[#dde4ec] hover:bg-[#eef2f7]'
             }`}>
             {f.label}
           </button>
@@ -424,7 +424,7 @@ function Pair({ label, value }: { label: string; value: string }) {
 }
 
 function ActionBtn({ label, onClick, tone = 'neutral' }: { label: string; onClick: () => void; tone?: 'neutral' | 'good' | 'bad' }) {
-  const bg = tone === 'good' ? 'bg-emerald-700' : tone === 'bad' ? 'bg-red-700' : 'bg-[#1a3a5c]';
+  const bg = tone === 'good' ? 'bg-emerald-700' : tone === 'bad' ? 'bg-red-700' : 'bg-[#c2873a]';
   return (
     <button type="button" onClick={onClick} className={`px-3 py-1.5 ${bg} text-white text-[12px] rounded-md hover:opacity-90`}>
       {label}
@@ -491,8 +491,8 @@ function CreateClaimModal({ onClose, onDone }: { onClose: () => void; onDone: ()
           <Field label="Fault code (optional)"   value={faultCode}   onChange={setFaultCode} />
           <Field label="Warranty reference (optional)" value={warrantyRef} onChange={setWarrantyRef} />
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
-            <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-[#1a3a5c] text-white rounded-lg disabled:opacity-50">
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-[#eef2f7]">Cancel</button>
+            <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-[#c2873a] text-white rounded-lg disabled:opacity-50">
               {saving ? 'Opening…' : 'Open claim'}
             </button>
           </div>

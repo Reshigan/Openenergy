@@ -128,7 +128,7 @@ export function AiAssistantDock() {
     return (
       <button type="button" onClick={() => setOpen(true)}
         aria-label="Open AI assistant"
-        className="fixed bottom-4 right-4 z-50 h-12 w-12 rounded-full bg-[#1a3a5c] hover:bg-[#0b1c30] text-white shadow-lg flex items-center justify-center transition-colors"
+        className="fixed bottom-4 right-4 z-50 h-12 w-12 rounded-full bg-[#c2873a] hover:bg-[#a3702f] text-white shadow-lg flex items-center justify-center transition-colors"
         style={{ boxShadow: '0 4px 14px rgba(26,58,92,0.4)' }}>
         <Sparkles size={20} />
       </button>
@@ -138,13 +138,13 @@ export function AiAssistantDock() {
   return (
     <div className="fixed bottom-4 right-4 z-50 w-[380px] h-[560px] max-h-[80vh] rounded-xl bg-white border border-[#dde4ec] shadow-2xl flex flex-col"
          style={{ boxShadow: '0 12px 32px rgba(15,28,46,0.25)' }}>
-      <header className="px-3 py-2 border-b border-[#eef2f7] flex items-center gap-2 bg-gradient-to-r from-[#1e3a5f] to-[#0b1c30] text-white rounded-t-xl">
+      <header className="px-3 py-2 border-b flex items-center gap-2 rounded-t-xl" style={{ background: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.40 0.14 55)' }}>
         <Sparkles size={16} className="text-[#f6c44a]" />
         <div className="flex-1">
-          <div className="text-[13px] font-semibold">CEC Assistant</div>
-          <div className="text-[10px] opacity-80 capitalize">context: {surfaceFromPath}</div>
+          <div className="text-[13px] font-semibold text-white">CEC Assistant</div>
+          <div className="text-[10px] text-white/70 capitalize">context: {surfaceFromPath}</div>
         </div>
-        <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="p-1 hover:bg-white/10 rounded">
+        <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="p-1 rounded text-white/80 hover:text-white hover:bg-[#f8fafc]/15">
           <X size={16} />
         </button>
       </header>
@@ -158,7 +158,7 @@ export function AiAssistantDock() {
         {messages.map((m) => (
           <div key={m.id}>
             <div className={`p-2 rounded-lg max-w-[85%] ${
-              m.role === 'user' ? 'ml-auto bg-[#1a3a5c] text-white' :
+              m.role === 'user' ? 'ml-auto bg-[#c2873a] text-white' :
               m.role === 'system' ? 'mx-auto bg-[#eef2f7] text-[#3d4756] text-[11px]' :
               'bg-[#f8fafc] border border-[#eef2f7] text-[#0f1c2e]'
             }`}>
@@ -199,7 +199,7 @@ export function AiAssistantDock() {
                placeholder="Ask anything…"
                className="flex-1 h-9 px-3 rounded border border-[#dde4ec] text-[13px]" />
         <button type="button" aria-label="Send" onClick={send} disabled={busy || !draft.trim()}
-                className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50 inline-flex items-center gap-1">
+                className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50 inline-flex items-center gap-1">
           <Send size={14} />
         </button>
       </div>

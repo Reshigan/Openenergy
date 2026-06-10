@@ -118,7 +118,7 @@ export function NoticesTab() {
             key={s}
             data-testid={`regulator-notices-filter-${s}`}
             onClick={() => setFilter(s)}
-            className={`h-7 px-3 rounded-full text-[11px] font-semibold border ${filter === s ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white text-[#445566] border-[#d8dee6]'}`}
+            className={`h-7 px-3 rounded-full text-[11px] font-semibold border ${filter === s ? 'bg-[#c2873a] text-white border-[#1a3a5c]' : 'bg-white text-[#445566] border-[#d8dee6]'}`}
           >
             {s === 'all' ? 'All' : s.replace(/_/g, ' ')}
           </button>
@@ -126,7 +126,7 @@ export function NoticesTab() {
         <button type="button"
           data-testid="regulator-notices-create"
           onClick={() => setCreating(true)}
-          className="h-7 px-3 rounded-full text-[11px] font-semibold bg-[#1a3a5c] text-white ml-auto"
+          className="h-7 px-3 rounded-full text-[11px] font-semibold bg-[#c2873a] text-white ml-auto"
         >
           + Issue notice
         </button>
@@ -306,7 +306,7 @@ function CreateNoticeForm({ onClose }: { onClose: () => void }) {
           data-testid="regulator-notice-form-submit"
           disabled={busy}
           onClick={submit}
-          className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[11px] font-semibold disabled:opacity-50"
+          className="h-8 px-3 rounded bg-[#c2873a] text-white text-[11px] font-semibold disabled:opacity-50"
         >
           Issue notice
         </button>

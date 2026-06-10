@@ -26,7 +26,7 @@ interface Kpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  notification_submitted:   'bg-gray-100 text-gray-500',
+  notification_submitted:   'bg-[#eef2f7] text-[#6b7685]',
   completeness_check:       'bg-blue-100 text-blue-700',
   foreign_ownership_screen: 'bg-purple-100 text-purple-700',
   competition_screen:       'bg-indigo-100 text-indigo-700',
@@ -35,14 +35,14 @@ const STATUS_COLORS: Record<string, string> = {
   nersa_evaluation:         'bg-yellow-100 text-yellow-800',
   conditional_approval:     'bg-teal-100 text-teal-700',
   control_transferred:      'bg-green-100 text-green-800',
-  withdrawn:                'bg-gray-100 text-gray-400',
+  withdrawn:                'bg-[#eef2f7] text-[#9aa5b4]',
   rejected:                 'bg-red-100 text-red-700',
   appeal_filed:             'bg-orange-200 text-orange-800',
-  appeal_determined:        'bg-gray-200 text-gray-600',
+  appeal_determined:        'bg-[#e8ecf0] text-[#3d4756]',
 };
 
 const TIER_COLORS: Record<string, string> = {
-  minor:       'bg-slate-100 text-slate-600',
+  minor:       'bg-[#eef2f7] text-[#3d4756]',
   moderate:    'bg-blue-100 text-blue-700',
   significant: 'bg-indigo-100 text-indigo-700',
   major:       'bg-orange-100 text-orange-800',
@@ -163,13 +163,13 @@ export function IppChangeOfControlTab() {
                   ? 'border-orange-300 bg-orange-50'
                   : (k as any).good
                   ? 'border-green-200 bg-green-50'
-                  : 'border-gray-200 bg-white'
+                  : 'border-[#dde4ec] bg-white'
               }`}
             >
-              <div className="text-xs text-gray-500">{k.label}</div>
+              <div className="text-xs text-[#6b7685]">{k.label}</div>
               <div
                 className={`text-xl font-bold ${
-                  (k as any).danger ? 'text-red-700' : (k as any).alert ? 'text-orange-700' : (k as any).good ? 'text-green-700' : 'text-gray-900'
+                  (k as any).danger ? 'text-red-700' : (k as any).alert ? 'text-orange-700' : (k as any).good ? 'text-green-700' : 'text-[#0f1c2e]'
                 }`}
               >
                 {k.value}
@@ -184,42 +184,42 @@ export function IppChangeOfControlTab() {
         <select
           value={filterStatus}
           onChange={e => { setFilterStatus(e.target.value); load(e.target.value, filterTier, filterForeign); }}
-          className="border rounded px-2 py-1 text-xs text-gray-700 bg-white"
+          className="border rounded px-2 py-1 text-xs text-[#2d3748] bg-white"
         >
           <option value="">All statuses</option>
           {Object.keys(STATUS_COLORS).map(s => (
             <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
           ))}
         </select>
-        <span className="text-gray-300">|</span>
+        <span className="text-[#9aa5b4]">|</span>
         {TIERS.map(t => (
           <button type="button"
             key={t}
             onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt, filterForeign); }}
-            className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white border-indigo-700' : 'bg-white text-gray-600 border-gray-300'}`}
+            className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white border-indigo-700' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
           >
             {t}
           </button>
         ))}
-        <span className="text-gray-300">|</span>
+        <span className="text-[#9aa5b4]">|</span>
         {(['all', 'domestic', 'foreign'] as const).map(f => (
           <button type="button"
             key={f}
             onClick={() => { setFilterForeign(f); load(filterStatus, filterTier, f); }}
-            className={`px-2 py-1 rounded text-xs border ${filterForeign === f ? 'bg-purple-700 text-white border-purple-700' : 'bg-white text-gray-600 border-gray-300'}`}
+            className={`px-2 py-1 rounded text-xs border ${filterForeign === f ? 'bg-[#c2873a] text-white border-[#c2873a]' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
           >
             {f === 'all' ? 'All ownership' : f === 'foreign' ? '🌍 Foreign' : 'Domestic'}
           </button>
         ))}
         <button type="button"
           onClick={() => setShowCreate(true)}
-          className="ml-auto px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700"
+          className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]"
         >
           + New notification
         </button>
         <button type="button"
           onClick={() => load(filterStatus, filterTier, filterForeign)}
-          className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
+          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
         >
           Refresh
         </button>
@@ -227,12 +227,12 @@ export function IppChangeOfControlTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-gray-400 py-8 text-center">Loading…</div>
+        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading…</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-gray-500">
+              <tr className="border-b text-left text-xs text-[#6b7685]">
                 <th className="pb-2 pr-4">Acquirer / Project</th>
                 <th className="pb-2 pr-4">Transaction type</th>
                 <th className="pb-2 pr-4">Cap (MW)</th>
@@ -251,43 +251,43 @@ export function IppChangeOfControlTab() {
                 return (
                   <tr
                     key={item.id}
-                    className="border-b hover:bg-gray-50 cursor-pointer"
+                    className="border-b hover:bg-[#eef2f7] cursor-pointer"
                     onClick={() => setSelected(item)}
                   >
                     <td className="py-2 pr-4 text-xs max-w-[200px]">
-                      <div className="truncate font-medium text-gray-800">{item.acquirer_name}</div>
-                      <div className="text-gray-400 truncate font-mono">{item.project_id}</div>
+                      <div className="truncate font-medium text-[#1e2a38]">{item.acquirer_name}</div>
+                      <div className="text-[#9aa5b4] truncate font-mono">{item.project_id}</div>
                     </td>
-                    <td className="py-2 pr-4 text-xs text-gray-600">
+                    <td className="py-2 pr-4 text-xs text-[#3d4756]">
                       {TX_TYPE_LABELS[item.transaction_type] ?? item.transaction_type}
                     </td>
                     <td className="py-2 pr-4 text-xs font-medium">{item.capacity_mw ?? '—'}</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.ownership_tier] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.ownership_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {item.ownership_tier}
                       </span>
                     </td>
                     <td className="py-2 pr-4 text-xs">
-                      {isForeign ? <span title={item.foreign_ownership_flag}>🌍</span> : <span className="text-gray-300">—</span>}
+                      {isForeign ? <span title={item.foreign_ownership_flag}>🌍</span> : <span className="text-[#9aa5b4]">—</span>}
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {item.chain_status.replace(/_/g, ' ')}
                       </span>
                       {hasRegulator && (
                         <span className="ml-1 px-1 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">REGULATOR</span>
                       )}
                     </td>
-                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                       {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_at)}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-gray-400">{fmtDate(item.created_at)}</td>
+                    <td className="py-2 pr-4 text-xs text-[#9aa5b4]">{fmtDate(item.created_at)}</td>
                   </tr>
                 );
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={8} className="py-10 text-center text-[#9aa5b4] text-sm">
                     No change-of-control notifications found
                   </td>
                 </tr>
@@ -304,21 +304,21 @@ export function IppChangeOfControlTab() {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h2 className="text-lg font-bold">Change of Control</h2>
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-xs text-[#6b7685] mt-1">
                   {TX_TYPE_LABELS[selected.transaction_type] ?? selected.transaction_type}
                   {' · '}
                   <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[selected.ownership_tier] ?? ''}`}>{selected.ownership_tier}</span>
                   {selected.foreign_ownership_flag !== 'domestic' && <span className="ml-1">🌍 {selected.foreign_ownership_flag}</span>}
                 </div>
               </div>
-              <button type="button" onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-700 text-lg leading-none">✕</button>
+              <button type="button" onClick={() => setSelected(null)} className="text-[#9aa5b4] hover:text-[#2d3748] text-lg leading-none">✕</button>
             </div>
             {selected.description && (
-              <div className="text-sm text-gray-600 bg-gray-50 rounded p-3 mb-4">{selected.description}</div>
+              <div className="text-sm text-[#3d4756] bg-[#f8fafc] rounded p-3 mb-4">{selected.description}</div>
             )}
             <div className="grid grid-cols-2 gap-3 text-sm mb-4">
               <div>
-                <span className="text-gray-500 text-xs">Status</span>
+                <span className="text-[#6b7685] text-xs">Status</span>
                 <div className="mt-0.5 flex flex-wrap gap-1">
                   <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status] ?? ''}`}>
                     {selected.chain_status.replace(/_/g, ' ')}
@@ -329,37 +329,37 @@ export function IppChangeOfControlTab() {
                 </div>
               </div>
               <div>
-                <span className="text-gray-500 text-xs">Acquirer</span>
+                <span className="text-[#6b7685] text-xs">Acquirer</span>
                 <div className="text-xs font-medium">{selected.acquirer_name}</div>
               </div>
               <div>
-                <span className="text-gray-500 text-xs">Project</span>
+                <span className="text-[#6b7685] text-xs">Project</span>
                 <div className="text-xs font-mono">{selected.project_id}</div>
               </div>
               {selected.capacity_mw != null && (
                 <div>
-                  <span className="text-gray-500 text-xs">Capacity</span>
+                  <span className="text-[#6b7685] text-xs">Capacity</span>
                   <div className="font-medium">{selected.capacity_mw} MW</div>
                 </div>
               )}
               <div>
-                <span className="text-gray-500 text-xs">Ownership</span>
+                <span className="text-[#6b7685] text-xs">Ownership</span>
                 <div className="text-xs">{selected.foreign_ownership_flag}</div>
               </div>
               <div>
-                <span className="text-gray-500 text-xs">SLA due</span>
+                <span className="text-[#6b7685] text-xs">SLA due</span>
                 <div className={isOverdue(selected.sla_due_at, selected.sla_breached) ? 'text-red-600 font-semibold' : ''}>
                   {isOverdue(selected.sla_due_at, selected.sla_breached) ? '⚠ ' : ''}{fmtDate(selected.sla_due_at)}
                 </div>
               </div>
               {selected.approval_granted_at && (
                 <div>
-                  <span className="text-gray-500 text-xs">Approval granted</span>
+                  <span className="text-[#6b7685] text-xs">Approval granted</span>
                   <div className="text-green-700">{fmtDate(selected.approval_granted_at)}</div>
                 </div>
               )}
               <div>
-                <span className="text-gray-500 text-xs">Created</span>
+                <span className="text-[#6b7685] text-xs">Created</span>
                 <div>{fmtDate(selected.created_at)}</div>
               </div>
             </div>
@@ -388,7 +388,7 @@ export function IppChangeOfControlTab() {
               <select
                 value={form.transaction_type}
                 onChange={e => setForm(f => ({ ...f, transaction_type: e.target.value }))}
-                className="w-full border rounded px-3 py-2 text-sm text-gray-700"
+                className="w-full border rounded px-3 py-2 text-sm text-[#2d3748]"
               >
                 {Object.entries(TX_TYPE_LABELS).map(([v, l]) => (
                   <option key={v} value={v}>{l}</option>
@@ -404,7 +404,7 @@ export function IppChangeOfControlTab() {
               <select
                 value={form.foreign_ownership_flag}
                 onChange={e => setForm(f => ({ ...f, foreign_ownership_flag: e.target.value }))}
-                className="w-full border rounded px-3 py-2 text-sm text-gray-700"
+                className="w-full border rounded px-3 py-2 text-sm text-[#2d3748]"
               >
                 <option value="domestic">Domestic</option>
                 <option value="sadc_resident">SADC resident</option>
@@ -422,13 +422,13 @@ export function IppChangeOfControlTab() {
               <button type="button"
                 onClick={createNotification}
                 disabled={createPending || !form.project_id || !form.acquirer_name}
-                className="px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
+                className="px-4 py-2 bg-[#c2873a] text-white rounded text-sm hover:bg-[#a3702f] disabled:opacity-50"
               >
                 {createPending ? 'Submitting…' : 'Submit notification'}
               </button>
               <button type="button"
                 onClick={() => setShowCreate(false)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200"
+                className="px-4 py-2 bg-[#eef2f7] text-[#2d3748] rounded text-sm hover:bg-[#e8ecf0]"
               >
                 Cancel
               </button>

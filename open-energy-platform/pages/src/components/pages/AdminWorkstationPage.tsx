@@ -53,7 +53,7 @@ const formatZAR = (v: number) =>
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
     <div className="flex justify-end mb-3">
-      <button type="button" onClick={onCreate} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+      <button type="button" onClick={onCreate} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
         + {label}
       </button>
     </div>
@@ -420,7 +420,7 @@ export function AdminWorkstationPage() {
             <div className="space-y-8">
               {ADMIN_REPORTS.map(cfg => (
                 <div key={cfg.endpoint} className="space-y-2">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{cfg.title}</p>
+                  <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">{cfg.title}</p>
                   <ReportPanel config={cfg} />
                 </div>
               ))}
@@ -881,7 +881,7 @@ function CascadeDlqTab() {
                                 <button type="button"
                                   key={s}
                                   onClick={() => setResolveStatus(s)}
-                                  className={`px-3 h-8 text-[11px] font-medium ${resolveStatus === s ? 'bg-[#1a3a5c] text-white' : 'bg-white text-[#3d4756] hover:bg-[#eef2f7]'}`}
+                                  className={`px-3 h-8 text-[11px] font-medium ${resolveStatus === s ? 'bg-[#c2873a] text-white' : 'bg-white text-[#3d4756] hover:bg-[#eef2f7]'}`}
                                 >
                                   {s}
                                 </button>
@@ -896,7 +896,7 @@ function CascadeDlqTab() {
                             <button type="button"
                               onClick={() => void submitResolve(r.id)}
                               disabled={rowBusy}
-                              className="h-8 px-3 rounded-md bg-[#1a3a5c] text-white text-[11px] font-semibold disabled:opacity-40"
+                              className="h-8 px-3 rounded-md bg-[#c2873a] text-white text-[11px] font-semibold disabled:opacity-40"
                             >
                               {rowBusy ? 'Saving…' : 'Confirm'}
                             </button>
@@ -1025,7 +1025,7 @@ function SubscriptionBillingTab() {
         <div className="flex shrink-0 items-center gap-2">
           <button type="button"
             onClick={() => setGenerating(true)}
-            className="h-8 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold hover:bg-[#16324f]"
+            className="h-8 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold hover:bg-[#a3702f]"
           >
             Generate invoice
           </button>

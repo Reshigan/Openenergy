@@ -110,7 +110,7 @@ function AlgosTab() {
           <input type="datetime-local" value={draft.start_at} onChange={(e) => setDraft({ ...draft, start_at: e.target.value })} className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]" />
           <input type="datetime-local" value={draft.end_at}   onChange={(e) => setDraft({ ...draft, end_at: e.target.value })}   className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]" />
         </div>
-        <div className="px-3 pb-3"><button type="button" onClick={submit} disabled={submitting} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">{submitting ? 'Submitting…' : 'Submit algo'}</button></div>
+        <div className="px-3 pb-3"><button type="button" onClick={submit} disabled={submitting} className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50">{submitting ? 'Submitting…' : 'Submit algo'}</button></div>
       </Section>
       <Section title={`Active algos (${rows.length})`}>
         <Table headers={['Algo', 'Side', 'Volume', 'Filled', 'Window', 'Status', '']}>

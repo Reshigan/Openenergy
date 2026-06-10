@@ -33,15 +33,15 @@ export function ConfirmDialog({
   if (!open) return null;
 
   const variantStyles = {
-    danger: 'border-red-200 bg-red-50',
-    warning: 'border-yellow-200 bg-yellow-50',
-    info: 'border-blue-200 bg-blue-50',
+    danger: 'border-red-200 bg-[#fff5f5]',
+    warning: 'border-yellow-200 bg-[#fffbf0]',
+    info: 'border-blue-200 bg-[#f0f7ff]',
   };
 
   const buttonStyles = {
     danger: 'bg-red-600 hover:bg-red-700',
     warning: 'bg-yellow-600 hover:bg-yellow-700',
-    info: 'bg-blue-600 hover:bg-blue-700',
+    info: 'bg-[#c2873a] hover:bg-[#a3702f]',
   };
 
   return (
@@ -51,20 +51,21 @@ export function ConfirmDialog({
           <div className="flex items-center gap-3">
             <AlertTriangle className={`w-5 h-5 ${variant === 'danger' ? 'text-red-600' : variant === 'warning' ? 'text-yellow-600' : 'text-blue-600'}`} />
             <h3 className="text-lg font-semibold">{title}</h3>
-            <button type="button" aria-label="Close" onClick={onCancel} className="ml-auto p-1 hover:bg-white/50 rounded">
+            <button type="button" aria-label="Close" onClick={onCancel} className="ml-auto p-1 hover:bg-[#f8fafc]/50 rounded">
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
         <div className="p-6">
-          <p className="text-gray-600">{message}</p>
+          <p style={{ color: '#3d4756' }}>{message}</p>
         </div>
-        <div className="flex justify-end gap-3 p-4 bg-gray-50 rounded-b-xl">
+        <div className="flex justify-end gap-3 p-4 rounded-b-xl" style={{ background: 'oklch(0.96 0.003 250)' }}>
           <button
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50"
+            className="px-4 py-2 text-sm rounded-lg disabled:opacity-50"
+            style={{ border: '1px solid #dde4ec', color: '#3d4756' }}
           >
             {cancelText}
           </button>

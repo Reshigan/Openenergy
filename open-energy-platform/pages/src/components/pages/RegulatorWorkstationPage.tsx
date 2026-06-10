@@ -62,7 +62,7 @@ const REGULATOR_REPORTS: ReportConfig[] = [
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
     <div className="flex justify-end mb-3">
-      <button type="button" onClick={onCreate} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+      <button type="button" onClick={onCreate} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
         + {label}
       </button>
     </div>
@@ -555,7 +555,7 @@ export function RegulatorWorkstationPage() {
             <div className="space-y-8">
               {REGULATOR_REPORTS.map(cfg => (
                 <div key={cfg.endpoint} className="space-y-2">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{cfg.title}</p>
+                  <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">{cfg.title}</p>
                   <ReportPanel config={cfg} />
                 </div>
               ))}
@@ -642,7 +642,7 @@ function LicencesTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'decided_at', label: 'Decided', render: (r) => r.decided_at ? new Date(r.decided_at).toLocaleDateString() : '—' },
           { key: '_actions', label: '', render: (r) => (
             r.status !== 'executed' && r.status !== 'reversed' && (
-              <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Transition</button>
+              <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[#c2873a] text-white rounded">Transition</button>
             )
           ) },
         ]}
@@ -746,7 +746,7 @@ function PublicConsultationTab({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button type="button" onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
           + New consultation
         </button>
       </div>
@@ -856,10 +856,10 @@ const MCE_TIER_TONE: Record<string, string> = {
 function mceStatusTone(s: string): string {
   if (['closed_satisfactory'].includes(s)) return 'bg-green-100 text-green-800';
   if (['enforcement_action'].includes(s)) return 'bg-red-100 text-red-800';
-  if (['withdrawn'].includes(s)) return 'bg-gray-100 text-gray-600';
+  if (['withdrawn'].includes(s)) return 'bg-[#eef2f7] text-[#3d4756]';
   if (['remedial_action_required'].includes(s)) return 'bg-orange-100 text-orange-800';
   if (['report_issued'].includes(s)) return 'bg-emerald-100 text-emerald-800';
-  return 'bg-slate-100 text-slate-700';
+  return 'bg-[#eef2f7] text-[#2d3748]';
 }
 
 type MceModal = { id: string; exam_tier: string; examination_ref?: string } | null;
@@ -887,47 +887,47 @@ function MarketConductExamTab({ onRefresh }: { onRefresh?: () => void }) {
           { label: 'Enforcement', val: kpis.enforcement ?? 0 },
           { label: 'Closed satisfactory', val: kpis.closed_satisfactory ?? 0 },
         ].map(k => (
-          <div key={k.label} className="bg-white border border-gray-200 rounded-lg p-3 text-center">
-            <div className="text-2xl font-semibold text-gray-900">{k.val}</div>
-            <div className="text-xs text-gray-500 mt-0.5">{k.label}</div>
+          <div key={k.label} className="bg-white border border-[#dde4ec] rounded-lg p-3 text-center">
+            <div className="text-2xl font-semibold text-[#0f1c2e]">{k.val}</div>
+            <div className="text-xs text-[#6b7685] mt-0.5">{k.label}</div>
           </div>
         ))}
       </div>
 
       <div className="flex justify-between items-center">
-        <span className="text-sm text-gray-500">{data.length} conduct examinations</span>
+        <span className="text-sm text-[#6b7685]">{data.length} conduct examinations</span>
         <button type="button"
           onClick={() => setCreateModal(true)}
-          className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700"
+          className="text-sm bg-[#c2873a] text-white px-3 py-1.5 rounded-md hover:bg-[#a3702f]"
         >+ Schedule examination</button>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-[#dde4ec] text-sm">
+          <thead className="bg-[#f8fafc]">
             <tr>
               {['Ref', 'Tier', 'Type', 'Subject licence', 'Status', 'SLA deadline', ''].map(h => (
-                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
+                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-[#6b7685] uppercase">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
+          <tbody className="bg-white divide-y divide-[#eef2f7]">
             {data.map((row: any) => (
-              <tr key={row.id} className="hover:bg-gray-50">
-                <td className="px-3 py-2 font-mono text-xs text-gray-700">{row.examination_ref ?? row.id.slice(0, 8)}</td>
+              <tr key={row.id} className="hover:bg-[#eef2f7]">
+                <td className="px-3 py-2 font-mono text-xs text-[#2d3748]">{row.examination_ref ?? row.id.slice(0, 8)}</td>
                 <td className="px-3 py-2">
-                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${MCE_TIER_TONE[row.exam_tier] ?? 'bg-gray-100 text-gray-700'}`}>
+                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${MCE_TIER_TONE[row.exam_tier] ?? 'bg-[#eef2f7] text-[#2d3748]'}`}>
                     {row.exam_tier?.replace(/_/g, ' ')}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-gray-600">{row.exam_type?.replace(/_/g, ' ') ?? '—'}</td>
-                <td className="px-3 py-2 text-gray-500 text-xs">{row.subject_licence_class ?? '—'}</td>
+                <td className="px-3 py-2 text-[#3d4756]">{row.exam_type?.replace(/_/g, ' ') ?? '—'}</td>
+                <td className="px-3 py-2 text-[#6b7685] text-xs">{row.subject_licence_class ?? '—'}</td>
                 <td className="px-3 py-2">
                   <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${mceStatusTone(row.chain_status)}`}>
                     {row.chain_status?.replace(/_/g, ' ')}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-gray-500 text-xs">{row.sla_deadline ? new Date(row.sla_deadline).toLocaleDateString() : '—'}</td>
+                <td className="px-3 py-2 text-[#6b7685] text-xs">{row.sla_deadline ? new Date(row.sla_deadline).toLocaleDateString() : '—'}</td>
                 <td className="px-3 py-2">
                   <button type="button" onClick={() => setModal({ id: row.id, exam_tier: row.exam_tier, examination_ref: row.examination_ref })}
                     className="text-xs text-blue-600 hover:underline">Action</button>
@@ -935,7 +935,7 @@ function MarketConductExamTab({ onRefresh }: { onRefresh?: () => void }) {
               </tr>
             ))}
             {data.length === 0 && (
-              <tr><td colSpan={7} className="px-3 py-8 text-center text-gray-400">No conduct examinations found</td></tr>
+              <tr><td colSpan={7} className="px-3 py-8 text-center text-[#9aa5b4]">No conduct examinations found</td></tr>
             )}
           </tbody>
         </table>

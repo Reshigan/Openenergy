@@ -152,7 +152,7 @@ export default function Security() {
             </div>
             <div className="flex-1 space-y-3">
               <div>
-                <div className="text-[12px] font-semibold text-gray-500 uppercase tracking-widest">Manual secret</div>
+                <div className="text-[12px] font-semibold text-[#6b7685] uppercase tracking-widest">Manual secret</div>
                 <div className="font-mono text-[13px] break-all select-all">{mfaSetup.secret}</div>
               </div>
               <p className="text-[13px]" style={{ color: '#6b7685' }}>
@@ -212,17 +212,17 @@ export default function Security() {
       {/* Sessions */}
       <section className="bg-white border rounded-xl p-5" style={{ borderColor: '#dde4ec' }}>
         <div className="flex items-center gap-2 mb-3">
-          <Laptop size={18} className="text-slate-700" />
+          <Laptop size={18} className="text-[#2d3748]" />
           <h2 className="text-[16px] font-semibold">Active sessions</h2>
           <button type="button" className="ml-auto btn btn-secondary" onClick={loadSessions}><RefreshCcw size={14} /> Refresh</button>
         </div>
-        {sessions.length === 0 && <div className="text-[13px] text-gray-500">No sessions recorded yet.</div>}
+        {sessions.length === 0 && <div className="text-[13px] text-[#6b7685]">No sessions recorded yet.</div>}
         <div className="divide-y">
           {sessions.map((s) => (
             <div key={s.id} className="py-3 flex flex-col md:flex-row md:items-center gap-2">
               <div className="flex-1">
                 <div className="text-[13px] font-semibold">{s.user_agent ? s.user_agent.slice(0, 80) : 'Unknown device'}</div>
-                <div className="text-[12px] text-gray-500">
+                <div className="text-[12px] text-[#6b7685]">
                   IP {s.ip || '—'} · issued {new Date(s.issued_at).toLocaleString()} · expires {new Date(s.expires_at).toLocaleString()}
                   {s.revoked_at && <> · <span className="text-red-600 font-semibold">revoked ({s.revoked_reason || 'unknown'})</span></>}
                 </div>

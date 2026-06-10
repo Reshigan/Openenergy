@@ -233,7 +233,7 @@ export function ProductTour({
             <button
               type="button"
               onClick={onNext}
-              style={{ display: 'flex', alignItems: 'center', gap: 4, height: 30, paddingLeft: 12, paddingRight: 10, borderRadius: 6, border: 'none', background: '#0f1c2e', cursor: 'pointer', fontSize: 12, color: '#fff', fontWeight: 600 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, height: 30, paddingLeft: 12, paddingRight: 10, borderRadius: 6, border: 'none', background: 'oklch(0.46 0.16 55)', cursor: 'pointer', fontSize: 12, color: '#fff', fontWeight: 600 }}
             >
               {isLast ? 'Done' : 'Next'} {!isLast && <ChevronRight size={13} />}
             </button>

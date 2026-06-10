@@ -86,11 +86,11 @@ const PRIORITY_COLOR: Record<IssuePriority, string> = {
   p2_high:          'bg-orange-100 text-orange-800',
   p3_medium:        'bg-yellow-100 text-yellow-700',
   p4_low:           'bg-blue-100 text-blue-700',
-  p5_informational: 'bg-gray-100 text-gray-600',
+  p5_informational: 'bg-[#eef2f7] text-[#3d4756]',
 };
 
 const STATUS_COLOR: Record<IssueStatus, string> = {
-  raised:         'bg-slate-100 text-slate-700',
+  raised:         'bg-[#eef2f7] text-[#2d3748]',
   triaged:        'bg-blue-50 text-blue-700',
   assigned:       'bg-blue-100 text-blue-800',
   acknowledged:   'bg-indigo-100 text-indigo-700',
@@ -101,10 +101,10 @@ const STATUS_COLOR: Record<IssueStatus, string> = {
   verified:       'bg-green-100 text-green-700',
   evidence_filed: 'bg-teal-100 text-teal-700',
   closed:         'bg-emerald-100 text-emerald-800',
-  archived:       'bg-gray-100 text-gray-500',
+  archived:       'bg-[#eef2f7] text-[#6b7685]',
   escalated:      'bg-red-200 text-red-900',
-  deferred:       'bg-gray-100 text-gray-600',
-  cancelled:      'bg-gray-200 text-gray-500',
+  deferred:       'bg-[#eef2f7] text-[#3d4756]',
+  cancelled:      'bg-[#e8ecf0] text-[#6b7685]',
   overdue_flagged:'bg-red-50 text-red-600',
 };
 
@@ -303,17 +303,17 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
           <option value="">All categories</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
         </select>
-        <span className="text-xs text-gray-400 ml-auto">{filtered.length} issues</span>
+        <span className="text-xs text-[#9aa5b4] ml-auto">{filtered.length} issues</span>
         {!readOnly && (
           <button type="button"
-            className="text-xs bg-blue-600 text-white rounded px-3 py-1 hover:bg-blue-700"
+            className="text-xs bg-[#c2873a] text-white rounded px-3 py-1 hover:bg-[#a3702f]"
             onClick={() => setShowCreate(true)}
           >
             + Raise issue
           </button>
         )}
         <button type="button"
-          className="text-xs border rounded px-2 py-1 hover:bg-gray-50"
+          className="text-xs border rounded px-2 py-1 hover:bg-[#eef2f7]"
           onClick={load}
         >
           Refresh
@@ -326,46 +326,46 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
         </div>
       )}
       {error && <div className="text-xs text-red-600 bg-red-50 rounded px-3 py-2">{error}</div>}
-      {loading && <div className="text-xs text-gray-400">Loading issues…</div>}
+      {loading && <div className="text-xs text-[#9aa5b4]">Loading issues…</div>}
 
       {/* Table */}
       {!loading && (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <div className="overflow-x-auto rounded-lg border border-[#dde4ec]">
           <table className="w-full text-xs">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#f8fafc]">
               <tr>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">ID</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Title</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Priority</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Category</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Status</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">SLA remaining</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Flags</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Project</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">ID</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Title</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Priority</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Category</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Status</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">SLA remaining</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Flags</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Project</th>
                 {!readOnly && <th className="px-3 py-2" />}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={readOnly ? 8 : 9} className="px-3 py-6 text-center text-gray-400">No issues</td></tr>
+                <tr><td colSpan={readOnly ? 8 : 9} className="px-3 py-6 text-center text-[#9aa5b4]">No issues</td></tr>
               )}
               {filtered.map(row => {
                 return (
                   <tr
                     key={row.id}
-                    className="border-t border-gray-100 hover:bg-gray-50 cursor-pointer"
+                    className="border-t border-[#eef2f7] hover:bg-[#eef2f7] cursor-pointer"
                     onClick={() => setSelected(row)}
                   >
-                    <td className="px-3 py-2 font-mono text-gray-400">{row.id}</td>
+                    <td className="px-3 py-2 font-mono text-[#9aa5b4]">{row.id}</td>
                     <td className="px-3 py-2 max-w-[200px]">
-                      <span className="font-medium text-gray-800 truncate block">{row.title}</span>
+                      <span className="font-medium text-[#1e2a38] truncate block">{row.title}</span>
                     </td>
                     <td className="px-3 py-2">
                       <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${PRIORITY_COLOR[row.priority]}`}>
                         {PRIORITY_LABEL[row.priority]}
                       </span>
                     </td>
-                    <td className="px-3 py-2 capitalize text-gray-600">{row.category}</td>
+                    <td className="px-3 py-2 capitalize text-[#3d4756]">{row.category}</td>
                     <td className="px-3 py-2">
                       <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${STATUS_COLOR[row.chain_status]}`}>
                         {row.chain_status.replace(/_/g, ' ')}
@@ -379,7 +379,7 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
                           breached={!!row.sla_breached}
                           compact
                         />
-                      ) : <span className="text-gray-400 text-xs">—</span>}
+                      ) : <span className="text-[#9aa5b4] text-xs">—</span>}
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex gap-1">
@@ -389,7 +389,7 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
                         {!!row.is_reportable && <Flag label="⚑" title="Regulator crossed" cls="bg-red-200 text-red-800" />}
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-gray-500 max-w-[120px] truncate">{row.project_name ?? row.project_id}</td>
+                    <td className="px-3 py-2 text-[#6b7685] max-w-[120px] truncate">{row.project_name ?? row.project_id}</td>
                     {!readOnly && (
                       <td className="px-3 py-2">
                         <button type="button"
@@ -425,15 +425,15 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
                   {!!selected.is_regulatory && <span className="px-1 py-0.5 rounded text-[10px] bg-orange-100 text-orange-700">REGULATORY</span>}
                   {!!selected.is_reportable && <span className="px-1 py-0.5 rounded text-[10px] bg-red-200 text-red-800">REGULATOR CROSSED</span>}
                 </div>
-                <h3 className="font-semibold text-gray-900">{selected.title}</h3>
-                <p className="text-xs text-gray-400 font-mono mt-0.5">{selected.id} · {selected.project_name ?? selected.project_id}</p>
+                <h3 className="font-semibold text-[#0f1c2e]">{selected.title}</h3>
+                <p className="text-xs text-[#9aa5b4] font-mono mt-0.5">{selected.id} · {selected.project_name ?? selected.project_id}</p>
               </div>
-              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
+              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
             </div>
 
             {/* Chain state progress */}
-            <div className="mb-4 px-3 py-3 bg-gray-50 rounded-lg">
-              <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-2">Workflow progress</p>
+            <div className="mb-4 px-3 py-3 bg-[#f8fafc] rounded-lg">
+              <p className="text-[10px] text-[#9aa5b4] uppercase tracking-wide mb-2">Workflow progress</p>
               <ChainStateBar
                 allStates={MAIN_STATES}
                 currentState={selected.chain_status}
@@ -456,7 +456,7 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
 
             {/* Description */}
             {selected.description && (
-              <p className="text-sm text-gray-600 mb-4">{selected.description}</p>
+              <p className="text-sm text-[#3d4756] mb-4">{selected.description}</p>
             )}
 
             {/* Detail fields */}
@@ -499,7 +499,7 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
             {/* Action buttons */}
             {!readOnly && (
               <div>
-                <p className="text-xs font-medium text-gray-500 mb-2">Available actions</p>
+                <p className="text-xs font-medium text-[#6b7685] mb-2">Available actions</p>
                 <div className="flex flex-wrap gap-2">
                   {(ACTIONS[selected.chain_status] ?? []).map(({ action, label }) => (
                     <button type="button"
@@ -509,8 +509,8 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
                         ${action === 'escalate_to_regulator'
                           ? 'bg-red-600 text-white hover:bg-red-700'
                           : action.startsWith('cancel') || action === 'flag_blocked'
-                          ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'}
+                          ? 'bg-[#eef2f7] text-[#2d3748] hover:bg-[#e8ecf0]'
+                          : 'bg-[#c2873a] text-white hover:bg-[#a3702f]'}
                         disabled:opacity-50`}
                       onClick={() => handleAction(action)}
                     >
@@ -518,7 +518,7 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
                     </button>
                   ))}
                   {ACTIONS[selected.chain_status]?.length === 0 && (
-                    <p className="text-xs text-gray-400">No actions available — terminal state.</p>
+                    <p className="text-xs text-[#9aa5b4]">No actions available — terminal state.</p>
                   )}
                 </div>
               </div>
@@ -532,8 +532,8 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowCreate(false)}>
           <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Raise new issue</h3>
-              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl" onClick={() => setShowCreate(false)}>×</button>
+              <h3 className="font-semibold text-[#0f1c2e]">Raise new issue</h3>
+              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl" onClick={() => setShowCreate(false)}>×</button>
             </div>
 
             <div className="space-y-3">
@@ -580,9 +580,9 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
             {error && <div className="text-xs text-red-600 mt-3">{error}</div>}
 
             <div className="flex justify-end gap-2 mt-4">
-              <button type="button" className="text-xs border rounded px-3 py-1.5 hover:bg-gray-50" onClick={() => setShowCreate(false)}>Cancel</button>
+              <button type="button" className="text-xs border rounded px-3 py-1.5 hover:bg-[#eef2f7]" onClick={() => setShowCreate(false)}>Cancel</button>
               <button type="button"
-                className="text-xs bg-blue-600 text-white rounded px-3 py-1.5 hover:bg-blue-700 disabled:opacity-50"
+                className="text-xs bg-[#c2873a] text-white rounded px-3 py-1.5 hover:bg-[#a3702f] disabled:opacity-50"
                 disabled={!newTitle || !newProject || createLoading}
                 onClick={handleCreate}
               >
@@ -597,10 +597,10 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
 }
 
 function KpiCard({ label, value, color }: { label: string; value: number; color: string }) {
-  const cls = color === 'red' ? 'text-red-600' : color === 'orange' ? 'text-orange-600' : color === 'blue' ? 'text-blue-600' : 'text-gray-700';
+  const cls = color === 'red' ? 'text-red-600' : color === 'orange' ? 'text-orange-600' : color === 'blue' ? 'text-blue-600' : 'text-[#2d3748]';
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-3">
-      <p className="text-[10px] text-gray-500 uppercase tracking-wide">{label}</p>
+    <div className="bg-white rounded-lg border border-[#dde4ec] p-3">
+      <p className="text-[10px] text-[#6b7685] uppercase tracking-wide">{label}</p>
       <p className={`text-2xl font-bold mt-0.5 ${cls}`}>{value}</p>
     </div>
   );
@@ -615,8 +615,8 @@ function Flag({ label, title, cls }: { label: string; title: string; cls: string
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] text-gray-400 uppercase tracking-wide">{label}</p>
-      <p className="text-xs text-gray-700 font-mono">{value}</p>
+      <p className="text-[10px] text-[#9aa5b4] uppercase tracking-wide">{label}</p>
+      <p className="text-xs text-[#2d3748] font-mono">{value}</p>
     </div>
   );
 }
@@ -624,7 +624,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+      <label className="block text-xs font-medium text-[#3d4756] mb-1">{label}</label>
       {children}
     </div>
   );

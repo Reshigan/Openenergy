@@ -67,7 +67,7 @@ export default function InsightsPanel({ chainKey, label, className }: InsightsPa
         </div>
         <button
           type="button" onClick={() => void load()}
-          className="rounded-md p-1.5 text-[#6b7685] hover:text-[#0f1c2e] hover:bg-[#eef2f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c]"
+          className="rounded-md p-1.5 text-[#6b7685] hover:text-[#0f1c2e] hover:bg-[#eef2f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2873a]"
           aria-label="Refresh insights"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden />
@@ -114,7 +114,7 @@ export default function InsightsPanel({ chainKey, label, className }: InsightsPa
                 {card.accept?.href && (
                   <button
                     type="button" onClick={() => navigate(card.accept!.href!)}
-                    className="mt-2 rounded-md bg-[#1a3a5c] hover:bg-[#16314e] text-white text-[11px] font-semibold px-3 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c]"
+                    className="mt-2 rounded-md bg-[#c2873a] hover:bg-[#a3702f] text-white text-[11px] font-semibold px-3 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2873a]"
                   >
                     {card.accept.label}
                   </button>

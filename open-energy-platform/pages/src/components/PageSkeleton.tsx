@@ -14,9 +14,9 @@ export function PageSkeleton({ variant = 'workstation', rows = 5 }: { variant?: 
       <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3 animate-pulse">
         {[0, 1, 2].map((i) => (
           <div key={i} className="widget-card p-4">
-            <div className="h-3 w-20 bg-gray-200 rounded mb-2"/>
+            <div className="h-3 w-20 bg-[#e8ecf0] rounded mb-2"/>
             <div className="h-7 w-32 bg-gray-300 rounded mb-1"/>
-            <div className="h-3 w-24 bg-gray-100 rounded"/>
+            <div className="h-3 w-24 bg-[#eef2f7] rounded"/>
           </div>
         ))}
       </div>
@@ -26,16 +26,16 @@ export function PageSkeleton({ variant = 'workstation', rows = 5 }: { variant?: 
   if (variant === 'detail') {
     return (
       <div className="p-4 space-y-3 animate-pulse">
-        <div className="h-5 w-1/3 bg-gray-200 rounded"/>
+        <div className="h-5 w-1/3 bg-[#e8ecf0] rounded"/>
         <div className="widget-card p-4 space-y-2">
-          <div className="h-4 w-2/3 bg-gray-200 rounded"/>
-          <div className="h-4 w-3/4 bg-gray-200 rounded"/>
-          <div className="h-4 w-1/2 bg-gray-200 rounded"/>
+          <div className="h-4 w-2/3 bg-[#e8ecf0] rounded"/>
+          <div className="h-4 w-3/4 bg-[#e8ecf0] rounded"/>
+          <div className="h-4 w-1/2 bg-[#e8ecf0] rounded"/>
         </div>
         <div className="widget-card p-4 space-y-2">
-          <div className="h-4 w-3/4 bg-gray-200 rounded"/>
-          <div className="h-4 w-2/3 bg-gray-200 rounded"/>
-          <div className="h-4 w-1/3 bg-gray-200 rounded"/>
+          <div className="h-4 w-3/4 bg-[#e8ecf0] rounded"/>
+          <div className="h-4 w-2/3 bg-[#e8ecf0] rounded"/>
+          <div className="h-4 w-1/3 bg-[#e8ecf0] rounded"/>
         </div>
       </div>
     );
@@ -46,11 +46,11 @@ export function PageSkeleton({ variant = 'workstation', rows = 5 }: { variant?: 
       <div className="p-4 animate-pulse">
         <div className="widget-card overflow-hidden">
           {Array.from({ length: rows }).map((_, i) => (
-            <div key={i} className="px-4 py-3 border-b border-gray-100 last:border-0 flex items-center gap-3">
-              <div className="h-3 w-1/4 bg-gray-200 rounded"/>
-              <div className="h-3 w-1/4 bg-gray-200 rounded"/>
-              <div className="h-3 w-1/4 bg-gray-200 rounded"/>
-              <div className="ml-auto h-3 w-12 bg-gray-100 rounded"/>
+            <div key={i} className="px-4 py-3 border-b border-[#eef2f7] last:border-0 flex items-center gap-3">
+              <div className="h-3 w-1/4 bg-[#e8ecf0] rounded"/>
+              <div className="h-3 w-1/4 bg-[#e8ecf0] rounded"/>
+              <div className="h-3 w-1/4 bg-[#e8ecf0] rounded"/>
+              <div className="ml-auto h-3 w-12 bg-[#eef2f7] rounded"/>
             </div>
           ))}
         </div>
@@ -61,22 +61,22 @@ export function PageSkeleton({ variant = 'workstation', rows = 5 }: { variant?: 
   // default: full workstation
   return (
     <div className="p-4 space-y-4 animate-pulse">
-      <div className="h-5 w-48 bg-gray-200 rounded"/>
+      <div className="h-5 w-48 bg-[#e8ecf0] rounded"/>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {[0, 1, 2].map((i) => (
           <div key={i} className="widget-card p-4">
-            <div className="h-3 w-20 bg-gray-200 rounded mb-2"/>
+            <div className="h-3 w-20 bg-[#e8ecf0] rounded mb-2"/>
             <div className="h-7 w-32 bg-gray-300 rounded"/>
           </div>
         ))}
       </div>
       <div className="widget-card overflow-hidden">
         {Array.from({ length: rows }).map((_, i) => (
-          <div key={i} className="px-4 py-3 border-b border-gray-100 last:border-0 flex items-center gap-3">
-            <div className="h-3 w-1/4 bg-gray-200 rounded"/>
-            <div className="h-3 w-1/4 bg-gray-200 rounded"/>
-            <div className="h-3 w-1/4 bg-gray-200 rounded"/>
-            <div className="ml-auto h-3 w-12 bg-gray-100 rounded"/>
+          <div key={i} className="px-4 py-3 border-b border-[#eef2f7] last:border-0 flex items-center gap-3">
+            <div className="h-3 w-1/4 bg-[#e8ecf0] rounded"/>
+            <div className="h-3 w-1/4 bg-[#e8ecf0] rounded"/>
+            <div className="h-3 w-1/4 bg-[#e8ecf0] rounded"/>
+            <div className="ml-auto h-3 w-12 bg-[#eef2f7] rounded"/>
           </div>
         ))}
       </div>

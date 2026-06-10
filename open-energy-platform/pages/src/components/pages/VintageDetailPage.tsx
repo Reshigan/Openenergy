@@ -80,7 +80,7 @@ export function VintageDetailPage() {
             <RefreshCw size={12} /> Refresh
           </button>
           {row.current_stage !== 'retired_full' && row.current_stage !== 'expired' && (
-            <button type="button" onClick={() => setAdvancing(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+            <button type="button" onClick={() => setAdvancing(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
               Advance stage
             </button>
           )}

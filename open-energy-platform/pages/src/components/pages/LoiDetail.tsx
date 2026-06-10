@@ -92,7 +92,7 @@ export function LoiDetail() {
                 <button
                   type="button"
                   onClick={() => navigate('/lois')}
-                  className="h-9 px-3 rounded-md bg-white/15 border border-white/20 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/25"
+                  className="h-9 px-3 rounded-md bg-white/15 border border-white/20 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#f8fafc]/25"
                 >
                   <OEIcon name="chevron-left" size={14} /> LOIs
                 </button>
@@ -100,7 +100,7 @@ export function LoiDetail() {
                   <button
                     type="button"
                     onClick={() => navigate(`/contracts/${data.contract!.record.id}`)}
-                    className="h-9 px-3 rounded-md bg-white text-[#3a1f5d] text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/90"
+                    className="h-9 px-3 rounded-md bg-white text-[#3a1f5d] text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#f8fafc]/90"
                   >
                     <OEIcon name="doc" size={14} /> Open contract file
                   </button>
@@ -109,7 +109,7 @@ export function LoiDetail() {
                   <button
                     type="button"
                     onClick={() => navigate(`/projects/${data.project.id}`)}
-                    className="h-9 px-3 rounded-md bg-white text-[#3a1f5d] text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/90"
+                    className="h-9 px-3 rounded-md bg-white text-[#3a1f5d] text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#f8fafc]/90"
                   >
                     <OEIcon name="workflow" size={14} /> Open project file
                   </button>
@@ -128,7 +128,7 @@ export function LoiDetail() {
                       type="button"
                       onClick={() => setShowDecline(true)}
                       disabled={busy !== null}
-                      className="h-9 px-3 rounded-md bg-white/15 border border-white/30 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/25 disabled:opacity-60"
+                      className="h-9 px-3 rounded-md bg-white/15 border border-white/30 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#f8fafc]/25 disabled:opacity-60"
                     >
                       <OEIcon name="close" size={14} /> Decline
                     </button>

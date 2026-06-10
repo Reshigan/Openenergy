@@ -26,7 +26,7 @@ export function NotFoundPage() {
         <button
           type="button"
           onClick={() => navigate('/launch')}
-          className="inline-flex items-center gap-1.5 rounded-md bg-[#1a3a5c] px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#16314e]"
+          className="inline-flex items-center gap-1.5 rounded-md bg-[#c2873a] px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#a3702f]"
         >
           <Home className="h-4 w-4" aria-hidden />
           Home

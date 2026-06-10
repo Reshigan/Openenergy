@@ -142,7 +142,7 @@ function GridDispatchTab() {
                  value={newRun.demand_mw} onChange={(e) => setNewRun({ ...newRun, demand_mw: e.target.value })}/>
         </label>
         <button type="button" disabled={creating || !newRun.demand_mw} onClick={createRun}
-                className="h-7 px-3 rounded bg-[#1a3a5c] text-white font-semibold disabled:opacity-50">
+                className="h-7 px-3 rounded bg-[#c2873a] text-white font-semibold disabled:opacity-50">
           {creating ? 'Creating…' : 'New run'}
         </button>
       </div>
@@ -410,7 +410,7 @@ function SurveillanceTab() {
   return (
     <>
       <div className="flex justify-end">
-        <button type="button" onClick={scan} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[11px] font-semibold">Run scan now</button>
+        <button type="button" onClick={scan} className="h-8 px-3 rounded bg-[#c2873a] text-white text-[11px] font-semibold">Run scan now</button>
       </div>
       <Section title="Open surveillance alerts">
         <Table headers={['Type', 'Participant', 'Severity', 'Score', 'Detected', 'Status', '']}>
@@ -624,7 +624,7 @@ function AuditArea() {
             <input type="date" className="block mt-1 h-7 px-2 rounded border border-[#dde4ec]"
                    value={buildDay} onChange={(e) => setBuildDay(e.target.value)}/>
           </label>
-          <button type="button" onClick={build} disabled={busy} className="h-7 px-3 rounded bg-[#1a3a5c] text-white font-semibold disabled:opacity-50">
+          <button type="button" onClick={build} disabled={busy} className="h-7 px-3 rounded bg-[#c2873a] text-white font-semibold disabled:opacity-50">
             {busy ? 'Building…' : 'Build root'}
           </button>
           {msg && <span className="text-[#3a4658]">{msg}</span>}
@@ -670,7 +670,7 @@ function SubTabs<T extends string>({ value, onChange, items }: { value: T; onCha
     <div className="flex flex-wrap gap-1 text-[11px]">
       {items.map((t) => (
         <button type="button" key={t.k} onClick={() => onChange(t.k)}
-                className={`h-7 px-2.5 rounded-full font-semibold border ${value === t.k ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white border-[#dde4ec]'}`}>
+                className={`h-7 px-2.5 rounded-full font-semibold border ${value === t.k ? 'bg-[#c2873a] text-white border-[#1a3a5c]' : 'bg-white border-[#dde4ec]'}`}>
           {t.label}
         </button>
       ))}

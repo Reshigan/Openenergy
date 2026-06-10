@@ -18,7 +18,7 @@ const phaseColors: Record<string, string> = {
   construction: 'bg-orange-100 text-orange-700',
   operational: 'bg-green-100 text-green-700',
   commissioning: 'bg-purple-100 text-purple-700',
-  suspended: 'bg-gray-100 text-ionex-text-sub',
+  suspended: 'bg-[#eef2f7] text-ionex-text-sub',
 };
 
 type Project = {
@@ -189,7 +189,7 @@ export function Projects() {
       <div className="bg-white rounded-xl border border-ionex-border-soft">
         <div className="p-4 border-b border-ionex-border-soft">
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9aa5b4]" />
             <input type="text" placeholder="Search projects..." value={search} onChange={e => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-ionex-border rounded-lg text-sm" />
           </div>
@@ -212,7 +212,7 @@ export function Projects() {
                     className="border border-ionex-border-soft rounded-xl p-4 hover:shadow-md transition-shadow flex flex-col">
                     <div className="flex items-start justify-between mb-3">
                       <div className="min-w-0">
-                        <h3 className="font-semibold text-gray-900 truncate">{displayName}</h3>
+                        <h3 className="font-semibold text-[#0f1c2e] truncate">{displayName}</h3>
                         <p className="text-xs text-ionex-text-mute"><EntityLink id={project.id} type="project" /></p>
                       </div>
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${phaseColors[displayStatus] || phaseColors.development}`}>
@@ -220,9 +220,9 @@ export function Projects() {
                       </span>
                     </div>
                     <div className="space-y-2 text-sm text-ionex-text-sub">
-                      <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-gray-400" /> {project.location || 'Location TBD'}</div>
-                      <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-gray-400" /> COD: {project.cod || 'TBD'}</div>
-                      <div className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-gray-400" /> {formatZAR((project.capacity_mw || 0) * 1500000)}</div>
+                      <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-[#9aa5b4]" /> {project.location || 'Location TBD'}</div>
+                      <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-[#9aa5b4]" /> COD: {project.cod || 'TBD'}</div>
+                      <div className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-[#9aa5b4]" /> {formatZAR((project.capacity_mw || 0) * 1500000)}</div>
                     </div>
                     <div className="mt-4 pt-4 border-t border-ionex-border-soft flex items-center justify-between">
                       <div className="text-xs text-ionex-text-mute">{project.capacity_mw || 0} MW Capacity</div>
@@ -230,7 +230,7 @@ export function Projects() {
                         {ownProject && canManage && (
                           <>
                             <button type="button" onClick={(e) => { e.stopPropagation(); openEdit(project); }}
-                              className="p-1.5 rounded hover:bg-gray-100" title="Edit project">
+                              className="p-1.5 rounded hover:bg-[#eef2f7]" title="Edit project">
                               <Edit2 className="w-4 h-4 text-ionex-text-sub" />
                             </button>
                             <button type="button" onClick={(e) => { e.stopPropagation(); doDelete(project.id); }}
@@ -240,8 +240,8 @@ export function Projects() {
                           </>
                         )}
                         <button type="button" onClick={() => navigate(`/projects/${project.id}`)}
-                          className="p-1.5 rounded hover:bg-gray-100" title="Open project">
-                          <ArrowRight className="w-4 h-4 text-gray-500" />
+                          className="p-1.5 rounded hover:bg-[#eef2f7]" title="Open project">
+                          <ArrowRight className="w-4 h-4 text-[#6b7685]" />
                         </button>
                       </div>
                     </div>
@@ -288,7 +288,7 @@ function ProjectModal(props: {
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mt-8">
         <div className="flex items-center justify-between px-5 py-4 border-b border-ionex-border-soft">
           <h2 id="projects-modal-title" className="text-lg font-semibold">{title}</h2>
-          <button type="button" onClick={onClose} aria-label="Close dialog" className="p-1 rounded hover:bg-gray-100"><X className="w-4 h-4" aria-hidden="true" /></button>
+          <button type="button" onClick={onClose} aria-label="Close dialog" className="p-1 rounded hover:bg-[#eef2f7]"><X className="w-4 h-4" aria-hidden="true" /></button>
         </div>
         <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <Field label="Project name" required>
@@ -355,7 +355,7 @@ function ProjectModal(props: {
         {err && <div className="px-5 pb-3 text-sm text-red-700">{err}</div>}
         <div className="px-5 py-4 border-t border-ionex-border-soft flex justify-end gap-2">
           <button type="button" onClick={onClose} disabled={saving}
-            className="px-4 py-2 border border-ionex-border rounded-lg text-sm hover:bg-gray-50">
+            className="px-4 py-2 border border-ionex-border rounded-lg text-sm hover:bg-[#eef2f7]">
             Cancel
           </button>
           <button type="button" onClick={onSubmit} disabled={saving}

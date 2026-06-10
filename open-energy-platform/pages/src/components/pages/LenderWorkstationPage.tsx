@@ -811,7 +811,7 @@ export function LenderWorkstationPage() {
             <div className="space-y-8">
               {LENDER_REPORTS.map(cfg => (
                 <div key={cfg.endpoint} className="space-y-2">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{cfg.title}</p>
+                  <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">{cfg.title}</p>
                   <ReportPanel config={cfg} />
                 </div>
               ))}
@@ -871,7 +871,7 @@ function CapitalAdequacyTab({ onRefresh }: { onRefresh?: () => void }) {
     <div>
       <div className="flex justify-end mb-3">
         <button type="button"
-          className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
+          className="px-3 py-1.5 rounded bg-[#c2873a] text-white text-sm font-medium hover:bg-[#a3702f]"
           onClick={() => setModal('create')}
         >
           + New report
@@ -1014,7 +1014,7 @@ function EsapMonitoringTab({ onRefresh }: { onRefresh: () => void }) {
     <div>
       <button type="button"
         onClick={() => setModal('create')}
-        className="mb-4 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+        className="mb-4 px-4 py-2 bg-[#c2873a] text-white text-sm rounded hover:bg-[#a3702f]"
       >
         Issue ESAP record
       </button>
@@ -1179,7 +1179,7 @@ function CpClearanceTab({ onRefresh }: { onRefresh?: () => void }) {
     <div>
       <div className="flex justify-end mb-3">
         <button type="button"
-          className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
+          className="px-3 py-1.5 rounded bg-[#c2873a] text-white text-sm font-medium hover:bg-[#a3702f]"
           onClick={() => setModal('create')}
         >
           + New CP register
@@ -1399,7 +1399,7 @@ function ConstructionCostReportTab({ onRefresh }: { onRefresh?: () => void }) {
           )}
         </div>
         <button type="button"
-          className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
+          className="px-3 py-1.5 rounded bg-[#c2873a] text-white text-sm font-medium hover:bg-[#a3702f]"
           onClick={() => setModal('create')}
         >
           + New period

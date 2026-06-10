@@ -78,7 +78,7 @@ export function NotificationsPage() {
               <button type="button"
                 key={s}
                 onClick={() => setStatus(s)}
-                className={`h-8 px-3 rounded-md text-[12px] font-semibold ${status === s ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'}`}
+                className={`h-8 px-3 rounded-md text-[12px] font-semibold ${status === s ? 'bg-[#c2873a] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'}`}
               >
                 {s === 'unread' ? `Unread${unread > 0 ? ` (${unread})` : ''}` : s === 'read' ? 'Read' : 'All'}
               </button>

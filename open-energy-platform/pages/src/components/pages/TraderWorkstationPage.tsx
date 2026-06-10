@@ -797,8 +797,8 @@ export function TraderWorkstationPage() {
             <div className="space-y-8">
               <div className="flex flex-wrap gap-2 items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">Export</p>
-                  <p className="text-xs text-slate-500">Download trader data for offline analysis or regulatory submission.</p>
+                  <p className="text-sm font-semibold text-[#1e2a38]">Export</p>
+                  <p className="text-xs text-[#4a5568]">Download trader data for offline analysis or regulatory submission.</p>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -812,14 +812,14 @@ export function TraderWorkstationPage() {
                       a.click();
                       document.body.removeChild(a);
                     }}
-                    className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                    className="px-3 py-1.5 text-xs bg-[#c2873a] text-white rounded hover:bg-[#a3702f]"
                   >
                     Export CSV
                   </button>
                   <button
                     type="button"
                     onClick={() => window.print()}
-                    className="px-3 py-1.5 text-xs bg-slate-700 text-white rounded hover:bg-slate-800"
+                    className="px-3 py-1.5 text-xs bg-[#2d3748] text-white rounded hover:bg-[#1e2a38]"
                   >
                     Print / PDF
                   </button>
@@ -841,17 +841,17 @@ export function TraderWorkstationPage() {
                       const btn = document.querySelector<HTMLButtonElement>(`[data-tab-key="${link.tabKey}"]`);
                       btn?.click();
                     }}
-                    className="block rounded-lg border border-slate-200 bg-white p-4 hover:border-blue-400 hover:shadow-sm transition-all"
+                    className="block rounded-lg border border-[#dde4ec] bg-white p-4 hover:border-blue-400 hover:shadow-sm transition-all"
                   >
-                    <p className="text-sm font-semibold text-slate-800">{link.label}</p>
-                    <p className="mt-1 text-xs text-slate-500">{link.description}</p>
+                    <p className="text-sm font-semibold text-[#1e2a38]">{link.label}</p>
+                    <p className="mt-1 text-xs text-[#4a5568]">{link.description}</p>
                   </a>
                 ))}
               </div>
 
               {TRADER_REPORTS.map(cfg => (
                 <div key={cfg.endpoint} className="space-y-2">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{cfg.title}</p>
+                  <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">{cfg.title}</p>
                   <ReportPanel config={cfg} />
                 </div>
               ))}
@@ -894,7 +894,7 @@ function OrdersTab({ onRefresh }: { onRefresh: () => void }) {
           { key: '_actions', label: '', render: (r) => (
             (r.status === 'open' || r.status === 'partially_filled') ? (
               <div className="flex gap-1">
-                <button type="button" onClick={() => setAmending(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Amend</button>
+                <button type="button" onClick={() => setAmending(r)} className="px-2 py-1 text-[11px] bg-[#c2873a] text-white rounded">Amend</button>
                 <button type="button" onClick={() => setCancelling(r)} className="px-2 py-1 text-[11px] bg-red-600 text-white rounded">Cancel</button>
               </div>
             ) : null
@@ -974,7 +974,7 @@ function ExplainButton({ id }: { id: string }) {
   };
   return (
     <>
-      <button type="button" onClick={() => { setOpen(true); if (!data) void load(); }} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">AI: why?</button>
+      <button type="button" onClick={() => { setOpen(true); if (!data) void load(); }} className="px-2 py-1 text-[11px] bg-[#c2873a] text-white rounded">AI: why?</button>
       {open && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setOpen(false)}>
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -1011,7 +1011,7 @@ function ExceptionsTab({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button type="button" onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
           + File exception
         </button>
       </div>
@@ -1027,7 +1027,7 @@ function ExceptionsTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'resolved' ? 'good' : r.status === 'rejected' ? 'bad' : 'warn'}>{r.status}</Pill> },
           { key: '_actions', label: '', render: (r) => (
             r.status !== 'resolved' && r.status !== 'rejected' ? (
-              <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Transition</button>
+              <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[#c2873a] text-white rounded">Transition</button>
             ) : null
           ) },
         ]}
@@ -1103,7 +1103,7 @@ function MarginTab({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button type="button" onClick={runScan} disabled={running} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
+        <button type="button" onClick={runScan} disabled={running} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50">
           {running ? 'Running…' : 'Run margin scan'}
         </button>
       </div>
@@ -1161,7 +1161,7 @@ function FscaComplianceTab({ onRefresh }: { onRefresh: () => void }) {
     <div>
       <div className="mb-3 flex justify-end">
         <button type="button" onClick={() => setCreating(true)}
-          className="px-3 py-1.5 bg-[#1a3a5c] text-white text-xs rounded hover:bg-[#1e4a72]">
+          className="px-3 py-1.5 bg-[#c2873a] text-white text-xs rounded hover:bg-[#a3702f]">
           + New compliance report
         </button>
       </div>
@@ -1256,7 +1256,7 @@ function FscaConductReportTab({ onRefresh }: { onRefresh: () => void }) {
     <div>
       <button type="button"
         onClick={() => setModal('create')}
-        className="mb-4 px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+        className="mb-4 px-4 py-2 bg-[#c2873a] text-white text-sm rounded hover:bg-[#a3702f]"
       >
         Open reporting period
       </button>
@@ -1395,10 +1395,10 @@ const CBT_TIER_TONE: Record<string, string> = {
 function cbtStatusTone(s: string): string {
   if (['trade_executed'].includes(s)) return 'bg-green-100 text-green-800';
   if (['fsca_rejected', 'sarb_rejected'].includes(s)) return 'bg-red-100 text-red-800';
-  if (['withdrawn', 'expired'].includes(s)) return 'bg-gray-100 text-gray-600';
+  if (['withdrawn', 'expired'].includes(s)) return 'bg-[#eef2f7] text-[#3d4756]';
   if (['fully_approved'].includes(s)) return 'bg-emerald-100 text-emerald-800';
   if (['fsca_approved'].includes(s)) return 'bg-blue-100 text-blue-800';
-  return 'bg-slate-100 text-slate-700';
+  return 'bg-[#eef2f7] text-[#2d3748]';
 }
 
 type CbtModal = { id: string; cbt_tier: string; counterparty_jurisdiction?: string; notional_zar?: number } | null;
@@ -1426,47 +1426,47 @@ function CrossBorderTradeTab({ onRefresh }: { onRefresh?: () => void }) {
           { label: 'Fully approved', val: kpis.approved ?? 0 },
           { label: 'Executed', val: kpis.executed ?? 0 },
         ].map(k => (
-          <div key={k.label} className="bg-white border border-gray-200 rounded-lg p-3 text-center">
-            <div className="text-2xl font-semibold text-gray-900">{k.val}</div>
-            <div className="text-xs text-gray-500 mt-0.5">{k.label}</div>
+          <div key={k.label} className="bg-white border border-[#dde4ec] rounded-lg p-3 text-center">
+            <div className="text-2xl font-semibold text-[#0f1c2e]">{k.val}</div>
+            <div className="text-xs text-[#6b7685] mt-0.5">{k.label}</div>
           </div>
         ))}
       </div>
 
       <div className="flex justify-between items-center">
-        <span className="text-sm text-gray-500">{data.length} cross-border pre-approvals</span>
+        <span className="text-sm text-[#6b7685]">{data.length} cross-border pre-approvals</span>
         <button type="button" onClick={() => setCreateModal(true)}
-          className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700">
+          className="text-sm bg-[#c2873a] text-white px-3 py-1.5 rounded-md hover:bg-[#a3702f]">
           + New pre-approval request
         </button>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-[#dde4ec] text-sm">
+          <thead className="bg-[#f8fafc]">
             <tr>
               {['Tier', 'Jurisdiction', 'Trade type', 'Notional (ZAR)', 'Status', 'SLA deadline', ''].map(h => (
-                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
+                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-[#6b7685] uppercase">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
+          <tbody className="bg-white divide-y divide-[#eef2f7]">
             {data.map((row: any) => (
-              <tr key={row.id} className="hover:bg-gray-50">
+              <tr key={row.id} className="hover:bg-[#eef2f7]">
                 <td className="px-3 py-2">
-                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${CBT_TIER_TONE[row.cbt_tier] ?? 'bg-gray-100 text-gray-700'}`}>
+                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${CBT_TIER_TONE[row.cbt_tier] ?? 'bg-[#eef2f7] text-[#2d3748]'}`}>
                     {row.cbt_tier}
                   </span>
                 </td>
-                <td className="px-3 py-2 font-mono text-xs text-gray-700">{row.counterparty_jurisdiction ?? '—'}</td>
-                <td className="px-3 py-2 text-gray-600">{row.trade_type?.replace(/_/g, ' ') ?? '—'}</td>
-                <td className="px-3 py-2 text-gray-700">{row.notional_zar ? `R${Number(row.notional_zar).toLocaleString()}` : '—'}</td>
+                <td className="px-3 py-2 font-mono text-xs text-[#2d3748]">{row.counterparty_jurisdiction ?? '—'}</td>
+                <td className="px-3 py-2 text-[#3d4756]">{row.trade_type?.replace(/_/g, ' ') ?? '—'}</td>
+                <td className="px-3 py-2 text-[#2d3748]">{row.notional_zar ? `R${Number(row.notional_zar).toLocaleString()}` : '—'}</td>
                 <td className="px-3 py-2">
                   <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${cbtStatusTone(row.chain_status)}`}>
                     {row.chain_status?.replace(/_/g, ' ')}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-gray-500 text-xs">{row.sla_deadline ? new Date(row.sla_deadline).toLocaleDateString() : '—'}</td>
+                <td className="px-3 py-2 text-[#6b7685] text-xs">{row.sla_deadline ? new Date(row.sla_deadline).toLocaleDateString() : '—'}</td>
                 <td className="px-3 py-2">
                   <button type="button" onClick={() => setModal({ id: row.id, cbt_tier: row.cbt_tier, counterparty_jurisdiction: row.counterparty_jurisdiction, notional_zar: row.notional_zar })}
                     className="text-xs text-blue-600 hover:underline">Action</button>
@@ -1474,7 +1474,7 @@ function CrossBorderTradeTab({ onRefresh }: { onRefresh?: () => void }) {
               </tr>
             ))}
             {data.length === 0 && (
-              <tr><td colSpan={7} className="px-3 py-8 text-center text-gray-400">No cross-border pre-approvals found</td></tr>
+              <tr><td colSpan={7} className="px-3 py-8 text-center text-[#9aa5b4]">No cross-border pre-approvals found</td></tr>
             )}
           </tbody>
         </table>

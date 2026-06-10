@@ -61,14 +61,14 @@ export function EsumsOmPortalView() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc]">
-      <header className="text-white px-6 py-5 shadow-md" style={{ background: `linear-gradient(135deg, ${meta.accent}, #0b1c30)` }}>
+      <header className="border-b px-6 py-4" style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}>
         <div className="w-full max-w-[1760px] mx-auto flex items-center justify-between gap-3">
           <div>
-            <div className="text-[11px] uppercase tracking-wider text-white/70">Esums O&amp;M · stakeholder portal</div>
-            <h1 className="font-display text-[24px] font-bold mt-1">{meta.title}</h1>
-            <p className="text-[12px] text-white/70 mt-1">{meta.subtitle}</p>
+            <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>Esums O&amp;M · stakeholder portal</div>
+            <h1 className="font-display text-[20px] font-bold mt-0.5" style={{ color: 'oklch(0.15 0.025 250)' }}>{meta.title}</h1>
+            <p className="text-[12px] mt-0.5" style={{ color: 'oklch(0.45 0.015 250)' }}>{meta.subtitle}</p>
           </div>
-          <div className="text-right text-[11px] text-white/70">
+          <div className="text-right text-[11px]" style={{ color: 'oklch(0.55 0.008 250)' }}>
             <div>Generated</div>
             <div className="font-mono">{new Date(data.generated_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}</div>
           </div>

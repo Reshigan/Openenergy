@@ -109,7 +109,7 @@ export function RiskTab() {
   return (
     <div className="space-y-4" data-testid="risk-tab">
       {/* Top strip */}
-      <div className="flex flex-wrap items-end gap-3 p-4 bg-[#0f1c2e] text-white rounded-lg">
+      <div className="flex flex-wrap items-end gap-3 p-4 bg-[#c2873a] text-white rounded-lg">
         <div className="flex-1 min-w-[200px]">
           <label className="block text-[10px] uppercase tracking-wider text-[#7a90a8]">Portfolio</label>
           <select

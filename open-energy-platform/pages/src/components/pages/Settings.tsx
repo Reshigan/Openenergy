@@ -148,7 +148,7 @@ export default function Settings() {
       {/* Profile */}
       <section className="bg-white border border-ionex-border-soft rounded-xl">
         <header className="px-5 py-4 border-b border-ionex-border-soft flex items-center gap-2">
-          <User className="w-4 h-4 text-gray-500" />
+          <User className="w-4 h-4 text-[#6b7685]" />
           <h2 className="font-semibold">Profile</h2>
         </header>
         <div className="p-5 space-y-3 text-sm">
@@ -165,12 +165,12 @@ export default function Settings() {
           <div>
             <label className="block text-xs text-ionex-text-mute mb-1">Email (read-only)</label>
             <input value={user?.email || ''} readOnly
-              className="w-full max-w-md border border-ionex-border-soft bg-gray-50 rounded-md px-3 py-2 text-sm text-gray-600" />
+              className="w-full max-w-md border border-ionex-border-soft bg-[#f8fafc] rounded-md px-3 py-2 text-sm text-[#3d4756]" />
           </div>
           <div>
             <label className="block text-xs text-ionex-text-mute mb-1">Role (read-only)</label>
             <input value={user?.role || ''} readOnly
-              className="w-full max-w-md border border-ionex-border-soft bg-gray-50 rounded-md px-3 py-2 text-sm text-gray-600" />
+              className="w-full max-w-md border border-ionex-border-soft bg-[#f8fafc] rounded-md px-3 py-2 text-sm text-[#3d4756]" />
           </div>
           <div className="flex items-center gap-3 pt-2">
             <button type="button" onClick={saveProfile}
@@ -189,7 +189,7 @@ export default function Settings() {
       {/* Preferences */}
       <section className="bg-white border border-ionex-border-soft rounded-xl">
         <header className="px-5 py-4 border-b border-ionex-border-soft flex items-center gap-2">
-          <Bell className="w-4 h-4 text-gray-500" />
+          <Bell className="w-4 h-4 text-[#6b7685]" />
           <h2 className="font-semibold">Notification preferences</h2>
         </header>
         <div className="p-5 space-y-3 text-sm">
@@ -234,7 +234,7 @@ export default function Settings() {
       {/* Password */}
       <section className="bg-white border border-ionex-border-soft rounded-xl">
         <header className="px-5 py-4 border-b border-ionex-border-soft flex items-center gap-2">
-          <Lock className="w-4 h-4 text-gray-500" />
+          <Lock className="w-4 h-4 text-[#6b7685]" />
           <h2 className="font-semibold">Change password</h2>
         </header>
         <div className="p-5 space-y-3 text-sm">
@@ -268,7 +268,7 @@ export default function Settings() {
       {/* Security link */}
       <section className="bg-white border border-ionex-border-soft rounded-xl">
         <header className="px-5 py-4 border-b border-ionex-border-soft flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-gray-500" />
+          <ShieldCheck className="w-4 h-4 text-[#6b7685]" />
           <h2 className="font-semibold">Security</h2>
         </header>
         <div className="p-5 text-sm">
@@ -288,7 +288,7 @@ export default function Settings() {
 function PrefRow({ label, on, onChange }: { label: string; on: boolean; onChange: () => void }) {
   return (
     <label className="flex items-center justify-between gap-3 py-1 cursor-pointer">
-      <span className="text-sm text-gray-800">{label}</span>
+      <span className="text-sm text-[#1e2a38]">{label}</span>
       <button
         type="button"
         onClick={onChange}

@@ -326,7 +326,7 @@ export function IppDiaryTab() {
         </div>
         <button type="button"
           onClick={() => setShowCreate(true)}
-          className="shrink-0 rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a3a5c]"
+          className="shrink-0 rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
         >
           + New diary entry
         </button>
@@ -352,7 +352,7 @@ export function IppDiaryTab() {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#0c2a4d] text-white'
+                ? 'bg-[#c2873a] text-white'
                 : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
             }`}
           >
@@ -533,7 +533,7 @@ function Drawer({
               {primary && (
                 <button type="button"
                   onClick={() => onAct(primary, row)}
-                  className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a3a5c]"
+                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
                 >
                   {ACTION_LABEL[primary]}
                 </button>
@@ -683,7 +683,7 @@ function CreateModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
           <button type="button" onClick={onClose} className="rounded border border-[#d8dde6] px-3 py-1.5 text-[12px] text-[#557] hover:bg-[#f3f5f9]">Cancel</button>
           <button type="button"
             onClick={submit} disabled={saving}
-            className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a3a5c] disabled:opacity-50"
+            className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a] disabled:opacity-50"
           >
             {saving ? 'Creating…' : 'Create diary entry'}
           </button>

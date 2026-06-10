@@ -64,7 +64,7 @@ export function VariationOrdersPage() {
         </select>
         <button type="button" onClick={load} className="h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1"><RefreshCw size={11}/>Refresh</button>
         <div className="ml-auto"/>
-        <button type="button" onClick={() => setRaising(true)} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[11px] font-semibold inline-flex items-center gap-1">
+        <button type="button" onClick={() => setRaising(true)} className="h-8 px-3 rounded bg-[#c2873a] text-white text-[11px] font-semibold inline-flex items-center gap-1">
           <Plus size={12}/> Raise VO
         </button>
       </div>
@@ -178,7 +178,7 @@ function RaiseModal({ onClose, onCreated }: { onClose: () => void; onCreated: ()
         </div>
         <div className="p-4 border-t border-[#dde4ec] flex justify-end gap-2">
           <button type="button" onClick={onClose} className="h-8 px-3 text-[12px]">Cancel</button>
-          <button type="button" disabled={busy} onClick={submit} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
+          <button type="button" disabled={busy} onClick={submit} className="h-8 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50">
             {busy ? 'Submitting…' : 'Raise VO'}
           </button>
         </div>

@@ -94,7 +94,7 @@ const URGENCY_COLOR: Record<QueryUrgency, string> = {
   safety_critical: 'bg-red-100 text-red-800',
   construction_blocking: 'bg-orange-100 text-orange-700',
   standard: 'bg-blue-50 text-blue-700',
-  information_only: 'bg-gray-100 text-gray-600',
+  information_only: 'bg-[#eef2f7] text-[#3d4756]',
 };
 
 const DISCIPLINE_LABEL: Record<string, string> = {
@@ -130,7 +130,7 @@ const RESPONSE_TYPE_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<TqStatus, string> = {
-  raised:                  'bg-slate-100 text-slate-700',
+  raised:                  'bg-[#eef2f7] text-[#2d3748]',
   logged:                  'bg-blue-50 text-blue-700',
   allocated:               'bg-indigo-100 text-indigo-700',
   under_review:            'bg-violet-100 text-violet-700',
@@ -138,7 +138,7 @@ const STATUS_COLOR: Record<TqStatus, string> = {
   response_approved:       'bg-teal-100 text-teal-700',
   response_issued:         'bg-emerald-100 text-emerald-700',
   acknowledged:            'bg-green-100 text-green-800',
-  closed:                  'bg-gray-100 text-gray-600',
+  closed:                  'bg-[#eef2f7] text-[#3d4756]',
   rejected:                'bg-red-200 text-red-900',
   design_change_required:  'bg-orange-100 text-orange-800',
   escalated:               'bg-red-100 text-red-800',
@@ -204,7 +204,7 @@ function KpiCard({ label, value, color }: { label: string; value: string | numbe
     orange: 'bg-orange-50 text-orange-900 border-orange-200',
     green:  'bg-green-50 text-green-900 border-green-200',
     amber:  'bg-amber-50 text-amber-900 border-amber-200',
-    gray:   'bg-gray-50 text-gray-700 border-gray-200',
+    gray:   'bg-[#f8fafc] text-[#2d3748] border-[#dde4ec]',
   };
   return (
     <div className={`rounded-lg border px-3 py-2 ${colors[color] ?? colors.gray}`}>
@@ -397,13 +397,13 @@ export default function IppTqTab({ readOnly = false }: Props) {
           <option value="">All disciplines</option>
           {ALL_DISCIPLINES.map(d => <option key={d} value={d}>{DISCIPLINE_LABEL[d]}</option>)}
         </select>
-        <span className="text-xs text-gray-400 ml-auto">{filtered.length} TQs</span>
+        <span className="text-xs text-[#9aa5b4] ml-auto">{filtered.length} TQs</span>
         {!readOnly && (
           <button type="button" className="text-xs bg-green-600 text-white rounded px-3 py-1 hover:bg-green-700" onClick={() => setShowCreate(true)}>
             + New TQ
           </button>
         )}
-        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-gray-50" onClick={load}>Refresh</button>
+        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-[#eef2f7]" onClick={load}>Refresh</button>
       </div>
 
       {actionResult && (
@@ -412,30 +412,30 @@ export default function IppTqTab({ readOnly = false }: Props) {
         </div>
       )}
       {error && <div className="text-xs text-red-600 bg-red-50 rounded px-3 py-2">{error}</div>}
-      {loading && <div className="text-xs text-gray-400">Loading technical queries…</div>}
+      {loading && <div className="text-xs text-[#9aa5b4]">Loading technical queries…</div>}
 
       {/* Table */}
       {!loading && (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <div className="overflow-x-auto rounded-lg border border-[#dde4ec]">
           <table className="w-full text-xs">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#f8fafc]">
               <tr>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">TQ No.</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Title</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Discipline</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Urgency</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Designer</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Response type</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Status</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">SLA</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Flags</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">TQ No.</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Title</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Discipline</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Urgency</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Designer</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Response type</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Status</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">SLA</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Flags</th>
                 {!readOnly && <th className="px-3 py-2" />}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={readOnly ? 9 : 10} className="px-3 py-6 text-center text-gray-400">
+                  <td colSpan={readOnly ? 9 : 10} className="px-3 py-6 text-center text-[#9aa5b4]">
                     No technical queries recorded
                   </td>
                 </tr>
@@ -443,22 +443,22 @@ export default function IppTqTab({ readOnly = false }: Props) {
               {filtered.map(row => (
                 <tr
                   key={row.id}
-                  className={`border-t border-gray-100 hover:bg-gray-50 cursor-pointer ${
+                  className={`border-t border-[#eef2f7] hover:bg-[#eef2f7] cursor-pointer ${
                     row.chain_status === 'escalated' ? 'bg-red-50/30' :
                     row.chain_status === 'design_change_required' ? 'bg-orange-50/30' : ''
                   }`}
                   onClick={() => setSelected(row)}
                 >
-                  <td className="px-3 py-2 font-mono text-gray-500">
+                  <td className="px-3 py-2 font-mono text-[#6b7685]">
                     {row.tq_number ?? row.id}
                   </td>
                   <td className="px-3 py-2 max-w-[200px]">
-                    <span className="text-gray-800 block truncate font-medium">{row.tq_title}</span>
-                    {row.project_name && <span className="text-gray-400 truncate block">{row.project_name}</span>}
+                    <span className="text-[#1e2a38] block truncate font-medium">{row.tq_title}</span>
+                    {row.project_name && <span className="text-[#9aa5b4] truncate block">{row.project_name}</span>}
                   </td>
                   <td className="px-3 py-2">
                     {row.discipline && (
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${DISCIPLINE_COLOR[row.discipline] ?? 'bg-gray-100 text-gray-600'}`}>
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${DISCIPLINE_COLOR[row.discipline] ?? 'bg-[#eef2f7] text-[#3d4756]'}`}>
                         {DISCIPLINE_LABEL[row.discipline] ?? row.discipline}
                       </span>
                     )}
@@ -471,13 +471,13 @@ export default function IppTqTab({ readOnly = false }: Props) {
                     )}
                   </td>
                   <td className="px-3 py-2">
-                    <span className="text-gray-700 block truncate">{row.assigned_designer ?? '—'}</span>
-                    {row.design_company && <span className="text-gray-400 text-[10px] block truncate">{row.design_company}</span>}
+                    <span className="text-[#2d3748] block truncate">{row.assigned_designer ?? '—'}</span>
+                    {row.design_company && <span className="text-[#9aa5b4] text-[10px] block truncate">{row.design_company}</span>}
                   </td>
                   <td className="px-3 py-2">
                     {row.response_type ? (
-                      <span className="text-gray-600">{RESPONSE_TYPE_LABEL[row.response_type] ?? row.response_type}</span>
-                    ) : <span className="text-gray-300">—</span>}
+                      <span className="text-[#3d4756]">{RESPONSE_TYPE_LABEL[row.response_type] ?? row.response_type}</span>
+                    ) : <span className="text-[#9aa5b4]">—</span>}
                   </td>
                   <td className="px-3 py-2">
                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${STATUS_COLOR[row.chain_status]}`}>
@@ -493,7 +493,7 @@ export default function IppTqTab({ readOnly = false }: Props) {
                         compact
                       />
                     ) : (
-                      <span className="text-gray-300 text-[10px]">—</span>
+                      <span className="text-[#9aa5b4] text-[10px]">—</span>
                     )}
                   </td>
                   <td className="px-3 py-2">
@@ -541,7 +541,7 @@ export default function IppTqTab({ readOnly = false }: Props) {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-6 space-y-5">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold text-gray-900">
+                <h2 className="text-base font-semibold text-[#0f1c2e]">
                   {selected.tq_number ?? selected.id}
                   {selected.query_urgency && (
                     <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold ${URGENCY_COLOR[selected.query_urgency]}`}>
@@ -549,10 +549,10 @@ export default function IppTqTab({ readOnly = false }: Props) {
                     </span>
                   )}
                 </h2>
-                <p className="text-sm text-gray-700 mt-0.5">{selected.tq_title}</p>
-                {selected.project_name && <p className="text-xs text-gray-400">{selected.project_name}</p>}
+                <p className="text-sm text-[#2d3748] mt-0.5">{selected.tq_title}</p>
+                {selected.project_name && <p className="text-xs text-[#9aa5b4]">{selected.project_name}</p>}
               </div>
-              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl" onClick={() => setSelected(null)}>✕</button>
+              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl" onClick={() => setSelected(null)}>✕</button>
             </div>
 
             {/* Chain state bar */}
@@ -582,14 +582,14 @@ export default function IppTqTab({ readOnly = false }: Props) {
             )}
 
             {/* Query content */}
-            <div className="rounded-lg border border-gray-200 p-4 space-y-3">
-              <h3 className="text-xs font-semibold text-gray-700">Query</h3>
-              <p className="text-xs text-gray-800 leading-relaxed">{selected.query_description}</p>
+            <div className="rounded-lg border border-[#dde4ec] p-4 space-y-3">
+              <h3 className="text-xs font-semibold text-[#2d3748]">Query</h3>
+              <p className="text-xs text-[#1e2a38] leading-relaxed">{selected.query_description}</p>
               {selected.drawing_ref && (
-                <div className="text-xs"><span className="font-medium text-gray-500">Drawing ref:</span> <span className="text-gray-700">{selected.drawing_ref}</span></div>
+                <div className="text-xs"><span className="font-medium text-[#6b7685]">Drawing ref:</span> <span className="text-[#2d3748]">{selected.drawing_ref}</span></div>
               )}
               {selected.specification_ref && (
-                <div className="text-xs"><span className="font-medium text-gray-500">Specification ref:</span> <span className="text-gray-700">{selected.specification_ref}</span></div>
+                <div className="text-xs"><span className="font-medium text-[#6b7685]">Specification ref:</span> <span className="text-[#2d3748]">{selected.specification_ref}</span></div>
               )}
               {selected.proposed_solution && (
                 <div className="text-xs bg-blue-50 rounded p-2">
@@ -601,7 +601,7 @@ export default function IppTqTab({ readOnly = false }: Props) {
 
             {/* Designer assignment */}
             {(selected.assigned_designer || selected.design_company) && (
-              <div className="text-xs text-gray-600 flex gap-4">
+              <div className="text-xs text-[#3d4756] flex gap-4">
                 {selected.assigned_designer && <span><span className="font-medium">Designer:</span> {selected.assigned_designer}</span>}
                 {selected.design_company && <span><span className="font-medium">Firm:</span> {selected.design_company}</span>}
               </div>
@@ -655,18 +655,18 @@ export default function IppTqTab({ readOnly = false }: Props) {
 
             {/* Cross-refs */}
             {(selected.rfi_ref || selected.ncr_ref || selected.ms_ref || selected.submittal_ref) && (
-              <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-                {selected.rfi_ref && <span className="rounded bg-gray-100 px-2 py-0.5">RFI: {selected.rfi_ref}</span>}
-                {selected.ncr_ref && <span className="rounded bg-gray-100 px-2 py-0.5">NCR: {selected.ncr_ref}</span>}
-                {selected.ms_ref && <span className="rounded bg-gray-100 px-2 py-0.5">MS: {selected.ms_ref}</span>}
-                {selected.submittal_ref && <span className="rounded bg-gray-100 px-2 py-0.5">Submittal: {selected.submittal_ref}</span>}
+              <div className="flex flex-wrap gap-2 text-xs text-[#6b7685]">
+                {selected.rfi_ref && <span className="rounded bg-[#eef2f7] px-2 py-0.5">RFI: {selected.rfi_ref}</span>}
+                {selected.ncr_ref && <span className="rounded bg-[#eef2f7] px-2 py-0.5">NCR: {selected.ncr_ref}</span>}
+                {selected.ms_ref && <span className="rounded bg-[#eef2f7] px-2 py-0.5">MS: {selected.ms_ref}</span>}
+                {selected.submittal_ref && <span className="rounded bg-[#eef2f7] px-2 py-0.5">Submittal: {selected.submittal_ref}</span>}
               </div>
             )}
 
             {/* Actions */}
             {!readOnly && selectedActions.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-medium text-gray-600">Actions</p>
+                <p className="text-xs font-medium text-[#3d4756]">Actions</p>
                 <div className="flex flex-wrap gap-2">
                   {selectedActions.map(({ action, label, danger }) => (
                     <button type="button"
@@ -676,7 +676,7 @@ export default function IppTqTab({ readOnly = false }: Props) {
                       className={`text-xs rounded px-3 py-1.5 font-medium disabled:opacity-50 ${
                         danger
                           ? 'bg-red-100 text-red-800 hover:bg-red-200'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                          : 'bg-[#c2873a] text-white hover:bg-[#a3702f]'
                       }`}
                     >
                       {label}
@@ -699,67 +699,67 @@ export default function IppTqTab({ readOnly = false }: Props) {
         <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center overflow-y-auto py-8 px-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-gray-900">New technical query (TQ)</h2>
-              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl" onClick={() => setShowCreate(false)}>✕</button>
+              <h2 className="text-base font-semibold text-[#0f1c2e]">New technical query (TQ)</h2>
+              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl" onClick={() => setShowCreate(false)}>✕</button>
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-xs">
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">TQ title *</span>
+                <span className="text-[#3d4756] font-medium">TQ title *</span>
                 <input className="border rounded px-2 py-1.5" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Foundation depth variation at column C4" />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">TQ number</span>
+                <span className="text-[#3d4756] font-medium">TQ number</span>
                 <input className="border rounded px-2 py-1.5" value={newTqNumber} onChange={e => setNewTqNumber(e.target.value)} placeholder="K500-TQ-013 (auto-generated if blank)" />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Project ID *</span>
+                <span className="text-[#3d4756] font-medium">Project ID *</span>
                 <input className="border rounded px-2 py-1.5" value={newProjectId} onChange={e => setNewProjectId(e.target.value)} placeholder="kakamas-500mw" />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Project name</span>
+                <span className="text-[#3d4756] font-medium">Project name</span>
                 <input className="border rounded px-2 py-1.5" value={newProjectName} onChange={e => setNewProjectName(e.target.value)} />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Discipline *</span>
+                <span className="text-[#3d4756] font-medium">Discipline *</span>
                 <select className="border rounded px-2 py-1.5" value={newDiscipline} onChange={e => setNewDiscipline(e.target.value)}>
                   {ALL_DISCIPLINES.map(d => <option key={d} value={d}>{DISCIPLINE_LABEL[d]}</option>)}
                 </select>
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Query urgency *</span>
+                <span className="text-[#3d4756] font-medium">Query urgency *</span>
                 <select className="border rounded px-2 py-1.5" value={newUrgency} onChange={e => setNewUrgency(e.target.value as QueryUrgency)}>
                   {ALL_URGENCIES.map(u => (
                     <option key={u} value={u}>{URGENCY_LABEL[u]} — {SLA_HOURS_BY_URGENCY[u]}h SLA</option>
                   ))}
                 </select>
-                <span className="text-[10px] text-gray-400 italic">Higher urgency = tighter SLA (URGENT polarity)</span>
+                <span className="text-[10px] text-[#9aa5b4] italic">Higher urgency = tighter SLA (URGENT polarity)</span>
               </label>
               <label className="col-span-2 flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Query description *</span>
+                <span className="text-[#3d4756] font-medium">Query description *</span>
                 <textarea className="border rounded px-2 py-1.5 h-24 resize-y" value={newDescription} onChange={e => setNewDescription(e.target.value)} placeholder="Describe the technical query, discrepancy, or design question…" />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Drawing ref</span>
+                <span className="text-[#3d4756] font-medium">Drawing ref</span>
                 <input className="border rounded px-2 py-1.5" value={newDrawingRef} onChange={e => setNewDrawingRef(e.target.value)} placeholder="S-101 Rev B" />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Specification ref</span>
+                <span className="text-[#3d4756] font-medium">Specification ref</span>
                 <input className="border rounded px-2 py-1.5" value={newSpecRef} onChange={e => setNewSpecRef(e.target.value)} placeholder="Spec Section 03300 Clause 4.2" />
               </label>
               <label className="col-span-2 flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Contractor's proposed solution (optional)</span>
+                <span className="text-[#3d4756] font-medium">Contractor's proposed solution (optional)</span>
                 <textarea className="border rounded px-2 py-1.5 h-16 resize-y" value={newProposedSolution} onChange={e => setNewProposedSolution(e.target.value)} placeholder="If contractor has a proposed solution, describe it here…" />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Contractor ref</span>
+                <span className="text-[#3d4756] font-medium">Contractor ref</span>
                 <input className="border rounded px-2 py-1.5" value={newContractorRef} onChange={e => setNewContractorRef(e.target.value)} placeholder="K500-CONT-TQ-013" />
               </label>
             </div>
 
             {/* Floor flags */}
-            <div className="space-y-2 pt-2 border-t border-gray-100">
-              <p className="text-xs font-medium text-gray-600">Technical flags</p>
+            <div className="space-y-2 pt-2 border-t border-[#eef2f7]">
+              <p className="text-xs font-medium text-[#3d4756]">Technical flags</p>
               <div className="grid grid-cols-2 gap-2">
                 <CheckRow
                   label="Structural safety impact"
@@ -791,29 +791,29 @@ export default function IppTqTab({ readOnly = false }: Props) {
             )}
 
             {/* Cross-refs */}
-            <div className="space-y-2 pt-2 border-t border-gray-100">
-              <p className="text-xs font-medium text-gray-600">Cross-references</p>
+            <div className="space-y-2 pt-2 border-t border-[#eef2f7]">
+              <p className="text-xs font-medium text-[#3d4756]">Cross-references</p>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <label className="flex flex-col gap-1">
-                  <span className="text-gray-500">RFI ref (W116)</span>
+                  <span className="text-[#6b7685]">RFI ref (W116)</span>
                   <input className="border rounded px-2 py-1" value={newRfiRef} onChange={e => setNewRfiRef(e.target.value)} placeholder="RFI-042" />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-gray-500">NCR ref (W136)</span>
+                  <span className="text-[#6b7685]">NCR ref (W136)</span>
                   <input className="border rounded px-2 py-1" value={newNcrRef} onChange={e => setNewNcrRef(e.target.value)} placeholder="NCR-018" />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-gray-500">Method statement ref (W137)</span>
+                  <span className="text-[#6b7685]">Method statement ref (W137)</span>
                   <input className="border rounded px-2 py-1" value={newMsRef} onChange={e => setNewMsRef(e.target.value)} placeholder="MS-007" />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-gray-500">Submittal ref (W115)</span>
+                  <span className="text-[#6b7685]">Submittal ref (W115)</span>
                   <input className="border rounded px-2 py-1" value={newSubmittalRef} onChange={e => setNewSubmittalRef(e.target.value)} placeholder="SUB-031" />
                 </label>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+            <div className="flex justify-end gap-3 pt-2 border-t border-[#eef2f7]">
               <button type="button" className="text-xs border rounded px-3 py-1.5" onClick={() => setShowCreate(false)}>Cancel</button>
               <button type="button"
                 className="text-xs bg-green-600 text-white rounded px-4 py-1.5 hover:bg-green-700 disabled:opacity-50"

@@ -37,7 +37,7 @@ interface BriefResponse {
   structured?: { actions?: BriefAction[] };
 }
 
-export function AiBriefPanel({ role, accentFrom = '#3b82c4', accentTo = '#1f9b95' }: {
+export function AiBriefPanel({ role, accentFrom = 'oklch(0.46 0.16 55)', accentTo = 'oklch(0.40 0.14 55)' }: {
   role: BriefRole;
   accentFrom?: string;
   accentTo?: string;
@@ -105,7 +105,7 @@ export function AiBriefPanel({ role, accentFrom = '#3b82c4', accentTo = '#1f9b95
             onClick={load}
             disabled={loading}
             className="h-9 px-3.5 rounded-lg text-[13px] font-semibold text-white inline-flex items-center gap-2 disabled:opacity-60"
-            style={{ background: `linear-gradient(135deg, ${accentFrom} 0%, ${accentTo} 100%)` }}
+            style={{ background: 'oklch(0.46 0.16 55)' }}
           >
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
             {brief ? 'Refresh' : 'Generate'}

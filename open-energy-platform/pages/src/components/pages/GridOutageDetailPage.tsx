@@ -90,7 +90,7 @@ export function GridOutageDetailPage() {
             <RefreshCw size={12} /> Refresh
           </button>
           {!isClosed && (
-            <button type="button" onClick={() => setLogging(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+            <button type="button" onClick={() => setLogging(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
               + Log response
             </button>
           )}

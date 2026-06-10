@@ -124,7 +124,7 @@ export function PasskeysPage() {
                  className="h-8 px-2 rounded border border-[#dde4ec] text-[12px] flex-1 max-w-sm"
                  value={deviceName} onChange={(e) => setDeviceName(e.target.value)}/>
           <button type="button" disabled={busy || !supported} onClick={enroll}
-                  className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50 inline-flex items-center gap-1">
+                  className="h-8 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50 inline-flex items-center gap-1">
             <Fingerprint size={13}/> {busy ? 'Enrolling…' : 'Enrol passkey'}
           </button>
         </div>

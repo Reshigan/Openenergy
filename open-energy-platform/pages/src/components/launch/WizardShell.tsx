@@ -60,7 +60,7 @@ export default function WizardShell({
             <p className="text-[11px] text-[#6b7685] mt-0.5">Step {i + 1} of {steps.length} · {step.title}</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Close"
-            className="rounded-md p-1.5 text-[#6b7685] hover:text-[#0f1c2e] hover:bg-[#eef2f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c]">
+            className="rounded-md p-1.5 text-[#6b7685] hover:text-[#0f1c2e] hover:bg-[#eef2f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2873a]">
             <X className="h-4 w-4" aria-hidden />
           </button>
         </header>
@@ -73,7 +73,7 @@ export default function WizardShell({
           )}
           <div className="flex items-center justify-between">
           <button type="button" onClick={() => (i === 0 ? onClose() : setI(i - 1))}
-            className="text-[12px] text-[#6b7685] hover:text-[#0f1c2e] px-3 py-1.5 rounded-md hover:bg-[#eef2f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c]">
+            className="text-[12px] text-[#6b7685] hover:text-[#0f1c2e] px-3 py-1.5 rounded-md hover:bg-[#eef2f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2873a]">
             {i === 0 ? 'Cancel' : 'Back'}
           </button>
           <button
@@ -90,7 +90,7 @@ export default function WizardShell({
                 setBusy(false);
               }
             }}
-            className="rounded-md bg-[#1a3a5c] hover:bg-[#16314e] text-white text-[12px] font-semibold px-4 py-1.5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c] focus-visible:ring-offset-1"
+            className="rounded-md bg-[#c2873a] hover:bg-[#a3702f] text-white text-[12px] font-semibold px-4 py-1.5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2873a] focus-visible:ring-offset-1"
           >
             {last ? finalLabel : 'Next'}
           </button>

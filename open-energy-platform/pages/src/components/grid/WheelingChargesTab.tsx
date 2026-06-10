@@ -86,7 +86,7 @@ function Kpi({ label, value, sub }: { label: string; value: string | number; sub
   return (
     <div style={{ background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, padding: '12px 16px', minWidth: 140 }}>
       <div style={{ fontSize: 11, color: '#557', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#1c2733', marginTop: 4 }}>{value}</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: '#0f1c2e', marginTop: 4 }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: '#7a8a9a', marginTop: 2 }}>{sub}</div>}
     </div>
   );
@@ -158,7 +158,7 @@ export function WheelingChargesTab({ scope = 'grid' }: { scope?: 'grid' | 'offta
 
   return (
     <div data-testid="grid-wheeling-charges-tab" style={{ padding: '16px 20px', minHeight: 600 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c2733', marginTop: 0 }}>Wheeling charges</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f1c2e', marginTop: 0 }}>Wheeling charges</h2>
       <p style={{ fontSize: 13, color: '#557', marginTop: 4 }}>
         {scope === 'offtaker'
           ? 'Monthly wheeling charges billed to you against active wheeling agreements. Raise a dispute within 14 days; unresolved disputes escalate to the regulator inbox automatically.'
@@ -183,8 +183,8 @@ export function WheelingChargesTab({ scope = 'grid' }: { scope?: 'grid' | 'offta
             onClick={() => setFilter(f.key)}
             style={{
               padding: '6px 12px', borderRadius: 999, border: '1px solid #e3e7ec',
-              background: filter === f.key ? '#1c2733' : '#fff',
-              color: filter === f.key ? '#fff' : '#1c2733', fontSize: 12, fontWeight: 600,
+              background: filter === f.key ? 'oklch(0.46 0.16 55)' : '#fff',
+              color: filter === f.key ? '#fff' : '#0f1c2e', fontSize: 12, fontWeight: 600,
               cursor: 'pointer',
             }}
           >{f.label}</button>
@@ -287,7 +287,7 @@ export function WheelingChargesTab({ scope = 'grid' }: { scope?: 'grid' | 'offta
             {drillDisputes.length === 0 && <div style={{ fontSize: 12, color: '#7a8a9a' }}>No disputes raised.</div>}
             {drillDisputes.map((d) => (
               <div key={d.id} style={{ marginTop: 8, padding: 10, background: '#f6f8fb', borderRadius: 6 }}>
-                <div style={{ fontSize: 12, color: '#1c2733', fontWeight: 600 }}>
+                <div style={{ fontSize: 12, color: '#0f1c2e', fontWeight: 600 }}>
                   {d.status.toUpperCase()} · raised {new Date(d.raised_at).toLocaleDateString()}
                 </div>
                 <div style={{ fontSize: 12, marginTop: 4 }}>{d.dispute_reason}</div>
@@ -305,7 +305,7 @@ export function WheelingChargesTab({ scope = 'grid' }: { scope?: 'grid' | 'offta
                       const amt = prompt('Resolved amount (ZAR)?', String(d.claimed_amount_zar ?? drillRow.total_zar));
                       if (amt) void act('resolve', { resolution_amount_zar: Number(amt), resolution_notes: 'Resolved from UI' }, d.id);
                     }}
-                    style={{ marginTop: 6, padding: '4px 10px', background: '#1c2733', color: '#fff', border: 'none', borderRadius: 4, fontSize: 11, cursor: 'pointer' }}
+                    style={{ marginTop: 6, padding: '4px 10px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 11, cursor: 'pointer' }}
                   >Resolve dispute</button>
                 )}
               </div>

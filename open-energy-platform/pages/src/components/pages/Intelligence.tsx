@@ -124,7 +124,7 @@ export function Intelligence() {
       subtitle="Operational, financial, regulatory and market signals."
       actions={
         <>
-          <button type="button" onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
+          <button type="button" onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]" aria-label="Refresh">
             <RefreshCw className="w-4 h-4" />
           </button>
           {canScan && (
@@ -193,7 +193,7 @@ export function Intelligence() {
                 </div>
                 <span className="text-[10px] text-ionex-text-mute">{new Date(it.created_at).toLocaleDateString()}</span>
               </div>
-              <h3 className="font-semibold text-sm text-gray-900 mb-1">{it.title}</h3>
+              <h3 className="font-semibold text-sm text-[#0f1c2e] mb-1">{it.title}</h3>
               <p className="text-xs text-ionex-text-mute line-clamp-3">{it.description}</p>
               {it.action_required && !it.resolved && (
                 <p className="mt-2 text-xs font-medium flex items-center gap-1"><Clock className="w-3 h-3" /> {it.action_required}</p>
@@ -219,7 +219,7 @@ function Tile({ label, value, accent }: { label: string; value: number; accent?:
   return (
     <div className="p-4 bg-white border border-ionex-border-100 rounded-xl">
       <p className="text-xs uppercase tracking-wide text-ionex-text-mute">{label}</p>
-      <p className={`text-2xl font-semibold mt-1 ${accent || 'text-gray-900'}`}>{value}</p>
+      <p className={`text-2xl font-semibold mt-1 ${accent || 'text-[#0f1c2e]'}`}>{value}</p>
     </div>
   );
 }
@@ -244,8 +244,8 @@ function DetailModal({ item, canResolve, onClose, onResolve }: {
           <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
-          <h2 className="text-lg font-semibold text-gray-900">{item.title}</h2>
-          <p className="text-sm text-gray-700 whitespace-pre-wrap">{item.description}</p>
+          <h2 className="text-lg font-semibold text-[#0f1c2e]">{item.title}</h2>
+          <p className="text-sm text-[#2d3748] whitespace-pre-wrap">{item.description}</p>
           {item.action_required && (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-xs uppercase text-amber-700 font-semibold mb-1">Action required</p>
@@ -273,7 +273,7 @@ function DetailModal({ item, canResolve, onClose, onResolve }: {
         </div>
         {canResolve && (
           <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Close</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Close</button>
             <button type="button" onClick={onResolve} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4" /> Mark resolved
             </button>

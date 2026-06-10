@@ -29,7 +29,7 @@ interface QgrKpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  report_quarter_opened:           'bg-gray-100 text-gray-500',
+  report_quarter_opened:           'bg-[#eef2f7] text-[#6b7685]',
   operations_data_collection:      'bg-blue-100 text-blue-700',
   environmental_data_compilation:  'bg-cyan-100 text-cyan-700',
   financial_data_compilation:      'bg-indigo-100 text-indigo-700',
@@ -40,7 +40,7 @@ const STATUS_COLORS: Record<string, string> = {
   acknowledgement_pending:         'bg-yellow-100 text-yellow-700',
   report_accepted:                 'bg-green-100 text-green-700',
   report_rejected:                 'bg-red-100 text-red-700',
-  report_lapsed:                   'bg-gray-100 text-gray-400',
+  report_lapsed:                   'bg-[#eef2f7] text-[#9aa5b4]',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -91,7 +91,7 @@ const PROJECT_TIERS = ['small', 'medium', 'large', 'major', 'flagship'] as const
 
 const PAGE_SIZE = 20;
 
-const sel = 'border rounded px-2 py-1 text-xs text-gray-700 bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
 
 function fmtDate(dateStr: string | null | undefined): { text: string; isPast: boolean } {
   if (!dateStr) return { text: '—', isPast: false };
@@ -128,15 +128,15 @@ function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-gray-200 bg-white';
+    'border-[#dde4ec] bg-white';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-gray-900';
+    'text-[#0f1c2e]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-gray-500">{label}</div>
+      <div className="text-xs text-[#6b7685]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -380,13 +380,13 @@ export function IppQuarterlyGenReportTab() {
         </select>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
+          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
         >
           Refresh
         </button>
         <button type="button"
           onClick={() => setShowCreate(v => !v)}
-          className="ml-auto px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+          className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]"
         >
           + New Report
         </button>
@@ -401,7 +401,7 @@ export function IppQuarterlyGenReportTab() {
           <div className="text-sm font-semibold text-blue-800">New DMRE Quarterly Generation Report</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Project Ref *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Project Ref *</label>
               <input
                 type="text"
                 value={formProjectRef}
@@ -412,7 +412,7 @@ export function IppQuarterlyGenReportTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Report Quarter *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Report Quarter *</label>
               <input
                 type="text"
                 value={formReportQuarter}
@@ -423,7 +423,7 @@ export function IppQuarterlyGenReportTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Project MW *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Project MW *</label>
               <input
                 type="number"
                 value={formProjectMw}
@@ -436,7 +436,7 @@ export function IppQuarterlyGenReportTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">MWh Contracted (optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">MWh Contracted (optional)</label>
               <input
                 type="number"
                 value={formMwhContracted}
@@ -448,7 +448,7 @@ export function IppQuarterlyGenReportTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">MWh Actual (optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">MWh Actual (optional)</label>
               <input
                 type="number"
                 value={formMwhActual}
@@ -460,7 +460,7 @@ export function IppQuarterlyGenReportTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Availability % (optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Availability % (optional)</label>
               <input
                 type="number"
                 value={formAvailabilityPct}
@@ -473,7 +473,7 @@ export function IppQuarterlyGenReportTab() {
               />
             </div>
             <div className="col-span-2 md:col-span-3">
-              <label className="block text-xs text-gray-600 mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
               <textarea
                 value={formNotes}
                 onChange={e => setFormNotes(e.target.value)}
@@ -492,14 +492,14 @@ export function IppQuarterlyGenReportTab() {
             <button
               type="submit"
               disabled={creating}
-              className="px-4 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-1.5 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f] disabled:opacity-50"
             >
               {creating ? 'Creating…' : 'Create'}
             </button>
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 bg-white border rounded text-xs text-gray-600 hover:bg-gray-50"
+              className="px-3 py-1.5 bg-white border rounded text-xs text-[#3d4756] hover:bg-[#eef2f7]"
             >
               Cancel
             </button>
@@ -516,12 +516,12 @@ export function IppQuarterlyGenReportTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-gray-400 py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-gray-500">
+              <tr className="border-b text-left text-xs text-[#6b7685]">
                 <th className="pb-2 pr-3">Quarter</th>
                 <th className="pb-2 pr-3">Status</th>
                 <th className="pb-2 pr-3">Project MW</th>
@@ -541,26 +541,26 @@ export function IppQuarterlyGenReportTab() {
                 return (
                   <tr
                     key={item.id}
-                    className="border-b hover:bg-gray-50 cursor-pointer"
+                    className="border-b hover:bg-[#eef2f7] cursor-pointer"
                     onClick={() => setDetailItem(item)}
                   >
-                    <td className="py-2 pr-3 text-xs font-mono text-gray-700">{item.report_quarter}</td>
+                    <td className="py-2 pr-3 text-xs font-mono text-[#2d3748]">{item.report_quarter}</td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
                       </span>
                     </td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-gray-700">{fmtMw(item.project_mw)}</td>
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[#2d3748]">{fmtMw(item.project_mw)}</td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.project_tier] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.project_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {item.project_tier.charAt(0).toUpperCase() + item.project_tier.slice(1)}
                       </span>
                     </td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-gray-600">{fmtMwh(item.mwh_contracted)}</td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-gray-600">{fmtMwh(item.mwh_actual)}</td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-gray-600">{fmtPct(item.availability_pct)}</td>
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[#3d4756]">{fmtMwh(item.mwh_contracted)}</td>
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[#3d4756]">{fmtMwh(item.mwh_actual)}</td>
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[#3d4756]">{fmtPct(item.availability_pct)}</td>
                     <td className="py-2 pr-3 text-xs tabular-nums">
-                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-gray-600'}>
+                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[#3d4756]'}>
                         {due.text}
                       </span>
                     </td>
@@ -568,7 +568,7 @@ export function IppQuarterlyGenReportTab() {
                       {item.sla_breached === 1 ? (
                         <span className="px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">Yes</span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-400">No</span>
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-[#eef2f7] text-[#9aa5b4]">No</span>
                       )}
                     </td>
                     <td
@@ -589,7 +589,7 @@ export function IppQuarterlyGenReportTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={10} className="py-10 text-center text-[#9aa5b4] text-sm">
                     No quarterly generation reports found
                   </td>
                 </tr>
@@ -605,17 +605,17 @@ export function IppQuarterlyGenReportTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-[#6b7685]">
             Page {page} of {totalPages}
           </span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             Next &rarr;
           </button>
@@ -628,14 +628,14 @@ export function IppQuarterlyGenReportTab() {
           <div className="bg-white h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <div>
-                <div className="text-sm font-semibold text-gray-800">
+                <div className="text-sm font-semibold text-[#1e2a38]">
                   DMRE Quarterly Report — {detailItem.report_quarter}
                 </div>
-                <div className="text-xs text-gray-500 mt-0.5">{detailItem.project_ref}</div>
+                <div className="text-xs text-[#6b7685] mt-0.5">{detailItem.project_ref}</div>
               </div>
               <button type="button"
                 onClick={() => setDetailItem(null)}
-                className="text-gray-400 hover:text-gray-700 text-lg leading-none"
+                className="text-[#9aa5b4] hover:text-[#2d3748] text-lg leading-none"
               >
                 &times;
               </button>
@@ -644,7 +644,7 @@ export function IppQuarterlyGenReportTab() {
             <div className="flex-1 p-5 space-y-5">
               {/* Status badge */}
               <div className="flex items-center gap-2">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                   {STATUS_LABELS[detailItem.chain_status] ?? detailItem.chain_status.replace(/_/g, ' ')}
                 </span>
                 {detailItem.sla_breached === 1 && (
@@ -655,64 +655,64 @@ export function IppQuarterlyGenReportTab() {
               {/* Grid details */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
                 <div>
-                  <div className="text-gray-400 mb-0.5">Project Ref</div>
-                  <div className="font-mono text-gray-800">{detailItem.project_ref}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Project Ref</div>
+                  <div className="font-mono text-[#1e2a38]">{detailItem.project_ref}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Report Quarter</div>
-                  <div className="text-gray-800">{detailItem.report_quarter}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Report Quarter</div>
+                  <div className="text-[#1e2a38]">{detailItem.report_quarter}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Project MW</div>
-                  <div className="text-gray-800">{fmtMw(detailItem.project_mw)}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Project MW</div>
+                  <div className="text-[#1e2a38]">{fmtMw(detailItem.project_mw)}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Tier</div>
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.project_tier] ?? 'bg-gray-100 text-gray-500'}`}>
+                  <div className="text-[#9aa5b4] mb-0.5">Tier</div>
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.project_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                     {detailItem.project_tier.charAt(0).toUpperCase() + detailItem.project_tier.slice(1)}
                   </span>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">MWh Contracted</div>
-                  <div className="tabular-nums text-gray-800">{fmtMwh(detailItem.mwh_contracted)}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">MWh Contracted</div>
+                  <div className="tabular-nums text-[#1e2a38]">{fmtMwh(detailItem.mwh_contracted)}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">MWh Actual</div>
-                  <div className="tabular-nums text-gray-800">{fmtMwh(detailItem.mwh_actual)}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">MWh Actual</div>
+                  <div className="tabular-nums text-[#1e2a38]">{fmtMwh(detailItem.mwh_actual)}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Availability %</div>
-                  <div className="tabular-nums text-gray-800">{fmtPct(detailItem.availability_pct)}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Availability %</div>
+                  <div className="tabular-nums text-[#1e2a38]">{fmtPct(detailItem.availability_pct)}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Capacity Factor %</div>
-                  <div className="tabular-nums text-gray-800">{fmtPct(detailItem.capacity_factor_pct)}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Capacity Factor %</div>
+                  <div className="tabular-nums text-[#1e2a38]">{fmtPct(detailItem.capacity_factor_pct)}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">ED Spend QTD (ZAR)</div>
-                  <div className="tabular-nums text-gray-800">{fmtZar(detailItem.ed_spend_qtd_zar)}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">ED Spend QTD (ZAR)</div>
+                  <div className="tabular-nums text-[#1e2a38]">{fmtZar(detailItem.ed_spend_qtd_zar)}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">SED Spend QTD (ZAR)</div>
-                  <div className="tabular-nums text-gray-800">{fmtZar(detailItem.sed_spend_qtd_zar)}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">SED Spend QTD (ZAR)</div>
+                  <div className="tabular-nums text-[#1e2a38]">{fmtZar(detailItem.sed_spend_qtd_zar)}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">SLA Deadline</div>
-                  <div className={`tabular-nums ${fmtDate(detailItem.sla_due_date).isPast ? 'text-red-600 font-medium' : 'text-gray-800'}`}>
+                  <div className="text-[#9aa5b4] mb-0.5">SLA Deadline</div>
+                  <div className={`tabular-nums ${fmtDate(detailItem.sla_due_date).isPast ? 'text-red-600 font-medium' : 'text-[#1e2a38]'}`}>
                     {fmtDate(detailItem.sla_due_date).text}
                   </div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Created</div>
-                  <div className="text-gray-600">{fmtDate(detailItem.created_at).text}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Created</div>
+                  <div className="text-[#3d4756]">{fmtDate(detailItem.created_at).text}</div>
                 </div>
               </div>
 
               {/* Notes */}
               {detailItem.notes && (
                 <div>
-                  <div className="text-xs text-gray-400 mb-1">Notes</div>
-                  <div className="text-xs text-gray-700 bg-gray-50 rounded p-2 border whitespace-pre-wrap">
+                  <div className="text-xs text-[#9aa5b4] mb-1">Notes</div>
+                  <div className="text-xs text-[#2d3748] bg-[#f8fafc] rounded p-2 border whitespace-pre-wrap">
                     {detailItem.notes}
                   </div>
                 </div>
@@ -721,13 +721,13 @@ export function IppQuarterlyGenReportTab() {
               {/* Actions section */}
               {!HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs font-semibold text-gray-700 mb-2">Advance State Machine</div>
+                  <div className="text-xs font-semibold text-[#2d3748] mb-2">Advance State Machine</div>
                   <button type="button"
                     onClick={() => {
                       setDetailItem(null);
                       openActionPicker(detailItem);
                     }}
-                    className="px-4 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"
+                    className="px-4 py-1.5 text-xs rounded bg-[#c2873a] text-white hover:bg-[#a3702f]"
                   >
                     Open Action Picker
                   </button>
@@ -736,7 +736,7 @@ export function IppQuarterlyGenReportTab() {
 
               {HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs text-gray-400 italic">
+                  <div className="text-xs text-[#9aa5b4] italic">
                     This report is in a terminal state — no further actions are available.
                   </div>
                 </div>
@@ -750,14 +750,14 @@ export function IppQuarterlyGenReportTab() {
       {actionItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-gray-800 mb-1">DMRE Quarterly Report Action</div>
-            <div className="text-xs text-gray-500 mb-4">
+            <div className="text-sm font-semibold text-[#1e2a38] mb-1">DMRE Quarterly Report Action</div>
+            <div className="text-xs text-[#6b7685] mb-4">
               {actionItem.project_ref} &mdash; {actionItem.report_quarter} &mdash;{' '}
               {STATUS_LABELS[actionItem.chain_status] ?? actionItem.chain_status}
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-gray-600 mb-1">Action *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Action *</label>
               <select
                 value={selectedAction}
                 onChange={e => setSelectedAction(e.target.value)}
@@ -770,7 +770,7 @@ export function IppQuarterlyGenReportTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-gray-600 mb-1">Reason (optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Reason (optional)</label>
               <input
                 type="text"
                 value={actionReason}
@@ -781,7 +781,7 @@ export function IppQuarterlyGenReportTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-gray-600 mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
               <textarea
                 value={actionNotes}
                 onChange={e => setActionNotes(e.target.value)}
@@ -800,14 +800,14 @@ export function IppQuarterlyGenReportTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-gray-600 hover:bg-gray-50"
+                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
               >
                 Cancel
               </button>
               <button type="button"
                 onClick={submitAction}
                 disabled={actionLoading || !selectedAction}
-                className="px-4 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                className="px-4 py-1.5 text-xs rounded bg-[#c2873a] text-white hover:bg-[#a3702f] disabled:opacity-50"
               >
                 {actionLoading ? 'Submitting…' : actionLabelCurrent}
               </button>

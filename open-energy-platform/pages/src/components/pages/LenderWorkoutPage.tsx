@@ -57,7 +57,7 @@ type Advice = {
 };
 
 const SEVERITY_PILL: Record<string, string> = {
-  low: 'bg-gray-100 text-gray-700',
+  low: 'bg-[#eef2f7] text-[#2d3748]',
   medium: 'bg-blue-100 text-blue-700',
   high: 'bg-amber-100 text-amber-800',
   critical: 'bg-red-100 text-red-700',
@@ -66,7 +66,7 @@ const STATUS_PILL: Record<string, string> = {
   open: 'bg-red-100 text-red-700',
   investigating: 'bg-amber-100 text-amber-800',
   resolved: 'bg-green-100 text-green-700',
-  rejected: 'bg-gray-200 text-gray-700',
+  rejected: 'bg-[#e8ecf0] text-[#2d3748]',
 };
 const ACTION_PILL: Record<string, string> = {
   cure_plan: 'bg-blue-50 text-blue-700',
@@ -74,7 +74,7 @@ const ACTION_PILL: Record<string, string> = {
   amendment_request: 'bg-indigo-50 text-indigo-700',
   acceleration_notice: 'bg-red-50 text-red-700',
   workout: 'bg-purple-50 text-purple-700',
-  no_action: 'bg-gray-100 text-gray-700',
+  no_action: 'bg-[#eef2f7] text-[#2d3748]',
 };
 
 const fmtZAR = (v: number) =>
@@ -159,7 +159,7 @@ export function LenderWorkoutPage() {
       <div className="flex flex-wrap gap-2 items-center">
         <span className="text-[12px] text-[#6b7685]">Status:</span>
         {(['all', 'open', 'investigating', 'resolved', 'rejected'] as const).map(s => (
-          <button type="button" key={s} onClick={() => setStatus(s)} className={`px-3 py-1 rounded-full text-[11px] capitalize ${status === s ? 'bg-[#1a3a5c] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
+          <button type="button" key={s} onClick={() => setStatus(s)} className={`px-3 py-1 rounded-full text-[11px] capitalize ${status === s ? 'bg-[#c2873a] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
             {s.replace(/_/g, ' ')}
           </button>
         ))}
@@ -200,15 +200,15 @@ export function LenderWorkoutPage() {
                         : '—'}
                     </td>
                     <td className="px-4 py-2">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${ACTION_PILL[a.action_type] || 'bg-gray-100'}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${ACTION_PILL[a.action_type] || 'bg-[#eef2f7]'}`}>
                         {a.action_type.replace(/_/g, ' ')}
                       </span>
                     </td>
                     <td className="px-4 py-2">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase ${SEVERITY_PILL[a.severity] || 'bg-gray-100'}`}>{a.severity}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase ${SEVERITY_PILL[a.severity] || 'bg-[#eef2f7]'}`}>{a.severity}</span>
                     </td>
                     <td className="px-4 py-2">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[a.status] || 'bg-gray-100'}`}>{a.status}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[a.status] || 'bg-[#eef2f7]'}`}>{a.status}</span>
                     </td>
                     <td className="px-4 py-2 text-[11px] text-[#6b7685]">{new Date(a.filed_at).toLocaleDateString()}</td>
                     <td className="px-4 py-2 text-[11px] text-[#6b7685]">{a.cure_deadline ? new Date(a.cure_deadline).toLocaleDateString() : '—'}</td>
@@ -220,7 +220,7 @@ export function LenderWorkoutPage() {
                         {(a.status === 'open' || a.status === 'investigating') && (
                           <>
                             <button type="button" onClick={() => setTransitioning({ ...a, status: 'resolved' as any })} className="px-2 py-1 text-[11px] bg-green-50 text-green-700 rounded">Resolve</button>
-                            <button type="button" onClick={() => setTransitioning({ ...a, status: 'rejected' as any })} className="px-2 py-1 text-[11px] bg-gray-100 text-gray-700 rounded">Reject</button>
+                            <button type="button" onClick={() => setTransitioning({ ...a, status: 'rejected' as any })} className="px-2 py-1 text-[11px] bg-[#eef2f7] text-[#2d3748] rounded">Reject</button>
                           </>
                         )}
                         {(a.status === 'resolved' || a.status === 'rejected') && (
@@ -249,7 +249,7 @@ export function LenderWorkoutPage() {
                             <p className="mt-1 text-[12px] text-[#3d4756]">{advices[a.id].rationale}</p>
                             <div className="mt-2 flex gap-2">
                               {advices[a.id].advice_id && (
-                                <button type="button" onClick={() => acceptAdvice(advices[a.id].advice_id)} className="px-2 py-1 text-[11px] bg-[#0f1c2e] text-white rounded">Accept</button>
+                                <button type="button" onClick={() => acceptAdvice(advices[a.id].advice_id)} className="px-2 py-1 text-[11px] bg-[#c2873a] text-white rounded">Accept</button>
                               )}
                               <button type="button" onClick={() => dismissAdvice(a.id)} className="px-2 py-1 text-[11px] bg-white border border-[#dde4ec] text-[#3d4756] rounded inline-flex items-center gap-1">
                                 <X size={10} /> Dismiss
@@ -329,7 +329,7 @@ function ResolveModal({
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} placeholder="What changed? ≥3 chars required." className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none" />
           </label>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-[#eef2f7]">Cancel</button>
             <button type="button" onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${isResolved ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}>
               {saving ? 'Saving…' : (isResolved ? 'Resolve' : 'Reject')}
             </button>

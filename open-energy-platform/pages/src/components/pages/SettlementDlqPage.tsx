@@ -111,7 +111,7 @@ export function SettlementDlqPage() {
       <div className="flex flex-wrap gap-2 items-center">
         <span className="text-[12px] text-[#6b7685]">Status:</span>
         {(['open', 'retrying', 'resolved', 'abandoned'] as const).map(s => (
-          <button type="button" key={s} onClick={() => setStatus(s)} className={`px-3 py-1 rounded-full text-[11px] capitalize ${status === s ? 'bg-[#1a3a5c] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
+          <button type="button" key={s} onClick={() => setStatus(s)} className={`px-3 py-1 rounded-full text-[11px] capitalize ${status === s ? 'bg-[#c2873a] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
             {s}
           </button>
         ))}

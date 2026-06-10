@@ -139,7 +139,7 @@ export function ThreadPanel({
             <button type="button"
               onClick={post}
               disabled={sending || !draft.trim()}
-              className="h-8 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-2 disabled:opacity-50"
+              className="h-8 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold inline-flex items-center gap-2 disabled:opacity-50"
             >
               <Send size={12} /> {sending ? 'Posting…' : 'Comment'}
             </button>

@@ -49,7 +49,7 @@ export function PublicStatusPage() {
         <AlertOctagon size={28} className="mx-auto" />
         <div className="mt-2 text-[16px] font-semibold">Status page unreachable</div>
         <div className="text-[12px] mt-1">{err}</div>
-        <button type="button" onClick={load} className="mt-3 h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Retry</button>
+        <button type="button" onClick={load} className="mt-3 h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold">Retry</button>
       </div>
     </div>
   );

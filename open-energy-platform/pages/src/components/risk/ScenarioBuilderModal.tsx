@@ -100,7 +100,7 @@ export function ScenarioBuilderModal({
         </div>
         <div className="px-5 py-3 border-t border-[#e5ebf2] flex justify-end gap-2">
           <button type="button" onClick={onClose} className="h-9 px-3 rounded border border-[#dbe4ee] text-[12px]">Cancel</button>
-          <button type="button" onClick={submit} disabled={saving} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50" data-testid="scenario-save">
+          <button type="button" onClick={submit} disabled={saving} className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50" data-testid="scenario-save">
             {saving ? 'Saving…' : 'Save scenario'}
           </button>
         </div>

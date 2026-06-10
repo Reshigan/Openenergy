@@ -161,7 +161,7 @@ export function StepUpModal() {
             ] as const).map(([k, label, Icon]) => (
               <button type="button" key={k} onClick={() => setMethod(k)}
                 className={`flex-1 h-8 px-2 rounded inline-flex items-center justify-center gap-1 ${
-                  method === k ? 'bg-[#1a3a5c] text-white' : 'border border-[#dde4ec] text-[#0f1c2e]'
+                  method === k ? 'bg-[#c2873a] text-white' : 'border border-[#dde4ec] text-[#0f1c2e]'
                 }`}>
                 <Icon size={11}/> {label}
               </button>
@@ -176,7 +176,7 @@ export function StepUpModal() {
                        value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}/>
               </label>
               <button type="button" disabled={busy || code.length !== 6} onClick={verifyTotp}
-                      className="w-full h-9 rounded bg-[#1a3a5c] text-white text-[13px] font-semibold disabled:opacity-50">
+                      className="w-full h-9 rounded bg-[#c2873a] text-white text-[13px] font-semibold disabled:opacity-50">
                 {busy ? 'Verifying…' : 'Verify code'}
               </button>
             </>
@@ -188,7 +188,7 @@ export function StepUpModal() {
                 Use your registered passkey (Touch ID, Windows Hello, security key) when prompted.
               </p>
               <button type="button" disabled={busy} onClick={verifyPasskey}
-                      className="w-full h-9 rounded bg-[#1a3a5c] text-white text-[13px] font-semibold inline-flex items-center justify-center gap-1 disabled:opacity-50">
+                      className="w-full h-9 rounded bg-[#c2873a] text-white text-[13px] font-semibold inline-flex items-center justify-center gap-1 disabled:opacity-50">
                 <Fingerprint size={14}/> {busy ? 'Waiting for passkey…' : 'Use passkey'}
               </button>
             </>
@@ -202,7 +202,7 @@ export function StepUpModal() {
                        value={code} onChange={(e) => setCode(e.target.value)}/>
               </label>
               <button type="button" disabled={busy || !code} onClick={verifyRecovery}
-                      className="w-full h-9 rounded bg-[#1a3a5c] text-white text-[13px] font-semibold disabled:opacity-50">
+                      className="w-full h-9 rounded bg-[#c2873a] text-white text-[13px] font-semibold disabled:opacity-50">
                 {busy ? 'Verifying…' : 'Use recovery code'}
               </button>
             </>

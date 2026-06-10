@@ -128,7 +128,7 @@ function TabNav({
           <button type="button"
             onClick={() => setActiveGroup(null)}
             className={`h-7 px-2 rounded text-[11px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
-              activeGroup === null ? 'bg-[var(--oe-primary)] text-white focus-visible:ring-white/80' : 'text-[var(--oe-outline)] hover:bg-gray-50 focus-visible:ring-[var(--oe-primary)]'
+              activeGroup === null ? 'bg-[var(--oe-primary)] text-white focus-visible:ring-white/80' : 'text-[var(--oe-outline)] hover:bg-[#eef2f7] focus-visible:ring-[var(--oe-primary)]'
             }`}
           >
             All
@@ -138,7 +138,7 @@ function TabNav({
               key={g}
               onClick={() => setActiveGroup(g)}
               className={`h-7 px-2 rounded text-[11px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
-                activeGroup === g ? 'bg-[var(--oe-primary)] text-white focus-visible:ring-white/80' : 'text-[var(--oe-outline)] hover:bg-gray-50 focus-visible:ring-[var(--oe-primary)]'
+                activeGroup === g ? 'bg-[var(--oe-primary)] text-white focus-visible:ring-white/80' : 'text-[var(--oe-outline)] hover:bg-[#eef2f7] focus-visible:ring-[var(--oe-primary)]'
               }`}
             >
               {g}
@@ -729,7 +729,7 @@ export const Pill = ({ tone, children }: { tone: 'good' | 'warn' | 'bad' | 'neut
     good: 'bg-green-100 text-green-700',
     warn: 'bg-amber-100 text-amber-800',
     bad: 'bg-red-100 text-red-700',
-    neutral: 'bg-gray-100 text-gray-700',
+    neutral: 'bg-[#eef2f7] text-[#2d3748]',
     info: 'bg-blue-100 text-blue-700',
   };
   return <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase ${bg[tone]}`}>{children}</span>;
@@ -927,7 +927,7 @@ export function ActionModal({
             </label>
           ))}
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-[var(--oe-surface-container-high)] rounded-lg hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)]">Cancel</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[var(--oe-surface-container-high)] rounded-lg hover:bg-[#eef2f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)]">Cancel</button>
             <button type="button" onClick={submit} disabled={saving || saved} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--oe-primary)] transition-colors ${saved ? 'bg-green-600' : btnCls}`}>
               {saved ? '✓ Done' : saving ? 'Saving…' : submitLabel}
             </button>

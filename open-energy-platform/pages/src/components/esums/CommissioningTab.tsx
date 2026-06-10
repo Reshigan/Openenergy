@@ -82,7 +82,7 @@ function Kpi({ label, value, sub }: { label: string; value: string | number; sub
   return (
     <div style={{ background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, padding: '12px 16px', minWidth: 140 }}>
       <div style={{ fontSize: 11, color: '#557', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#1c2733', marginTop: 4 }}>{value}</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: '#0f1c2e', marginTop: 4 }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: '#7a8a9a', marginTop: 2 }}>{sub}</div>}
     </div>
   );
@@ -160,7 +160,7 @@ export function CommissioningTab() {
 
   return (
     <div data-testid="esums-commissioning-tab" style={{ padding: '16px 20px', minHeight: 600 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c2733', marginTop: 0 }}>Site commissioning chain</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f1c2e', marginTop: 0 }}>Site commissioning chain</h2>
       <InlineHelp helpKey="esums.commissioning.intro" title="How commissioning works">
         Each site moves through fixed stages with an SLA per stage. Click a row to open its timeline and advance it.
         Miss an SLA and the site is flagged to its owner and the regulator.
@@ -189,8 +189,8 @@ export function CommissioningTab() {
             onClick={() => setFilter(f.key)}
             style={{
               padding: '6px 12px', borderRadius: 999, border: '1px solid #e3e7ec',
-              background: filter === f.key ? '#1c2733' : '#fff',
-              color: filter === f.key ? '#fff' : '#1c2733', fontSize: 12, fontWeight: 600,
+              background: filter === f.key ? 'oklch(0.46 0.16 55)' : '#fff',
+              color: filter === f.key ? '#fff' : '#0f1c2e', fontSize: 12, fontWeight: 600,
               cursor: 'pointer',
             }}
           >{f.label}</button>
@@ -311,19 +311,19 @@ export function CommissioningTab() {
             {drill.commissioning_status === 'planned' && (
               <button type="button" data-testid="esums-commissioning-register-site"
                 onClick={() => void act('register-site', {}, drill.id)}
-                style={{ padding: '6px 12px', background: '#1c2733', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                style={{ padding: '6px 12px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
               >Register site</button>
             )}
             {drill.commissioning_status === 'site_registered' && (
               <button type="button" data-testid="esums-commissioning-register-devices"
                 onClick={() => void act('register-devices', {}, drill.id)}
-                style={{ padding: '6px 12px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                style={{ padding: '6px 12px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
               >Register devices</button>
             )}
             {drill.commissioning_status === 'devices_registered' && (
               <button type="button" data-testid="esums-commissioning-wire-ingestion"
                 onClick={() => void act('wire-ingestion', {}, drill.id)}
-                style={{ padding: '6px 12px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                style={{ padding: '6px 12px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
               >Wire ingestion adapter</button>
             )}
             {drill.commissioning_status === 'ingestion_wired' && (
@@ -341,7 +341,7 @@ export function CommissioningTab() {
             {drill.commissioning_status === 'energised' && (
               <button type="button" data-testid="esums-commissioning-handover-om"
                 onClick={() => void act('handover-om', {}, drill.id)}
-                style={{ padding: '6px 12px', background: '#1c2733', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                style={{ padding: '6px 12px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
               >Handover to O&M</button>
             )}
             {!drill.is_terminal && drill.commissioning_status !== 'planned' && (

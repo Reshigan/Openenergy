@@ -170,7 +170,7 @@ export function Article6Tab() {
             onClick={() => setFilter(s)}
             data-testid={`article6-filter-${s}`}
             className={`px-2 py-1 rounded text-[11px] font-semibold border ${
-              filter === s ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white text-[#445566] border-[#dde4ed]'
+              filter === s ? 'bg-[#c2873a] text-white border-[#1a3a5c]' : 'bg-white text-[#445566] border-[#dde4ed]'
             }`}
           >
             {s === 'all' ? 'All' : STATUS_TONE[s].label}
@@ -266,7 +266,7 @@ export function Article6Tab() {
               <button type="button"
                 disabled={actionBusy}
                 onClick={() => transition(drill.id, 'submit-dffe')}
-                className="px-2 py-1 text-[11px] rounded bg-[#1a3a5c] text-white"
+                className="px-2 py-1 text-[11px] rounded bg-[#c2873a] text-white"
                 data-testid="article6-submit-dffe"
               >Submit to DFFE</button>
             )}
@@ -277,7 +277,7 @@ export function Article6Tab() {
                   const ref = prompt('DFFE clearance reference:');
                   if (ref) transition(drill.id, 'clear-dffe', { clearance_ref: ref });
                 }}
-                className="px-2 py-1 text-[11px] rounded bg-[#1a3a5c] text-white"
+                className="px-2 py-1 text-[11px] rounded bg-[#c2873a] text-white"
                 data-testid="article6-clear-dffe"
               >Clear (DFFE only)</button>
             )}

@@ -311,8 +311,8 @@ export function BessSohChainTab() {
             onClick={() => setFilter(f.key)}
             className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
               filter === f.key
-                ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]'
-                : 'bg-white text-[#4a5568] border-[#dde4ec] hover:bg-gray-50'
+                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
+                : 'bg-white text-[#4a5568] border-[#dde4ec] hover:bg-[#eef2f7]'
             }`}>
             {f.label}
           </button>
@@ -675,7 +675,7 @@ function Pair({ label, value }: { label: string; value: string }) {
 }
 
 function ActionBtn({ label, onClick, tone = 'neutral' }: { label: string; onClick: () => void; tone?: 'neutral' | 'good' | 'bad' }) {
-  const bg = tone === 'good' ? 'bg-emerald-700' : tone === 'bad' ? 'bg-red-700' : 'bg-[#1a3a5c]';
+  const bg = tone === 'good' ? 'bg-emerald-700' : tone === 'bad' ? 'bg-red-700' : 'bg-[#c2873a]';
   return (
     <button type="button" onClick={onClick} className={`px-3 py-1.5 ${bg} text-white text-[12px] rounded-md hover:opacity-90`}>
       {label}

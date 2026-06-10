@@ -69,7 +69,7 @@ export function ModulesPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <header className="flex items-center gap-3 mb-6">
-        <div className="rounded-xl bg-[#1a3a5c] text-white p-2.5">
+        <div className="rounded-xl bg-[#c2873a] text-white p-2.5">
           <LayoutGrid className="h-5 w-5" aria-hidden />
         </div>
         <div>
@@ -105,7 +105,7 @@ export function ModulesPage() {
                     <button
                       type="button"
                       onClick={() => navigate(route)}
-                      className="inline-flex items-center gap-1.5 rounded-md bg-[#1a3a5c] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#16314e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c] focus-visible:ring-offset-1"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#a3702f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2873a] focus-visible:ring-offset-1"
                     >
                       Open <ArrowRight className="h-3.5 w-3.5" aria-hidden />
                     </button>

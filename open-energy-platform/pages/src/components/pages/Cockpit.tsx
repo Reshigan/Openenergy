@@ -159,18 +159,15 @@ export function Cockpit() {
               <button type="button"
                 onClick={() => navigate(primaryActionFor(role).path)}
                 className="h-10 px-5 rounded text-[13px] font-semibold text-white inline-flex items-center gap-2 transition-all hover:brightness-110"
-                style={{
-                  background: 'linear-gradient(135deg,#5fa8e8 0%,#1a5d97 100%)',
-                  boxShadow: '0 8px 20px rgba(95,168,232,0.35)',
-                  fontFamily: 'IBM Plex Sans, sans-serif',
-                }}
+                style={{ background: 'oklch(0.46 0.16 55)', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}
               >
                 {primaryActionFor(role).label}
                 <ArrowRight size={14} />
               </button>
               <button type="button"
                 onClick={() => navigate('/marketplace')}
-                className="h-10 px-5 rounded text-[13px] font-semibold text-white border border-white/35 hover:bg-white/10 transition-colors inline-flex items-center gap-2"
+                className="h-10 px-5 rounded text-[13px] font-semibold inline-flex items-center gap-2 border hover:bg-[#eef2f7] transition-colors"
+                style={{ color: 'oklch(0.45 0.015 250)', borderColor: 'oklch(0.88 0.006 250)' }}
               >
                 Explore Marketplace
               </button>

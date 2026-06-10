@@ -220,7 +220,7 @@ function RoleQueueDepth({ rows }: { rows: QueueDepth[] }) {
                 aria-valuenow={r.pending}
                 aria-valuemin={0}
                 aria-valuemax={max}
-                className="h-full rounded-full bg-[#1a3a5c]"
+                className="h-full rounded-full bg-[#c2873a]"
                 style={{ width: `${(r.pending / max) * 100}%` }}
               />
             </div>

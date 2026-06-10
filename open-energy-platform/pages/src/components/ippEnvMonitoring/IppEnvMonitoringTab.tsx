@@ -115,7 +115,7 @@ const MONITORING_TIER_COLOR: Record<MonitoringTier, string> = {
   critical: 'bg-red-100 text-red-800',
   regular: 'bg-orange-100 text-orange-700',
   routine: 'bg-amber-100 text-amber-700',
-  baseline: 'bg-gray-100 text-gray-600',
+  baseline: 'bg-[#eef2f7] text-[#3d4756]',
 };
 
 const MONITORING_CATEGORY_LABEL: Record<MonitoringCategory, string> = {
@@ -132,18 +132,18 @@ const MONITORING_CATEGORY_LABEL: Record<MonitoringCategory, string> = {
 };
 
 const STATUS_COLOR: Record<EnvMonitoringStatus, string> = {
-  scheduled: 'bg-slate-100 text-slate-700',
+  scheduled: 'bg-[#eef2f7] text-[#2d3748]',
   sampling: 'bg-blue-50 text-blue-700',
   sample_submitted: 'bg-indigo-100 text-indigo-700',
   results_received: 'bg-violet-100 text-violet-700',
   compliance_assessed: 'bg-cyan-100 text-cyan-700',
   report_drafted: 'bg-teal-100 text-teal-700',
   report_submitted: 'bg-green-100 text-green-800',
-  closed: 'bg-gray-100 text-gray-600',
+  closed: 'bg-[#eef2f7] text-[#3d4756]',
   exceedance_flagged: 'bg-red-100 text-red-800',
   corrective_action: 'bg-orange-100 text-orange-800',
   under_investigation: 'bg-yellow-100 text-yellow-800',
-  cancelled: 'bg-gray-200 text-gray-400',
+  cancelled: 'bg-[#e8ecf0] text-[#9aa5b4]',
 };
 
 const ACTIONS: Record<EnvMonitoringStatus, Array<{ action: string; label: string; danger?: boolean }>> = {
@@ -200,7 +200,7 @@ function KpiCard({ label, value, color }: { label: string; value: number; color:
     orange: 'bg-orange-50 text-orange-900 border-orange-200',
     green: 'bg-green-50 text-green-900 border-green-200',
     amber: 'bg-amber-50 text-amber-900 border-amber-200',
-    gray: 'bg-gray-50 text-gray-700 border-gray-200',
+    gray: 'bg-[#f8fafc] text-[#2d3748] border-[#dde4ec]',
   };
   return (
     <div className={`rounded-lg border px-3 py-2 ${colors[color] ?? colors.gray}`}>
@@ -421,13 +421,13 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
           <option value="">All categories</option>
           {MONITORING_CATEGORIES.map(c => <option key={c} value={c}>{MONITORING_CATEGORY_LABEL[c]}</option>)}
         </select>
-        <span className="text-xs text-gray-400 ml-auto">{filtered.length} monitoring records</span>
+        <span className="text-xs text-[#9aa5b4] ml-auto">{filtered.length} monitoring records</span>
         {!readOnly && (
           <button type="button" className="text-xs bg-green-600 text-white rounded px-3 py-1 hover:bg-green-700" onClick={() => setShowCreate(true)}>
             + Schedule monitoring
           </button>
         )}
-        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-gray-50" onClick={load}>Refresh</button>
+        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-[#eef2f7]" onClick={load}>Refresh</button>
       </div>
 
       {actionResult && (
@@ -436,29 +436,29 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
         </div>
       )}
       {error && <div className="text-xs text-red-600 bg-red-50 rounded px-3 py-2">{error}</div>}
-      {loading && <div className="text-xs text-gray-400">Loading environmental monitoring register…</div>}
+      {loading && <div className="text-xs text-[#9aa5b4]">Loading environmental monitoring register…</div>}
 
       {/* Table */}
       {!loading && (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <div className="overflow-x-auto rounded-lg border border-[#dde4ec]">
           <table className="w-full text-xs">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#f8fafc]">
               <tr>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Ref</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Title</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Category</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Tier</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Measurement</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Status</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">SLA</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Flags</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Ref</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Title</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Category</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Tier</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Measurement</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Status</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">SLA</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Flags</th>
                 {!readOnly && <th className="px-3 py-2" />}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={readOnly ? 8 : 9} className="px-3 py-6 text-center text-gray-400">
+                  <td colSpan={readOnly ? 8 : 9} className="px-3 py-6 text-center text-[#9aa5b4]">
                     No environmental monitoring records
                   </td>
                 </tr>
@@ -468,15 +468,15 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
                 return (
                   <tr
                     key={row.id}
-                    className={`border-t border-gray-100 hover:bg-gray-50 cursor-pointer ${exceedance ? 'bg-red-50/40' : ''}`}
+                    className={`border-t border-[#eef2f7] hover:bg-[#eef2f7] cursor-pointer ${exceedance ? 'bg-red-50/40' : ''}`}
                     onClick={() => setSelected(row)}
                   >
-                    <td className="px-3 py-2 font-mono text-gray-400">{row.monitoring_ref ?? row.id}</td>
+                    <td className="px-3 py-2 font-mono text-[#9aa5b4]">{row.monitoring_ref ?? row.id}</td>
                     <td className="px-3 py-2 max-w-[200px]">
-                      <span className="text-gray-800 block truncate">{row.monitoring_title}</span>
-                      {row.project_name && <span className="text-gray-400 truncate block">{row.project_name}</span>}
+                      <span className="text-[#1e2a38] block truncate">{row.monitoring_title}</span>
+                      {row.project_name && <span className="text-[#9aa5b4] truncate block">{row.project_name}</span>}
                     </td>
-                    <td className="px-3 py-2 text-gray-600">
+                    <td className="px-3 py-2 text-[#3d4756]">
                       {row.monitoring_category ? MONITORING_CATEGORY_LABEL[row.monitoring_category] : '—'}
                     </td>
                     <td className="px-3 py-2">
@@ -486,19 +486,19 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-gray-600">
+                    <td className="px-3 py-2 text-[#3d4756]">
                       {row.measured_value != null ? (
                         <span className={exceedance ? 'text-red-700 font-semibold' : ''}>
                           {row.measured_value} {row.measurement_unit}
                           {row.permit_limit_max != null && (
-                            <span className="text-gray-400"> / {row.permit_limit_max}</span>
+                            <span className="text-[#9aa5b4]"> / {row.permit_limit_max}</span>
                           )}
                           {row.exceedance_pct != null && (
                             <span className="text-red-600 ml-1">+{row.exceedance_pct.toFixed(1)}%</span>
                           )}
                         </span>
                       ) : (
-                        <span className="text-gray-400">{row.parameter_name ?? '—'}</span>
+                        <span className="text-[#9aa5b4]">{row.parameter_name ?? '—'}</span>
                       )}
                     </td>
                     <td className="px-3 py-2">
@@ -514,7 +514,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
                           breached={!!row.sla_breached}
                           compact
                         />
-                      ) : <span className="text-gray-400">—</span>}
+                      ) : <span className="text-[#9aa5b4]">—</span>}
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex gap-1 flex-wrap">
@@ -563,7 +563,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
                     </span>
                   )}
                   {selected.monitoring_category && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-100 text-gray-600">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-[#eef2f7] text-[#3d4756]">
                       {MONITORING_CATEGORY_LABEL[selected.monitoring_category]}
                     </span>
                   )}
@@ -574,12 +574,12 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
                     <span className="px-1 py-0.5 rounded text-[10px] bg-red-200 text-red-800">REGULATOR CROSSED</span>
                   )}
                 </div>
-                <h3 className="font-semibold text-gray-900 text-sm">{selected.monitoring_title}</h3>
-                <p className="text-xs text-gray-400 font-mono mt-0.5">
+                <h3 className="font-semibold text-[#0f1c2e] text-sm">{selected.monitoring_title}</h3>
+                <p className="text-xs text-[#9aa5b4] font-mono mt-0.5">
                   {selected.monitoring_ref ?? selected.id} · {selected.project_name ?? selected.project_id}
                 </p>
               </div>
-              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl leading-none" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
+              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl leading-none" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
             </div>
 
             {/* Chain state bar */}
@@ -632,21 +632,21 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
 
             {/* Measurement details */}
             {selected.measured_value != null && (
-              <div className="mb-4 p-3 rounded-lg bg-slate-50 border border-slate-200">
-                <p className="text-xs font-semibold text-slate-900 mb-2">Measurement</p>
+              <div className="mb-4 p-3 rounded-lg bg-[#f8fafc] border border-[#dde4ec]">
+                <p className="text-xs font-semibold text-[#0f1c2e] mb-2">Measurement</p>
                 <div className="grid grid-cols-3 gap-3 text-xs">
                   <div>
-                    <span className="text-gray-500">Parameter</span>
+                    <span className="text-[#6b7685]">Parameter</span>
                     <p className="font-medium">{selected.parameter_name ?? '—'}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Measured</span>
+                    <span className="text-[#6b7685]">Measured</span>
                     <p className={`font-medium ${selected.is_exceedance_live ? 'text-red-700' : 'text-green-700'}`}>
                       {selected.measured_value} {selected.measurement_unit}
                     </p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Limit (max)</span>
+                    <span className="text-[#6b7685]">Limit (max)</span>
                     <p className="font-medium">{selected.permit_limit_max ?? '—'} {selected.measurement_unit}</p>
                   </div>
                 </div>
@@ -656,46 +656,46 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
             {/* Details grid */}
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs mb-4">
               <div>
-                <span className="text-gray-500">EIA condition ref</span>
-                <p className="font-medium text-gray-800">{selected.eia_condition_ref ?? '—'}</p>
+                <span className="text-[#6b7685]">EIA condition ref</span>
+                <p className="font-medium text-[#1e2a38]">{selected.eia_condition_ref ?? '—'}</p>
               </div>
               <div>
-                <span className="text-gray-500">Sampling location</span>
-                <p className="font-medium text-gray-800">{selected.sampling_location ?? '—'}</p>
+                <span className="text-[#6b7685]">Sampling location</span>
+                <p className="font-medium text-[#1e2a38]">{selected.sampling_location ?? '—'}</p>
               </div>
               <div>
-                <span className="text-gray-500">Frequency</span>
-                <p className="font-medium text-gray-800">{selected.monitoring_frequency ?? '—'}</p>
+                <span className="text-[#6b7685]">Frequency</span>
+                <p className="font-medium text-[#1e2a38]">{selected.monitoring_frequency ?? '—'}</p>
               </div>
               <div>
-                <span className="text-gray-500">Lab</span>
-                <p className="font-medium text-gray-800">
+                <span className="text-[#6b7685]">Lab</span>
+                <p className="font-medium text-[#1e2a38]">
                   {selected.lab_name ?? '—'}
                   {!!selected.lab_accredited && <span className="ml-1 text-green-600 text-[9px] font-bold">SANAS</span>}
                 </p>
               </div>
               {selected.lab_sample_ref && (
                 <div>
-                  <span className="text-gray-500">Lab sample ref</span>
-                  <p className="font-medium text-gray-800">{selected.lab_sample_ref}</p>
+                  <span className="text-[#6b7685]">Lab sample ref</span>
+                  <p className="font-medium text-[#1e2a38]">{selected.lab_sample_ref}</p>
                 </div>
               )}
               {selected.corrective_action_deadline && (
                 <div>
-                  <span className="text-gray-500">Corrective action deadline</span>
+                  <span className="text-[#6b7685]">Corrective action deadline</span>
                   <p className="font-medium text-orange-700">{selected.corrective_action_deadline}</p>
                 </div>
               )}
               {selected.sla_breach_count > 0 && (
                 <div>
-                  <span className="text-gray-500">SLA breach count</span>
+                  <span className="text-[#6b7685]">SLA breach count</span>
                   <p className="font-medium text-red-800">{selected.sla_breach_count}</p>
                 </div>
               )}
               {selected.regulator_ref && (
                 <div>
-                  <span className="text-gray-500">Regulator ref</span>
-                  <p className="font-medium text-gray-800">{selected.regulator_ref}</p>
+                  <span className="text-[#6b7685]">Regulator ref</span>
+                  <p className="font-medium text-[#1e2a38]">{selected.regulator_ref}</p>
                 </div>
               )}
             </div>
@@ -703,16 +703,16 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
             {/* Findings */}
             {selected.findings && (
               <div className="mb-4">
-                <p className="text-xs text-gray-500 mb-1">Findings</p>
-                <p className="text-xs text-gray-800 whitespace-pre-wrap">{selected.findings}</p>
+                <p className="text-xs text-[#6b7685] mb-1">Findings</p>
+                <p className="text-xs text-[#1e2a38] whitespace-pre-wrap">{selected.findings}</p>
               </div>
             )}
 
             {/* Corrective actions */}
             {selected.corrective_actions && (
               <div className="mb-4">
-                <p className="text-xs text-gray-500 mb-1">Corrective actions</p>
-                <p className="text-xs text-gray-800 whitespace-pre-wrap">{selected.corrective_actions}</p>
+                <p className="text-xs text-[#6b7685] mb-1">Corrective actions</p>
+                <p className="text-xs text-[#1e2a38] whitespace-pre-wrap">{selected.corrective_actions}</p>
               </div>
             )}
 
@@ -727,9 +727,9 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
             {/* Report details */}
             {selected.report_title && (
               <div className="mb-4">
-                <p className="text-xs text-gray-500 mb-1">Report</p>
-                <p className="text-xs text-gray-800">{selected.report_title}</p>
-                {selected.report_submitted_to && <p className="text-xs text-gray-600 mt-0.5">Submitted to: {selected.report_submitted_to}</p>}
+                <p className="text-xs text-[#6b7685] mb-1">Report</p>
+                <p className="text-xs text-[#1e2a38]">{selected.report_title}</p>
+                {selected.report_submitted_to && <p className="text-xs text-[#3d4756] mt-0.5">Submitted to: {selected.report_submitted_to}</p>}
               </div>
             )}
 
@@ -753,7 +753,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
             {/* Cross-references */}
             {(selected.ncr_ref || selected.hse_incident_ref || selected.ms_ref || selected.stage_gate_ref) && (
               <div className="mb-4">
-                <p className="text-xs text-gray-500 mb-1">Cross-references</p>
+                <p className="text-xs text-[#6b7685] mb-1">Cross-references</p>
                 <div className="flex flex-wrap gap-2">
                   {selected.ncr_ref && <span className="text-xs text-blue-600">NCR: {selected.ncr_ref}</span>}
                   {selected.hse_incident_ref && <span className="text-xs text-blue-600">HSE: {selected.hse_incident_ref}</span>}
@@ -765,8 +765,8 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
 
             {/* Actions */}
             {!readOnly && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <p className="text-xs text-gray-500 mb-2">Actions</p>
+              <div className="mt-4 pt-4 border-t border-[#eef2f7]">
+                <p className="text-xs text-[#6b7685] mb-2">Actions</p>
                 {actionResult && (
                   <div className={`text-xs rounded px-2 py-1 mb-2 ${actionResult.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
                     {actionResult}
@@ -788,7 +788,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
                     </button>
                   ))}
                   {(ACTIONS[selected.chain_status] ?? []).length === 0 && (
-                    <span className="text-xs text-gray-400 italic">No actions available (terminal state)</span>
+                    <span className="text-xs text-[#9aa5b4] italic">No actions available (terminal state)</span>
                   )}
                 </div>
               </div>
@@ -808,8 +808,8 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Schedule environmental monitoring</h3>
-              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl leading-none" onClick={() => setShowCreate(false)}>×</button>
+              <h3 className="font-semibold text-[#0f1c2e]">Schedule environmental monitoring</h3>
+              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl leading-none" onClick={() => setShowCreate(false)}>×</button>
             </div>
 
             {/* SIGNATURE warning on create */}
@@ -828,59 +828,59 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Monitoring title *</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Monitoring title *</label>
                   <input aria-label="Monitoring title" className="text-xs border rounded px-2 py-1.5 w-full" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="e.g. PM10 monitoring — Station A" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Monitoring ref</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Monitoring ref</label>
                   <input aria-label="Monitoring ref" className="text-xs border rounded px-2 py-1.5 w-full" value={newMonitoringRef} onChange={e => setNewMonitoringRef(e.target.value)} placeholder="e.g. K500-ENV-013" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Project ID *</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Project ID *</label>
                   <input aria-label="Project ID" className="text-xs border rounded px-2 py-1.5 w-full" value={newProject} onChange={e => setNewProject(e.target.value)} placeholder="project-id" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Project name</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Project name</label>
                   <input aria-label="Project name" className="text-xs border rounded px-2 py-1.5 w-full" value={newProjectName} onChange={e => setNewProjectName(e.target.value)} placeholder="Project display name" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Category *</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Category *</label>
                   <select aria-label="Category" className="text-xs border rounded px-2 py-1.5 w-full" value={newCategory} onChange={e => setNewCategory(e.target.value as MonitoringCategory)}>
                     {MONITORING_CATEGORIES.map(c => <option key={c} value={c}>{MONITORING_CATEGORY_LABEL[c]}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Monitoring tier *</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Monitoring tier *</label>
                   <select aria-label="Monitoring tier" className="text-xs border rounded px-2 py-1.5 w-full" value={newTier} onChange={e => setNewTier(e.target.value as MonitoringTier)}>
                     {MONITORING_TIERS.map(t => <option key={t} value={t}>{MONITORING_TIER_LABEL[t]} ({SLA_HOURS_BY_TIER[t]}h SLA)</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">EIA condition ref</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">EIA condition ref</label>
                   <input aria-label="EIA condition ref" className="text-xs border rounded px-2 py-1.5 w-full" value={newEiaCondRef} onChange={e => setNewEiaCondRef(e.target.value)} placeholder="e.g. EIA-2024-CON-014" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Sampling location</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Sampling location</label>
                   <input aria-label="Sampling location" className="text-xs border rounded px-2 py-1.5 w-full" value={newSamplingLocation} onChange={e => setNewSamplingLocation(e.target.value)} placeholder="GPS or site description" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Monitoring frequency</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Monitoring frequency</label>
                   <input aria-label="Monitoring frequency" className="text-xs border rounded px-2 py-1.5 w-full" value={newFrequency} onChange={e => setNewFrequency(e.target.value)} placeholder="daily / weekly / monthly / quarterly" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Parameter name</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Parameter name</label>
                   <input aria-label="Parameter name" className="text-xs border rounded px-2 py-1.5 w-full" value={newParameterName} onChange={e => setNewParameterName(e.target.value)} placeholder="e.g. PM10, pH, Laeq(1h)" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Unit</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Unit</label>
                   <input aria-label="Unit" className="text-xs border rounded px-2 py-1.5 w-full" value={newUnit} onChange={e => setNewUnit(e.target.value)} placeholder="µg/m³, pH units, dB(A)…" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Permit limit (max)</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Permit limit (max)</label>
                   <input aria-label="Permit limit (max)" type="number" className="text-xs border rounded px-2 py-1.5 w-full" value={newPermitLimitMax} onChange={e => setNewPermitLimitMax(e.target.value)} placeholder="e.g. 75" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Lab name</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Lab name</label>
                   <input aria-label="Lab name" className="text-xs border rounded px-2 py-1.5 w-full" value={newLabName} onChange={e => setNewLabName(e.target.value)} placeholder="e.g. Waterlab SA" />
                 </div>
               </div>
@@ -909,25 +909,25 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
               {/* Cross-references */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">NCR ref (W136)</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">NCR ref (W136)</label>
                   <input aria-label="NCR ref (W136)" className="text-xs border rounded px-2 py-1.5 w-full" value={newNcrRef} onChange={e => setNewNcrRef(e.target.value)} placeholder="ncr-xxx" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">HSE incident ref (W25)</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">HSE incident ref (W25)</label>
                   <input aria-label="HSE incident ref (W25)" className="text-xs border rounded px-2 py-1.5 w-full" value={newHseRef} onChange={e => setNewHseRef(e.target.value)} placeholder="hse-xxx" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Method statement ref (W137)</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Method statement ref (W137)</label>
                   <input aria-label="Method statement ref (W137)" className="text-xs border rounded px-2 py-1.5 w-full" value={newMsRef} onChange={e => setNewMsRef(e.target.value)} placeholder="ms-xxx" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Stage gate ref (W131)</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Stage gate ref (W131)</label>
                   <input aria-label="Stage gate ref (W131)" className="text-xs border rounded px-2 py-1.5 w-full" value={newStageGateRef} onChange={e => setNewStageGateRef(e.target.value)} placeholder="sg-xxx" />
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100">
+            <div className="flex gap-3 mt-4 pt-4 border-t border-[#eef2f7]">
               <button type="button"
                 onClick={handleCreate}
                 disabled={createLoading || !newTitle || !newProject}
@@ -935,7 +935,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
               >
                 {createLoading ? 'Creating…' : 'Schedule monitoring'}
               </button>
-              <button type="button" onClick={() => setShowCreate(false)} className="text-xs border rounded px-3 py-1.5 hover:bg-gray-50">
+              <button type="button" onClick={() => setShowCreate(false)} className="text-xs border rounded px-3 py-1.5 hover:bg-[#eef2f7]">
                 Cancel
               </button>
             </div>

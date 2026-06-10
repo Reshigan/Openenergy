@@ -115,7 +115,7 @@ function SarTab() {
       <div className="flex flex-wrap gap-1 text-[11px]">
         {['all', 'open', 'in_progress', 'fulfilled', 'rejected', 'escalated'].map((s) => (
           <button type="button" key={s} onClick={() => setFilter(s)}
-                  className={`h-7 px-2.5 rounded-full font-semibold border ${filter === s ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white border-[#dde4ec]'}`}>
+                  className={`h-7 px-2.5 rounded-full font-semibold border ${filter === s ? 'bg-[#c2873a] text-white border-[#1a3a5c]' : 'bg-white border-[#dde4ec]'}`}>
             {s.replace(/_/g, ' ')}
           </button>
         ))}
@@ -171,7 +171,7 @@ function KycReviewTab() {
         <div className="p-3 flex gap-2 items-center">
           <input value={screenName} onChange={(e) => setScreenName(e.target.value)} placeholder="Full legal name"
                  className="h-9 flex-1 px-3 rounded border border-[#dde4ec] text-[12px]" />
-          <button type="button" onClick={screen} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Screen</button>
+          <button type="button" onClick={screen} className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold">Screen</button>
         </div>
         {screenResult && (
           <div className="p-3 border-t border-[#eef2f7] text-[12px]">
@@ -420,7 +420,7 @@ function MaintenanceTab() {
                  className="h-9 px-2 rounded border border-[#dde4ec] text-[12px] font-mono md:col-span-2" />
           <input type="datetime-local" value={draft.starts_at} onChange={(e) => setDraft({ ...draft, starts_at: e.target.value })} className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]" />
           <input type="datetime-local" value={draft.ends_at}   onChange={(e) => setDraft({ ...draft, ends_at: e.target.value })}   className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]" />
-          <button type="button" onClick={create} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold md:col-span-2">Schedule</button>
+          <button type="button" onClick={create} className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold md:col-span-2">Schedule</button>
         </div>
       </Section>
       <Section title="Upcoming + recent maintenance">

@@ -88,7 +88,7 @@ function Kpi({ label, value, sub }: { label: string; value: string | number; sub
   return (
     <div style={{ background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, padding: '12px 16px', minWidth: 150 }}>
       <div style={{ fontSize: 11, color: '#557', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#1c2733', marginTop: 4 }}>{value}</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: '#0f1c2e', marginTop: 4 }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: '#7a8a9a', marginTop: 2 }}>{sub}</div>}
     </div>
   );
@@ -168,7 +168,7 @@ export function DispatchNominationTab() {
 
   return (
     <div data-testid="grid-dispatch-nominations-tab" style={{ padding: '16px 20px', minHeight: 600 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c2733', marginTop: 0 }}>Dispatch nomination chain</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f1c2e', marginTop: 0 }}>Dispatch nomination chain</h2>
       <p style={{ fontSize: 13, color: '#557', marginTop: 4 }}>
         Day-ahead BRP nomination → SO acceptance → activation → performance recording →
         settlement → close. SLA windows: 15m / 30m / 60m / 5d / 15d / 10d per stage.
@@ -193,8 +193,8 @@ export function DispatchNominationTab() {
             onClick={() => setFilter(f.key)}
             style={{
               padding: '6px 12px', borderRadius: 999, border: '1px solid #e3e7ec',
-              background: filter === f.key ? '#1c2733' : '#fff',
-              color: filter === f.key ? '#fff' : '#1c2733', fontSize: 12, fontWeight: 600,
+              background: filter === f.key ? 'oklch(0.46 0.16 55)' : '#fff',
+              color: filter === f.key ? '#fff' : '#0f1c2e', fontSize: 12, fontWeight: 600,
               cursor: 'pointer',
             }}
           >{f.label}</button>
@@ -352,7 +352,7 @@ export function DispatchNominationTab() {
             {drill.nomination_status === 'accepted' && (
               <button type="button" data-testid="grid-dispatch-nominations-activate"
                 onClick={() => void act('activate', {}, drill.id)}
-                style={{ padding: '6px 12px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                style={{ padding: '6px 12px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
               >Activate (publish)</button>
             )}
             {drill.nomination_status === 'activated' && (
@@ -373,7 +373,7 @@ export function DispatchNominationTab() {
                     const charge_zar = raw ? Number(raw) : NaN;
                     if (Number.isFinite(charge_zar)) void act('settle', { charge_zar }, drill.id);
                   }}
-                  style={{ padding: '6px 12px', background: '#1c2733', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
                 >Settle</button>
                 <button type="button" data-testid="grid-dispatch-nominations-raise-dispute"
                   onClick={() => {

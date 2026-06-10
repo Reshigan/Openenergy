@@ -703,7 +703,7 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
         {!regulatorView && (
           <button type="button"
             onClick={() => setShowPropose(true)}
-            className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#1a3a5c]"
+            className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#c2873a]"
           >
             + Propose cycle
           </button>
@@ -760,7 +760,7 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#0c2a4d] text-white'
+                ? 'bg-[#c2873a] text-white'
                 : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
             }`}
           >
@@ -777,7 +777,7 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#1a3a5c] text-white'
+                ? 'bg-[#c2873a] text-white'
                 : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
             }`}
           >
@@ -811,7 +811,7 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#0c2a4d] text-white'
+                ? 'bg-[#c2873a] text-white'
                 : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
             }`}
           >
@@ -998,7 +998,7 @@ function Drawer({
 
   const renderAct = (action: ActionKind, label: string, tone: 'primary' | 'danger' | 'amber' | 'plain' = 'plain') => {
     const cls = tone === 'primary'
-      ? 'bg-[#0c2a4d] text-white hover:bg-[#1a3a5c]'
+      ? 'bg-[#c2873a] text-white hover:bg-[#c2873a]'
       : tone === 'danger'
         ? 'bg-[#7a0e0e] text-white hover:bg-[#9b1f1f]'
         : tone === 'amber'
@@ -1213,7 +1213,7 @@ function FlagPill({ on, label }: { on: boolean; label: string }) {
 function BridgePill({ on, label }: { on: boolean; label: string }) {
   return (
     <span
-      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[#0c2a4d] text-white' : 'bg-[#e3e7ec] text-[#6b7685]'}`}
+      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[#c2873a] text-white' : 'bg-[#e3e7ec] text-[#6b7685]'}`}
       title={label}
     >
       {label}
@@ -1406,7 +1406,7 @@ function ProposeModal({
 
         <div className="mt-3 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1.5 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Cancel</button>
-          <button type="button" onClick={submit} className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#1a3a5c]">Propose cycle</button>
+          <button type="button" onClick={submit} className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#c2873a]">Propose cycle</button>
         </div>
       </div>
     </div>

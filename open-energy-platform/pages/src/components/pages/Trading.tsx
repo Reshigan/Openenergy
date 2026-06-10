@@ -498,7 +498,7 @@ function AlgoRulesTab() {
         <header className="px-5 py-3 border-b border-[#eef2f7] flex items-center justify-between">
           <div className="flex items-center gap-2 font-display font-semibold text-[14px] text-[#0f1c2e]"><Cpu size={14} /> Algorithmic strategies</div>
           <button type="button" onClick={() => setEditing({ name: '', side: 'buy', size_mwh: 10, energy_type: 'solar', enabled: true })}
-            className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1">
+            className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold inline-flex items-center gap-1">
             <Plus size={14} /> New rule
           </button>
         </header>
@@ -572,7 +572,7 @@ function AlgoRulesTab() {
             <Field label="Size (MWh)"><input type="number" value={editing.size_mwh || 0} onChange={(e) => setEditing({ ...editing, size_mwh: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></Field>
           </div>
           <div className="mt-3 flex gap-2">
-            <button type="button" onClick={save} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold">Save</button>
+            <button type="button" onClick={save} className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold">Save</button>
             <button type="button" onClick={() => setEditing(null)} className="h-9 px-4 rounded-md border border-[#dde4ec] text-[#3d4756] text-[13px] font-semibold">Cancel</button>
           </div>
         </section>
@@ -622,7 +622,7 @@ function BacktesterTab() {
             </select>
           </Field>
           <Field label="Horizon (days)"><input type="number" min={1} max={365} value={horizon} onChange={(e) => setHorizon(Number(e.target.value))} className="w-28 h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></Field>
-          <button type="button" onClick={run} disabled={running} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold inline-flex items-center gap-2 disabled:opacity-50">
+          <button type="button" onClick={run} disabled={running} className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold inline-flex items-center gap-2 disabled:opacity-50">
             {running ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />} Run backtest
           </button>
         </div>
@@ -1331,7 +1331,7 @@ function AmendModal({
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={onClose} className="h-9 px-4 rounded-md border border-[#dde4ec] text-[13px]">Cancel</button>
             <button type="submit" disabled={noop || submitting}
-              className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold disabled:opacity-50">
+              className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold disabled:opacity-50">
               {submitting ? 'Amending…' : 'Confirm amendment'}
             </button>
           </div>
@@ -1376,7 +1376,7 @@ type TradeExceptionRow = {
 };
 
 const EX_SEVERITY_PILL: Record<string, string> = {
-  low: 'bg-gray-100 text-gray-700',
+  low: 'bg-[#eef2f7] text-[#2d3748]',
   medium: 'bg-blue-100 text-blue-700',
   high: 'bg-amber-100 text-amber-800',
   critical: 'bg-red-100 text-red-700',
@@ -1385,7 +1385,7 @@ const EX_STATUS_PILL: Record<string, string> = {
   open: 'bg-red-100 text-red-700',
   investigating: 'bg-amber-100 text-amber-800',
   resolved: 'bg-green-100 text-green-700',
-  rejected: 'bg-gray-200 text-gray-700',
+  rejected: 'bg-[#e8ecf0] text-[#2d3748]',
 };
 
 function ExceptionsTab() {
@@ -1424,7 +1424,7 @@ function ExceptionsTab() {
           <span className="text-[12px] text-[#6b7685]">Status:</span>
           {(['all', 'open', 'investigating', 'resolved', 'rejected'] as const).map((s) => (
             <button type="button" key={s} onClick={() => setStatus(s)}
-              className={`px-3 py-1 rounded-full text-[11px] capitalize ${status === s ? 'bg-[#1a3a5c] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
+              className={`px-3 py-1 rounded-full text-[11px] capitalize ${status === s ? 'bg-[#c2873a] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
               {s.replace(/_/g, ' ')}
             </button>
           ))}
@@ -1464,10 +1464,10 @@ function ExceptionsTab() {
                 <tr key={r.id} className="border-t border-[#e5ebf2] hover:bg-[#f8fafc]">
                   <td className="px-4 py-2 capitalize">{r.exception_type.replace(/_/g, ' ')}</td>
                   <td className="px-4 py-2">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase ${EX_SEVERITY_PILL[r.severity] || 'bg-gray-100'}`}>{r.severity}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase ${EX_SEVERITY_PILL[r.severity] || 'bg-[#eef2f7]'}`}>{r.severity}</span>
                   </td>
                   <td className="px-4 py-2">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${EX_STATUS_PILL[r.status] || 'bg-gray-100'}`}>{r.status.replace(/_/g, ' ')}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${EX_STATUS_PILL[r.status] || 'bg-[#eef2f7]'}`}>{r.status.replace(/_/g, ' ')}</span>
                   </td>
                   <td className="px-4 py-2 text-[#6b7685] text-[11px]">
                     {num(r.matched_volume_mwh, 2)} MWh @ {formatZAR(r.matched_price_zar)}
@@ -1484,7 +1484,7 @@ function ExceptionsTab() {
                       {(r.status === 'open' || r.status === 'investigating') && (
                         <>
                           <button type="button" onClick={() => setResolving({ ...r, status: 'resolved' as any })} className="px-2 py-1 text-[11px] bg-green-50 text-green-700 rounded">Resolve</button>
-                          <button type="button" onClick={() => setResolving({ ...r, status: 'rejected' as any })} className="px-2 py-1 text-[11px] bg-gray-100 text-gray-700 rounded">Reject</button>
+                          <button type="button" onClick={() => setResolving({ ...r, status: 'rejected' as any })} className="px-2 py-1 text-[11px] bg-[#eef2f7] text-[#2d3748] rounded">Reject</button>
                         </>
                       )}
                       {(r.status === 'resolved' || r.status === 'rejected') && (
@@ -1571,7 +1571,7 @@ function ResolveExceptionModal({
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} placeholder="What changed? Required ≥3 chars." className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none" />
           </label>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-[#eef2f7]">Cancel</button>
             <button type="button" onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${isResolved ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}>
               {saving ? 'Saving…' : (isResolved ? 'Resolve' : 'Reject')}
             </button>
@@ -1660,7 +1660,7 @@ function FileExceptionModal({ onClose, onDone }: { onClose: () => void; onDone: 
             <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={4} placeholder="What is wrong with this fill? At least 3 characters." className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none" />
           </label>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-[#eef2f7]">Cancel</button>
             <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50">
               {saving ? 'Filing…' : 'File exception'}
             </button>
@@ -1769,7 +1769,7 @@ function AllocationsTab() {
                     <td className="px-4 py-2">{formatZAR(p.matched_price_zar)}</td>
                     <td className="px-4 py-2 font-medium">{formatZAR(p.matched_volume_mwh * p.matched_price_zar)}</td>
                     <td className="px-4 py-2">
-                      <button type="button" onClick={() => setAllocating(p)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">
+                      <button type="button" onClick={() => setAllocating(p)} className="px-2 py-1 text-[11px] bg-[#c2873a] text-white rounded">
                         Allocate
                       </button>
                     </td>
@@ -1817,7 +1817,7 @@ function AllocationsTab() {
                     <td className="px-4 py-2">{formatZAR(a.allocated_price_zar)}</td>
                     <td className="px-4 py-2">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${
-                        a.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                        a.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-[#eef2f7] text-[#2d3748]'
                       }`}>{a.status.replace(/_/g, ' ')}</span>
                     </td>
                   </tr>
@@ -1949,8 +1949,8 @@ function AllocateModal({
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
-            <button type="button" onClick={submit} disabled={saving || !balanced} className="px-4 py-2 bg-[#1a3a5c] text-white rounded-lg disabled:opacity-50">
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-[#eef2f7]">Cancel</button>
+            <button type="button" onClick={submit} disabled={saving || !balanced} className="px-4 py-2 bg-[#c2873a] text-white rounded-lg disabled:opacity-50">
               {saving ? 'Allocating…' : 'Allocate'}
             </button>
           </div>
@@ -1991,8 +1991,8 @@ const FEE_TYPE_PILL: Record<string, string> = {
   clearing:      'bg-purple-100 text-purple-700',
   market_data:   'bg-amber-100 text-amber-800',
   regulatory:    'bg-rose-100 text-rose-700',
-  tax:           'bg-gray-200 text-gray-700',
-  adjustment:    'bg-gray-100 text-gray-700',
+  tax:           'bg-[#e8ecf0] text-[#2d3748]',
+  adjustment:    'bg-[#eef2f7] text-[#2d3748]',
 };
 
 function FeesTab() {
@@ -2041,7 +2041,7 @@ function FeesTab() {
         <span className="text-[12px] text-[#6b7685]">Type:</span>
         {(['all', 'brokerage', 'exchange', 'clearing', 'regulatory', 'tax', 'adjustment'] as const).map((s) => (
           <button type="button" key={s} onClick={() => setFeeType(s)}
-            className={`px-3 py-1 rounded-full text-[11px] capitalize ${feeType === s ? 'bg-[#1a3a5c] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
+            className={`px-3 py-1 rounded-full text-[11px] capitalize ${feeType === s ? 'bg-[#c2873a] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
             {s.replace(/_/g, ' ')}
           </button>
         ))}
@@ -2074,7 +2074,7 @@ function FeesTab() {
                 <tr key={r.id} className="border-t border-[#e5ebf2] hover:bg-[#f8fafc]">
                   <td className="px-4 py-2 text-[#6b7685]">{new Date(r.calculated_at).toLocaleString()}</td>
                   <td className="px-4 py-2">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${FEE_TYPE_PILL[r.fee_type] || 'bg-gray-100'}`}>{r.fee_type.replace(/_/g, ' ')}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${FEE_TYPE_PILL[r.fee_type] || 'bg-[#eef2f7]'}`}>{r.fee_type.replace(/_/g, ' ')}</span>
                   </td>
                   <td className="px-4 py-2 capitalize">{r.order_side}</td>
                   <td className="px-4 py-2 text-[#6b7685] text-[11px]">{num(r.matched_volume_mwh, 2)} MWh @ {formatZAR(r.matched_price_zar)}</td>

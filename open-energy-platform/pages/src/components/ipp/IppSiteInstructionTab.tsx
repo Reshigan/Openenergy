@@ -255,7 +255,7 @@ export function IppSiteInstructionTab() {
                 onClick={() => setSelected(row)}
                 style={{
                   borderBottom: '1px solid #1e293b', cursor: 'pointer',
-                  background: selected?.id === row.id ? '#1e3a5f' : 'transparent',
+                  background: selected?.id === row.id ? 'oklch(0.93 0.012 55)' : 'transparent',
                 }}
                 onMouseEnter={e => { if (selected?.id !== row.id) (e.currentTarget as HTMLElement).style.background = '#1e293b'; }}
                 onMouseLeave={e => { if (selected?.id !== row.id) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}

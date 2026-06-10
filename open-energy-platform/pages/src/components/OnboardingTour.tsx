@@ -67,7 +67,7 @@ export function OnboardingTour({ scope, steps }: Props) {
       </div>
       <div className="flex justify-end mt-3 gap-2">
         <button type="button" onClick={() => setSkip(true)} className="h-8 px-3 text-[11px] text-[#6b7685] hover:text-[#0f1c2e]">Skip</button>
-        <button type="button" onClick={() => void advance()} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[11px] font-semibold inline-flex items-center gap-1">
+        <button type="button" onClick={() => void advance()} className="h-8 px-3 rounded bg-[#c2873a] text-white text-[11px] font-semibold inline-flex items-center gap-1">
           {step.cta || 'Got it'} <ArrowRight size={12}/>
         </button>
       </div>

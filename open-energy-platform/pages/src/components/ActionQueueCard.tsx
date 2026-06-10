@@ -103,7 +103,7 @@ export function ActionQueueCard() {
           <div
             className="w-9 h-9 rounded-lg flex items-center justify-center"
             style={{
-              background: 'linear-gradient(135deg,#3b82c4 0%,#1f9b95 100%)',
+              background: 'oklch(0.46 0.16 55)',
               color: '#fff',
             }}
           >

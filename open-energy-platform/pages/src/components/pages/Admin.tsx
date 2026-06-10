@@ -92,7 +92,7 @@ const STATUS_PILL: Record<string, string> = {
   in_review: 'bg-blue-100 text-blue-700',
   approved: 'bg-green-100 text-green-700',
   rejected: 'bg-red-100 text-red-700',
-  suspended: 'bg-gray-200 text-gray-700',
+  suspended: 'bg-[#e8ecf0] text-[#2d3748]',
 };
 
 const formatZAR = (value: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value || 0);
@@ -324,7 +324,7 @@ export function Admin() {
       title="Platform Admin"
       subtitle="KYC queue, users, modules, audit logs, billing."
       actions={
-        <button type="button" onClick={fetchAll} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
+        <button type="button" onClick={fetchAll} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]" aria-label="Refresh">
           <RefreshCw className="w-4 h-4" />
         </button>
       }
@@ -333,7 +333,7 @@ export function Admin() {
         {overviewTiles.map(t => (
           <div key={t.label} className="p-4 bg-white border border-ionex-border-100 rounded-xl">
             <p className="text-xs uppercase tracking-wide text-ionex-text-mute">{t.label}</p>
-            <p className="text-2xl font-semibold text-gray-900 mt-1">{t.value}</p>
+            <p className="text-2xl font-semibold text-[#0f1c2e] mt-1">{t.value}</p>
           </div>
         ))}
       </div>
@@ -343,7 +343,7 @@ export function Admin() {
           <button type="button"
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex items-center gap-2 pb-3 border-b-2 transition-colors ${tab === t.key ? 'border-ionex-brand text-ionex-brand font-semibold' : 'border-transparent text-ionex-text-mute hover:text-gray-900'}`}
+            className={`flex items-center gap-2 pb-3 border-b-2 transition-colors ${tab === t.key ? 'border-ionex-brand text-ionex-brand font-semibold' : 'border-transparent text-ionex-text-mute hover:text-[#0f1c2e]'}`}
           >
             {t.icon}{t.label}
           </button>
@@ -389,7 +389,7 @@ export function Admin() {
       )}
 
       {toast && (
-        <div className="fixed bottom-6 right-6 max-w-md bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg text-sm flex items-start gap-3" role="status" aria-live="polite">
+        <div className="fixed bottom-6 right-6 max-w-md bg-[#1e2a38] text-white px-4 py-3 rounded-lg shadow-lg text-sm flex items-start gap-3" role="status" aria-live="polite">
           <Copy className="w-4 h-4 mt-0.5 flex-shrink-0" />
           <span className="break-all">{toast}</span>
         </div>
@@ -402,14 +402,14 @@ function OverviewPanel({ stats }: { stats: StatsSnapshot | null }) {
   if (!stats) return <EmptyState icon={<BarChart2 className="w-8 h-8" />} title="No stats" description="Stats are being collected." />;
   const Section = ({ title, rows, valueKey }: { title: string; rows: any[]; valueKey: string }) => (
     <div className="p-5 bg-white rounded-xl border border-ionex-border-100">
-      <h3 className="font-semibold text-gray-900 mb-3">{title}</h3>
+      <h3 className="font-semibold text-[#0f1c2e] mb-3">{title}</h3>
       {(!rows || rows.length === 0) ? (
         <p className="text-sm text-ionex-text-mute">No data</p>
       ) : (
         <ul className="divide-y divide-ionex-border-100">
           {rows.map((r, i) => (
             <li key={i} className="py-2 flex justify-between text-sm">
-              <span className="capitalize text-gray-700">{r[valueKey]}</span>
+              <span className="capitalize text-[#2d3748]">{r[valueKey]}</span>
               <span className="font-semibold">{r.n}{r.total != null ? ` · ${formatZAR(r.total)}` : ''}</span>
             </li>
           ))}
@@ -423,7 +423,7 @@ function OverviewPanel({ stats }: { stats: StatsSnapshot | null }) {
       <Section title="Contracts by phase" rows={stats.contracts_by_phase} valueKey="phase" />
       <Section title="Invoices by status" rows={stats.invoices_by_status} valueKey="status" />
       <div className="p-5 bg-white rounded-xl border border-ionex-border-100">
-        <h3 className="font-semibold text-gray-900 mb-3">Trade activity (30d)</h3>
+        <h3 className="font-semibold text-[#0f1c2e] mb-3">Trade activity (30d)</h3>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <p className="text-ionex-text-mute">Matched trades</p>
@@ -452,7 +452,7 @@ function KycPanel({ kyc, filter, onFilterChange, onDecide }: {
           <button type="button"
             key={s}
             onClick={() => onFilterChange(s)}
-            className={`px-3 py-1.5 rounded-full text-sm border ${filter === s ? 'bg-ionex-brand text-white border-ionex-brand' : 'bg-white border-ionex-border-200 text-gray-700 hover:bg-gray-50'}`}
+            className={`px-3 py-1.5 rounded-full text-sm border ${filter === s ? 'bg-ionex-brand text-white border-ionex-brand' : 'bg-white border-ionex-border-200 text-[#2d3748] hover:bg-[#eef2f7]'}`}
           >
             {s.replace('_', ' ')}
           </button>
@@ -465,7 +465,7 @@ function KycPanel({ kyc, filter, onFilterChange, onDecide }: {
           {kyc.map(p => (
             <div key={p.id} className="p-4 flex items-center justify-between flex-wrap gap-3">
               <div className="min-w-0">
-                <p className="font-semibold text-gray-900">{p.name}{p.company_name ? ` · ${p.company_name}` : ''}</p>
+                <p className="font-semibold text-[#0f1c2e]">{p.name}{p.company_name ? ` · ${p.company_name}` : ''}</p>
                 <p className="text-sm text-ionex-text-mute">{p.email} · {p.role}</p>
                 <p className="text-xs text-ionex-text-mute">Submitted {new Date(p.created_at).toLocaleString()}</p>
               </div>
@@ -537,7 +537,7 @@ function UsersPanel({ users, tenants, search, onSearchChange, onSetStatus, onCre
       </div>
       {showCreate && (
         <div className="p-4 bg-white border border-ionex-border-100 rounded-xl space-y-3">
-          <h3 className="font-semibold text-gray-900">New user</h3>
+          <h3 className="font-semibold text-[#0f1c2e]">New user</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="text-sm">
               <span className="text-ionex-text-mute">Email *</span>
@@ -570,7 +570,7 @@ function UsersPanel({ users, tenants, search, onSearchChange, onSetStatus, onCre
             </label>
           </div>
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-2 text-sm border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-2 text-sm border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
             <button type="button"
               disabled={!form.email || !form.name}
               onClick={() => {
@@ -596,7 +596,7 @@ function UsersPanel({ users, tenants, search, onSearchChange, onSetStatus, onCre
       ) : (
         <div className="bg-white rounded-xl border border-ionex-border-100 overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-ionex-text-mute">
+            <thead className="bg-[#f8fafc] text-left text-ionex-text-mute">
               <tr>
                 <th className="p-3 font-medium">User</th>
                 <th className="p-3 font-medium">Role</th>
@@ -610,12 +610,12 @@ function UsersPanel({ users, tenants, search, onSearchChange, onSetStatus, onCre
               {users.map(u => (
                 <tr key={u.id}>
                   <td className="p-3">
-                    <p className="font-medium text-gray-900">{u.name}</p>
+                    <p className="font-medium text-[#0f1c2e]">{u.name}</p>
                     <p className="text-xs text-ionex-text-mute">{u.email}{u.company_name ? ` · ${u.company_name}` : ''}</p>
                   </td>
                   <td className="p-3 capitalize">{u.role.replace('_', ' ')}</td>
-                  <td className="p-3"><span className={`px-2 py-1 rounded-full text-xs ${STATUS_PILL[u.status] || 'bg-gray-100 text-gray-700'}`}>{u.status}</span></td>
-                  <td className="p-3"><span className={`px-2 py-1 rounded-full text-xs ${STATUS_PILL[u.kyc_status] || 'bg-gray-100 text-gray-700'}`}>{u.kyc_status}</span></td>
+                  <td className="p-3"><span className={`px-2 py-1 rounded-full text-xs ${STATUS_PILL[u.status] || 'bg-[#eef2f7] text-[#2d3748]'}`}>{u.status}</span></td>
+                  <td className="p-3"><span className={`px-2 py-1 rounded-full text-xs ${STATUS_PILL[u.kyc_status] || 'bg-[#eef2f7] text-[#2d3748]'}`}>{u.kyc_status}</span></td>
                   <td className="p-3 capitalize">{u.subscription_tier || '—'}</td>
                   <td className="p-3 text-right whitespace-nowrap">
                     {u.status !== 'active' && (
@@ -670,7 +670,7 @@ function ModulesPanel({ modules, onToggle, onCreate, onUpdate, onDelete }: {
       </div>
       {showCreate && (
         <div className="p-4 bg-white border border-ionex-border-100 rounded-xl space-y-3">
-          <h3 className="font-semibold text-gray-900">New module</h3>
+          <h3 className="font-semibold text-[#0f1c2e]">New module</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="text-sm">
               <span className="text-ionex-text-mute">Module key *</span>
@@ -694,7 +694,7 @@ function ModulesPanel({ modules, onToggle, onCreate, onUpdate, onDelete }: {
             </label>
           </div>
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-2 text-sm border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-2 text-sm border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
             <button type="button"
               disabled={!form.module_key || !form.display_name}
               onClick={() => {
@@ -721,7 +721,7 @@ function ModulesPanel({ modules, onToggle, onCreate, onUpdate, onDelete }: {
             <div key={m.module_key} className="p-4 bg-white border border-ionex-border-100 rounded-xl">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-semibold text-gray-900">{m.display_name}</p>
+                  <p className="font-semibold text-[#0f1c2e]">{m.display_name}</p>
                   <p className="text-xs text-ionex-text-mute">{m.module_key}{m.category ? ` · ${m.category}` : ''}{m.required_role ? ` · requires ${m.required_role}` : ''}{m.price_monthly != null ? ` · ${formatZAR(Number(m.price_monthly))}/mo` : ''}</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
@@ -738,7 +738,7 @@ function ModulesPanel({ modules, onToggle, onCreate, onUpdate, onDelete }: {
                     <input value={editForm.required_role} onChange={e => setEditForm({ ...editForm, required_role: e.target.value })} className="w-full px-2 py-1.5 text-sm border border-ionex-border-200 rounded" placeholder="Required role" />
                   </div>
                   <div className="flex justify-end gap-2 pt-1">
-                    <button type="button" onClick={() => setEditKey(null)} className="text-xs text-gray-700 hover:underline">Cancel</button>
+                    <button type="button" onClick={() => setEditKey(null)} className="text-xs text-[#2d3748] hover:underline">Cancel</button>
                     <button type="button"
                       onClick={() => {
                         onUpdate(m.module_key, {
@@ -755,7 +755,7 @@ function ModulesPanel({ modules, onToggle, onCreate, onUpdate, onDelete }: {
                 </div>
               ) : (
                 <>
-                  {m.description && <p className="text-sm text-gray-600 mt-2">{m.description}</p>}
+                  {m.description && <p className="text-sm text-[#3d4756] mt-2">{m.description}</p>}
                   <div className="mt-3 flex gap-3">
                     <button type="button" onClick={() => beginEdit(m)} className="text-xs text-blue-700 hover:underline flex items-center gap-1"><Edit3 className="w-3.5 h-3.5" /> Edit</button>
                     <button type="button" onClick={() => onDelete(m.module_key)} className="text-xs text-red-700 hover:underline flex items-center gap-1"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
@@ -798,7 +798,7 @@ function TenantsPanel({ tenants, onCreate, onUpdate, onDelete }: {
       </div>
       {showCreate && (
         <div className="p-4 bg-white border border-ionex-border-100 rounded-xl space-y-3">
-          <h3 className="font-semibold text-gray-900">New tenant</h3>
+          <h3 className="font-semibold text-[#0f1c2e]">New tenant</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="text-sm">
               <span className="text-ionex-text-mute">Display name *</span>
@@ -814,7 +814,7 @@ function TenantsPanel({ tenants, onCreate, onUpdate, onDelete }: {
             </label>
           </div>
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-2 text-sm border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-2 text-sm border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
             <button type="button"
               disabled={!form.display_name}
               onClick={() => {
@@ -836,7 +836,7 @@ function TenantsPanel({ tenants, onCreate, onUpdate, onDelete }: {
       ) : (
         <div className="bg-white rounded-xl border border-ionex-border-100 overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-ionex-text-mute">
+            <thead className="bg-[#f8fafc] text-left text-ionex-text-mute">
               <tr>
                 <th className="p-3 font-medium">Tenant</th>
                 <th className="p-3 font-medium">Slug</th>
@@ -856,7 +856,7 @@ function TenantsPanel({ tenants, onCreate, onUpdate, onDelete }: {
                       </div>
                     ) : (
                       <div>
-                        <p className="font-medium text-gray-900 flex items-center gap-2"><Building2 className="w-4 h-4 text-ionex-text-mute" />{t.display_name}</p>
+                        <p className="font-medium text-[#0f1c2e] flex items-center gap-2"><Building2 className="w-4 h-4 text-ionex-text-mute" />{t.display_name}</p>
                         {t.description && <p className="text-xs text-ionex-text-mute mt-0.5">{t.description}</p>}
                       </div>
                     )}
@@ -867,7 +867,7 @@ function TenantsPanel({ tenants, onCreate, onUpdate, onDelete }: {
                   <td className="p-3 text-right whitespace-nowrap">
                     {editId === t.id ? (
                       <>
-                        <button type="button" onClick={() => setEditId(null)} className="text-xs text-gray-700 hover:underline mr-3">Cancel</button>
+                        <button type="button" onClick={() => setEditId(null)} className="text-xs text-[#2d3748] hover:underline mr-3">Cancel</button>
                         <button type="button"
                           onClick={() => {
                             onUpdate(t.id, {
@@ -908,7 +908,7 @@ function AuditPanel({ rows }: { rows: AuditRow[] }) {
   return (
     <div className="bg-white rounded-xl border border-ionex-border-100 overflow-x-auto">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-left text-ionex-text-mute">
+        <thead className="bg-[#f8fafc] text-left text-ionex-text-mute">
           <tr>
             <th className="p-3 font-medium">When</th>
             <th className="p-3 font-medium">Actor</th>
@@ -922,7 +922,7 @@ function AuditPanel({ rows }: { rows: AuditRow[] }) {
             <tr key={r.id}>
               <td className="p-3 text-ionex-text-mute">{new Date(r.created_at).toLocaleString()}</td>
               <td className="p-3">
-                <p className="font-medium text-gray-900">{r.actor_name || r.actor_id}</p>
+                <p className="font-medium text-[#0f1c2e]">{r.actor_name || r.actor_id}</p>
                 {r.actor_role && <p className="text-xs text-ionex-text-mute capitalize">{r.actor_role.replace('_', ' ')}</p>}
               </td>
               <td className="p-3 font-mono text-xs">{r.action}</td>
@@ -942,22 +942,22 @@ function BillingPanel({ billing }: { billing: BillingSnapshot | null }) {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="p-5 bg-white border border-ionex-border-100 rounded-xl">
         <p className="text-xs uppercase tracking-wide text-ionex-text-mute">Monthly recurring revenue</p>
-        <p className="text-3xl font-bold text-gray-900 mt-2">{formatZAR(billing.monthly_recurring_zar)}</p>
+        <p className="text-3xl font-bold text-[#0f1c2e] mt-2">{formatZAR(billing.monthly_recurring_zar)}</p>
         <p className="text-xs text-ionex-text-mute mt-1">Based on active participants × tier rate</p>
       </div>
       <div className="p-5 bg-white border border-ionex-border-100 rounded-xl">
-        <p className="font-semibold text-gray-900 mb-3">Tier rate card</p>
+        <p className="font-semibold text-[#0f1c2e] mb-3">Tier rate card</p>
         <ul className="text-sm space-y-1">
           {Object.entries(billing.rate_card).map(([tier, rate]) => (
             <li key={tier} className="flex justify-between">
-              <span className="capitalize text-gray-700">{tier}</span>
+              <span className="capitalize text-[#2d3748]">{tier}</span>
               <span className="font-mono">{formatZAR(Number(rate))}</span>
             </li>
           ))}
         </ul>
       </div>
       <div className="p-5 bg-white border border-ionex-border-100 rounded-xl md:col-span-2">
-        <p className="font-semibold text-gray-900 mb-3">Active participants by tier</p>
+        <p className="font-semibold text-[#0f1c2e] mb-3">Active participants by tier</p>
         {billing.tiers.length === 0 ? (
           <p className="text-sm text-ionex-text-mute">No active participants.</p>
         ) : (
@@ -966,7 +966,7 @@ function BillingPanel({ billing }: { billing: BillingSnapshot | null }) {
               const rate = billing.rate_card[t.subscription_tier] || 0;
               return (
                 <li key={t.subscription_tier} className="py-2 flex justify-between text-sm">
-                  <span className="capitalize text-gray-700">{t.subscription_tier || '—'}</span>
+                  <span className="capitalize text-[#2d3748]">{t.subscription_tier || '—'}</span>
                   <span className="font-mono">{t.n} × {formatZAR(rate)} = {formatZAR(rate * Number(t.n || 0))}</span>
                 </li>
               );

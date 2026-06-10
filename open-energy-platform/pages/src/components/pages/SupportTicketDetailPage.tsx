@@ -131,7 +131,7 @@ export function SupportTicketDetailPage() {
           </button>
           {isAgent && ticket.status !== 'resolved' && ticket.status !== 'closed' && (
             <>
-              <button type="button" onClick={() => setTransitioning(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+              <button type="button" onClick={() => setTransitioning(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
                 Transition
               </button>
               <button type="button" onClick={() => setEscalating(true)} className="h-9 px-3 rounded-md bg-amber-600 text-white text-[12px] font-semibold">
@@ -217,13 +217,13 @@ export function SupportTicketDetailPage() {
                 Visibility:
                 {(['public', 'internal'] as const).map(v => (
                   <button type="button" key={v} onClick={() => setReplyVisibility(v)}
-                    className={`px-2 py-0.5 rounded ${replyVisibility === v ? 'bg-[#1a3a5c] text-white' : 'border border-[#dde4ec] text-[#3d4756]'}`}>
+                    className={`px-2 py-0.5 rounded ${replyVisibility === v ? 'bg-[#c2873a] text-white' : 'border border-[#dde4ec] text-[#3d4756]'}`}>
                     {v}
                   </button>
                 ))}
               </div>
             ) : <div />}
-            <button type="button" onClick={postComment} disabled={posting || !reply.trim()} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1 disabled:opacity-50">
+            <button type="button" onClick={postComment} disabled={posting || !reply.trim()} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold inline-flex items-center gap-1 disabled:opacity-50">
               <Send size={12} /> {posting ? 'Posting…' : 'Post'}
             </button>
           </div>

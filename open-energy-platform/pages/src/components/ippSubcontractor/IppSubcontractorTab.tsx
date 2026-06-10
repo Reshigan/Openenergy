@@ -109,7 +109,7 @@ const TIER_COLOR: Record<SubcontractorTier, string> = {
   critical_trade: 'bg-red-100 text-red-800',
   specialist: 'bg-orange-100 text-orange-700',
   general_trade: 'bg-amber-100 text-amber-700',
-  labor_only: 'bg-gray-100 text-gray-600',
+  labor_only: 'bg-[#eef2f7] text-[#3d4756]',
 };
 
 const TRADE_CATEGORY_LABEL: Record<string, string> = {
@@ -136,7 +136,7 @@ const TERMINATION_CAUSE_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<SubcontractorStatus, string> = {
-  registered:       'bg-slate-100 text-slate-700',
+  registered:       'bg-[#eef2f7] text-[#2d3748]',
   pre_qualification:'bg-blue-50 text-blue-700',
   inducted:         'bg-indigo-100 text-indigo-700',
   mobilized:        'bg-violet-100 text-violet-700',
@@ -145,7 +145,7 @@ const STATUS_COLOR: Record<SubcontractorStatus, string> = {
   good_standing:    'bg-emerald-100 text-emerald-800',
   work_complete:    'bg-teal-100 text-teal-700',
   demobilized:      'bg-cyan-100 text-cyan-700',
-  closed:           'bg-gray-100 text-gray-600',
+  closed:           'bg-[#eef2f7] text-[#3d4756]',
   suspended:        'bg-orange-100 text-orange-800',
   terminated:       'bg-red-200 text-red-900',
 };
@@ -205,7 +205,7 @@ function KpiCard({ label, value, color }: { label: string; value: string | numbe
     orange: 'bg-orange-50 text-orange-900 border-orange-200',
     green: 'bg-green-50 text-green-900 border-green-200',
     amber: 'bg-amber-50 text-amber-900 border-amber-200',
-    gray: 'bg-gray-50 text-gray-700 border-gray-200',
+    gray: 'bg-[#f8fafc] text-[#2d3748] border-[#dde4ec]',
   };
   return (
     <div className={`rounded-lg border px-3 py-2 ${colors[color] ?? colors.gray}`}>
@@ -230,7 +230,7 @@ function CheckRow({ label, checked, onChange, warningLabel }: {
 }
 
 function PerformanceBadge({ score }: { score: number | null }) {
-  if (score === null) return <span className="text-gray-400 text-xs">—</span>;
+  if (score === null) return <span className="text-[#9aa5b4] text-xs">—</span>;
   const cls = score < 60
     ? 'bg-red-100 text-red-800'
     : score < 80
@@ -415,13 +415,13 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
           <option value="">All trades</option>
           {TRADE_CATEGORIES.map(c => <option key={c} value={c}>{TRADE_CATEGORY_LABEL[c]}</option>)}
         </select>
-        <span className="text-xs text-gray-400 ml-auto">{filtered.length} subcontractors</span>
+        <span className="text-xs text-[#9aa5b4] ml-auto">{filtered.length} subcontractors</span>
         {!readOnly && (
           <button type="button" className="text-xs bg-green-600 text-white rounded px-3 py-1 hover:bg-green-700" onClick={() => setShowCreate(true)}>
             + Register subcontractor
           </button>
         )}
-        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-gray-50" onClick={load}>Refresh</button>
+        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-[#eef2f7]" onClick={load}>Refresh</button>
       </div>
 
       {actionResult && (
@@ -430,31 +430,31 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
         </div>
       )}
       {error && <div className="text-xs text-red-600 bg-red-50 rounded px-3 py-2">{error}</div>}
-      {loading && <div className="text-xs text-gray-400">Loading subcontractor register…</div>}
+      {loading && <div className="text-xs text-[#9aa5b4]">Loading subcontractor register…</div>}
 
       {/* Table */}
       {!loading && (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <div className="overflow-x-auto rounded-lg border border-[#dde4ec]">
           <table className="w-full text-xs">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#f8fafc]">
               <tr>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">ID</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Company</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Trade</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Tier</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Contract value</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Performance</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">BEE</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Status</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">SLA</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Flags</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">ID</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Company</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Trade</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Tier</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Contract value</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Performance</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">BEE</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Status</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">SLA</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Flags</th>
                 {!readOnly && <th className="px-3 py-2" />}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={readOnly ? 10 : 11} className="px-3 py-6 text-center text-gray-400">
+                  <td colSpan={readOnly ? 10 : 11} className="px-3 py-6 text-center text-[#9aa5b4]">
                     No subcontractors registered
                   </td>
                 </tr>
@@ -462,15 +462,15 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
               {filtered.map(row => (
                 <tr
                   key={row.id}
-                  className={`border-t border-gray-100 hover:bg-gray-50 cursor-pointer ${row.chain_status === 'suspended' ? 'bg-orange-50/40' : row.chain_status === 'terminated' ? 'bg-red-50/40' : ''}`}
+                  className={`border-t border-[#eef2f7] hover:bg-[#eef2f7] cursor-pointer ${row.chain_status === 'suspended' ? 'bg-orange-50/40' : row.chain_status === 'terminated' ? 'bg-red-50/40' : ''}`}
                   onClick={() => setSelected(row)}
                 >
-                  <td className="px-3 py-2 font-mono text-gray-400">{row.id}</td>
+                  <td className="px-3 py-2 font-mono text-[#9aa5b4]">{row.id}</td>
                   <td className="px-3 py-2 max-w-[160px]">
-                    <span className="text-gray-800 block truncate font-medium">{row.company_name}</span>
-                    {row.project_name && <span className="text-gray-400 truncate block">{row.project_name}</span>}
+                    <span className="text-[#1e2a38] block truncate font-medium">{row.company_name}</span>
+                    {row.project_name && <span className="text-[#9aa5b4] truncate block">{row.project_name}</span>}
                   </td>
-                  <td className="px-3 py-2 text-gray-600">
+                  <td className="px-3 py-2 text-[#3d4756]">
                     {row.trade_category ? (TRADE_CATEGORY_LABEL[row.trade_category] ?? row.trade_category) : '—'}
                   </td>
                   <td className="px-3 py-2">
@@ -480,7 +480,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
+                  <td className="px-3 py-2 text-[#3d4756] whitespace-nowrap">
                     {row.contract_value_zar != null
                       ? `R ${Number(row.contract_value_zar).toLocaleString('en-ZA')}`
                       : '—'}
@@ -488,7 +488,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
                   <td className="px-3 py-2">
                     <PerformanceBadge score={row.performance_score} />
                   </td>
-                  <td className="px-3 py-2 text-gray-600">
+                  <td className="px-3 py-2 text-[#3d4756]">
                     {row.bee_level != null ? `L${row.bee_level}` : '—'}
                   </td>
                   <td className="px-3 py-2">
@@ -504,7 +504,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
                         breached={!!row.sla_breached}
                         compact
                       />
-                    ) : <span className="text-gray-400">—</span>}
+                    ) : <span className="text-[#9aa5b4]">—</span>}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex gap-1 flex-wrap">
@@ -553,7 +553,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
                     </span>
                   )}
                   {selected.trade_category && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-100 text-gray-600">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-[#eef2f7] text-[#3d4756]">
                       {TRADE_CATEGORY_LABEL[selected.trade_category] ?? selected.trade_category}
                     </span>
                   )}
@@ -564,12 +564,12 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
                     <span className="px-1 py-0.5 rounded text-[10px] bg-red-200 text-red-800">REGULATOR CROSSED</span>
                   )}
                 </div>
-                <h3 className="font-semibold text-gray-900 text-sm">{selected.company_name}</h3>
-                <p className="text-xs text-gray-400 font-mono mt-0.5">
+                <h3 className="font-semibold text-[#0f1c2e] text-sm">{selected.company_name}</h3>
+                <p className="text-xs text-[#9aa5b4] font-mono mt-0.5">
                   {selected.id} · {selected.project_name ?? selected.project_id}
                 </p>
               </div>
-              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl leading-none" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
+              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl leading-none" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
             </div>
 
             {/* Chain state bar */}
@@ -629,100 +629,100 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
             {/* Contract details */}
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs mb-4">
               <div>
-                <span className="text-gray-500">Contract ref</span>
-                <p className="font-medium text-gray-800">{selected.contract_ref ?? '—'}</p>
+                <span className="text-[#6b7685]">Contract ref</span>
+                <p className="font-medium text-[#1e2a38]">{selected.contract_ref ?? '—'}</p>
               </div>
               <div>
-                <span className="text-gray-500">Contract value</span>
-                <p className="font-medium text-gray-800">
+                <span className="text-[#6b7685]">Contract value</span>
+                <p className="font-medium text-[#1e2a38]">
                   {selected.contract_value_zar != null
                     ? `R ${Number(selected.contract_value_zar).toLocaleString('en-ZA')}`
                     : '—'}
                 </p>
               </div>
               <div className="col-span-2">
-                <span className="text-gray-500">Scope description</span>
-                <p className="font-medium text-gray-800 text-xs mt-0.5">{selected.scope_description}</p>
+                <span className="text-[#6b7685]">Scope description</span>
+                <p className="font-medium text-[#1e2a38] text-xs mt-0.5">{selected.scope_description}</p>
               </div>
             </div>
 
             {/* Schedule */}
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs mb-4">
               <div>
-                <span className="text-gray-500">Planned start</span>
-                <p className="font-medium text-gray-800">{selected.scheduled_start_date ?? '—'}</p>
+                <span className="text-[#6b7685]">Planned start</span>
+                <p className="font-medium text-[#1e2a38]">{selected.scheduled_start_date ?? '—'}</p>
               </div>
               <div>
-                <span className="text-gray-500">Planned end</span>
-                <p className="font-medium text-gray-800">{selected.scheduled_end_date ?? '—'}</p>
+                <span className="text-[#6b7685]">Planned end</span>
+                <p className="font-medium text-[#1e2a38]">{selected.scheduled_end_date ?? '—'}</p>
               </div>
               <div>
-                <span className="text-gray-500">Actual start</span>
-                <p className="font-medium text-gray-800">{selected.actual_start_date ?? '—'}</p>
+                <span className="text-[#6b7685]">Actual start</span>
+                <p className="font-medium text-[#1e2a38]">{selected.actual_start_date ?? '—'}</p>
               </div>
               <div>
-                <span className="text-gray-500">Actual end</span>
-                <p className="font-medium text-gray-800">{selected.actual_end_date ?? '—'}</p>
+                <span className="text-[#6b7685]">Actual end</span>
+                <p className="font-medium text-[#1e2a38]">{selected.actual_end_date ?? '—'}</p>
               </div>
             </div>
 
             {/* Compliance grid */}
-            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 mb-4">
-              <p className="text-xs font-semibold text-slate-900 mb-2">Compliance</p>
+            <div className="p-3 rounded-lg bg-[#f8fafc] border border-[#dde4ec] mb-4">
+              <p className="text-xs font-semibold text-[#0f1c2e] mb-2">Compliance</p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
                 <div>
-                  <span className="text-gray-500">BEE level</span>
-                  <p className="font-medium text-gray-800">
+                  <span className="text-[#6b7685]">BEE level</span>
+                  <p className="font-medium text-[#1e2a38]">
                     {selected.bee_level != null ? `Level ${selected.bee_level}` : '—'}
                   </p>
                 </div>
                 <div>
-                  <span className="text-gray-500">CIDB grade</span>
-                  <p className="font-medium text-gray-800">{selected.cidb_grade ?? '—'}</p>
+                  <span className="text-[#6b7685]">CIDB grade</span>
+                  <p className="font-medium text-[#1e2a38]">{selected.cidb_grade ?? '—'}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500">Local content %</span>
-                  <p className="font-medium text-gray-800">
+                  <span className="text-[#6b7685]">Local content %</span>
+                  <p className="font-medium text-[#1e2a38]">
                     {selected.local_content_pct != null ? `${selected.local_content_pct.toFixed(1)}%` : '—'}
                   </p>
                 </div>
                 <div>
-                  <span className="text-gray-500">SA employees on site</span>
-                  <p className="font-medium text-gray-800">{selected.sa_employee_count ?? '—'}</p>
+                  <span className="text-[#6b7685]">SA employees on site</span>
+                  <p className="font-medium text-[#1e2a38]">{selected.sa_employee_count ?? '—'}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500">Insurance expiry</span>
-                  <p className={`font-medium ${selected.insurance_near_expiry_live ? 'text-red-700' : 'text-gray-800'}`}>
+                  <span className="text-[#6b7685]">Insurance expiry</span>
+                  <p className={`font-medium ${selected.insurance_near_expiry_live ? 'text-red-700' : 'text-[#1e2a38]'}`}>
                     {selected.insurance_expiry_date ?? '—'}
                     {selected.insurance_near_expiry_live && <span className="ml-1 text-[9px] bg-red-100 text-red-800 px-1 rounded">NEAR EXPIRY</span>}
                   </p>
                 </div>
                 <div>
-                  <span className="text-gray-500">Registration number</span>
-                  <p className="font-medium text-gray-800 font-mono text-[10px]">{selected.registration_number ?? '—'}</p>
+                  <span className="text-[#6b7685]">Registration number</span>
+                  <p className="font-medium text-[#1e2a38] font-mono text-[10px]">{selected.registration_number ?? '—'}</p>
                 </div>
               </div>
             </div>
 
             {/* Performance + incidents */}
             <div className="grid grid-cols-3 gap-3 text-xs mb-4">
-              <div className="p-3 rounded-lg bg-white border border-gray-200 text-center">
-                <p className="text-gray-500 mb-1">Performance score</p>
+              <div className="p-3 rounded-lg bg-white border border-[#dde4ec] text-center">
+                <p className="text-[#6b7685] mb-1">Performance score</p>
                 <div className="flex justify-center">
                   <PerformanceBadge score={selected.performance_score} />
                 </div>
                 {selected.performance_score != null && (
-                  <p className="text-[10px] text-gray-400 mt-1">/ 100</p>
+                  <p className="text-[10px] text-[#9aa5b4] mt-1">/ 100</p>
                 )}
               </div>
-              <div className="p-3 rounded-lg bg-white border border-gray-200 text-center">
-                <p className="text-gray-500 mb-1">HSE incidents</p>
+              <div className="p-3 rounded-lg bg-white border border-[#dde4ec] text-center">
+                <p className="text-[#6b7685] mb-1">HSE incidents</p>
                 <p className={`text-lg font-bold ${selected.hse_incident_count > 0 ? 'text-red-700' : 'text-green-700'}`}>
                   {selected.hse_incident_count}
                 </p>
               </div>
-              <div className="p-3 rounded-lg bg-white border border-gray-200 text-center">
-                <p className="text-gray-500 mb-1">NCRs raised</p>
+              <div className="p-3 rounded-lg bg-white border border-[#dde4ec] text-center">
+                <p className="text-[#6b7685] mb-1">NCRs raised</p>
                 <p className={`text-lg font-bold ${selected.ncr_count > 0 ? 'text-amber-700' : 'text-green-700'}`}>
                   {selected.ncr_count}
                 </p>
@@ -734,19 +734,19 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs mb-4">
                 {selected.site_representative && (
                   <div>
-                    <span className="text-gray-500">Site representative</span>
-                    <p className="font-medium text-gray-800">{selected.site_representative}</p>
+                    <span className="text-[#6b7685]">Site representative</span>
+                    <p className="font-medium text-[#1e2a38]">{selected.site_representative}</p>
                     {selected.site_representative_phone && (
-                      <p className="text-gray-500">{selected.site_representative_phone}</p>
+                      <p className="text-[#6b7685]">{selected.site_representative_phone}</p>
                     )}
                   </div>
                 )}
                 {selected.safety_officer && (
                   <div>
-                    <span className="text-gray-500">Safety officer</span>
-                    <p className="font-medium text-gray-800">{selected.safety_officer}</p>
+                    <span className="text-[#6b7685]">Safety officer</span>
+                    <p className="font-medium text-[#1e2a38]">{selected.safety_officer}</p>
                     {selected.safety_officer_phone && (
-                      <p className="text-gray-500">{selected.safety_officer_phone}</p>
+                      <p className="text-[#6b7685]">{selected.safety_officer_phone}</p>
                     )}
                   </div>
                 )}
@@ -772,7 +772,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
             {/* Cross-references */}
             {(selected.ed_commitment_ref || selected.hse_incident_ref || selected.ncr_ref || selected.ms_ref) && (
               <div className="mb-4">
-                <p className="text-xs text-gray-500 mb-1">Cross-references</p>
+                <p className="text-xs text-[#6b7685] mb-1">Cross-references</p>
                 <div className="flex flex-wrap gap-2">
                   {selected.ed_commitment_ref && <span className="text-xs text-blue-600">ED commitment: {selected.ed_commitment_ref}</span>}
                   {selected.hse_incident_ref && <span className="text-xs text-red-600">HSE incident: {selected.hse_incident_ref}</span>}
@@ -784,7 +784,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
 
             {/* SLA breach info */}
             {selected.sla_breach_count > 0 && (
-              <div className="mb-4 text-xs text-gray-600">
+              <div className="mb-4 text-xs text-[#3d4756]">
                 SLA breach count: <span className="font-medium text-red-700">{selected.sla_breach_count}</span>
                 {selected.regulator_ref && <span className="ml-3">Regulator ref: <span className="font-mono">{selected.regulator_ref}</span></span>}
               </div>
@@ -807,8 +807,8 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
 
             {/* Actions */}
             {!readOnly && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <p className="text-xs text-gray-500 mb-2">Actions</p>
+              <div className="mt-4 pt-4 border-t border-[#eef2f7]">
+                <p className="text-xs text-[#6b7685] mb-2">Actions</p>
                 {actionResult && (
                   <div className={`text-xs rounded px-2 py-1 mb-2 ${actionResult.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
                     {actionResult}
@@ -830,7 +830,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
                     </button>
                   ))}
                   {(ACTIONS[selected.chain_status] ?? []).length === 0 && (
-                    <span className="text-xs text-gray-400 italic">No actions available (terminal state)</span>
+                    <span className="text-xs text-[#9aa5b4] italic">No actions available (terminal state)</span>
                   )}
                 </div>
               </div>
@@ -850,8 +850,8 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Register Subcontractor</h3>
-              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl leading-none" onClick={() => setShowCreate(false)}>×</button>
+              <h3 className="font-semibold text-[#0f1c2e]">Register Subcontractor</h3>
+              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl leading-none" onClick={() => setShowCreate(false)}>×</button>
             </div>
 
             {/* SIGNATURE warning */}
@@ -870,74 +870,74 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
-                  <label className="text-xs text-gray-500 block mb-1">Company name *</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Company name *</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newCompany} onChange={e => setNewCompany(e.target.value)} placeholder="e.g. PowerTech Electrical SA" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Project ID *</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Project ID *</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newProject} onChange={e => setNewProject(e.target.value)} placeholder="project-id" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Project name</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Project name</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newProjectName} onChange={e => setNewProjectName(e.target.value)} placeholder="Display name" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Trade category *</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Trade category *</label>
                   <select className="text-xs border rounded px-2 py-1.5 w-full" value={newTradeCategory} onChange={e => setNewTradeCategory(e.target.value)}>
                     {TRADE_CATEGORIES.map(c => <option key={c} value={c}>{TRADE_CATEGORY_LABEL[c]}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Tier *</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Tier *</label>
                   <select className="text-xs border rounded px-2 py-1.5 w-full" value={newTier} onChange={e => setNewTier(e.target.value as SubcontractorTier)}>
                     {SUBCONTRACTOR_TIERS.map(t => <option key={t} value={t}>{TIER_LABEL[t]} ({SLA_HOURS_BY_TIER[t]}h SLA)</option>)}
                   </select>
                 </div>
                 <div className="col-span-2">
-                  <label className="text-xs text-gray-500 block mb-1">Scope description *</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Scope description *</label>
                   <textarea className="text-xs border rounded px-2 py-1.5 w-full" rows={3} value={newScope} onChange={e => setNewScope(e.target.value)} placeholder="Describe the work scope…" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Contract ref</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Contract ref</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newContractRef} onChange={e => setNewContractRef(e.target.value)} placeholder="CT-XXX-2026-001" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Contract value (ZAR)</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Contract value (ZAR)</label>
                   <input type="number" className="text-xs border rounded px-2 py-1.5 w-full" value={newContractValue} onChange={e => setNewContractValue(e.target.value)} placeholder="e.g. 5000000" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Scheduled start date</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Scheduled start date</label>
                   <input type="date" className="text-xs border rounded px-2 py-1.5 w-full" value={newStartDate} onChange={e => setNewStartDate(e.target.value)} />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Scheduled end date</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Scheduled end date</label>
                   <input type="date" className="text-xs border rounded px-2 py-1.5 w-full" value={newEndDate} onChange={e => setNewEndDate(e.target.value)} />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">BEE level (1–8)</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">BEE level (1–8)</label>
                   <select className="text-xs border rounded px-2 py-1.5 w-full" value={newBeeLevel} onChange={e => setNewBeeLevel(e.target.value)}>
                     <option value="">Select…</option>
                     {[1,2,3,4,5,6,7,8].map(l => <option key={l} value={l}>Level {l}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">CIDB grade</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">CIDB grade</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newCidbGrade} onChange={e => setNewCidbGrade(e.target.value)} placeholder="e.g. 7EP" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Registration number</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Registration number</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newRegistrationNumber} onChange={e => setNewRegistrationNumber(e.target.value)} placeholder="CIPC reg no." />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Insurance expiry</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Insurance expiry</label>
                   <input type="date" className="text-xs border rounded px-2 py-1.5 w-full" value={newInsuranceExpiry} onChange={e => setNewInsuranceExpiry(e.target.value)} />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Local content %</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Local content %</label>
                   <input type="number" className="text-xs border rounded px-2 py-1.5 w-full" value={newLocalContentPct} onChange={e => setNewLocalContentPct(e.target.value)} placeholder="0–100" min={0} max={100} />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">SA employees on site</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">SA employees on site</label>
                   <input type="number" className="text-xs border rounded px-2 py-1.5 w-full" value={newSaEmployeeCount} onChange={e => setNewSaEmployeeCount(e.target.value)} placeholder="e.g. 25" />
                 </div>
               </div>
@@ -955,7 +955,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
               </div>
             </div>
 
-            <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100">
+            <div className="flex gap-3 mt-4 pt-4 border-t border-[#eef2f7]">
               <button type="button"
                 onClick={handleCreate}
                 disabled={createLoading || !newCompany || !newProject || !newScope}
@@ -963,7 +963,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
               >
                 {createLoading ? 'Registering…' : 'Register subcontractor'}
               </button>
-              <button type="button" onClick={() => setShowCreate(false)} className="text-xs border rounded px-3 py-1.5 hover:bg-gray-50">
+              <button type="button" onClick={() => setShowCreate(false)} className="text-xs border rounded px-3 py-1.5 hover:bg-[#eef2f7]">
                 Cancel
               </button>
             </div>

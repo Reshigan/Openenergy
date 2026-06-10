@@ -28,7 +28,7 @@ interface CepComplianceKpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  cep_triggered:              'bg-gray-100 text-gray-500',
+  cep_triggered:              'bg-[#eef2f7] text-[#6b7685]',
   stakeholder_identification: 'bg-blue-100 text-blue-700',
   distribution_calculation:   'bg-cyan-100 text-cyan-700',
   trustee_approval:           'bg-sky-100 text-sky-700',
@@ -85,7 +85,7 @@ const TIERS    = ['small', 'medium', 'large', 'major', 'flagship'] as const;
 
 const PAGE_SIZE = 20;
 
-const sel = 'border rounded px-2 py-1 text-xs text-gray-700 bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
 
 function fmtZarM(amount: number | null | undefined): string {
   if (amount == null) return '—';
@@ -107,15 +107,15 @@ function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-gray-200 bg-white';
+    'border-[#dde4ec] bg-white';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-gray-900';
+    'text-[#0f1c2e]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-gray-500">{label}</div>
+      <div className="text-xs text-[#6b7685]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -353,13 +353,13 @@ export function IppCepComplianceTab() {
         </select>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
+          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
         >
           Refresh
         </button>
         <button type="button"
           onClick={() => setShowCreate(v => !v)}
-          className="ml-auto px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+          className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]"
         >
           + New CEP Compliance
         </button>
@@ -374,7 +374,7 @@ export function IppCepComplianceTab() {
           <div className="text-sm font-semibold text-blue-800">New CEP Compliance Record</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Project Ref *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Project Ref *</label>
               <input
                 type="text"
                 value={formProjectRef}
@@ -385,7 +385,7 @@ export function IppCepComplianceTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Compliance Year *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Compliance Year *</label>
               <input
                 type="number"
                 value={formComplianceYear}
@@ -399,7 +399,7 @@ export function IppCepComplianceTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Project MW *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Project MW *</label>
               <input
                 type="number"
                 value={formProjectMw}
@@ -412,7 +412,7 @@ export function IppCepComplianceTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Project Tier *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Project Tier *</label>
               <select
                 value={formTier}
                 onChange={e => setFormTier(e.target.value as typeof formTier)}
@@ -425,7 +425,7 @@ export function IppCepComplianceTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">CEP Equity % (optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">CEP Equity % (optional)</label>
               <input
                 type="number"
                 value={formCepEquityPct}
@@ -438,7 +438,7 @@ export function IppCepComplianceTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Structure Type *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Structure Type *</label>
               <select
                 value={formStructureType}
                 onChange={e => setFormStructureType(e.target.value)}
@@ -451,7 +451,7 @@ export function IppCepComplianceTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Distribution Amount (ZAR, optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Distribution Amount (ZAR, optional)</label>
               <input
                 type="number"
                 value={formDistributionAmt}
@@ -463,7 +463,7 @@ export function IppCepComplianceTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Community Dev Spend (ZAR, optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Community Dev Spend (ZAR, optional)</label>
               <input
                 type="number"
                 value={formCommunityDevSpend}
@@ -475,7 +475,7 @@ export function IppCepComplianceTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Trustee Name (optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Trustee Name (optional)</label>
               <input
                 type="text"
                 value={formTrusteeName}
@@ -485,7 +485,7 @@ export function IppCepComplianceTab() {
               />
             </div>
             <div className="col-span-2 md:col-span-3">
-              <label className="block text-xs text-gray-600 mb-1">Notes</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Notes</label>
               <textarea
                 value={formNotes}
                 onChange={e => setFormNotes(e.target.value)}
@@ -504,14 +504,14 @@ export function IppCepComplianceTab() {
             <button
               type="submit"
               disabled={creating}
-              className="px-4 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-1.5 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f] disabled:opacity-50"
             >
               {creating ? 'Creating…' : 'Create'}
             </button>
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 bg-white border rounded text-xs text-gray-600 hover:bg-gray-50"
+              className="px-3 py-1.5 bg-white border rounded text-xs text-[#3d4756] hover:bg-[#eef2f7]"
             >
               Cancel
             </button>
@@ -528,12 +528,12 @@ export function IppCepComplianceTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-gray-400 py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-gray-500">
+              <tr className="border-b text-left text-xs text-[#6b7685]">
                 <th className="pb-2 pr-4">Project Ref</th>
                 <th className="pb-2 pr-4">Year</th>
                 <th className="pb-2 pr-4">Tier</th>
@@ -552,34 +552,34 @@ export function IppCepComplianceTab() {
               {pageItems.map(item => {
                 const actions = getActions(item);
                 return (
-                  <tr key={item.id} className="border-b hover:bg-gray-50">
-                    <td className="py-2 pr-4 text-xs font-mono text-gray-700">{item.project_ref}</td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-gray-600">{item.compliance_year}</td>
+                  <tr key={item.id} className="border-b hover:bg-[#eef2f7]">
+                    <td className="py-2 pr-4 text-xs font-mono text-[#2d3748]">{item.project_ref}</td>
+                    <td className="py-2 pr-4 text-xs tabular-nums text-[#3d4756]">{item.compliance_year}</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_BADGE_COLORS[item.project_tier] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_BADGE_COLORS[item.project_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {item.project_tier.charAt(0).toUpperCase() + item.project_tier.slice(1)}
                       </span>
                     </td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-gray-700">
+                    <td className="py-2 pr-4 text-xs tabular-nums text-[#2d3748]">
                       {fmtMw(item.project_mw)}
                     </td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-gray-600">
+                    <td className="py-2 pr-4 text-xs tabular-nums text-[#3d4756]">
                       {fmtPct(item.cep_equity_pct)}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-gray-600">
+                    <td className="py-2 pr-4 text-xs text-[#3d4756]">
                       {STRUCTURE_TYPE_LABELS[item.structure_type] ?? item.structure_type.replace(/_/g, ' ')}
                     </td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-gray-700">
+                    <td className="py-2 pr-4 text-xs tabular-nums text-[#2d3748]">
                       {fmtZarM(item.distribution_amount_zar)}
                     </td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-gray-700">
+                    <td className="py-2 pr-4 text-xs tabular-nums text-[#2d3748]">
                       {fmtZarM(item.community_dev_spend_zar)}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-gray-500 max-w-[120px] truncate" title={item.trustee_name ?? ''}>
+                    <td className="py-2 pr-4 text-xs text-[#6b7685] max-w-[120px] truncate" title={item.trustee_name ?? ''}>
                       {item.trustee_name ?? '—'}
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
                       </span>
                     </td>
@@ -587,7 +587,7 @@ export function IppCepComplianceTab() {
                       {item.sla_breached === 1 ? (
                         <span className="px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">Yes</span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-400">No</span>
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-[#eef2f7] text-[#9aa5b4]">No</span>
                       )}
                     </td>
                     <td className="py-2 pr-4">
@@ -616,7 +616,7 @@ export function IppCepComplianceTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={12} className="py-10 text-center text-[#9aa5b4] text-sm">
                     No CEP compliance records found
                   </td>
                 </tr>
@@ -632,17 +632,17 @@ export function IppCepComplianceTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-[#6b7685]">
             Page {page} of {totalPages}
           </span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             Next &rarr;
           </button>
@@ -653,12 +653,12 @@ export function IppCepComplianceTab() {
       {actionItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-gray-800 mb-1">{actionLabel}</div>
-            <div className="text-xs text-gray-500 mb-4">
+            <div className="text-sm font-semibold text-[#1e2a38] mb-1">{actionLabel}</div>
+            <div className="text-xs text-[#6b7685] mb-4">
               CEP Compliance &mdash; {actionItem.project_ref} / {actionItem.compliance_year}
             </div>
             <div className="mb-3">
-              <label className="block text-xs text-gray-600 mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
               <textarea
                 value={actionNotes}
                 onChange={e => setActionNotes(e.target.value)}
@@ -675,14 +675,14 @@ export function IppCepComplianceTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-gray-600 hover:bg-gray-50"
+                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
               >
                 Cancel
               </button>
               <button type="button"
                 onClick={submitAction}
                 disabled={actionLoading}
-                className="px-4 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                className="px-4 py-1.5 text-xs rounded bg-[#c2873a] text-white hover:bg-[#a3702f] disabled:opacity-50"
               >
                 {actionLoading ? 'Submitting…' : 'Confirm'}
               </button>

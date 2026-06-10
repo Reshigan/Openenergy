@@ -36,7 +36,7 @@ interface Kpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  draft:                    'bg-gray-100 text-gray-500',
+  draft:                    'bg-[#eef2f7] text-[#6b7685]',
   submitted:                'bg-blue-100 text-blue-800',
   assessed:                 'bg-indigo-100 text-indigo-800',
   certified:                'bg-green-100 text-green-800',
@@ -44,14 +44,14 @@ const STATUS_COLORS: Record<string, string> = {
   revised:                  'bg-yellow-100 text-yellow-800',
   paid:                     'bg-green-200 text-green-900',
   final_payment:            'bg-emerald-200 text-emerald-900',
-  adjudicated:              'bg-gray-200 text-gray-800',
-  withdrawn:                'bg-gray-100 text-gray-500',
+  adjudicated:              'bg-[#e8ecf0] text-[#1e2a38]',
+  withdrawn:                'bg-[#eef2f7] text-[#6b7685]',
   lapsed:                   'bg-orange-100 text-orange-800',
   rejected:                 'bg-red-200 text-red-900',
 };
 
 const TIER_COLORS: Record<string, string> = {
-  minor:        'bg-gray-100 text-gray-600',
+  minor:        'bg-[#eef2f7] text-[#3d4756]',
   moderate:     'bg-blue-100 text-blue-700',
   significant:  'bg-yellow-100 text-yellow-800',
   major:        'bg-orange-100 text-orange-800',
@@ -138,7 +138,7 @@ export function IppPaymentCertTab() {
   if (!loaded) {
     return (
       <div className="p-6">
-        <button type="button" onClick={() => load()} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">
+        <button type="button" onClick={() => load()} className="px-4 py-2 bg-[#c2873a] text-white rounded hover:bg-[#a3702f] text-sm">
           Load Payment Certificates
         </button>
       </div>
@@ -156,25 +156,25 @@ export function IppPaymentCertTab() {
             { label: 'Disputed', value: kpis.disputed_count, alert: kpis.disputed_count > 0 },
             { label: 'Lapsed', value: kpis.lapsed_count, alert: kpis.lapsed_count > 0 },
           ].map(k => (
-            <div key={k.label} className={`rounded-lg p-3 border ${k.alert ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'}`}>
-              <div className="text-xs text-gray-500">{k.label}</div>
-              <div className={`text-xl font-bold ${k.alert ? 'text-red-700' : 'text-gray-900'}`}>{k.value}</div>
+            <div key={k.label} className={`rounded-lg p-3 border ${k.alert ? 'border-red-300 bg-red-50' : 'border-[#dde4ec] bg-white'}`}>
+              <div className="text-xs text-[#6b7685]">{k.label}</div>
+              <div className={`text-xl font-bold ${k.alert ? 'text-red-700' : 'text-[#0f1c2e]'}`}>{k.value}</div>
             </div>
           ))}
         </div>
       )}
       {kpis && (
         <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-lg p-3 border border-gray-200 bg-white">
-            <div className="text-xs text-gray-500">Open Claims</div>
-            <div className="text-lg font-bold text-gray-900">{fmt(kpis.open_value_zar)}</div>
+          <div className="rounded-lg p-3 border border-[#dde4ec] bg-white">
+            <div className="text-xs text-[#6b7685]">Open Claims</div>
+            <div className="text-lg font-bold text-[#0f1c2e]">{fmt(kpis.open_value_zar)}</div>
           </div>
           <div className="rounded-lg p-3 border border-green-200 bg-green-50">
-            <div className="text-xs text-gray-500">Total Paid</div>
+            <div className="text-xs text-[#6b7685]">Total Paid</div>
             <div className="text-lg font-bold text-green-700">{fmt(kpis.total_paid_zar)}</div>
           </div>
           <div className="rounded-lg p-3 border border-orange-200 bg-orange-50">
-            <div className="text-xs text-gray-500">Outstanding (Certified)</div>
+            <div className="text-xs text-[#6b7685]">Outstanding (Certified)</div>
             <div className="text-lg font-bold text-orange-700">{fmt(kpis.outstanding_zar)}</div>
           </div>
         </div>
@@ -182,26 +182,26 @@ export function IppPaymentCertTab() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2 items-center">
-        <button type="button" onClick={() => { setFilterStatus(''); load('', filterTier); }} className={`px-3 py-1 rounded text-xs border ${!filterStatus ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>All</button>
+        <button type="button" onClick={() => { setFilterStatus(''); load('', filterTier); }} className={`px-3 py-1 rounded text-xs border ${!filterStatus ? 'bg-[#1e2a38] text-white' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>All</button>
         {['submitted','assessed','certified','disputed','paid','lapsed'].map(s => (
-          <button type="button" key={s} onClick={() => { setFilterStatus(s); load(s, filterTier); }} className={`px-3 py-1 rounded text-xs border ${filterStatus === s ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>
+          <button type="button" key={s} onClick={() => { setFilterStatus(s); load(s, filterTier); }} className={`px-3 py-1 rounded text-xs border ${filterStatus === s ? 'bg-[#1e2a38] text-white' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>
             {s}
           </button>
         ))}
-        <span className="ml-2 text-gray-300">|</span>
+        <span className="ml-2 text-[#9aa5b4]">|</span>
         {['minor','moderate','significant','major','material'].map(t => (
-          <button type="button" key={t} onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>{t}</button>
+          <button type="button" key={t} onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>{t}</button>
         ))}
-        <button type="button" onClick={() => setShowCreate(true)} className="ml-auto px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700">+ New Cert</button>
-        <button type="button" onClick={() => load(filterStatus, filterTier)} className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border">Refresh</button>
+        <button type="button" onClick={() => setShowCreate(true)} className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]">+ New Cert</button>
+        <button type="button" onClick={() => load(filterStatus, filterTier)} className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border">Refresh</button>
       </div>
 
       {/* Table */}
-      {loading ? <div className="text-sm text-gray-400 py-4">Loading…</div> : (
+      {loading ? <div className="text-sm text-[#9aa5b4] py-4">Loading…</div> : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-gray-500">
+              <tr className="border-b text-left text-xs text-[#6b7685]">
                 <th className="pb-2 pr-4">Cert #</th>
                 <th className="pb-2 pr-4">Type</th>
                 <th className="pb-2 pr-4">Period</th>
@@ -215,10 +215,10 @@ export function IppPaymentCertTab() {
             </thead>
             <tbody>
               {items.map(pc => (
-                <tr key={pc.id} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => setSelected(pc)}>
+                <tr key={pc.id} className="border-b hover:bg-[#eef2f7] cursor-pointer" onClick={() => setSelected(pc)}>
                   <td className="py-2 pr-4 font-mono text-xs font-semibold">{pc.cert_number}</td>
-                  <td className="py-2 pr-4 text-xs text-gray-600">{TYPE_LABELS[pc.claim_type] ?? pc.claim_type}</td>
-                  <td className="py-2 pr-4 text-xs text-gray-500">
+                  <td className="py-2 pr-4 text-xs text-[#3d4756]">{TYPE_LABELS[pc.claim_type] ?? pc.claim_type}</td>
+                  <td className="py-2 pr-4 text-xs text-[#6b7685]">
                     {pc.period_from ? `${fmtDate(pc.period_from)} – ${fmtDate(pc.period_to)}` : (pc.description?.slice(0, 30) ?? '—')}
                   </td>
                   <td className="py-2 pr-4">
@@ -229,14 +229,14 @@ export function IppPaymentCertTab() {
                   <td className="py-2 pr-4">
                     <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[pc.chain_status]}`}>{pc.chain_status}</span>
                   </td>
-                  <td className={`py-2 pr-4 text-xs ${pc.sla_breached || pc.chain_status === 'lapsed' ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                  <td className={`py-2 pr-4 text-xs ${pc.sla_breached || pc.chain_status === 'lapsed' ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                     {pc.chain_status === 'lapsed' ? '⚠ LAPSED' : pc.sla_breached ? '⚠ SLA BREACHED' : fmtDate(pc.payment_due_at ?? pc.sla_due_at)}
                   </td>
                   <td className="py-2 text-xs text-indigo-600">View →</td>
                 </tr>
               ))}
               {items.length === 0 && (
-                <tr><td colSpan={9} className="py-6 text-center text-gray-400 text-sm">No payment certificates found</td></tr>
+                <tr><td colSpan={9} className="py-6 text-center text-[#9aa5b4] text-sm">No payment certificates found</td></tr>
               )}
             </tbody>
           </table>
@@ -250,34 +250,34 @@ export function IppPaymentCertTab() {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h2 className="text-lg font-bold">{selected.cert_number}</h2>
-                <div className="text-xs text-gray-500 mt-1">{TYPE_LABELS[selected.claim_type] ?? selected.claim_type} · {selected.value_tier}</div>
+                <div className="text-xs text-[#6b7685] mt-1">{TYPE_LABELS[selected.claim_type] ?? selected.claim_type} · {selected.value_tier}</div>
               </div>
-              <button type="button" onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+              <button type="button" onClick={() => setSelected(null)} className="text-[#9aa5b4] hover:text-[#3d4756]">✕</button>
             </div>
 
             {selected.description && (
-              <div className="text-sm text-gray-600 bg-gray-50 rounded p-3 mb-4">{selected.description}</div>
+              <div className="text-sm text-[#3d4756] bg-[#f8fafc] rounded p-3 mb-4">{selected.description}</div>
             )}
 
             <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-              <div><span className="text-gray-500">Claimed:</span> <span className="font-bold">{fmt(selected.claimed_value_zar)}</span></div>
-              <div><span className="text-gray-500">Certified:</span> <span className="font-bold text-green-700">{fmt(selected.certified_value_zar)}</span></div>
-              <div><span className="text-gray-500">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{selected.chain_status}</span></div>
-              <div><span className="text-gray-500">Payment Due:</span> <span className={selected.chain_status === 'lapsed' ? 'text-red-600 font-bold' : 'text-gray-700'}>{selected.chain_status === 'lapsed' ? '⚠ LAPSED' : fmtDate(selected.payment_due_at)}</span></div>
-              {selected.period_from && <div className="col-span-2"><span className="text-gray-500">Period:</span> {fmtDate(selected.period_from)} – {fmtDate(selected.period_to)}</div>}
-              <div><span className="text-gray-500">Submitted:</span> {fmtDate(selected.submitted_at)}</div>
-              {selected.certified_at && <div><span className="text-gray-500">Certified:</span> {fmtDate(selected.certified_at)}</div>}
-              {selected.paid_at && <div><span className="text-gray-500">Paid:</span> {fmtDate(selected.paid_at)}</div>}
+              <div><span className="text-[#6b7685]">Claimed:</span> <span className="font-bold">{fmt(selected.claimed_value_zar)}</span></div>
+              <div><span className="text-[#6b7685]">Certified:</span> <span className="font-bold text-green-700">{fmt(selected.certified_value_zar)}</span></div>
+              <div><span className="text-[#6b7685]">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{selected.chain_status}</span></div>
+              <div><span className="text-[#6b7685]">Payment Due:</span> <span className={selected.chain_status === 'lapsed' ? 'text-red-600 font-bold' : 'text-[#2d3748]'}>{selected.chain_status === 'lapsed' ? '⚠ LAPSED' : fmtDate(selected.payment_due_at)}</span></div>
+              {selected.period_from && <div className="col-span-2"><span className="text-[#6b7685]">Period:</span> {fmtDate(selected.period_from)} – {fmtDate(selected.period_to)}</div>}
+              <div><span className="text-[#6b7685]">Submitted:</span> {fmtDate(selected.submitted_at)}</div>
+              {selected.certified_at && <div><span className="text-[#6b7685]">Certified:</span> {fmtDate(selected.certified_at)}</div>}
+              {selected.paid_at && <div><span className="text-[#6b7685]">Paid:</span> {fmtDate(selected.paid_at)}</div>}
             </div>
 
             {/* Actions */}
             {ACTION_MAP[selected.chain_status] && (
               <div className="space-y-2">
-                <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Actions</div>
+                <div className="text-xs font-semibold text-[#6b7685] uppercase mb-1">Actions</div>
                 {ACTION_MAP[selected.chain_status].map(a => (
                   <button type="button" key={a.action} disabled={actionPending}
                     onClick={() => doAction(selected.id, a.action)}
-                    className={`w-full text-left px-3 py-2 rounded border text-sm hover:bg-indigo-50 hover:border-indigo-300 ${a.danger ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-gray-200 text-gray-700'}`}>
+                    className={`w-full text-left px-3 py-2 rounded border text-sm hover:bg-indigo-50 hover:border-indigo-300 ${a.danger ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-[#dde4ec] text-[#2d3748]'}`}>
                     {a.label}
                     {a.tag && <span className={`ml-2 text-xs px-1 rounded ${a.tag.includes('REGULATOR') ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{a.tag}</span>}
                   </button>
@@ -315,8 +315,8 @@ export function IppPaymentCertTab() {
             </div>
             <div className="flex gap-2 mt-4">
               <button type="button" onClick={createCert} disabled={!form.claimed_value_zar}
-                className="px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50">Create</button>
-              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded text-sm">Cancel</button>
+                className="px-4 py-2 bg-[#c2873a] text-white rounded text-sm hover:bg-[#a3702f] disabled:opacity-50">Create</button>
+              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 bg-[#eef2f7] text-[#2d3748] rounded text-sm">Cancel</button>
             </div>
           </div>
         </div>

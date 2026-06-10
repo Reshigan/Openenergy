@@ -220,7 +220,7 @@ function RatesTab() {
         {err && <div className="text-[12px] text-[#c0392b] mt-2"><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
         {ack && <div className="text-[12px] text-[#1a8a5b] mt-2"><CheckCircle2 size={13} className="inline mr-1"/>{ack}</div>}
         <button type="button" disabled={busy || !form.rate_pct} onClick={submit}
-                className="mt-3 h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
+                className="mt-3 h-8 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50">
           {busy ? 'Saving…' : 'Record rate'}
         </button>
       </div>

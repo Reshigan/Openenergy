@@ -156,14 +156,14 @@ function RevenueTicker({ baseToday, blendedTariff, totalMw, availabilityPct }: {
 function HeroStrip({ kpis }: { kpis: FleetKpis | null }) {
   if (!kpis) return <Skeleton variant="card" rows={1} />;
   return (
-    <div className="rounded-xl bg-gradient-to-r from-[#1e3a5f] via-[#1a3a5c] to-[#0b1c30] text-white p-5 shadow-md">
+    <div className="rounded-xl border p-5" style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="text-[11px] uppercase tracking-wider text-white/70">Esums O&amp;M · Fleet Overview</div>
-          <h1 className="font-display text-[24px] font-bold tracking-tight mt-1">
+          <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>Esums O&amp;M · Fleet Overview</div>
+          <h1 className="font-display text-[22px] font-bold tracking-tight mt-0.5" style={{ color: 'oklch(0.15 0.025 250)' }}>
             {kpis.total_sites} sites · {kpis.total_mw.toFixed(1)} MW · ZA portfolio
           </h1>
-          <p className="text-[12px] text-white/70 mt-1">
+          <p className="text-[12px] mt-0.5" style={{ color: 'oklch(0.45 0.015 250)' }}>
             Real-time asset intelligence — every fault carries a financial price tag.
           </p>
         </div>
@@ -198,18 +198,18 @@ function Kpi({ icon, label, value, sub, tone = 'info' }: {
   icon: React.ReactNode; label: string; value: string; sub?: string; tone?: 'good' | 'warn' | 'bad' | 'info';
 }) {
   const tones: Record<string, string> = {
-    good: 'text-[#a1d494]',
-    warn: 'text-[#ffb77d]',
-    bad:  'text-[#ffb4ab]',
-    info: 'text-white',
+    good: 'text-[#1f7a4a]',
+    warn: 'text-[#b45309]',
+    bad:  'text-[#c0392b]',
+    info: '',
   };
   return (
-    <div className="rounded-lg bg-white/10 backdrop-blur p-3 border border-white/10">
-      <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-white/75">{icon}{label}</div>
-      <div className={`mt-1 font-mono font-bold text-[18px] ${tones[tone]}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
+    <div className="rounded-lg p-3" style={{ background: 'oklch(0.96 0.003 250)', border: '1px solid oklch(0.90 0.004 250)' }}>
+      <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider" style={{ color: 'oklch(0.55 0.008 250)' }}>{icon}{label}</div>
+      <div className={`mt-1 font-mono font-bold text-[18px] ${tones[tone]}`} style={{ fontVariantNumeric: 'tabular-nums', color: tones[tone] ? undefined : 'oklch(0.15 0.025 250)' }}>
         {value}
       </div>
-      {sub && <div className="text-[10px] text-white/60 mt-0.5">{sub}</div>}
+      {sub && <div className="text-[10px] mt-0.5" style={{ color: 'oklch(0.55 0.008 250)' }}>{sub}</div>}
     </div>
   );
 }
@@ -354,7 +354,7 @@ function AiBriefing({ briefing }: { briefing: Briefing | null }) {
                 ) : null}
               </div>
               <Link to={i.cta.href}
-                    className="text-[11px] font-semibold text-white bg-[#1a3a5c] hover:bg-[#0b1c30] rounded-md px-2 py-1 transition-colors whitespace-nowrap">
+                    className="text-[11px] font-semibold text-white bg-[#c2873a] hover:bg-[#a3702f] rounded-md px-2 py-1 transition-colors whitespace-nowrap">
                 {i.cta.label}
               </Link>
             </div>

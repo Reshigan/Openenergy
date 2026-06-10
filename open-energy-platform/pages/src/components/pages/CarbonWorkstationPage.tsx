@@ -67,7 +67,7 @@ const CARBON_REPORTS: ReportConfig[] = [
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
     <div className="flex justify-end mb-3">
-      <button type="button" onClick={onCreate} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+      <button type="button" onClick={onCreate} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
         + {label}
       </button>
     </div>
@@ -610,7 +610,7 @@ export function CarbonWorkstationPage() {
             <div className="space-y-8">
               {CARBON_REPORTS.map(cfg => (
                 <div key={cfg.endpoint} className="space-y-2">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{cfg.title}</p>
+                  <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">{cfg.title}</p>
                   <ReportPanel config={cfg} />
                 </div>
               ))}
@@ -650,7 +650,7 @@ function VintagesTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'outstanding_tco2e', label: 'Outstanding tCO₂e', align: 'right', render: (r) => Number(r.outstanding_tco2e || 0).toFixed(1) },
           { key: 'updated_at', label: 'Updated', render: (r) => new Date(r.updated_at).toLocaleDateString() },
           { key: '_actions', label: '', render: (r) => (
-            <button type="button" onClick={() => setAdvancing(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Advance</button>
+            <button type="button" onClick={() => setAdvancing(r)} className="px-2 py-1 text-[11px] bg-[#c2873a] text-white rounded">Advance</button>
           ) },
         ]}
       />
@@ -690,7 +690,7 @@ function MrvTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'verified_at', label: 'Verified', render: (r) => r.verified_at ? new Date(r.verified_at).toLocaleDateString() : '—' },
           { key: '_actions', label: '', render: (r) => (
             r.status !== 'published' && r.status !== 'rejected' && (
-              <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[#1a3a5c] text-white rounded">Transition</button>
+              <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[#c2873a] text-white rounded">Transition</button>
             )
           ) },
         ]}
@@ -897,7 +897,7 @@ function CarbonRegistryTransferTab({ onRefresh }: { onRefresh?: () => void }) {
     <div>
       <div className="flex justify-end mb-3">
         <button type="button"
-          className="px-3 py-1.5 rounded bg-[#1a3a5c] text-white text-sm font-medium hover:bg-[#1f4a78]"
+          className="px-3 py-1.5 rounded bg-[#c2873a] text-white text-sm font-medium hover:bg-[#a3702f]"
           onClick={() => setModal('create')}
         >
           + New transfer

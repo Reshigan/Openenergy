@@ -27,7 +27,7 @@ interface PerfSecurityKpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  security_required:           'bg-gray-100 text-gray-500',
+  security_required:           'bg-[#eef2f7] text-[#6b7685]',
   bond_application_submitted:  'bg-blue-100 text-blue-700',
   bank_assessment:             'bg-cyan-100 text-cyan-700',
   terms_issued:                'bg-sky-100 text-sky-700',
@@ -85,7 +85,7 @@ const TIERS    = ['micro', 'small', 'medium', 'large', 'major'] as const;
 
 const PAGE_SIZE = 20;
 
-const sel = 'border rounded px-2 py-1 text-xs text-gray-700 bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
 
 function fmtDate(d?: string | null): string {
   if (!d) return '—';
@@ -110,15 +110,15 @@ function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-gray-200 bg-white';
+    'border-[#dde4ec] bg-white';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-gray-900';
+    'text-[#0f1c2e]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-gray-500">{label}</div>
+      <div className="text-xs text-[#6b7685]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -353,13 +353,13 @@ export function IppPerfSecurityTab() {
         </select>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
+          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
         >
           Refresh
         </button>
         <button type="button"
           onClick={() => setShowCreate(v => !v)}
-          className="ml-auto px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+          className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]"
         >
           + New Performance Security
         </button>
@@ -374,7 +374,7 @@ export function IppPerfSecurityTab() {
           <div className="text-sm font-semibold text-blue-800">New Performance Security</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Project Ref *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Project Ref *</label>
               <input
                 type="text"
                 value={formProjectRef}
@@ -385,7 +385,7 @@ export function IppPerfSecurityTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Bond Quantum (ZAR) *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Bond Quantum (ZAR) *</label>
               <input
                 type="number"
                 value={formBondQuantum}
@@ -398,7 +398,7 @@ export function IppPerfSecurityTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Security Type *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Security Type *</label>
               <select
                 value={formSecurityType}
                 onChange={e => setFormSecurityType(e.target.value)}
@@ -411,7 +411,7 @@ export function IppPerfSecurityTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Bond Tier *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Bond Tier *</label>
               <select
                 value={formTier}
                 onChange={e => setFormTier(e.target.value as typeof formTier)}
@@ -424,7 +424,7 @@ export function IppPerfSecurityTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Expiry Date *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Expiry Date *</label>
               <input
                 type="date"
                 value={formExpiryDate}
@@ -434,7 +434,7 @@ export function IppPerfSecurityTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Issuing Bank</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Issuing Bank</label>
               <input
                 type="text"
                 value={formIssuingBank}
@@ -444,7 +444,7 @@ export function IppPerfSecurityTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Beneficiary</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Beneficiary</label>
               <input
                 type="text"
                 value={formBeneficiary}
@@ -454,7 +454,7 @@ export function IppPerfSecurityTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Bond Reference</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Bond Reference</label>
               <input
                 type="text"
                 value={formBondReference}
@@ -464,7 +464,7 @@ export function IppPerfSecurityTab() {
               />
             </div>
             <div className="col-span-2 md:col-span-3">
-              <label className="block text-xs text-gray-600 mb-1">Notes</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Notes</label>
               <textarea
                 value={formNotes}
                 onChange={e => setFormNotes(e.target.value)}
@@ -483,14 +483,14 @@ export function IppPerfSecurityTab() {
             <button
               type="submit"
               disabled={creating}
-              className="px-4 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-1.5 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f] disabled:opacity-50"
             >
               {creating ? 'Creating…' : 'Create'}
             </button>
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 bg-white border rounded text-xs text-gray-600 hover:bg-gray-50"
+              className="px-3 py-1.5 bg-white border rounded text-xs text-[#3d4756] hover:bg-[#eef2f7]"
             >
               Cancel
             </button>
@@ -507,12 +507,12 @@ export function IppPerfSecurityTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-gray-400 py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-gray-500">
+              <tr className="border-b text-left text-xs text-[#6b7685]">
                 <th className="pb-2 pr-4">Project Ref</th>
                 <th className="pb-2 pr-4">Bond Ref</th>
                 <th className="pb-2 pr-4">Tier</th>
@@ -531,39 +531,39 @@ export function IppPerfSecurityTab() {
                 const expired = isExpired(item.expiry_date);
                 const actions = getActions(item);
                 return (
-                  <tr key={item.id} className="border-b hover:bg-gray-50">
-                    <td className="py-2 pr-4 text-xs font-mono text-gray-700">{item.project_ref}</td>
-                    <td className="py-2 pr-4 text-xs text-gray-500">{item.bond_reference ?? '—'}</td>
+                  <tr key={item.id} className="border-b hover:bg-[#eef2f7]">
+                    <td className="py-2 pr-4 text-xs font-mono text-[#2d3748]">{item.project_ref}</td>
+                    <td className="py-2 pr-4 text-xs text-[#6b7685]">{item.bond_reference ?? '—'}</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_BADGE_COLORS[item.bond_tier] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_BADGE_COLORS[item.bond_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {item.bond_tier.charAt(0).toUpperCase() + item.bond_tier.slice(1)}
                       </span>
                     </td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-gray-700">
+                    <td className="py-2 pr-4 text-xs tabular-nums text-[#2d3748]">
                       {fmtZar(item.bond_quantum_zar)}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-gray-600">
+                    <td className="py-2 pr-4 text-xs text-[#3d4756]">
                       {SECURITY_TYPE_LABELS[item.security_type] ?? item.security_type.replace(/_/g, ' ')}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-gray-500 max-w-[120px] truncate" title={item.issuing_bank ?? ''}>
+                    <td className="py-2 pr-4 text-xs text-[#6b7685] max-w-[120px] truncate" title={item.issuing_bank ?? ''}>
                       {item.issuing_bank ?? '—'}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-gray-500 max-w-[120px] truncate" title={item.beneficiary ?? ''}>
+                    <td className="py-2 pr-4 text-xs text-[#6b7685] max-w-[120px] truncate" title={item.beneficiary ?? ''}>
                       {item.beneficiary ?? '—'}
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
                       </span>
                     </td>
-                    <td className={`py-2 pr-4 text-xs ${expired ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                    <td className={`py-2 pr-4 text-xs ${expired ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                       {expired ? '⚠ ' : ''}{fmtDate(item.expiry_date)}
                     </td>
                     <td className="py-2 pr-4">
                       {item.sla_breached === 1 ? (
                         <span className="px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">Yes</span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-400">No</span>
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-[#eef2f7] text-[#9aa5b4]">No</span>
                       )}
                     </td>
                     <td className="py-2 pr-4">
@@ -592,7 +592,7 @@ export function IppPerfSecurityTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={11} className="py-10 text-center text-[#9aa5b4] text-sm">
                     No performance security records found
                   </td>
                 </tr>
@@ -608,17 +608,17 @@ export function IppPerfSecurityTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-[#6b7685]">
             Page {page} of {totalPages}
           </span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             Next &rarr;
           </button>
@@ -629,13 +629,13 @@ export function IppPerfSecurityTab() {
       {actionItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-gray-800 mb-1">{actionLabel}</div>
-            <div className="text-xs text-gray-500 mb-4">
+            <div className="text-sm font-semibold text-[#1e2a38] mb-1">{actionLabel}</div>
+            <div className="text-xs text-[#6b7685] mb-4">
               Performance Security &mdash; {actionItem.project_ref}
               {actionItem.bond_reference ? ` / ${actionItem.bond_reference}` : ''}
             </div>
             <div className="mb-3">
-              <label className="block text-xs text-gray-600 mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
               <textarea
                 value={actionNotes}
                 onChange={e => setActionNotes(e.target.value)}
@@ -652,14 +652,14 @@ export function IppPerfSecurityTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-gray-600 hover:bg-gray-50"
+                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
               >
                 Cancel
               </button>
               <button type="button"
                 onClick={submitAction}
                 disabled={actionLoading}
-                className="px-4 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                className="px-4 py-1.5 text-xs rounded bg-[#c2873a] text-white hover:bg-[#a3702f] disabled:opacity-50"
               >
                 {actionLoading ? 'Submitting…' : 'Confirm'}
               </button>

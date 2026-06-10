@@ -44,12 +44,12 @@ const STATUS_COLORS: Record<string, string> = {
   completed_pending_payment:  'bg-orange-100 text-orange-800',
   paid:                       'bg-green-200 text-green-900',
   disputed_pricing:           'bg-red-100 text-red-800',
-  adjudicated:                'bg-gray-200 text-gray-800',
-  cancelled:                  'bg-gray-100 text-gray-500',
+  adjudicated:                'bg-[#e8ecf0] text-[#1e2a38]',
+  cancelled:                  'bg-[#eef2f7] text-[#6b7685]',
 };
 
 const TIER_COLORS: Record<string, string> = {
-  minor:        'bg-gray-100 text-gray-600',
+  minor:        'bg-[#eef2f7] text-[#3d4756]',
   moderate:     'bg-blue-100 text-blue-700',
   significant:  'bg-yellow-100 text-yellow-800',
   major:        'bg-orange-100 text-orange-800',
@@ -146,7 +146,7 @@ export function IppVariationOrderTab() {
   if (!loaded) {
     return (
       <div className="p-6">
-        <button type="button" onClick={() => load()} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">
+        <button type="button" onClick={() => load()} className="px-4 py-2 bg-[#c2873a] text-white rounded hover:bg-[#a3702f] text-sm">
           Load Variation Orders
         </button>
       </div>
@@ -165,21 +165,21 @@ export function IppVariationOrderTab() {
             { label: 'Disputed', value: kpis.disputed_count },
             { label: 'SLA Breached', value: kpis.breached_count, alert: kpis.breached_count > 0 },
           ].map(k => (
-            <div key={k.label} className={`rounded-lg p-3 border ${k.alert ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'}`}>
-              <div className="text-xs text-gray-500">{k.label}</div>
-              <div className={`text-xl font-bold ${k.alert ? 'text-red-700' : 'text-gray-900'}`}>{k.value}</div>
+            <div key={k.label} className={`rounded-lg p-3 border ${k.alert ? 'border-red-300 bg-red-50' : 'border-[#dde4ec] bg-white'}`}>
+              <div className="text-xs text-[#6b7685]">{k.label}</div>
+              <div className={`text-xl font-bold ${k.alert ? 'text-red-700' : 'text-[#0f1c2e]'}`}>{k.value}</div>
             </div>
           ))}
         </div>
       )}
       {kpis && (
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-lg p-3 border border-gray-200 bg-white">
-            <div className="text-xs text-gray-500">Open Value (Instructed)</div>
-            <div className="text-lg font-bold text-gray-900">{fmt(kpis.open_value_zar)}</div>
+          <div className="rounded-lg p-3 border border-[#dde4ec] bg-white">
+            <div className="text-xs text-[#6b7685]">Open Value (Instructed)</div>
+            <div className="text-lg font-bold text-[#0f1c2e]">{fmt(kpis.open_value_zar)}</div>
           </div>
-          <div className="rounded-lg p-3 border border-gray-200 bg-white">
-            <div className="text-xs text-gray-500">Total Paid (Certified)</div>
+          <div className="rounded-lg p-3 border border-[#dde4ec] bg-white">
+            <div className="text-xs text-[#6b7685]">Total Paid (Certified)</div>
             <div className="text-lg font-bold text-green-700">{fmt(kpis.total_paid_zar)}</div>
           </div>
         </div>
@@ -187,26 +187,26 @@ export function IppVariationOrderTab() {
 
       {/* Filters + actions */}
       <div className="flex flex-wrap gap-2 items-center">
-        <button type="button" onClick={() => applyFilter('')} className={`px-3 py-1 rounded text-xs border ${!filterStatus ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>All</button>
+        <button type="button" onClick={() => applyFilter('')} className={`px-3 py-1 rounded text-xs border ${!filterStatus ? 'bg-[#1e2a38] text-white' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>All</button>
         {['instructed','approved','in_progress','disputed_pricing','paid'].map(s => (
-          <button type="button" key={s} onClick={() => applyFilter(s)} className={`px-3 py-1 rounded text-xs border ${filterStatus === s ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>
+          <button type="button" key={s} onClick={() => applyFilter(s)} className={`px-3 py-1 rounded text-xs border ${filterStatus === s ? 'bg-[#1e2a38] text-white' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>
             {s.replace(/_/g,' ')}
           </button>
         ))}
-        <span className="ml-2 text-gray-300">|</span>
+        <span className="ml-2 text-[#9aa5b4]">|</span>
         {['minor','moderate','significant','major','material'].map(t => (
-          <button type="button" key={t} onClick={() => applyTier(filterTier === t ? '' : t)} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white' : 'bg-white text-gray-600 border-gray-300'}`}>{t}</button>
+          <button type="button" key={t} onClick={() => applyTier(filterTier === t ? '' : t)} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>{t}</button>
         ))}
-        <button type="button" onClick={() => setShowCreate(true)} className="ml-auto px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700">+ New VO</button>
-        <button type="button" onClick={() => load(filterStatus, filterTier)} className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border hover:bg-gray-200">Refresh</button>
+        <button type="button" onClick={() => setShowCreate(true)} className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]">+ New VO</button>
+        <button type="button" onClick={() => load(filterStatus, filterTier)} className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border hover:bg-[#e8ecf0]">Refresh</button>
       </div>
 
       {/* Table */}
-      {loading ? <div className="text-sm text-gray-400 py-4">Loading…</div> : (
+      {loading ? <div className="text-sm text-[#9aa5b4] py-4">Loading…</div> : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-gray-500">
+              <tr className="border-b text-left text-xs text-[#6b7685]">
                 <th className="pb-2 pr-4">Ref</th>
                 <th className="pb-2 pr-4">Title</th>
                 <th className="pb-2 pr-4">Type</th>
@@ -220,26 +220,26 @@ export function IppVariationOrderTab() {
             </thead>
             <tbody>
               {items.map(vo => (
-                <tr key={vo.id} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => setSelected(vo)}>
-                  <td className="py-2 pr-4 font-mono text-xs text-gray-500">{vo.site_ref ?? vo.id.slice(-8)}</td>
+                <tr key={vo.id} className="border-b hover:bg-[#eef2f7] cursor-pointer" onClick={() => setSelected(vo)}>
+                  <td className="py-2 pr-4 font-mono text-xs text-[#6b7685]">{vo.site_ref ?? vo.id.slice(-8)}</td>
                   <td className="py-2 pr-4 font-medium max-w-xs truncate">{vo.title}</td>
-                  <td className="py-2 pr-4 text-xs text-gray-600">{TYPE_LABELS[vo.variation_type] ?? vo.variation_type}</td>
+                  <td className="py-2 pr-4 text-xs text-[#3d4756]">{TYPE_LABELS[vo.variation_type] ?? vo.variation_type}</td>
                   <td className="py-2 pr-4">
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[vo.value_tier] ?? 'bg-gray-100 text-gray-600'}`}>{vo.value_tier}</span>
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[vo.value_tier] ?? 'bg-[#eef2f7] text-[#3d4756]'}`}>{vo.value_tier}</span>
                   </td>
                   <td className="py-2 pr-4 text-xs">{fmt(vo.instructed_value_zar)}</td>
                   <td className="py-2 pr-4 text-xs">{fmt(vo.agreed_value_zar)}</td>
                   <td className="py-2 pr-4">
-                    <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[vo.chain_status] ?? 'bg-gray-100 text-gray-600'}`}>{vo.chain_status.replace(/_/g,' ')}</span>
+                    <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[vo.chain_status] ?? 'bg-[#eef2f7] text-[#3d4756]'}`}>{vo.chain_status.replace(/_/g,' ')}</span>
                   </td>
-                  <td className={`py-2 pr-4 text-xs ${vo.sla_breached ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                  <td className={`py-2 pr-4 text-xs ${vo.sla_breached ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                     {vo.sla_breached ? '⚠ BREACHED' : fmtDate(vo.sla_due_at)}
                   </td>
                   <td className="py-2 text-xs text-indigo-600">View →</td>
                 </tr>
               ))}
               {items.length === 0 && (
-                <tr><td colSpan={9} className="py-6 text-center text-gray-400 text-sm">No variation orders found</td></tr>
+                <tr><td colSpan={9} className="py-6 text-center text-[#9aa5b4] text-sm">No variation orders found</td></tr>
               )}
             </tbody>
           </table>
@@ -253,35 +253,35 @@ export function IppVariationOrderTab() {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h2 className="text-lg font-bold">{selected.title}</h2>
-                <div className="text-xs text-gray-500 mt-1">{selected.site_ref ?? selected.id}</div>
+                <div className="text-xs text-[#6b7685] mt-1">{selected.site_ref ?? selected.id}</div>
               </div>
-              <button type="button" onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+              <button type="button" onClick={() => setSelected(null)} className="text-[#9aa5b4] hover:text-[#3d4756]">✕</button>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-              <div><span className="text-gray-500">Type:</span> <span className="font-medium">{TYPE_LABELS[selected.variation_type] ?? selected.variation_type}</span></div>
-              <div><span className="text-gray-500">Tier:</span> <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[selected.value_tier]}`}>{selected.value_tier}</span></div>
-              <div><span className="text-gray-500">Instructed:</span> <span className="font-medium">{fmt(selected.instructed_value_zar)}</span></div>
-              <div><span className="text-gray-500">Agreed:</span> <span className="font-medium text-green-700">{fmt(selected.agreed_value_zar)}</span></div>
-              <div><span className="text-gray-500">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{selected.chain_status.replace(/_/g,' ')}</span></div>
-              <div><span className="text-gray-500">SLA:</span> <span className={selected.sla_breached ? 'text-red-600 font-bold' : 'text-gray-700'}>{selected.sla_breached ? '⚠ BREACHED' : fmtDate(selected.sla_due_at)}</span></div>
-              <div><span className="text-gray-500">Instructed:</span> {fmtDate(selected.instructed_at)}</div>
-              {selected.approved_at && <div><span className="text-gray-500">Approved:</span> {fmtDate(selected.approved_at)}</div>}
-              {selected.paid_at && <div><span className="text-gray-500">Paid:</span> {fmtDate(selected.paid_at)}</div>}
+              <div><span className="text-[#6b7685]">Type:</span> <span className="font-medium">{TYPE_LABELS[selected.variation_type] ?? selected.variation_type}</span></div>
+              <div><span className="text-[#6b7685]">Tier:</span> <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[selected.value_tier]}`}>{selected.value_tier}</span></div>
+              <div><span className="text-[#6b7685]">Instructed:</span> <span className="font-medium">{fmt(selected.instructed_value_zar)}</span></div>
+              <div><span className="text-[#6b7685]">Agreed:</span> <span className="font-medium text-green-700">{fmt(selected.agreed_value_zar)}</span></div>
+              <div><span className="text-[#6b7685]">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{selected.chain_status.replace(/_/g,' ')}</span></div>
+              <div><span className="text-[#6b7685]">SLA:</span> <span className={selected.sla_breached ? 'text-red-600 font-bold' : 'text-[#2d3748]'}>{selected.sla_breached ? '⚠ BREACHED' : fmtDate(selected.sla_due_at)}</span></div>
+              <div><span className="text-[#6b7685]">Instructed:</span> {fmtDate(selected.instructed_at)}</div>
+              {selected.approved_at && <div><span className="text-[#6b7685]">Approved:</span> {fmtDate(selected.approved_at)}</div>}
+              {selected.paid_at && <div><span className="text-[#6b7685]">Paid:</span> {fmtDate(selected.paid_at)}</div>}
             </div>
 
             {selected.description && (
-              <div className="text-sm text-gray-600 bg-gray-50 rounded p-3 mb-4">{selected.description}</div>
+              <div className="text-sm text-[#3d4756] bg-[#f8fafc] rounded p-3 mb-4">{selected.description}</div>
             )}
 
             {/* Actions */}
             {ACTION_MAP[selected.chain_status] && (
               <div className="space-y-2">
-                <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Actions</div>
+                <div className="text-xs font-semibold text-[#6b7685] uppercase mb-1">Actions</div>
                 {ACTION_MAP[selected.chain_status].map(a => (
                   <button type="button" key={a.next} disabled={actionPending}
                     onClick={() => doAction(selected.id, a.next)}
-                    className={`w-full text-left px-3 py-2 rounded border text-sm hover:bg-indigo-50 hover:border-indigo-300 ${a.next === 'refer_adjudication' ? 'border-red-300 text-red-700 hover:bg-red-50' : a.next.includes('cancel') || a.next.includes('reject') ? 'border-red-200 text-red-600' : 'border-gray-200 text-gray-700'}`}>
+                    className={`w-full text-left px-3 py-2 rounded border text-sm hover:bg-indigo-50 hover:border-indigo-300 ${a.next === 'refer_adjudication' ? 'border-red-300 text-red-700 hover:bg-red-50' : a.next.includes('cancel') || a.next.includes('reject') ? 'border-red-200 text-red-600' : 'border-[#dde4ec] text-[#2d3748]'}`}>
                     {a.label}
                     {a.next === 'refer_adjudication' && <span className="ml-2 text-xs bg-red-100 text-red-700 px-1 rounded">REGULATOR</span>}
                     {(a.next === 'approve_variation' && (selected.value_tier === 'major' || selected.value_tier === 'material')) && <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-1 rounded">NOTIFIES FUNDERS</span>}
@@ -314,8 +314,8 @@ export function IppVariationOrderTab() {
                 className="w-full border rounded px-3 py-2 text-sm" />
             </div>
             <div className="flex gap-2 mt-4">
-              <button type="button" onClick={createVO} className="px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700">Create</button>
-              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200">Cancel</button>
+              <button type="button" onClick={createVO} className="px-4 py-2 bg-[#c2873a] text-white rounded text-sm hover:bg-[#a3702f]">Create</button>
+              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 bg-[#eef2f7] text-[#2d3748] rounded text-sm hover:bg-[#e8ecf0]">Cancel</button>
             </div>
           </div>
         </div>

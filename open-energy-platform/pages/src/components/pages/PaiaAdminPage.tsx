@@ -171,7 +171,7 @@ function SarDetail({ sar, onClose, onChanged }: { sar: Sar; onClose: () => void;
           )}
           {!sar.assigned_to && (
             <div className="border-t pt-3 border-[#eef2f7]">
-              <button type="button" disabled={busy} onClick={assign} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
+              <button type="button" disabled={busy} onClick={assign} className="h-8 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50">
                 Assign to me
               </button>
             </div>

@@ -59,7 +59,7 @@ const STATUS_PILL: Record<DealStatus, string> = {
   active: 'bg-blue-100 text-blue-700',
   won: 'bg-green-100 text-green-700',
   lost: 'bg-red-100 text-red-700',
-  cancelled: 'bg-gray-200 text-gray-700',
+  cancelled: 'bg-[#e8ecf0] text-[#2d3748]',
 };
 
 export function Pipeline() {
@@ -124,7 +124,7 @@ export function Pipeline() {
       subtitle="Originated deals across the funnel."
       actions={
         <>
-          <button type="button" onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
+          <button type="button" onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]" aria-label="Refresh">
             <RefreshCw className="w-4 h-4" />
           </button>
           <button type="button" onClick={() => setShowCreate(true)} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light flex items-center gap-2">
@@ -162,9 +162,9 @@ export function Pipeline() {
       {!loading && !error && deals.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {STAGES.map(s => (
-            <div key={s.key} className="bg-gray-50 rounded-xl p-3 min-h-[160px]">
+            <div key={s.key} className="bg-[#f8fafc] rounded-xl p-3 min-h-[160px]">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-gray-900">{s.label}</h3>
+                <h3 className="font-semibold text-[#0f1c2e]">{s.label}</h3>
                 <span className="text-xs text-ionex-text-mute">
                   {dealsByStage[s.key]?.length || 0} · {formatZAR((summary?.by_stage as any)?.[s.key]?.value_zar || 0)}
                 </span>
@@ -177,7 +177,7 @@ export function Pipeline() {
                     className="w-full text-left p-3 bg-white border border-ionex-border-100 rounded-lg hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <p className="font-medium text-sm text-gray-900 truncate">{d.deal_name}</p>
+                      <p className="font-medium text-sm text-[#0f1c2e] truncate">{d.deal_name}</p>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] ${STATUS_PILL[d.status]}`}>{d.status}</span>
                     </div>
                     <p className="text-xs text-ionex-text-mute mt-1 truncate">{d.client_name || d.client_participant_id}</p>
@@ -211,7 +211,7 @@ function Tile({ label, value, accent }: { label: string; value: string; accent?:
   return (
     <div className="p-4 bg-white border border-ionex-border-100 rounded-xl">
       <p className="text-xs uppercase tracking-wide text-ionex-text-mute">{label}</p>
-      <p className={`text-2xl font-semibold mt-1 ${accent || 'text-gray-900'}`}>{value}</p>
+      <p className={`text-2xl font-semibold mt-1 ${accent || 'text-[#0f1c2e]'}`}>{value}</p>
     </div>
   );
 }
@@ -236,7 +236,7 @@ function DealDetailModal({ deal, onClose, onStageChange }: {
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">{deal.deal_name}</h3>
+            <h3 className="text-lg font-semibold text-[#0f1c2e]">{deal.deal_name}</h3>
             <p className="text-sm text-ionex-text-mute">{deal.client_name || deal.client_participant_id} · Owner: {deal.owner_name || deal.created_by}</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
@@ -254,7 +254,7 @@ function DealDetailModal({ deal, onClose, onStageChange }: {
           </div>
 
           <div className="border-t border-ionex-border-100 pt-4 space-y-3">
-            <h4 className="font-semibold text-gray-900 flex items-center gap-2"><ChevronRight className="w-4 h-4" /> Move stage</h4>
+            <h4 className="font-semibold text-[#0f1c2e] flex items-center gap-2"><ChevronRight className="w-4 h-4" /> Move stage</h4>
             <select value={targetStage} onChange={e => setTargetStage(e.target.value as Stage)} className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg">
               {STAGES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
             </select>
@@ -290,7 +290,7 @@ function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-xs text-ionex-text-mute">{label}</p>
-      <p className="font-medium text-gray-900 capitalize">{value}</p>
+      <p className="font-medium text-[#0f1c2e] capitalize">{value}</p>
     </div>
   );
 }
@@ -346,7 +346,7 @@ function CreateDealModal({ onClose, onCreated }: { onClose: () => void; onCreate
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">New deal</h3>
+          <h3 className="text-lg font-semibold text-[#0f1c2e]">New deal</h3>
           <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
@@ -377,7 +377,7 @@ function CreateDealModal({ onClose, onCreated }: { onClose: () => void; onCreate
           <Input label="Submission deadline (optional)" value={deadline} onChange={setDeadline} type="date" />
         </div>
         <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
           <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50">
             {saving ? 'Saving…' : 'Create'}
           </button>

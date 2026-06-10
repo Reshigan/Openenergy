@@ -75,8 +75,8 @@ const TYPE_ICONS: Record<ListingType, React.ReactNode> = {
 const STATUS_COLOR: Record<ListingStatus, string> = {
   active: 'bg-green-100 text-green-700',
   pending: 'bg-amber-100 text-amber-700',
-  sold: 'bg-gray-200 text-gray-700',
-  withdrawn: 'bg-gray-100 text-gray-500',
+  sold: 'bg-[#e8ecf0] text-[#2d3748]',
+  withdrawn: 'bg-[#eef2f7] text-[#6b7685]',
 };
 
 const formatMoney = (value: number, currency = 'ZAR') => {
@@ -202,7 +202,7 @@ export function Marketplace() {
       subtitle="Capacity, RECs and carbon credits — list, inquire, transact."
       actions={
         <>
-          <button type="button" onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
+          <button type="button" onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]" aria-label="Refresh">
             <RefreshCw className="w-4 h-4" />
           </button>
           <button type="button" onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light">
@@ -215,7 +215,7 @@ export function Marketplace() {
         {summaryTiles.map(t => (
           <div key={t.label} className="p-4 bg-white border border-ionex-border-100 rounded-xl">
             <p className="text-xs uppercase tracking-wide text-ionex-text-mute">{t.label}</p>
-            <p className="text-2xl font-semibold text-gray-900 mt-1">{t.value}</p>
+            <p className="text-2xl font-semibold text-[#0f1c2e] mt-1">{t.value}</p>
           </div>
         ))}
       </div>
@@ -229,7 +229,7 @@ export function Marketplace() {
           <button type="button"
             key={t.k}
             onClick={() => setTab(t.k)}
-            className={`pb-3 border-b-2 transition-colors ${tab === t.k ? 'border-ionex-brand text-ionex-brand font-semibold' : 'border-transparent text-ionex-text-mute hover:text-gray-900'}`}
+            className={`pb-3 border-b-2 transition-colors ${tab === t.k ? 'border-ionex-brand text-ionex-brand font-semibold' : 'border-transparent text-ionex-text-mute hover:text-[#0f1c2e]'}`}
           >
             {t.label}
           </button>
@@ -336,26 +336,26 @@ function ListingCard({ listing, isMine, onOpen, onInquire }: {
             {TYPE_ICONS[listing.listing_type] || <Tag className="w-4 h-4" />}
             {listing.listing_type.replace('_', ' ').toUpperCase()}
           </span>
-          <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLOR[listing.status] || 'bg-gray-100 text-gray-700'}`}>
+          <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLOR[listing.status] || 'bg-[#eef2f7] text-[#2d3748]'}`}>
             {listing.status}
           </span>
         </div>
         <div>
-          <h3 className="font-semibold text-gray-900">{listing.title}</h3>
+          <h3 className="font-semibold text-[#0f1c2e]">{listing.title}</h3>
           {listing.seller_company && <p className="text-sm text-ionex-text-mute">by {listing.seller_company}</p>}
         </div>
         {listing.description && (
-          <p className="text-sm text-gray-600 line-clamp-3">{listing.description}</p>
+          <p className="text-sm text-[#3d4756] line-clamp-3">{listing.description}</p>
         )}
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          <span className="font-semibold text-gray-900">{formatMoney(listing.price, listing.currency)}{listing.price_unit ? ` / ${listing.price_unit}` : ''}</span>
+          <span className="font-semibold text-[#0f1c2e]">{formatMoney(listing.price, listing.currency)}{listing.price_unit ? ` / ${listing.price_unit}` : ''}</span>
           {listing.volume_available != null && (
             <span className="text-ionex-text-mute">{listing.volume_available}{listing.volume_unit ? ` ${listing.volume_unit}` : ''} available</span>
           )}
         </div>
       </div>
       <div className="p-4 border-t border-ionex-border-100 flex gap-2">
-        <button type="button" onClick={onOpen} className="flex-1 px-3 py-2 border border-ionex-border-200 rounded-lg text-sm hover:bg-gray-50">
+        <button type="button" onClick={onOpen} className="flex-1 px-3 py-2 border border-ionex-border-200 rounded-lg text-sm hover:bg-[#eef2f7]">
           View details
         </button>
         {!isMine && listing.status === 'active' && (
@@ -378,11 +378,11 @@ function InquiryRow({ inquiry }: { inquiry: Inquiry }) {
   return (
     <div className="p-4 bg-white border border-ionex-border-100 rounded-lg flex items-center justify-between gap-4">
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-gray-900 truncate">{inquiry.listing_title || 'Listing'}</p>
+        <p className="font-medium text-[#0f1c2e] truncate">{inquiry.listing_title || 'Listing'}</p>
         <p className="text-sm text-ionex-text-mute truncate">
           {inquiry.seller_company || inquiry.seller_name || 'Seller'} · sent {new Date(inquiry.created_at).toLocaleDateString()}
         </p>
-        {inquiry.message && <p className="text-sm text-gray-600 mt-1 truncate">“{inquiry.message}”</p>}
+        {inquiry.message && <p className="text-sm text-[#3d4756] mt-1 truncate">“{inquiry.message}”</p>}
       </div>
       <span className="flex items-center gap-1 text-sm capitalize">
         {statusIcon[inquiry.status]}
@@ -412,10 +412,10 @@ function ListingDetailModal({ listing, isMine, inquiries, inquiriesLoading, onCl
             <h2 className="text-xl font-bold mt-2">{listing.title}</h2>
             {listing.seller_company && <p className="text-sm text-ionex-text-mute">by {listing.seller_company}</p>}
           </div>
-          <button type="button" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
+          <button type="button" onClick={onClose} className="p-2 hover:bg-[#eef2f7] rounded-lg">✕</button>
         </div>
         <div className="p-5 space-y-4">
-          {listing.description && <p className="text-gray-700 whitespace-pre-wrap">{listing.description}</p>}
+          {listing.description && <p className="text-[#2d3748] whitespace-pre-wrap">{listing.description}</p>}
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-ionex-text-mute">Price</p>
@@ -455,7 +455,7 @@ function ListingDetailModal({ listing, isMine, inquiries, inquiriesLoading, onCl
 
         {isMine && (
           <div className="p-5 border-t border-ionex-border-100 space-y-3">
-            <h3 className="font-semibold text-gray-900">Inquiries</h3>
+            <h3 className="font-semibold text-[#0f1c2e]">Inquiries</h3>
             {inquiriesLoading && <Skeleton variant="card" rows={2} />}
             {!inquiriesLoading && (!inquiries || inquiries.length === 0) && (
               <p className="text-sm text-ionex-text-mute">No inquiries yet.</p>
@@ -463,15 +463,15 @@ function ListingDetailModal({ listing, isMine, inquiries, inquiriesLoading, onCl
             {!inquiriesLoading && inquiries && inquiries.length > 0 && (
               <div className="space-y-2">
                 {inquiries.map(inq => (
-                  <div key={inq.id} className="p-3 bg-gray-50 rounded-lg">
+                  <div key={inq.id} className="p-3 bg-[#f8fafc] rounded-lg">
                     <div className="flex items-center justify-between">
                       <div className="min-w-0">
-                        <p className="font-medium text-gray-900">{inq.buyer_company || inq.buyer_name || inq.buyer_id}</p>
+                        <p className="font-medium text-[#0f1c2e]">{inq.buyer_company || inq.buyer_name || inq.buyer_id}</p>
                         <p className="text-xs text-ionex-text-mute">{new Date(inq.created_at).toLocaleString()}</p>
                       </div>
                       <span className="text-sm capitalize">{inq.status}</span>
                     </div>
-                    {inq.message && <p className="text-sm text-gray-700 mt-2">“{inq.message}”</p>}
+                    {inq.message && <p className="text-sm text-[#2d3748] mt-2">“{inq.message}”</p>}
                     {inq.status === 'pending' && (
                       <div className="flex gap-2 mt-3">
                         <button type="button"
@@ -550,7 +550,7 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
           <h2 className="text-xl font-bold">Create listing</h2>
-          <button type="button" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
+          <button type="button" onClick={onClose} className="p-2 hover:bg-[#eef2f7] rounded-lg">✕</button>
         </div>
         <div className="p-5 space-y-4">
           {err && <ErrorBanner message={err} />}
@@ -594,7 +594,7 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
           </div>
         </div>
         <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
           <button type="button"
             onClick={submit}
             disabled={submitting}
@@ -635,7 +635,7 @@ function InquireModal({ listing, onClose, onSent }: { listing: Listing; onClose:
             <h2 className="text-xl font-bold">Inquire</h2>
             <p className="text-sm text-ionex-text-mute">{listing.title}</p>
           </div>
-          <button type="button" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
+          <button type="button" onClick={onClose} className="p-2 hover:bg-[#eef2f7] rounded-lg">✕</button>
         </div>
         <div className="p-5 space-y-3">
           {err && <ErrorBanner message={err} />}
@@ -650,7 +650,7 @@ function InquireModal({ listing, onClose, onSent }: { listing: Listing; onClose:
           </Field>
         </div>
         <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
           <button type="button"
             onClick={submit}
             disabled={submitting}
@@ -667,7 +667,7 @@ function InquireModal({ listing, onClose, onSent }: { listing: Listing; onClose:
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-1">
-      <span className="text-sm font-medium text-gray-700">{label}</span>
+      <span className="text-sm font-medium text-[#2d3748]">{label}</span>
       {children}
     </label>
   );

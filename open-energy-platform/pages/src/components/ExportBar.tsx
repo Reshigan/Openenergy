@@ -32,7 +32,8 @@ export function ExportBar({ data, filename = 'export', columns }: ExportBarProps
       <button type="button"
         onClick={handleExport}
         disabled={!data || data.length === 0}
-        className="flex items-center gap-2 px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg hover:bg-[#eef2f7] disabled:opacity-50 disabled:cursor-not-allowed"
+        style={{ background: 'oklch(0.99 0.002 80)', border: '1px solid #dde4ec', color: '#3d4756' }}
       >
         <Download className="w-4 h-4" />
         Export CSV

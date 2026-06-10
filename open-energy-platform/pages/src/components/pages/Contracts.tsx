@@ -14,7 +14,7 @@ import { StitchPage } from '../StitchPage';
 const phases = ['draft', 'loi', 'term_sheet', 'hoa', 'draft_agreement', 'legal_review', 'statutory_check', 'execution', 'active', 'amended', 'terminated', 'expired'];
 
 const phaseColors: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-700',
+  draft: 'bg-[#eef2f7] text-[#2d3748]',
   loi: 'bg-blue-100 text-blue-700',
   term_sheet: 'bg-indigo-100 text-indigo-700',
   hoa: 'bg-purple-100 text-purple-700',
@@ -25,7 +25,7 @@ const phaseColors: Record<string, string> = {
   active: 'bg-green-100 text-green-700',
   amended: 'bg-cyan-100 text-cyan-700',
   terminated: 'bg-red-100 text-red-700',
-  expired: 'bg-gray-200 text-ionex-text-mute',
+  expired: 'bg-[#e8ecf0] text-ionex-text-mute',
 };
 
 export function Contracts() {
@@ -77,7 +77,7 @@ export function Contracts() {
       <div className="bg-white rounded-xl border border-ionex-border-100">
         <div className="p-4 border-b border-ionex-border-100 flex gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9aa5b4]" />
             <input type="text" placeholder="Search contracts..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-ionex-border-200 rounded-lg text-sm" />
           </div>
           <select value={phaseFilter} onChange={e => setPhaseFilter(e.target.value)} className="px-3 py-2 border border-ionex-border-200 rounded-lg text-sm">
@@ -92,7 +92,7 @@ export function Contracts() {
           <>
             <ExportBar data={filteredContracts} filename="contracts" columns={[{ key: 'title', header: 'Title' }, { key: 'phase', header: 'Phase' }, { key: 'document_type', header: 'Type' }]} />
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-ionex-border-100">
+              <thead className="bg-[#f8fafc] border-b border-ionex-border-100">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-medium text-ionex-text-mute">Title</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-ionex-text-mute">Type</th>
@@ -101,14 +101,14 @@ export function Contracts() {
                   <th className="text-left px-4 py-3 text-xs font-medium text-ionex-text-mute">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[#eef2f7]">
                 {filteredContracts.map(contract => (
-                  <tr key={contract.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/contracts/${contract.id}`)}>
-                    <td className="px-4 py-3"><span className="font-medium">{contract.title}</span><br /><span className="text-xs text-gray-400">{contract.id}</span></td>
+                  <tr key={contract.id} className="hover:bg-[#eef2f7] cursor-pointer" onClick={() => navigate(`/contracts/${contract.id}`)}>
+                    <td className="px-4 py-3"><span className="font-medium">{contract.title}</span><br /><span className="text-xs text-[#9aa5b4]">{contract.id}</span></td>
                     <td className="px-4 py-3 text-sm">{contract.document_type?.replace(/_/g, ' ')}</td>
                     <td className="px-4 py-3"><span className={`px-2 py-1 text-xs font-medium rounded-full ${phaseColors[contract.phase] || phaseColors.draft}`}>{contract.phase?.replace(/_/g, ' ')}</span></td>
                     <td className="px-4 py-3"><EntityLink id={contract.counterparty_id} type="participant" /></td>
-                    <td className="px-4 py-3"><button type="button" onClick={e => { e.stopPropagation(); navigate(`/contracts/${contract.id}`); }} className="p-1.5 hover:bg-gray-100 rounded"><Eye className="w-4 h-4" /></button></td>
+                    <td className="px-4 py-3"><button type="button" onClick={e => { e.stopPropagation(); navigate(`/contracts/${contract.id}`); }} className="p-1.5 hover:bg-[#eef2f7] rounded"><Eye className="w-4 h-4" /></button></td>
                   </tr>
                 ))}
               </tbody>
@@ -192,13 +192,13 @@ function CreateContractModal({ onClose, onCreated }: { onClose: () => void; onCr
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-4 border-b border-ionex-border-100 flex items-center justify-between sticky top-0 bg-white">
           <h3 className="text-lg font-semibold">Create Contract</h3>
-          <button type="button" onClick={onClose} aria-label="Close dialog" className="p-1 hover:bg-gray-100 rounded"><XCircle className="w-5 h-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Close dialog" className="p-1 hover:bg-[#eef2f7] rounded"><XCircle className="w-5 h-5" /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              SA-law template <span className="text-xs text-gray-400">(optional — pre-fills type)</span>
+            <label className="block text-sm font-medium text-[#2d3748] mb-1">
+              SA-law template <span className="text-xs text-[#9aa5b4]">(optional — pre-fills type)</span>
             </label>
             <select value={formData.template_code} onChange={(e) => selectTemplate(e.target.value)} className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg">
               <option value="">— no template (blank draft) —</option>
@@ -209,7 +209,7 @@ function CreateContractModal({ onClose, onCreated }: { onClose: () => void; onCr
               ))}
             </select>
             {selectedTpl && (
-              <div className="mt-2 text-xs text-gray-600 bg-gray-50 border border-ionex-border-100 rounded-md p-2">
+              <div className="mt-2 text-xs text-[#3d4756] bg-[#f8fafc] border border-ionex-border-100 rounded-md p-2">
                 <div><strong>Governing law:</strong> {selectedTpl.governing_law} · {selectedTpl.jurisdiction}</div>
                 <div><strong>SA references:</strong> {selectedTpl.sa_law_references}</div>
                 {selectedTpl.description && <div className="mt-1">{selectedTpl.description}</div>}
@@ -217,11 +217,11 @@ function CreateContractModal({ onClose, onCreated }: { onClose: () => void; onCr
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <label className="block text-sm font-medium text-[#2d3748] mb-1">Title</label>
             <input type="text" required value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg" placeholder="Contract title" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            <label className="block text-sm font-medium text-[#2d3748] mb-1">Type</label>
             {/* document_type values are constrained by the v2 schema CHECK:
                  loi, term_sheet, hoa, ppa_wheeling, ppa_btm, carbon_purchase,
                  carbon_option_isda, forward, epc, wheeling_agreement,
@@ -250,11 +250,11 @@ function CreateContractModal({ onClose, onCreated }: { onClose: () => void; onCr
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Counterparty ID</label>
+            <label className="block text-sm font-medium text-[#2d3748] mb-1">Counterparty ID</label>
             <input type="text" required value={formData.counterparty_id} onChange={e => setFormData({ ...formData, counterparty_id: e.target.value })} className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg" placeholder="e.g. demo_offtaker_001" />
           </div>
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-300 rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-300 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
             <button type="submit" disabled={loading} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-dark disabled:opacity-50">{loading ? 'Creating...' : 'Create'}</button>
           </div>
         </form>

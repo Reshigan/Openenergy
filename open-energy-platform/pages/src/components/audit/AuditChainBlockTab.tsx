@@ -629,7 +629,7 @@ export function AuditChainBlockTab() {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#0c2a4d] text-white'
+                ? 'bg-[#c2873a] text-white'
                 : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
             }`}
           >
@@ -646,7 +646,7 @@ export function AuditChainBlockTab() {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#1a3a5c] text-white'
+                ? 'bg-[#c2873a] text-white'
                 : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
             }`}
           >

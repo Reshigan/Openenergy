@@ -31,7 +31,7 @@ interface AcsKpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  assessment_triggered:      'bg-gray-100 text-gray-500',
+  assessment_triggered:      'bg-[#eef2f7] text-[#6b7685]',
   protection_systems_audit:  'bg-blue-100 text-blue-700',
   metering_scada_audit:      'bg-cyan-100 text-cyan-700',
   reactive_power_audit:      'bg-indigo-100 text-indigo-700',
@@ -42,7 +42,7 @@ const STATUS_COLORS: Record<string, string> = {
   so_review_in_progress:     'bg-blue-100 text-blue-800',
   assessment_accepted:       'bg-green-100 text-green-700',
   assessment_deficient:      'bg-red-100 text-red-700',
-  assessment_lapsed:         'bg-gray-100 text-gray-400',
+  assessment_lapsed:         'bg-[#eef2f7] text-[#9aa5b4]',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -93,7 +93,7 @@ const CAPACITY_TIERS = ['small', 'medium', 'large', 'major', 'flagship'] as cons
 
 const PAGE_SIZE = 20;
 
-const sel = 'border rounded px-2 py-1 text-xs text-gray-700 bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
 
 function fmtDate(dateStr: string | null | undefined): { text: string; isPast: boolean } {
   if (!dateStr) return { text: '—', isPast: false };
@@ -125,15 +125,15 @@ function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-gray-200 bg-white';
+    'border-[#dde4ec] bg-white';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-gray-900';
+    'text-[#0f1c2e]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-gray-500">{label}</div>
+      <div className="text-xs text-[#6b7685]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -371,13 +371,13 @@ export function IppAnnualComplianceAssessmentTab() {
         </select>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
+          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
         >
           Refresh
         </button>
         <button type="button"
           onClick={() => setShowCreate(v => !v)}
-          className="ml-auto px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+          className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]"
         >
           + New Assessment
         </button>
@@ -392,7 +392,7 @@ export function IppAnnualComplianceAssessmentTab() {
           <div className="text-sm font-semibold text-blue-800">New Annual Grid Code Compliance Assessment</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Plant Name *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Plant Name *</label>
               <input
                 type="text"
                 value={formPlantName}
@@ -403,7 +403,7 @@ export function IppAnnualComplianceAssessmentTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Assessment Year *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Assessment Year *</label>
               <input
                 type="number"
                 value={formAssessmentYear}
@@ -417,7 +417,7 @@ export function IppAnnualComplianceAssessmentTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Plant MW *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Plant MW *</label>
               <input
                 type="number"
                 value={formPlantMw}
@@ -430,7 +430,7 @@ export function IppAnnualComplianceAssessmentTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Grid Connection Voltage (kV)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Grid Connection Voltage (kV)</label>
               <input
                 type="number"
                 value={formGridConnectionVoltageKv}
@@ -442,7 +442,7 @@ export function IppAnnualComplianceAssessmentTab() {
               />
             </div>
             <div className="col-span-2 md:col-span-2">
-              <label className="block text-xs text-gray-600 mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
               <textarea
                 value={formNotes}
                 onChange={e => setFormNotes(e.target.value)}
@@ -461,14 +461,14 @@ export function IppAnnualComplianceAssessmentTab() {
             <button
               type="submit"
               disabled={creating}
-              className="px-4 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-1.5 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f] disabled:opacity-50"
             >
               {creating ? 'Creating…' : 'Create'}
             </button>
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 bg-white border rounded text-xs text-gray-600 hover:bg-gray-50"
+              className="px-3 py-1.5 bg-white border rounded text-xs text-[#3d4756] hover:bg-[#eef2f7]"
             >
               Cancel
             </button>
@@ -485,12 +485,12 @@ export function IppAnnualComplianceAssessmentTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-gray-400 py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-gray-500">
+              <tr className="border-b text-left text-xs text-[#6b7685]">
                 <th className="pb-2 pr-3">Assessment Year</th>
                 <th className="pb-2 pr-3">Plant Name</th>
                 <th className="pb-2 pr-3">Status</th>
@@ -509,27 +509,27 @@ export function IppAnnualComplianceAssessmentTab() {
                 return (
                   <tr
                     key={item.id}
-                    className="border-b hover:bg-gray-50 cursor-pointer"
+                    className="border-b hover:bg-[#eef2f7] cursor-pointer"
                     onClick={() => setDetailItem(item)}
                   >
-                    <td className="py-2 pr-3 text-xs font-mono text-gray-700">{item.assessment_year}</td>
-                    <td className="py-2 pr-3 text-xs text-gray-800 max-w-[160px] truncate" title={item.plant_name}>
+                    <td className="py-2 pr-3 text-xs font-mono text-[#2d3748]">{item.assessment_year}</td>
+                    <td className="py-2 pr-3 text-xs text-[#1e2a38] max-w-[160px] truncate" title={item.plant_name}>
                       {item.plant_name}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
                       </span>
                     </td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-gray-700">{fmtMw(item.plant_mw)}</td>
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[#2d3748]">{fmtMw(item.plant_mw)}</td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.capacity_tier] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.capacity_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {item.capacity_tier.charAt(0).toUpperCase() + item.capacity_tier.slice(1)}
                       </span>
                     </td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-gray-600">{fmtScore(item.overall_score)}</td>
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[#3d4756]">{fmtScore(item.overall_score)}</td>
                     <td className="py-2 pr-3 text-xs tabular-nums">
-                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-gray-600'}>
+                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[#3d4756]'}>
                         {due.text}
                       </span>
                     </td>
@@ -537,7 +537,7 @@ export function IppAnnualComplianceAssessmentTab() {
                       {item.sla_breached === 1 ? (
                         <span className="px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">Yes</span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-400">No</span>
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-[#eef2f7] text-[#9aa5b4]">No</span>
                       )}
                     </td>
                     <td
@@ -558,7 +558,7 @@ export function IppAnnualComplianceAssessmentTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={9} className="py-10 text-center text-[#9aa5b4] text-sm">
                     No annual compliance assessments found
                   </td>
                 </tr>
@@ -574,17 +574,17 @@ export function IppAnnualComplianceAssessmentTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-[#6b7685]">
             Page {page} of {totalPages}
           </span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             Next &rarr;
           </button>
@@ -597,14 +597,14 @@ export function IppAnnualComplianceAssessmentTab() {
           <div className="bg-white h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <div>
-                <div className="text-sm font-semibold text-gray-800">
+                <div className="text-sm font-semibold text-[#1e2a38]">
                   Grid Code Compliance Assessment — {detailItem.assessment_year}
                 </div>
-                <div className="text-xs text-gray-500 mt-0.5">{detailItem.plant_name}</div>
+                <div className="text-xs text-[#6b7685] mt-0.5">{detailItem.plant_name}</div>
               </div>
               <button type="button"
                 onClick={() => setDetailItem(null)}
-                className="text-gray-400 hover:text-gray-700 text-lg leading-none"
+                className="text-[#9aa5b4] hover:text-[#2d3748] text-lg leading-none"
               >
                 &times;
               </button>
@@ -613,10 +613,10 @@ export function IppAnnualComplianceAssessmentTab() {
             <div className="flex-1 p-5 space-y-5">
               {/* Status badge */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                   {STATUS_LABELS[detailItem.chain_status] ?? detailItem.chain_status.replace(/_/g, ' ')}
                 </span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.capacity_tier] ?? 'bg-gray-100 text-gray-500'}`}>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.capacity_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                   {detailItem.capacity_tier.charAt(0).toUpperCase() + detailItem.capacity_tier.slice(1)}
                 </span>
                 {detailItem.sla_breached === 1 && (
@@ -627,44 +627,44 @@ export function IppAnnualComplianceAssessmentTab() {
               {/* Core grid details */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
                 <div>
-                  <div className="text-gray-400 mb-0.5">Plant Name</div>
-                  <div className="font-medium text-gray-800">{detailItem.plant_name}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Plant Name</div>
+                  <div className="font-medium text-[#1e2a38]">{detailItem.plant_name}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Assessment Year</div>
-                  <div className="font-mono text-gray-800">{detailItem.assessment_year}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Assessment Year</div>
+                  <div className="font-mono text-[#1e2a38]">{detailItem.assessment_year}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Plant MW</div>
-                  <div className="tabular-nums text-gray-800">{fmtMw(detailItem.plant_mw)}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Plant MW</div>
+                  <div className="tabular-nums text-[#1e2a38]">{fmtMw(detailItem.plant_mw)}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Grid Connection Voltage</div>
-                  <div className="tabular-nums text-gray-800">{fmtKv(detailItem.grid_connection_voltage_kv)}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Grid Connection Voltage</div>
+                  <div className="tabular-nums text-[#1e2a38]">{fmtKv(detailItem.grid_connection_voltage_kv)}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Overall Score</div>
-                  <div className="tabular-nums text-gray-800 font-semibold">{fmtScore(detailItem.overall_score)}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Overall Score</div>
+                  <div className="tabular-nums text-[#1e2a38] font-semibold">{fmtScore(detailItem.overall_score)}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">SLA Deadline</div>
-                  <div className={`tabular-nums ${fmtDate(detailItem.sla_due_date).isPast ? 'text-red-600 font-medium' : 'text-gray-800'}`}>
+                  <div className="text-[#9aa5b4] mb-0.5">SLA Deadline</div>
+                  <div className={`tabular-nums ${fmtDate(detailItem.sla_due_date).isPast ? 'text-red-600 font-medium' : 'text-[#1e2a38]'}`}>
                     {fmtDate(detailItem.sla_due_date).text}
                   </div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Created</div>
-                  <div className="text-gray-600">{fmtDate(detailItem.created_at).text}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Created</div>
+                  <div className="text-[#3d4756]">{fmtDate(detailItem.created_at).text}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Updated</div>
-                  <div className="text-gray-600">{fmtDate(detailItem.updated_at).text}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Updated</div>
+                  <div className="text-[#3d4756]">{fmtDate(detailItem.updated_at).text}</div>
                 </div>
               </div>
 
               {/* Domain scores */}
               <div>
-                <div className="text-xs font-semibold text-gray-700 mb-2">Domain Audit Scores</div>
+                <div className="text-xs font-semibold text-[#2d3748] mb-2">Domain Audit Scores</div>
                 <div className="grid grid-cols-1 gap-2">
                   {[
                     { label: 'Protection Systems',       value: detailItem.protection_systems_score },
@@ -673,9 +673,9 @@ export function IppAnnualComplianceAssessmentTab() {
                     { label: 'Frequency Response',       value: detailItem.frequency_response_score },
                     { label: 'FRT & Power Quality',      value: detailItem.frt_pq_score },
                   ].map(({ label, value }) => (
-                    <div key={label} className="flex items-center justify-between text-xs bg-gray-50 rounded px-3 py-1.5 border">
-                      <span className="text-gray-600">{label}</span>
-                      <span className="tabular-nums font-medium text-gray-800">{fmtScore(value)}</span>
+                    <div key={label} className="flex items-center justify-between text-xs bg-[#f8fafc] rounded px-3 py-1.5 border">
+                      <span className="text-[#3d4756]">{label}</span>
+                      <span className="tabular-nums font-medium text-[#1e2a38]">{fmtScore(value)}</span>
                     </div>
                   ))}
                 </div>
@@ -684,7 +684,7 @@ export function IppAnnualComplianceAssessmentTab() {
               {/* Deficiency domains */}
               {detailItem.deficiency_domains && (
                 <div>
-                  <div className="text-xs text-gray-400 mb-1">Deficiency Domains</div>
+                  <div className="text-xs text-[#9aa5b4] mb-1">Deficiency Domains</div>
                   <div className="flex flex-wrap gap-1">
                     {detailItem.deficiency_domains.split(',').map(d => d.trim()).filter(Boolean).map(domain => (
                       <span
@@ -701,8 +701,8 @@ export function IppAnnualComplianceAssessmentTab() {
               {/* Notes */}
               {detailItem.notes && (
                 <div>
-                  <div className="text-xs text-gray-400 mb-1">Notes</div>
-                  <div className="text-xs text-gray-700 bg-gray-50 rounded p-2 border whitespace-pre-wrap">
+                  <div className="text-xs text-[#9aa5b4] mb-1">Notes</div>
+                  <div className="text-xs text-[#2d3748] bg-[#f8fafc] rounded p-2 border whitespace-pre-wrap">
                     {detailItem.notes}
                   </div>
                 </div>
@@ -711,13 +711,13 @@ export function IppAnnualComplianceAssessmentTab() {
               {/* Actions section */}
               {!HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs font-semibold text-gray-700 mb-2">Advance State Machine</div>
+                  <div className="text-xs font-semibold text-[#2d3748] mb-2">Advance State Machine</div>
                   <button type="button"
                     onClick={() => {
                       setDetailItem(null);
                       openActionPicker(detailItem);
                     }}
-                    className="px-4 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"
+                    className="px-4 py-1.5 text-xs rounded bg-[#c2873a] text-white hover:bg-[#a3702f]"
                   >
                     Open Action Picker
                   </button>
@@ -726,7 +726,7 @@ export function IppAnnualComplianceAssessmentTab() {
 
               {HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs text-gray-400 italic">
+                  <div className="text-xs text-[#9aa5b4] italic">
                     This assessment is in a terminal state — no further actions are available.
                   </div>
                 </div>
@@ -740,14 +740,14 @@ export function IppAnnualComplianceAssessmentTab() {
       {actionItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-gray-800 mb-1">Annual Compliance Assessment Action</div>
-            <div className="text-xs text-gray-500 mb-4">
+            <div className="text-sm font-semibold text-[#1e2a38] mb-1">Annual Compliance Assessment Action</div>
+            <div className="text-xs text-[#6b7685] mb-4">
               {actionItem.plant_name} &mdash; {actionItem.assessment_year} &mdash;{' '}
               {STATUS_LABELS[actionItem.chain_status] ?? actionItem.chain_status}
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-gray-600 mb-1">Action *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Action *</label>
               <select
                 value={selectedAction}
                 onChange={e => setSelectedAction(e.target.value)}
@@ -760,7 +760,7 @@ export function IppAnnualComplianceAssessmentTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-gray-600 mb-1">Reason (optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Reason (optional)</label>
               <input
                 type="text"
                 value={actionReason}
@@ -771,7 +771,7 @@ export function IppAnnualComplianceAssessmentTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-gray-600 mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
               <textarea
                 value={actionNotes}
                 onChange={e => setActionNotes(e.target.value)}
@@ -790,14 +790,14 @@ export function IppAnnualComplianceAssessmentTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-gray-600 hover:bg-gray-50"
+                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
               >
                 Cancel
               </button>
               <button type="button"
                 onClick={submitAction}
                 disabled={actionLoading || !selectedAction}
-                className="px-4 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                className="px-4 py-1.5 text-xs rounded bg-[#c2873a] text-white hover:bg-[#a3702f] disabled:opacity-50"
               >
                 {actionLoading ? 'Submitting…' : actionLabelCurrent}
               </button>

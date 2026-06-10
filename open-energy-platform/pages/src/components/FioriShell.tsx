@@ -740,7 +740,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white font-headline"
                 style={{
-                  background: 'linear-gradient(135deg,#5fa8e8 0%,#1a5d97 100%)',
+                  background: 'oklch(0.46 0.16 55)',
                   boxShadow: '0 0 0 2px oklch(0.88 0.006 250)',
                 }}
               >

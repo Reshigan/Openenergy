@@ -123,7 +123,7 @@ export function ReconBreaksModal({
                           </div>
                           {!b.resolution && (
                             <div className="col-span-2 flex justify-end">
-                              <button type="button" onClick={() => setResolving(b)} className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">
+                              <button type="button" onClick={() => setResolving(b)} className="h-8 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold">
                                 Resolve
                               </button>
                             </div>
@@ -210,7 +210,7 @@ function ResolveBreakModal({
           </label>
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg">Cancel</button>
-            <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-[#1a3a5c] text-white rounded-lg disabled:opacity-50">
+            <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-[#c2873a] text-white rounded-lg disabled:opacity-50">
               {saving ? 'Saving…' : 'Resolve'}
             </button>
           </div>
@@ -402,7 +402,7 @@ export function ExportDetailModal({
                 <div className="text-[10px] text-[#6b7685] mt-1">{manifest.csv?.bytes?.toLocaleString() || 0} bytes</div>
               </div>
               <div className="flex justify-end pt-2">
-                <button type="button" onClick={downloadCsv} className="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold">
+                <button type="button" onClick={downloadCsv} className="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
                   <Download size={14} /> Download CSV
                 </button>
               </div>

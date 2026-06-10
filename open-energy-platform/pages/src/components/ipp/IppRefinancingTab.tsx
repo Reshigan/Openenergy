@@ -25,7 +25,7 @@ interface Kpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  refinancing_mandated:      'bg-gray-100 text-gray-500',
+  refinancing_mandated:      'bg-[#eef2f7] text-[#6b7685]',
   term_sheet_signed:         'bg-blue-100 text-blue-700',
   credit_approval:           'bg-indigo-100 text-indigo-700',
   conditions_precedent:      'bg-purple-100 text-purple-700',
@@ -33,14 +33,14 @@ const STATUS_COLORS: Record<string, string> = {
   nersa_clearance:           'bg-yellow-100 text-yellow-800',
   legal_documentation:       'bg-teal-100 text-teal-700',
   financial_close:           'bg-green-100 text-green-800',
-  abandoned:                 'bg-gray-100 text-gray-400',
+  abandoned:                 'bg-[#eef2f7] text-[#9aa5b4]',
   rejected:                  'bg-red-100 text-red-700',
   lender_default:            'bg-red-200 text-red-900',
   recovery_in_progress:      'bg-orange-200 text-orange-900',
 };
 
 const TIER_COLORS: Record<string, string> = {
-  minor:       'bg-slate-100 text-slate-600',
+  minor:       'bg-[#eef2f7] text-[#3d4756]',
   moderate:    'bg-blue-100 text-blue-700',
   significant: 'bg-indigo-100 text-indigo-700',
   major:       'bg-orange-100 text-orange-800',
@@ -163,13 +163,13 @@ export function IppRefinancingTab() {
                   ? 'border-orange-200 bg-orange-50'
                   : (k as any).good
                   ? 'border-green-200 bg-green-50'
-                  : 'border-gray-200 bg-white'
+                  : 'border-[#dde4ec] bg-white'
               }`}
             >
-              <div className="text-xs text-gray-500">{k.label}</div>
+              <div className="text-xs text-[#6b7685]">{k.label}</div>
               <div
                 className={`text-xl font-bold ${
-                  (k as any).danger ? 'text-red-700' : (k as any).alert ? 'text-orange-700' : (k as any).good ? 'text-green-700' : 'text-gray-900'
+                  (k as any).danger ? 'text-red-700' : (k as any).alert ? 'text-orange-700' : (k as any).good ? 'text-green-700' : 'text-[#0f1c2e]'
                 }`}
               >
                 {k.value}
@@ -184,33 +184,33 @@ export function IppRefinancingTab() {
         <select
           value={filterStatus}
           onChange={e => { setFilterStatus(e.target.value); load(e.target.value, filterTier); }}
-          className="border rounded px-2 py-1 text-xs text-gray-700 bg-white"
+          className="border rounded px-2 py-1 text-xs text-[#2d3748] bg-white"
         >
           <option value="">All statuses</option>
           {Object.keys(STATUS_COLORS).map(s => (
             <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
           ))}
         </select>
-        <span className="text-gray-300">|</span>
+        <span className="text-[#9aa5b4]">|</span>
         {TIERS.map(t => (
           <button type="button"
             key={t}
             onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }}
-            className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white border-indigo-700' : 'bg-white text-gray-600 border-gray-300'}`}
+            className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white border-indigo-700' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
           >
             {t}
           </button>
         ))}
-        <span className="text-gray-300">|</span>
+        <span className="text-[#9aa5b4]">|</span>
         <button type="button"
           onClick={() => setShowCreate(true)}
-          className="ml-auto px-3 py-1 bg-indigo-600 text-white rounded text-xs hover:bg-indigo-700"
+          className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]"
         >
           + New refinancing
         </button>
         <button type="button"
           onClick={() => load(filterStatus, filterTier)}
-          className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
+          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
         >
           Refresh
         </button>
@@ -218,12 +218,12 @@ export function IppRefinancingTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-gray-400 py-8 text-center">Loading…</div>
+        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading…</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-gray-500">
+              <tr className="border-b text-left text-xs text-[#6b7685]">
                 <th className="pb-2 pr-4">Project / Description</th>
                 <th className="pb-2 pr-4">Type</th>
                 <th className="pb-2 pr-4">Debt quantum</th>
@@ -239,21 +239,21 @@ export function IppRefinancingTab() {
                 const overdue = isOverdue(item.sla_due_at, item.sla_breached);
                 const hasRegulator = !!item.financial_close_at;
                 return (
-                  <tr key={item.id} className="border-b hover:bg-gray-50">
+                  <tr key={item.id} className="border-b hover:bg-[#eef2f7]">
                     <td className="py-2 pr-4 text-xs max-w-[200px]">
-                      <div className="truncate font-medium text-gray-800 font-mono">{item.project_id}</div>
+                      <div className="truncate font-medium text-[#1e2a38] font-mono">{item.project_id}</div>
                       {item.description && (
-                        <div className="text-gray-400 truncate">{item.description}</div>
+                        <div className="text-[#9aa5b4] truncate">{item.description}</div>
                       )}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-gray-600">
+                    <td className="py-2 pr-4 text-xs text-[#3d4756]">
                       {REFI_TYPE_LABELS[item.refinancing_type] ?? item.refinancing_type}
                     </td>
                     <td className="py-2 pr-4 text-xs font-medium tabular-nums">
                       {fmtZar(item.debt_quantum_zar)}
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.ownership_tier] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.ownership_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {item.ownership_tier}
                       </span>
                     </td>
@@ -261,27 +261,27 @@ export function IppRefinancingTab() {
                       {item.sarb_approval_required ? (
                         <span title="SARB exchange control approval required">🌍</span>
                       ) : (
-                        <span className="text-gray-300">—</span>
+                        <span className="text-[#9aa5b4]">—</span>
                       )}
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {item.chain_status.replace(/_/g, ' ')}
                       </span>
                       {hasRegulator && (
                         <span className="ml-1 px-1 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">REGULATOR</span>
                       )}
                     </td>
-                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                       {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_at)}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-gray-400">{fmtDate(item.created_at)}</td>
+                    <td className="py-2 pr-4 text-xs text-[#9aa5b4]">{fmtDate(item.created_at)}</td>
                   </tr>
                 );
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={8} className="py-10 text-center text-[#9aa5b4] text-sm">
                     No refinancing deals found
                   </td>
                 </tr>
@@ -314,13 +314,13 @@ export function IppRefinancingTab() {
               <select
                 value={form.refinancing_type}
                 onChange={e => setForm(f => ({ ...f, refinancing_type: e.target.value }))}
-                className="w-full border rounded px-3 py-2 text-sm text-gray-700"
+                className="w-full border rounded px-3 py-2 text-sm text-[#2d3748]"
               >
                 {Object.entries(REFI_TYPE_LABELS).map(([v, l]) => (
                   <option key={v} value={v}>{l}</option>
                 ))}
               </select>
-              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <label className="flex items-center gap-2 text-sm text-[#2d3748] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={form.sarb_approval_required}
@@ -341,13 +341,13 @@ export function IppRefinancingTab() {
               <button type="button"
                 onClick={createRefinancing}
                 disabled={createPending || !form.project_id || !form.debt_quantum_zar}
-                className="px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
+                className="px-4 py-2 bg-[#c2873a] text-white rounded text-sm hover:bg-[#a3702f] disabled:opacity-50"
               >
                 {createPending ? 'Submitting…' : 'Create refinancing'}
               </button>
               <button type="button"
                 onClick={() => setShowCreate(false)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200"
+                className="px-4 py-2 bg-[#eef2f7] text-[#2d3748] rounded text-sm hover:bg-[#e8ecf0]"
               >
                 Cancel
               </button>

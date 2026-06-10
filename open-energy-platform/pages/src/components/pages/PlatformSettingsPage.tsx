@@ -69,7 +69,7 @@ function UsageTab() {
         <span className="text-[#6b7685]">Window:</span>
         {[7, 30, 90].map((n) => (
           <button type="button" key={n} onClick={() => setDays(n)}
-            className={`h-7 px-2.5 rounded-full text-[11px] font-semibold border ${days === n ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>
+            className={`h-7 px-2.5 rounded-full text-[11px] font-semibold border ${days === n ? 'bg-[#c2873a] text-white border-[#1a3a5c]' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>
             {n}d
           </button>
         ))}
@@ -144,7 +144,7 @@ function ApiKeysTab() {
             <button type="button" onClick={() => { void navigator.clipboard.writeText(newKey); }} className="h-8 px-2.5 rounded bg-white border border-[#dde4ec] text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
               <Copy size={13} /> Copy
             </button>
-            <button type="button" onClick={() => setNewKey(null)} className="h-8 px-2.5 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Done</button>
+            <button type="button" onClick={() => setNewKey(null)} className="h-8 px-2.5 rounded bg-[#c2873a] text-white text-[12px] font-semibold">Done</button>
           </div>
         </div>
       )}
@@ -161,7 +161,7 @@ function ApiKeysTab() {
           <input placeholder="Scopes (comma-sep, optional)" value={scopes} onChange={(e) => setScopes(e.target.value)}
                  className="h-9 px-3 rounded border border-[#dde4ec] text-[12px] font-mono" />
           <button type="button" onClick={create} disabled={!name.trim()}
-                  className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
+                  className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50">
             Create key
           </button>
         </div>
@@ -239,7 +239,7 @@ function WebhooksTab() {
           <div className="text-[12px] font-bold widget-tone-good-text">Subscription created — copy the HMAC secret now</div>
           <div className="text-[11px] text-[#3d4756] mt-1">Verify <code>x-oe-signature: sha256=...</code> against this secret in your handler. Shown once.</div>
           <code className="block mt-2 font-mono text-[12px] bg-white border border-[#dde4ec] px-3 py-2 rounded">{secret}</code>
-          <button type="button" onClick={() => setSecret(null)} className="mt-2 h-8 px-2.5 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Got it</button>
+          <button type="button" onClick={() => setSecret(null)} className="mt-2 h-8 px-2.5 rounded bg-[#c2873a] text-white text-[12px] font-semibold">Got it</button>
         </div>
       )}
       <section className="widget-card">
@@ -253,13 +253,13 @@ function WebhooksTab() {
             {WEBHOOK_EVENTS.map((ev) => (
               <button type="button" key={ev}
                 onClick={() => setEvents((s) => s.includes(ev) ? s.filter((x) => x !== ev) : [...s, ev])}
-                className={`h-6 px-2 rounded-full text-[10px] font-mono ${events.includes(ev) ? 'bg-[#1a3a5c] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
+                className={`h-6 px-2 rounded-full text-[10px] font-mono ${events.includes(ev) ? 'bg-[#c2873a] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
                 {ev}
               </button>
             ))}
           </div>
           <button type="button" onClick={create} disabled={!url || events.length === 0}
-                  className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
+                  className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50">
             Subscribe
           </button>
         </div>
@@ -358,7 +358,7 @@ function DigestsTab() {
           <input type="number" min={0} max={23} value={hour} onChange={(e) => setHour(Number(e.target.value))}
                  placeholder="Hour SAST" className="h-9 px-2 rounded border border-[#dde4ec] text-[12px] font-mono" />
         </div>
-        <div className="px-3 pb-3"><button type="button" onClick={create} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Subscribe</button></div>
+        <div className="px-3 pb-3"><button type="button" onClick={create} className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold">Subscribe</button></div>
       </section>
       <section className="widget-card">
         <header className="widget-card-header"><div className="widget-card-title">Subscriptions</div></header>

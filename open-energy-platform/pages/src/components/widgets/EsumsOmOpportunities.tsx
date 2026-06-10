@@ -87,24 +87,24 @@ export function EsumsOmOpportunities() {
 
   return (
     <div className="space-y-3">
-      <header className="rounded-xl bg-gradient-to-r from-[#1e3a5f] via-[#1a3a5c] to-[#0b1c30] text-white p-5 shadow-md">
+      <header className="rounded-xl border p-5" style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <div className="text-[11px] uppercase tracking-wider text-white/70 inline-flex items-center gap-1">
-              <Sparkles size={11} /> Performance opportunities · deterministic rule scan
+            <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold inline-flex items-center gap-1" style={{ color: 'oklch(0.55 0.008 250)' }}>
+              <Sparkles size={10} /> Performance opportunities · deterministic rule scan
             </div>
-            <h1 className="font-display text-[22px] font-bold tracking-tight mt-1">
+            <h1 className="font-display text-[20px] font-bold tracking-tight mt-0.5" style={{ color: 'oklch(0.15 0.025 250)' }}>
               {data.count} opportunities · {formatZAR(data.total_annual_upside_zar)} annual upside
             </h1>
-            <p className="text-[12px] text-white/70 mt-1">
+            <p className="text-[12px] mt-0.5" style={{ color: 'oklch(0.45 0.015 250)' }}>
               Every opportunity is computed from SQL + arithmetic over operational data — no LLM inference,
               no opaque models. Tap an evidence chip to see why a rule fired.
             </p>
           </div>
-          <div className="flex items-center gap-2 text-[11px] text-white/70">
+          <div className="flex items-center gap-2 text-[11px]" style={{ color: 'oklch(0.55 0.008 250)' }}>
             <span>Last scan</span>
             <span className="font-mono">{new Date(data.generated_at).toLocaleTimeString('en-ZA', { timeZone: 'Africa/Johannesburg', hour: '2-digit', minute: '2-digit' })}</span>
-            <button type="button" onClick={load} className="ml-2 px-2 h-7 rounded bg-white/10 hover:bg-white/15 text-white text-[11px] border border-white/15">
+            <button type="button" onClick={load} className="ml-2 px-2 h-7 rounded text-[11px] border hover:bg-[#eef2f7]" style={{ color: 'oklch(0.45 0.015 250)', borderColor: 'oklch(0.88 0.006 250)' }}>
               Re-scan
             </button>
           </div>
@@ -115,7 +115,7 @@ export function EsumsOmOpportunities() {
         <div className="px-4 py-2 flex flex-wrap gap-2 items-center border-b border-[#eef2f7]">
           <button type="button"
             onClick={() => setFilter('all')}
-            className={`h-7 px-2.5 rounded-full text-[11px] font-semibold border ${filter === 'all' ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
+            className={`h-7 px-2.5 rounded-full text-[11px] font-semibold border ${filter === 'all' ? 'bg-[#c2873a] text-white border-[#c2873a]' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
           >
             All <span className="opacity-70 ml-1">{data.count}</span>
           </button>
@@ -128,7 +128,7 @@ export function EsumsOmOpportunities() {
                 <button type="button"
                   key={cat}
                   onClick={() => setFilter(cat)}
-                  className={`h-7 px-2.5 rounded-full text-[11px] font-semibold border inline-flex items-center gap-1 ${filter === cat ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
+                  className={`h-7 px-2.5 rounded-full text-[11px] font-semibold border inline-flex items-center gap-1 ${filter === cat ? 'bg-[#c2873a] text-white border-[#c2873a]' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
                 >
                   <Icon size={11} />
                   {meta.label}
@@ -192,7 +192,7 @@ export function EsumsOmOpportunities() {
                     <button type="button"
                       onClick={() => act(o)}
                       disabled={acting === o.id}
-                      className="self-start h-8 px-3 rounded-md bg-[#1a3a5c] hover:bg-[#0b1c30] text-white text-[11px] font-semibold disabled:opacity-50 whitespace-nowrap"
+                      className="self-start h-8 px-3 rounded-md bg-[#c2873a] hover:bg-[#a3702f] text-white text-[11px] font-semibold disabled:opacity-50 whitespace-nowrap"
                     >
                       {acting === o.id ? 'Acting…' : actionLabel(o.action.kind)}
                     </button>

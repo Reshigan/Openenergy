@@ -172,7 +172,7 @@ function FlagsTab() {
                   </td>
                   <td className="py-2 text-right">
                     <button type="button" disabled={!dirty || busy} onClick={() => save(f.key)}
-                            className="h-7 px-2 rounded bg-[#1a3a5c] text-white text-[11px] font-semibold disabled:opacity-40 inline-flex items-center gap-1">
+                            className="h-7 px-2 rounded bg-[#c2873a] text-white text-[11px] font-semibold disabled:opacity-40 inline-flex items-center gap-1">
                       <Save size={11}/> Save
                     </button>
                   </td>
@@ -280,7 +280,7 @@ function SignaturesTab() {
                  value={docRef} onChange={(e) => setDocRef(e.target.value)}/>
         </label>
         <button type="button" disabled={busy} onClick={load}
-                className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[11px] font-semibold disabled:opacity-50">
+                className="h-8 px-3 rounded bg-[#c2873a] text-white text-[11px] font-semibold disabled:opacity-50">
           {busy ? 'Loading…' : 'Look up'}
         </button>
       </div>

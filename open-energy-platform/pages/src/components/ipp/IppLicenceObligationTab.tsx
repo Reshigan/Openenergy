@@ -31,7 +31,7 @@ interface ObligationKpis {
 // ─── Status meta ─────────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<string, string> = {
-  monitoring_active:      'bg-slate-100 text-slate-600',
+  monitoring_active:      'bg-[#eef2f7] text-[#3d4756]',
   assessment_due:         'bg-amber-100 text-amber-700',
   evidence_gathered:      'bg-cyan-100 text-cyan-700',
   evidence_submitted:     'bg-blue-100 text-blue-700',
@@ -69,7 +69,7 @@ const CLASS_COLORS: Record<string, string> = {
   environmental:      'bg-green-100 text-green-700',
   financial:          'bg-blue-100 text-blue-700',
   technical:          'bg-indigo-100 text-indigo-700',
-  administrative:     'bg-gray-100 text-gray-600',
+  administrative:     'bg-[#eef2f7] text-[#3d4756]',
 };
 
 const CLASS_LABELS: Record<string, string> = {
@@ -181,7 +181,7 @@ function truncate(s: string, n = 24): string {
   return s.length > n ? s.slice(0, n) + '…' : s;
 }
 
-const sel = 'border rounded px-2 py-1 text-xs text-gray-700 bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
 
 const PAGE_SIZE = 20;
 
@@ -193,15 +193,15 @@ function KpiChip({ label, value, mode = 'neutral' }: { label: string; value: str
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-gray-200 bg-white';
+    'border-[#dde4ec] bg-white';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-gray-900';
+    'text-[#0f1c2e]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-gray-500">{label}</div>
+      <div className="text-xs text-[#6b7685]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -418,7 +418,7 @@ export function IppLicenceObligationTab() {
             <option key={c} value={c}>{CLASS_LABELS[c] ?? c}</option>
           ))}
         </select>
-        <label className="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer select-none">
+        <label className="flex items-center gap-1.5 text-xs text-[#2d3748] cursor-pointer select-none">
           <input
             type="checkbox"
             checked={filterSlaBreached}
@@ -429,13 +429,13 @@ export function IppLicenceObligationTab() {
         </label>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
+          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
         >
           Refresh
         </button>
         <button type="button"
           onClick={() => setShowCreate(v => !v)}
-          className="ml-auto px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+          className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]"
         >
           + New Obligation
         </button>
@@ -450,7 +450,7 @@ export function IppLicenceObligationTab() {
           <div className="text-sm font-semibold text-blue-800">New Licence Obligation</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-gray-600 mb-1">IPP ID *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">IPP ID *</label>
               <input
                 type="text"
                 value={formIppId}
@@ -461,7 +461,7 @@ export function IppLicenceObligationTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Licence Number *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Licence Number *</label>
               <input
                 type="text"
                 value={formLicenceNumber}
@@ -472,7 +472,7 @@ export function IppLicenceObligationTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Obligation Ref *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Obligation Ref *</label>
               <input
                 type="text"
                 value={formObligationRef}
@@ -483,7 +483,7 @@ export function IppLicenceObligationTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Obligation Class *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Obligation Class *</label>
               <select
                 value={formObligationClass}
                 onChange={e => setFormObligationClass(e.target.value)}
@@ -496,7 +496,7 @@ export function IppLicenceObligationTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Compliance Period *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Compliance Period *</label>
               <input
                 type="text"
                 value={formPeriod}
@@ -507,7 +507,7 @@ export function IppLicenceObligationTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Project Name (optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Project Name (optional)</label>
               <input
                 type="text"
                 value={formProjectName}
@@ -517,7 +517,7 @@ export function IppLicenceObligationTab() {
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs text-gray-600 mb-1">Condition Description *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Condition Description *</label>
               <textarea
                 value={formCondDesc}
                 onChange={e => setFormCondDesc(e.target.value)}
@@ -537,14 +537,14 @@ export function IppLicenceObligationTab() {
             <button
               type="submit"
               disabled={creating}
-              className="px-4 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-1.5 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f] disabled:opacity-50"
             >
               {creating ? 'Creating…' : 'Create'}
             </button>
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 bg-white border rounded text-xs text-gray-600 hover:bg-gray-50"
+              className="px-3 py-1.5 bg-white border rounded text-xs text-[#3d4756] hover:bg-[#eef2f7]"
             >
               Cancel
             </button>
@@ -561,12 +561,12 @@ export function IppLicenceObligationTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-gray-400 py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-gray-500">
+              <tr className="border-b text-left text-xs text-[#6b7685]">
                 <th className="pb-2 pr-3">Obligation Ref</th>
                 <th className="pb-2 pr-3">Class</th>
                 <th className="pb-2 pr-3">Licence No.</th>
@@ -584,25 +584,25 @@ export function IppLicenceObligationTab() {
                 return (
                   <tr
                     key={item.id}
-                    className="border-b hover:bg-gray-50 cursor-pointer"
+                    className="border-b hover:bg-[#eef2f7] cursor-pointer"
                     onClick={() => setDetailItem(item)}
                   >
-                    <td className="py-2 pr-3 text-xs font-mono text-gray-700">
+                    <td className="py-2 pr-3 text-xs font-mono text-[#2d3748]">
                       {item.obligation_ref}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${CLASS_COLORS[item.obligation_class] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${CLASS_COLORS[item.obligation_class] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {CLASS_LABELS[item.obligation_class] ?? item.obligation_class}
                       </span>
                     </td>
-                    <td className="py-2 pr-3 text-xs text-gray-600">
+                    <td className="py-2 pr-3 text-xs text-[#3d4756]">
                       {item.licence_number}
                     </td>
-                    <td className="py-2 pr-3 text-xs text-gray-600">
+                    <td className="py-2 pr-3 text-xs text-[#3d4756]">
                       {item.compliance_period}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
                       </span>
                       {item.sla_breached === 1 && (
@@ -610,7 +610,7 @@ export function IppLicenceObligationTab() {
                       )}
                     </td>
                     <td className="py-2 pr-3 text-xs tabular-nums">
-                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-gray-600'}>
+                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[#3d4756]'}>
                         {due.text}
                       </span>
                     </td>
@@ -618,7 +618,7 @@ export function IppLicenceObligationTab() {
                       {item.regulator_notified === 1 ? (
                         <span title="Regulator notified" className="text-orange-500 text-base leading-none">&#9873;</span>
                       ) : (
-                        <span className="text-gray-200 text-base leading-none">&#9873;</span>
+                        <span className="text-[#e8ecf0] text-base leading-none">&#9873;</span>
                       )}
                     </td>
                     <td
@@ -639,7 +639,7 @@ export function IppLicenceObligationTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={8} className="py-10 text-center text-[#9aa5b4] text-sm">
                     No licence obligation records found
                   </td>
                 </tr>
@@ -655,15 +655,15 @@ export function IppLicenceObligationTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-gray-500">Page {page} of {totalPages}</span>
+          <span className="text-xs text-[#6b7685]">Page {page} of {totalPages}</span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             Next &rarr;
           </button>
@@ -676,17 +676,17 @@ export function IppLicenceObligationTab() {
           <div className="bg-white h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <div>
-                <div className="text-sm font-semibold text-gray-800">
+                <div className="text-sm font-semibold text-[#1e2a38]">
                   Licence Obligation
                 </div>
-                <div className="text-xs text-gray-500 mt-0.5">
+                <div className="text-xs text-[#6b7685] mt-0.5">
                   {detailItem.obligation_ref}
                   {detailItem.project_name && <> &nbsp;&middot;&nbsp; {detailItem.project_name}</>}
                 </div>
               </div>
               <button type="button"
                 onClick={() => setDetailItem(null)}
-                className="text-gray-400 hover:text-gray-700 text-lg leading-none"
+                className="text-[#9aa5b4] hover:text-[#2d3748] text-lg leading-none"
               >
                 &times;
               </button>
@@ -695,10 +695,10 @@ export function IppLicenceObligationTab() {
             <div className="flex-1 p-5 space-y-5">
               {/* Status badges */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                   {STATUS_LABELS[detailItem.chain_status] ?? detailItem.chain_status.replace(/_/g, ' ')}
                 </span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${CLASS_COLORS[detailItem.obligation_class] ?? 'bg-gray-100 text-gray-500'}`}>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${CLASS_COLORS[detailItem.obligation_class] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                   {CLASS_LABELS[detailItem.obligation_class] ?? detailItem.obligation_class}
                 </span>
                 {detailItem.sla_breached === 1 && (
@@ -712,52 +712,52 @@ export function IppLicenceObligationTab() {
               {/* Core fields */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
                 <div>
-                  <div className="text-gray-400 mb-0.5">Licence Number</div>
-                  <div className="text-gray-700 font-mono">{detailItem.licence_number}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Licence Number</div>
+                  <div className="text-[#2d3748] font-mono">{detailItem.licence_number}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Obligation Ref</div>
-                  <div className="text-gray-700 font-mono">{detailItem.obligation_ref}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Obligation Ref</div>
+                  <div className="text-[#2d3748] font-mono">{detailItem.obligation_ref}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Compliance Period</div>
-                  <div className="text-gray-800">{detailItem.compliance_period}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Compliance Period</div>
+                  <div className="text-[#1e2a38]">{detailItem.compliance_period}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Project Name</div>
-                  <div className="text-gray-800">{detailItem.project_name ?? '—'}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Project Name</div>
+                  <div className="text-[#1e2a38]">{detailItem.project_name ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">SLA Deadline</div>
-                  <div className={`tabular-nums ${fmtDate(detailItem.sla_deadline).isPast ? 'text-red-600 font-medium' : 'text-gray-800'}`}>
+                  <div className="text-[#9aa5b4] mb-0.5">SLA Deadline</div>
+                  <div className={`tabular-nums ${fmtDate(detailItem.sla_deadline).isPast ? 'text-red-600 font-medium' : 'text-[#1e2a38]'}`}>
                     {fmtDate(detailItem.sla_deadline).text}
                   </div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Regulator Notified</div>
-                  <div className={detailItem.regulator_notified === 1 ? 'text-orange-600 font-medium' : 'text-gray-400'}>
+                  <div className="text-[#9aa5b4] mb-0.5">Regulator Notified</div>
+                  <div className={detailItem.regulator_notified === 1 ? 'text-orange-600 font-medium' : 'text-[#9aa5b4]'}>
                     {detailItem.regulator_notified === 1 ? 'Yes' : 'No'}
                   </div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Actor</div>
-                  <div className="text-gray-700 break-all">{detailItem.actor_id ?? '—'}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Actor</div>
+                  <div className="text-[#2d3748] break-all">{detailItem.actor_id ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">IPP ID</div>
-                  <div className="font-mono text-gray-600 break-all">{truncate(detailItem.ipp_id, 30)}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">IPP ID</div>
+                  <div className="font-mono text-[#3d4756] break-all">{truncate(detailItem.ipp_id, 30)}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Created</div>
-                  <div className="text-gray-600">{fmtDate(detailItem.created_at).text}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Created</div>
+                  <div className="text-[#3d4756]">{fmtDate(detailItem.created_at).text}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Updated</div>
-                  <div className="text-gray-600">{fmtDate(detailItem.updated_at).text}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Updated</div>
+                  <div className="text-[#3d4756]">{fmtDate(detailItem.updated_at).text}</div>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-gray-400 mb-0.5">Condition Description</div>
-                  <div className="text-gray-700 bg-gray-50 rounded p-2 border whitespace-pre-wrap">
+                  <div className="text-[#9aa5b4] mb-0.5">Condition Description</div>
+                  <div className="text-[#2d3748] bg-[#f8fafc] rounded p-2 border whitespace-pre-wrap">
                     {detailItem.condition_description}
                   </div>
                 </div>
@@ -766,8 +766,8 @@ export function IppLicenceObligationTab() {
               {/* Reason */}
               {detailItem.reason && (
                 <div>
-                  <div className="text-xs text-gray-400 mb-1">Reason / Notes</div>
-                  <div className="text-xs text-gray-700 bg-gray-50 rounded p-2 border whitespace-pre-wrap">
+                  <div className="text-xs text-[#9aa5b4] mb-1">Reason / Notes</div>
+                  <div className="text-xs text-[#2d3748] bg-[#f8fafc] rounded p-2 border whitespace-pre-wrap">
                     {detailItem.reason}
                   </div>
                 </div>
@@ -776,13 +776,13 @@ export function IppLicenceObligationTab() {
               {/* Actions section */}
               {!HARD_TERMINALS.has(detailItem.chain_status) && getActions(detailItem).length > 0 && (
                 <div className="border-t pt-4">
-                  <div className="text-xs font-semibold text-gray-700 mb-2">Advance State Machine</div>
+                  <div className="text-xs font-semibold text-[#2d3748] mb-2">Advance State Machine</div>
                   <button type="button"
                     onClick={() => {
                       setDetailItem(null);
                       openActionPicker(detailItem);
                     }}
-                    className="px-4 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"
+                    className="px-4 py-1.5 text-xs rounded bg-[#c2873a] text-white hover:bg-[#a3702f]"
                   >
                     Open Action Picker
                   </button>
@@ -791,7 +791,7 @@ export function IppLicenceObligationTab() {
 
               {(HARD_TERMINALS.has(detailItem.chain_status) || detailItem.chain_status === 'assessed_compliant') && (
                 <div className="border-t pt-4">
-                  <div className="text-xs text-gray-400 italic">
+                  <div className="text-xs text-[#9aa5b4] italic">
                     {HARD_TERMINALS.has(detailItem.chain_status)
                       ? 'This obligation is in a terminal state — no further actions are available.'
                       : 'This obligation period is closed as compliant. A new record will be created for the next period.'}
@@ -807,8 +807,8 @@ export function IppLicenceObligationTab() {
       {actionItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-gray-800 mb-1">Licence Obligation Action</div>
-            <div className="text-xs text-gray-500 mb-4">
+            <div className="text-sm font-semibold text-[#1e2a38] mb-1">Licence Obligation Action</div>
+            <div className="text-xs text-[#6b7685] mb-4">
               {CLASS_LABELS[actionItem.obligation_class] ?? actionItem.obligation_class}
               {' '}&mdash;{' '}
               {actionItem.obligation_ref}
@@ -817,7 +817,7 @@ export function IppLicenceObligationTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-gray-600 mb-1">Action *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Action *</label>
               <select
                 value={selectedAction}
                 onChange={e => setSelectedAction(e.target.value)}
@@ -830,7 +830,7 @@ export function IppLicenceObligationTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-gray-600 mb-1">Reason (optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Reason (optional)</label>
               <input
                 type="text"
                 value={actionReason}
@@ -849,7 +849,7 @@ export function IppLicenceObligationTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-gray-600 hover:bg-gray-50"
+                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
               >
                 Cancel
               </button>
@@ -861,7 +861,7 @@ export function IppLicenceObligationTab() {
                     ? 'bg-red-600 hover:bg-red-700'
                     : modalActions.find(a => a.name === selectedAction)?.variant === 'warn'
                     ? 'bg-amber-500 hover:bg-amber-600'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-[#c2873a] hover:bg-[#a3702f]'
                 }`}
               >
                 {actionLoading ? 'Submitting…' : actionLabelCurrent}

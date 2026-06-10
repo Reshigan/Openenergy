@@ -88,7 +88,7 @@ function Kpi({ label, value, sub }: { label: string; value: string | number; sub
   return (
     <div style={{ background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, padding: '12px 16px', minWidth: 140 }}>
       <div style={{ fontSize: 11, color: '#557', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#1c2733', marginTop: 4 }}>{value}</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: '#0f1c2e', marginTop: 4 }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: '#7a8a9a', marginTop: 2 }}>{sub}</div>}
     </div>
   );
@@ -168,7 +168,7 @@ export function MrvChainTab() {
 
   return (
     <div data-testid="carbon-mrv-chain-tab" style={{ padding: '16px 20px', minHeight: 600 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c2733', marginTop: 0 }}>MRV verification chain</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f1c2e', marginTop: 0 }}>MRV verification chain</h2>
       <p style={{ fontSize: 13, color: '#557', marginTop: 4 }}>
         UNFCCC Article 6 verification workflow — draft → DOE assigned → DOE review →
         DOE opinion → CRA review → CRA approve / reject → issuance authorized → issued.
@@ -193,8 +193,8 @@ export function MrvChainTab() {
             onClick={() => setFilter(f.key)}
             style={{
               padding: '6px 12px', borderRadius: 999, border: '1px solid #e3e7ec',
-              background: filter === f.key ? '#1c2733' : '#fff',
-              color: filter === f.key ? '#fff' : '#1c2733', fontSize: 12, fontWeight: 600,
+              background: filter === f.key ? 'oklch(0.46 0.16 55)' : '#fff',
+              color: filter === f.key ? '#fff' : '#0f1c2e', fontSize: 12, fontWeight: 600,
               cursor: 'pointer',
             }}
           >{f.label}</button>
@@ -323,19 +323,19 @@ export function MrvChainTab() {
             {drill.chain_status === 'draft' && (
               <button type="button" data-testid="carbon-mrv-chain-submit"
                 onClick={() => void act('submit', {}, drill.id)}
-                style={{ padding: '6px 12px', background: '#1c2733', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                style={{ padding: '6px 12px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
               >Submit</button>
             )}
             {drill.chain_status === 'submitted' && (
               <button type="button" data-testid="carbon-mrv-chain-assign-doe"
                 onClick={() => void act('assign-doe', {}, drill.id)}
-                style={{ padding: '6px 12px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                style={{ padding: '6px 12px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
               >Assign DOE</button>
             )}
             {drill.chain_status === 'doe_assigned' && (
               <button type="button" data-testid="carbon-mrv-chain-start-review"
                 onClick={() => void act('start-review', {}, drill.id)}
-                style={{ padding: '6px 12px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                style={{ padding: '6px 12px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
               >Start review</button>
             )}
             {drill.chain_status === 'doe_review' && (
@@ -360,7 +360,7 @@ export function MrvChainTab() {
             {(drill.chain_status === 'doe_opinion_positive' || drill.chain_status === 'doe_opinion_qualified') && (
               <button type="button" data-testid="carbon-mrv-chain-submit-cra"
                 onClick={() => void act('submit-cra', {}, drill.id)}
-                style={{ padding: '6px 12px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                style={{ padding: '6px 12px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
               >Submit to CRA</button>
             )}
             {drill.chain_status === 'cra_review' && (
@@ -381,7 +381,7 @@ export function MrvChainTab() {
             {drill.chain_status === 'cra_approved' && (
               <button type="button" data-testid="carbon-mrv-chain-authorize-issuance"
                 onClick={() => void act('authorize-issuance', {}, drill.id)}
-                style={{ padding: '6px 12px', background: '#1c2733', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                style={{ padding: '6px 12px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
               >Authorize issuance</button>
             )}
             {drill.chain_status === 'issuance_authorized' && (

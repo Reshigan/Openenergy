@@ -118,15 +118,15 @@ function zarFromKwh(kwhVal: number | null, rate: number | null): string {
 function Pill({ status }: { status: string }) {
   const map: Record<string, string> = {
     active:   'bg-emerald-100 text-emerald-800',
-    inactive: 'bg-gray-100 text-gray-600',
+    inactive: 'bg-[#eef2f7] text-[#3d4756]',
     error:    'bg-red-100 text-red-700',
     online:   'bg-emerald-100 text-emerald-800',
-    offline:  'bg-gray-100 text-gray-500',
+    offline:  'bg-[#eef2f7] text-[#6b7685]',
     pending:  'bg-amber-100 text-amber-700',
     stub:     'bg-violet-100 text-violet-700',
   };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${map[status] ?? 'bg-gray-100 text-gray-600'}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${map[status] ?? 'bg-[#eef2f7] text-[#3d4756]'}`}>
       {status}
     </span>
   );
@@ -152,19 +152,19 @@ function CredCard({
   const isLive = ADAPTER_LIVE[cred.manufacturer] ?? false;
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4 bg-white hover:border-gray-300 transition-colors">
+    <div className="border border-[#dde4ec] rounded-lg p-4 bg-white hover:border-[#dde4ec] transition-colors">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-sm text-gray-900 truncate">
+            <span className="font-medium text-sm text-[#0f1c2e] truncate">
               {MFR_LABEL[cred.manufacturer] ?? cred.manufacturer}
             </span>
             <Pill status={cred.status} />
             {!isLive && <Pill status="stub" />}
           </div>
-          <div className="text-xs text-gray-500 mt-0.5">{cred.auth_type}</div>
+          <div className="text-xs text-[#6b7685] mt-0.5">{cred.auth_type}</div>
           {cred.base_url && (
-            <div className="text-xs text-gray-400 truncate mt-0.5">{cred.base_url}</div>
+            <div className="text-xs text-[#9aa5b4] truncate mt-0.5">{cred.base_url}</div>
           )}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -172,13 +172,13 @@ function CredCard({
             onClick={() => onTest(cred.id)}
             disabled={testing || !isLive}
             title={isLive ? 'Test connection' : 'Adapter not yet implemented'}
-            className="px-2.5 py-1 text-xs rounded border border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-2.5 py-1 text-xs rounded border border-[#dde4ec] text-[#3d4756] hover:border-blue-400 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {testing ? '…' : 'Test'}
           </button>
           <button type="button"
             onClick={() => onEdit(cred)}
-            className="px-2.5 py-1 text-xs rounded border border-gray-200 text-gray-600 hover:border-gray-400 transition-colors"
+            className="px-2.5 py-1 text-xs rounded border border-[#dde4ec] text-[#3d4756] hover:border-gray-400 transition-colors"
           >
             Edit
           </button>
@@ -191,10 +191,10 @@ function CredCard({
         </div>
       </div>
 
-      <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
+      <div className="mt-3 flex items-center gap-4 text-xs text-[#6b7685]">
         <span>{stationCount} station{stationCount !== 1 ? 's' : ''}</span>
         {cred.last_tested_at && <span>Tested {fmtTs(cred.last_tested_at)}</span>}
-        {!cred.last_tested_at && <span className="text-gray-400">Never tested</span>}
+        {!cred.last_tested_at && <span className="text-[#9aa5b4]">Never tested</span>}
       </div>
 
       {cred.last_error && (
@@ -289,11 +289,11 @@ function CredModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-900">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eef2f7]">
+          <h2 className="text-sm font-semibold text-[#0f1c2e]">
             {initial ? 'Edit integration' : 'Add integration'}
           </h2>
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-700 text-lg leading-none">&times;</button>
+          <button type="button" onClick={onClose} className="text-[#9aa5b4] hover:text-[#2d3748] text-lg leading-none">&times;</button>
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-3 max-h-[70vh] overflow-y-auto">
@@ -301,19 +301,19 @@ function CredModal({
           {/* Manufacturer picker */}
           {!initial && (
             <div className="space-y-2">
-              <label className="block text-xs font-medium text-gray-700">Technology &amp; manufacturer</label>
+              <label className="block text-xs font-medium text-[#2d3748]">Technology &amp; manufacturer</label>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setIsCustom(false)}
-                  className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${!isCustom ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-600 hover:border-gray-400'}`}
+                  className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${!isCustom ? 'bg-[#c2873a] text-white border-blue-600' : 'border-[#dde4ec] text-[#3d4756] hover:border-gray-400'}`}
                 >
                   Known manufacturer
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsCustom(true)}
-                  className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${isCustom ? 'bg-gray-800 text-white border-gray-800' : 'border-gray-200 text-gray-600 hover:border-gray-400'}`}
+                  className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${isCustom ? 'bg-[#1e2a38] text-white border-gray-800' : 'border-[#dde4ec] text-[#3d4756] hover:border-gray-400'}`}
                 >
                   Other / custom
                 </button>
@@ -324,7 +324,7 @@ function CredModal({
                   value={form.manufacturer}
                   onChange={e => set('manufacturer', e.target.value)}
                   required={!isCustom}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-[#dde4ec] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#c2873a]"
                 >
                   <option value="">— select —</option>
                   {TECH_GROUPS.map(tg => (
@@ -343,9 +343,9 @@ function CredModal({
                     onChange={e => setCustomName(e.target.value)}
                     placeholder="Manufacturer name (e.g. deye, saj, solplanet)"
                     required={isCustom}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-[#dde4ec] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#c2873a]"
                   />
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-[#9aa5b4]">
                     Credentials will be stored. A live polling adapter must be built before data flows —
                     contact your platform administrator or open a feature request with the manufacturer's
                     API documentation.
@@ -355,7 +355,7 @@ function CredModal({
                     onChange={e => set('adapter_notes', e.target.value)}
                     placeholder="API docs URL, auth method, endpoint pattern, any notes for the adapter builder…"
                     rows={3}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    className="w-full border border-[#dde4ec] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#c2873a] resize-none"
                   />
                 </div>
               )}
@@ -364,11 +364,11 @@ function CredModal({
 
           {/* Auth type */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Auth type</label>
+            <label className="block text-xs font-medium text-[#2d3748] mb-1">Auth type</label>
             <select
               value={form.auth_type}
               onChange={e => set('auth_type', e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-[#dde4ec] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#c2873a]"
             >
               {AUTH_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
@@ -398,9 +398,9 @@ function CredModal({
           <Field label="Site / Plant ID (required by some manufacturers)" name="site_id" value={form.site_id} onChange={v => set('site_id', v)} />
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-[#2d3748] mb-1">
               Fund tariff (ZAR / kWh)
-              <span className="ml-1 text-gray-400 font-normal">— rate at which the fund sells energy (revenue accrual)</span>
+              <span className="ml-1 text-[#9aa5b4] font-normal">— rate at which the fund sells energy (revenue accrual)</span>
             </label>
             <input
               type="number"
@@ -411,14 +411,14 @@ function CredModal({
               min="0"
               step="0.01"
               autoComplete="off"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-[#dde4ec] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#c2873a]"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-[#2d3748] mb-1">
                 Customer grid rate (ZAR / kWh)
-                <span className="ml-1 text-gray-400 font-normal">— what customer pays Eskom (savings accrual)</span>
+                <span className="ml-1 text-[#9aa5b4] font-normal">— what customer pays Eskom (savings accrual)</span>
               </label>
               <input
                 type="number"
@@ -429,13 +429,13 @@ function CredModal({
                 min="0"
                 step="0.01"
                 autoComplete="off"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-[#dde4ec] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#c2873a]"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-[#2d3748] mb-1">
                 Grid carbon intensity (gCO₂e / kWh)
-                <span className="ml-1 text-gray-400 font-normal">— SA Eskom default 950</span>
+                <span className="ml-1 text-[#9aa5b4] font-normal">— SA Eskom default 950</span>
               </label>
               <input
                 type="number"
@@ -446,7 +446,7 @@ function CredModal({
                 min="0"
                 step="1"
                 autoComplete="off"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-[#dde4ec] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#c2873a]"
               />
             </div>
           </div>
@@ -454,12 +454,12 @@ function CredModal({
           {error && <div className="text-xs text-red-600 bg-red-50 border border-red-100 rounded px-3 py-2">{error}</div>}
         </form>
 
-        <div className="px-6 py-3 border-t border-gray-100 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-1.5 text-sm text-gray-600 hover:text-gray-900">Cancel</button>
+        <div className="px-6 py-3 border-t border-[#eef2f7] flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="px-4 py-1.5 text-sm text-[#3d4756] hover:text-[#0f1c2e]">Cancel</button>
           <button type="button"
             onClick={handleSubmit as unknown as React.MouseEventHandler}
             disabled={saving}
-            className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            className="px-4 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg hover:bg-[#a3702f] disabled:opacity-50 transition-colors"
           >
             {saving ? 'Saving…' : (initial ? 'Update' : 'Add integration')}
           </button>
@@ -476,7 +476,7 @@ function Field({ label, name, value, onChange, type = 'text', placeholder }: {
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-xs font-medium text-[#2d3748] mb-1">{label}</label>
       <input
         type={type}
         name={name}
@@ -484,7 +484,7 @@ function Field({ label, name, value, onChange, type = 'text', placeholder }: {
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         autoComplete="off"
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full border border-[#dde4ec] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#c2873a]"
       />
     </div>
   );
@@ -496,15 +496,15 @@ function StationRow({ s }: { s: Station }) {
   const online = s.snapshot_online === 1 || s.online_status === 1;
   const rate = s.tariff_rate_zar_per_kwh;
   return (
-    <tr className="border-t border-gray-100 hover:bg-gray-50/50">
-      <td className="px-3 py-2 text-xs font-mono text-gray-700">{s.device_sn}</td>
-      <td className="px-3 py-2 text-xs text-gray-600">{MFR_LABEL[s.manufacturer] ?? s.manufacturer}</td>
-      <td className="px-3 py-2 text-xs text-gray-600">{s.plant_name ?? s.plant_id}</td>
-      <td className="px-3 py-2 text-xs text-gray-600">{s.site_name ?? <span className="text-gray-400">unlinked</span>}</td>
-      <td className="px-3 py-2 text-xs text-right tabular-nums font-medium text-gray-900">
+    <tr className="border-t border-[#eef2f7] hover:bg-[#eef2f7]/50">
+      <td className="px-3 py-2 text-xs font-mono text-[#2d3748]">{s.device_sn}</td>
+      <td className="px-3 py-2 text-xs text-[#3d4756]">{MFR_LABEL[s.manufacturer] ?? s.manufacturer}</td>
+      <td className="px-3 py-2 text-xs text-[#3d4756]">{s.plant_name ?? s.plant_id}</td>
+      <td className="px-3 py-2 text-xs text-[#3d4756]">{s.site_name ?? <span className="text-[#9aa5b4]">unlinked</span>}</td>
+      <td className="px-3 py-2 text-xs text-right tabular-nums font-medium text-[#0f1c2e]">
         {s.ac_kw !== null ? kw(s.ac_kw) : '—'}
       </td>
-      <td className="px-3 py-2 text-xs text-right tabular-nums text-gray-600">
+      <td className="px-3 py-2 text-xs text-right tabular-nums text-[#3d4756]">
         {s.daily_kwh !== null ? kwh(s.daily_kwh) : '—'}
       </td>
       <td className="px-3 py-2 text-xs text-right tabular-nums text-emerald-700 font-medium">
@@ -513,13 +513,13 @@ function StationRow({ s }: { s: Station }) {
       <td className="px-3 py-2 text-xs text-right tabular-nums text-emerald-600">
         {zarFromKwh(s.total_kwh, rate)}
       </td>
-      <td className="px-3 py-2 text-xs text-right tabular-nums text-gray-500">
+      <td className="px-3 py-2 text-xs text-right tabular-nums text-[#6b7685]">
         {s.temperature_c !== null ? `${Number(s.temperature_c).toFixed(0)} °C` : '—'}
       </td>
       <td className="px-3 py-2">
         <Pill status={online ? 'online' : 'offline'} />
       </td>
-      <td className="px-3 py-2 text-xs text-gray-400 whitespace-nowrap">
+      <td className="px-3 py-2 text-xs text-[#9aa5b4] whitespace-nowrap">
         {fmtTs(s.snapshot_ts ?? s.last_sync_at)}
       </td>
     </tr>
@@ -633,17 +633,17 @@ function AccrualsPanel() {
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Value accruals</h4>
-          <p className="text-xs text-gray-500 mt-0.5">Carbon · revenue · customer savings from generation</p>
+          <h4 className="text-xs font-semibold text-[#0f1c2e] uppercase tracking-wide">Value accruals</h4>
+          <p className="text-xs text-[#6b7685] mt-0.5">Carbon · revenue · customer savings from generation</p>
         </div>
         <div className="flex items-center gap-2">
           {/* Period selector */}
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+          <div className="flex rounded-lg border border-[#dde4ec] overflow-hidden text-xs">
             {(Object.keys(PERIOD_LABELS) as AccrualPeriod[]).map(p => (
               <button type="button"
                 key={p}
                 onClick={() => setPeriod(p)}
-                className={`px-3 py-1.5 transition-colors ${period === p ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                className={`px-3 py-1.5 transition-colors ${period === p ? 'bg-[#c2873a] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'}`}
               >
                 {PERIOD_LABELS[p]}
               </button>
@@ -671,19 +671,19 @@ function AccrualsPanel() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {kpiCards.map(card => (
           <div key={card.label} className={`p-3 rounded-lg border ${card.border} ${card.bg}`}>
-            <p className="text-xs text-gray-500">{card.label}</p>
+            <p className="text-xs text-[#6b7685]">{card.label}</p>
             <p className={`text-lg font-bold tabular-nums mt-0.5 ${card.colour}`}>
               {loading ? <span className="animate-pulse text-sm">…</span> : card.value}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">{card.sublabel}</p>
+            <p className="text-xs text-[#9aa5b4] mt-0.5">{card.sublabel}</p>
           </div>
         ))}
       </div>
 
       {/* Daily chart */}
       {chartData.length > 0 && (
-        <div className="border border-gray-200 rounded-lg p-4 bg-white">
-          <p className="text-xs font-medium text-gray-600 mb-3">Daily revenue vs customer savings (ZAR)</p>
+        <div className="border border-[#dde4ec] rounded-lg p-4 bg-white">
+          <p className="text-xs font-medium text-[#3d4756] mb-3">Daily revenue vs customer savings (ZAR)</p>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={chartData} barSize={8} margin={{ top: 0, right: 8, left: -16, bottom: 0 }}>
               <XAxis dataKey="day" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
@@ -702,25 +702,25 @@ function AccrualsPanel() {
 
       {/* Per-station breakdown */}
       {stations.length > 0 && (
-        <div className="overflow-x-auto border border-gray-200 rounded-lg">
+        <div className="overflow-x-auto border border-[#dde4ec] rounded-lg">
           <table className="w-full text-xs">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
+              <tr className="bg-[#f8fafc] border-b border-[#eef2f7]">
                 {['Station', 'Serial', 'kWh', 'Carbon (tCO₂e)', 'Revenue (ZAR)', 'Customer savings', 'Last accrual'].map(h => (
-                  <th key={h} className="px-3 py-2 text-left text-gray-500 font-medium">{h}</th>
+                  <th key={h} className="px-3 py-2 text-left text-[#6b7685] font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {stations.map(st => (
-                <tr key={st.station_id} className="hover:bg-gray-50">
-                  <td className="px-3 py-2 text-gray-700">{st.plant_name ?? '—'}</td>
-                  <td className="px-3 py-2 font-mono text-gray-500">{st.device_sn}</td>
-                  <td className="px-3 py-2 tabular-nums text-gray-700">{st.total_kwh?.toFixed(1) ?? '—'}</td>
+                <tr key={st.station_id} className="hover:bg-[#eef2f7]">
+                  <td className="px-3 py-2 text-[#2d3748]">{st.plant_name ?? '—'}</td>
+                  <td className="px-3 py-2 font-mono text-[#6b7685]">{st.device_sn}</td>
+                  <td className="px-3 py-2 tabular-nums text-[#2d3748]">{st.total_kwh?.toFixed(1) ?? '—'}</td>
                   <td className="px-3 py-2 tabular-nums text-green-700 font-medium">{fmtTco2e(st.total_carbon_tco2e ?? 0)}</td>
                   <td className="px-3 py-2 tabular-nums text-emerald-700 font-medium">{fmtZar(st.total_revenue_zar ?? 0)}</td>
                   <td className="px-3 py-2 tabular-nums text-blue-700">{fmtZar(st.total_savings_zar ?? 0)}</td>
-                  <td className="px-3 py-2 text-gray-400">{st.last_accrual_at ? fmtTs(st.last_accrual_at) : '—'}</td>
+                  <td className="px-3 py-2 text-[#9aa5b4]">{st.last_accrual_at ? fmtTs(st.last_accrual_at) : '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -729,9 +729,9 @@ function AccrualsPanel() {
       )}
 
       {!loading && stations.length === 0 && (
-        <div className="border border-dashed border-gray-200 rounded-lg py-8 text-center">
-          <p className="text-sm text-gray-400">No accruals yet.</p>
-          <p className="text-xs text-gray-400 mt-1">
+        <div className="border border-dashed border-[#dde4ec] rounded-lg py-8 text-center">
+          <p className="text-sm text-[#9aa5b4]">No accruals yet.</p>
+          <p className="text-xs text-[#9aa5b4] mt-1">
             Click <strong>Import historical data</strong> to backfill from SolaX, or wait for the hourly cron.
           </p>
         </div>
@@ -830,7 +830,7 @@ export function InverterIntegrationsTab() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-sm text-gray-400">Loading integrations…</div>
+      <div className="flex items-center justify-center py-16 text-sm text-[#9aa5b4]">Loading integrations…</div>
     );
   }
 
@@ -839,8 +839,8 @@ export function InverterIntegrationsTab() {
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-gray-900">Inverter &amp; device integrations</h3>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <h3 className="text-sm font-semibold text-[#0f1c2e]">Inverter &amp; device integrations</h3>
+          <p className="text-xs text-[#6b7685] mt-0.5">
             Connect generation assets across solar, wind, hydro and waste-to-energy technologies.
           </p>
         </div>
@@ -848,13 +848,13 @@ export function InverterIntegrationsTab() {
           <button type="button"
             onClick={handlePollAll}
             disabled={polling}
-            className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            className="px-3 py-1.5 text-xs font-medium bg-[#c2873a] text-white rounded-lg hover:bg-[#a3702f] disabled:opacity-50 transition-colors"
           >
             {polling ? 'Polling…' : 'Poll all now'}
           </button>
           <button type="button"
             onClick={() => { setEditCred(null); setPrefillMfr(undefined); setShowModal(true); }}
-            className="px-3 py-1.5 text-xs font-medium border border-gray-200 text-gray-700 rounded-lg hover:border-gray-400 transition-colors"
+            className="px-3 py-1.5 text-xs font-medium border border-[#dde4ec] text-[#2d3748] rounded-lg hover:border-gray-400 transition-colors"
           >
             + Add integration
           </button>
@@ -863,7 +863,7 @@ export function InverterIntegrationsTab() {
 
       {error && <div className="text-xs text-red-600 bg-red-50 border border-red-100 rounded px-4 py-2">{error}</div>}
       {pollResult && (
-        <div className="text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded px-4 py-2">
+        <div className="text-xs text-[#2d3748] bg-[#f8fafc] border border-[#dde4ec] rounded px-4 py-2">
           {pollResult}
         </div>
       )}
@@ -887,7 +887,7 @@ export function InverterIntegrationsTab() {
             </div>
             <div className={`border-x border-b ${tg.border} rounded-b-lg p-3`}>
               {mfrsInGroup.length === 0 ? (
-                <p className="text-xs text-gray-400">No manufacturers registered for this technology.</p>
+                <p className="text-xs text-[#9aa5b4]">No manufacturers registered for this technology.</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {mfrsInGroup.map(m => {
@@ -914,12 +914,12 @@ export function InverterIntegrationsTab() {
                           setPrefillMfr(m);
                           setShowModal(true);
                         }}
-                        className="border border-dashed border-gray-200 rounded-lg p-4 text-left hover:border-blue-300 hover:bg-blue-50/30 transition-colors group"
+                        className="border border-dashed border-[#dde4ec] rounded-lg p-4 text-left hover:border-blue-300 hover:bg-blue-50/30 transition-colors group"
                       >
-                        <div className="text-sm font-medium text-gray-400 group-hover:text-blue-600">
+                        <div className="text-sm font-medium text-[#9aa5b4] group-hover:text-blue-600">
                           {MFR_LABEL[m] ?? m}
                         </div>
-                        <div className="text-xs text-gray-300 mt-0.5 group-hover:text-blue-400">
+                        <div className="text-xs text-[#9aa5b4] mt-0.5 group-hover:text-blue-400">
                           Click to connect
                         </div>
                       </button>
@@ -939,11 +939,11 @@ export function InverterIntegrationsTab() {
         if (customCreds.length === 0) return null;
         return (
           <section>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-t-lg border border-gray-200 bg-gray-50">
-              <span className="text-xs font-semibold uppercase tracking-wide text-gray-600">Other / custom</span>
-              <span className="text-xs text-gray-400">{customCreds.length} configured</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-t-lg border border-[#dde4ec] bg-[#f8fafc]">
+              <span className="text-xs font-semibold uppercase tracking-wide text-[#3d4756]">Other / custom</span>
+              <span className="text-xs text-[#9aa5b4]">{customCreds.length} configured</span>
             </div>
-            <div className="border-x border-b border-gray-200 rounded-b-lg p-3">
+            <div className="border-x border-b border-[#dde4ec] rounded-b-lg p-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {customCreds.map(cred => (
                   <CredCard
@@ -965,14 +965,14 @@ export function InverterIntegrationsTab() {
       {/* ── Stations table ── */}
       <section>
         <div className="flex items-center justify-between mb-2">
-          <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+          <h4 className="text-xs font-semibold text-[#2d3748] uppercase tracking-wide">
             Stations &amp; live snapshots
-            <span className="ml-2 font-normal normal-case text-gray-400">({filteredStations.length})</span>
+            <span className="ml-2 font-normal normal-case text-[#9aa5b4]">({filteredStations.length})</span>
           </h4>
           <select
             value={mfrFilter}
             onChange={e => setMfrFilter(e.target.value)}
-            className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="text-xs border border-[#dde4ec] rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#c2873a]"
           >
             <option value="">All manufacturers</option>
             {Array.from(new Set(stations.map(s => s.manufacturer))).sort().map(m => (
@@ -982,19 +982,19 @@ export function InverterIntegrationsTab() {
         </div>
 
         {filteredStations.length === 0 ? (
-          <div className="border border-dashed border-gray-200 rounded-lg py-10 text-center">
-            <p className="text-sm text-gray-400">No stations yet.</p>
-            <p className="text-xs text-gray-400 mt-1">
+          <div className="border border-dashed border-[#dde4ec] rounded-lg py-10 text-center">
+            <p className="text-sm text-[#9aa5b4]">No stations yet.</p>
+            <p className="text-xs text-[#9aa5b4] mt-1">
               Add an integration above, then use <strong>Poll all now</strong> or the SolaX sync to discover devices.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
+          <div className="overflow-x-auto border border-[#dde4ec] rounded-lg">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
+                <tr className="bg-[#f8fafc] border-b border-[#eef2f7]">
                   {['Serial number', 'Manufacturer', 'Plant', 'Site', 'AC output', 'Daily yield', 'Daily (ZAR)', 'Total (ZAR)', 'Temp', 'Status', 'Last data'].map(h => (
-                    <th key={h} className={`px-3 py-2 text-xs font-medium ${h.includes('ZAR') ? 'text-emerald-600 text-right' : 'text-left text-gray-500'}`}>{h}</th>
+                    <th key={h} className={`px-3 py-2 text-xs font-medium ${h.includes('ZAR') ? 'text-emerald-600 text-right' : 'text-left text-[#6b7685]'}`}>{h}</th>
                   ))}
                 </tr>
               </thead>

@@ -35,7 +35,7 @@ type DvpLock = {
 };
 
 const LOCK_PILL: Record<string, string> = {
-  open: 'bg-gray-200 text-gray-700',
+  open: 'bg-[#e8ecf0] text-[#2d3748]',
   cash_in: 'bg-blue-100 text-blue-700',
   energy_in: 'bg-amber-100 text-amber-800',
   locked: 'bg-green-100 text-green-700',
@@ -124,7 +124,7 @@ export function DvpPanel() {
   return (
     <div className="space-y-4" data-testid="dvp-panel">
       {/* Cycle picker */}
-      <div className="flex flex-wrap items-end gap-3 p-4 bg-[#0f1c2e] text-white rounded-lg">
+      <div className="flex flex-wrap items-end gap-3 p-4 bg-[#c2873a] text-white rounded-lg">
         <div className="flex-1 min-w-[260px]">
           <label className="block text-[10px] uppercase tracking-wider text-[#7a90a8]">Settlement cycle</label>
           <select
@@ -144,7 +144,7 @@ export function DvpPanel() {
         <div className="min-w-[140px]">
           <div className="text-[10px] uppercase tracking-wider text-[#7a90a8]">Lock status</div>
           <div className="mt-1">
-            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold capitalize ${LOCK_PILL[lockStatus] || 'bg-gray-200'}`} data-testid="dvp-status">
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold capitalize ${LOCK_PILL[lockStatus] || 'bg-[#e8ecf0]'}`} data-testid="dvp-status">
               {lockStatus.replace(/_/g, ' ')}
             </span>
           </div>
@@ -153,7 +153,7 @@ export function DvpPanel() {
           <button type="button"
             onClick={() => void release()}
             disabled={busy === 'release'}
-            className="px-3 py-1.5 bg-purple-600 rounded text-[13px] hover:bg-purple-700 disabled:opacity-50"
+            className="px-3 py-1.5 bg-[#c2873a] rounded text-[13px] hover:bg-[#a3702f] disabled:opacity-50"
             data-testid="dvp-release"
           >
             {busy === 'release' ? 'Releasing…' : 'Release'}
@@ -163,7 +163,7 @@ export function DvpPanel() {
 
       {err && <div className="rounded-lg bg-red-50 text-red-700 px-3 py-2 text-sm">{err}</div>}
 
-      {loading && <div className="rounded-xl bg-gray-100 p-4 text-sm text-ionex-text-mute">Loading lock state…</div>}
+      {loading && <div className="rounded-xl bg-[#eef2f7] p-4 text-sm text-ionex-text-mute">Loading lock state…</div>}
 
       {/* State machine card */}
       {lock && !loading && (
@@ -188,7 +188,7 @@ export function DvpPanel() {
                 {canConfirmCash && (
                   <button type="button"
                     onClick={() => setShowConfirm('cash')}
-                    className="px-3 py-1 text-[12px] bg-blue-600 text-white rounded hover:bg-blue-700"
+                    className="px-3 py-1 text-[12px] bg-[#c2873a] text-white rounded hover:bg-[#a3702f]"
                     data-testid="dvp-confirm-cash"
                   >
                     Confirm cash
@@ -241,10 +241,10 @@ export function DvpPanel() {
               const isPast = idx < order;
               return (
                 <React.Fragment key={stage}>
-                  <div className={`flex-1 text-center px-2 py-1.5 rounded ${isActive ? 'bg-ionex-brand text-white font-semibold' : isPast ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}>
+                  <div className={`flex-1 text-center px-2 py-1.5 rounded ${isActive ? 'bg-ionex-brand text-white font-semibold' : isPast ? 'bg-green-100 text-green-800' : 'bg-[#eef2f7] text-[#6b7685]'}`}>
                     {stage.replace(/_/g, ' ')}
                   </div>
-                  {idx < arr.length - 1 && <div className="text-gray-400">→</div>}
+                  {idx < arr.length - 1 && <div className="text-[#9aa5b4]">→</div>}
                 </React.Fragment>
               );
             })}

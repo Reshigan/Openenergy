@@ -32,7 +32,7 @@ interface WulApplication {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  wul_application_triggered:   'bg-gray-100 text-gray-500',
+  wul_application_triggered:   'bg-[#eef2f7] text-[#6b7685]',
   site_assessment:              'bg-blue-100 text-blue-700',
   application_preparation:      'bg-sky-100 text-sky-700',
   application_submitted:        'bg-indigo-100 text-indigo-700',
@@ -93,7 +93,7 @@ const TRIGGER_CATEGORIES = Object.keys(TRIGGER_LABELS);
 
 const PAGE_SIZE = 20;
 
-const sel = 'border rounded px-2 py-1 text-xs text-gray-700 bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
 
 function fmtDate(d?: string | null): string {
   if (!d) return '—';
@@ -119,15 +119,15 @@ function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
     mode === 'danger'  ? 'border-red-200 bg-red-50'       :
     mode === 'alert'   ? 'border-orange-200 bg-orange-50' :
     mode === 'good'    ? 'border-green-200 bg-green-50'   :
-    'border-gray-200 bg-white';
+    'border-[#dde4ec] bg-white';
   const text =
     mode === 'danger'  ? 'text-red-700'    :
     mode === 'alert'   ? 'text-orange-700' :
     mode === 'good'    ? 'text-green-700'  :
-    'text-gray-900';
+    'text-[#0f1c2e]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-gray-500">{label}</div>
+      <div className="text-xs text-[#6b7685]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -223,7 +223,7 @@ export function IppWulTab() {
         </select>
         <button type="button"
           onClick={() => load()}
-          className="ml-auto px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
+          className="ml-auto px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
         >
           Refresh
         </button>
@@ -238,12 +238,12 @@ export function IppWulTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-gray-400 py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-gray-500">
+              <tr className="border-b text-left text-xs text-[#6b7685]">
                 <th className="pb-2 pr-4">ID</th>
                 <th className="pb-2 pr-4">Project</th>
                 <th className="pb-2 pr-4">Trigger Category</th>
@@ -262,17 +262,17 @@ export function IppWulTab() {
                 const regulator = hasRegulatorFlag(item);
                 const tierColor = TIER_COLORS[item.wul_capacity_tier] ?? '#6b7280';
                 return (
-                  <tr key={item.id} className="border-b hover:bg-gray-50">
-                    <td className="py-2 pr-4 text-xs font-mono text-gray-600">{item.id.slice(0, 12)}</td>
-                    <td className="py-2 pr-4 text-xs text-gray-700">{item.project_name ?? item.project_id?.slice(0, 12) ?? '—'}</td>
-                    <td className="py-2 pr-4 text-xs text-gray-700">
+                  <tr key={item.id} className="border-b hover:bg-[#eef2f7]">
+                    <td className="py-2 pr-4 text-xs font-mono text-[#3d4756]">{item.id.slice(0, 12)}</td>
+                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{item.project_name ?? item.project_id?.slice(0, 12) ?? '—'}</td>
+                    <td className="py-2 pr-4 text-xs text-[#2d3748]">
                       {TRIGGER_LABELS[item.trigger_category] ?? item.trigger_category}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-gray-700">
+                    <td className="py-2 pr-4 text-xs text-[#2d3748]">
                       {SECTION21_LABELS[item.section21_category] ?? item.section21_category}
                     </td>
                     <td className="py-2 pr-4">
-                      <span className="text-xs tabular-nums text-gray-700 mr-1">{item.capacity_mw.toFixed(1)}</span>
+                      <span className="text-xs tabular-nums text-[#2d3748] mr-1">{item.capacity_mw.toFixed(1)}</span>
                       <span
                         className="px-1.5 py-0.5 rounded text-xs text-white font-medium"
                         style={{ backgroundColor: tierColor }}
@@ -282,7 +282,7 @@ export function IppWulTab() {
                     </td>
                     <td className="py-2 pr-4">
                       <div className="flex items-center gap-1 flex-wrap">
-                        <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                        <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                           {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
                         </span>
                         {regulator && (
@@ -292,16 +292,16 @@ export function IppWulTab() {
                         )}
                       </div>
                     </td>
-                    <td className="py-2 pr-4 text-xs text-gray-700">{item.dws_reference ?? '—'}</td>
-                    <td className="py-2 pr-4 text-xs text-gray-700">{item.water_consultant ?? '—'}</td>
-                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{item.dws_reference ?? '—'}</td>
+                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{item.water_consultant ?? '—'}</td>
+                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                       {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_at)}
                     </td>
                     <td className="py-2 pr-4">
                       {item.sla_breached === 1 ? (
                         <span className="px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">Yes</span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-400">No</span>
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-[#eef2f7] text-[#9aa5b4]">No</span>
                       )}
                     </td>
                   </tr>
@@ -309,7 +309,7 @@ export function IppWulTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={10} className="py-10 text-center text-[#9aa5b4] text-sm">
                     No water use licence records found
                   </td>
                 </tr>
@@ -325,17 +325,17 @@ export function IppWulTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             ← Prev
           </button>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-[#6b7685]">
             Page {page} of {totalPages}
           </span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             Next →
           </button>

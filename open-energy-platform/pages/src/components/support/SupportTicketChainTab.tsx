@@ -93,7 +93,7 @@ function Kpi({ label, value, sub }: { label: string; value: string | number; sub
   return (
     <div style={{ background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, padding: '12px 16px', minWidth: 150 }}>
       <div style={{ fontSize: 11, color: '#557', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#1c2733', marginTop: 4 }}>{value}</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: '#0f1c2e', marginTop: 4 }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: '#7a8a9a', marginTop: 2 }}>{sub}</div>}
     </div>
   );
@@ -181,7 +181,7 @@ export function SupportTicketChainTab() {
 
   return (
     <div data-testid="support-ticket-chain-tab" style={{ padding: '16px 20px', minHeight: 600 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c2733', marginTop: 0 }}>Support ticket chain</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f1c2e', marginTop: 0 }}>Support ticket chain</h2>
       <p style={{ fontSize: 13, color: '#557', marginTop: 4 }}>
         Priority-tiered ticket lifecycle: open → triaged → in progress → resolved → closed,
         with awaiting-user (clock paused), reopen, and escalation branches. SLA windows are
@@ -207,8 +207,8 @@ export function SupportTicketChainTab() {
             onClick={() => setFilter(f.key)}
             style={{
               padding: '6px 12px', borderRadius: 999, border: '1px solid #e3e7ec',
-              background: filter === f.key ? '#1c2733' : '#fff',
-              color: filter === f.key ? '#fff' : '#1c2733', fontSize: 12, fontWeight: 600,
+              background: filter === f.key ? 'oklch(0.46 0.16 55)' : '#fff',
+              color: filter === f.key ? '#fff' : '#0f1c2e', fontSize: 12, fontWeight: 600,
               cursor: 'pointer',
             }}
           >{f.label}</button>
@@ -298,7 +298,7 @@ export function SupportTicketChainTab() {
           <div style={{ fontSize: 12, color: '#557', marginTop: 2 }}>
             Reporter: <span style={{ fontFamily: 'monospace' }}>{drill.reporter_id}</span> · Category: {drill.category}
           </div>
-          <div style={{ marginTop: 8, fontSize: 14, color: '#1c2733', fontWeight: 600 }}>{drill.subject}</div>
+          <div style={{ marginTop: 8, fontSize: 14, color: '#0f1c2e', fontWeight: 600 }}>{drill.subject}</div>
 
           <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: 12 }}>
             <div><span style={{ color: '#557' }}>Priority:</span> <strong>{PRIORITY_TONE[drill.priority].label}</strong></div>
@@ -347,7 +347,7 @@ export function SupportTicketChainTab() {
               <>
                 <button type="button" data-testid="support-ticket-chain-triage"
                   onClick={() => void act('triage', {}, drill.id)}
-                  style={{ padding: '6px 12px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
                 >Triage</button>
                 <button type="button" data-testid="support-ticket-chain-escalate"
                   onClick={() => {
@@ -362,7 +362,7 @@ export function SupportTicketChainTab() {
               <>
                 <button type="button" data-testid="support-ticket-chain-pick-up"
                   onClick={() => void act('pick-up', {}, drill.id)}
-                  style={{ padding: '6px 12px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
                 >Pick up</button>
                 <button type="button" data-testid="support-ticket-chain-escalate"
                   onClick={() => {
@@ -399,7 +399,7 @@ export function SupportTicketChainTab() {
               <>
                 <button type="button" data-testid="support-ticket-chain-user-responded"
                   onClick={() => void act('user-responded', {}, drill.id)}
-                  style={{ padding: '6px 12px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
                 >User responded</button>
                 <button type="button" data-testid="support-ticket-chain-resolve"
                   onClick={() => {

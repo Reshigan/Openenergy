@@ -31,7 +31,7 @@ export function FundDetail() {
             <button
               type="button"
               onClick={() => navigate('/funds')}
-              className="h-9 px-3 rounded-md bg-white/15 border border-white/20 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/25"
+              className="h-9 px-3 rounded-md bg-white/15 border border-white/20 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#f8fafc]/25"
             >
               <OEIcon name="chevron-left" size={14} /> Funds
             </button>
@@ -39,7 +39,7 @@ export function FundDetail() {
               <button
                 type="button"
                 onClick={() => navigate(`/projects/${data.project.id}`)}
-                className="h-9 px-3 rounded-md bg-white text-[#0e3b6e] text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/90"
+                className="h-9 px-3 rounded-md bg-white text-[#0e3b6e] text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#f8fafc]/90"
               >
                 <OEIcon name="workflow" size={14} /> Open project file
               </button>

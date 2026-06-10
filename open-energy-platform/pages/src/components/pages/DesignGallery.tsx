@@ -229,7 +229,7 @@ export function DesignGallery(): React.JSX.Element {
                 href={s.thumb}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block bg-slate-50 border-b"
+                className="block bg-[#f8fafc] border-b"
                 style={{ borderColor: '#eef2f7', aspectRatio: '16 / 10' }}
               >
                 <img
@@ -257,7 +257,7 @@ export function DesignGallery(): React.JSX.Element {
                   <Link
                     to={s.route}
                     className="text-[12px] font-semibold inline-flex items-center gap-1 px-2 py-1 rounded-sm"
-                    style={{ color: '#1a3a5c' }}
+                    style={{ color: 'oklch(0.46 0.16 55)' }}
                   >
                     Open route →
                   </Link>
@@ -266,7 +266,7 @@ export function DesignGallery(): React.JSX.Element {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[12px] font-semibold inline-flex items-center gap-1 px-2 py-1 rounded-sm"
-                    style={{ color: '#1a3a5c' }}
+                    style={{ color: 'oklch(0.46 0.16 55)' }}
                   >
                     Full design ↗
                   </a>
@@ -302,7 +302,7 @@ function FilterChip({
   const style = active && tint
     ? { background: tint.fg, color: '#fff', borderColor: tint.fg }
     : active
-      ? { background: '#1a3a5c', color: '#fff', borderColor: '#1a3a5c' }
+      ? { background: 'oklch(0.46 0.16 55)', color: '#fff', borderColor: '#c2873a' }
       : { background: '#fff', color: '#0f1c2e', borderColor: '#dde4ec' };
   return (
     <button type="button"

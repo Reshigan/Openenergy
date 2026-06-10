@@ -165,7 +165,7 @@ function StageCard({
             type="button"
             onClick={() => navigate(stage.workflow.href)}
             className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded"
-            style={{ background: '#0f1c2e', color: '#fff' }}
+            style={{ background: 'oklch(0.46 0.16 55)', color: '#fff' }}
           >
             {stage.workflow.label} <ArrowRight size={12} />
           </button>
@@ -234,7 +234,7 @@ function SuggestionBanner({
             disabled={accepting}
             onClick={handleAccept}
             className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded"
-            style={{ background: '#0f1c2e', color: '#fff', opacity: accepting ? 0.6 : 1 }}
+            style={{ background: 'oklch(0.46 0.16 55)', color: '#fff', opacity: accepting ? 0.6 : 1 }}
           >
             {accepting ? 'Working…' : suggestion.accept.label} <ArrowRight size={12} />
           </button>
@@ -304,35 +304,35 @@ export function ProjectLifecycle() {
       {/* Project header */}
       <div
         className="rounded-xl border p-5"
-        style={{ background: 'linear-gradient(135deg,#0f1c2e 0%,#1a3a5c 100%)', borderColor: '#1a3a5c' }}
+        style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}
       >
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="min-w-0">
-            <div className="text-[12px] tracking-widest uppercase text-white/70 font-semibold">
+            <div className="text-[10px] tracking-[0.12em] uppercase font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>
               {phaseLabel[phase] || phase}
             </div>
-            <h1 className="mt-2 text-[28px] sm:text-[32px] font-bold tracking-tight text-white">
+            <h1 className="mt-1 text-[24px] sm:text-[28px] font-bold tracking-tight" style={{ color: 'oklch(0.15 0.025 250)' }}>
               {project.project_name}
             </h1>
-            <p className="mt-1 text-white/75 text-[14px]">
+            <p className="mt-0.5 text-[14px]" style={{ color: 'oklch(0.45 0.015 250)' }}>
               {project.capacity_mw} MW {project.technology} · {project.location}
               {project.commercial_operation_date ? ` · COD ${project.commercial_operation_date}` : ''}
             </p>
           </div>
           <div className="grid grid-cols-3 gap-4 text-right">
             <div>
-              <div className="text-[11px] uppercase tracking-wide text-white/60">Stages done</div>
-              <div className="text-[24px] font-bold text-white">{completed}/{stages.length}</div>
+              <div className="text-[11px] uppercase tracking-wide" style={{ color: 'oklch(0.55 0.008 250)' }}>Stages done</div>
+              <div className="text-[24px] font-bold font-mono" style={{ color: 'oklch(0.15 0.025 250)' }}>{completed}/{stages.length}</div>
             </div>
             <div>
-              <div className="text-[11px] uppercase tracking-wide text-white/60">PPA price</div>
-              <div className="text-[24px] font-bold text-white">
+              <div className="text-[11px] uppercase tracking-wide" style={{ color: 'oklch(0.55 0.008 250)' }}>PPA price</div>
+              <div className="text-[24px] font-bold font-mono" style={{ color: 'oklch(0.15 0.025 250)' }}>
                 {project.ppa_price_per_mwh ? `R${Math.round(project.ppa_price_per_mwh)}` : '—'}
               </div>
             </div>
             <div>
-              <div className="text-[11px] uppercase tracking-wide text-white/60">PPA term</div>
-              <div className="text-[24px] font-bold text-white">
+              <div className="text-[11px] uppercase tracking-wide" style={{ color: 'oklch(0.55 0.008 250)' }}>PPA term</div>
+              <div className="text-[24px] font-bold font-mono" style={{ color: 'oklch(0.15 0.025 250)' }}>
                 {project.ppa_duration_years ? `${project.ppa_duration_years}y` : '—'}
               </div>
             </div>
@@ -342,7 +342,7 @@ export function ProjectLifecycle() {
           <button
             type="button"
             onClick={() => navigate(`/projects/${project.id}`)}
-            className="h-9 px-4 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 text-white/90 border border-white/30 hover:bg-white/10"
+            className="h-9 px-4 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 border hover:bg-[#eef2f7]" style={{ color: 'oklch(0.45 0.015 250)', borderColor: 'oklch(0.88 0.006 250)' } as React.CSSProperties}
           >
             <ArrowLeft size={12} /> Back to project file
           </button>

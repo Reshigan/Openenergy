@@ -61,7 +61,7 @@ function Kpi({ label, value, sub }: { label: string; value: string | number; sub
   return (
     <div style={{ background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, padding: '12px 16px', minWidth: 140 }}>
       <div style={{ fontSize: 11, color: '#557', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#1c2733', marginTop: 4 }}>{value}</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: '#0f1c2e', marginTop: 4 }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: '#7a8a9a', marginTop: 2 }}>{sub}</div>}
     </div>
   );
@@ -139,14 +139,14 @@ export function SmartMeterChainTab() {
     <div data-testid="esums-smart-meter-tab" style={{ padding: '16px 20px', minHeight: 600 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c2733', marginTop: 0 }}>Smart-meter commissioning</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f1c2e', marginTop: 0 }}>Smart-meter commissioning</h2>
           <p style={{ fontSize: 13, color: '#557', marginTop: 4, maxWidth: 720 }}>
             Every meter from purchase order through FAT, delivery, installation, commissioning, comms test
             and data-quality validation to operational service. URGENT SLA by class (HV bulk 7d &rarr; post-paid 30d).
           </p>
         </div>
         <button type="button" onClick={() => setCreating((v) => !v)}
-          style={{ flexShrink: 0, padding: '8px 14px', background: '#1c2733', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          style={{ flexShrink: 0, padding: '8px 14px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
           {creating ? 'Cancel' : '+ Add meter'}
         </button>
       </div>
@@ -198,7 +198,7 @@ export function SmartMeterChainTab() {
         {FILTERS.map((f) => (
           <button type="button" key={f.key} onClick={() => setFilter(f.key)}
             style={{ padding: '6px 12px', borderRadius: 999, border: '1px solid #e3e7ec',
-              background: filter === f.key ? '#1c2733' : '#fff', color: filter === f.key ? '#fff' : '#1c2733',
+              background: filter === f.key ? 'oklch(0.46 0.16 55)' : '#fff', color: filter === f.key ? '#fff' : '#0f1c2e',
               fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{f.label}</button>
         ))}
       </div>
@@ -266,7 +266,7 @@ export function SmartMeterChainTab() {
           <div style={{ marginTop: 18, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {ACTIONS.filter((a) => a.from.includes(drill.chain_status)).map((a) => (
               <button type="button" key={a.action} onClick={() => void act(a.action, drill.id)}
-                style={{ padding: '6px 12px', background: a.danger ? '#9b1f1f' : '#1a3a5c', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}>{a.label}</button>
+                style={{ padding: '6px 12px', background: a.danger ? '#9b1f1f' : 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}>{a.label}</button>
             ))}
           </div>
         </div>

@@ -77,7 +77,7 @@ const PRIORITY_PILL: Record<string, string> = {
   urgent: 'bg-red-100 text-red-800',
   high: 'bg-orange-100 text-orange-800',
   normal: 'bg-blue-100 text-blue-800',
-  low: 'bg-gray-100 text-gray-700',
+  low: 'bg-[#eef2f7] text-[#2d3748]',
 };
 
 const SEV_PILL: Record<string, string> = {
@@ -160,13 +160,13 @@ export function Briefing() {
       subtitle={dateLabel}
       actions={
         <>
-          <button type="button" onClick={markAllRead} className="flex items-center gap-2 px-3 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50 text-sm">
+          <button type="button" onClick={markAllRead} className="flex items-center gap-2 px-3 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7] text-sm">
             <CheckCheck size={14} /> Mark all read
           </button>
           <button type="button" onClick={sendBriefing} disabled={sending} className="flex items-center gap-2 px-3 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand/90 disabled:opacity-50 text-sm">
             <Send size={14} /> {sending ? 'Queuing…' : sent ? 'Queued' : 'Send to inbox'}
           </button>
-          <button type="button" onClick={fetchBriefing} className="flex items-center gap-2 px-3 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50 text-sm">
+          <button type="button" onClick={fetchBriefing} className="flex items-center gap-2 px-3 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7] text-sm">
             <RefreshCw size={14} /> Refresh
           </button>
         </>
@@ -175,7 +175,7 @@ export function Briefing() {
 
       <div className="rounded-xl border border-ionex-border-100 bg-gradient-to-r from-blue-50 to-green-50 p-5">
         <div className="text-xs uppercase tracking-wide text-ionex-text-mute mb-2">Summary for {briefing.role.replace(/_/g, ' ')}</div>
-        <p className="text-lg text-gray-900">{briefing.summary}</p>
+        <p className="text-lg text-[#0f1c2e]">{briefing.summary}</p>
       </div>
 
       <div>
@@ -198,7 +198,7 @@ export function Briefing() {
               <ul className="divide-y divide-ionex-border-100">
                 {briefing.action_items.map(a => (
                   <li key={a.id} className="py-3">
-                    <Link to={actionDeepLink(a)} className="flex items-start justify-between gap-3 hover:bg-gray-50 rounded -mx-2 px-2">
+                    <Link to={actionDeepLink(a)} className="flex items-start justify-between gap-3 hover:bg-[#eef2f7] rounded -mx-2 px-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${PRIORITY_PILL[a.priority]}`}>{a.priority}</span>
@@ -241,7 +241,7 @@ export function Briefing() {
                   const dueIn = Math.ceil((new Date(inv.due_date).getTime() - Date.now()) / 86400000);
                   return (
                     <li key={inv.id} className="py-3">
-                      <Link to="/settlement" className="flex items-center justify-between gap-3 hover:bg-gray-50 rounded -mx-2 px-2">
+                      <Link to="/settlement" className="flex items-center justify-between gap-3 hover:bg-[#eef2f7] rounded -mx-2 px-2">
                         <div>
                           <div className="font-medium">{inv.invoice_number}</div>
                           <div className="text-xs text-ionex-text-mute capitalize">{inv.status}</div>
@@ -284,7 +284,7 @@ export function Briefing() {
             <ul className="divide-y divide-ionex-border-100">
               {briefing.recent_trades.map(t => (
                 <li key={t.id} className="py-3">
-                  <Link to="/trading" className="flex items-center justify-between gap-3 hover:bg-gray-50 rounded -mx-2 px-2">
+                  <Link to="/trading" className="flex items-center justify-between gap-3 hover:bg-[#eef2f7] rounded -mx-2 px-2">
                     <div>
                       <div className="font-medium capitalize">{t.energy_type}</div>
                       <div className="text-xs text-ionex-text-mute">{new Date(t.matched_at).toLocaleString()}</div>

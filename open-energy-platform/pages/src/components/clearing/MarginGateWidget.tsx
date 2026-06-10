@@ -102,7 +102,7 @@ export function MarginGateWidget() {
           Clearing members — gate status
         </div>
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs uppercase text-ionex-text-mute">
+          <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
             <tr>
               <th className="px-4 py-2">Member</th>
               <th className="px-4 py-2">Gate</th>
@@ -120,7 +120,7 @@ export function MarginGateWidget() {
             ) : rows.length === 0 ? (
               <tr><td colSpan={8} className="px-4 py-6 text-center text-ionex-text-mute">No clearing members.</td></tr>
             ) : rows.map(r => (
-              <tr key={r.member_id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+              <tr key={r.member_id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
                 <td className="px-4 py-2 font-mono text-xs">{r.member_id}</td>
                 <td className="px-4 py-2">
                   <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize font-semibold ${GATE_PILL[r.gate_status]}`}>
@@ -148,7 +148,7 @@ export function MarginGateWidget() {
                       <button type="button"
                         onClick={() => void recompute(r.member_id)}
                         disabled={busy === r.member_id}
-                        className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50"
+                        className="px-2 py-1 text-xs bg-[#eef2f7] rounded hover:bg-[#e8ecf0] disabled:opacity-50"
                       >
                         Recompute
                       </button>

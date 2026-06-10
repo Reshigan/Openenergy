@@ -303,7 +303,7 @@ export function Scope3DisclosureChainTab() {
         </div>
         <button type="button"
           onClick={create}
-          className="shrink-0 rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a3a5c]"
+          className="shrink-0 rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
         >
           New disclosure
         </button>
@@ -324,7 +324,7 @@ export function Scope3DisclosureChainTab() {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#0c2a4d] text-white'
+                ? 'bg-[#c2873a] text-white'
                 : 'border border-[#d8dde6] bg-white text-[#4a5568] hover:bg-[#f3f5f9]'
             }`}
           >
@@ -485,7 +485,7 @@ function Drawer({
                 const destructive = DESTRUCTIVE.includes(a);
                 const primary = i === 0 && !destructive;
                 const cls = primary
-                  ? 'rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a3a5c]'
+                  ? 'rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]'
                   : destructive
                     ? 'rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50'
                     : 'rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#1a3a5c] hover:bg-[#f3f5f9]';

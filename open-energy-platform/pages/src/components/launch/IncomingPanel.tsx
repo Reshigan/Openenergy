@@ -60,7 +60,7 @@ export default function IncomingPanel({ onAct, className }: IncomingPanelProps) 
         </div>
         <button
           type="button" onClick={() => void load()}
-          className="rounded-md p-1.5 text-[#6b7685] hover:text-[#0f1c2e] hover:bg-[#eef2f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c]"
+          className="rounded-md p-1.5 text-[#6b7685] hover:text-[#0f1c2e] hover:bg-[#eef2f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2873a]"
           aria-label="Refresh incoming actions"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden />
@@ -89,20 +89,20 @@ export default function IncomingPanel({ onAct, className }: IncomingPanelProps) 
               {a.cross_option && (
                 <button
                   type="button" onClick={() => onAct?.(a)} disabled={busyId === a.id}
-                  className="rounded-md bg-[#1a3a5c] hover:bg-[#16314e] text-white text-[11px] font-semibold px-3 py-1.5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c] focus-visible:ring-offset-1"
+                  className="rounded-md bg-[#c2873a] hover:bg-[#a3702f] text-white text-[11px] font-semibold px-3 py-1.5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2873a] focus-visible:ring-offset-1"
                 >
                   {a.cross_option.action_label}
                 </button>
               )}
               <button
                 type="button" onClick={() => void resolve(a, 'acknowledge')} disabled={busyId === a.id}
-                className="rounded-md text-[11px] text-[#3d4756] hover:bg-[#eef2f7] px-2.5 py-1.5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c]"
+                className="rounded-md text-[11px] text-[#3d4756] hover:bg-[#eef2f7] px-2.5 py-1.5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2873a]"
               >
                 Acknowledge
               </button>
               <button
                 type="button" onClick={() => void resolve(a, 'dismiss')} disabled={busyId === a.id}
-                className="rounded-md text-[11px] text-[#6b7685] hover:text-[#0f1c2e] hover:bg-[#eef2f7] px-2.5 py-1.5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3a5c]"
+                className="rounded-md text-[11px] text-[#6b7685] hover:text-[#0f1c2e] hover:bg-[#eef2f7] px-2.5 py-1.5 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2873a]"
               >
                 Dismiss
               </button>

@@ -100,7 +100,7 @@ const TIER_COLOR: Record<ClaimTier, string> = {
   major: 'bg-red-100 text-red-800',
   significant: 'bg-orange-100 text-orange-700',
   standard: 'bg-amber-100 text-amber-700',
-  minor: 'bg-gray-100 text-gray-600',
+  minor: 'bg-[#eef2f7] text-[#3d4756]',
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -116,17 +116,17 @@ const TYPE_COLOR: Record<string, string> = {
   milestone: 'bg-purple-100 text-purple-700',
   final: 'bg-green-100 text-green-700',
   variation: 'bg-amber-100 text-amber-700',
-  daywork: 'bg-gray-100 text-gray-600',
+  daywork: 'bg-[#eef2f7] text-[#3d4756]',
 };
 
 const STATUS_COLOR: Record<ClaimStatus, string> = {
-  submitted:              'bg-slate-100 text-slate-700',
+  submitted:              'bg-[#eef2f7] text-[#2d3748]',
   quantity_survey_review: 'bg-blue-50 text-blue-700',
   pm_review:              'bg-indigo-100 text-indigo-700',
   engineer_certified:     'bg-violet-100 text-violet-700',
   approved:               'bg-emerald-100 text-emerald-700',
   payment_processed:      'bg-green-100 text-green-800',
-  closed:                 'bg-gray-100 text-gray-600',
+  closed:                 'bg-[#eef2f7] text-[#3d4756]',
   disputed:               'bg-red-100 text-red-800',
   suspended:              'bg-orange-100 text-orange-800',
   rejected:               'bg-red-200 text-red-900',
@@ -199,7 +199,7 @@ function KpiCard({ label, value, color }: { label: string; value: string | numbe
     green:  'bg-green-50 text-green-900 border-green-200',
     amber:  'bg-amber-50 text-amber-900 border-amber-200',
     purple: 'bg-purple-50 text-purple-900 border-purple-200',
-    gray:   'bg-gray-50 text-gray-700 border-gray-200',
+    gray:   'bg-[#f8fafc] text-[#2d3748] border-[#dde4ec]',
   };
   return (
     <div className={`rounded-lg border px-3 py-2 ${colors[color] ?? colors.gray}`}>
@@ -226,8 +226,8 @@ function CheckRow({ label, checked, onChange, warningLabel }: {
 function FinancialRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
     <tr className={highlight ? 'font-bold' : ''}>
-      <td className="pr-3 text-gray-500 py-1">{label}</td>
-      <td className={`text-right py-1 ${highlight ? 'text-green-800' : 'text-gray-800'}`}>{value}</td>
+      <td className="pr-3 text-[#6b7685] py-1">{label}</td>
+      <td className={`text-right py-1 ${highlight ? 'text-green-800' : 'text-[#1e2a38]'}`}>{value}</td>
     </tr>
   );
 }
@@ -397,13 +397,13 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
           <option value="">All types</option>
           {CLAIM_TYPES.map(t => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
         </select>
-        <span className="text-xs text-gray-400 ml-auto">{filtered.length} claims</span>
+        <span className="text-xs text-[#9aa5b4] ml-auto">{filtered.length} claims</span>
         {!readOnly && (
           <button type="button" className="text-xs bg-green-600 text-white rounded px-3 py-1 hover:bg-green-700" onClick={() => setShowCreate(true)}>
             + New progress claim
           </button>
         )}
-        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-gray-50" onClick={load}>Refresh</button>
+        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-[#eef2f7]" onClick={load}>Refresh</button>
       </div>
 
       {actionResult && (
@@ -412,31 +412,31 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
         </div>
       )}
       {error && <div className="text-xs text-red-600 bg-red-50 rounded px-3 py-2">{error}</div>}
-      {loading && <div className="text-xs text-gray-400">Loading progress claims…</div>}
+      {loading && <div className="text-xs text-[#9aa5b4]">Loading progress claims…</div>}
 
       {/* Table */}
       {!loading && (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <div className="overflow-x-auto rounded-lg border border-[#dde4ec]">
           <table className="w-full text-xs">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#f8fafc]">
               <tr>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">PCN No.</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Contractor</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Type</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Tier</th>
-                <th className="text-right px-3 py-2 font-medium text-gray-500">Claim ZAR</th>
-                <th className="text-right px-3 py-2 font-medium text-gray-500">Certified ZAR</th>
-                <th className="text-right px-3 py-2 font-medium text-gray-500">Approved ZAR</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Status</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">SLA</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Flags</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">PCN No.</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Contractor</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Type</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Tier</th>
+                <th className="text-right px-3 py-2 font-medium text-[#6b7685]">Claim ZAR</th>
+                <th className="text-right px-3 py-2 font-medium text-[#6b7685]">Certified ZAR</th>
+                <th className="text-right px-3 py-2 font-medium text-[#6b7685]">Approved ZAR</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Status</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">SLA</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Flags</th>
                 {!readOnly && <th className="px-3 py-2" />}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={readOnly ? 10 : 11} className="px-3 py-6 text-center text-gray-400">
+                  <td colSpan={readOnly ? 10 : 11} className="px-3 py-6 text-center text-[#9aa5b4]">
                     No progress claims recorded
                   </td>
                 </tr>
@@ -448,19 +448,19 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
                 return (
                   <tr
                     key={row.id}
-                    className={`border-t border-gray-100 hover:bg-gray-50 cursor-pointer ${row.chain_status === 'disputed' ? 'bg-red-50/30' : row.chain_status === 'suspended' ? 'bg-orange-50/30' : ''}`}
+                    className={`border-t border-[#eef2f7] hover:bg-[#eef2f7] cursor-pointer ${row.chain_status === 'disputed' ? 'bg-red-50/30' : row.chain_status === 'suspended' ? 'bg-orange-50/30' : ''}`}
                     onClick={() => setSelected(row)}
                   >
-                    <td className="px-3 py-2 font-mono text-gray-500">
+                    <td className="px-3 py-2 font-mono text-[#6b7685]">
                       {row.claim_number ?? row.id}
                     </td>
                     <td className="px-3 py-2 max-w-[140px]">
-                      <span className="text-gray-800 block truncate font-medium">{row.contractor_name ?? '—'}</span>
-                      {row.project_name && <span className="text-gray-400 truncate block">{row.project_name}</span>}
+                      <span className="text-[#1e2a38] block truncate font-medium">{row.contractor_name ?? '—'}</span>
+                      {row.project_name && <span className="text-[#9aa5b4] truncate block">{row.project_name}</span>}
                     </td>
                     <td className="px-3 py-2">
                       {row.claim_type && (
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${TYPE_COLOR[row.claim_type] ?? 'bg-gray-100 text-gray-600'}`}>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${TYPE_COLOR[row.claim_type] ?? 'bg-[#eef2f7] text-[#3d4756]'}`}>
                           {TYPE_LABEL[row.claim_type] ?? row.claim_type}
                         </span>
                       )}
@@ -472,7 +472,7 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-right text-gray-700 whitespace-nowrap">
+                    <td className="px-3 py-2 text-right text-[#2d3748] whitespace-nowrap">
                       {formatZar(row.claim_amount_zar)}
                     </td>
                     <td className="px-3 py-2 text-right whitespace-nowrap">
@@ -485,7 +485,7 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
                         </span>
                       ) : '—'}
                     </td>
-                    <td className="px-3 py-2 text-right text-gray-700 whitespace-nowrap">
+                    <td className="px-3 py-2 text-right text-[#2d3748] whitespace-nowrap">
                       {formatZar(row.approved_amount_zar)}
                     </td>
                     <td className="px-3 py-2">
@@ -502,7 +502,7 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
                           compact
                         />
                       ) : (
-                        <span className="text-gray-300 text-[10px]">—</span>
+                        <span className="text-[#9aa5b4] text-[10px]">—</span>
                       )}
                     </td>
                     <td className="px-3 py-2">
@@ -551,17 +551,17 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-6 space-y-5">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold text-gray-900">
+                <h2 className="text-base font-semibold text-[#0f1c2e]">
                   {selected.claim_number ?? selected.id}
                   {selected.contractor_name && (
-                    <span className="ml-2 text-sm text-gray-500 font-normal">· {selected.contractor_name}</span>
+                    <span className="ml-2 text-sm text-[#6b7685] font-normal">· {selected.contractor_name}</span>
                   )}
                 </h2>
                 {selected.project_name && (
-                  <p className="text-xs text-gray-400">{selected.project_name}</p>
+                  <p className="text-xs text-[#9aa5b4]">{selected.project_name}</p>
                 )}
               </div>
-              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl" onClick={() => setSelected(null)}>✕</button>
+              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl" onClick={() => setSelected(null)}>✕</button>
             </div>
 
             {/* Chain state bar */}
@@ -591,8 +591,8 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
             )}
 
             {/* Financial summary */}
-            <div className="rounded-lg border border-gray-200 p-4">
-              <h3 className="text-xs font-semibold text-gray-700 mb-3">Financial summary</h3>
+            <div className="rounded-lg border border-[#dde4ec] p-4">
+              <h3 className="text-xs font-semibold text-[#2d3748] mb-3">Financial summary</h3>
               <table className="w-full text-xs">
                 <tbody>
                   <FinancialRow label="Claim submitted" value={formatZar(selected.claim_amount_zar)} />
@@ -612,8 +612,8 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
               </table>
               {selected.contract_completion_pct != null && (
                 <div className="mt-3">
-                  <div className="text-xs text-gray-500 mb-1">Contract completion: {selected.contract_completion_pct.toFixed(1)}%</div>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
+                  <div className="text-xs text-[#6b7685] mb-1">Contract completion: {selected.contract_completion_pct.toFixed(1)}%</div>
+                  <div className="w-full bg-[#eef2f7] rounded-full h-2">
                     <div
                       className="bg-green-500 h-2 rounded-full"
                       style={{ width: `${Math.min(100, selected.contract_completion_pct)}%` }}
@@ -669,11 +669,11 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
 
             {/* Cross-refs */}
             {(selected.change_order_ref || selected.milestone_ref || selected.drawdown_ref || selected.subcontractor_ref) && (
-              <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-                {selected.change_order_ref && <span className="rounded bg-gray-100 px-2 py-0.5">CO: {selected.change_order_ref}</span>}
-                {selected.milestone_ref && <span className="rounded bg-gray-100 px-2 py-0.5">Milestone: {selected.milestone_ref}</span>}
-                {selected.drawdown_ref && <span className="rounded bg-gray-100 px-2 py-0.5">Drawdown: {selected.drawdown_ref}</span>}
-                {selected.subcontractor_ref && <span className="rounded bg-gray-100 px-2 py-0.5">Subcontractor: {selected.subcontractor_ref}</span>}
+              <div className="flex flex-wrap gap-2 text-xs text-[#6b7685]">
+                {selected.change_order_ref && <span className="rounded bg-[#eef2f7] px-2 py-0.5">CO: {selected.change_order_ref}</span>}
+                {selected.milestone_ref && <span className="rounded bg-[#eef2f7] px-2 py-0.5">Milestone: {selected.milestone_ref}</span>}
+                {selected.drawdown_ref && <span className="rounded bg-[#eef2f7] px-2 py-0.5">Drawdown: {selected.drawdown_ref}</span>}
+                {selected.subcontractor_ref && <span className="rounded bg-[#eef2f7] px-2 py-0.5">Subcontractor: {selected.subcontractor_ref}</span>}
               </div>
             )}
 
@@ -689,7 +689,7 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
             {/* Actions */}
             {!readOnly && selectedActions.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-medium text-gray-600">Actions</p>
+                <p className="text-xs font-medium text-[#3d4756]">Actions</p>
                 <div className="flex flex-wrap gap-2">
                   {selectedActions.map(({ action, label, danger }) => (
                     <button type="button"
@@ -699,7 +699,7 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
                       className={`text-xs rounded px-3 py-1.5 font-medium disabled:opacity-50 ${
                         danger
                           ? 'bg-red-100 text-red-800 hover:bg-red-200'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                          : 'bg-[#c2873a] text-white hover:bg-[#a3702f]'
                       }`}
                     >
                       {label}
@@ -722,75 +722,75 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
         <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center overflow-y-auto py-8 px-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-gray-900">New progress claim (PCN)</h2>
-              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl" onClick={() => setShowCreate(false)}>✕</button>
+              <h2 className="text-base font-semibold text-[#0f1c2e]">New progress claim (PCN)</h2>
+              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl" onClick={() => setShowCreate(false)}>✕</button>
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-xs">
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Project ID *</span>
+                <span className="text-[#3d4756] font-medium">Project ID *</span>
                 <input className="border rounded px-2 py-1.5" value={newProjectId} onChange={e => setNewProjectId(e.target.value)} placeholder="kakamas-500mw" />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Project name</span>
+                <span className="text-[#3d4756] font-medium">Project name</span>
                 <input className="border rounded px-2 py-1.5" value={newProjectName} onChange={e => setNewProjectName(e.target.value)} />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Claim number</span>
+                <span className="text-[#3d4756] font-medium">Claim number</span>
                 <input className="border rounded px-2 py-1.5" value={newClaimNumber} onChange={e => setNewClaimNumber(e.target.value)} placeholder="K500-PCN-013 (auto-generated if blank)" />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Contractor name</span>
+                <span className="text-[#3d4756] font-medium">Contractor name</span>
                 <input className="border rounded px-2 py-1.5" value={newContractorName} onChange={e => setNewContractorName(e.target.value)} placeholder="Powercon SA" />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Claim type *</span>
+                <span className="text-[#3d4756] font-medium">Claim type *</span>
                 <select className="border rounded px-2 py-1.5" value={newClaimType} onChange={e => setNewClaimType(e.target.value)}>
                   {CLAIM_TYPES.map(t => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
                 </select>
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Tier *</span>
+                <span className="text-[#3d4756] font-medium">Tier *</span>
                 <select className="border rounded px-2 py-1.5" value={newTier} onChange={e => setNewTier(e.target.value as ClaimTier)}>
                   {CLAIM_TIERS.map(t => (
                     <option key={t} value={t}>{TIER_LABEL[t]} — {SLA_HOURS_BY_TIER[t]}h SLA</option>
                   ))}
                 </select>
-                <span className="text-[10px] text-gray-400 italic">Larger claims get more review time (INVERTED SLA)</span>
+                <span className="text-[10px] text-[#9aa5b4] italic">Larger claims get more review time (INVERTED SLA)</span>
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Claim amount ZAR *</span>
+                <span className="text-[#3d4756] font-medium">Claim amount ZAR *</span>
                 <input type="number" className="border rounded px-2 py-1.5" value={newClaimAmount} onChange={e => setNewClaimAmount(e.target.value)} placeholder="4500000" />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Invoice reference</span>
+                <span className="text-[#3d4756] font-medium">Invoice reference</span>
                 <input className="border rounded px-2 py-1.5" value={newInvoiceRef} onChange={e => setNewInvoiceRef(e.target.value)} placeholder="INV-2026-0042" />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Claim period from</span>
+                <span className="text-[#3d4756] font-medium">Claim period from</span>
                 <input type="date" className="border rounded px-2 py-1.5" value={newPeriodFrom} onChange={e => setNewPeriodFrom(e.target.value)} />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Claim period to</span>
+                <span className="text-[#3d4756] font-medium">Claim period to</span>
                 <input type="date" className="border rounded px-2 py-1.5" value={newPeriodTo} onChange={e => setNewPeriodTo(e.target.value)} />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Subcontractor ref</span>
+                <span className="text-[#3d4756] font-medium">Subcontractor ref</span>
                 <input className="border rounded px-2 py-1.5" value={newSubcontractorRef} onChange={e => setNewSubcontractorRef(e.target.value)} placeholder="sub-001" />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Change order ref</span>
+                <span className="text-[#3d4756] font-medium">Change order ref</span>
                 <input className="border rounded px-2 py-1.5" value={newChangeOrderRef} onChange={e => setNewChangeOrderRef(e.target.value)} placeholder="CO-017" />
               </label>
               <label className="col-span-2 flex flex-col gap-1">
-                <span className="text-gray-600 font-medium">Milestone ref</span>
+                <span className="text-[#3d4756] font-medium">Milestone ref</span>
                 <input className="border rounded px-2 py-1.5" value={newMilestoneRef} onChange={e => setNewMilestoneRef(e.target.value)} placeholder="MS-04 Mechanical complete" />
               </label>
             </div>
 
             {/* Floor flags */}
-            <div className="space-y-2 pt-2 border-t border-gray-100">
-              <p className="text-xs font-medium text-gray-600">Payment flags</p>
+            <div className="space-y-2 pt-2 border-t border-[#eef2f7]">
+              <p className="text-xs font-medium text-[#3d4756]">Payment flags</p>
               <div className="grid grid-cols-2 gap-2">
                 <CheckRow
                   label="IE milestone payment required"
@@ -826,7 +826,7 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+            <div className="flex justify-end gap-3 pt-2 border-t border-[#eef2f7]">
               <button type="button" className="text-xs border rounded px-3 py-1.5" onClick={() => setShowCreate(false)}>Cancel</button>
               <button type="button"
                 className="text-xs bg-green-600 text-white rounded px-4 py-1.5 hover:bg-green-700 disabled:opacity-50"

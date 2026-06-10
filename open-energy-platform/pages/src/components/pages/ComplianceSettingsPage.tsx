@@ -108,7 +108,7 @@ function MfaTab() {
 
         {!state?.verified && !otpauth && (
           <button type="button" onClick={enroll} disabled={busy}
-                  className="mt-3 h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
+                  className="mt-3 h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50">
             {busy ? 'Enrolling…' : 'Enable MFA'}
           </button>
         )}
@@ -129,7 +129,7 @@ function MfaTab() {
                 <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="123 456" autoComplete="one-time-code"
                        className="mt-1 h-9 w-32 px-2 rounded border border-[#dde4ec] font-mono text-[15px] tracking-widest" />
                 <button type="button" onClick={verify} disabled={busy || code.length < 6}
-                        className="ml-2 h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
+                        className="ml-2 h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50">
                   {busy ? 'Verifying…' : 'Verify'}
                 </button>
               </div>
@@ -152,7 +152,7 @@ function MfaTab() {
               ))}
             </div>
             <button type="button" onClick={() => setRecoveryCodes(null)}
-                    className="mt-2 h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">
+                    className="mt-2 h-8 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold">
               I've saved them
             </button>
           </div>
@@ -217,8 +217,8 @@ function KycTab({ isAdmin }: { isAdmin: boolean }) {
     <div className="mt-3 space-y-3">
       {isAdmin && (
         <div className="flex gap-2 text-[12px]">
-          <button type="button" onClick={() => setAdminView(false)} className={`h-8 px-2.5 rounded-full text-[11px] font-semibold border ${!adminView ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white border-[#dde4ec]'}`}>My submissions</button>
-          <button type="button" onClick={() => setAdminView(true)}  className={`h-8 px-2.5 rounded-full text-[11px] font-semibold border ${adminView ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white border-[#dde4ec]'}`}>Pending review queue</button>
+          <button type="button" onClick={() => setAdminView(false)} className={`h-8 px-2.5 rounded-full text-[11px] font-semibold border ${!adminView ? 'bg-[#c2873a] text-white border-[#1a3a5c]' : 'bg-white border-[#dde4ec]'}`}>My submissions</button>
+          <button type="button" onClick={() => setAdminView(true)}  className={`h-8 px-2.5 rounded-full text-[11px] font-semibold border ${adminView ? 'bg-[#c2873a] text-white border-[#1a3a5c]' : 'bg-white border-[#dde4ec]'}`}>Pending review queue</button>
         </div>
       )}
       {!adminView && (
@@ -331,7 +331,7 @@ function PopiaTab() {
           </div>
           <p className="text-[12px] text-[#3d4756] mt-2">Download all personal information we hold about you in a portable JSON archive. Ready within seconds.</p>
           <button type="button" onClick={requestExport} disabled={busy}
-                  className="mt-3 h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
+                  className="mt-3 h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50">
             {busy ? 'Generating…' : 'Request data export'}
           </button>
           <ul className="mt-3 divide-y divide-[#eef2f7] text-[11px]">
@@ -415,7 +415,7 @@ function RegulatorTab() {
             <select value={quarter} onChange={(e) => setQuarter(Number(e.target.value))} className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]">
               <option value={1}>Q1</option><option value={2}>Q2</option><option value={3}>Q3</option><option value={4}>Q4</option>
             </select>
-            <button type="button" onClick={generateNersa} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Generate</button>
+            <button type="button" onClick={generateNersa} className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold">Generate</button>
           </div>
           <ul className="divide-y divide-[#eef2f7] text-[11px]">
             {nersa.map((r) => (
@@ -442,7 +442,7 @@ function RegulatorTab() {
               <option value="carbon_tax">Carbon tax</option>
             </select>
             <input value={sarsLabel} onChange={(e) => setSarsLabel(e.target.value)} placeholder={sarsType === 'vat201' ? '2026/02' : '2026'} className="h-9 w-28 px-2 rounded border border-[#dde4ec] text-[12px] font-mono" />
-            <button type="button" onClick={generateSars} className="h-9 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold">Generate</button>
+            <button type="button" onClick={generateSars} className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold">Generate</button>
           </div>
           <ul className="divide-y divide-[#eef2f7] text-[11px]">
             {sars.map((r) => (

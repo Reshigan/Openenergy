@@ -71,7 +71,7 @@ export function PublicAuditPage() {
               key={key}
               onClick={() => setTab(key)}
               className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-1.5 ${
-                tab === key ? 'bg-[#1a3a5c] text-white' : 'text-[#0f1c2e] hover:bg-[#eef2f7]'
+                tab === key ? 'bg-[#c2873a] text-white' : 'text-[#0f1c2e] hover:bg-[#eef2f7]'
               }`}
             >
               <Icon size={13} /> {label}
@@ -170,7 +170,7 @@ function ProofPanel() {
                  value={evtId} onChange={(e) => setEvtId(e.target.value)}/>
         </label>
         <button type="button" disabled={!evtId || busy} onClick={run}
-                className="h-9 px-4 rounded bg-[#0f1c2e] text-white text-[12px] font-semibold disabled:opacity-50">
+                className="h-9 px-4 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50">
           {busy ? 'Computing…' : 'Generate proof'}
         </button>
       </div>
@@ -268,7 +268,7 @@ function VerifyPanel() {
         </div>
       )}
       <button type="button" disabled={!leaf || !root || !pathJson || busy} onClick={run}
-              className="h-9 px-4 rounded bg-[#0f1c2e] text-white text-[12px] font-semibold disabled:opacity-50">
+              className="h-9 px-4 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50">
         {busy ? 'Verifying…' : 'Verify'}
       </button>
     </section>

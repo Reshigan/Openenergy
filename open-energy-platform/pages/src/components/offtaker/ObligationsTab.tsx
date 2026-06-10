@@ -82,7 +82,7 @@ function Kpi({ label, value, sub }: { label: string; value: string | number; sub
   return (
     <div style={{ background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, padding: '12px 16px', minWidth: 140 }}>
       <div style={{ fontSize: 11, color: '#557', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#1c2733', marginTop: 4 }}>{value}</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: '#0f1c2e', marginTop: 4 }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: '#7a8a9a', marginTop: 2 }}>{sub}</div>}
     </div>
   );
@@ -152,7 +152,7 @@ export function ObligationsTab() {
 
   return (
     <div data-testid="offtaker-obligations-tab" style={{ padding: '16px 20px', minHeight: 600 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c2733', marginTop: 0 }}>PPA delivery obligations</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f1c2e', marginTop: 0 }}>PPA delivery obligations</h2>
       <p style={{ fontSize: 13, color: '#557', marginTop: 4 }}>
         Monthly contracted-vs-delivered tracking. Shortfalls open a 14-day cure window; expired
         rows flip to take-or-pay and feed the regulator inbox automatically.
@@ -176,8 +176,8 @@ export function ObligationsTab() {
             onClick={() => setFilter(f.key)}
             style={{
               padding: '6px 12px', borderRadius: 999, border: '1px solid #e3e7ec',
-              background: filter === f.key ? '#1c2733' : '#fff',
-              color: filter === f.key ? '#fff' : '#1c2733', fontSize: 12, fontWeight: 600,
+              background: filter === f.key ? 'oklch(0.46 0.16 55)' : '#fff',
+              color: filter === f.key ? '#fff' : '#0f1c2e', fontSize: 12, fontWeight: 600,
               cursor: 'pointer',
             }}
           >{f.label}</button>
@@ -281,7 +281,7 @@ export function ObligationsTab() {
                           <button data-testid={`offtaker-obligations-verify-${dv.id}`}
                                   type="button"
                                   onClick={() => act('verify', null, dv.id)}
-                                  style={{ marginRight: 6, padding: '4px 10px', background: '#1c2733', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>
+                                  style={{ marginRight: 6, padding: '4px 10px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>
                             Verify
                           </button>
                           <button data-testid={`offtaker-obligations-reject-${dv.id}`}

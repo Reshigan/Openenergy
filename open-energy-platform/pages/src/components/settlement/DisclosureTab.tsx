@@ -133,7 +133,7 @@ export function DisclosureTab() {
   return (
     <div className="space-y-4" data-testid="disclosure-tab">
       {/* Top strip — as-of + verdict + actions */}
-      <div className="flex flex-wrap items-end gap-3 p-4 bg-[#0f1c2e] text-white rounded-lg">
+      <div className="flex flex-wrap items-end gap-3 p-4 bg-[#c2873a] text-white rounded-lg">
         <div className="flex-1 min-w-[180px]">
           <div className="text-[10px] uppercase tracking-wider text-[#7a90a8]">As of</div>
           <div className="text-[20px] font-semibold mt-1">{current?.as_of_date || '—'}</div>
@@ -141,7 +141,7 @@ export function DisclosureTab() {
         <div className="min-w-[160px]">
           <div className="text-[10px] uppercase tracking-wider text-[#7a90a8]">Cover-1 verdict</div>
           {cover1Pass === null ? (
-            <span className="inline-block mt-1 px-3 py-1 rounded-full text-[11px] font-semibold bg-gray-500">—</span>
+            <span className="inline-block mt-1 px-3 py-1 rounded-full text-[11px] font-semibold bg-[#f8fafc]0">—</span>
           ) : cover1Pass ? (
             <span className="inline-block mt-1 px-3 py-1 rounded-full text-[11px] font-semibold bg-green-600" data-testid="disclosure-cover1-pass">PASS</span>
           ) : (
@@ -152,7 +152,7 @@ export function DisclosureTab() {
           <div className="text-[10px] uppercase tracking-wider text-[#7a90a8]">Status</div>
           <div className="mt-1 text-[13px]">
             {current?.published
-              ? <span className="px-2 py-0.5 rounded-full bg-blue-600 text-white">Published</span>
+              ? <span className="px-2 py-0.5 rounded-full bg-[#c2873a] text-white">Published</span>
               : <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white">Unpublished</span>}
           </div>
         </div>
@@ -171,7 +171,7 @@ export function DisclosureTab() {
             <button type="button"
               onClick={() => void publish()}
               disabled={busy === 'publish'}
-              className="px-3 py-1.5 bg-blue-600 rounded text-[13px] hover:bg-blue-700 disabled:opacity-50"
+              className="px-3 py-1.5 bg-[#c2873a] rounded text-[13px] hover:bg-[#a3702f] disabled:opacity-50"
               data-testid="disclosure-publish"
             >
               {busy === 'publish' ? 'Publishing…' : 'Publish'}
@@ -234,7 +234,7 @@ export function DisclosureTab() {
           Monthly snapshots
         </div>
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs uppercase text-ionex-text-mute">
+          <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
             <tr>
               <th className="px-4 py-2">As of</th>
               <th className="px-4 py-2">Margin %</th>
@@ -250,7 +250,7 @@ export function DisclosureTab() {
             ) : list.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-6 text-center text-ionex-text-mute">No snapshots yet.</td></tr>
             ) : list.map(r => (
-              <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+              <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
                 <td className="px-4 py-2 font-medium">{r.as_of_date}</td>
                 <td className="px-4 py-2">{pct(r.margin_coverage_pct)}</td>
                 <td className="px-4 py-2">{ratio(r.liquidity_coverage_ratio)}</td>
@@ -280,7 +280,7 @@ export function DisclosureTab() {
             {busy === 'ai' ? 'Asking…' : 'Generate'}
           </button>
         </div>
-        <div className="text-[13px] text-gray-800 whitespace-pre-wrap min-h-[60px]">
+        <div className="text-[13px] text-[#1e2a38] whitespace-pre-wrap min-h-[60px]">
           {aiSummary || (
             <span className="text-ionex-text-mute italic">
               Click "Generate" for a regulator-grade narrative summary of this month's PFMI metrics, Cover-1 verdict, and notable changes vs. prior periods.

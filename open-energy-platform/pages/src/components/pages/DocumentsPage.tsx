@@ -83,7 +83,7 @@ function TemplatesTab() {
             <div className="font-semibold text-[#0f1c2e] text-[14px]">{t.display_name}</div>
             <div className="text-[11px] text-[#6b7685] font-mono">{t.template_key} · v{t.version}</div>
             <button type="button" onClick={() => setRaising(t)}
-              className="mt-3 h-8 px-3 rounded bg-[#1a3a5c] text-white text-[11px] font-semibold inline-flex items-center gap-1">
+              className="mt-3 h-8 px-3 rounded bg-[#c2873a] text-white text-[11px] font-semibold inline-flex items-center gap-1">
               <Plus size={12}/> Raise envelope
             </button>
           </div>
@@ -163,7 +163,7 @@ function RaiseEnvelopeModal({ template, onClose, onCreated }: { template: Templa
         <div className="p-4 border-t border-[#dde4ec] flex justify-end gap-2">
           <button type="button" onClick={onClose} className="h-8 px-3 text-[12px] text-[#3a4658]">Cancel</button>
           <button type="button" disabled={busy} onClick={submit}
-                  className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-50">
+                  className="h-8 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50">
             {busy ? 'Creating…' : 'Create envelope'}
           </button>
         </div>
@@ -328,7 +328,7 @@ function EnvelopeDetail({ envelope, onClose, onChanged }: { envelope: Envelope; 
         <div className="p-4 border-t border-[#dde4ec] flex justify-end gap-2">
           <button type="button" onClick={cancel} className="h-8 px-3 text-[12px] text-[#c0392b]">Cancel envelope</button>
           <button type="button" disabled={busy || envelope.status === 'completed' || envelope.status === 'cancelled'} onClick={sign}
-                  className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[12px] font-semibold disabled:opacity-40 inline-flex items-center gap-1">
+                  className="h-8 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-40 inline-flex items-center gap-1">
             <Send size={12}/> {busy ? 'Signing…' : 'Sign'}
           </button>
         </div>

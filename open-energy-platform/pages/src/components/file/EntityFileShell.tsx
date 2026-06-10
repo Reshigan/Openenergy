@@ -156,27 +156,29 @@ export function EntityFileShell<TData>({
 
   return (
     <div className="p-6 lg:p-10 space-y-5 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
-      {/* Gradient hero ─────────────────────────────────────────────────── */}
+      {/* Hero ─────────────────────────────────────────────────── */}
       <section
-        className="rounded-xl text-white p-6 shadow-md"
-        style={{ background: `linear-gradient(135deg, ${accentFrom} 0%, #1a3a5c 60%, ${accentTo} 100%)` }}
+        className="rounded-xl border p-5"
+        style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-white/80 bg-white/10 border border-white/15 rounded-full px-3 py-1">
-              {hero.eyebrowIcon ? <hero.eyebrowIcon size={12} /> : null} {hero.eyebrowLabel}
-            </div>
-            <h1 className="font-display text-[26px] font-bold tracking-tight mt-2">{hero.title}</h1>
-            {hero.subtitle && <p className="text-[13px] text-white/80 mt-1 max-w-3xl">{hero.subtitle}</p>}
+            {hero.eyebrowLabel && (
+              <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>
+                {hero.eyebrowIcon ? <hero.eyebrowIcon size={10} /> : null} {hero.eyebrowLabel}
+              </div>
+            )}
+            <h1 className="font-display text-[20px] font-bold tracking-tight mt-0.5" style={{ color: 'oklch(0.15 0.025 250)' }}>{hero.title}</h1>
+            {hero.subtitle && <p className="text-[12px] mt-0.5 max-w-3xl" style={{ color: 'oklch(0.45 0.015 250)' }}>{hero.subtitle}</p>}
           </div>
           {hero.actions && <div className="flex items-center gap-2">{hero.actions}</div>}
         </div>
         {hero.kpis && hero.kpis.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
             {hero.kpis.slice(0, 8).map((k) => (
-              <div key={k.key} className="rounded-lg bg-white/10 backdrop-blur p-3 border border-white/10">
-                <div className="text-[10px] uppercase tracking-wider text-white/75">{k.label}</div>
-                <div className="mt-1 font-mono text-[20px] font-bold leading-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <div key={k.key} className="rounded-lg p-3" style={{ background: 'oklch(0.96 0.003 250)', border: '1px solid oklch(0.90 0.004 250)' }}>
+                <div className="text-[10px] uppercase tracking-wider" style={{ color: 'oklch(0.55 0.008 250)' }}>{k.label}</div>
+                <div className="mt-1 font-mono text-[18px] font-bold leading-tight" style={{ fontVariantNumeric: 'tabular-nums', color: 'oklch(0.15 0.025 250)' }}>
                   {k.value}
                 </div>
               </div>
@@ -224,7 +226,7 @@ export function EntityFileShell<TData>({
               type="button"
               onClick={() => setActiveTab(t.id)}
               className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-2 ${
-                active ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'
+                active ? 'bg-[#c2873a] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'
               }`}
             >
               {TIcon ? <TIcon size={14} /> : null} {t.label}

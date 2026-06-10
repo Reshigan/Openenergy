@@ -188,7 +188,7 @@ function MyRfpsTab() {
       </div>
       <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
         <div className="text-[13px] text-[#3d4756]">{rfps.length} RFPs you've issued</div>
-        <button type="button" onClick={() => setShowCreate(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1"><Plus size={14} /> New RFP</button>
+        <button type="button" onClick={() => setShowCreate(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold inline-flex items-center gap-1"><Plus size={14} /> New RFP</button>
       </div>
       <Card title="Your RFPs">
         {rfps.length === 0 ? <EmptyMsg>You haven't issued any RFPs yet.</EmptyMsg> : (
@@ -500,7 +500,7 @@ function CreateRfpModal({ onClose, onCreated }: { onClose: () => void; onCreated
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Cancel</button>
-          <button type="submit" disabled={loading} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold disabled:opacity-50">{loading ? 'Creating…' : 'Create RFP'}</button>
+          <button type="submit" disabled={loading} className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold disabled:opacity-50">{loading ? 'Creating…' : 'Create RFP'}</button>
         </div>
       </form>
     </Modal>
@@ -543,7 +543,7 @@ function RfpDetailModal({ rfp, onClose, onUpdate }: { rfp: Rfp; onClose: () => v
             <Field label="Proposed price (ZAR)"><input required type="number" value={bidPrice} onChange={(e) => setBidPrice(e.target.value)} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></Field>
             <Field label="Terms / commercial offer"><textarea value={bidTerms} onChange={(e) => setBidTerms(e.target.value)} rows={3} className="w-full px-3 py-2 rounded-md border border-[#dde4ec] text-[13px]" /></Field>
             <div className="flex justify-end">
-              <button type="submit" disabled={submitting} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold disabled:opacity-50">{submitting ? 'Submitting…' : 'Submit bid'}</button>
+              <button type="submit" disabled={submitting} className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold disabled:opacity-50">{submitting ? 'Submitting…' : 'Submit bid'}</button>
             </div>
           </form>
         )}

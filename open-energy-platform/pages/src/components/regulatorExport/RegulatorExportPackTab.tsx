@@ -602,7 +602,7 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
         {!regulatorView && (
           <button type="button"
             onClick={() => setShowPropose(true)}
-            className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#1a3a5c]"
+            className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#c2873a]"
           >
             + Propose pack
           </button>
@@ -657,7 +657,7 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#0c2a4d] text-white'
+                ? 'bg-[#c2873a] text-white'
                 : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
             }`}
           >
@@ -674,7 +674,7 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#1a3a5c] text-white'
+                ? 'bg-[#c2873a] text-white'
                 : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
             }`}
           >
@@ -856,7 +856,7 @@ function Drawer({
 
   const renderAct = (action: ActionKind, label: string, tone: 'primary' | 'danger' | 'amber' | 'plain' = 'plain') => {
     const cls = tone === 'primary'
-      ? 'bg-[#0c2a4d] text-white hover:bg-[#1a3a5c]'
+      ? 'bg-[#c2873a] text-white hover:bg-[#c2873a]'
       : tone === 'danger'
         ? 'bg-[#7a0e0e] text-white hover:bg-[#9b1f1f]'
         : tone === 'amber'
@@ -1072,7 +1072,7 @@ function ProposeModal({
         </div>
         <div className="mt-3 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Cancel</button>
-          <button type="button" onClick={submit} className="rounded bg-[#0c2a4d] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#1a3a5c]">Propose</button>
+          <button type="button" onClick={submit} className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#c2873a]">Propose</button>
         </div>
       </div>
     </div>

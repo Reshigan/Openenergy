@@ -114,7 +114,7 @@ const RISK_TIER_COLOR: Record<RiskTier, string> = {
   high_risk: 'bg-red-100 text-red-800',
   medium_risk: 'bg-orange-100 text-orange-700',
   low_risk: 'bg-amber-100 text-amber-700',
-  routine: 'bg-gray-100 text-gray-600',
+  routine: 'bg-[#eef2f7] text-[#3d4756]',
 };
 
 const WORK_TYPE_LABEL: Record<WorkType, string> = {
@@ -131,18 +131,18 @@ const WORK_TYPE_LABEL: Record<WorkType, string> = {
 };
 
 const STATUS_COLOR: Record<MsStatus, string> = {
-  drafted: 'bg-slate-100 text-slate-700',
+  drafted: 'bg-[#eef2f7] text-[#2d3748]',
   reviewed: 'bg-blue-50 text-blue-700',
   risk_assessed: 'bg-indigo-100 text-indigo-700',
   approved: 'bg-violet-100 text-violet-700',
   toolbox_briefed: 'bg-cyan-100 text-cyan-700',
   active: 'bg-green-100 text-green-800',
   work_completed: 'bg-teal-100 text-teal-700',
-  closed: 'bg-gray-100 text-gray-600',
+  closed: 'bg-[#eef2f7] text-[#3d4756]',
   rejected: 'bg-red-100 text-red-700',
   superseded: 'bg-amber-100 text-amber-700',
   suspended: 'bg-yellow-100 text-yellow-800',
-  archived: 'bg-gray-200 text-gray-400',
+  archived: 'bg-[#e8ecf0] text-[#9aa5b4]',
 };
 
 const ACTIONS: Record<MsStatus, Array<{ action: string; label: string; danger?: boolean }>> = {
@@ -198,7 +198,7 @@ function KpiCard({ label, value, color }: { label: string; value: number; color:
     orange: 'bg-orange-50 text-orange-900 border-orange-200',
     green: 'bg-green-50 text-green-900 border-green-200',
     amber: 'bg-amber-50 text-amber-900 border-amber-200',
-    gray: 'bg-gray-50 text-gray-700 border-gray-200',
+    gray: 'bg-[#f8fafc] text-[#2d3748] border-[#dde4ec]',
   };
   return (
     <div className={`rounded-lg border px-3 py-2 ${colors[color] ?? colors.gray}`}>
@@ -421,13 +421,13 @@ export default function IppMethodStatementTab({ readOnly = false }: Props) {
           <option value="">All work types</option>
           {WORK_TYPES.map(w => <option key={w} value={w}>{WORK_TYPE_LABEL[w]}</option>)}
         </select>
-        <span className="text-xs text-gray-400 ml-auto">{filtered.length} method statements</span>
+        <span className="text-xs text-[#9aa5b4] ml-auto">{filtered.length} method statements</span>
         {!readOnly && (
-          <button type="button" className="text-xs bg-blue-600 text-white rounded px-3 py-1 hover:bg-blue-700" onClick={() => setShowCreate(true)}>
+          <button type="button" className="text-xs bg-[#c2873a] text-white rounded px-3 py-1 hover:bg-[#a3702f]" onClick={() => setShowCreate(true)}>
             + New MS
           </button>
         )}
-        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-gray-50" onClick={load}>Refresh</button>
+        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-[#eef2f7]" onClick={load}>Refresh</button>
       </div>
 
       {actionResult && (
@@ -436,28 +436,28 @@ export default function IppMethodStatementTab({ readOnly = false }: Props) {
         </div>
       )}
       {error && <div className="text-xs text-red-600 bg-red-50 rounded px-3 py-2">{error}</div>}
-      {loading && <div className="text-xs text-gray-400">Loading method statement register…</div>}
+      {loading && <div className="text-xs text-[#9aa5b4]">Loading method statement register…</div>}
 
       {/* Table */}
       {!loading && (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <div className="overflow-x-auto rounded-lg border border-[#dde4ec]">
           <table className="w-full text-xs">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#f8fafc]">
               <tr>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">MS No.</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Title</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Work type</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Risk tier</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Status</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">SLA</th>
-                <th className="text-left px-3 py-2 font-medium text-gray-500">Safety flags</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">MS No.</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Title</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Work type</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Risk tier</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Status</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">SLA</th>
+                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Safety flags</th>
                 {!readOnly && <th className="px-3 py-2" />}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={readOnly ? 7 : 8} className="px-3 py-6 text-center text-gray-400">
+                  <td colSpan={readOnly ? 7 : 8} className="px-3 py-6 text-center text-[#9aa5b4]">
                     No method statements in register
                   </td>
                 </tr>
@@ -465,15 +465,15 @@ export default function IppMethodStatementTab({ readOnly = false }: Props) {
               {filtered.map(row => (
                 <tr
                   key={row.id}
-                  className="border-t border-gray-100 hover:bg-gray-50 cursor-pointer"
+                  className="border-t border-[#eef2f7] hover:bg-[#eef2f7] cursor-pointer"
                   onClick={() => setSelected(row)}
                 >
-                  <td className="px-3 py-2 font-mono text-gray-400">{row.ms_number ?? row.id}</td>
+                  <td className="px-3 py-2 font-mono text-[#9aa5b4]">{row.ms_number ?? row.id}</td>
                   <td className="px-3 py-2 max-w-[200px]">
-                    <span className="text-gray-800 block truncate">{row.ms_title}</span>
-                    {row.project_name && <span className="text-gray-400 truncate block">{row.project_name}</span>}
+                    <span className="text-[#1e2a38] block truncate">{row.ms_title}</span>
+                    {row.project_name && <span className="text-[#9aa5b4] truncate block">{row.project_name}</span>}
                   </td>
-                  <td className="px-3 py-2 capitalize text-gray-600">
+                  <td className="px-3 py-2 capitalize text-[#3d4756]">
                     {row.work_type ? WORK_TYPE_LABEL[row.work_type] : '—'}
                   </td>
                   <td className="px-3 py-2">
@@ -496,7 +496,7 @@ export default function IppMethodStatementTab({ readOnly = false }: Props) {
                         breached={!!row.sla_breached}
                         compact
                       />
-                    ) : <span className="text-gray-400">—</span>}
+                    ) : <span className="text-[#9aa5b4]">—</span>}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex gap-1 flex-wrap">
@@ -548,7 +548,7 @@ export default function IppMethodStatementTab({ readOnly = false }: Props) {
                     {selected.chain_status.replace(/_/g, ' ')}
                   </span>
                   {selected.work_type && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-gray-100 text-gray-600">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-[#eef2f7] text-[#3d4756]">
                       {WORK_TYPE_LABEL[selected.work_type]}
                     </span>
                   )}
@@ -556,12 +556,12 @@ export default function IppMethodStatementTab({ readOnly = false }: Props) {
                     <span className="px-1 py-0.5 rounded text-[10px] bg-red-200 text-red-800">REGULATOR CROSSED</span>
                   )}
                 </div>
-                <h3 className="font-semibold text-gray-900 text-sm">{selected.ms_title}</h3>
-                <p className="text-xs text-gray-400 font-mono mt-0.5">
+                <h3 className="font-semibold text-[#0f1c2e] text-sm">{selected.ms_title}</h3>
+                <p className="text-xs text-[#9aa5b4] font-mono mt-0.5">
                   {selected.ms_number ?? selected.id} · {selected.project_name ?? selected.project_id}
                 </p>
               </div>
-              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl leading-none" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
+              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl leading-none" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
             </div>
 
             {/* Chain state bar */}
@@ -622,54 +622,54 @@ export default function IppMethodStatementTab({ readOnly = false }: Props) {
             {/* Details grid */}
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs mb-4">
               <div>
-                <span className="text-gray-500">Work area</span>
-                <p className="font-medium text-gray-800">{selected.work_area ?? '—'}</p>
+                <span className="text-[#6b7685]">Work area</span>
+                <p className="font-medium text-[#1e2a38]">{selected.work_area ?? '—'}</p>
               </div>
               <div>
-                <span className="text-gray-500">Scheduled start</span>
-                <p className="font-medium text-gray-800">{selected.scheduled_start_date ?? '—'}</p>
+                <span className="text-[#6b7685]">Scheduled start</span>
+                <p className="font-medium text-[#1e2a38]">{selected.scheduled_start_date ?? '—'}</p>
               </div>
               <div>
-                <span className="text-gray-500">Duration (days)</span>
-                <p className="font-medium text-gray-800">{selected.scheduled_duration_days ?? '—'}</p>
+                <span className="text-[#6b7685]">Duration (days)</span>
+                <p className="font-medium text-[#1e2a38]">{selected.scheduled_duration_days ?? '—'}</p>
               </div>
               <div>
-                <span className="text-gray-500">Revision</span>
-                <p className="font-medium text-gray-800">{selected.revision_number}</p>
+                <span className="text-[#6b7685]">Revision</span>
+                <p className="font-medium text-[#1e2a38]">{selected.revision_number}</p>
               </div>
               {selected.sla_breach_count > 0 && (
                 <div>
-                  <span className="text-gray-500">SLA breach count</span>
+                  <span className="text-[#6b7685]">SLA breach count</span>
                   <p className="font-medium text-red-800">{selected.sla_breach_count}</p>
                 </div>
               )}
               {selected.regulator_ref && (
                 <div>
-                  <span className="text-gray-500">Regulator ref</span>
-                  <p className="font-medium text-gray-800">{selected.regulator_ref}</p>
+                  <span className="text-[#6b7685]">Regulator ref</span>
+                  <p className="font-medium text-[#1e2a38]">{selected.regulator_ref}</p>
                 </div>
               )}
             </div>
 
             {/* Scope of work */}
             <div className="mb-4">
-              <p className="text-xs text-gray-500 mb-1">Scope of work</p>
-              <p className="text-xs text-gray-800 whitespace-pre-wrap">{selected.scope_of_work}</p>
+              <p className="text-xs text-[#6b7685] mb-1">Scope of work</p>
+              <p className="text-xs text-[#1e2a38] whitespace-pre-wrap">{selected.scope_of_work}</p>
             </div>
 
             {/* Hazard register */}
             {selected.hazard_register && (
               <div className="mb-4">
-                <p className="text-xs text-gray-500 mb-1">Hazard register</p>
-                <p className="text-xs text-gray-800 whitespace-pre-wrap">{selected.hazard_register}</p>
+                <p className="text-xs text-[#6b7685] mb-1">Hazard register</p>
+                <p className="text-xs text-[#1e2a38] whitespace-pre-wrap">{selected.hazard_register}</p>
               </div>
             )}
 
             {/* Toolbox talk notes */}
             {selected.toolbox_talk_notes && (
               <div className="mb-4">
-                <p className="text-xs text-gray-500 mb-1">Toolbox talk notes</p>
-                <p className="text-xs text-gray-800 whitespace-pre-wrap">{selected.toolbox_talk_notes}</p>
+                <p className="text-xs text-[#6b7685] mb-1">Toolbox talk notes</p>
+                <p className="text-xs text-[#1e2a38] whitespace-pre-wrap">{selected.toolbox_talk_notes}</p>
               </div>
             )}
 
@@ -690,7 +690,7 @@ export default function IppMethodStatementTab({ readOnly = false }: Props) {
             {/* Cross-references */}
             {(selected.ptw_ref || selected.ncr_ref || selected.hse_incident_ref || selected.work_order_ref || selected.risk_ref) && (
               <div className="mb-4">
-                <p className="text-xs text-gray-500 mb-1">Cross-references</p>
+                <p className="text-xs text-[#6b7685] mb-1">Cross-references</p>
                 <div className="flex flex-wrap gap-2">
                   {selected.ptw_ref && <span className="text-xs text-blue-600">PTW: {selected.ptw_ref}</span>}
                   {selected.ncr_ref && <span className="text-xs text-blue-600">NCR: {selected.ncr_ref}</span>}
@@ -712,8 +712,8 @@ export default function IppMethodStatementTab({ readOnly = false }: Props) {
 
             {/* Actions */}
             {!readOnly && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <p className="text-xs text-gray-500 mb-2">Actions</p>
+              <div className="mt-4 pt-4 border-t border-[#eef2f7]">
+                <p className="text-xs text-[#6b7685] mb-2">Actions</p>
                 {actionResult && (
                   <div className={`text-xs rounded px-2 py-1 mb-2 ${actionResult.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
                     {actionResult}
@@ -728,14 +728,14 @@ export default function IppMethodStatementTab({ readOnly = false }: Props) {
                       className={`text-xs rounded px-3 py-1 ${
                         danger
                           ? 'bg-red-600 text-white hover:bg-red-700'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                          : 'bg-[#c2873a] text-white hover:bg-[#a3702f]'
                       } disabled:opacity-50`}
                     >
                       {label}
                     </button>
                   ))}
                   {(ACTIONS[selected.chain_status] ?? []).length === 0 && (
-                    <span className="text-xs text-gray-400 italic">No actions available (terminal state)</span>
+                    <span className="text-xs text-[#9aa5b4] italic">No actions available (terminal state)</span>
                   )}
                 </div>
               </div>
@@ -755,8 +755,8 @@ export default function IppMethodStatementTab({ readOnly = false }: Props) {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">New method statement</h3>
-              <button type="button" className="text-gray-400 hover:text-gray-600 text-xl leading-none" onClick={() => setShowCreate(false)}>×</button>
+              <h3 className="font-semibold text-[#0f1c2e]">New method statement</h3>
+              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl leading-none" onClick={() => setShowCreate(false)}>×</button>
             </div>
 
             {/* SIGNATURE warning on create */}
@@ -774,49 +774,49 @@ export default function IppMethodStatementTab({ readOnly = false }: Props) {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">MS title *</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">MS title *</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Method statement title" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">MS number</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">MS number</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newMsNumber} onChange={e => setNewMsNumber(e.target.value)} placeholder="e.g. K500-MS-013" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Project ID *</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Project ID *</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newProject} onChange={e => setNewProject(e.target.value)} placeholder="project-id" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Project name</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Project name</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newProjectName} onChange={e => setNewProjectName(e.target.value)} placeholder="Project display name" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Work type</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Work type</label>
                   <select className="text-xs border rounded px-2 py-1.5 w-full" value={newWorkType} onChange={e => setNewWorkType(e.target.value as WorkType)}>
                     {WORK_TYPES.map(w => <option key={w} value={w}>{WORK_TYPE_LABEL[w]}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Risk tier</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Risk tier</label>
                   <select className="text-xs border rounded px-2 py-1.5 w-full" value={newRiskTier} onChange={e => setNewRiskTier(e.target.value as RiskTier)}>
                     {RISK_TIERS.map(t => <option key={t} value={t}>{RISK_TIER_LABEL[t]} ({SLA_HOURS_BY_TIER[t]}h SLA)</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Work area</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Work area</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newWorkArea} onChange={e => setNewWorkArea(e.target.value)} placeholder="Site zone / block" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Scheduled start date</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Scheduled start date</label>
                   <input type="date" className="text-xs border rounded px-2 py-1.5 w-full" value={newScheduledStart} onChange={e => setNewScheduledStart(e.target.value)} />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Duration (days)</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Duration (days)</label>
                   <input type="number" min="1" className="text-xs border rounded px-2 py-1.5 w-full" value={newDurationDays} onChange={e => setNewDurationDays(e.target.value)} placeholder="e.g. 3" />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Scope of work *</label>
+                <label className="text-xs text-[#6b7685] block mb-1">Scope of work *</label>
                 <textarea className="text-xs border rounded px-2 py-1.5 w-full" rows={4} value={newScopeOfWork} onChange={e => setNewScopeOfWork(e.target.value)} placeholder="Detailed scope of work, work sequence, controls…" />
               </div>
 
@@ -847,37 +847,37 @@ export default function IppMethodStatementTab({ readOnly = false }: Props) {
               {/* Cross-references */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">PTW ref (W64)</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">PTW ref (W64)</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newPtwRef} onChange={e => setNewPtwRef(e.target.value)} placeholder="ptw-xxx" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">NCR ref (W136)</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">NCR ref (W136)</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newNcrRef} onChange={e => setNewNcrRef(e.target.value)} placeholder="ncr-xxx" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">HSE incident ref (W25)</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">HSE incident ref (W25)</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newHseRef} onChange={e => setNewHseRef(e.target.value)} placeholder="hse-xxx" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Work order ref (W16)</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Work order ref (W16)</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newWorkOrderRef} onChange={e => setNewWorkOrderRef(e.target.value)} placeholder="wo-xxx" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 block mb-1">Risk ref (W133)</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Risk ref (W133)</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newRiskRef} onChange={e => setNewRiskRef(e.target.value)} placeholder="risk-xxx" />
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100">
+            <div className="flex gap-3 mt-4 pt-4 border-t border-[#eef2f7]">
               <button type="button"
                 onClick={handleCreate}
                 disabled={createLoading || !newTitle || !newProject || !newScopeOfWork}
-                className="text-xs bg-blue-600 text-white rounded px-4 py-1.5 hover:bg-blue-700 disabled:opacity-50"
+                className="text-xs bg-[#c2873a] text-white rounded px-4 py-1.5 hover:bg-[#a3702f] disabled:opacity-50"
               >
                 {createLoading ? 'Creating…' : 'Create method statement'}
               </button>
-              <button type="button" onClick={() => setShowCreate(false)} className="text-xs border rounded px-3 py-1.5 hover:bg-gray-50">
+              <button type="button" onClick={() => setShowCreate(false)} className="text-xs border rounded px-3 py-1.5 hover:bg-[#eef2f7]">
                 Cancel
               </button>
             </div>

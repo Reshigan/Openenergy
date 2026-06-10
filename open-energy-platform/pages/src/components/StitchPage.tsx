@@ -86,7 +86,7 @@ export function StitchPage<TId extends string = string>({
             key={t.id}
             onClick={() => onTabChange?.(t.id)}
             className={`h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-2 ${
-              active ? 'bg-[#1a3a5c] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'
+              active ? 'bg-[#c2873a] text-white' : 'text-[#3d4756] hover:bg-[#eef2f7]'
             }`}
           >
             {TIcon ? <TIcon size={14} /> : null} {t.label}

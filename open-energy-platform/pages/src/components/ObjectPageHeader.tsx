@@ -33,7 +33,7 @@ export function ObjectPageHeader({
   title,
   subtitle,
   icon: Icon,
-  iconColor = 'linear-gradient(135deg,#3b82c4 0%,#1f9b95 100%)',
+  iconColor = 'oklch(0.46 0.16 55)',
   badge,
   kpis,
   actions,
@@ -50,7 +50,7 @@ export function ObjectPageHeader({
             className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
             style={{
               background: iconColor,
-              boxShadow: '0 6px 16px rgba(59,130,196,0.25)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.10)',
             }}
           >
             <Icon size={26} className="text-white" />

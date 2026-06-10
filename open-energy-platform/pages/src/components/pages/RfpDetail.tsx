@@ -24,7 +24,7 @@ export function RfpDetail() {
             <button
               type="button"
               onClick={() => navigate('/procurement')}
-              className="h-9 px-3 rounded-md bg-white/15 border border-white/20 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/25"
+              className="h-9 px-3 rounded-md bg-white/15 border border-white/20 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#f8fafc]/25"
             >
               <OEIcon name="chevron-left" size={14} /> Procurement
             </button>
@@ -32,7 +32,7 @@ export function RfpDetail() {
               <button
                 type="button"
                 onClick={() => navigate(`/contracts/${data.award.linked_contract.id}`)}
-                className="h-9 px-3 rounded-md bg-white text-[#143d35] text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/90"
+                className="h-9 px-3 rounded-md bg-white text-[#143d35] text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#f8fafc]/90"
               >
                 <OEIcon name="doc" size={14} /> Open contract file
               </button>

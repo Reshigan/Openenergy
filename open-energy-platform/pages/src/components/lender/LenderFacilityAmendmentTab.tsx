@@ -36,7 +36,7 @@ interface AmendmentKpis {
 // ─── Status meta ──────────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<string, string> = {
-  amendment_requested:    'bg-slate-100 text-slate-600',
+  amendment_requested:    'bg-[#eef2f7] text-[#3d4756]',
   eligibility_assessed:   'bg-blue-100 text-blue-700',
   lender_circulated:      'bg-cyan-100 text-cyan-700',
   majority_response:      'bg-indigo-100 text-indigo-700',
@@ -46,8 +46,8 @@ const STATUS_COLORS: Record<string, string> = {
   execution_signed:       'bg-purple-100 text-purple-700',
   effective:              'bg-green-100 text-green-700',
   refused:                'bg-red-100 text-red-700',
-  lapsed:                 'bg-gray-100 text-gray-400',
-  withdrawn:              'bg-gray-100 text-gray-500',
+  lapsed:                 'bg-[#eef2f7] text-[#9aa5b4]',
+  withdrawn:              'bg-[#eef2f7] text-[#6b7685]',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -72,7 +72,7 @@ const CLASS_COLORS: Record<string, string> = {
   majority_consent:         'bg-amber-100 text-amber-700',
   technical_amendment:      'bg-blue-100 text-blue-700',
   administrative_amendment: 'bg-cyan-100 text-cyan-700',
-  clerical_correction:      'bg-gray-100 text-gray-600',
+  clerical_correction:      'bg-[#eef2f7] text-[#3d4756]',
 };
 
 const CLASS_LABELS: Record<string, string> = {
@@ -194,7 +194,7 @@ function truncate(s: string, n = 32): string {
   return s.length > n ? s.slice(0, n) + '…' : s;
 }
 
-const sel = 'border rounded px-2 py-1 text-xs text-gray-700 bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
 const PAGE_SIZE = 20;
 
 // ─── KPI chip ─────────────────────────────────────────────────────────────────
@@ -205,15 +205,15 @@ function KpiChip({ label, value, mode = 'neutral' }: { label: string; value: str
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-gray-200 bg-white';
+    'border-[#dde4ec] bg-white';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-gray-900';
+    'text-[#0f1c2e]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-gray-500">{label}</div>
+      <div className="text-xs text-[#6b7685]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -431,7 +431,7 @@ export function LenderFacilityAmendmentTab() {
             <option key={c} value={c}>{CLASS_LABELS[c]} — {CLASS_SLA[c]}</option>
           ))}
         </select>
-        <label className="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer select-none">
+        <label className="flex items-center gap-1.5 text-xs text-[#2d3748] cursor-pointer select-none">
           <input
             type="checkbox"
             checked={filterSlaBreached}
@@ -442,13 +442,13 @@ export function LenderFacilityAmendmentTab() {
         </label>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs border border-gray-200 hover:bg-gray-200"
+          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
         >
           Refresh
         </button>
         <button type="button"
           onClick={() => setShowCreate(v => !v)}
-          className="ml-auto px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+          className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]"
         >
           + New Amendment
         </button>
@@ -463,7 +463,7 @@ export function LenderFacilityAmendmentTab() {
           <div className="text-sm font-semibold text-blue-800">New Facility Amendment Request</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Facility ID *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Facility ID *</label>
               <input
                 type="text"
                 value={formFacilityId}
@@ -474,7 +474,7 @@ export function LenderFacilityAmendmentTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Amendment Reference</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Amendment Reference</label>
               <input
                 type="text"
                 value={formAmendmentRef}
@@ -484,7 +484,7 @@ export function LenderFacilityAmendmentTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Amendment Class *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Amendment Class *</label>
               <select
                 value={formClass}
                 onChange={e => setFormClass(e.target.value)}
@@ -497,7 +497,7 @@ export function LenderFacilityAmendmentTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Amendment Type</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Amendment Type</label>
               <input
                 type="text"
                 value={formAmendmentType}
@@ -507,7 +507,7 @@ export function LenderFacilityAmendmentTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Pricing Change (bps)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Pricing Change (bps)</label>
               <input
                 type="number"
                 step="0.01"
@@ -525,12 +525,12 @@ export function LenderFacilityAmendmentTab() {
                 onChange={e => setFormSecurityVariation(e.target.checked)}
                 className="accent-amber-600"
               />
-              <label htmlFor="security-variation" className="text-xs text-gray-700 cursor-pointer">
+              <label htmlFor="security-variation" className="text-xs text-[#2d3748] cursor-pointer">
                 Security variation (triggers SARB Reg 29)
               </label>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs text-gray-600 mb-1">Description</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Description</label>
               <textarea
                 value={formDescription}
                 onChange={e => setFormDescription(e.target.value)}
@@ -549,14 +549,14 @@ export function LenderFacilityAmendmentTab() {
             <button
               type="submit"
               disabled={creating}
-              className="px-4 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-1.5 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f] disabled:opacity-50"
             >
               {creating ? 'Creating…' : 'Create'}
             </button>
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 bg-white border rounded text-xs text-gray-600 hover:bg-gray-50"
+              className="px-3 py-1.5 bg-white border rounded text-xs text-[#3d4756] hover:bg-[#eef2f7]"
             >
               Cancel
             </button>
@@ -573,12 +573,12 @@ export function LenderFacilityAmendmentTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-gray-400 py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-gray-500">
+              <tr className="border-b text-left text-xs text-[#6b7685]">
                 <th className="pb-2 pr-3">Amendment Ref</th>
                 <th className="pb-2 pr-3">Facility</th>
                 <th className="pb-2 pr-3">Class</th>
@@ -597,33 +597,33 @@ export function LenderFacilityAmendmentTab() {
                 return (
                   <tr
                     key={item.id}
-                    className="border-b hover:bg-gray-50 cursor-pointer"
+                    className="border-b hover:bg-[#eef2f7] cursor-pointer"
                     onClick={() => setDetailItem(item)}
                   >
-                    <td className="py-2 pr-3 text-xs font-medium text-gray-800">
+                    <td className="py-2 pr-3 text-xs font-medium text-[#1e2a38]">
                       {item.amendment_ref ?? item.id.slice(0, 12)}
                     </td>
-                    <td className="py-2 pr-3 text-xs text-gray-600">
+                    <td className="py-2 pr-3 text-xs text-[#3d4756]">
                       {item.facility_id}
                     </td>
                     <td className="py-2 pr-3">
                       <div className="flex flex-col gap-0.5">
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${CLASS_COLORS[item.amendment_class] ?? 'bg-gray-100 text-gray-500'}`}>
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${CLASS_COLORS[item.amendment_class] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                           {CLASS_LABELS[item.amendment_class] ?? item.amendment_class}
                         </span>
-                        <span className="text-xs text-gray-400">{CLASS_SLA[item.amendment_class]}</span>
+                        <span className="text-xs text-[#9aa5b4]">{CLASS_SLA[item.amendment_class]}</span>
                       </div>
                     </td>
                     <td
-                      className="py-2 pr-3 text-xs text-gray-600 max-w-[120px] truncate"
+                      className="py-2 pr-3 text-xs text-[#3d4756] max-w-[120px] truncate"
                       title={item.amendment_type ?? undefined}
                     >
                       {item.amendment_type
                         ? item.amendment_type.replace(/_/g, ' ')
-                        : <span className="text-gray-300">—</span>}
+                        : <span className="text-[#9aa5b4]">—</span>}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                         {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
                       </span>
                       {item.sla_breached === 1 && (
@@ -631,7 +631,7 @@ export function LenderFacilityAmendmentTab() {
                       )}
                     </td>
                     <td className="py-2 pr-3 text-xs tabular-nums">
-                      <span className={due.isPast && !HARD_TERMINALS.has(item.chain_status) ? 'text-red-600 font-medium' : 'text-gray-600'}>
+                      <span className={due.isPast && !HARD_TERMINALS.has(item.chain_status) ? 'text-red-600 font-medium' : 'text-[#3d4756]'}>
                         {due.text}
                       </span>
                     </td>
@@ -639,14 +639,14 @@ export function LenderFacilityAmendmentTab() {
                       {item.security_variation === 1 ? (
                         <span title="Security variation" className="text-amber-500 text-sm leading-none">&#9679;</span>
                       ) : (
-                        <span className="text-gray-200 text-sm leading-none">&#9675;</span>
+                        <span className="text-[#e8ecf0] text-sm leading-none">&#9675;</span>
                       )}
                     </td>
                     <td className="py-2 pr-3 text-center">
                       {item.regulator_notified === 1 ? (
                         <span title="Regulator notified" className="text-orange-500 text-base leading-none">&#9873;</span>
                       ) : (
-                        <span className="text-gray-200 text-base leading-none">&#9873;</span>
+                        <span className="text-[#e8ecf0] text-base leading-none">&#9873;</span>
                       )}
                     </td>
                     <td
@@ -667,7 +667,7 @@ export function LenderFacilityAmendmentTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={9} className="py-10 text-center text-[#9aa5b4] text-sm">
                     No facility amendments found
                   </td>
                 </tr>
@@ -683,15 +683,15 @@ export function LenderFacilityAmendmentTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-gray-500">Page {page} of {totalPages}</span>
+          <span className="text-xs text-[#6b7685]">Page {page} of {totalPages}</span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-gray-50"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
           >
             Next &rarr;
           </button>
@@ -700,7 +700,7 @@ export function LenderFacilityAmendmentTab() {
 
       {/* Stats footer */}
       {kpis && (
-        <div className="text-xs text-gray-400 pt-1">
+        <div className="text-xs text-[#9aa5b4] pt-1">
           {total} total &middot; {pending} pending &middot; {consented} effective &middot; {refused} refused &middot; {(kpis.lapsed_count ?? 0)} lapsed
         </div>
       )}
@@ -711,10 +711,10 @@ export function LenderFacilityAmendmentTab() {
           <div className="bg-white h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <div>
-                <div className="text-sm font-semibold text-gray-800">
+                <div className="text-sm font-semibold text-[#1e2a38]">
                   Facility Amendment
                 </div>
-                <div className="text-xs text-gray-500 mt-0.5">
+                <div className="text-xs text-[#6b7685] mt-0.5">
                   {detailItem.amendment_ref ?? detailItem.id}
                   {' '}&middot;{' '}
                   {CLASS_LABELS[detailItem.amendment_class] ?? detailItem.amendment_class}
@@ -722,7 +722,7 @@ export function LenderFacilityAmendmentTab() {
               </div>
               <button type="button"
                 onClick={() => setDetailItem(null)}
-                className="text-gray-400 hover:text-gray-700 text-lg leading-none"
+                className="text-[#9aa5b4] hover:text-[#2d3748] text-lg leading-none"
               >
                 &times;
               </button>
@@ -731,10 +731,10 @@ export function LenderFacilityAmendmentTab() {
             <div className="flex-1 p-5 space-y-5">
               {/* Status badges */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                   {STATUS_LABELS[detailItem.chain_status] ?? detailItem.chain_status.replace(/_/g, ' ')}
                 </span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${CLASS_COLORS[detailItem.amendment_class] ?? 'bg-gray-100 text-gray-500'}`}>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${CLASS_COLORS[detailItem.amendment_class] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                   {CLASS_LABELS[detailItem.amendment_class] ?? detailItem.amendment_class} — {CLASS_SLA[detailItem.amendment_class] ?? ''}
                 </span>
                 {detailItem.sla_breached === 1 && (
@@ -751,70 +751,70 @@ export function LenderFacilityAmendmentTab() {
               {/* Core fields */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
                 <div>
-                  <div className="text-gray-400 mb-0.5">Facility ID</div>
-                  <div className="font-medium text-gray-800">{detailItem.facility_id}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Facility ID</div>
+                  <div className="font-medium text-[#1e2a38]">{detailItem.facility_id}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Amendment Ref</div>
-                  <div className="text-gray-800">{detailItem.amendment_ref ?? '—'}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Amendment Ref</div>
+                  <div className="text-[#1e2a38]">{detailItem.amendment_ref ?? '—'}</div>
                 </div>
                 {detailItem.amendment_type && (
                   <div>
-                    <div className="text-gray-400 mb-0.5">Amendment Type</div>
-                    <div className="text-gray-800">{detailItem.amendment_type.replace(/_/g, ' ')}</div>
+                    <div className="text-[#9aa5b4] mb-0.5">Amendment Type</div>
+                    <div className="text-[#1e2a38]">{detailItem.amendment_type.replace(/_/g, ' ')}</div>
                   </div>
                 )}
                 {detailItem.majority_threshold_pct != null && (
                   <div>
-                    <div className="text-gray-400 mb-0.5">Majority Threshold</div>
-                    <div className="text-gray-800">{detailItem.majority_threshold_pct}%</div>
+                    <div className="text-[#9aa5b4] mb-0.5">Majority Threshold</div>
+                    <div className="text-[#1e2a38]">{detailItem.majority_threshold_pct}%</div>
                   </div>
                 )}
                 {detailItem.pricing_change_bps != null && (
                   <div>
-                    <div className="text-gray-400 mb-0.5">Pricing Change</div>
-                    <div className="text-gray-800">{detailItem.pricing_change_bps > 0 ? '+' : ''}{detailItem.pricing_change_bps} bps</div>
+                    <div className="text-[#9aa5b4] mb-0.5">Pricing Change</div>
+                    <div className="text-[#1e2a38]">{detailItem.pricing_change_bps > 0 ? '+' : ''}{detailItem.pricing_change_bps} bps</div>
                   </div>
                 )}
                 <div>
-                  <div className="text-gray-400 mb-0.5">SLA Deadline</div>
-                  <div className={`tabular-nums ${fmtDate(detailItem.sla_deadline).isPast && !HARD_TERMINALS.has(detailItem.chain_status) ? 'text-red-600 font-medium' : 'text-gray-800'}`}>
+                  <div className="text-[#9aa5b4] mb-0.5">SLA Deadline</div>
+                  <div className={`tabular-nums ${fmtDate(detailItem.sla_deadline).isPast && !HARD_TERMINALS.has(detailItem.chain_status) ? 'text-red-600 font-medium' : 'text-[#1e2a38]'}`}>
                     {fmtDate(detailItem.sla_deadline).text}
                   </div>
                 </div>
                 {detailItem.consent_deadline && (
                   <div>
-                    <div className="text-gray-400 mb-0.5">Consent Deadline</div>
-                    <div className="text-gray-800 tabular-nums">{fmtDate(detailItem.consent_deadline).text}</div>
+                    <div className="text-[#9aa5b4] mb-0.5">Consent Deadline</div>
+                    <div className="text-[#1e2a38] tabular-nums">{fmtDate(detailItem.consent_deadline).text}</div>
                   </div>
                 )}
                 {detailItem.effective_date && (
                   <div>
-                    <div className="text-gray-400 mb-0.5">Effective Date</div>
+                    <div className="text-[#9aa5b4] mb-0.5">Effective Date</div>
                     <div className="text-green-700 font-medium tabular-nums">{fmtDate(detailItem.effective_date).text}</div>
                   </div>
                 )}
                 <div>
-                  <div className="text-gray-400 mb-0.5">Unanimous Required</div>
-                  <div className={detailItem.unanimous_required === 1 ? 'text-amber-700 font-medium' : 'text-gray-400'}>
+                  <div className="text-[#9aa5b4] mb-0.5">Unanimous Required</div>
+                  <div className={detailItem.unanimous_required === 1 ? 'text-amber-700 font-medium' : 'text-[#9aa5b4]'}>
                     {detailItem.unanimous_required === 1 ? 'Yes' : 'No'}
                   </div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Created</div>
-                  <div className="text-gray-600">{fmtDate(detailItem.created_at).text}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Created</div>
+                  <div className="text-[#3d4756]">{fmtDate(detailItem.created_at).text}</div>
                 </div>
                 <div>
-                  <div className="text-gray-400 mb-0.5">Updated</div>
-                  <div className="text-gray-600">{fmtDate(detailItem.updated_at).text}</div>
+                  <div className="text-[#9aa5b4] mb-0.5">Updated</div>
+                  <div className="text-[#3d4756]">{fmtDate(detailItem.updated_at).text}</div>
                 </div>
               </div>
 
               {/* Description */}
               {detailItem.description && (
                 <div>
-                  <div className="text-xs text-gray-400 mb-1">Description</div>
-                  <div className="text-xs text-gray-700 bg-gray-50 rounded p-2 border leading-relaxed">
+                  <div className="text-xs text-[#9aa5b4] mb-1">Description</div>
+                  <div className="text-xs text-[#2d3748] bg-[#f8fafc] rounded p-2 border leading-relaxed">
                     {detailItem.description}
                   </div>
                 </div>
@@ -823,8 +823,8 @@ export function LenderFacilityAmendmentTab() {
               {/* Reason */}
               {detailItem.reason && (
                 <div>
-                  <div className="text-xs text-gray-400 mb-1">Reason / Notes</div>
-                  <div className="text-xs text-gray-700 bg-gray-50 rounded p-2 border whitespace-pre-wrap">
+                  <div className="text-xs text-[#9aa5b4] mb-1">Reason / Notes</div>
+                  <div className="text-xs text-[#2d3748] bg-[#f8fafc] rounded p-2 border whitespace-pre-wrap">
                     {detailItem.reason}
                   </div>
                 </div>
@@ -844,13 +844,13 @@ export function LenderFacilityAmendmentTab() {
               {/* Actions section */}
               {!HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs font-semibold text-gray-700 mb-2">Advance State Machine</div>
+                  <div className="text-xs font-semibold text-[#2d3748] mb-2">Advance State Machine</div>
                   <button type="button"
                     onClick={() => {
                       setDetailItem(null);
                       openActionPicker(detailItem);
                     }}
-                    className="px-4 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"
+                    className="px-4 py-1.5 text-xs rounded bg-[#c2873a] text-white hover:bg-[#a3702f]"
                   >
                     Open Action Picker
                   </button>
@@ -859,7 +859,7 @@ export function LenderFacilityAmendmentTab() {
 
               {HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs text-gray-400 italic">
+                  <div className="text-xs text-[#9aa5b4] italic">
                     This amendment is in a terminal state — no further transitions are available.
                   </div>
                 </div>
@@ -873,8 +873,8 @@ export function LenderFacilityAmendmentTab() {
       {actionItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-gray-800 mb-1">Facility Amendment Action</div>
-            <div className="text-xs text-gray-500 mb-4">
+            <div className="text-sm font-semibold text-[#1e2a38] mb-1">Facility Amendment Action</div>
+            <div className="text-xs text-[#6b7685] mb-4">
               {truncate(actionItem.amendment_ref ?? actionItem.id, 24)}
               {' '}—{' '}
               {CLASS_LABELS[actionItem.amendment_class] ?? actionItem.amendment_class}
@@ -883,7 +883,7 @@ export function LenderFacilityAmendmentTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-gray-600 mb-1">Action *</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Action *</label>
               <select
                 value={selectedAction}
                 onChange={e => setSelectedAction(e.target.value)}
@@ -897,7 +897,7 @@ export function LenderFacilityAmendmentTab() {
 
             {selectedAction === 'record_effective_date' && (
               <div className="mb-3">
-                <label className="block text-xs text-gray-600 mb-1">Effective Date</label>
+                <label className="block text-xs text-[#3d4756] mb-1">Effective Date</label>
                 <input
                   type="date"
                   value={actionEffectiveDate}
@@ -908,7 +908,7 @@ export function LenderFacilityAmendmentTab() {
             )}
 
             <div className="mb-3">
-              <label className="block text-xs text-gray-600 mb-1">Reason (optional)</label>
+              <label className="block text-xs text-[#3d4756] mb-1">Reason (optional)</label>
               <input
                 type="text"
                 value={actionReason}
@@ -927,7 +927,7 @@ export function LenderFacilityAmendmentTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-gray-600 hover:bg-gray-50"
+                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
               >
                 Cancel
               </button>
@@ -939,7 +939,7 @@ export function LenderFacilityAmendmentTab() {
                     ? 'bg-red-600 hover:bg-red-700'
                     : modalActions.find(a => a.name === selectedAction)?.variant === 'warn'
                     ? 'bg-amber-500 hover:bg-amber-600'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-[#c2873a] hover:bg-[#a3702f]'
                 }`}
               >
                 {actionLoading ? 'Submitting…' : actionLabelCurrent}

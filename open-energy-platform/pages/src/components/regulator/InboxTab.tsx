@@ -136,7 +136,7 @@ export function InboxTab() {
             key={s}
             data-testid={`regulator-inbox-filter-${s}`}
             onClick={() => setFilter(s)}
-            className={`h-7 px-3 rounded-full text-[11px] font-semibold border ${filter === s ? 'bg-[#1a3a5c] text-white border-[#1a3a5c]' : 'bg-white text-[#445566] border-[#d8dee6]'}`}
+            className={`h-7 px-3 rounded-full text-[11px] font-semibold border ${filter === s ? 'bg-[#c2873a] text-white border-[#1a3a5c]' : 'bg-white text-[#445566] border-[#d8dee6]'}`}
           >
             {s === 'all' ? 'All' : STATUS_TONE[s].label}
           </button>

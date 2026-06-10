@@ -174,7 +174,7 @@ export function EsumsOmFieldWosPage() {
   // ─── List view ───
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-20">
-      <header className={`text-white px-4 py-3 sticky top-0 z-10 flex items-center justify-between shadow ${offline ? 'bg-[#b04e0f]' : 'bg-[#1a3a5c]'}`}>
+      <header className={`text-white px-4 py-3 sticky top-0 z-10 flex items-center justify-between shadow ${offline ? 'bg-[#b04e0f]' : 'bg-[#c2873a]'}`}>
         <button type="button" onClick={() => navigate('/esums')} className="p-1.5 -ml-1.5"><ArrowLeft size={20} /></button>
         <div className="text-center flex-1">
           <div className="text-[10px] uppercase tracking-wider opacity-80 inline-flex items-center gap-1">
@@ -238,7 +238,7 @@ function FieldWoDetail({
 
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-32">
-      <header className="bg-[#1a3a5c] text-white px-4 py-3 sticky top-0 z-10 flex items-center gap-2 shadow">
+      <header className="bg-[#c2873a] text-white px-4 py-3 sticky top-0 z-10 flex items-center gap-2 shadow">
         <button type="button" onClick={onBack} className="p-1.5 -ml-1.5"><ArrowLeft size={20} /></button>
         <div className="flex-1 min-w-0">
           <div className="text-[10px] uppercase tracking-wider opacity-80">{wo.site_name}</div>
@@ -286,14 +286,14 @@ function FieldWoDetail({
             <button type="button"
               disabled={busy}
               onClick={onOnSite}
-              className="flex-1 h-12 rounded-lg bg-[#1a3a5c] text-white font-semibold text-[14px] inline-flex items-center justify-center gap-2 disabled:opacity-50">
+              className="flex-1 h-12 rounded-lg bg-[#c2873a] text-white font-semibold text-[14px] inline-flex items-center justify-center gap-2 disabled:opacity-50">
               <MapPin size={16} /> Arrived (check-in)
             </button>
           ) : (
             <button type="button"
               disabled={busy}
               onClick={() => onTransition(wo, next.to)}
-              className="flex-1 h-12 rounded-lg bg-[#1a3a5c] text-white font-semibold text-[14px] inline-flex items-center justify-center gap-2 disabled:opacity-50">
+              className="flex-1 h-12 rounded-lg bg-[#c2873a] text-white font-semibold text-[14px] inline-flex items-center justify-center gap-2 disabled:opacity-50">
               <Check size={16} /> {next.label}
             </button>
           )}

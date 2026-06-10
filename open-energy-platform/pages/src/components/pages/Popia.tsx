@@ -80,15 +80,15 @@ const STATUS_PILL: Record<string, string> = {
   approved: 'bg-green-100 text-green-700',
   applied: 'bg-green-100 text-green-700',
   upheld: 'bg-green-100 text-green-700',
-  rejected: 'bg-gray-200 text-gray-700',
-  withdrawn: 'bg-gray-200 text-gray-700',
+  rejected: 'bg-[#e8ecf0] text-[#2d3748]',
+  withdrawn: 'bg-[#e8ecf0] text-[#2d3748]',
   open: 'bg-red-100 text-red-800',
   contained: 'bg-amber-100 text-amber-800',
-  closed: 'bg-gray-200 text-gray-700',
+  closed: 'bg-[#e8ecf0] text-[#2d3748]',
 };
 
 const SEVERITY_PILL: Record<string, string> = {
-  low: 'bg-gray-100 text-gray-700',
+  low: 'bg-[#eef2f7] text-[#2d3748]',
   medium: 'bg-amber-100 text-amber-800',
   high: 'bg-orange-100 text-orange-800',
   critical: 'bg-red-100 text-red-800',
@@ -197,7 +197,7 @@ export function Popia() {
       title="POPIA"
       subtitle="Consent, data-subject access and right-to-erasure — Sections 23 and 24."
       actions={
-        <button type="button" onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50" aria-label="Refresh">
+        <button type="button" onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]" aria-label="Refresh">
           <RefreshCw className="w-4 h-4" />
         </button>
       }
@@ -214,7 +214,7 @@ export function Popia() {
           <button type="button"
             key={t.k}
             onClick={() => setTab(t.k)}
-            className={`pb-3 border-b-2 transition-colors ${tab === t.k ? 'border-ionex-brand text-ionex-brand font-semibold' : 'border-transparent text-ionex-text-mute hover:text-gray-900'}`}
+            className={`pb-3 border-b-2 transition-colors ${tab === t.k ? 'border-ionex-brand text-ionex-brand font-semibold' : 'border-transparent text-ionex-text-mute hover:text-[#0f1c2e]'}`}
           >
             {t.label}
           </button>
@@ -238,7 +238,7 @@ export function Popia() {
           ]).map(row => (
             <div key={row.key} className="flex items-start justify-between gap-4 border-t border-ionex-border-100 pt-3 first:border-t-0 first:pt-0">
               <div>
-                <p className="font-medium text-gray-900">{row.label}</p>
+                <p className="font-medium text-[#0f1c2e]">{row.label}</p>
                 <p className="text-xs text-ionex-text-mute mt-0.5">{row.hint}</p>
               </div>
               <Toggle
@@ -264,15 +264,15 @@ export function Popia() {
           ) : (
             <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-left text-xs uppercase text-ionex-text-mute">
+                <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
                   <tr><Th>ID</Th><Th>Scope</Th><Th>Status</Th><Th>Requested</Th><Th>Processed</Th><Th>Action</Th></tr>
                 </thead>
                 <tbody>
                   {dsars.map(r => (
-                    <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+                    <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
                       <Td className="font-mono text-xs">{r.id}</Td>
                       <Td>{r.scope}</Td>
-                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-gray-100'}`}>{r.status}</span></Td>
+                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-[#eef2f7]'}`}>{r.status}</span></Td>
                       <Td>{new Date(r.requested_at).toLocaleDateString()}</Td>
                       <Td>{r.processed_at ? new Date(r.processed_at).toLocaleDateString() : '—'}</Td>
                       <Td>
@@ -302,15 +302,15 @@ export function Popia() {
           ) : (
             <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-left text-xs uppercase text-ionex-text-mute">
+                <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
                   <tr><Th>ID</Th><Th>Reason</Th><Th>Status</Th><Th>Requested</Th></tr>
                 </thead>
                 <tbody>
                   {erasures.map(r => (
-                    <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+                    <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
                       <Td className="font-mono text-xs">{r.id}</Td>
                       <Td className="max-w-md"><div className="truncate" title={r.reason}>{r.reason}</div></Td>
-                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-gray-100'}`}>{r.status}</span></Td>
+                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-[#eef2f7]'}`}>{r.status}</span></Td>
                       <Td>{new Date(r.requested_at).toLocaleDateString()}</Td>
                     </tr>
                   ))}
@@ -334,15 +334,15 @@ export function Popia() {
           ) : (
             <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-left text-xs uppercase text-ionex-text-mute">
+                <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
                   <tr><Th>ID</Th><Th>Purpose</Th><Th>Status</Th><Th>Requested</Th></tr>
                 </thead>
                 <tbody>
                   {objections.map(r => (
-                    <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+                    <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
                       <Td className="font-mono text-xs">{r.id}</Td>
                       <Td className="max-w-md"><div className="truncate" title={r.processing_purpose}>{r.processing_purpose}</div></Td>
-                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-gray-100'}`}>{r.status}</span></Td>
+                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-[#eef2f7]'}`}>{r.status}</span></Td>
                       <Td>{new Date(r.requested_at).toLocaleDateString()}</Td>
                     </tr>
                   ))}
@@ -366,17 +366,17 @@ export function Popia() {
           ) : (
             <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-left text-xs uppercase text-ionex-text-mute">
+                <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
                   <tr><Th>ID</Th><Th>Field</Th><Th>Current</Th><Th>Requested</Th><Th>Status</Th></tr>
                 </thead>
                 <tbody>
                   {corrections.map(r => (
-                    <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+                    <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
                       <Td className="font-mono text-xs">{r.id}</Td>
                       <Td className="font-mono text-xs">{r.field_name}</Td>
                       <Td className="max-w-[180px]"><div className="truncate" title={r.current_value || ''}>{r.current_value || '—'}</div></Td>
                       <Td className="max-w-[180px]"><div className="truncate" title={r.requested_value}>{r.requested_value}</div></Td>
-                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-gray-100'}`}>{r.status}</span></Td>
+                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-[#eef2f7]'}`}>{r.status}</span></Td>
                     </tr>
                   ))}
                 </tbody>
@@ -399,17 +399,17 @@ export function Popia() {
           ) : (
             <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-left text-xs uppercase text-ionex-text-mute">
+                <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
                   <tr><Th>ID</Th><Th>Severity</Th><Th>Category</Th><Th>Affected</Th><Th>Status</Th><Th>Discovered</Th><Th>Regulator notified</Th></tr>
                 </thead>
                 <tbody>
                   {breaches.map(r => (
-                    <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+                    <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
                       <Td className="font-mono text-xs">{r.id}</Td>
-                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${SEVERITY_PILL[r.severity] || 'bg-gray-100'}`}>{r.severity}</span></Td>
+                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${SEVERITY_PILL[r.severity] || 'bg-[#eef2f7]'}`}>{r.severity}</span></Td>
                       <Td className="text-xs">{r.category}</Td>
                       <Td className="text-xs">{r.affected_subjects_count ?? 0}</Td>
-                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-gray-100'}`}>{r.status}</span></Td>
+                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-[#eef2f7]'}`}>{r.status}</span></Td>
                       <Td>{new Date(r.discovered_at).toLocaleDateString()}</Td>
                       <Td>{r.regulator_notified_at ? new Date(r.regulator_notified_at).toLocaleDateString() : '—'}</Td>
                     </tr>
@@ -477,12 +477,12 @@ function ErasureModal({ onClose, onSubmitted }: { onClose: () => void; onSubmitt
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Request erasure (Section 24)</h3>
+          <h3 className="text-lg font-semibold text-[#0f1c2e]">Request erasure (Section 24)</h3>
           <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
           {err && <ErrorBanner message={err} />}
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-[#2d3748]">
             Submitting this request will be reviewed by the Data Protection Officer. Retention obligations under FIC,
             Companies Act, Tax Administration Act and NERSA licensing may prevent immediate deletion; in that case
             data will be anonymised and retained only as legally required.
@@ -497,7 +497,7 @@ function ErasureModal({ onClose, onSubmitted }: { onClose: () => void; onSubmitt
           </label>
         </div>
         <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
           <button type="button" onClick={submit} disabled={saving || !confirmation} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
             {saving ? 'Submitting…' : 'Submit request'}
           </button>
@@ -535,12 +535,12 @@ function ObjectionModal({ onClose, onSubmitted }: { onClose: () => void; onSubmi
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="obj-title">
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
-          <h3 id="obj-title" className="text-lg font-semibold text-gray-900">Raise objection (Section 11(3))</h3>
+          <h3 id="obj-title" className="text-lg font-semibold text-[#0f1c2e]">Raise objection (Section 11(3))</h3>
           <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
           {err && <ErrorBanner message={err} />}
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-[#2d3748]">
             You may object to a specific processing purpose. The Data Protection Officer will review and respond
             within 30 days as required by POPIA 4 of 2013 Section 11(3).
           </p>
@@ -564,7 +564,7 @@ function ObjectionModal({ onClose, onSubmitted }: { onClose: () => void; onSubmi
           </label>
         </div>
         <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
           <button type="button" onClick={submit} disabled={saving || !processingPurpose.trim()} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50">
             {saving ? 'Submitting…' : 'Submit objection'}
           </button>
@@ -604,12 +604,12 @@ function CorrectionModal({ onClose, onSubmitted }: { onClose: () => void; onSubm
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="cor-title">
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
-          <h3 id="cor-title" className="text-lg font-semibold text-gray-900">Request correction (Section 24)</h3>
+          <h3 id="cor-title" className="text-lg font-semibold text-[#0f1c2e]">Request correction (Section 24)</h3>
           <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
           {err && <ErrorBanner message={err} />}
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-[#2d3748]">
             Request correction of inaccurate personal information on your profile. The DPO will review and apply the
             change once confirmed.
           </p>
@@ -644,7 +644,7 @@ function CorrectionModal({ onClose, onSubmitted }: { onClose: () => void; onSubm
           </label>
         </div>
         <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
           <button type="button" onClick={submit} disabled={saving || !requestedValue.trim()} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50">
             {saving ? 'Submitting…' : 'Submit correction'}
           </button>
@@ -698,12 +698,12 @@ function BreachModal({ onClose, onSubmitted }: { onClose: () => void; onSubmitte
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="brch-title">
       <div className="bg-white rounded-xl shadow-xl max-w-xl w-full" onClick={e => e.stopPropagation()}>
         <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
-          <h3 id="brch-title" className="text-lg font-semibold text-gray-900">Record breach (Section 22)</h3>
+          <h3 id="brch-title" className="text-lg font-semibold text-[#0f1c2e]">Record breach (Section 22)</h3>
           <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
           {err && <ErrorBanner message={err} />}
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-[#2d3748]">
             Security compromises must be reported to the Information Regulator and affected data subjects without
             undue delay (POPIA 4 of 2013 Section 22). Complete initial details now; notification timestamps can be
             updated later as the incident progresses.
@@ -779,7 +779,7 @@ function BreachModal({ onClose, onSubmitted }: { onClose: () => void; onSubmitte
           </div>
         </div>
         <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">Cancel</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
           <button type="button" onClick={submit} disabled={saving || !description.trim()} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
             {saving ? 'Recording…' : 'Record breach'}
           </button>

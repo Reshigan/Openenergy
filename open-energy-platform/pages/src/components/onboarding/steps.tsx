@@ -88,7 +88,7 @@ export function WelcomeStep({ data: _data, onChange: _onChange, role = 'admin', 
       <div
         className="absolute inset-0 pointer-events-none opacity-[0.03] rounded-xl"
         style={{
-          backgroundImage: 'linear-gradient(#1a3a5c 1px, transparent 1px), linear-gradient(90deg, #1a3a5c 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(oklch(0.88 0.006 250) 1px, transparent 1px), linear-gradient(90deg, oklch(0.88 0.006 250) 1px, transparent 1px)',
           backgroundSize: '32px 32px',
         }}
       />

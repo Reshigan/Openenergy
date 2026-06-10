@@ -251,7 +251,7 @@ export function DunningTab() {
                     data-testid="lender-dunning-ack"
                     disabled={busy}
                     onClick={() => run('ack', { note })}
-                    className="h-8 px-3 rounded bg-[#1a3a5c] text-white text-[11px] font-semibold disabled:opacity-50"
+                    className="h-8 px-3 rounded bg-[#c2873a] text-white text-[11px] font-semibold disabled:opacity-50"
                   >
                     Acknowledge
                   </button>

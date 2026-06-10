@@ -306,10 +306,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* Right side actions */}
         <div className="flex items-center gap-2">
           <LocalePicker compact/>
-          <button type="button" className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+          <button type="button" className="p-2 text-white/80 hover:text-white hover:bg-[#f8fafc]/10 rounded-lg transition-colors">
             <BellIcon size={18} />
           </button>
-          <button type="button" className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+          <button type="button" className="p-2 text-white/80 hover:text-white hover:bg-[#f8fafc]/10 rounded-lg transition-colors">
             <HelpIcon size={18} />
           </button>
           <button type="button" className="p-1.5 bg-ionex-accent rounded-lg hover:bg-ionex-accent-deep transition-colors">

@@ -37,14 +37,14 @@ export function ProjectDetail() {
             <button
               type="button"
               onClick={() => navigate('/projects')}
-              className="h-9 px-3 rounded-md bg-white/15 border border-white/20 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/25"
+              className="h-9 px-3 rounded-md bg-white/15 border border-white/20 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#f8fafc]/25"
             >
               <OEIcon name="chevron-left" size={14} /> Projects
             </button>
             <button
               type="button"
               onClick={() => navigate(`/projects/${id}/lifecycle`)}
-              className="h-9 px-3 rounded-md bg-white text-[#1a3a5c] text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-white/90"
+              className="h-9 px-3 rounded-md bg-white text-[#1a3a5c] text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#f8fafc]/90"
             >
               <OEIcon name="flow" size={14} /> Lifecycle timeline
             </button>

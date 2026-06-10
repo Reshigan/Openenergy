@@ -239,7 +239,7 @@ export function Reports() {
           </div>
           <button type="button"
             onClick={() => window.print()}
-            className="h-9 px-3 rounded-lg border border-[#d0d5dd] text-[13px] text-[#6b7685] hover:bg-white inline-flex items-center gap-2"
+            className="h-9 px-3 rounded-lg border border-[#d0d5dd] text-[13px] text-[#6b7685] hover:bg-[#f8fafc] inline-flex items-center gap-2"
           >
             <Printer size={14} /> Print / PDF
           </button>

@@ -67,7 +67,7 @@ interface Imbalance {
 }
 
 const SEV_PILL: Record<string, string> = {
-  low: 'bg-gray-100 text-gray-700',
+  low: 'bg-[#eef2f7] text-[#2d3748]',
   medium: 'bg-yellow-100 text-yellow-800',
   high: 'bg-orange-100 text-orange-800',
   critical: 'bg-red-100 text-red-800',
@@ -76,9 +76,9 @@ const SEV_PILL: Record<string, string> = {
 const STATUS_PILL: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
   active: 'bg-green-100 text-green-800',
-  resolved: 'bg-gray-100 text-gray-700',
+  resolved: 'bg-[#eef2f7] text-[#2d3748]',
   forecast: 'bg-blue-100 text-blue-800',
-  expired: 'bg-gray-100 text-gray-700',
+  expired: 'bg-[#eef2f7] text-[#2d3748]',
 };
 
 export function Grid() {
@@ -193,7 +193,7 @@ export function Grid() {
               <Plus size={14} /> Publish constraint
             </button>
           )}
-          <button type="button" onClick={refreshAll} className="flex items-center gap-2 px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-gray-50">
+          <button type="button" onClick={refreshAll} className="flex items-center gap-2 px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">
             <RefreshCw size={14} /> Refresh
           </button>
         </>
@@ -220,13 +220,13 @@ export function Grid() {
                 connections.length === 0 ? <EmptyState icon={<Activity className="w-8 h-8" />} title="No connections" description={isOperator ? 'Grid operators can register developer connection applications.' : 'Connection applications you file will appear here.'} />
                   : <Table headers={['Connection point', 'Project', 'Voltage', 'Export MW', 'Import MW', 'Status', 'Actions']}>
                     {connections.map(c => (
-                      <tr key={c.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+                      <tr key={c.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
                         <Td><div className="font-medium">{c.connection_point}</div><div className="text-xs text-ionex-text-mute">{c.id}</div></Td>
                         <Td>{c.project_name || c.project_id}</Td>
                         <Td>{c.voltage_kv} kV</Td>
                         <Td>{c.export_capacity_mw.toFixed(1)}</Td>
                         <Td>{c.import_capacity_mw.toFixed(1)}</Td>
-                        <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[c.status] || 'bg-gray-100'}`}>{c.status}</span></Td>
+                        <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[c.status] || 'bg-[#eef2f7]'}`}>{c.status}</span></Td>
                         <Td>{isOperator && c.status !== 'active' ? <button type="button" onClick={() => commissionConnection(c.id)} className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"><CheckCircle2 size={12} /> Commission</button> : <span className="text-xs text-ionex-text-mute">—</span>}</Td>
                       </tr>
                     ))}
@@ -237,12 +237,12 @@ export function Grid() {
                 wheeling.length === 0 ? <EmptyState icon={<MapPin className="w-8 h-8" />} title="No wheeling agreements" description="Wheeling agreements you are party to will appear here." />
                   : <Table headers={['Injection → offtake', 'Capacity', 'Rate (ZAR/kWh)', 'Period', 'Status', 'Actions']}>
                     {wheeling.map(w => (
-                      <tr key={w.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+                      <tr key={w.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
                         <Td><div className="font-medium">{w.injection_point}</div><div className="text-xs text-ionex-text-mute">→ {w.offtake_point}</div></Td>
                         <Td>{w.capacity_mw.toFixed(1)} MW</Td>
                         <Td>R{Number(w.wheeling_rate_per_kwh || 0).toFixed(3)}</Td>
                         <Td className="text-xs">{w.start_date} → {w.end_date}</Td>
-                        <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[w.status] || 'bg-gray-100'}`}>{w.status}</span></Td>
+                        <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[w.status] || 'bg-[#eef2f7]'}`}>{w.status}</span></Td>
                         <Td>{isOperator && w.status === 'pending' ? <button type="button" onClick={() => activateWheeling(w.id)} className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"><CheckCircle2 size={12} /> Activate</button> : <span className="text-xs text-ionex-text-mute">—</span>}</Td>
                       </tr>
                     ))}
@@ -253,14 +253,14 @@ export function Grid() {
                 constraints.length === 0 ? <EmptyState icon={<AlertTriangle className="w-8 h-8" />} title="No active constraints" description={isOperator ? 'Publish a transmission/distribution constraint to advise market participants.' : 'Active grid constraints published by operators will appear here.'} />
                   : <Table headers={['Location', 'Type', 'Severity', 'Available MW', 'Period', 'Description', 'Actions']}>
                     {constraints.map(k => (
-                      <tr key={k.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+                      <tr key={k.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
                         <Td><div className="font-medium">{k.location}</div><div className="text-xs text-ionex-text-mute">{k.id}</div></Td>
                         <Td className="capitalize">{k.constraint_type}</Td>
                         <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${SEV_PILL[k.severity]}`}>{k.severity}</span></Td>
                         <Td>{k.available_capacity_mw != null ? `${k.available_capacity_mw} MW` : '—'}</Td>
                         <Td className="text-xs">{k.start_date || '—'} → {k.end_date || 'ongoing'}</Td>
                         <Td className="max-w-xs"><div className="truncate text-xs" title={k.description || ''}>{k.description || '—'}</div></Td>
-                        <Td>{isOperator && k.status === 'active' ? <button type="button" onClick={() => clearConstraint(k.id)} className="text-xs px-2 py-1 bg-gray-700 text-white rounded hover:bg-gray-800">Clear</button> : <span className="text-xs text-ionex-text-mute">—</span>}</Td>
+                        <Td>{isOperator && k.status === 'active' ? <button type="button" onClick={() => clearConstraint(k.id)} className="text-xs px-2 py-1 bg-gray-700 text-white rounded hover:bg-[#1e2a38]">Clear</button> : <span className="text-xs text-ionex-text-mute">—</span>}</Td>
                       </tr>
                     ))}
                   </Table>
@@ -274,7 +274,7 @@ export function Grid() {
                       const tone = i.imbalance_kwh > 0 ? 'text-green-700' : i.imbalance_kwh < 0 ? 'text-red-700' : '';
                       const settlement = (i.settlement_price_per_kwh || 0) * Math.abs(i.imbalance_kwh);
                       return (
-                        <tr key={i.id} className="border-t border-ionex-border-100 hover:bg-gray-50">
+                        <tr key={i.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
                           <Td>{i.participant_name || i.participant_id}</Td>
                           <Td className="text-xs">{new Date(i.period_start).toLocaleString()} → {new Date(i.period_end).toLocaleString()}</Td>
                           <Td>{Number(i.scheduled_kwh || 0).toLocaleString()}</Td>
@@ -401,7 +401,7 @@ function Table({ headers, children }: { headers: string[]; children: React.React
   return (
     <div className="overflow-x-auto rounded-xl border border-ionex-border-100 bg-white">
       <table className="min-w-full text-sm">
-        <thead className="bg-gray-50 text-left text-xs text-ionex-text-mute">
+        <thead className="bg-[#f8fafc] text-left text-xs text-ionex-text-mute">
           <tr>{headers.map(h => <th key={h} className="px-3 py-2 font-medium">{h}</th>)}</tr>
         </thead>
         <tbody>{children}</tbody>

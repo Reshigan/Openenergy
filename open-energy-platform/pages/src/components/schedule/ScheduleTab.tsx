@@ -199,7 +199,7 @@ export function ScheduleTab({ projectId }: ScheduleTabProps) {
           data-testid="schedule-recompute"
           disabled={loading || busy !== null}
           onClick={recompute}
-          className="px-3 py-1.5 text-sm rounded-md bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
+          className="px-3 py-1.5 text-sm rounded-md bg-[#c2873a] text-white hover:bg-[#a3702f] disabled:opacity-50"
         >
           {busy === 'recompute' ? 'Recomputing…' : 'Recompute CPM'}
         </button>
@@ -207,7 +207,7 @@ export function ScheduleTab({ projectId }: ScheduleTabProps) {
           data-testid="schedule-level"
           disabled={loading || busy !== null}
           onClick={level}
-          className="px-3 py-1.5 text-sm rounded-md border border-slate-300 hover:bg-slate-50 disabled:opacity-50"
+          className="px-3 py-1.5 text-sm rounded-md border border-[#dde4ec] hover:bg-[#f8fafc] disabled:opacity-50"
         >
           {busy === 'level' ? 'Leveling…' : 'Level resources'}
         </button>
@@ -215,25 +215,25 @@ export function ScheduleTab({ projectId }: ScheduleTabProps) {
           data-testid="schedule-baseline"
           disabled={loading || busy !== null}
           onClick={saveBaseline}
-          className="px-3 py-1.5 text-sm rounded-md border border-slate-300 hover:bg-slate-50 disabled:opacity-50"
+          className="px-3 py-1.5 text-sm rounded-md border border-[#dde4ec] hover:bg-[#f8fafc] disabled:opacity-50"
         >
           {busy === 'baseline' ? 'Saving…' : 'Save baseline'}
         </button>
         {state?.last_computed_at ? (
-          <span className="text-xs text-slate-500 ml-2">Last computed {fmtDate(state.last_computed_at)} · v{state.version}</span>
+          <span className="text-xs text-[#4a5568] ml-2">Last computed {fmtDate(state.last_computed_at)} · v{state.version}</span>
         ) : null}
       </div>
 
       {/* ── Gantt ──────────────────────────────────────────────────── */}
-      <div className="rounded-md border border-slate-200 bg-white p-3 overflow-x-auto" data-testid="schedule-gantt">
-        <div className="text-sm font-medium text-slate-700 mb-2">Gantt</div>
+      <div className="rounded-md border border-[#dde4ec] bg-white p-3 overflow-x-auto" data-testid="schedule-gantt">
+        <div className="text-sm font-medium text-[#2d3748] mb-2">Gantt</div>
         <GanttBoard rows={gantt.rows} totalDays={gantt.totalDays} startDate={kpis.start || ''} />
       </div>
 
       {/* ── WBS table ─────────────────────────────────────────────── */}
-      <div className="rounded-md border border-slate-200 bg-white overflow-x-auto" data-testid="schedule-table">
+      <div className="rounded-md border border-[#dde4ec] bg-white overflow-x-auto" data-testid="schedule-table">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
+          <thead className="bg-[#f8fafc] text-[#3d4756] border-b border-[#dde4ec]">
             <tr>
               <th className="text-left px-3 py-2 font-medium">WBS</th>
               <th className="text-left px-3 py-2 font-medium">Activity</th>
@@ -246,7 +246,7 @@ export function ScheduleTab({ projectId }: ScheduleTabProps) {
           </thead>
           <tbody>
             {activities.map(a => (
-              <tr key={a.id} className={`border-b border-slate-100 ${a.type === 'summary' ? 'font-semibold bg-slate-50' : ''}`}>
+              <tr key={a.id} className={`border-b border-[#eef2f7] ${a.type === 'summary' ? 'font-semibold bg-[#f8fafc]' : ''}`}>
                 <td className="px-3 py-1.5 font-mono text-xs">{a.wbs_code}</td>
                 <td className="px-3 py-1.5">{a.name}{a.type === 'milestone' ? ' ◆' : ''}</td>
                 <td className="px-3 py-1.5 text-right">{a.duration_days || 0}</td>
@@ -261,25 +261,25 @@ export function ScheduleTab({ projectId }: ScheduleTabProps) {
       </div>
 
       {/* ── Resources ─────────────────────────────────────────────── */}
-      <div className="rounded-md border border-slate-200 bg-white p-3" data-testid="schedule-resources">
-        <div className="text-sm font-medium text-slate-700 mb-2">Resources</div>
+      <div className="rounded-md border border-[#dde4ec] bg-white p-3" data-testid="schedule-resources">
+        <div className="text-sm font-medium text-[#2d3748] mb-2">Resources</div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
           {resources.map(r => (
-            <div key={r.id} className="text-xs border border-slate-200 rounded p-2">
-              <div className="font-medium text-slate-800">{r.name}</div>
-              <div className="text-slate-500">{r.resource_type} · max {r.max_units}{r.unit ? ` ${r.unit}` : ''}</div>
+            <div key={r.id} className="text-xs border border-[#dde4ec] rounded p-2">
+              <div className="font-medium text-[#1e2a38]">{r.name}</div>
+              <div className="text-[#4a5568]">{r.resource_type} · max {r.max_units}{r.unit ? ` ${r.unit}` : ''}</div>
             </div>
           ))}
-          {!resources.length && <div className="text-xs text-slate-500">No resources defined yet.</div>}
+          {!resources.length && <div className="text-xs text-[#4a5568]">No resources defined yet.</div>}
         </div>
       </div>
 
       {/* ── Baselines ─────────────────────────────────────────────── */}
-      <div className="rounded-md border border-slate-200 bg-white p-3" data-testid="schedule-baselines">
-        <div className="text-sm font-medium text-slate-700 mb-2">Baselines</div>
+      <div className="rounded-md border border-[#dde4ec] bg-white p-3" data-testid="schedule-baselines">
+        <div className="text-sm font-medium text-[#2d3748] mb-2">Baselines</div>
         {baselines.length ? (
           <table className="w-full text-sm">
-            <thead className="text-slate-500 text-xs">
+            <thead className="text-[#4a5568] text-xs">
               <tr>
                 <th className="text-left py-1">Name</th>
                 <th className="text-left py-1">Saved</th>
@@ -288,7 +288,7 @@ export function ScheduleTab({ projectId }: ScheduleTabProps) {
             </thead>
             <tbody>
               {baselines.map(b => (
-                <tr key={b.id} className="border-t border-slate-100">
+                <tr key={b.id} className="border-t border-[#eef2f7]">
                   <td className="py-1">{b.name}</td>
                   <td className="py-1 font-mono text-xs">{fmtDate(b.saved_at)}</td>
                   <td className="py-1">{b.is_current ? '●' : ''}</td>
@@ -296,7 +296,7 @@ export function ScheduleTab({ projectId }: ScheduleTabProps) {
               ))}
             </tbody>
           </table>
-        ) : <div className="text-xs text-slate-500">No baselines saved yet.</div>}
+        ) : <div className="text-xs text-[#4a5568]">No baselines saved yet.</div>}
       </div>
     </div>
   );
@@ -305,9 +305,9 @@ export function ScheduleTab({ projectId }: ScheduleTabProps) {
 // ── KPI tile ─────────────────────────────────────────────────────────────
 function Kpi({ label, value, mono, accent }: { label: string; value: any; mono?: boolean; accent?: 'critical' }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-slate-500">{label}</div>
-      <div className={`text-lg ${mono ? 'font-mono' : 'font-semibold'} ${accent === 'critical' ? 'text-red-600' : 'text-slate-900'}`}>
+    <div className="rounded-md border border-[#dde4ec] bg-white px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
+      <div className={`text-lg ${mono ? 'font-mono' : 'font-semibold'} ${accent === 'critical' ? 'text-red-600' : 'text-[#0f1c2e]'}`}>
         {value}
       </div>
     </div>
@@ -320,7 +320,7 @@ function GanttBoard({ rows, totalDays, startDate }: {
   totalDays: number;
   startDate: string;
 }) {
-  if (!rows.length || !totalDays) return <div className="text-xs text-slate-500">Run “Recompute CPM” to schedule activities.</div>;
+  if (!rows.length || !totalDays) return <div className="text-xs text-[#4a5568]">Run “Recompute CPM” to schedule activities.</div>;
   const dayW = Math.max(2, Math.min(8, Math.floor(800 / totalDays)));
   const rowH = 22;
   const width = totalDays * dayW + 240;

@@ -372,7 +372,7 @@ function DisbursementsTab() {
       </div>
       <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
         <div className="text-[13px] text-[#3d4756]">Disbursement requests against active facilities. Approving fires a cascade event into Settlement.</div>
-        <button type="button" onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#1a3a5c] text-white text-[12px] font-semibold inline-flex items-center gap-1"><Plus size={14} /> Request</button>
+        <button type="button" onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold inline-flex items-center gap-1"><Plus size={14} /> Request</button>
       </div>
       <Card title="Disbursement queue">
         {items.length === 0 ? <EmptyMsg>No disbursements yet.</EmptyMsg> : (
@@ -454,7 +454,7 @@ function NewDisbursementModal({ onClose, onCreated }: { onClose: () => void; onC
           <Field label="Due (optional)"><input type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></Field>
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Cancel</button>
-            <button type="submit" disabled={loading || !facilityId} className="h-9 px-4 rounded-md bg-[#1a3a5c] text-white text-[13px] font-semibold disabled:opacity-50">{loading ? 'Submitting…' : 'Submit'}</button>
+            <button type="submit" disabled={loading || !facilityId} className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold disabled:opacity-50">{loading ? 'Submitting…' : 'Submit'}</button>
           </div>
         </form>
       </div>
